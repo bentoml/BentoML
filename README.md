@@ -3,6 +3,7 @@
 ![project status](https://www.repostatus.org/badges/latest/wip.svg)
 ![pypi status](https://img.shields.io/pypi/v/bentoml.svg)
 ![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)
+![build_status](https://travis-ci.org/bentoml/BentoML.svg?branch=master)
 
 BentoML is open source tool for packaging machine learning models and their preprocessing code into container image or python library that can be easily used for testing and production deployment.
 

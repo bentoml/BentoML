@@ -1,0 +1,101 @@
+import os
+import logging
+from logging.handlers import RotatingFileHandler
+from pythonjsonlogger import jsonlogger
+
+# prediction log conf
+PREDICTION_LOGGER_NAME = "PredictionLogger"
+PREDICTION_LOG_FILE_PATH = "/tmp/logs"
+PREDICTION_LOG_FILE = "/tmp/logs/prediction.log"
+PREDICTION_LOG_POS_FILE = "/tmp/logs/prediction.log.pos"
+
+# logging conf
+LOG_FILE_MAX_SIZE = 100 * 1000 * 1000
+LOG_FILE_NUM_BACKUPS = 10
+
+
+def initialize_prediction_logger():
+    """
+    initialize logger for logging prediction results
+    """
+
+    # prediction.log json fields - request / result / time
+    formatter = jsonlogger.JsonFormatter(
+        '(model_name) (model_version) (api_name) (request_id) (request) (response) (asctime)')
+
+    prediction_logger = logging.getLogger(PREDICTION_LOGGER_NAME)
+
+    if not prediction_logger.handlers:
+        prediction_logger.setLevel(logging.INFO)
+
+        # Create log file and its dir, it not exist
+        if os.path.isdir(PREDICTION_LOG_FILE_PATH) is False:
+            os.mkdir(PREDICTION_LOG_FILE_PATH)
+        if os.path.exists(PREDICTION_LOG_FILE) is False:
+            open(PREDICTION_LOG_FILE, 'a').close()
+        if os.path.exists(PREDICTION_LOG_POS_FILE) is False:
+            open(PREDICTION_LOG_POS_FILE, "a").close()
+
+        handler = RotatingFileHandler(filename=PREDICTION_LOG_FILE, maxBytes=LOG_FILE_MAX_SIZE,
+                                      backupCount=LOG_FILE_NUM_BACKUPS)
+        handler.setFormatter(formatter)
+        prediction_logger.addHandler(handler)
+        prediction_logger.propagate = False  # avoid duplicating the log in server logs
+
+    return getLogger()
+
+
+def getLogger():
+    """
+    Get prediction logger
+    """
+    return logging.getLogger(PREDICTION_LOGGER_NAME)
+
+
+def parse_request(request):
+    """
+    Return request data for log prediction
+    """
+    # TODO: Handle images
+
+    if request.content_type == 'application/json':
+        return request.get_json()
+    elif "image" in request.content_type:
+        return {'data': 'dont handle'}
+    elif "video" in request.content_type:
+        return {'data': 'dont handle'}
+
+    return {'data': request.get_data().decode('utf-8')}
+
+
+def parse_response(response):
+    """
+    Return response prediction result for log prediction
+    """
+    return response.response
+
+
+class PredictionLoggingMetaData():
+
+    def __init__(self, model_name, model_version, api_name, request_id, asctime):
+        self.model_name = model_name
+        self.model_version = model_version
+        self.api_name = api_name
+        self.request_id = request_id
+        self.asctime = asctime
+
+
+def log_prediction(logger, metadata, request, response):
+    """
+    Log prediction result.
+    """
+
+    logger.info({
+        "model_name": metadata['model_name'],
+        "model_version": metadata['model_version'],
+        "api_name": metadata['api_name'],
+        "request_id": metadata['request_id'],
+        "request": parse_request(request),
+        "response": parse_response(response),
+        "asctime": metadata['asctime'],
+    })

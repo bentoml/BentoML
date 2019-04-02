@@ -32,10 +32,10 @@ class CondaEnv(object):
                                        bentoml_version=bentoml_version))
 
     def set_name(self, name):
-        self._yaml["name"] = name
+        self._conda_env["name"] = name
 
     def get_name(self):
-        return self._yaml["name"]
+        return self._conda_env["name"]
 
     def add_conda_dependencies(self, extra_conda_dependencies):
         if not isinstance(extra_conda_dependencies, list):

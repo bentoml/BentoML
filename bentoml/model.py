@@ -2,13 +2,10 @@ import re
 import os
 import uuid
 from datetime import datetime
-import inspect
-from importlib import import_module
 
 from abc import abstractmethod
-from six import string_types
-
 from bentoml.utils import Path
+from bentoml.utils.module_helper import copy_module_and_local_dependencies
 from bentoml.service_env import BentoServiceEnv
 from bentoml.service import SingleModelBentoService
 from bentoml.artifacts import ArtifactCollection
@@ -98,34 +95,13 @@ model_name: {model_name}
 model_version: {model_version}
 bentoml_version: {bentoml_version}
 module_name: {module_name}
+module_file: {module_file}
 created_at: {created_at}
 """
 
 DEFAULT_MODEL_DESCRIPTION = """\
 # BentoML(bentoml.ai) generated model archive
 """
-
-
-# TODO: copy loacl python dependencies
-def _copy_module_and_local_dependencies_to(module, path):
-    """
-    bundle given module, and all its dependencies, copy files to path/src
-    """
-    if isinstance(module, string_types):
-        module = import_module(module)
-    else:
-        module = inspect.getmodule(module)
-
-    src_file = module.__file__[:-1] if module.__file__.endswith('.pyc') \
-        else module.__file__
-    # TODO: find local dependencies and copy their sources
-
-    with open(src_file, "r") as f:
-        code = f.read()
-
-    new_src_file = os.path.join(path, module.__name__ + '.py')
-    with open(new_src_file, "w") as f:
-        f.write(code)
 
 
 def _validate_version_str(version_str):
@@ -193,7 +169,7 @@ class BentoModel(SingleModelBentoService):
     def version(self):
         return self._version
 
-    def save(self, base_path, version=None):
+    def save(self, base_path, version=None, project_base_dir=None, copy_entire_project=False):
         Path(os.path.join(base_path), self.name).mkdir(parents=True, exist_ok=True)
 
         if version is not None:
@@ -227,10 +203,14 @@ class BentoModel(SingleModelBentoService):
         self.env.save(path)
 
         # copy over all custom model code
-        _copy_module_and_local_dependencies_to(
-            self.__class__.__module__,
-            # use model_name as top level package
-            os.path.join(path, self.name))
+        module_name, module_file = copy_module_and_local_dependencies(self.__class__.__module__,
+                                                                      os.path.join(path, self.name),
+                                                                      project_base_dir,
+                                                                      copy_entire_project)
+
+        # create __init__.py
+        with open(os.path.join(path, self.name, '__init__.py'), "w") as f:
+            f.write(INIT_PY_TEMPLATE.format(model_name=self.name, module_name=module_name))
 
         # write setup.py, make exported model pip installable
         setup_py_content = BENTO_MODEL_SETUP_PY_TEMPLATE.format(
@@ -242,12 +222,6 @@ class BentoModel(SingleModelBentoService):
         with open(os.path.join(path, 'MANIFEST.in'), 'w') as f:
             f.write(MANIFEST_IN_TEMPLATE.format(model_name=self.name))
 
-        # create __init__.py
-        with open(os.path.join(path, self.name, '__init__.py'), "w") as f:
-            f.write(
-                INIT_PY_TEMPLATE.format(model_name=self.name,
-                                        module_name=self.__class__.__module__))
-
         # write Dockerfile
         with open(os.path.join(path, 'Dockerfile'), 'w') as f:
             f.write(BENTO_SERVER_SINGLE_MODEL_DOCKERFILE_TEMPLATE)
@@ -255,7 +229,7 @@ class BentoModel(SingleModelBentoService):
         # write bentoml.yml
         bentoml_yml_content = BENTOML_CONFIG_YAML_TEMPLATE.format(
             model_name=self.name, bentoml_version=BENTOML_VERSION, model_version=version,
-            module_name=self.__class__.__module__, created_at=str(datetime.now()))
+            module_name=module_name, module_file=module_file, created_at=str(datetime.now()))
         with open(os.path.join(path, 'bentoml.yml'), 'w') as f:
             f.write(bentoml_yml_content)
         # Also write bentoml.yml to module base path to make it accessible

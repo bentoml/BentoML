@@ -31,6 +31,4 @@ class DataframeHandler(RequestHandler, CliHandler):
 
     @staticmethod
     def handle_cli(options, func):
-        # TODO: Implement this
-
-        return func(options)
+        raise NotImplementedError

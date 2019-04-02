@@ -23,7 +23,7 @@ class MyFakeBentoModel(bentoml.BentoModel):
     """
 
     def config(self, artifacts, env):
-        artifacts.add(bentoml.PickleArtifact('fake_model'))
+        artifacts.add(bentoml.artifacts.PickleArtifact('fake_model'))
 
     def predict(self, df):
         """

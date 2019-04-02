@@ -63,7 +63,7 @@ class BentoService(object):
         """
         Decorator for adding api to a BentoService
 
-        >>> from bentoml.service import BentoService
+        >>> from bentoml import BentoService
         >>> from bentoml.handlers import JsonHandler, DataframeHandler
         >>>
         >>> class FraudDetectionAndIdentityService(BentoService):

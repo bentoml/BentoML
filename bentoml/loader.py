@@ -76,7 +76,7 @@ def load(path, lazy_load=False):
     config = load_bentoml_config(path)
 
     # Load target module containing BentoService class from given path
-    module_file_path = os.path.join(path, config['model_name'], config['module_name'] + '.py')
+    module_file_path = os.path.join(path, config['model_name'], config['module_file'])
 
     if sys.version_info >= (3, 5):
         import importlib.util

@@ -2,7 +2,6 @@ import os
 import json
 import uuid
 import sys
-import flask
 
 import bentoml
 from bentoml.server import BentoModelApiServer
@@ -19,7 +18,7 @@ class RestServiceTestModel(bentoml.BentoModel):
     """
 
     def config(self, artifacts, env):
-        artifacts.add(bentoml.PickleArtifact('sentiment_lr'))
+        artifacts.add(bentoml.artifacts.PickleArtifact('sentiment_lr'))
 
         env.add_conda_dependencies(["scikit-learn"])
 

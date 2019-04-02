@@ -14,7 +14,7 @@ if [ ! -f $HOME/.pypirc ]; then
 fi
 
 echo "Installing dev dependencies..."
-pip install -r .[dev]
+pip install .[dev]
 
 echo "Generating distribution archives..."
 python3 setup.py sdist bdist_wheel

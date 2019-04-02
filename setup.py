@@ -26,7 +26,7 @@ optional_requires = [
 ]
 
 dev_requires = [
-    'tox==3.8.4'
+    'tox==3.8.4',
     'yapf==0.26.0',
     'pylint==2.3.1',
     'pytest==4.4.0',
@@ -65,7 +65,6 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3",
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',

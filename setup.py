@@ -37,7 +37,6 @@ dev_requires = [
 ]
 
 test_requires = [
-    'pylint==2.3.1',
     'pytest==4.4.0',
     'snapshottest==0.5.0',
     'mock==2.0.0',

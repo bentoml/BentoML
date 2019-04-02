@@ -31,6 +31,12 @@ class CondaEnv(object):
             CONDA_ENV_BASE_YAML.format(name=name, python_version=python_version,
                                        bentoml_version=bentoml_version))
 
+    def set_name(self, name):
+        self._yaml["name"] = name
+
+    def get_name(self):
+        return self._yaml["name"]
+
     def add_conda_dependencies(self, extra_conda_dependencies):
         if not isinstance(extra_conda_dependencies, list):
             # TODO: add more validation here
@@ -76,6 +82,12 @@ class BentoServiceEnv(object):
         self._setup_sh = None
         self._conda_env = CondaEnv()
         self._requirements_txt = None
+
+    def get_conda_env_name(self):
+        return self._conda_env.get_name()
+
+    def set_codna_env_name(self, name):
+        self._conda_env.set_name(name)
 
     def add_conda_channels(self, channels):
         if not isinstance(channels, list):

@@ -64,20 +64,33 @@ graft {model_name}/artifacts
 BENTO_SERVER_SINGLE_MODEL_DOCKERFILE_TEMPLATE = """\
 FROM continuumio/miniconda3
 
+ENTRYPOINT [ "/bin/bash", "-c" ]
+
+EXPOSE 5000
+
+RUN apt-get update && apt-get install -y \
+      libpq-dev \
+      build-essential \
+      && rm -rf /var/lib/apt/lists/*
+
 # copy over model files
 COPY . /model
+WORKDIR /model
+
+ARG conda_env={conda_env_name}
+
+# update conda and setup environment
+RUN conda update conda -y
 
 # create conda env
 RUN conda env create -f /model/environment.yml
 
-# Pull the environment name out of the environment.yml
-RUN echo "source activate $(head-1/model/environment.yml | cut -d ' ' -f2)" > ~/.bashrc
-ENV PATH /opt/conda/envs/$(head -1 /model/environment.yml | cut -d ' ' -f2)/bin:$PATH
+ENV PATH /opt/conda/envs/$conda_env/bin:$PATH
 
-RUN conda install pip && pip install -r /model/requirements
+RUN conda install pip && pip install -r /model/requirements.txt
 
 # Run bento server with path to model
-CMD ["/bin/bash", "-c", "bentoml serve --model-path=/model"]
+CMD ["bentoml serve --model-path=/model"]
 """
 
 INIT_PY_TEMPLATE = """\
@@ -222,7 +235,9 @@ class BentoModel(SingleModelBentoService):
 
         # write Dockerfile
         with open(os.path.join(path, 'Dockerfile'), 'w') as f:
-            f.write(BENTO_SERVER_SINGLE_MODEL_DOCKERFILE_TEMPLATE)
+            f.write(
+                BENTO_SERVER_SINGLE_MODEL_DOCKERFILE_TEMPLATE.format(
+                    conda_env_name=self.env.get_conda_env_name()))
 
         # write bentoml.yml
         bentoml_yml_content = BENTOML_CONFIG_YAML_TEMPLATE.format(

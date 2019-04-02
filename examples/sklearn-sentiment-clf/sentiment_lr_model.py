@@ -11,10 +11,9 @@ class SentimentLRModel(bentoml.BentoModel):
         artifacts.add(PickleArtifact('sentiment_lr'))
 
         env.add_conda_dependencies(["scikit-learn", "pandas"])
-        
-        
+
     def predict(self, df):
         """
         predict expects dataframe as input
-        """
+        """        
         return self.artifacts.sentiment_lr.predict(df)

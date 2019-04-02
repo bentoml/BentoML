@@ -14,7 +14,8 @@ channels:
   - defaults
 dependencies:
   - python={python_version}
-  - bentoml={bentoml_version}
+  - pip:
+    - bentoml=={bentoml_version}
 """
 
 CONDA_ENV_DEFAULT_NAME = 'bentoml-custom-conda-env'
@@ -29,6 +30,12 @@ class CondaEnv(object):
         self._conda_env = self._yaml.load(
             CONDA_ENV_BASE_YAML.format(name=name, python_version=python_version,
                                        bentoml_version=bentoml_version))
+
+    def set_name(self, name):
+        self._yaml["name"] = name
+
+    def get_name(self):
+        return self._yaml["name"]
 
     def add_conda_dependencies(self, extra_conda_dependencies):
         if not isinstance(extra_conda_dependencies, list):
@@ -76,6 +83,12 @@ class BentoServiceEnv(object):
         self._conda_env = CondaEnv()
         self._requirements_txt = None
 
+    def get_conda_env_name(self):
+        return self._conda_env.get_name()
+
+    def set_codna_env_name(self, name):
+        self._conda_env.set_name(name)
+
     def add_conda_channels(self, channels):
         if not isinstance(channels, list):
             channels = [channels]
@@ -120,10 +133,9 @@ class BentoServiceEnv(object):
         conda_yml_file = os.path.join(path, 'environment.yml')
         self._conda_env.write_to_yaml_file(conda_yml_file)
 
-        if self._requirements_txt:
-            requirements_txt_file = os.path.join(path, 'requirements.txt')
-            with open(requirements_txt_file, 'wb') as f:
-                f.write(self._requirements_txt)
+        requirements_txt_file = os.path.join(path, 'requirements.txt')
+        with open(requirements_txt_file, 'wb') as f:
+            f.write(self._requirements_txt or b'')
 
         if self._setup_sh:
             setup_sh_file = os.path.join(path, 'setup.sh')

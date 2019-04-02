@@ -1,5 +1,6 @@
-import bentoml
 import pandas as pd
+import bentoml
+from bentoml.artifacts import PickleArtifact
 
 class SentimentLRModel(bentoml.BentoModel):
     """
@@ -7,7 +8,7 @@ class SentimentLRModel(bentoml.BentoModel):
     """
     
     def config(self, artifacts, env):
-        artifacts.add(bentoml.PickleArtifact('sentiment_lr'))
+        artifacts.add(PickleArtifact('sentiment_lr'))
 
         env.add_conda_dependencies(["scikit-learn", "pandas"])
         

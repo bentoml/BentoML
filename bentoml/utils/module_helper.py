@@ -38,9 +38,7 @@ def copy_module_and_local_dependencies(module, destination, project_base_dir=Non
     else:
         module = inspect.getmodule(module)
 
-    try:
-        module_file = _get_module_src_file(module)
-    except AttributeError:
+    if module.__name__ == '__main__' and not module.__file__:
         raise BentoMLException(
             "Custom BentoModel class can not be defined in Python interactive REPL")
 
@@ -49,13 +47,15 @@ def copy_module_and_local_dependencies(module, destination, project_base_dir=Non
         module_name = os.path.split(module.__file__)[1].split('.')[0]
     else:
         module_name = module.__name__
+    module_file = _get_module_src_file(module)
 
     if copy_entire_project:
         if project_base_dir is None:
             raise ValueError("Must provide project base dir when copy_entire_project=True")
         _copy_entire_project(project_base_dir, destination)
-        return module_name
+        return module_name, module_file
 
+    # Find all modules must be imported for target module to run
     finder = ModuleFinder()
     # NOTE: This method could take a few seconds to run
     finder.run_script(module_file)
@@ -76,8 +76,13 @@ def copy_module_and_local_dependencies(module, destination, project_base_dir=Non
         name: module_file
         for name, module_file in iteritems(module_files) if module_file.startswith(project_base_dir)
     }
+
     # Lastly, add target module itself
     module_files[module_name] = module_file
+
+    # Remove "__main__" module, it should be
+    if '__main__' in module_files:
+        del module_files['__main__']
 
     for mod_name, mod_file in iteritems(module_files):
         with open(mod_file, "rb") as f:

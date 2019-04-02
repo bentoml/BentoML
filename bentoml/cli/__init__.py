@@ -22,8 +22,7 @@ def serve(model_path, port):
     port = port if port is not None else 5000
 
     if not os.path.isabs(model_path):
-        current_path = os.path.abspath(os.path.dirname(__file__))
-        model_path = os.path.join(current_path, model_path)
+        model_path = os.path.abspath(model_path)
 
     model_service = load(model_path)
     name = "bento_rest_api_server"

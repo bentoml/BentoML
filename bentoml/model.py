@@ -71,15 +71,13 @@ COPY . /model
 RUN conda env create -f /model/environment.yml
 
 # Pull the environment name out of the environment.yml
-RUN echo "source activate $(head-1/model/environment.yml|cut-d''-f2)" > ~/.bashrc
-ENV PATH /opt/conda/envs/$(head -1 /model/environment.yml | cut -d'' -f2)/bin:$PATH
+RUN echo "source activate $(head-1/model/environment.yml | cut -d ' ' -f2)" > ~/.bashrc
+ENV PATH /opt/conda/envs/$(head -1 /model/environment.yml | cut -d ' ' -f2)/bin:$PATH
 
-RUN source activate$(head-1/model/environment.yml|cut-d''-f2) && \
-    conda install pip && \
-    pip install -r /model/requirements
+RUN conda install pip && pip install -r /model/requirements
 
 # Run bento server with path to model
-CMD ["bentoml", "serve", "--model-path=/model"]
+CMD ["/bin/bash", "-c", "bentoml serve --model-path=/model"]
 """
 
 INIT_PY_TEMPLATE = """\

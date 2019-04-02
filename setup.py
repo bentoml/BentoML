@@ -26,10 +26,11 @@ optional_requires = [
 ]
 
 dev_requires = [
-    'tox==2.9.1',
+    'tox==3.8.4'
     'yapf==0.26.0',
     'pylint==2.3.1',
     'pytest==4.4.0',
+    'tox-conda==0.2.0',
     'twine',
     'setuptools',
     'pycodestyle'

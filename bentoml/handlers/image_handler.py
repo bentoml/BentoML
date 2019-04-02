@@ -8,8 +8,8 @@ class ImageHandler(RequestHandler, CliHandler):
 
     @staticmethod
     def handle_request(request, func):
-        return func(request)
+        raise NotImplementedError
 
     @staticmethod
     def handle_cli(options, func):
-        return func(options)
+        raise NotImplementedError

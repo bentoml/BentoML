@@ -23,4 +23,4 @@ class JsonHandler(RequestHandler, CliHandler):
 
     @staticmethod
     def handle_cli(options, func):
-        return func(options)
+        raise NotImplementedError

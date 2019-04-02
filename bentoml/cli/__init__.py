@@ -21,7 +21,7 @@ def serve(model_path, port):
     """
     port = port if port is not None else 5000
 
-    if os.path.isabs(model_path) is False:
+    if not os.path.isabs(model_path):
         current_path = os.path.abspath(os.path.dirname(__file__))
         model_path = os.path.join(current_path, model_path)
 

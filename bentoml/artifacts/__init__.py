@@ -14,6 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 from bentoml.artifacts.artifact import Artifact, ArtifactCollection
 from bentoml.artifacts.pickle_artifact import PickleArtifact
 from bentoml.artifacts.pytorch_model_artifact import PytorchModelArtifact

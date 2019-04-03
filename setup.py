@@ -18,6 +18,7 @@ install_requires = [
     'pandas',
     'dill',
     'python-json-logger',
+    'boto3',
 ]
 
 optional_requires = [

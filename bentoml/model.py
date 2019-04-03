@@ -18,10 +18,12 @@ import re
 import os
 import uuid
 from datetime import datetime
+from urlparse import urlparse
 
 from abc import abstractmethod
 from bentoml.utils import Path
 from bentoml.utils.module_helper import copy_module_and_local_dependencies
+from bentoml.utils.s3 import check_is_s3_path, upload_to_s3
 from bentoml.service_env import BentoServiceEnv
 from bentoml.service import SingleModelBentoService
 from bentoml.artifacts import ArtifactCollection
@@ -151,6 +153,8 @@ def _generate_new_version_str():
     return date_string + '_' + random_hash
 
 
+TEMPORARY_BENTOML_DIR_PATH = '/tmp/bentoml_tmp/'
+
 class BentoModel(SingleModelBentoService):
     """
     BentoModel is the base abstraction for defining how a ML model can
@@ -197,7 +201,12 @@ class BentoModel(SingleModelBentoService):
         return self._version
 
     def save(self, base_path, version=None, project_base_dir=None, copy_entire_project=False):
-        Path(os.path.join(base_path), self.name).mkdir(parents=True, exist_ok=True)
+        is_s3_path = check_is_s3_path(base_path)
+        if is_s3_path:
+            s3_path = base_path
+            Path(os.path.join(TEMPORARY_BENTOML_DIR_PATH), self.name).mkdir(parents=True, exist_ok=True)
+        else:
+            Path(os.path.join(base_path), self.name).mkdir(parents=True, exist_ok=True)
 
         if version is not None:
             _validate_version_str(version)
@@ -206,7 +215,10 @@ class BentoModel(SingleModelBentoService):
         self._version = version
 
         # Update path to subfolder in the form of 'base/model_name/version/'
-        path = os.path.join(base_path, self.name, version)
+        if is_s3_path:
+            path = os.path.join(TEMPORARY_BENTOML_DIR_PATH, self.name, version)
+        else:
+            path = os.path.join(base_path, self.name, version)
         if os.path.exists(path):
             raise ValueError("Version {version} in Path: {path} already "
                              "exist.".format(version=version, path=base_path))
@@ -266,7 +278,11 @@ class BentoModel(SingleModelBentoService):
         with open(os.path.join(module_base_path, 'bentoml.yml'), 'w') as f:
             f.write(bentoml_yml_content)
 
-        return path
+        if is_s3_path:
+            upload_to_s3(s3_path, path)
+            return 's3 path'
+        else:
+            return path
 
     def load(self, path=None):
         # TODO: add model.env.verify() to check dependencies and python version etc

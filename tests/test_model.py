@@ -58,3 +58,7 @@ def test_save_and_load_model():
 
     # Check api methods are available
     assert model_service.predict(1) == 2
+
+
+def test_save_and_load_from_s3():
+    assert True

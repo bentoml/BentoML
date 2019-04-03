@@ -34,8 +34,10 @@ def _get_module_src_file(module):
 def _guess_project_base(module):
     try:
         # By default, use git root path as package base
-        return subprocess.getoutput("git rev-parse --show-toplevel")
-    except (FileNotFoundError, subprocess.CalledProcessError):
+        p = subprocess.Popen(["git", "rev-parse", "--show-toplevel"], stdout=subprocess.PIPE,
+                             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        return p.communicate()[0].decode().strip()
+    except (IOError, subprocess.CalledProcessError):
         # when not inside a git repository, use "..." folder as package base
         return os.path.dirname(os.path.dirname(module.__file__))
 
@@ -74,7 +76,13 @@ def copy_module_and_local_dependencies(module, destination, project_base_dir=Non
     # Find all modules must be imported for target module to run
     finder = ModuleFinder()
     # NOTE: This method could take a few seconds to run
-    finder.run_script(module_file)
+    try:
+        finder.run_script(module_file)
+    except SyntaxError:
+        # For package with conditional import that may only work with py2
+        # or py3, ModuleFinder#run_script will try to compile the source
+        # with current python version. And that may result in SyntaxError.
+        pass
 
     module_files = {}
     for name, module in iteritems(finder.modules):
@@ -96,7 +104,8 @@ def copy_module_and_local_dependencies(module, destination, project_base_dir=Non
     # Lastly, add target module itself
     module_files[module_name] = module_file
 
-    # Remove "__main__" module, it should be
+    # Remove "__main__" module, if target module is loaded as __main__, it should
+    # be in module_files as (module_name, module_file) in current context
     if '__main__' in module_files:
         del module_files['__main__']
 

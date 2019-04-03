@@ -59,8 +59,13 @@ def create_bucket_if_not_exit(client, bucket):
     """
     try:
         client.head_bucket(Bucket=bucket)
-    except:
-        client.create_bucket(Bucket=bucket)
+    except Exception:
+        region_name = boto3.Session().region_name
+        client.create_bucket(
+            Bucket=bucket,
+            CreateBucketConfiguration={'LocationConstraint': region_name}
+        )
+
 
 def upload_to_s3(s3_path, file_path):
     """
@@ -71,10 +76,35 @@ def upload_to_s3(s3_path, file_path):
     try:
         s3_client = boto3.client('s3')
         create_bucket_if_not_exit(s3_client, bucket)
+
         for root, dirs, files in os.walk(file_path):
             for file_name in files:
-                key_name = '/'.join([s3_key, 'need add dir', file_name])
-                submit_file_path = '/'.join([root, file_name])
-                s3_client.upload_file(Filename=submit_file_path, Bucket=bucket, Key=key_name)
-    except Exception:
-        raise Exception
+                submit_file_path = os.path.join(root, file_name)
+                full_path = submit_file_path[len(file_path) + 1:]
+                s3_path = os.path.join(s3_key, full_path)
+                s3_client.upload_file(Filename=submit_file_path, Bucket=bucket, Key=s3_path)
+    except Exception as e:
+        raise e
+
+
+def download_from_s3(s3_path, file_path):
+    """
+    Download files from given s3_path and store in the given file path
+    """
+    bucket, s3_key = split_s3_bucket_key(s3_path)
+
+    try:
+        s3_client = boto3.client('s3')
+        list_object_result = s3_client.list_objects(Bucket=bucket, Prefix=s3_key)
+        result_content = list_object_result['Contents']
+
+        for content in result_content:
+            full_path = content['Key'][len(s3_key) + 1:]
+            local_file_path = os.path.join(file_path, full_path)
+            if not os.path.exists(os.path.dirname(local_file_path)):
+                os.makedirs(os.path.dirname(local_file_path))
+            s3_client.download_file(Bucket=bucket, Key=content['Key'], Filename=local_file_path)
+
+        return file_path
+    except Exception as e:
+        raise e

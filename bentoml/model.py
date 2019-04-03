@@ -18,12 +18,11 @@ import re
 import os
 import uuid
 from datetime import datetime
-from urlparse import urlparse
 
 from abc import abstractmethod
 from bentoml.utils import Path
 from bentoml.utils.module_helper import copy_module_and_local_dependencies
-from bentoml.utils.s3 import check_is_s3_path, upload_to_s3
+from bentoml.utils.s3 import check_is_s3_path, upload_to_s3, download_from_s3
 from bentoml.service_env import BentoServiceEnv
 from bentoml.service import SingleModelBentoService
 from bentoml.artifacts import ArtifactCollection
@@ -155,6 +154,7 @@ def _generate_new_version_str():
 
 TEMPORARY_BENTOML_DIR_PATH = '/tmp/bentoml_tmp/'
 
+
 class BentoModel(SingleModelBentoService):
     """
     BentoModel is the base abstraction for defining how a ML model can
@@ -200,13 +200,18 @@ class BentoModel(SingleModelBentoService):
     def version(self):
         return self._version
 
-    def save(self, base_path, version=None, project_base_dir=None, copy_entire_project=False):
-        is_s3_path = check_is_s3_path(base_path)
-        if is_s3_path:
-            s3_path = base_path
-            Path(os.path.join(TEMPORARY_BENTOML_DIR_PATH), self.name).mkdir(parents=True, exist_ok=True)
-        else:
+    def save(self, base_path, version=None, project_base_dir=None, copy_entire_project=False,
+             storage_type='file'):
+        if storage_type == 'file':
             Path(os.path.join(base_path), self.name).mkdir(parents=True, exist_ok=True)
+        else:
+            if storage_type == 's3':
+                if check_is_s3_path(base_path) is True:
+                    remote_path = base_path
+                    Path(os.path.join(TEMPORARY_BENTOML_DIR_PATH), self.name).mkdir(
+                        parents=True, exist_ok=True)
+                else:
+                    raise ValueError('Incorrect s3 path format')
 
         if version is not None:
             _validate_version_str(version)
@@ -215,10 +220,11 @@ class BentoModel(SingleModelBentoService):
         self._version = version
 
         # Update path to subfolder in the form of 'base/model_name/version/'
-        if is_s3_path:
-            path = os.path.join(TEMPORARY_BENTOML_DIR_PATH, self.name, version)
-        else:
+        if storage_type == 'file':
             path = os.path.join(base_path, self.name, version)
+        else:
+            path = os.path.join(TEMPORARY_BENTOML_DIR_PATH, self.name, version)
+
         if os.path.exists(path):
             raise ValueError("Version {version} in Path: {path} already "
                              "exist.".format(version=version, path=base_path))
@@ -278,32 +284,49 @@ class BentoModel(SingleModelBentoService):
         with open(os.path.join(module_base_path, 'bentoml.yml'), 'w') as f:
             f.write(bentoml_yml_content)
 
-        if is_s3_path:
-            upload_to_s3(s3_path, path)
-            return 's3 path'
-        else:
+        if storage_type == 'file':
             return path
+        else:
+            remote_path = os.path.join(remote_path, self.name, version)
+            if storage_type == 's3':
+                try:
+                    upload_to_s3(remote_path, path)
+                    return remote_path
+                except Exception as e:
+                    raise e
 
-    def load(self, path=None):
+    def load(self, path=None, storage_type='file'):  # pylint:disable=arguments-differ
         # TODO: add model.env.verify() to check dependencies and python version etc
 
         if self.__class__._bento_module_path is not None:
             # When calling load from pip installled bento model, use installed
             # python package for loading and the same path for '/artifacts'
+
             # TODO: warn user when path is None here
             path = self.__class__._bento_module_path
             artifacts_path = path
         else:
             # When calling load on generated archive directory, look for /artifacts
             # directory under module sub-directory
-            # TODO: assert path is not None
-            artifacts_path = os.path.join(path, self.name)
 
-        bentoml_config = load_bentoml_config(path)
+            # TODO: assert path is not None
+            if storage_type == 'file':
+                artifacts_path = os.path.join(path, self.name)
+                bentoml_config = load_bentoml_config(path)
+            elif storage_type == 's3':
+                if check_is_s3_path(path) is not True:
+                    raise ValueError('Incorrect s3 path format')
+
+                random_hash = uuid.uuid4().hex[:8]
+                temporary_path = os.path.join(TEMPORARY_BENTOML_DIR_PATH, 'download', random_hash)
+                download_from_s3(path, temporary_path)
+                artifacts_path = os.path.join(temporary_path, self.name)
+                bentoml_config = load_bentoml_config(temporary_path)
 
         self.artifacts.load(artifacts_path)
         self._model_name = bentoml_config['model_name']
         self._version = bentoml_config['model_version']
+
         return self
 
     @abstractmethod

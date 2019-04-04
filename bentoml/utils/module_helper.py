@@ -20,7 +20,6 @@ from __future__ import print_function
 
 import os
 import inspect
-import subprocess
 import shutil
 import importlib
 from modulefinder import ModuleFinder

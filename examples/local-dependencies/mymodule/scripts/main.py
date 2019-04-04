@@ -3,16 +3,16 @@ import sys
 from sklearn import svm
 from sklearn import datasets
 
-# use local bentoml repo if not installed
-sys.path.append(os.path.join(os.getcwd(), "..", "..")) 
+# Use local bentoml code
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..')))
 from bentoml import BentoModel, handler, load
 from bentoml.artifacts import PickleArtifact
 from bentoml.handlers import JsonHandler
 
-from mymodule import method_a
-from mymodule2 import method_b
-from mymodule.submodule3 import method_c
-from mymodule.submodule4 import method_d
+from mymodule import method_in_mymodule
+from mymodule.submodule import method_in_submodule
+from mymodule.submodule1 import method_in_submodule1
+from mymodule.submodule.submodule2 import method_in_submodule2
 
 class IrisClassifier(BentoModel):
     """
@@ -25,10 +25,10 @@ class IrisClassifier(BentoModel):
 
     @handler(JsonHandler)
     def predict(self, parsed_json):
-        data = method_a(parsed_json)
-        data = method_b(data)
-        data = method_c(data)
-        data = method_d(data)
+        data = method_in_mymodule(parsed_json)
+        data = method_in_submodule(data)
+        data = method_in_submodule1(data)
+        data = method_in_submodule2(data)
         return self.artifacts.clf.predict(data)
 
 if __name__ == "__main__":
@@ -41,11 +41,8 @@ if __name__ == "__main__":
     print(model.__class__.__module__)
 
     saved_path = model.save("./model")
-    print(saved_path)
+    print("Saving new bento model archive to: '{}'".format(saved_path))
 
-    # from importlib import import_module
-    # m = import_module(model.__class__.__module__)
+    loaded_model = bentoml.load(saved_path)
+    loaded_model.predict()
 
-    # print(m)
-    # print(m.__name__)
-    # print(m.__file__)

@@ -72,7 +72,7 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
                                          toplevel_package.__path__)
     else:
         toplevel_package_path_list = [toplevel_package_path]
-    toplevel_package_path_list = map(lambda path: os.path.abspath(path), toplevel_package_path_list)
+    toplevel_package_path_list = map(os.path.abspath, toplevel_package_path_list)
 
     # Find all modules must be imported for target module to run
     finder = ModuleFinder()
@@ -121,7 +121,7 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
         with open(target_file, 'wb') as f:
             f.write(src_code)
 
-    for root, dirs, files in os.walk(destination):
+    for root, _, files in os.walk(destination):
         if '__init__.py' not in files:
             Path(os.path.join(root, '__init__.py')).touch()
 

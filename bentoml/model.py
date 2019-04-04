@@ -28,7 +28,7 @@ from abc import abstractmethod
 from bentoml.utils import Path
 from bentoml.utils.module_helper import copy_module_and_local_dependencies
 from bentoml.utils.exceptions import BentoMLException
-from bentoml.utils.s3 import is_s3_path, upload_to_s3, download_from_s3
+from bentoml.utils.s3 import is_s3_url, upload_to_s3, download_from_s3
 from bentoml.service_env import BentoServiceEnv
 from bentoml.service import BentoService
 from bentoml.artifacts import ArtifactCollection
@@ -222,7 +222,7 @@ class BentoModel(BentoService):
             version = _generate_new_version_str()
         self._version = version
 
-        if is_s3_path(base_path):
+        if is_s3_url(base_path):
             storage_type = 's3'
             temp_dir = tempfile.mkdtemp()
             remote_path = base_path
@@ -322,7 +322,7 @@ class BentoModel(BentoService):
 
             # When calling load on generated archive directory, look for /artifacts
             # directory under module sub-directory
-            if is_s3_path(path):
+            if is_s3_url(path):
                 temporary_path = tempfile.mkdtemp()
                 download_from_s3(path, temporary_path)
                 # Use loacl temp path for the following loading operations

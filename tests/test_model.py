@@ -68,8 +68,6 @@ def test_save_and_load_model_from_s3():
     fake_model = MyFakeModel()
     sm = MyFakeBentoModel(fake_model=fake_model)
 
-    import boto3
-
     s3_location = 's3://bentoml/test'
     s3_saved_path = sm.save(base_path=s3_location)
     assert s3_saved_path == os.path.join(s3_location, sm.name, sm.version)
@@ -78,4 +76,4 @@ def test_save_and_load_model_from_s3():
     assert not download_model_service.loaded
     download_model_service.load()
     assert download_model_service.loaded
-    assert download_model_service.apis[0].func(1) == 2
+    assert download_model_service.get_service_apis()[0].func(1) == 2

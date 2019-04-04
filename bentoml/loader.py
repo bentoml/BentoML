@@ -26,7 +26,7 @@ from ruamel.yaml import YAML
 
 from bentoml.service import BentoService
 from bentoml.version import __version__ as BENTOML_VERSION
-from bentoml.utils.s3 import is_s3_path, download_from_s3
+from bentoml.utils.s3 import is_s3_url, download_from_s3
 
 
 class _LoadedBentoServiceWrapper(BentoService):
@@ -94,7 +94,7 @@ def load(path, lazy_load=False):
     :param path: A BentoArchive path generated from BentoService.save call
     :return: BentoService
     """
-    if is_s3_path(path):
+    if is_s3_url(path):
         tempdir = tempfile.mkdtemp()
         download_from_s3(path, tempdir)
         path = tempdir

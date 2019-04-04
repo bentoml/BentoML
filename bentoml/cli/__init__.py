@@ -23,7 +23,7 @@ import os
 import tempfile
 from bentoml.loader import load
 from bentoml.server import BentoModelApiServer
-from bentoml.utils.s3 import is_s3_path, download_from_s3
+from bentoml.utils.s3 import is_s3_url, download_from_s3
 
 
 @click.group()
@@ -43,7 +43,7 @@ def serve(model_path, port):
     """
     port = port if port is not None else 5000
 
-    if is_s3_path(model_path):
+    if is_s3_url(model_path):
         temp_dir = tempfile.mkdtemp()
         download_from_s3(model_path, temp_dir)
         model_path = temp_dir

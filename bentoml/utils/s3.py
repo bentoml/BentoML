@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import os
 import boto3
+from botocore.exceptions import ClientError
 from six.moves.urllib.parse import urlparse
 
 
@@ -63,7 +64,7 @@ def create_bucket_if_not_exit(client, bucket):
     """
     try:
         client.head_bucket(Bucket=bucket)
-    except Exception:
+    except ClientError:
         region_name = boto3.Session().region_name
         client.create_bucket(Bucket=bucket,
                              CreateBucketConfiguration={'LocationConstraint': region_name})
@@ -75,20 +76,15 @@ def upload_to_s3(s3_path, file_path):
     """
     bucket, s3_key = split_s3_bucket_key(s3_path)
 
-    try:
-        s3_client = boto3.client('s3')
-        create_bucket_if_not_exit(s3_client, bucket)
+    s3_client = boto3.client('s3')
+    create_bucket_if_not_exit(s3_client, bucket)
 
-        for root, dirs, files in os.walk(file_path):
-            for file_name in files:
-                submit_file_path = os.path.join(root, file_name)
-                full_path = submit_file_path[len(file_path) + 1:]
-                s3_path = os.path.join(s3_key, full_path)
-                s3_client.upload_file(Filename=submit_file_path, Bucket=bucket, Key=s3_path)
-
-        #TODO: Clean up files in the temp dir
-    except Exception as e:
-        raise e
+    for root, _, files in os.walk(file_path):
+        for file_name in files:
+            submit_file_path = os.path.join(root, file_name)
+            full_path = submit_file_path[len(file_path) + 1:]
+            s3_path = os.path.join(s3_key, full_path)
+            s3_client.upload_file(Filename=submit_file_path, Bucket=bucket, Key=s3_path)
 
 
 def download_from_s3(s3_path, file_path):

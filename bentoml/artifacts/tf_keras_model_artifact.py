@@ -36,14 +36,17 @@ class TfKerasModelArtifact(Artifact):
     def model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._model_extension)
 
-    def pack(self, model):
+    def pack(self, model):  # pylint:disable=arguments-differ
         self.model = model
 
     def get(self):
         return self.model
 
-    def load(self, base_path):  # pylint:disable=arguments-differ
-        from tensorflow.keras.models import load_model
+    def load(self, base_path):
+        try:
+            from tensorflow.keras.models import load_model
+        except ImportError:
+            raise ImportError("tensorflow package is required to use TfKerasModelArtifact")
         self.model = load_model(self.model_file_path(base_path))
 
     def save(self, base_path):

@@ -52,7 +52,7 @@ class BentoService(object):
         """
 
     def _config_service_apis(self):
-        self._service_apis = []
+        self._service_apis = []   # pylint:disable=attribute-defined-outside-init
         for _, function in inspect.getmembers(
                 self.__class__, predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x)):
             if hasattr(function, '_is_api'):

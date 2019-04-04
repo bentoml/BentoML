@@ -45,8 +45,8 @@ def serve(model_path, port):
 
     if is_s3_path(model_path):
         temp_dir = tempfile.mkdtemp()
-        downloaded_file_path = download_from_s3(model_path, temp_dir)
-        model_path = downloaded_file_path
+        download_from_s3(model_path, temp_dir)
+        model_path = temp_dir
     else:
         if not os.path.isabs(model_path):
             model_path = os.path.abspath(model_path)

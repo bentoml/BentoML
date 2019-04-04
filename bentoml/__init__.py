@@ -18,11 +18,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from bentoml import handlers
 from bentoml.server import metrics
 from bentoml.model import BentoModel
 from bentoml.service import BentoService
 from bentoml.loader import load
-from bentoml import handlers
 from bentoml.version import __version__
 
 api = BentoService.api

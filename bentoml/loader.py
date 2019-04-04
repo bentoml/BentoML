@@ -21,7 +21,6 @@ from __future__ import print_function
 import os
 import sys
 import tempfile
-import uuid
 
 from ruamel.yaml import YAML
 

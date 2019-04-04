@@ -68,8 +68,14 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
         toplevel_package_name = target_module_name.split('.')[0]
         toplevel_package = importlib.import_module(
             toplevel_package_name)  # Should already loaded in sys.modules
-        toplevel_package_path_list = map(lambda path: os.path.join(path, '..'),
-                                         toplevel_package.__path__)
+
+        if hasattr(toplevel_package, '__path__'):
+            toplevel_package_path_list = map(lambda path: os.path.join(path, '..'),
+                                             toplevel_package.__path__)
+        else:
+            toplevel_package_path_list = [
+                os.path.join(os.path.dirname(toplevel_package.__file__), '..')
+            ]
     else:
         toplevel_package_path_list = [toplevel_package_path]
     toplevel_package_path_list = map(os.path.abspath, toplevel_package_path_list)

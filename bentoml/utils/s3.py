@@ -24,13 +24,14 @@ from six.moves.urllib.parse import urlparse
 
 from bentoml.utils import Path
 
+
 def is_s3_url(url):
     """
     Check if url is an s3, s3n, or s3a url
     """
     try:
         return urlparse(url).scheme in ['s3', 's3n', 's3a']
-    except Exception:
+    except Exception:  # pylint:disable=broad-except
         return False
 
 

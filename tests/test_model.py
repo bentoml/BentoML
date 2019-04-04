@@ -27,6 +27,7 @@ class MyFakeBentoModel(bentoml.BentoModel):
     def config(self, artifacts, env):
         artifacts.add(bentoml.artifacts.PickleArtifact('fake_model'))
 
+    @bentoml.api(bentoml.handlers.DataframeHandler)
     def predict(self, df):
         """
         predict expects dataframe as input
@@ -53,8 +54,8 @@ def test_save_and_load_model():
     model_service.load()
     assert model_service.loaded
 
-    assert len(model_service.apis) == 1
-    api = model_service.apis[0]
+    assert len(model_service.get_service_apis()) == 1
+    api = model_service.get_service_apis()[0]
     assert api.name == 'predict'
     assert api.handler == bentoml.handlers.DataframeHandler
     assert api.func(1) == 2
@@ -62,12 +63,10 @@ def test_save_and_load_model():
     # Check api methods are available
     assert model_service.predict(1) == 2
 
-
+@pytest.mark.skip(reason="Setup s3 creds in travis or use a mock")
 def test_save_and_load_model_from_s3():
     fake_model = MyFakeModel()
     sm = MyFakeBentoModel(fake_model=fake_model)
-
-    import boto3
 
     s3_location = 's3://bentoml/test'
     s3_saved_path = sm.save(base_path=s3_location)
@@ -77,4 +76,4 @@ def test_save_and_load_model_from_s3():
     assert not download_model_service.loaded
     download_model_service.load()
     assert download_model_service.loaded
-    assert download_model_service.apis[0].func(1) == 2
+    assert download_model_service.get_service_apis()[0].func(1) == 2

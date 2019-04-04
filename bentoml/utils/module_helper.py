@@ -36,7 +36,11 @@ def _get_module_src_file(module):
 
 def copy_module_and_local_dependencies(target_module, destination, toplevel_package_path=None,
                                        copy_entire_package=False):
-    """bundle given module, and all its dependencies, copy files to destination"""
+    """
+    bundle given module, and all its dependencies within top level package,
+    and copy all source files to destination path, essentially creating
+    a source distribution of target_module
+    """
     if isinstance(target_module, string_types):
         target_module = importlib.import_module(target_module)
     else:
@@ -53,6 +57,9 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
         target_module_name = target_module.__name__
 
     target_module_file = _get_module_src_file(target_module)
+
+    if target_module_name == '__main__':
+        target_module_name = target_module_file[:-3].replace(os.sep, '.')
 
     if copy_entire_package:
         if toplevel_package_path is None:
@@ -100,13 +107,13 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
                 if name not in local_modules and _get_module_src_file(module).startswith(path):
                     local_modules[name] = module
 
-    # Lastly, add target module itself
-    local_modules[target_module_name] = target_module
-
     # Remove "__main__" module, if target module is loaded as __main__, it should
     # be in module_files as (module_name, module_file) in current context
     if '__main__' in local_modules:
         del local_modules['__main__']
+
+    # Lastly, add target module itself
+    local_modules[target_module_name] = target_module
 
     for module_name, module in iteritems(local_modules):
         module_file = _get_module_src_file(module)
@@ -114,11 +121,16 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
         with open(module_file, "rb") as f:
             src_code = f.read()
 
-        _, file_name = os.path.split(module_file)
-
-        if file_name == '__init__.py':
+        if not os.path.isabs(module_file):
+            # For modules within current top level package, module_file here should be a
+            # relative path to the src file
+            target_file = os.path.join(destination, module_file)
+        elif os.path.split(module_file)[1] == '__init__.py':
+            # for module a.b.c in 'some_path/a/b/c/__init__.py', copy file to
+            # 'destination/a/b/c/__init__.py'
             target_file = os.path.join(destination, module_name.replace('.', '/'), '__init__.py')
         else:
+            # for module a.b.c in 'some_path/a/b/c.py', copy file to 'destination/a/b/c.py'
             target_file = os.path.join(destination, module_name.replace('.', '/') + '.py')
 
         target_path = os.path.dirname(target_file)

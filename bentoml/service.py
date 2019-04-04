@@ -45,9 +45,6 @@ class BentoService(object):
     for BentoAPIServer and BentoCLI
     """
 
-    def __init__(self):
-        self._config_service_apis()
-
     @abstractmethod
     def load(self, path):
         """
@@ -55,14 +52,14 @@ class BentoService(object):
         """
 
     def _config_service_apis(self):
-        self._apis = []
+        self._service_apis = []   # pylint:disable=attribute-defined-outside-init
         for _, function in inspect.getmembers(
                 self.__class__, predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x)):
             if hasattr(function, '_is_api'):
                 api_name = _get_func_attr(function, '_api_name')
                 handler = _get_func_attr(function, '_handler')
                 func = function.__get__(self)
-                self._apis.append(BentoServiceAPI(api_name, handler, func))
+                self._service_apis.append(BentoServiceAPI(api_name, handler, func))
 
     @property
     @abstractmethod
@@ -74,9 +71,10 @@ class BentoService(object):
     def version(self):
         pass
 
-    @property
-    def apis(self):
-        return self._apis
+    def get_service_apis(self):
+        if not hasattr(self, '_service_apis'):
+            self._config_service_apis()
+        return self._service_apis
 
     @staticmethod
     def api(handler=DataframeHandler, api_name=None):
@@ -140,42 +138,3 @@ class BentoServiceAPI(object):
     @property
     def func(self):
         return self._func
-
-
-class SingleModelBentoService(BentoService):
-    """
-    A BentoService that host a single model's predict function as its only API
-    """
-
-    def __init__(self):
-        # Adding BentoServiceAPI metadata to predict function
-        try:
-            handler = _get_func_attr(self.__class__.predict, "_handler")
-        except AttributeError:
-            handler = DataframeHandler
-        BentoService.api(handler, 'predict')(self.__class__.predict)
-
-        super(SingleModelBentoService, self).__init__()
-
-    @abstractmethod
-    def load(self, path):
-        pass
-
-    @abstractmethod
-    def predict(self, data):
-        pass
-
-
-def handler_decorator(handler=DataframeHandler):
-    """
-    Decorator for setting handler Class for predict function in a BentoModel
-    """
-
-    def _handler_decorator(predict_func):
-        if predict_func.__name__ != 'predict':
-            raise ValueError("Bentoml's handler decoration can only "
-                             "be applied to BentoModel#predict function")
-        _set_func_attr(predict_func, '_handler', handler)
-        return predict_func
-
-    return _handler_decorator

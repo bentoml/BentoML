@@ -42,7 +42,11 @@ class PytorchModelArtifact(Artifact):
         return os.path.join(base_path, self.name + self._file_extension)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        import torch
+        try:
+            import torch
+        except ImportError:
+            raise ImportError("torch package is required to use PytorchModelArtifact")
+
         if not isinstance(model, torch.nn.Module):
             raise TypeError("PytorchModelArtifact can only pack type 'torch.nn.Module'")
 

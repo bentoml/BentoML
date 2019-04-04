@@ -45,9 +45,6 @@ class BentoService(object):
     for BentoAPIServer and BentoCLI
     """
 
-    def __init__(self):
-        self._config_service_apis()
-
     @abstractmethod
     def load(self, path):
         """
@@ -77,6 +74,8 @@ class BentoService(object):
     @property
     def apis(self):
         return self._apis
+        if not hasattr(self, '_service_apis'):
+            self._config_service_apis()
 
     @staticmethod
     def api(handler=DataframeHandler, api_name=None):

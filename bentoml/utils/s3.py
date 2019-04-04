@@ -14,6 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
 import boto3
 from six.moves.urllib.parse import urlparse
@@ -61,10 +65,8 @@ def create_bucket_if_not_exit(client, bucket):
         client.head_bucket(Bucket=bucket)
     except Exception:
         region_name = boto3.Session().region_name
-        client.create_bucket(
-            Bucket=bucket,
-            CreateBucketConfiguration={'LocationConstraint': region_name}
-        )
+        client.create_bucket(Bucket=bucket,
+                             CreateBucketConfiguration={'LocationConstraint': region_name})
 
 
 def upload_to_s3(s3_path, file_path):

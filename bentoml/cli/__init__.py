@@ -32,7 +32,7 @@ def cli():
 @cli.command()
 @click.option('--model-path', type=click.Path(exists=True), required=True)
 @click.option('--port', type=click.INT)
-def serve(model_path, port, storage_type='file'):
+def serve(model_path, port):
     """
     serve command for bentoml cli tool.  It will start a rest API server
 
@@ -44,7 +44,6 @@ def serve(model_path, port, storage_type='file'):
         downloaded_file_path = download_from_s3(model_path, temp_dir)
         model_path = downloaded_file_path
     else:
-        storage_type = 'file'
         if not os.path.isabs(model_path):
             model_path = os.path.abspath(model_path)
 

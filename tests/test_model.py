@@ -68,7 +68,7 @@ def test_save_and_load_model_from_s3():
     import boto3
 
     s3_location = 's3://bentoml/test'
-    s3_saved_path = sm.save(base_path=s3_location, storage_type='s3')
+    s3_saved_path = sm.save(base_path=s3_location)
     assert s3_saved_path == os.path.join(s3_location, sm.name, sm.version)
 
     download_model_service = bentoml.load(s3_saved_path, lazy_load=True)

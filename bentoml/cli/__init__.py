@@ -18,6 +18,10 @@ import click
 import os
 from bentoml.loader import load
 from bentoml.server import BentoModelApiServer
+from bentoml.utils.s3 import check_is_s3_path, download_from_s3
+
+
+TEMPORARY_BENTOML_DIR_PATH = '/tmp/bentoml_tmp/download'
 
 
 @click.group()
@@ -30,15 +34,22 @@ def cli():
 @cli.command()
 @click.option('--model-path', type=click.Path(exists=True), required=True)
 @click.option('--port', type=click.INT)
-def serve(model_path, port):
+@click.option('--storage-type', type=click.STRING)
+def serve(model_path, port, storage_type='file'):
     """
     serve command for bentoml cli tool.  It will start a rest API server
 
     """
     port = port if port is not None else 5000
 
-    if not os.path.isabs(model_path):
-        model_path = os.path.abspath(model_path)
+    if storage_type == 'file':
+        if not os.path.isabs(model_path):
+            model_path = os.path.abspath(model_path)
+    elif storage_type == 's3':
+        if not check_is_s3_path(model_path):
+            raise ValueError('Incorrect s3 path format')
+        downloaded_file_path = download_from_s3(model_path, TEMPORARY_BENTOML_DIR_PATH)
+        model_path = downloaded_file_path
 
     model_service = load(model_path)
     name = "bento_rest_api_server"

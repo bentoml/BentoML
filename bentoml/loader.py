@@ -94,7 +94,7 @@ def load(path, lazy_load=False, storage_type='file'):
     :return: BentoService
     """
     if storage_type == 's3':
-        if check_is_s3_path(path) is False:
+        if not check_is_s3_path(path):
             raise ValueError('Incorrect S3 path format')
 
         downloaded_file_path = download_from_s3(path, TEMPORARY_BENTOML_DIR_PATH)

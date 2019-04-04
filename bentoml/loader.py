@@ -103,18 +103,21 @@ def load(path, lazy_load=False):
     config = load_bentoml_config(path)
 
     # Load target module containing BentoService class from given path
-    module_file_path = os.path.join(file_path, config['model_name'], config['module_file'])
+    module_file_path = os.path.join(path, config['model_name'], config['module_file'])
 
-    if sys.version_info >= (3, 5):
+    module_name = config['module_name']
+    if module_name in sys.modules:
+        # module already loaded, TODO: add warning
+        module = sys.modules[module_name]
+    elif sys.version_info >= (3, 5):
         import importlib.util
-        spec = importlib.util.spec_from_file_location(config['module_name'], module_file_path)
+        spec = importlib.util.spec_from_file_location(module_name, module_file_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
     elif sys.version_info >= (3, 3):
         from importlib.machinery import SourceFileLoader
         # pylint:disable=deprecated-method
-        module = SourceFileLoader(config['module_name'],
-                                  module_file_path).load_module(config['module_name'])
+        module = SourceFileLoader(module_name, module_file_path).load_module(module_name)
         # pylint:enable=deprecated-method
     else:
         import imp

@@ -33,6 +33,7 @@ from bentoml.utils.exceptions import BentoMLException
 def _get_module_src_file(module):
     return module.__file__[:-1] if module.__file__.endswith('.pyc') else module.__file__
 
+
 def copy_module_and_local_dependencies(target_module, destination, toplevel_package_path=None,
                                        copy_entire_package=False):
     """bundle given module, and all its dependencies, copy files to destination"""
@@ -55,7 +56,8 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
 
     if copy_entire_package:
         if toplevel_package_path is None:
-            raise BentoMLException("Must set toplevel_package_path when using copy_entire_package=True")
+            raise BentoMLException("Must set toplevel_package_path when using"
+                                   "copy_entire_package=True")
         shutil.copytree(toplevel_package_path, destination)
         return target_module_name, target_module_file
 
@@ -66,7 +68,8 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
         toplevel_package_name = target_module_name.split('.')[0]
         toplevel_package = importlib.import_module(
             toplevel_package_name)  # Should already loaded in sys.modules
-        toplevel_package_path_list = map(lambda path: os.path.join(path, '..'), toplevel_package.__path__)
+        toplevel_package_path_list = map(lambda path: os.path.join(path, '..'),
+                                         toplevel_package.__path__)
     else:
         toplevel_package_path_list = [toplevel_package_path]
     toplevel_package_path_list = map(lambda path: os.path.abspath(path), toplevel_package_path_list)

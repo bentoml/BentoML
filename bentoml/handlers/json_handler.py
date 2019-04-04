@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import json
 from flask import Response, make_response
 
@@ -37,10 +38,44 @@ class JsonHandler(RequestHandler, CliHandler):
             return make_response(400)
 
         output = func(parsed_json)
+        try:
+            result = json.dumps(output)
+        except Exception as e:  # pylint:disable=W0703
+            if isinstance(e, TypeError):
+                if type(output).__module__ == 'numpy':
+                    output = output.tolist()
+                    result = json.dumps(output)
+                else:
+                    raise e
+            else:
+                raise e
 
-        response = Response(response=json.dumps(output), status=200, mimetype="application/json")
+        response = Response(response=result, status=200, mimetype="application/json")
         return response
 
     @staticmethod
     def handle_cli(options, func):
-        raise NotImplementedError
+        with open(options['input'], 'r') as content_file:
+            content = content_file.read()
+            input_json = json.loads(content)
+            output = func(input_json)
+
+            try:
+                result = json.dumps(output)
+            except Exception as e:  # pylint:disable=W0703
+                if isinstance(e, TypeError):
+                    if type(output).__module__ == 'numpy':
+                        output = output.tolist()
+                        result = json.dumps(output)
+                    else:
+                        raise e
+                else:
+                    raise e
+
+            if options['output'] == 'json':
+                try:
+                    sys.stdout.write(result)
+                except Exception:
+                    raise NotImplementedError
+            else:
+                raise NotImplementedError

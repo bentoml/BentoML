@@ -46,14 +46,15 @@ def cli():
     pass
 
 
+# TODO: allow string to be a value for input as well
 # bentoml serve --model=/MODEL_PATH --api-name=API_FUNC_NAME --input=/INPUT_PATH
 @cli.command()
 @click.option('--model-path', type=click.Path(exists=True), required=True)
 @click.option('--api-name', type=click.STRING)
-@click.option('--input-path', type=click.Path(exists=True), required=True)
+@click.option('--input', type=click.STRING, required=True)
 @click.option('--output', type=click.STRING, show_default=True, default='json',
               help='Output format')
-def run(model_path, api_name, input_path, output):
+def run(model_path, api_name, input, output):
     model_service = load_model_service(model_path)
     service_apis = model_service.get_service_apis()
 
@@ -66,9 +67,9 @@ def run(model_path, api_name, input_path, output):
         matched_api = service_apis[matched_api_index]
 
     if not os.path.isabs(input):
-        input_path = os.path.abspath(input_path)
+        input = os.path.abspath(input)
 
-    cli_options = {'input_path': input_path, 'output': output}
+    cli_options = {'input': input, 'output': output}
 
     return matched_api.handler.handle_cli(cli_options, matched_api.func)
 

@@ -52,22 +52,21 @@ class DataframeHandler(RequestHandler, CliHandler):
 
     @staticmethod
     def handle_cli(options, func):
-        if options['input_path'] is not None:
-            with open(options['input_path'], 'r') as content_file:
-                content = content_file.read()
-                if content_file.name.endswith('.csv'):
-                    df = pd.read_csv(content)
-                elif content_file.name.endswith('.json'):
-                    df = pd.read_json(content)
-                output = func(df)
+        with open(options['input'], 'r') as content_file:
+            content = content_file.read()
+            if content_file.name.endswith('.csv'):
+                df = pd.read_csv(content)
+            elif content_file.name.endswith('.json'):
+                df = pd.read_json(content)
+            output = func(df)
 
-                if options['output'] == 'json':
-                    if isinstance(output, pd.DataFrame):
-                        result = output.to_json(orient='records')
-                        result = json.loads(result)
-                        result = json.dumps(result, indent=2)
-                    else:
-                        result = json.dumps(output)
-                    sys.stdout.write(result)
+            if options['output'] == 'json':
+                if isinstance(output, pd.DataFrame):
+                    result = output.to_json(orient='records')
+                    result = json.loads(result)
+                    result = json.dumps(result, indent=2)
                 else:
-                    raise NotImplementedError
+                    result = json.dumps(output)
+                sys.stdout.write(result)
+            else:
+                raise NotImplementedError

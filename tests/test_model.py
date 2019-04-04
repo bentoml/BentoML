@@ -1,5 +1,4 @@
 import os
-import boto3
 import pytest
 
 import bentoml
@@ -32,6 +31,7 @@ class MyFakeBentoModel(bentoml.BentoModel):
         """
         return self.artifacts.fake_model.predict(df)
 
+
 BASE_TEST_PATH = "/tmp/bentoml-test"
 
 def test_save_and_load_model():
@@ -61,5 +61,18 @@ def test_save_and_load_model():
     assert model_service.predict(1) == 2
 
 
-def test_save_and_load_from_s3():
-    assert True
+def test_save_and_load_model_from_s3():
+    fake_model = MyFakeModel()
+    sm = MyFakeBentoModel(fake_model=fake_model)
+
+    import boto3
+
+    s3_location = 's3://bentoml/test'
+    s3_saved_path = sm.save(base_path=s3_location, storage_type='s3')
+    assert s3_saved_path == os.path.join(s3_location, sm.name, sm.version)
+
+    download_model_service = bentoml.load(s3_saved_path, storage_type='s3', lazy_load=True)
+    assert not download_model_service.loaded
+    download_model_service.load()
+    assert download_model_service.loaded
+    assert download_model_service.apis[0].func(1) == 2

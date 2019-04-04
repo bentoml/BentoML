@@ -83,6 +83,8 @@ def upload_to_s3(s3_path, file_path):
                 full_path = submit_file_path[len(file_path) + 1:]
                 s3_path = os.path.join(s3_key, full_path)
                 s3_client.upload_file(Filename=submit_file_path, Bucket=bucket, Key=s3_path)
+
+        #TODO: Clean up files in the temp dir
     except Exception as e:
         raise e
 

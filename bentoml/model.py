@@ -131,6 +131,7 @@ DEFAULT_MODEL_DESCRIPTION = """\
 # BentoML(bentoml.ai) generated model archive
 """
 
+TEMPORARY_BENTOML_DIR_PATH = '/tmp/bentoml_tmp/upload'
 
 def _validate_version_str(version_str):
     """
@@ -151,8 +152,6 @@ def _generate_new_version_str():
 
     return date_string + '_' + random_hash
 
-
-TEMPORARY_BENTOML_DIR_PATH = '/tmp/bentoml_tmp/'
 
 
 class BentoModel(SingleModelBentoService):
@@ -295,7 +294,7 @@ class BentoModel(SingleModelBentoService):
                 except Exception as e:
                     raise e
 
-    def load(self, path=None, storage_type='file'):  # pylint:disable=arguments-differ
+    def load(self, path=None):
         # TODO: add model.env.verify() to check dependencies and python version etc
 
         if self.__class__._bento_module_path is not None:
@@ -310,18 +309,9 @@ class BentoModel(SingleModelBentoService):
             # directory under module sub-directory
 
             # TODO: assert path is not None
-            if storage_type == 'file':
-                artifacts_path = os.path.join(path, self.name)
-                bentoml_config = load_bentoml_config(path)
-            elif storage_type == 's3':
-                if check_is_s3_path(path) is not True:
-                    raise ValueError('Incorrect s3 path format')
+            artifacts_path = os.path.join(path, self.name)
 
-                random_hash = uuid.uuid4().hex[:8]
-                temporary_path = os.path.join(TEMPORARY_BENTOML_DIR_PATH, 'download', random_hash)
-                download_from_s3(path, temporary_path)
-                artifacts_path = os.path.join(temporary_path, self.name)
-                bentoml_config = load_bentoml_config(temporary_path)
+        bentoml_config = load_bentoml_config(path)
 
         self.artifacts.load(artifacts_path)
         self._model_name = bentoml_config['model_name']

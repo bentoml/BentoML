@@ -16,12 +16,16 @@
 
 import os
 import sys
+import uuid
 
 from ruamel.yaml import YAML
 
 from bentoml.service import BentoService
 from bentoml.version import __version__ as BENTOML_VERSION
+from bentoml.utils.s3 import check_is_s3_path, download_from_s3
 
+
+TEMPORARY_BENTOML_DIR_PATH = '/tmp/bentoml_tmp/download'
 
 class _LoadedBentoServiceWrapper(BentoService):
 
@@ -82,17 +86,27 @@ def load_bentoml_config(path):
     return bentoml_config
 
 
-def load(path, lazy_load=False):
+def load(path, lazy_load=False, storage_type='file'):
     """
     Load a BentoService or BentoModel from saved archive in given path
 
     :param path: A BentoArchive path generated from BentoService.save call
     :return: BentoService
     """
-    config = load_bentoml_config(path)
+    if storage_type == 's3':
+        if check_is_s3_path(path) is False:
+            raise ValueError('Incorrect S3 path format')
+
+        downloaded_file_path = download_from_s3(path, TEMPORARY_BENTOML_DIR_PATH)
+
+        file_path = downloaded_file_path
+    else:
+        file_path = path
+
+    config = load_bentoml_config(file_path)
 
     # Load target module containing BentoService class from given path
-    module_file_path = os.path.join(path, config['model_name'], config['module_file'])
+    module_file_path = os.path.join(file_path, config['model_name'], config['module_file'])
 
     if sys.version_info >= (3, 5):
         import importlib.util
@@ -110,7 +124,7 @@ def load(path, lazy_load=False):
         module = imp.load_source(config['module_name'], module_file_path)
 
     model_service_class = module.__getattribute__(config['model_name'])
-    loaded_model = _LoadedBentoServiceWrapper(model_service_class, path, config)
+    loaded_model = _LoadedBentoServiceWrapper(model_service_class, file_path, config)
 
     if not lazy_load:
         loaded_model.load()

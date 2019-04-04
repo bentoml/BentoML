@@ -16,16 +16,15 @@
 
 import os
 import sys
+import tempfile
 import uuid
 
 from ruamel.yaml import YAML
 
 from bentoml.service import BentoService
 from bentoml.version import __version__ as BENTOML_VERSION
-from bentoml.utils.s3 import check_is_s3_path, download_from_s3
+from bentoml.utils.s3 import is_s3_path, download_from_s3
 
-
-TEMPORARY_BENTOML_DIR_PATH = '/tmp/bentoml_tmp/download'
 
 class _LoadedBentoServiceWrapper(BentoService):
 
@@ -94,10 +93,11 @@ def load(path, lazy_load=False, storage_type='file'):
     :return: BentoService
     """
     if storage_type == 's3':
-        if not check_is_s3_path(path):
+        if not is_s3_path(path):
             raise ValueError('Incorrect S3 path format')
 
-        downloaded_file_path = download_from_s3(path, TEMPORARY_BENTOML_DIR_PATH)
+        temp_dir = tempfile.mkdtemp()
+        downloaded_file_path = download_from_s3(path, temp_dir)
 
         file_path = downloaded_file_path
     else:

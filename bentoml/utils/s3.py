@@ -19,7 +19,7 @@ import boto3
 from six.moves.urllib.parse import urlparse
 
 
-def check_is_s3_path(path):
+def is_s3_path(path):
     """
     This helper function return True if path is in s3:// format
     """

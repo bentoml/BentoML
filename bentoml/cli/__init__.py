@@ -16,12 +16,10 @@
 
 import click
 import os
+import tempfile
 from bentoml.loader import load
 from bentoml.server import BentoModelApiServer
-from bentoml.utils.s3 import check_is_s3_path, download_from_s3
-
-
-TEMPORARY_BENTOML_DIR_PATH = '/tmp/bentoml_tmp/download'
+from bentoml.utils.s3 import is_s3_path, download_from_s3
 
 
 @click.group()
@@ -46,9 +44,10 @@ def serve(model_path, port, storage_type='file'):
         if not os.path.isabs(model_path):
             model_path = os.path.abspath(model_path)
     elif storage_type == 's3':
-        if not check_is_s3_path(model_path):
+        if not is_s3_path(model_path):
             raise ValueError('Incorrect s3 path format')
-        downloaded_file_path = download_from_s3(model_path, TEMPORARY_BENTOML_DIR_PATH)
+        temp_dir = tempfile.mkdtemp()
+        downloaded_file_path = download_from_s3(model_path, temp_dir)
         model_path = downloaded_file_path
 
     model_service = load(model_path)

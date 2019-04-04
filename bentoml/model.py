@@ -16,13 +16,14 @@
 
 import re
 import os
+import tempfile
 import uuid
 from datetime import datetime
 
 from abc import abstractmethod
 from bentoml.utils import Path
 from bentoml.utils.module_helper import copy_module_and_local_dependencies
-from bentoml.utils.s3 import check_is_s3_path, upload_to_s3, download_from_s3
+from bentoml.utils.s3 import is_s3_path, upload_to_s3, download_from_s3
 from bentoml.service_env import BentoServiceEnv
 from bentoml.service import SingleModelBentoService
 from bentoml.artifacts import ArtifactCollection
@@ -131,8 +132,6 @@ DEFAULT_MODEL_DESCRIPTION = """\
 # BentoML(bentoml.ai) generated model archive
 """
 
-TEMPORARY_BENTOML_DIR_PATH = '/tmp/bentoml_tmp'
-
 
 def _validate_version_str(version_str):
     """
@@ -204,12 +203,13 @@ class BentoModel(SingleModelBentoService):
         if storage_type == 'file':
             Path(os.path.join(base_path), self.name).mkdir(parents=True, exist_ok=True)
         else:
+            temp_dir = tempfile.mkdtemp()
             if storage_type == 's3':
-                if not check_is_s3_path(base_path):
+                if not is_s3_path(base_path):
                     raise ValueError('Incorrect s3 path format')
 
                 remote_path = base_path
-                Path(os.path.join(TEMPORARY_BENTOML_DIR_PATH, 'upload'), self.name).mkdir(
+                Path(temp_dir, self.name).mkdir(
                     parents=True, exist_ok=True)
 
         if version is not None:
@@ -222,7 +222,7 @@ class BentoModel(SingleModelBentoService):
         if storage_type == 'file':
             path = os.path.join(base_path, self.name, version)
         else:
-            path = os.path.join(TEMPORARY_BENTOML_DIR_PATH, 'upload', self.name, version)
+            path = os.path.join(temp_dir, self.name, version)
 
         if os.path.exists(path):
             raise ValueError("Version {version} in Path: {path} already "
@@ -314,9 +314,9 @@ class BentoModel(SingleModelBentoService):
                 artifacts_path = os.path.join(path, self.name)
                 bentoml_config = load_bentoml_config(path)
             elif storage_type == 's3':
-                if not check_is_s3_path(path):
+                if not is_s3_path(path):
                     raise ValueError('Incorrect s3 path format')
-                temporary_path = os.path.join(TEMPORARY_BENTOML_DIR_PATH, 'download')
+                temporary_path = tempfile.mkdtemp()
                 download_file_path = download_from_s3(path, temporary_path)
                 artifacts_path = os.path.join(download_file_path, self.name)
                 bentoml_config = load_bentoml_config(download_file_path)

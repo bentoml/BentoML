@@ -29,7 +29,6 @@ if __name__ == "__main__":
     clf.fit(X, y)
 
     model = IrisClassifier(clf=clf)
-    print(X[0:1])
     print("model.predict = {}".format(model.predict(X[0:1])))
 
     print("Saving model as bento archive...")

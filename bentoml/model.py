@@ -262,6 +262,8 @@ class BentoModel(BentoService):
                                                                       os.path.join(path, self.name),
                                                                       project_base_dir,
                                                                       copy_entire_project)
+        if os.path.isabs(module_file):
+            module_file = module_name.replace('.', os.sep) + '.py'
 
         # create __init__.py
         with open(os.path.join(path, self.name, '__init__.py'), "w") as f:

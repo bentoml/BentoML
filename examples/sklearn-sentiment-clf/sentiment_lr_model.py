@@ -3,15 +3,13 @@ import bentoml
 from bentoml.artifacts import PickleArtifact
 
 class SentimentLRModel(bentoml.BentoModel):
-    """
-    My SentimentLRModel packaging with BentoML
-    """
     
     def config(self, artifacts, env):
         artifacts.add(PickleArtifact('sentiment_lr'))
 
         env.add_conda_dependencies(["scikit-learn", "pandas"])
 
+    @bentoml.api(bentoml.handlers.DataframeHandler)
     def predict(self, df):
         """
         predict expects dataframe as input

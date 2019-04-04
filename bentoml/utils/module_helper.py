@@ -128,10 +128,10 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
         elif os.path.split(module_file)[1] == '__init__.py':
             # for module a.b.c in 'some_path/a/b/c/__init__.py', copy file to
             # 'destination/a/b/c/__init__.py'
-            target_file = os.path.join(destination, module_name.replace('.', '/'), '__init__.py')
+            target_file = os.path.join(destination, module_name.replace('.', os.sep), '__init__.py')
         else:
             # for module a.b.c in 'some_path/a/b/c.py', copy file to 'destination/a/b/c.py'
-            target_file = os.path.join(destination, module_name.replace('.', '/') + '.py')
+            target_file = os.path.join(destination, module_name.replace('.', os.sep) + '.py')
 
         target_path = os.path.dirname(target_file)
         Path(target_path).mkdir(parents=True, exist_ok=True)

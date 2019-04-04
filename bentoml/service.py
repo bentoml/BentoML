@@ -52,14 +52,14 @@ class BentoService(object):
         """
 
     def _config_service_apis(self):
-        self._apis = []
+        self._service_apis = []
         for _, function in inspect.getmembers(
                 self.__class__, predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x)):
             if hasattr(function, '_is_api'):
                 api_name = _get_func_attr(function, '_api_name')
                 handler = _get_func_attr(function, '_handler')
                 func = function.__get__(self)
-                self._apis.append(BentoServiceAPI(api_name, handler, func))
+                self._service_apis.append(BentoServiceAPI(api_name, handler, func))
 
     @property
     @abstractmethod
@@ -71,11 +71,10 @@ class BentoService(object):
     def version(self):
         pass
 
-    @property
-    def apis(self):
-        return self._apis
+    def get_service_apis(self):
         if not hasattr(self, '_service_apis'):
             self._config_service_apis()
+        return self._service_apis
 
     @staticmethod
     def api(handler=DataframeHandler, api_name=None):

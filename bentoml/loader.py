@@ -34,38 +34,37 @@ class _LoadedBentoServiceWrapper(BentoService):
 
     def __init__(self, model_service_class, path, config):
         super(_LoadedBentoServiceWrapper, self).__init__()
-        self.path = path
-        self.config = config
-        self.model_service = model_service_class()
-        self.loaded = False
+        self._path = path
+        self._config = config
+        self._model_service = model_service_class()
         self._wrap_api_funcs()
+        self.loaded = False
 
     def load(self, path=None):
         if path is not None:
             # TODO: warn user path is ignored when using pip installed bentoML model
             pass
-        self.model_service.load(self.path)
+        self._model_service.load(self._path)
         self.loaded = True
 
-    @property
-    def apis(self):
-        return self.model_service._apis
+    def get_service_apis(self):
+        return self._model_service.get_service_apis()
 
     @property
     def name(self):
-        return self.config['model_name']
+        return self._config['model_name']
 
     @property
     def version(self):
-        return self.config['model_version']
+        return self._config['model_version']
 
     def _wrap_api_funcs(self):
         """
         Add target ModelService's API methods to the returned wrapper class
         """
-        for api in self.apis:
+        for api in self.get_service_apis():
             setattr(self, api.name,
-                    self.model_service.__getattribute__(api.name).__get__(self.model_service))
+                    self._model_service.__getattribute__(api.name).__get__(self._model_service))
 
 
 def load_bentoml_config(path):

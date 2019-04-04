@@ -53,8 +53,8 @@ def test_save_and_load_model():
     model_service.load()
     assert model_service.loaded
 
-    assert len(model_service.apis) == 1
-    api = model_service.apis[0]
+    assert len(model_service.get_service_apis()) == 1
+    api = model_service.get_service_apis()[0]
     assert api.name == 'predict'
     assert api.handler == bentoml.handlers.DataframeHandler
     assert api.func(1) == 2

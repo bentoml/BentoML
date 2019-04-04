@@ -143,7 +143,7 @@ class BentoModelApiServer():
         model_name/model_version/api_name
         """
         model_service = self.model_service
-        apis = self.model_service.apis
+        apis = self.model_service.get_service_apis()
         if len(apis) == 1:
             self.setup_api_func_route(model_service.name, model_service.version, apis[0].name,
                                       apis[0])

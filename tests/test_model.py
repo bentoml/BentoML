@@ -71,7 +71,7 @@ def test_save_and_load_model_from_s3():
     s3_saved_path = sm.save(base_path=s3_location, storage_type='s3')
     assert s3_saved_path == os.path.join(s3_location, sm.name, sm.version)
 
-    download_model_service = bentoml.load(s3_saved_path, storage_type='s3', lazy_load=True)
+    download_model_service = bentoml.load(s3_saved_path, lazy_load=True)
     assert not download_model_service.loaded
     download_model_service.load()
     assert download_model_service.loaded

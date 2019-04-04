@@ -85,17 +85,14 @@ def load_bentoml_config(path):
     return bentoml_config
 
 
-def load(path, lazy_load=False, storage_type='file'):
+def load(path, lazy_load=False):
     """
     Load a BentoService or BentoModel from saved archive in given path
 
     :param path: A BentoArchive path generated from BentoService.save call
     :return: BentoService
     """
-    if storage_type == 's3':
-        if not is_s3_path(path):
-            raise ValueError('Incorrect S3 path format')
-
+    if is_s3_path(path):
         temp_dir = tempfile.mkdtemp()
         downloaded_file_path = download_from_s3(path, temp_dir)
 

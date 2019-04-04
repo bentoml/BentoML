@@ -32,7 +32,6 @@ def cli():
 @cli.command()
 @click.option('--model-path', type=click.Path(exists=True), required=True)
 @click.option('--port', type=click.INT)
-@click.option('--storage-type', type=click.STRING)
 def serve(model_path, port, storage_type='file'):
     """
     serve command for bentoml cli tool.  It will start a rest API server
@@ -40,15 +39,14 @@ def serve(model_path, port, storage_type='file'):
     """
     port = port if port is not None else 5000
 
-    if storage_type == 'file':
-        if not os.path.isabs(model_path):
-            model_path = os.path.abspath(model_path)
-    elif storage_type == 's3':
-        if not is_s3_path(model_path):
-            raise ValueError('Incorrect s3 path format')
+    if is_s3_path(model_path):
         temp_dir = tempfile.mkdtemp()
         downloaded_file_path = download_from_s3(model_path, temp_dir)
         model_path = downloaded_file_path
+    else:
+        storage_type = 'file'
+        if not os.path.isabs(model_path):
+            model_path = os.path.abspath(model_path)
 
     model_service = load(model_path)
     name = "bento_rest_api_server"

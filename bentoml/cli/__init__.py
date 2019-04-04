@@ -21,6 +21,7 @@ from __future__ import print_function
 import click
 import os
 import tempfile
+
 from bentoml.loader import load
 from bentoml.server import BentoModelApiServer
 from bentoml.utils.s3 import is_s3_url, download_from_s3
@@ -43,13 +44,14 @@ def load_model_service(model_path):
 def cli():
     pass
 
+
 # bentoml serve --model=/MODEL_PATH --api-name=API_FUNC_NAME --input=/INPUT_PATH
 @cli.command()
 @click.option('--model-path', type=click.Path(exists=True), required=True)
-@click.option('--service-api-name', type=click.STRING)
-@click.option('--input', type=click.Path(exists=True), required=True)
-@click.option('--output', type=click.STRING)
-def run(model_path, api_name, input_path, output_format='json'):
+@click.option('--api-name', type=click.STRING)
+@click.option('--input-path', type=click.Path(exists=True), required=True)
+@click.option('--output', type=click.STRING, show_default=True, default='json', help='Output format')
+def run(model_path, api_name, input_path, output):
     model_service = load_model_service(model_path)
     service_apis = model_service.get_service_apis()
 
@@ -63,7 +65,7 @@ def run(model_path, api_name, input_path, output_format='json'):
     if not os.path.isabs(input): 
         input_path = os.path.abspath(input_path)
 
-    cli_options = {'input_path': input_path, 'output_format': output_format}
+    cli_options = {'input_path': input_path, 'output': output}
 
     return matched_api.handler.handle_cli(cli_options, matched_api.func)
 

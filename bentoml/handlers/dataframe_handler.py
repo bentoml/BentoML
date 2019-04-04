@@ -61,10 +61,13 @@ class DataframeHandler(RequestHandler, CliHandler):
                     df = pd.read_json(content)
                 output = func(df)
 
-                if isinstance(output, pd.DataFrame):
-                    result = output.to_json(orient='records')
-                    result = json.loads(result)
-                    result = json.dumps(result, indent=2)
+                if options['output'] == 'json':
+                    if isinstance(output, pd.DataFrame):
+                        result = output.to_json(orient='records')
+                        result = json.loads(result)
+                        result = json.dumps(result, indent=2)
+                    else:
+                        result = json.dumps(output)
+                    sys.stdout.write(result)
                 else:
-                    result = json.dumps(output)
-                sys.stdout.write(result)
+                    raise NotImplementedError

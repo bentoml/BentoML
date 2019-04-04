@@ -316,19 +316,20 @@ class BentoModel(SingleModelBentoService):
             path = self.__class__._bento_module_path
             artifacts_path = path
         else:
+            if path is None:
+                raise BentoMLException("Loading path is required for {}#load".format(self.name))
+
             # When calling load on generated archive directory, look for /artifacts
             # directory under module sub-directory
-
-            # TODO: assert path is not None
-
             if is_s3_path(path):
                 temporary_path = tempfile.mkdtemp()
-                download_file_path = download_from_s3(path, temporary_path)
-                artifacts_path = os.path.join(download_file_path, self.name)
-                bentoml_config = load_bentoml_config(download_file_path)
-            else:
-                artifacts_path = os.path.join(path, self.name)
-                bentoml_config = load_bentoml_config(path)
+                download_from_s3(path, temporary_path)
+                # Use loacl temp path for the following loading operations
+                path = temporary_path
+
+            artifacts_path = os.path.join(path, self.name)
+
+        bentoml_config = load_bentoml_config(path)
 
         self.artifacts.load(artifacts_path)
         self._model_name = bentoml_config['model_name']

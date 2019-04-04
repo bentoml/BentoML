@@ -96,14 +96,11 @@ def load(path, lazy_load=False):
     :return: BentoService
     """
     if is_s3_path(path):
-        temp_dir = tempfile.mkdtemp()
-        downloaded_file_path = download_from_s3(path, temp_dir)
+        tempdir = tempfile.mkdtemp()
+        download_from_s3(path, tempdir)
+        path = tempdir
 
-        file_path = downloaded_file_path
-    else:
-        file_path = path
-
-    config = load_bentoml_config(file_path)
+    config = load_bentoml_config(path)
 
     # Load target module containing BentoService class from given path
     module_file_path = os.path.join(file_path, config['model_name'], config['module_file'])
@@ -121,10 +118,10 @@ def load(path, lazy_load=False):
         # pylint:enable=deprecated-method
     else:
         import imp
-        module = imp.load_source(config['module_name'], module_file_path)
+        module = imp.load_source(module_name, module_file_path)
 
     model_service_class = module.__getattribute__(config['model_name'])
-    loaded_model = _LoadedBentoServiceWrapper(model_service_class, file_path, config)
+    loaded_model = _LoadedBentoServiceWrapper(model_service_class, path, config)
 
     if not lazy_load:
         loaded_model.load()

@@ -109,6 +109,5 @@ def download_from_s3(s3_path, file_path):
                 os.makedirs(os.path.dirname(local_file_path))
             s3_client.download_file(Bucket=bucket, Key=content['Key'], Filename=local_file_path)
 
-        return file_path
     except Exception as e:
         raise e

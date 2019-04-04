@@ -14,6 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
 
 from bentoml.artifacts import Artifact
@@ -38,7 +42,7 @@ class TfKerasModelArtifact(Artifact):
     def get(self):
         return self.model
 
-    def load(self, base_path):
+    def load(self, base_path):  # pylint:disable=arguments-differ
         from tensorflow.keras.models import load_model
         self.model = load_model(self.model_file_path(base_path))
 

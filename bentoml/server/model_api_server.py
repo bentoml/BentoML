@@ -17,6 +17,11 @@
 This module should generate a BentoModelApiServer class.
 BentoModelApiServer takes in a list of models and serve their prediction from rest endpoints.
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import uuid
 from time import time
 from flask import Flask, url_for, jsonify, Response, request

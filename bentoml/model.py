@@ -14,6 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import re
 import os
 import tempfile
@@ -111,12 +115,24 @@ RUN conda install pip && pip install -r /model/requirements.txt
 CMD ["bentoml serve --model-path=/model"]
 """
 
+# TODO: improve this with import hooks PEP302?
 INIT_PY_TEMPLATE = """\
 import os
-from {model_name}.{module_name} import {model_name}
+import sys
 
-_module_path, _ = os.path.split(__file__)
+__VERSION__ = "{model_version}"
+
+_module_path = os.path.abspath(os.path.split(__file__)[0])
+
+# Prepend _module_path to sys.path, to avoid name conflicts with other installed modules
+sys.path.insert(0, _module_path)
+from {model_name}.{module_name} import {model_name}
+sys.path.remove(_module_path)
+
+# Set _bento_module_path, which tells the model where to load its artifacts
 {model_name}._bento_module_path = _module_path
+
+__all__ = ['__version__', '{model_name}']
 """
 
 BENTOML_CONFIG_YAML_TEMPLATE = """\
@@ -248,7 +264,9 @@ class BentoModel(SingleModelBentoService):
 
         # create __init__.py
         with open(os.path.join(path, self.name, '__init__.py'), "w") as f:
-            f.write(INIT_PY_TEMPLATE.format(model_name=self.name, module_name=module_name))
+            f.write(
+                INIT_PY_TEMPLATE.format(model_name=self.name, module_name=module_name,
+                                        model_version=self.__class__._model_package_version))
 
         # write setup.py, make exported model pip installable
         setup_py_content = BENTO_MODEL_SETUP_PY_TEMPLATE.format(

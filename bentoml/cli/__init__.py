@@ -39,6 +39,7 @@ def load_model_service(model_path):
     model_service = load(model_path)
     return model_service
 
+
 @click.group()
 @click.version_option()
 def cli():
@@ -50,19 +51,21 @@ def cli():
 @click.option('--model-path', type=click.Path(exists=True), required=True)
 @click.option('--api-name', type=click.STRING)
 @click.option('--input-path', type=click.Path(exists=True), required=True)
-@click.option('--output', type=click.STRING, show_default=True, default='json', help='Output format')
+@click.option('--output', type=click.STRING, show_default=True, default='json',
+              help='Output format')
 def run(model_path, api_name, input_path, output):
     model_service = load_model_service(model_path)
     service_apis = model_service.get_service_apis()
 
-    matched_api_index = next((index for (index, d) in enumerate(service_apis) if d.name == api_name), None)
+    matched_api_index = next(
+        (index for (index, d) in enumerate(service_apis) if d.name == api_name), None)
 
     if matched_api_index is None:
         raise ValueError("Can't find api name inside model {}".format(api_name))
     else:
         matched_api = service_apis[matched_api_index]
 
-    if not os.path.isabs(input): 
+    if not os.path.isabs(input):
         input_path = os.path.abspath(input_path)
 
     cli_options = {'input_path': input_path, 'output': output}

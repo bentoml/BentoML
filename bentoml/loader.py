@@ -20,11 +20,14 @@ from __future__ import print_function
 
 import os
 import sys
+import tempfile
+import uuid
 
 from ruamel.yaml import YAML
 
 from bentoml.service import BentoService
 from bentoml.version import __version__ as BENTOML_VERSION
+from bentoml.utils.s3 import is_s3_path, download_from_s3
 
 
 class _LoadedBentoServiceWrapper(BentoService):
@@ -93,10 +96,18 @@ def load(path, lazy_load=False):
     :param path: A BentoArchive path generated from BentoService.save call
     :return: BentoService
     """
-    config = load_bentoml_config(path)
+    if is_s3_path(path):
+        temp_dir = tempfile.mkdtemp()
+        downloaded_file_path = download_from_s3(path, temp_dir)
+
+        file_path = downloaded_file_path
+    else:
+        file_path = path
+
+    config = load_bentoml_config(file_path)
 
     # Load target module containing BentoService class from given path
-    module_file_path = os.path.join(path, config['model_name'], config['module_file'])
+    module_file_path = os.path.join(file_path, config['model_name'], config['module_file'])
 
     if sys.version_info >= (3, 5):
         import importlib.util
@@ -114,7 +125,7 @@ def load(path, lazy_load=False):
         module = imp.load_source(config['module_name'], module_file_path)
 
     model_service_class = module.__getattribute__(config['model_name'])
-    loaded_model = _LoadedBentoServiceWrapper(model_service_class, path, config)
+    loaded_model = _LoadedBentoServiceWrapper(model_service_class, file_path, config)
 
     if not lazy_load:
         loaded_model.load()

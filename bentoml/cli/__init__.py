@@ -20,8 +20,10 @@ from __future__ import print_function
 
 import click
 import os
+import tempfile
 from bentoml.loader import load
 from bentoml.server import BentoModelApiServer
+from bentoml.utils.s3 import is_s3_path, download_from_s3
 
 
 @click.group()
@@ -41,8 +43,13 @@ def serve(model_path, port):
     """
     port = port if port is not None else 5000
 
-    if not os.path.isabs(model_path):
-        model_path = os.path.abspath(model_path)
+    if is_s3_path(model_path):
+        temp_dir = tempfile.mkdtemp()
+        downloaded_file_path = download_from_s3(model_path, temp_dir)
+        model_path = downloaded_file_path
+    else:
+        if not os.path.isabs(model_path):
+            model_path = os.path.abspath(model_path)
 
     model_service = load(model_path)
     name = "bento_rest_api_server"

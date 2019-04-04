@@ -38,11 +38,10 @@ if __name__ == "__main__":
     clf.fit(X, y)
 
     model = IrisClassifier(clf=clf)
-    print(model.__class__.__module__)
 
     saved_path = model.save("./model")
     print("Saving new bento model archive to: '{}'".format(saved_path))
 
-    loaded_model = bentoml.load(saved_path)
-    loaded_model.predict()
+    loaded_model = load(saved_path)
+    print(loaded_model.predict(X[0:1]))
 

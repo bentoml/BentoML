@@ -42,7 +42,7 @@ class TfKerasModelArtifact(Artifact):
     def get(self):
         return self.model
 
-    def load(self, base_path):
+    def load(self, base_path):  # pylint:disable=arguments-differ
         from tensorflow.keras.models import load_model
         self.model = load_model(self.model_file_path(base_path))
 

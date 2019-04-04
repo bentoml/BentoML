@@ -20,7 +20,6 @@ from __future__ import print_function
 
 import os
 import inspect
-import subprocess
 import shutil
 import importlib
 from modulefinder import ModuleFinder
@@ -33,6 +32,7 @@ from bentoml.utils.exceptions import BentoMLException
 
 def _get_module_src_file(module):
     return module.__file__[:-1] if module.__file__.endswith('.pyc') else module.__file__
+
 
 def copy_module_and_local_dependencies(target_module, destination, toplevel_package_path=None,
                                        copy_entire_package=False):
@@ -56,7 +56,8 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
 
     if copy_entire_package:
         if toplevel_package_path is None:
-            raise BentoMLException("Must set toplevel_package_path when using copy_entire_package=True")
+            raise BentoMLException("Must set toplevel_package_path when using"
+                                   "copy_entire_package=True")
         shutil.copytree(toplevel_package_path, destination)
         return target_module_name, target_module_file
 
@@ -67,10 +68,17 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
         toplevel_package_name = target_module_name.split('.')[0]
         toplevel_package = importlib.import_module(
             toplevel_package_name)  # Should already loaded in sys.modules
-        toplevel_package_path_list = map(lambda path: os.path.join(path, '..'), toplevel_package.__path__)
+
+        if hasattr(toplevel_package, '__path__'):
+            toplevel_package_path_list = map(lambda path: os.path.join(path, '..'),
+                                             toplevel_package.__path__)
+        else:
+            toplevel_package_path_list = [
+                os.path.join(os.path.dirname(toplevel_package.__file__), '..')
+            ]
     else:
         toplevel_package_path_list = [toplevel_package_path]
-    toplevel_package_path_list = map(lambda path: os.path.abspath(path), toplevel_package_path_list)
+    toplevel_package_path_list = map(os.path.abspath, toplevel_package_path_list)
 
     # Find all modules must be imported for target module to run
     finder = ModuleFinder()
@@ -119,7 +127,7 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
         with open(target_file, 'wb') as f:
             f.write(src_code)
 
-    for root, dirs, files in os.walk(destination):
+    for root, _, files in os.walk(destination):
         if '__init__.py' not in files:
             Path(os.path.join(root, '__init__.py')).touch()
 

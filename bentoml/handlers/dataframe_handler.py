@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import json
 import pandas as pd
 from flask import Response, make_response
@@ -42,7 +43,7 @@ class DataframeHandler(RequestHandler, CliHandler):
         output = func(df)
 
         if isinstance(output, pd.DataFrame):
-            result = output.to_json()
+            result = output.to_json(orient='records')
         else:
             result = json.dumps(output)
 
@@ -51,4 +52,19 @@ class DataframeHandler(RequestHandler, CliHandler):
 
     @staticmethod
     def handle_cli(options, func):
-        raise NotImplementedError
+        if options['input_path'] is not None:
+            with open(options['input_path'], 'r') as content_file:
+                content = content_file.read()
+                if content_file.name.endswith('.csv'):
+                    df = pd.read_csv(content)
+                elif content_file.name.endswith('.json'):
+                    df = pd.read_json(content)
+                output = func(df)
+
+                if isinstance(output, pd.DataFrame):
+                    result = output.to_json(orient='records')
+                    result = json.loads(result)
+                    result = json.dumps(result, indent=2)
+                else:
+                    result = json.dumps(output)
+                sys.stdout.write(result)

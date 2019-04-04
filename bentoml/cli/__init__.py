@@ -26,10 +26,46 @@ from bentoml.server import BentoModelApiServer
 from bentoml.utils.s3 import is_s3_url, download_from_s3
 
 
+def load_model_service(model_path):
+    if is_s3_url(model_path):
+        temp_dir = tempfile.mkdtemp()
+        download_from_s3(model_path, temp_dir)
+        model_path = temp_dir
+    else:
+        if not os.path.isabs(model_path):
+            model_path = os.path.abspath(model_path)
+
+    model_service = load(model_path)
+    return model_service
+
 @click.group()
 @click.version_option()
 def cli():
     pass
+
+# bentoml serve --model=/MODEL_PATH --api-name=API_FUNC_NAME --input=/INPUT_PATH
+@cli.command()
+@click.option('--model-path', type=click.Path(exists=True), required=True)
+@click.option('--service-api-name', type=click.STRING)
+@click.option('--input', type=click.Path(exists=True), required=True)
+@click.option('--output', type=click.STRING)
+def run(model_path, api_name, input_path, output_format='json'):
+    model_service = load_model_service(model_path)
+    service_apis = model_service.get_service_apis()
+
+    matched_api_index = next((index for (index, d) in enumerate(service_apis) if d.name == api_name), None)
+
+    if matched_api_index is None:
+        raise ValueError("Can't find api name inside model {}".format(api_name))
+    else:
+        matched_api = service_apis[matched_api_index]
+
+    if not os.path.isabs(input): 
+        input_path = os.path.abspath(input_path)
+
+    cli_options = {'input_path': input_path, 'output_format': output_format}
+
+    return matched_api.handler.handle_cli(cli_options, matched_api.func)
 
 
 # bentoml serve --model=/MODEL_PATH --port=PORT_NUM
@@ -43,15 +79,7 @@ def serve(model_path, port):
     """
     port = port if port is not None else 5000
 
-    if is_s3_url(model_path):
-        temp_dir = tempfile.mkdtemp()
-        download_from_s3(model_path, temp_dir)
-        model_path = temp_dir
-    else:
-        if not os.path.isabs(model_path):
-            model_path = os.path.abspath(model_path)
-
-    model_service = load(model_path)
+    model_service = load_model_service(model_path)
     name = "bento_rest_api_server"
 
     server = BentoModelApiServer(name, model_service, port)

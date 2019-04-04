@@ -27,6 +27,7 @@ class MyFakeBentoModel(bentoml.BentoModel):
     def config(self, artifacts, env):
         artifacts.add(bentoml.artifacts.PickleArtifact('fake_model'))
 
+    @bentoml.api(bentoml.handlers.DataframeHandler)
     def predict(self, df):
         """
         predict expects dataframe as input

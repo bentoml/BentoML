@@ -27,9 +27,10 @@ from datetime import datetime
 from abc import abstractmethod
 from bentoml.utils import Path
 from bentoml.utils.module_helper import copy_module_and_local_dependencies
+from bentoml.utils.exceptions import BentoMLException
 from bentoml.utils.s3 import is_s3_path, upload_to_s3, download_from_s3
 from bentoml.service_env import BentoServiceEnv
-from bentoml.service import SingleModelBentoService
+from bentoml.service import BentoService
 from bentoml.artifacts import ArtifactCollection
 from bentoml.loader import load_bentoml_config
 from bentoml.version import __version__ as BENTOML_VERSION
@@ -169,7 +170,7 @@ def _generate_new_version_str():
     return date_string + '_' + random_hash
 
 
-class BentoModel(SingleModelBentoService):
+class BentoModel(BentoService):
     """
     BentoModel is the base abstraction for defining how a ML model can
     be save to or load from a file directory in BentoArchive format
@@ -339,8 +340,4 @@ class BentoModel(SingleModelBentoService):
 
     @abstractmethod
     def config(self, artifacts, env):
-        pass
-
-    @abstractmethod
-    def predict(self, data):
         pass

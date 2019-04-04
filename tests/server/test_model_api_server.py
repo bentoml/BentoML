@@ -23,6 +23,7 @@ class RestServiceTestModel(bentoml.BentoModel):
 
         env.add_conda_dependencies(["scikit-learn"])
 
+    @bentoml.api(bentoml.handlers.DataframeHandler)
     def predict(self, df):
         """
         predict expects dataframe as input

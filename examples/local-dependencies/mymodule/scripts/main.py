@@ -5,10 +5,11 @@ from sklearn import datasets
 
 # Use local bentoml code
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..')))
-from bentoml import BentoModel, handler, load
+from bentoml import BentoModel, api, load
 from bentoml.artifacts import PickleArtifact
 from bentoml.handlers import JsonHandler
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from mymodule import method_in_mymodule
 from mymodule.submodule import method_in_submodule
 from mymodule.submodule1 import method_in_submodule1
@@ -23,7 +24,7 @@ class IrisClassifier(BentoModel):
         artifacts.add(PickleArtifact('clf'))
         env.add_conda_dependencies(["scikit-learn"])
 
-    @handler(JsonHandler)
+    @api(JsonHandler)
     def predict(self, parsed_json):
         data = method_in_mymodule(parsed_json)
         data = method_in_submodule(data)

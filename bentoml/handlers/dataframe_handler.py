@@ -26,6 +26,13 @@ from bentoml.handlers import CliHandler, RequestHandler
 from bentoml.cli.utils import generate_default_parser
 
 
+def check_missing_columns(required_columns, df_columns):
+    missing_columns = set(required_columns) - set(df_columns)
+    if missing_columns:
+        raise ValueError('Missing columns: {}'.format(','.join(missing_columns)))
+
+
+
 class DataframeHandler(RequestHandler, CliHandler):
     """
     Create Data frame handler.  Dataframe handler will take inputs from rest request
@@ -42,9 +49,7 @@ class DataframeHandler(RequestHandler, CliHandler):
             return make_response(400)
 
         if options.column_names:
-            missing_columns = set(options.column_names) - set(df.columns)
-            if missing_columns:
-                raise ValueError('Missing columns: {}'.format(','.join(missing_columns)))
+            check_missing_columns(options.column_names, df.columns)
 
         output = func(df)
 

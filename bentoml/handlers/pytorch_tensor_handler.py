@@ -30,9 +30,9 @@ class PytorchTensorHanlder(RequestHandler, CliHandler):
     """
 
     @staticmethod
-    def handle_request(request, func):
+    def handle_request(request, func, options=None):
         raise NotImplementedError
 
     @staticmethod
-    def handle_cli(options, func):
+    def handle_cli(options, func, options=None):
         raise NotImplementedError

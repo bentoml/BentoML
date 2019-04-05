@@ -77,7 +77,7 @@ class BentoService(object):
         return self._service_apis
 
     @staticmethod
-    def api(handler=DataframeHandler, api_name=None):
+    def api(handler=DataframeHandler, api_name=None, options=None):
         """
         Decorator for adding api to a BentoService
 
@@ -103,6 +103,11 @@ class BentoService(object):
                 _set_func_attr(func, '_api_name', func.__name__)
             else:
                 _set_func_attr(func, '_api_name', api_name)
+
+            if options:
+                _set_func_attr(func, 'options', options)
+            else:
+                _set_func_attr(func, 'options', None)
 
             return func
 

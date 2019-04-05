@@ -33,13 +33,18 @@ class DataframeHandler(RequestHandler, CliHandler):
     """
 
     @staticmethod
-    def handle_request(request, func):
+    def handle_request(request, func, options=None):
         if request.content_type == 'application/json':
             df = pd.read_json(request.data.decode('utf-8'))
         elif request.content_type == 'text/csv':
             df = pd.read_csv(request.data.decode('utf-8'))
         else:
             return make_response(400)
+
+        if options.column_names:
+            missing_columns = set(options.column_names) - set(df.columns)
+            if missing_columns:
+                raise ValueError('Missing columns: {}'.format(','.join(missing_columns)))
 
         output = func(df)
 
@@ -52,7 +57,7 @@ class DataframeHandler(RequestHandler, CliHandler):
         return response
 
     @staticmethod
-    def handle_cli(options, func):
+    def handle_cli(options, func, options=None):
         parser = generate_default_parser()
         parsed_args = parser.parse_args(options)
 

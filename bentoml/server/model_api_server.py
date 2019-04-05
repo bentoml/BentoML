@@ -51,7 +51,7 @@ def create_api_function_wrapper(logger, model_name, model_version, api):
         with request_metric_time.time():
             request_time = time()
             request_id = str(uuid.uuid4())
-            response = api.handler.handle_request(request, api.func)
+            response = api.handler.handle_request(request, api.func, api.handler.options)
             response.headers['request_id'] = request_id
             if response.status_code == 200:
                 metadata = {

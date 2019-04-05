@@ -22,7 +22,8 @@ import sys
 import json
 import pandas as pd
 from flask import Response, make_response
-from bentoml.handlers import CliHandler, RequestHandler
+from bentoml.handlers.base_handlers import CliHandler, RequestHandler
+from bentoml.handlers.utils import merge_dicts
 from bentoml.cli.utils import generate_default_parser
 
 
@@ -32,6 +33,12 @@ def check_missing_columns(required_columns, df_columns):
         raise ValueError('Missing columns: {}'.format(','.join(missing_columns)))
 
 
+default_options = {
+    'input_json_orient': 'records',
+    'output_json_orient': 'records',
+    'input_column_requires': []
+}
+
 
 class DataframeHandler(RequestHandler, CliHandler):
     """
@@ -40,21 +47,26 @@ class DataframeHandler(RequestHandler, CliHandler):
     """
 
     @staticmethod
-    def handle_request(request, func, options=None):
+    def handle_request(request, func, options={}):
+        options = merge_dicts(default_options, options)
+        if request.headers.get('input_json_orient'):
+            options['input_json_orient'] = request.headers['input_json_orient']
+
         if request.content_type == 'application/json':
-            df = pd.read_json(request.data.decode('utf-8'))
+            df = pd.read_json(
+                request.data.decode('utf-8'), orient=options['input_json_orient'], dtype=False)
         elif request.content_type == 'text/csv':
             df = pd.read_csv(request.data.decode('utf-8'))
         else:
             return make_response(400)
 
-        if options.column_names:
-            check_missing_columns(options.column_names, df.columns)
+        if options['input_column_requires']:
+            check_missing_columns(options['input_column_requires'], df.columns)
 
         output = func(df)
 
         if isinstance(output, pd.DataFrame):
-            result = output.to_json(orient='records')
+            result = output.to_json(orient=options['output_json_orient'])
         else:
             result = json.dumps(output)
 
@@ -62,21 +74,29 @@ class DataframeHandler(RequestHandler, CliHandler):
         return response
 
     @staticmethod
-    def handle_cli(options, func, options=None):
+    def handle_cli(args, func, options={}):
         parser = generate_default_parser()
-        parsed_args = parser.parse_args(options)
+        parsed_args = parser.parse_args(args)
+        options = merge_dicts(default_options, options)
+
+        if parsed_args.input_json_orient:
+            options['input_json_orient'] = parsed_args.input_json_orient
 
         with open(parsed_args.input, 'r') as content_file:
             content = content_file.read()
             if content_file.name.endswith('.csv'):
                 df = pd.read_csv(content)
             elif content_file.name.endswith('.json'):
-                df = pd.read_json(content)
+                df = pd.read_json(content, orient=options['input_json_orient'], dtype=False)
+
+            if options['input_column_requires']:
+                check_missing_columns(options['input_column_requires'], df.columns)
+
             output = func(df)
 
             if parsed_args.output == 'json' or not parsed_args.output:
                 if isinstance(output, pd.DataFrame):
-                    result = output.to_json(orient='records')
+                    result = output.to_json(orient=options['output_json_orient'])
                     result = json.loads(result)
                     result = json.dumps(result, indent=2)
                 else:

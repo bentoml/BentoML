@@ -34,5 +34,5 @@ class PytorchTensorHanlder(RequestHandler, CliHandler):
         raise NotImplementedError
 
     @staticmethod
-    def handle_cli(options, func, options=None):
+    def handle_cli(args, func, options=None):
         raise NotImplementedError

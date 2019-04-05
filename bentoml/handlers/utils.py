@@ -18,27 +18,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from abc import ABCMeta, abstractmethod
-from six import add_metaclass
+import sys
 
 
-@add_metaclass(ABCMeta)
-class RequestHandler():
-
-    @abstractmethod
-    def options():
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def handle_request(request, func):
-        pass
-
-
-@add_metaclass(ABCMeta)
-class CliHandler():
-
-    @staticmethod
-    @abstractmethod
-    def handle_cli(args, func):
-        pass
+def merge_dicts(x, y):
+    """
+    Merge 2 dictionaries into one. The second directory override first dictionary's key
+    """
+    if sys.version_info >= (3, 5):
+        return {**x, **y}
+    else:
+        temp = x.copy()
+        temp.update(y)
+        return temp

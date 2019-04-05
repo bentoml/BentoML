@@ -104,10 +104,7 @@ class BentoService(object):
             else:
                 _set_func_attr(func, '_api_name', api_name)
 
-            if options:
-                _set_func_attr(func, 'options', options)
-            else:
-                _set_func_attr(func, 'options', None)
+            _set_func_attr(func, 'options', options)
 
             return func
 

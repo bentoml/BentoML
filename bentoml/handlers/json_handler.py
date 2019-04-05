@@ -79,7 +79,7 @@ class JsonHandler(RequestHandler, CliHandler):
             if parsed_args.output == 'json' or not parsed_args.output:
                 try:
                     sys.stdout.write(result)
-                except Exception:
-                    raise NotImplementedError
+                except Exception as e:
+                    raise e
             else:
                 raise NotImplementedError

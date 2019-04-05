@@ -66,4 +66,4 @@ def test_api_function_route():
         response_data = ast.literal_eval(str(response.data))
     else:
         response_data = json.loads(response.data)
-    assert 15 == response_data['age']['0']
+    assert 15 == response_data[0]['age']

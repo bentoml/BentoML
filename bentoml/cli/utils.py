@@ -13,3 +13,20 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import argparse
+
+
+def generate_default_parser():
+    """
+    Create default parser for CLI tool.  With input and output option
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', required=True)
+    parser.add_argument('-o', '--output', default='json')
+
+    return parser

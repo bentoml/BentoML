@@ -18,10 +18,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import json
 import pandas as pd
 from flask import Response, make_response
 from bentoml.handlers import CliHandler, RequestHandler
+from bentoml.cli.utils import generate_default_parser
 
 
 class DataframeHandler(RequestHandler, CliHandler):
@@ -42,7 +44,7 @@ class DataframeHandler(RequestHandler, CliHandler):
         output = func(df)
 
         if isinstance(output, pd.DataFrame):
-            result = output.to_json()
+            result = output.to_json(orient='records')
         else:
             result = json.dumps(output)
 
@@ -51,4 +53,24 @@ class DataframeHandler(RequestHandler, CliHandler):
 
     @staticmethod
     def handle_cli(options, func):
-        raise NotImplementedError
+        parser = generate_default_parser()
+        parsed_args = parser.parse_args(options)
+
+        with open(parsed_args.input, 'r') as content_file:
+            content = content_file.read()
+            if content_file.name.endswith('.csv'):
+                df = pd.read_csv(content)
+            elif content_file.name.endswith('.json'):
+                df = pd.read_json(content)
+            output = func(df)
+
+            if parsed_args.output == 'json' or not parsed_args.output:
+                if isinstance(output, pd.DataFrame):
+                    result = output.to_json(orient='records')
+                    result = json.loads(result)
+                    result = json.dumps(result, indent=2)
+                else:
+                    result = json.dumps(output)
+                sys.stdout.write(result)
+            else:
+                raise NotImplementedError

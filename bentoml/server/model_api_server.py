@@ -44,14 +44,14 @@ def create_api_function_wrapper(logger, model_name, model_version, api):
     """
     Create api function for flask route
     """
-    summary_name = model_name + '_' + model_version + '_' + api.name
+    summary_name = str(model_name) + '_' + str(model_version) + '_' + str(api.name)
     request_metric_time = Summary(summary_name, summary_name + ' request latency')
 
     def wrapper():
         with request_metric_time.time():
             request_time = time()
             request_id = str(uuid.uuid4())
-            response = api.handler.handle_request(request, api.func, api.handler.options)
+            response = api.handler.handle_request(request, api.func, api.options)
             response.headers['request_id'] = request_id
             if response.status_code == 200:
                 metadata = {

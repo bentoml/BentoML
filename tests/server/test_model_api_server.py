@@ -2,16 +2,20 @@ import os
 import json
 import uuid
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import bentoml
 from bentoml.server import BentoModelApiServer
 
-
 BASE_TEST_PATH = "/tmp/bentoml-test"
+
+
 class MyFakeModel(object):
-    def predict(self, input):
-        return input.add(3)
+
+    def predict(self, df):
+        df['age'] = df['age'].add(5)
+        return df
+
 
 class RestServiceTestModel(bentoml.BentoModel):
     """
@@ -19,21 +23,19 @@ class RestServiceTestModel(bentoml.BentoModel):
     """
 
     def config(self, artifacts, env):
-        artifacts.add(bentoml.artifacts.PickleArtifact('sentiment_lr'))
+        artifacts.add(bentoml.artifacts.PickleArtifact('fake_model'))
 
-        env.add_conda_dependencies(["scikit-learn"])
-
-    @bentoml.api(bentoml.handlers.DataframeHandler)
+    @bentoml.api(bentoml.handlers.DataframeHandler, options={'input_columns_require': ['age']})
     def predict(self, df):
         """
         predict expects dataframe as input
         """
-        return self.artifacts.sentiment_lr.predict(df)
+        return self.artifacts.fake_model.predict(df)
 
 
 def create_rest_server():
-    sentiment_lr = MyFakeModel()
-    sm = RestServiceTestModel(sentiment_lr=sentiment_lr)
+    fake_model = MyFakeModel()
+    sm = RestServiceTestModel(fake_model=fake_model)
     version = "test_" + uuid.uuid4().hex
     sm.save(BASE_TEST_PATH, version=version)
 
@@ -45,7 +47,6 @@ def create_rest_server():
     return rest_server
 
 
-
 def test_api_function_route():
     rest_server = create_rest_server()
     test_client = rest_server.app.test_client()
@@ -55,11 +56,10 @@ def test_api_function_route():
         list.append(rule.endpoint)
 
     assert 'predict' in list
-    data = [{'age': 12}]
+    data = [{'age': 10}]
 
     response = test_client.post('/predict', data=json.dumps(data), content_type='application/json')
 
-    print(response.data)
     if sys.version_info.major < 3:
         import ast
         loaded_json = json.loads(response.data)

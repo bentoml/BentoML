@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from click.testing import CliRunner
 
-from bentoml.cli import run
+from bentoml.cli.commands import run
 from tests.utils import generate_fake_model
 
 

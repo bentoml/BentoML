@@ -25,13 +25,9 @@ from six import add_metaclass
 @add_metaclass(ABCMeta)
 class RequestHandler():
 
-    @abstractmethod
-    def options():
-        pass
-
     @staticmethod
     @abstractmethod
-    def handle_request(request, func):
+    def handle_request(request, func, options):
         pass
 
 
@@ -40,5 +36,5 @@ class CliHandler():
 
     @staticmethod
     @abstractmethod
-    def handle_cli(args, func):
+    def handle_cli(args, func, options):
         pass

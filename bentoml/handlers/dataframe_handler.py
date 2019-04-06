@@ -36,7 +36,7 @@ def check_missing_columns(required_columns, df_columns):
 default_options = {
     'input_json_orient': 'records',
     'output_json_orient': 'records',
-    'input_column_requires': []
+    'input_columns_require': []
 }
 
 
@@ -60,8 +60,8 @@ class DataframeHandler(RequestHandler, CliHandler):
         else:
             return make_response(400)
 
-        if options['input_column_requires']:
-            check_missing_columns(options['input_column_requires'], df.columns)
+        if options['input_columns_require']:
+            check_missing_columns(options['input_columns_require'], df.columns)
 
         output = func(df)
 
@@ -76,6 +76,7 @@ class DataframeHandler(RequestHandler, CliHandler):
     @staticmethod
     def handle_cli(args, func, options={}):
         parser = generate_default_parser()
+        parser.add_argument('--input_json_orient', default='records')
         parsed_args = parser.parse_args(args)
         options = merge_dicts(default_options, options)
 
@@ -89,8 +90,8 @@ class DataframeHandler(RequestHandler, CliHandler):
             elif content_file.name.endswith('.json'):
                 df = pd.read_json(content, orient=options['input_json_orient'], dtype=False)
 
-            if options['input_column_requires']:
-                check_missing_columns(options['input_column_requires'], df.columns)
+            if options['input_columns_require']:
+                check_missing_columns(options['input_columns_require'], df.columns)
 
             output = func(df)
 

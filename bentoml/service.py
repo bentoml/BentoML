@@ -59,7 +59,8 @@ class BentoService(object):
                 api_name = _get_func_attr(function, '_api_name')
                 handler = _get_func_attr(function, '_handler')
                 func = function.__get__(self)
-                self._service_apis.append(BentoServiceAPI(api_name, handler, func))
+                options = _get_func_attr(function, '_options')
+                self._service_apis.append(BentoServiceAPI(api_name, handler, func, options))
 
     @property
     @abstractmethod
@@ -104,7 +105,7 @@ class BentoService(object):
             else:
                 _set_func_attr(func, '_api_name', api_name)
 
-            _set_func_attr(func, 'options', options)
+            _set_func_attr(func, '_options', options)
 
             return func
 
@@ -117,7 +118,7 @@ class BentoServiceAPI(object):
     with BentoAPIServer and BentoCLI
     """
 
-    def __init__(self, name, handler, func):
+    def __init__(self, name, handler, func, options):
         """
         :param name: API name
         :param handler: A BentoHandler that transforms HTTP Request and/or
@@ -128,6 +129,7 @@ class BentoServiceAPI(object):
         self._name = name
         self._handler = handler
         self._func = func
+        self._options = options
 
     @property
     def name(self):
@@ -140,3 +142,7 @@ class BentoServiceAPI(object):
     @property
     def func(self):
         return self._func
+
+    @property
+    def options(self):
+        return self._options

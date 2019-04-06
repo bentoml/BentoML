@@ -18,18 +18,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.handlers.base_handlers import RequestHandler, CliHandler
+import sys
 
 
-class ImageHandler(RequestHandler, CliHandler):
+def merge_dicts(x, y):
     """
-    Image handler take input image and process them and return response or stdout.
+    Merge 2 dictionaries into one. The second directory override first dictionary's key
     """
-
-    @staticmethod
-    def handle_request(request, func, options=None):
-        raise NotImplementedError
-
-    @staticmethod
-    def handle_cli(args, func, options=None):
-        raise NotImplementedError
+    if sys.version_info >= (3, 5):
+        return {**x, **y}
+    else:
+        temp = x.copy()
+        temp.update(y)
+        return temp

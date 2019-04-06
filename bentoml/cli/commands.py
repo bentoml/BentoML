@@ -67,7 +67,7 @@ def run(ctx, model_path, api_name):
     else:
         matched_api = service_apis[matched_api_index]
 
-    matched_api.handler.handle_cli(ctx.args, matched_api.func)
+    matched_api.handler.handle_cli(ctx.args, matched_api.func, matched_api.options)
 
 
 # bentoml serve --model=/MODEL_PATH --port=PORT_NUM

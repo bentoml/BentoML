@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import inspect
 import shutil
 import importlib
@@ -68,25 +69,6 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
         shutil.copytree(toplevel_package_path, destination)
         return target_module_name, target_module_file
 
-    # Try use current directory or top level package directory path as project base path
-    # This will be used to determine if a module is loacl dependency that should be copied
-    # into bentoml model archive
-    if toplevel_package_path is None:
-        toplevel_package_name = target_module_name.split('.')[0]
-        toplevel_package = importlib.import_module(
-            toplevel_package_name)  # Should already loaded in sys.modules
-
-        if hasattr(toplevel_package, '__path__'):
-            toplevel_package_path_list = map(lambda path: os.path.join(path, '..'),
-                                             toplevel_package.__path__)
-        else:
-            toplevel_package_path_list = [
-                os.path.join(os.path.dirname(toplevel_package.__file__), '..')
-            ]
-    else:
-        toplevel_package_path_list = [toplevel_package_path]
-    toplevel_package_path_list = map(os.path.abspath, toplevel_package_path_list)
-
     # Find all modules must be imported for target module to run
     finder = ModuleFinder()
     # NOTE: This method could take a few seconds to run
@@ -100,22 +82,31 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
 
     # Remove dependencies not in current project source code
     # all third party dependencies must be defined in BentoEnv when creating model
-    local_modules = {}
-    for path in toplevel_package_path_list:
-        for name, module in iteritems(finder.modules):
-            if module.__file__ is not None:
-                if name not in local_modules and _get_module_src_file(module).startswith(path):
-                    local_modules[name] = module
+    user_packages_and_modules = {}
+    site_or_dist_package_path = [f for f in sys.path if f.endswith('-packages')] + [sys.prefix]
+
+    for name, module in iteritems(finder.modules):
+        if module.__file__ is not None:
+            module_src_file = _get_module_src_file(module)
+
+            is_module_in_site_or_dist_package = False
+            for path in site_or_dist_package_path:
+                if module_src_file.startswith(path):
+                    is_module_in_site_or_dist_package = True
+                    break
+
+            if not is_module_in_site_or_dist_package:
+                user_packages_and_modules[name] = module
 
     # Remove "__main__" module, if target module is loaded as __main__, it should
     # be in module_files as (module_name, module_file) in current context
-    if '__main__' in local_modules:
-        del local_modules['__main__']
+    if '__main__' in user_packages_and_modules:
+        del user_packages_and_modules['__main__']
 
     # Lastly, add target module itself
-    local_modules[target_module_name] = target_module
+    user_packages_and_modules[target_module_name] = target_module
 
-    for module_name, module in iteritems(local_modules):
+    for module_name, module in iteritems(user_packages_and_modules):
         module_file = _get_module_src_file(module)
 
         with open(module_file, "rb") as f:

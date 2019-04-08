@@ -20,6 +20,7 @@ def generate_test_input_file():
     return file_path
 
 
+@pytest.mark.skip(reason="Incomplete testing")
 def test_run_command_with_input_file():
     saved_path = generate_fake_model()
     input_path = generate_test_input_file()

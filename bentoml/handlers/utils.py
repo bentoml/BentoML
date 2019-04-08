@@ -18,10 +18,23 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import argparse
 
 
-def generate_default_parser():
+def merge_dicts(x, y):
+    """
+    Merge 2 dictionaries into one. The second directory override first dictionary's key
+    """
+    if sys.version_info >= (3, 5):
+        return {**x, **y}
+    else:
+        temp = x.copy()
+        temp.update(y)
+        return temp
+    
+
+def generate_cli_default_parser():
     """
     Create default parser for CLI tool.  With input and output option
     """

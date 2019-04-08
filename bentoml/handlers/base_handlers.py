@@ -27,7 +27,7 @@ class RequestHandler():
 
     @staticmethod
     @abstractmethod
-    def handle_request(request, func):
+    def handle_request(request, func, options):
         pass
 
 
@@ -36,5 +36,5 @@ class CliHandler():
 
     @staticmethod
     @abstractmethod
-    def handle_cli(options, func):
+    def handle_cli(args, func, options):
         pass

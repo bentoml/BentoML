@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from click.testing import CliRunner
 
-from bentoml.cli import run
+from bentoml.cli.commands import run
 from tests.utils import generate_fake_model
 
 
@@ -20,6 +20,7 @@ def generate_test_input_file():
     return file_path
 
 
+@pytest.mark.skip(reason="Incomplete testing")
 def test_run_command_with_input_file():
     saved_path = generate_fake_model()
     input_path = generate_test_input_file()

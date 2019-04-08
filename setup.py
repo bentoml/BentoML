@@ -19,6 +19,7 @@ install_requires = [
     'dill',
     'python-json-logger',
     'boto3',
+    'Werkzeug'
 ]
 
 optional_requires = [

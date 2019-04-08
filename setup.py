@@ -82,7 +82,7 @@ setuptools.setup(
         ],
     },
     project_urls={
-        'Bug Reports': 'https://github.com/atalaya-io/bentoml/issues',
-        'Source Code': 'https://github.com/atalaya-io/bentoml'
+        'Bug Reports': 'https://github.com/bentoml/BentoML/issues',
+        'Source Code': 'https://github.com/bentoml/BentoML'
     }
 )

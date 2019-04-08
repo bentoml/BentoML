@@ -21,8 +21,8 @@ from __future__ import print_function
 import json
 import os
 import sys
-import cv2
 import numpy as np
+from six import string_types
 from werkzeug.utils import secure_filename
 from flask import request, Response, make_response
 from bentoml.handlers.base_handlers import RequestHandler, CliHandler
@@ -103,6 +103,12 @@ class ImageHandler(RequestHandler, CliHandler):
             check_file_format(file_path, options['accept_file_extensions'])
             if not os.path.isabs(file_path):
                 file_path = os.path.abspath(file_path)
+
+            try:
+                if not cv2:
+                    cv2 = __import__('cv2')
+            except:
+                cv2 = __import__('cv2')
 
             image = cv2.imread(file_path)
             output = func(image)

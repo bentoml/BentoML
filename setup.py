@@ -19,8 +19,7 @@ install_requires = [
     'dill',
     'python-json-logger',
     'boto3',
-    'Werkzeug',
-    'opencv-python'
+    'Werkzeug'
 ]
 
 optional_requires = [

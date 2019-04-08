@@ -23,8 +23,7 @@ import json
 from flask import Response, make_response
 
 from bentoml.handlers.base_handlers import RequestHandler, CliHandler
-from bentoml.handlers.utils import merge_dicts
-from bentoml.cli.utils import generate_default_parser
+from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
 
 default_options = {
     'input_json_orient': 'records',
@@ -64,7 +63,7 @@ class JsonHandler(RequestHandler, CliHandler):
     @staticmethod
     def handle_cli(args, func, options={}):
         options = merge_dicts(default_options, options)
-        parser = generate_default_parser()
+        parser = generate_cli_default_parser()
         parsed_args = parser.parse_args(args)
 
         with open(parsed_args.input, 'r') as content_file:

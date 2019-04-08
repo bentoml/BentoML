@@ -31,7 +31,8 @@ from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
 default_options = {
     'input_names': ['image'],
     'accept_multiply_files': False,
-    'accept_file_extensions': ['.jpg', '.png', '.jpeg']
+    'accept_file_extensions': ['.jpg', '.png', '.jpeg'],
+    'output_format': 'json'
 }
 
 
@@ -79,9 +80,12 @@ class ImageHandler(RequestHandler, CliHandler):
 
                 output = func(input_data)
 
-                result = json.dumps(output)
-                response = Response(response=result, status=200, mimetype='applications/json')
-                return response
+                if options['output_format'] == 'json':
+                    result = json.dumps(output)
+                    response = Response(response=result, status=200, mimetype='applications/json')
+                    return response
+                else:
+                    raise NotImplementedError
             except Exception as e:
                 # TODO: handle exceptions
                 return make_response(500)
@@ -103,7 +107,7 @@ class ImageHandler(RequestHandler, CliHandler):
             image = cv2.imread(file_path)
             output = func(image)
 
-            if parsed_args.output == 'json' or not parsed_args.output:
+            if options['output_format'] == 'json':
                 result = json.dumps(output)
                 sys.stdout.write(result)
             else:

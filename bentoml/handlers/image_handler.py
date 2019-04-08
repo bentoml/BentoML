@@ -21,7 +21,6 @@ from __future__ import print_function
 import json
 import os
 import sys
-import cv2
 import numpy as np
 from werkzeug.utils import secure_filename
 from flask import request, Response, make_response
@@ -103,6 +102,11 @@ class ImageHandler(RequestHandler, CliHandler):
             check_file_format(file_path, options['accept_file_extensions'])
             if not os.path.isabs(file_path):
                 file_path = os.path.abspath(file_path)
+
+            try:
+                import cv2
+            except ImportError:
+                raise ImportError("opencv-python package is required to use ImageHandler")
 
             image = cv2.imread(file_path)
             output = func(image)

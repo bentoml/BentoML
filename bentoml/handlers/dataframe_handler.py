@@ -78,29 +78,28 @@ class DataframeHandler(RequestHandler, CliHandler):
         parser.add_argument('--input_json_orient', default='records')
         parsed_args = parser.parse_args(args)
         options = merge_dicts(default_options, options)
+        file_path = parsed_args.input
 
         if parsed_args.input_json_orient:
             options['input_json_orient'] = parsed_args.input_json_orient
 
-        with open(parsed_args.input, 'r') as content_file:
-            content = content_file.read()
-            if content_file.name.endswith('.csv'):
-                df = pd.read_csv(content)
-            elif content_file.name.endswith('.json'):
-                df = pd.read_json(content, orient=options['input_json_orient'], dtype=False)
+        if file_path.endswith('.csv'):
+            df = pd.read_csv(file_path)
+        elif file_path.endswith('.json'):
+            df = pd.read_json(file_path, orient=options['input_json_orient'], dtype=False)
 
-            if options['input_columns_require']:
-                check_missing_columns(options['input_columns_require'], df.columns)
+        if options['input_columns_require']:
+            check_missing_columns(options['input_columns_require'], df.columns)
 
-            output = func(df)
+        output = func(df)
 
-            if parsed_args.output == 'json' or not parsed_args.output:
-                if isinstance(output, pd.DataFrame):
-                    result = output.to_json(orient=options['output_json_orient'])
-                    result = json.loads(result)
-                    result = json.dumps(result, indent=2)
-                else:
-                    result = json.dumps(output)
-                sys.stdout.write(result)
+        if parsed_args.output == 'json' or not parsed_args.output:
+            if isinstance(output, pd.DataFrame):
+                result = output.to_json(orient=options['output_json_orient'])
+                result = json.loads(result)
+                result = json.dumps(result, indent=2)
             else:
-                raise NotImplementedError
+                result = json.dumps(output)
+            sys.stdout.write(result)
+        else:
+            raise NotImplementedError

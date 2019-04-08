@@ -3,6 +3,7 @@ graft docs
 
 # Don't include Examples
 prune examples
+prune tests
 
 # Patterns to exclude from any directory
 global-exclude *~

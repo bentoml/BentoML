@@ -62,7 +62,7 @@ setuptools.setup(
         'test': test_requires,
     },
     url="https://github.com/atalaya-io/BentoML",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=['tests*']),
     classifiers=[
         "Programming Language :: Python :: 2.7",
         'Programming Language :: Python :: 3.4',

@@ -104,10 +104,9 @@ class ImageHandler(RequestHandler, CliHandler):
                 file_path = os.path.abspath(file_path)
 
             try:
-                if not cv2:
-                    cv2 = __import__('cv2')
-            except:
-                cv2 = __import__('cv2')
+                import cv2
+            except ImportError:
+                raise ImportError("opencv-python package is required to use ImageHandler")
 
             image = cv2.imread(file_path)
             output = func(image)

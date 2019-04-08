@@ -21,6 +21,7 @@ from __future__ import print_function
 import json
 import os
 import sys
+import cv2
 from werkzeug.utils import secure_filename
 from flask import request, Response, make_response
 from bentoml.handlers.base_handlers import RequestHandler, CliHandler
@@ -82,9 +83,9 @@ class ImageHandler(RequestHandler, CliHandler):
 
         try:
             check_file_format(parsed_args.input, options.accept_format_list)
+            image = cv2.imread(parsed_args.input)
+            output = func(content)
             with open(parsed_args.input, 'rb') as content_file:
-                content = content_file.read()
-                output = func(content)
 
                 if parsed_args.output == 'json' or not parsed_args.output:
                     result = json.dumps(output)

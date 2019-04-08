@@ -22,7 +22,6 @@ import json
 import os
 import sys
 import numpy as np
-from six import string_types
 from werkzeug.utils import secure_filename
 from flask import request, Response, make_response
 from bentoml.handlers.base_handlers import RequestHandler, CliHandler

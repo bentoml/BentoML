@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+import argparse
 
 
 def merge_dicts(x, y):
@@ -31,3 +32,14 @@ def merge_dicts(x, y):
         temp = x.copy()
         temp.update(y)
         return temp
+    
+
+def generate_cli_default_parser():
+    """
+    Create default parser for CLI tool.  With input and output option
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', required=True)
+    parser.add_argument('-o', '--output', default='json')
+
+    return parser

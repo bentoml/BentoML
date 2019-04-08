@@ -23,8 +23,7 @@ import json
 import pandas as pd
 from flask import Response, make_response
 from bentoml.handlers.base_handlers import CliHandler, RequestHandler
-from bentoml.handlers.utils import merge_dicts
-from bentoml.cli.utils import generate_default_parser
+from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
 
 
 def check_missing_columns(required_columns, df_columns):
@@ -75,7 +74,7 @@ class DataframeHandler(RequestHandler, CliHandler):
 
     @staticmethod
     def handle_cli(args, func, options={}):
-        parser = generate_default_parser()
+        parser = generate_cli_default_parser()
         parser.add_argument('--input_json_orient', default='records')
         parsed_args = parser.parse_args(args)
         options = merge_dicts(default_options, options)

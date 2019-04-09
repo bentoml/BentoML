@@ -32,7 +32,6 @@ def initialize_feedback_logger():
     formatter = jsonlogger.JsonFormatter('(request_id) (result)')
     feedback_logger = logging.getLogger(FEEDBACK_LOGGER_NAME)
 
-    print('getting feedbac', feedback_logger)
     if not feedback_logger.handlers:
         feedback_logger.setLevel(logging.INFO)
 

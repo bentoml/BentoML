@@ -24,7 +24,6 @@ import tempfile
 
 from ruamel.yaml import YAML
 
-from bentoml import archive
 from bentoml.service import BentoService
 from bentoml.version import __version__ as BENTOML_VERSION
 from bentoml.utils.s3 import is_s3_url, download_from_s3
@@ -36,7 +35,7 @@ class _LoadedBentoServiceWrapper(BentoService):
         super(_LoadedBentoServiceWrapper, self).__init__()
         self._path = path
         self._config = config
-        self._bento_service_class = bento_service_class()
+        self._bento_service_class = bento_service_class
         self._bento_service = None
         self._wrap_api_funcs()
         self.loaded = False
@@ -45,7 +44,7 @@ class _LoadedBentoServiceWrapper(BentoService):
         if path is not None:
             # TODO: warn user path is ignored when using pip installed bentoML archive
             pass
-        self._bento_service = archive.load(self._bento_service_class, self._path)
+        self._bento_service = self._bento_service_class.load(self._path)
         self.loaded = True
 
     def get_service_apis(self):

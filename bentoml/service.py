@@ -25,6 +25,7 @@ from bentoml.handlers import DataframeHandler
 from bentoml.utils.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifacts import ArtifactCollection
+from bentoml import archive
 
 
 def _get_func_attr(func, attribute_name):
@@ -82,13 +83,19 @@ class BentoService(object):
     for BentoAPIServer and BentoCLI to execute, and allow customizing
     the artifacts and environments required for the service.
 
+    >>>  from bentoml import BentoService, env
     >>>  class MyMLService(BentoService):
-    >>>      @BentoService.api(DataframeHandler)
-    >>>      def predict(self, df):
-    >>>          return self.artifacts.model.predict(df)
     >>>
-    >>>  model = MyMLService.pack(model=my_clf)
-    >>>  bentoml.save(model, './export')
+    >>>     artifacts = [PickleArtifact('clf')]
+    >>>
+    >>>     env = env(conda_dependencies: [ 'scikit-learn' ])
+    >>>
+    >>>     @BentoService.api(DataframeHandler)
+    >>>     def predict(self, df):
+    >>>         return self.artifacts.clf.predict(df)
+    >>>
+    >>>  bento_service = MyMLService.pack(clf=my_trained_clf_object)
+    >>>  bentoml.save(bento_service, './export')
     """
 
     # User may override this if they don't want the generated model to
@@ -170,10 +177,10 @@ class BentoService(object):
         """
         Decorator for adding api to a BentoService
 
-        >>> from bentoml import Service, api
+        >>> from bentoml import BentoService, api
         >>> from bentoml.handlers import JsonHandler, DataframeHandler
         >>>
-        >>> class FraudDetectionAndIdentityService(Service):
+        >>> class FraudDetectionAndIdentityService(BentoService):
         >>>
         >>>     @api(JsonHandler)
         >>>     def fraud_detect(self, parsed_json):
@@ -199,10 +206,17 @@ class BentoService(object):
 
         return api_decorator
 
-    # @classmethod
-    # def pack(cls, *args, **kwargs):
-    #     artifacts = ArtifactCollection()
-    #     for artifact in cls.artifacts:
-    #         artifacts[artifact.name] = artifact.pack
-    #
-    #     cls(artifacts)
+    @classmethod
+    def pack(cls, *args, **kwargs):
+        artifacts = ArtifactCollection()
+        for artifact in cls.artifacts:
+            artifacts[artifact.name] = artifact.create()
+        artifacts.pack(*args, **kwargs)
+        cls(artifacts)
+
+    def save(self, *args, **kwargs):
+        return archive.save(self, *args, **kwargs)
+
+    @classmethod
+    def load(cls, path):
+        return archive.load(cls, path)

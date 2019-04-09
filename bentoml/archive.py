@@ -263,6 +263,7 @@ def save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
         return path
 
 
+# TODO: consolidate this with loader module
 def load(bento_service_cls, path=None):
     # TODO: add model.env.verify() to check dependencies and python version etc
 

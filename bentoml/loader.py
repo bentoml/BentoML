@@ -32,19 +32,16 @@ from bentoml.utils.s3 import is_s3_url, download_from_s3
 class _LoadedBentoServiceWrapper(BentoService):
 
     def __init__(self, bento_service_class, path, config):
-        super(_LoadedBentoServiceWrapper, self).__init__()
         self._path = path
         self._config = config
         self._bento_service_class = bento_service_class
         self._bento_service = None
-        self._wrap_api_funcs()
         self.loaded = False
 
-    def load(self, path=None):
-        if path is not None:
-            # TODO: warn user path is ignored when using pip installed bentoML archive
-            pass
-        self._bento_service = self._bento_service_class.load(self._path)
+    def load(self):
+        from bentoml import archive
+        self._bento_service = archive.load(self._bento_service_class, self._path)
+        self._wrap_api_funcs()
         self.loaded = True
 
     def get_service_apis(self):

@@ -19,47 +19,50 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from six import string_types
+
 import dill
+from six import string_types
 
-from bentoml.artifacts import Artifact
+from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
 
-class PickleArtifact(Artifact):
+class PickleArtifact(ArtifactSpec):
     """
-    Abstraction for saving/loading python objects with customizable pickle_module
+    Abstraction for saving/loading python objects with pickle serialization
     """
 
     def __init__(self, name, pickle_module=dill, pickle_extension='.pkl'):
-        self.obj = None
+        super(PickleArtifact, self).__init__(name)
+
         self._pickle_extension = pickle_extension
+
         if isinstance(pickle_module, string_types):
             self._pickle = __import__(pickle_module)
         else:
             self._pickle = pickle_module
-        super(PickleArtifact, self).__init__(name)
 
     def _pkl_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._pickle_extension)
 
     def pack(self, obj):  # pylint:disable=arguments-differ
-        self.obj = obj
+        return _PickleArtifactInstance(self, obj)
+
+    def load(self, path):
+        with open(self._pkl_file_path(path), "rb") as pkl_file:
+            obj = self._pickle.load(pkl_file)
+        return self.pack(obj)
+
+
+class _PickleArtifactInstance(ArtifactInstance):
+
+    def __init__(self, spec, obj):
+        super(_PickleArtifactInstance, self).__init__(spec)
+
+        self._obj = obj
 
     def get(self):
-        if not self.obj:
-            # TODO: create special exception type for this?
-            raise Exception("Must 'pack' artifact before 'get'.")
+        return self._obj
 
-        return self.obj
-
-    def load(self, base_path):
-        with open(self._pkl_file_path(base_path), "rb") as pkl_file:
-            self.obj = self._pickle.load(pkl_file)
-
-    def save(self, base_path):
-        if not self.obj:
-            raise RuntimeError("Must 'pack' artifact before 'save'.")
-
-        with open(self._pkl_file_path(base_path), "wb") as pkl_file:
-            self._pickle.dump(self.obj, pkl_file)
-        # TODO: catch error when file does not exist
+    def save(self, dst):
+        with open(self.spec._pkl_file_path(dst), "wb") as pkl_file:
+            self.spec._pickle.dump(self._obj, pkl_file)

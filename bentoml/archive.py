@@ -28,8 +28,6 @@ from bentoml.utils import Path
 from bentoml.utils.module_helper import copy_used_py_modules
 from bentoml.utils.exceptions import BentoMLException
 from bentoml.utils.s3 import is_s3_url, upload_to_s3, download_from_s3
-from bentoml.service_env import BentoServiceEnv
-from bentoml.artifacts import ArtifactCollection
 from bentoml.loader import load_bentoml_config
 from bentoml.version import __version__ as BENTOML_VERSION
 
@@ -130,7 +128,7 @@ sys.path.remove(__module_path)
 
 # Set _bento_module_path, which tells the model where to load its artifacts
 {service_name} = {module_name}.{service_name}
-{service_name}.__bento_module_path = __module_path
+{service_name}._bento_module_path = __module_path
 
 __all__ = ['__version__', '{service_name}']
 """
@@ -166,7 +164,7 @@ def _generate_new_version_str():
     date_string = time_obj.strftime('%Y_%m_%d')
     random_hash = uuid.uuid4().hex[:8]
 
-    return date_string + '_' + random_hash
+    return 'b' + date_string + '_' + random_hash
 
 
 # TODO: make pypi version consistent with archive version, and use Semantic versioning for both
@@ -267,12 +265,12 @@ def save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
 def load(bento_service_cls, path=None):
     # TODO: add model.env.verify() to check dependencies and python version etc
 
-    if bento_service_cls.__bento_module_path is not None:
+    if bento_service_cls._bento_module_path is not None:
         # When calling load from pip installled bento model, use installed
         # python package for loading and the same path for '/artifacts'
 
         # TODO: warn user that 'path' parameter is ignored if it's not None here
-        path = bento_service_cls.__bento_module_path
+        path = bento_service_cls._bento_module_path
         artifacts_path = path
     else:
         if path is None:
@@ -291,7 +289,7 @@ def load(bento_service_cls, path=None):
 
     bentoml_config = load_bentoml_config(path)
 
-    bento_service = bento_service_cls()
-    bento_service.artifacts.load(artifacts_path)
+    bento_service = bento_service_cls.load(artifacts_path)
+
     bento_service._version = bentoml_config['service_version']
     return bento_service

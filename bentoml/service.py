@@ -24,8 +24,7 @@ import inspect
 from bentoml.handlers import DataframeHandler
 from bentoml.utils.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
-from bentoml.artifacts import ArtifactCollection
-from bentoml import archive
+from bentoml.artifact import ArtifactCollection
 
 
 def _get_func_attr(func, attribute_name):
@@ -79,16 +78,15 @@ class BentoServiceAPI(object):
 
 class BentoService(object):
     """
-    BentoService is the base abstraction that exposes a list of APIs
+    BentoService packs a list of artifacts and exposes service APIs
     for BentoAPIServer and BentoCLI to execute, and allow customizing
     the artifacts and environments required for the service.
 
     >>>  from bentoml import BentoService, env
+    >>>
+    >>>  @artifacts([PickleArtifact('clf')])
+    >>>  @env(conda_dependencies: [ 'scikit-learn' ])
     >>>  class MyMLService(BentoService):
-    >>>
-    >>>     artifacts = [PickleArtifact('clf')]
-    >>>
-    >>>     env = env(conda_dependencies: [ 'scikit-learn' ])
     >>>
     >>>     @BentoService.api(DataframeHandler)
     >>>     def predict(self, df):
@@ -100,18 +98,16 @@ class BentoService(object):
 
     # User may override this if they don't want the generated model to
     # have the same name as their Python model class name
-    __bento_service_name = None
+    _bento_service_name = None
 
     # This is overwritten when user install exported bento model as a
     # pip package, in that case, #load method will load from the installed
     # python package location
-    __bento_module_path = None
-
-    env = {}
-
-    artifacts = []
+    _bento_module_path = None
 
     def __init__(self, artifacts, env=None):
+        # TODO: validate artifacts arg matches self.__class__._artifacts_spec definition
+
         if isinstance(artifacts, ArtifactCollection):
             self._artifacts = artifacts
         else:
@@ -120,12 +116,17 @@ class BentoService(object):
                 self._artifacts[artifact.name] = artifact
 
         if env is None:
-            if isinstance(self.__class__.env, dict):
-                self._env = BentoServiceEnv.fromDict(self.__class__.env)
+            if isinstance(self.__class__._env, dict):
+                self._env = BentoServiceEnv.fromDict(self.__class__._env)
             else:
-                self._env = self.__class__.env
+                self._env = self.__class__._env
         else:
+            # Override default model service environment
+            # This is used when bundling multiple model service together for deployment
             self._env = env
+
+        self._config_service_apis()
+        self.name = self.__class__.name()
 
     @property
     def artifacts(self):
@@ -137,17 +138,13 @@ class BentoService(object):
 
     @classmethod
     def name(cls):
-        if cls.__bento_service_name is not None:
-            # TODO: verify self.__class__.__bento_service_name format, can't have space in it
+        if cls._bento_service_name is not None:
+            # TODO: verify self.__class__._bento_service_name format, can't have space in it
             #  and can be valid folder name
-            return cls.__bento_service_name
+            return cls._bento_service_name
         else:
             # Use python class name as service name
             return cls.__name__
-
-    @property
-    def name(self):
-        return self.__class__.name()
 
     @property
     def version(self):
@@ -168,12 +165,10 @@ class BentoService(object):
                 self._service_apis.append(BentoServiceAPI(api_name, handler, func, options))
 
     def get_service_apis(self):
-        if not hasattr(self, '_service_apis'):
-            self._config_service_apis()
         return self._service_apis
 
     @staticmethod
-    def api(handler=DataframeHandler, api_name=None, options=None):
+    def api(handler, api_name=None, options=None):
         """
         Decorator for adding api to a BentoService
 
@@ -206,17 +201,43 @@ class BentoService(object):
 
         return api_decorator
 
-    @classmethod
-    def pack(cls, *args, **kwargs):
-        artifacts = ArtifactCollection()
-        for artifact in cls.artifacts:
-            artifacts[artifact.name] = artifact.create()
-        artifacts.pack(*args, **kwargs)
-        cls(artifacts)
-
     def save(self, *args, **kwargs):
+        from bentoml import archive
         return archive.save(self, *args, **kwargs)
 
     @classmethod
+    def pack(cls, *args, **kwargs):
+        if args and isinstance(args[0], ArtifactCollection):
+            return cls(args[0])
+
+        artifacts = ArtifactCollection()
+
+        for artifact_spec in cls._artifacts_spec:
+            if artifact_spec.name in kwargs:
+                artifact_instance = artifact_spec.pack(kwargs[artifact_spec.name])
+                artifacts.add(artifact_instance)
+
+        return cls(artifacts, cls._env)
+
+    @classmethod
     def load(cls, path):
-        return archive.load(cls, path)
+        artifacts = ArtifactCollection.load(path, cls._artifacts_spec)
+        return cls(artifacts, cls._env)
+
+
+def artifacts(artifact_specs):
+
+    def decorator(bento_service_cls):
+        bento_service_cls._artifacts_spec = artifact_specs
+        return bento_service_cls
+
+    return decorator
+
+
+def env(**kwargs):
+
+    def decorator(bento_service_cls):
+        bento_service_cls._env = BentoServiceEnv.fromDict(kwargs)
+        return bento_service_cls
+
+    return decorator

@@ -20,37 +20,51 @@ from __future__ import print_function
 
 import os
 
-from bentoml.artifacts import Artifact
+from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
 
-class TfKerasModelArtifact(Artifact):
+class TfKerasModelArtifact(ArtifactSpec):
     """
     Abstraction for saving/loading tensorflow keras model
     """
 
     def __init__(self, name, model_extension='.h5'):
-        self.model = None
-        self._model_extension = model_extension
         super(TfKerasModelArtifact, self).__init__(name)
+        self._model_extension = model_extension
 
-    def model_file_path(self, base_path):
+    def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._model_extension)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        self.model = model
-
-    def get(self):
-        return self.model
+        return _TfKerasModelArtifactInstance(self, model)
 
     def load(self, base_path):
         try:
-            from tensorflow.keras.models import load_model
+            from tensorflow.python.keras.models import load_model
         except ImportError:
             raise ImportError("tensorflow package is required to use TfKerasModelArtifact")
-        self.model = load_model(self.model_file_path(base_path))
+
+        model = load_model(self._model_file_path(base_path))
+        return self.pack(model)
+
+
+class _TfKerasModelArtifactInstance(ArtifactInstance):
+
+    def __init__(self, spec, model):
+        super(_TfKerasModelArtifactInstance, self).__init__(spec)
+
+        try:
+            from tensorflow.python.keras.engine import training
+        except ImportError:
+            raise ImportError("tensorflow package is required to use TfKerasModelArtifact")
+
+        if not isinstance(model, training.Model):
+            raise ValueError('Expected `model` argument to be a `Model` instance')
+
+        self._model = model
 
     def save(self, base_path):
-        if not self.model:
-            raise RuntimeError("Must 'pack' artifact before 'save'.")
+        return self._model.save(self.spec._model_file_path(base_path))
 
-        self.model.save(self.model_file_path(base_path))
+    def get(self):
+        return self._model

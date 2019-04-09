@@ -70,8 +70,9 @@ class CondaEnv(object):
         for dep in self._conda_env["dependencies"]:
             if isinstance(dep, dict) and 'pip' in dep:
                 # there is already a pip list in conda_env, append extra deps
-                dep += extra_pip_dependencies
+                dep['pip'] += extra_pip_dependencies
                 return self
+
         self._conda_env["dependencies"] += [{"pip": extra_pip_dependencies}]
 
     def add_channels(self, channels):
@@ -181,23 +182,3 @@ class BentoServiceEnv(object):
             env.add_conda_pip_dependencies(dict['conda_pip_dependencies'])
 
         return env
-
-
-def env(**kwargs):
-    """
-    Helper method to add BentoServiceEnv definition in custom BentoService
-
-    >>> class MyTestBentoModel(bentoml.BentoModel):
-    >>>     env = bentoml.env(
-    >>>         conda_channels = [],
-    >>>
-    >>>         conda_dependencies = [],
-    >>>
-    >>>         conda_pip_dependencies = [],
-    >>>
-    >>>         requirements_txt = '',
-    >>>
-    >>>         setup_sh = ''
-    >>>     )
-    """
-    return BentoServiceEnv.fromDict(kwargs)

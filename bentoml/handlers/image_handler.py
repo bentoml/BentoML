@@ -23,7 +23,7 @@ import os
 import sys
 import numpy as np
 from werkzeug.utils import secure_filename
-from flask import request, Response, make_response
+from flask import request, Response
 from bentoml.handlers.base_handlers import RequestHandler, CliHandler
 from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
 
@@ -51,7 +51,7 @@ class ImageHandler(RequestHandler, CliHandler):
     """
 
     @staticmethod
-    def handle_request(request, func, options={}):
+    def handle_request(request, func, options=None):
         """
         Handle http request that has image file/s.  It will convert image into a ndarray for the function to consume.
 
@@ -64,59 +64,50 @@ class ImageHandler(RequestHandler, CliHandler):
         """
 
         if request.method == 'POST':
-            try:
-                options = merge_dicts(default_options, options)
-                if not options.accept_multiply_files:
-                    input_file = request.files[options.input_name]
-                    file_name = secure_filename(input_file.filename)
+            options = merge_dicts(default_options, options)
+            if not options.accept_multiply_files:
+                input_file = request.files[options.input_name]
+                file_name = secure_filename(input_file.filename)
 
-                    check_file_format(file_name, options['accept_file_extensions'])
+                check_file_format(file_name, options['accept_file_extensions'])
 
-                    input_data_string = input_file.read()
-                    input_data = np.fromstring(input_data_string, np.uint8)
-                else:
-                    raise NotImplementedError
+                input_data_string = input_file.read()
+                input_data = np.fromstring(input_data_string, np.uint8)
+            else:
+                return Response(response="Only support single file input", status=400)
 
-                output = func(input_data)
+            output = func(input_data)
 
-                if options['output_format'] == 'json':
-                    result = json.dumps(output)
-                    response = Response(response=result, status=200, mimetype='applications/json')
-                    return response
-                else:
-                    raise NotImplementedError
-            except Exception as e:
-                # TODO: handle exceptions
-                return make_response(500)
+            if options['output_format'] == 'json':
+                result = json.dumps(output)
+                response = Response(response=result, status=200, mimetype='applications/json')
+                return response
+            else:
+                return Response(response="Only support json output", status=400)
         else:
-            return make_response(500)
+            return Response(response="Only accept POST request", status=400)
 
     @staticmethod
-    def handle_cli(args, func, options={}):
+    def handle_cli(args, func, options=None):
         options = merge_dicts(default_options, options)
         parser = generate_cli_default_parser()
         parsed_args = parser.parse_args(args)
         file_path = parsed_args.input
 
+        check_file_format(file_path, options['accept_file_extensions'])
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(file_path)
+
         try:
-            check_file_format(file_path, options['accept_file_extensions'])
-            if not os.path.isabs(file_path):
-                file_path = os.path.abspath(file_path)
+            import cv2
+        except ImportError:
+            raise ImportError("opencv-python package is required to use ImageHandler")
 
-            try:
-                import cv2
-            except ImportError:
-                raise ImportError("opencv-python package is required to use ImageHandler")
+        image = cv2.imread(file_path)
+        output = func(image)
 
-            image = cv2.imread(file_path)
-            output = func(image)
-
-            if options['output_format'] == 'json':
-                result = json.dumps(output)
-                sys.stdout.write(result)
-            else:
-                raise NotImplementedError
-
-        except Exception as e:
-            # TODO: handle exceptions
+        if options['output_format'] == 'json':
+            result = json.dumps(output)
+            sys.stdout.write(result)
+        else:
             raise NotImplementedError

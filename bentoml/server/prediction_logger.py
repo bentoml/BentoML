@@ -26,8 +26,8 @@ from pythonjsonlogger import jsonlogger
 # prediction log conf
 PREDICTION_LOGGER_NAME = "PredictionLogger"
 PREDICTION_LOG_FILE_PATH = "/tmp/logs"
-PREDICTION_LOG_FILE = "/tmp/logs/prediction.log"
-PREDICTION_LOG_POS_FILE = "/tmp/logs/prediction.log.pos"
+PREDICTION_LOG_FILE = "/tmp/logs/bentoml_prediction.log"
+PREDICTION_LOG_POS_FILE = "/tmp/logs/bentoml_prediction.log.pos"
 
 # logging conf
 LOG_FILE_MAX_SIZE = 100 * 1000 * 1000

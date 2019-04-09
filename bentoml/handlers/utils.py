@@ -26,12 +26,10 @@ def merge_dicts(x, y):
     """
     Merge 2 dictionaries into one. The second directory override first dictionary's key
     """
-    if sys.version_info >= (3, 5):
-        return {**x, **y}
-    else:
-        temp = x.copy()
-        temp.update(y)
-        return temp
+    y = y if y is not None else {}
+    temp = x.copy()
+    temp.update(y)
+    return temp
 
 
 def generate_cli_default_parser():

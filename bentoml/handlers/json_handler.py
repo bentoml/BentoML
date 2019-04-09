@@ -37,7 +37,7 @@ class JsonHandler(RequestHandler, CliHandler):
     """
 
     @staticmethod
-    def handle_request(request, func, options={}):
+    def handle_request(request, func, options=None):
         options = merge_dicts(default_options, options)
         if request.content_type == 'application/json':
             parsed_json = json.loads(request.data.decode('utf-8'))
@@ -61,7 +61,7 @@ class JsonHandler(RequestHandler, CliHandler):
         return response
 
     @staticmethod
-    def handle_cli(args, func, options={}):
+    def handle_cli(args, func, options=None):
         options = merge_dicts(default_options, options)
         parser = generate_cli_default_parser()
         parsed_args = parser.parse_args(args)

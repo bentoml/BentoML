@@ -220,7 +220,10 @@ class BentoService(object):
         return cls(artifacts, cls._env)
 
     @classmethod
-    def load(cls, path):
+    def load(cls, path=None):
+        if cls._bento_module_path is not None:
+            path = cls._bento_module_path
+
         artifacts = ArtifactCollection.load(path, cls._artifacts_spec)
         return cls(artifacts, cls._env)
 

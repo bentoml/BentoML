@@ -4,8 +4,8 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import bentoml
-from bentoml.model import _validate_version_str
-
+from bentoml.artifact import PickleArtifact
+from bentoml.archive import _validate_version_str
 
 def test_validate_version_str_fails():
     with pytest.raises(ValueError):
@@ -15,38 +15,37 @@ def test_validate_version_str_fails():
 def test_validate_version_str_pass():
     _validate_version_str('abc_123')
 
-class MyFakeModel(object):
+class MyTestModel(object):
     def predict(self, input):
         return int(input) * 2
 
-class MyFakeBentoModel(bentoml.BentoModel):
-    """
-    My SentimentLRModel packaging with BentoML
-    """
-
-    def config(self, artifacts, env):
-        artifacts.add(bentoml.artifacts.PickleArtifact('fake_model'))
+@bentoml.env(conda_pip_dependencies = ['scikit-learn'])
+@bentoml.artifacts([
+    PickleArtifact('model')
+])
+class MyTestBentoService(bentoml.BentoService):
 
     @bentoml.api(bentoml.handlers.DataframeHandler)
     def predict(self, df):
         """
-        predict expects dataframe as input
+        An API for testing simple bento model service
         """
-        return self.artifacts.fake_model.predict(df)
+        return self.artifacts.model.predict(df)
 
 
 BASE_TEST_PATH = "/tmp/bentoml-test"
 
 def test_save_and_load_model():
-    fake_model = MyFakeModel()
-    sm = MyFakeBentoModel(fake_model=fake_model)
-    assert sm.predict(1000) == 2000
+    test_model = MyTestModel()
+    ms = MyTestBentoService.pack(model=test_model)
+
+    assert ms.predict(1000) == 2000
 
     import uuid
     version = "test_" + uuid.uuid4().hex
-    saved_path = sm.save(BASE_TEST_PATH, version=version)
+    saved_path = ms.save(BASE_TEST_PATH, version=version)
 
-    model_path = os.path.join(BASE_TEST_PATH, 'MyFakeBentoModel', version)
+    model_path = os.path.join(BASE_TEST_PATH, 'MyTestBentoService', version)
     assert os.path.exists(model_path)
 
     model_service = bentoml.load(saved_path, lazy_load=True)
@@ -66,12 +65,11 @@ def test_save_and_load_model():
 
 @pytest.mark.skip(reason="Setup s3 creds in travis or use a mock")
 def test_save_and_load_model_from_s3():
-    fake_model = MyFakeModel()
-    sm = MyFakeBentoModel(fake_model=fake_model)
+    test_model = MyTestModel()
+    ms = MyTestBentoService.pack(model=test_model)
 
     s3_location = 's3://bentoml/test'
-    s3_saved_path = sm.save(base_path=s3_location)
-    assert s3_saved_path == os.path.join(s3_location, sm.name, sm.version)
+    s3_saved_path = ms.save(base_path=s3_location)
 
     download_model_service = bentoml.load(s3_saved_path, lazy_load=True)
     assert not download_model_service.loaded

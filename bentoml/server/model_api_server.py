@@ -141,7 +141,6 @@ class BentoModelApiServer():
         log_feedback(self.feedback_logger, data)
         return Response(response='success', status=200)
 
-
     def setup_api_func_route(self, model_name, model_version, route_name, api):
         """
         Setup a route for the api function from model service

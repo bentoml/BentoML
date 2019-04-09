@@ -21,7 +21,6 @@ from __future__ import print_function
 import sys
 import inspect
 
-from bentoml.handlers import DataframeHandler
 from bentoml.utils.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
@@ -228,7 +227,7 @@ class BentoService(object):
         return cls(artifacts, cls._env)
 
 
-def artifacts(artifact_specs):
+def artifacts_decorator(artifact_specs):
 
     def decorator(bento_service_cls):
         bento_service_cls._artifacts_spec = artifact_specs
@@ -237,7 +236,7 @@ def artifacts(artifact_specs):
     return decorator
 
 
-def env(**kwargs):
+def env_decorator(**kwargs):
 
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv.fromDict(kwargs)

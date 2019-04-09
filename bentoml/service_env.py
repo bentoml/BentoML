@@ -163,22 +163,22 @@ class BentoServiceEnv(object):
                 f.write(self._setup_sh)
 
     @classmethod
-    def fromDict(cls, dict):
+    def fromDict(cls, env_dict):
         env = cls()
 
-        if 'setup_sh' in dict:
-            env.set_setup_sh(dict['setup_sh'])
+        if 'setup_sh' in env_dict:
+            env.set_setup_sh(env_dict['setup_sh'])
 
-        if 'requirements_txt' in dict:
-            env.set_requirements_txt(dict['requirements_txt'])
+        if 'requirements_txt' in env_dict:
+            env.set_requirements_txt(env_dict['requirements_txt'])
 
-        if 'conda_channels' in dict:
-            env.add_conda_channels(dict['conda_channels'])
+        if 'conda_channels' in env_dict:
+            env.add_conda_channels(env_dict['conda_channels'])
 
-        if 'conda_dependencies' in dict:
-            env.add_conda_dependencies(dict['conda_dependencies'])
+        if 'conda_dependencies' in env_dict:
+            env.add_conda_dependencies(env_dict['conda_dependencies'])
 
-        if 'conda_pip_dependencies' in dict:
-            env.add_conda_pip_dependencies(dict['conda_pip_dependencies'])
+        if 'conda_pip_dependencies' in env_dict:
+            env.add_conda_pip_dependencies(env_dict['conda_pip_dependencies'])
 
         return env

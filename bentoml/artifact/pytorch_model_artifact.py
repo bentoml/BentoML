@@ -43,13 +43,13 @@ class PytorchModelArtifact(ArtifactSpec):
     def pack(self, model):  # pylint:disable=arguments-differ
         return _PytorchModelArtifactInstance(self, model)
 
-    def load(self, base_path):
+    def load(self, path):
         try:
             import torch
         except ImportError:
             raise ImportError("torch package is required to use PytorchModelArtifact")
 
-        model = torch.load(self._file_path(base_path), pickle_module=self._pickle)
+        model = torch.load(self._file_path(path), pickle_module=self._pickle)
         return self.pack(model)
 
 
@@ -71,11 +71,10 @@ class _PytorchModelArtifactInstance(ArtifactInstance):
     def get(self):
         return self._model
 
-    def save(self, base_path):
+    def save(self, dst):
         try:
             import torch
         except ImportError:
             raise ImportError("torch package is required to use PytorchModelArtifact")
 
-        return torch.save(self._model, self.spec._file_path(base_path),
-                          pickle_module=self.spec._pickle)
+        return torch.save(self._model, self.spec._file_path(dst), pickle_module=self.spec._pickle)

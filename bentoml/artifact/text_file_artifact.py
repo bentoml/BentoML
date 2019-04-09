@@ -21,7 +21,6 @@ from __future__ import print_function
 import os
 
 from bentoml.artifact import ArtifactSpec, ArtifactInstance
-from bentoml.utils.exceptions import BentoMLException
 
 
 class TextFileArtifact(ArtifactSpec):
@@ -38,8 +37,8 @@ class TextFileArtifact(ArtifactSpec):
     def _text_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._file_extension)
 
-    def load(self, base_path):
-        with open(self._text_file_path(base_path), "rb") as f:
+    def load(self, path):
+        with open(self._text_file_path(path), "rb") as f:
             content = f.read().decode(self._encoding)
         return self.pack(content)
 
@@ -57,6 +56,6 @@ class _TextFileArtifactInstance(ArtifactInstance):
     def get(self):
         return self._content
 
-    def save(self, base_path):
-        with open(self.spec._text_file_path(base_path), "wb") as f:
+    def save(self, dst):
+        with open(self.spec._text_file_path(dst), "wb") as f:
             f.write(self._content.encode(self.spec._encoding))

@@ -1,15 +1,13 @@
 import pandas as pd
 import bentoml
-from bentoml.artifacts import PickleArtifact
+from bentoml.artifact import PickleArtifact
+from bentoml.handlers import DataframeHandler
 
-class SentimentLRModel(bentoml.BentoModel):
-    
-    def config(self, artifacts, env):
-        artifacts.add(PickleArtifact('sentiment_lr'))
+@bentoml.artifacts([PickleArtifact('sentiment_lr')])
+@bentoml.env(conda_dependencies=["scikit-learn", "pandas"])
+class SentimentLRModel(bentoml.BentoService):
 
-        env.add_conda_dependencies(["scikit-learn", "pandas"])
-
-    @bentoml.api(bentoml.handlers.DataframeHandler)
+    @bentoml.api(DataframeHandler)
     def predict(self, df):
         """
         predict expects dataframe as input

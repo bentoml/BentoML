@@ -31,39 +31,37 @@ from bentoml.utils.s3 import is_s3_url, download_from_s3
 
 class _LoadedBentoServiceWrapper(BentoService):
 
-    def __init__(self, model_service_class, path, config):
-        super(_LoadedBentoServiceWrapper, self).__init__()
+    def __init__(self, bento_service_class, path, config):
         self._path = path
         self._config = config
-        self._model_service = model_service_class()
-        self._wrap_api_funcs()
+        self._bento_service_class = bento_service_class
+        self._bento_service = None
         self.loaded = False
 
-    def load(self, path=None):
-        if path is not None:
-            # TODO: warn user path is ignored when using pip installed bentoML model
-            pass
-        self._model_service.load(self._path)
+    def load(self):
+        from bentoml import archive
+        self._bento_service = archive.load(self._bento_service_class, self._path)
+        self._wrap_api_funcs()
         self.loaded = True
 
     def get_service_apis(self):
-        return self._model_service.get_service_apis()
+        return self._bento_service.get_service_apis()
 
     @property
     def name(self):
-        return self._config['model_name']
+        return self._config['service_name']
 
     @property
     def version(self):
-        return self._config['model_version']
+        return self._config['service_version']
 
     def _wrap_api_funcs(self):
         """
-        Add target ModelService's API methods to the returned wrapper class
+        Add target BentoService's API methods to the returned wrapper class
         """
         for api in self.get_service_apis():
             setattr(self, api.name,
-                    self._model_service.__getattribute__(api.name).__get__(self._model_service))
+                    self._bento_service.__getattribute__(api.name).__get__(self._bento_service))
 
 
 def load_bentoml_config(path):
@@ -71,7 +69,7 @@ def load_bentoml_config(path):
         with open(os.path.join(path, 'bentoml.yml'), 'r') as f:
             bentml_yml_content = f.read()
     except FileNotFoundError:
-        raise ValueError("Bentoml can't locate model config file 'bentoml.yml' "
+        raise ValueError("Bentoml can't locate bentoml config file 'bentoml.yml' "
                          " in the give path: {}".format(path))
 
     yaml = YAML()
@@ -102,7 +100,7 @@ def load(path, lazy_load=False):
     config = load_bentoml_config(path)
 
     # Load target module containing BentoService class from given path
-    module_file_path = os.path.join(path, config['model_name'], config['module_file'])
+    module_file_path = os.path.join(path, config['service_name'], config['module_file'])
 
     module_name = config['module_name']
     if module_name in sys.modules:
@@ -122,7 +120,7 @@ def load(path, lazy_load=False):
         import imp
         module = imp.load_source(module_name, module_file_path)
 
-    model_service_class = module.__getattribute__(config['model_name'])
+    model_service_class = module.__getattribute__(config['service_name'])
     loaded_model = _LoadedBentoServiceWrapper(model_service_class, path, config)
 
     if not lazy_load:

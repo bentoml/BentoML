@@ -21,7 +21,6 @@ from __future__ import print_function
 import os
 import sys
 import inspect
-import shutil
 import importlib
 from modulefinder import ModuleFinder
 
@@ -35,8 +34,7 @@ def _get_module_src_file(module):
     return module.__file__[:-1] if module.__file__.endswith('.pyc') else module.__file__
 
 
-def copy_module_and_local_dependencies(target_module, destination, toplevel_package_path=None,
-                                       copy_entire_package=False):
+def copy_used_py_modules(target_module, destination):
     """
     bundle given module, and all its dependencies within top level package,
     and copy all source files to destination path, essentially creating
@@ -57,17 +55,12 @@ def copy_module_and_local_dependencies(target_module, destination, toplevel_pack
     except AttributeError:
         target_module_name = target_module.__name__
 
+    # TODO: handle when __main__ script filename starts with numbers
     target_module_file = _get_module_src_file(target_module)
 
+    # TODO: Remove this two lines?
     if target_module_name == '__main__':
         target_module_name = target_module_file[:-3].replace(os.sep, '.')
-
-    if copy_entire_package:
-        if toplevel_package_path is None:
-            raise BentoMLException("Must set toplevel_package_path when using"
-                                   "copy_entire_package=True")
-        shutil.copytree(toplevel_package_path, destination)
-        return target_module_name, target_module_file
 
     # Find all modules must be imported for target module to run
     finder = ModuleFinder()

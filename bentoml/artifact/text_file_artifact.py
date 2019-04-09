@@ -19,37 +19,44 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from bentoml.artifacts import Artifact
+
+from bentoml.artifact import ArtifactSpec, ArtifactInstance
+from bentoml.utils.exceptions import BentoMLException
 
 
-class TextFileArtifact(Artifact):
+class TextFileArtifact(ArtifactSpec):
     """
     Abstraction for saving/loading string to/from text files
     """
 
     def __init__(self, name, file_extension='.txt', encoding='utf8'):
-        self.content = None
-        # TODO: validate file_extension (with a regex?)
+        # TODO: validate file name and extension?
+        super(TextFileArtifact, self).__init__(name)
         self._file_extension = file_extension
         self._encoding = encoding
-        super(TextFileArtifact, self).__init__(name)
 
-    def text_file_path(self, base_path):
-        os.path.join(base_path, self.name + self._file_extension)
+    def _text_file_path(self, base_path):
+        return os.path.join(base_path, self.name + self._file_extension)
 
     def load(self, base_path):
-        with open(self.text_file_path(base_path), "rb") as f:
-            self.content = f.read().decode(self._encoding)
-
-    def save(self, base_path):
-        if not self.content:
-            raise RuntimeError("Must 'pack' artifact before 'save'.")
-
-        with open(self.text_file_path(base_path), "wb") as f:
-            f.write(self.content.encode(self._encoding))
+        with open(self._text_file_path(base_path), "rb") as f:
+            content = f.read().decode(self._encoding)
+        return self.pack(content)
 
     def pack(self, content):  # pylint:disable=arguments-differ
-        self.content = content
+        return _TextFileArtifactInstance(self, content)
+
+
+class _TextFileArtifactInstance(ArtifactInstance):
+
+    def __init__(self, spec, content):
+        super(_TextFileArtifactInstance, self).__init__(spec)
+
+        self._content = content
 
     def get(self):
-        return self.content
+        return self._content
+
+    def save(self, base_path):
+        with open(self.spec._text_file_path(base_path), "wb") as f:
+            f.write(self._content.encode(self.spec._encoding))

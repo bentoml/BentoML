@@ -19,12 +19,15 @@ from __future__ import division
 from __future__ import print_function
 
 from bentoml import handlers
-from bentoml.server import metrics
-from bentoml.model import BentoModel
-from bentoml.service import BentoService
-from bentoml.loader import load
 from bentoml.version import __version__
+
+from bentoml.service import BentoService, env, artifacts
+from bentoml.server import metrics
+from bentoml.loader import load
+from bentoml.archive import save
 
 api = BentoService.api
 
-__all__ = ['__version__', 'api', 'BentoModel', 'BentoService', 'load', 'handlers', 'metrics']
+__all__ = [
+    '__version__', 'api', 'env', 'artifacts', 'BentoService', 'save', 'load', 'handlers', 'metrics'
+]

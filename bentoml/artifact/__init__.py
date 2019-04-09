@@ -18,13 +18,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.artifacts.artifact import Artifact, ArtifactCollection
-from bentoml.artifacts.pickle_artifact import PickleArtifact
-from bentoml.artifacts.pytorch_model_artifact import PytorchModelArtifact
-from bentoml.artifacts.text_file_artifact import TextFileArtifact
-from bentoml.artifacts.tf_keras_model_artifact import TfKerasModelArtifact
+from bentoml.artifact.artifact import ArtifactSpec, ArtifactInstance, ArtifactCollection
+from bentoml.artifact.pickle_artifact import PickleArtifact
+from bentoml.artifact.pytorch_model_artifact import PytorchModelArtifact
+from bentoml.artifact.text_file_artifact import TextFileArtifact
+from bentoml.artifact.tf_keras_model_artifact import TfKerasModelArtifact
 
 __all__ = [
-    'Artifact', 'ArtifactCollection', 'PickleArtifact', 'PytorchModelArtifact', 'TextFileArtifact',
-    'TfKerasModelArtifact'
+    'ArtifactSpec', 'ArtifactInstance', 'ArtifactCollection', 'PickleArtifact',
+    'PytorchModelArtifact', 'TextFileArtifact', 'TfKerasModelArtifact'
 ]

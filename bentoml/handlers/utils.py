@@ -32,7 +32,7 @@ def merge_dicts(x, y):
         temp = x.copy()
         temp.update(y)
         return temp
-    
+
 
 def generate_cli_default_parser():
     """

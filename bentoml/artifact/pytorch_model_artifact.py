@@ -21,27 +21,43 @@ from __future__ import print_function
 import os
 from six import string_types
 
-from bentoml.artifacts import Artifact
+from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
 
-class PytorchModelArtifact(Artifact):
+class PytorchModelArtifact(ArtifactSpec):
     """
     Abstraction for saving/loading objects with torch.save and torch.load
     """
 
     def __init__(self, name, pickle_module='dill', file_extension='.pt'):
-        self.model = None
+        super(PytorchModelArtifact, self).__init__(name)
         self._file_extension = file_extension
         if isinstance(pickle_module, string_types):
             self._pickle = __import__(pickle_module)
         else:
             self._pickle = pickle_module
-        super(PytorchModelArtifact, self).__init__(name)
 
-    def file_path(self, base_path):
+    def _file_path(self, base_path):
         return os.path.join(base_path, self.name + self._file_extension)
 
     def pack(self, model):  # pylint:disable=arguments-differ
+        return _PytorchModelArtifactInstance(self, model)
+
+    def load(self, base_path):
+        try:
+            import torch
+        except ImportError:
+            raise ImportError("torch package is required to use PytorchModelArtifact")
+
+        model = torch.load(self._file_path(base_path), pickle_module=self._pickle)
+        return self.pack(model)
+
+
+class _PytorchModelArtifactInstance(ArtifactInstance):
+
+    def __init__(self, spec, model):
+        super(_PytorchModelArtifactInstance, self).__init__(spec)
+
         try:
             import torch
         except ImportError:
@@ -50,19 +66,16 @@ class PytorchModelArtifact(Artifact):
         if not isinstance(model, torch.nn.Module):
             raise TypeError("PytorchModelArtifact can only pack type 'torch.nn.Module'")
 
-        self.model = model
+        self._model = model
 
     def get(self):
-        return self.model
+        return self._model
 
     def save(self, base_path):
-        if not self.model:
-            raise RuntimeError("Must 'pack' artifact before 'save'.")
+        try:
+            import torch
+        except ImportError:
+            raise ImportError("torch package is required to use PytorchModelArtifact")
 
-        import torch
-        torch.save(self.model, self.file_path(base_path), pickle_module=self._pickle)
-
-    def load(self, base_path):
-        import torch
-        self.model = torch.load(self.file_path(base_path), pickle_module=self._pickle)
-        self.model.eval()
+        return torch.save(self._model, self.spec._file_path(base_path),
+                          pickle_module=self.spec._pickle)

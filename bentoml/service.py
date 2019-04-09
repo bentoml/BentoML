@@ -20,10 +20,11 @@ from __future__ import print_function
 
 import sys
 import inspect
-from abc import ABCMeta, abstractmethod
-from six import add_metaclass
 
 from bentoml.handlers import DataframeHandler
+from bentoml.utils.exceptions import BentoMLException
+from bentoml.service_env import BentoServiceEnv
+from bentoml.artifacts import ArtifactCollection
 
 
 def _get_func_attr(func, attribute_name):
@@ -38,80 +39,7 @@ def _set_func_attr(func, attribute_name, value):
     return setattr(func, attribute_name, value)
 
 
-@add_metaclass(ABCMeta)
-class BentoService(object):
-    """
-    BentoService is the base abstraction that exposes a list of APIs
-    for BentoAPIServer and BentoCLI
-    """
-
-    @abstractmethod
-    def load(self, path):
-        """
-        Load and initialize a BentoService
-        """
-
-    def _config_service_apis(self):
-        self._service_apis = []  # pylint:disable=attribute-defined-outside-init
-        for _, function in inspect.getmembers(
-                self.__class__, predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x)):
-            if hasattr(function, '_is_api'):
-                api_name = _get_func_attr(function, '_api_name')
-                handler = _get_func_attr(function, '_handler')
-                func = function.__get__(self)
-                options = _get_func_attr(function, '_options')
-                self._service_apis.append(BentoServiceAPI(api_name, handler, func, options))
-
-    @property
-    @abstractmethod
-    def name(self):
-        pass
-
-    @property
-    @abstractmethod
-    def version(self):
-        pass
-
-    def get_service_apis(self):
-        if not hasattr(self, '_service_apis'):
-            self._config_service_apis()
-        return self._service_apis
-
-    @staticmethod
-    def api(handler=DataframeHandler, api_name=None, options=None):
-        """
-        Decorator for adding api to a BentoService
-
-        >>> from bentoml import BentoService
-        >>> from bentoml.handlers import JsonHandler, DataframeHandler
-        >>>
-        >>> class FraudDetectionAndIdentityService(BentoService):
-        >>>
-        >>>     @BentoService.api(JsonHandler)
-        >>>     def fraud_detect(self, features):
-        >>>         pass
-        >>>
-        >>>     @BentoService.api(DataframeHandler)
-        >>>     def identity(self, features):
-        >>>         pass
-        """
-
-        def api_decorator(func):
-            _set_func_attr(func, '_is_api', True)
-            _set_func_attr(func, '_handler', handler)
-            # TODO: validate api_name
-            if api_name is None:
-                _set_func_attr(func, '_api_name', func.__name__)
-            else:
-                _set_func_attr(func, '_api_name', api_name)
-
-            _set_func_attr(func, '_options', options)
-
-            return func
-
-        return api_decorator
-
-
+# TODO(chaoyu): add property info, default to api func's doc string
 class BentoServiceAPI(object):
     """
     BentoServiceAPI defines abstraction for an API call that can be executed
@@ -146,3 +74,135 @@ class BentoServiceAPI(object):
     @property
     def options(self):
         return self._options
+
+
+class BentoService(object):
+    """
+    BentoService is the base abstraction that exposes a list of APIs
+    for BentoAPIServer and BentoCLI to execute, and allow customizing
+    the artifacts and environments required for the service.
+
+    >>>  class MyMLService(BentoService):
+    >>>      @BentoService.api(DataframeHandler)
+    >>>      def predict(self, df):
+    >>>          return self.artifacts.model.predict(df)
+    >>>
+    >>>  model = MyMLService.pack(model=my_clf)
+    >>>  bentoml.save(model, './export')
+    """
+
+    # User may override this if they don't want the generated model to
+    # have the same name as their Python model class name
+    __bento_service_name = None
+
+    # This is overwritten when user install exported bento model as a
+    # pip package, in that case, #load method will load from the installed
+    # python package location
+    __bento_module_path = None
+
+    env = {}
+
+    artifacts = []
+
+    def __init__(self, artifacts, env=None):
+        if isinstance(artifacts, ArtifactCollection):
+            self._artifacts = artifacts
+        else:
+            self._artifacts = ArtifactCollection()
+            for artifact in artifacts:
+                self._artifacts[artifact.name] = artifact
+
+        if env is None:
+            if isinstance(self.__class__.env, dict):
+                self._env = BentoServiceEnv.fromDict(self.__class__.env)
+            else:
+                self._env = self.__class__.env
+        else:
+            self._env = env
+
+    @property
+    def artifacts(self):
+        return self._artifacts
+
+    @property
+    def env(self):
+        return self._env
+
+    @classmethod
+    def name(cls):
+        if cls.__bento_service_name is not None:
+            # TODO: verify self.__class__.__bento_service_name format, can't have space in it
+            #  and can be valid folder name
+            return cls.__bento_service_name
+        else:
+            # Use python class name as service name
+            return cls.__name__
+
+    @property
+    def name(self):
+        return self.__class__.name()
+
+    @property
+    def version(self):
+        try:
+            return self._version
+        except AttributeError:
+            raise BentoMLException("Only BentoService loaded from archive has version attribute")
+
+    def _config_service_apis(self):
+        self._service_apis = []  # pylint:disable=attribute-defined-outside-init
+        for _, function in inspect.getmembers(
+                self.__class__, predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x)):
+            if hasattr(function, '_is_api'):
+                api_name = _get_func_attr(function, '_api_name')
+                handler = _get_func_attr(function, '_handler')
+                func = function.__get__(self)
+                options = _get_func_attr(function, '_options')
+                self._service_apis.append(BentoServiceAPI(api_name, handler, func, options))
+
+    def get_service_apis(self):
+        if not hasattr(self, '_service_apis'):
+            self._config_service_apis()
+        return self._service_apis
+
+    @staticmethod
+    def api(handler=DataframeHandler, api_name=None, options=None):
+        """
+        Decorator for adding api to a BentoService
+
+        >>> from bentoml import Service, api
+        >>> from bentoml.handlers import JsonHandler, DataframeHandler
+        >>>
+        >>> class FraudDetectionAndIdentityService(Service):
+        >>>
+        >>>     @api(JsonHandler)
+        >>>     def fraud_detect(self, parsed_json):
+        >>>         # do something
+        >>>
+        >>>     @api(DataframeHandler)
+        >>>     def identity(self, df):
+        >>>         # do something
+        """
+
+        def api_decorator(func):
+            _set_func_attr(func, '_is_api', True)
+            _set_func_attr(func, '_handler', handler)
+            # TODO: validate api_name
+            if api_name is None:
+                _set_func_attr(func, '_api_name', func.__name__)
+            else:
+                _set_func_attr(func, '_api_name', api_name)
+
+            _set_func_attr(func, '_options', options)
+
+            return func
+
+        return api_decorator
+
+    # @classmethod
+    # def pack(cls, *args, **kwargs):
+    #     artifacts = ArtifactCollection()
+    #     for artifact in cls.artifacts:
+    #         artifacts[artifact.name] = artifact.pack
+    #
+    #     cls(artifacts)

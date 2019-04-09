@@ -25,6 +25,7 @@ install_requires = [
 optional_requires = [
     'torch',
     'torchvision',
+    'tensorflow',
     'opencv-python'
 ]
 

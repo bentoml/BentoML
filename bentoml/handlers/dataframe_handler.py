@@ -46,7 +46,7 @@ class DataframeHandler(RequestHandler, CliHandler):
     """
 
     @staticmethod
-    def handle_request(request, func, options={}):
+    def handle_request(request, func, options=None):
         options = merge_dicts(default_options, options)
         if request.headers.get('input_json_orient'):
             options['input_json_orient'] = request.headers['input_json_orient']
@@ -73,7 +73,7 @@ class DataframeHandler(RequestHandler, CliHandler):
         return response
 
     @staticmethod
-    def handle_cli(args, func, options={}):
+    def handle_cli(args, func, options=None):
         parser = generate_cli_default_parser()
         parser.add_argument('--input_json_orient', default='records')
         parsed_args = parser.parse_args(args)

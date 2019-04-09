@@ -29,7 +29,7 @@ class ArtifactSpec(object):
     of model dependencies to/from file system.
 
     A call to pack and load should return an ArtifactInstance that can
-    be saved to file system and retrieved for service workload
+    be saved to file system or retrieved for BentoService workload
     """
 
     def __init__(self, name):
@@ -37,6 +37,11 @@ class ArtifactSpec(object):
 
     @property
     def name(self):
+        """
+        The name of an artifact is used to set parameters for #pack when used
+        in BentoService, and as name of sub-directory for the artifact files
+        when saving to file system
+        """
         return self._name
 
     def pack(self, data):
@@ -54,12 +59,19 @@ class ArtifactSpec(object):
 
 
 class ArtifactInstance(object):
+    """
+    ArtifactInstance is an object representing a materialized Artifact, either
+    loaded from file system or packed with data in a python session
+    """
 
     def __init__(self, spec):
         self._spec = spec
 
     @property
     def spec(self):
+        """
+        :return: reference to the ArtifactSpec that produced this ArtifactInstance
+        """
         return self._spec
 
     def save(self, dst):
@@ -97,14 +109,20 @@ class ArtifactCollection(dict):
 
         super(ArtifactCollection, self).__setitem__(artifact.spec.name, artifact)
 
-    def save(self, path):
-        save_path = os.path.join(path, ARTIFACTS_SUBPATH)
+    def save(self, dst):
+        """
+        bulk operation for saving all artifacts in self.values() to `dst` path
+        """
+        save_path = os.path.join(dst, ARTIFACTS_SUBPATH)
         os.mkdir(save_path)
         for artifact in self.values():
             artifact.save(save_path)
 
     @classmethod
     def load(cls, path, artifacts_spec):
+        """
+        bulk operation for loading all artifacts from path based on a list of ArtifactSpec
+        """
         load_path = os.path.join(path, ARTIFACTS_SUBPATH)
         artifacts = cls()
 

@@ -151,8 +151,9 @@ class BentoServiceBase(object):
 class BentoService(BentoServiceBase):
     """
     BentoService packs a list of artifacts and exposes service APIs
-    for BentoAPIServer and BentoCLI to execute, and allow customizing
-    the artifacts and environments required for the service.
+    for BentoAPIServer and BentoCLI to execute. By subclassing BentoService,
+    users can customize the artifacts and environments required for
+    a ML service.
 
     >>>  from bentoml import BentoService, env
     >>>  from bentoml.handlers import DataframeHandler
@@ -196,13 +197,12 @@ class BentoService(BentoServiceBase):
                 self._artifacts[artifact.name] = artifact
 
         if env is None:
-            if isinstance(self.__class__._env, dict):
-                self._env = BentoServiceEnv.fromDict(self.__class__._env)
-            else:
-                self._env = self.__class__._env
+            # By default use BentoServiceEnv defined on class via @env decorator
+            env = self.__class__._env
+
+        if isinstance(env, dict):
+            self._env = BentoServiceEnv.fromDict(env)
         else:
-            # Override default model service environment
-            # This is used when bundling multiple model service together for deployment
             self._env = env
 
         self._config_service_apis()
@@ -249,7 +249,7 @@ class BentoService(BentoServiceBase):
                 artifact_instance = artifact_spec.pack(kwargs[artifact_spec.name])
                 artifacts.add(artifact_instance)
 
-        return cls(artifacts, cls._env)
+        return cls(artifacts)
 
     @classmethod
     def load(cls, path=None):
@@ -257,7 +257,7 @@ class BentoService(BentoServiceBase):
             path = cls._bento_module_path
 
         artifacts = ArtifactCollection.load(path, cls._artifacts_spec)
-        return cls(artifacts, cls._env)
+        return cls(artifacts)
 
 
 def artifacts_decorator(artifact_specs):

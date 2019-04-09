@@ -26,12 +26,12 @@ if __name__ == "__main__":
     X, y = iris.data, iris.target
     clf.fit(X, y)
 
-    model = IrisClassifier.pack(clf=clf)
-    print("model.predict = {}".format(model.predict(X[0:1])))
+    iris_clf_service = IrisClassifier.pack(clf=clf)
+    print("iris_clf_service.predict = {}".format(iris_clf_service.predict(X[0:1])))
 
     print("Saving model as bento archive...")
-    saved_path = model.save("./model")
+    saved_path = iris_clf_service.save("/tmp/bento")
     print("BentoML model archive saved to path: {}".format(saved_path))
 
-    bento_model = load(saved_path)
-    print("Model output after loading from archiev: {}".format(bento_model.predict(X[0:1])))
+    bento_service = load(saved_path)
+    print("Loaded BentoService #predict output: {}".format(bento_service.predict(X[0:1])))

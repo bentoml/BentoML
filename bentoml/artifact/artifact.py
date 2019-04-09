@@ -20,9 +20,6 @@ from __future__ import print_function
 
 import os
 
-from abc import ABCMeta, abstractmethod
-from six import add_metaclass, iteritems
-
 ARTIFACTS_SUBPATH = "artifacts"
 
 
@@ -84,8 +81,8 @@ class ArtifactCollection(dict):
 
     def __setitem__(self, key, artifact):
         if key != artifact.spec.name:
-            raise ValueError('Must use Artifact name as key, {key} not equal to {name}'.format(
-                key, artifact.name))
+            raise ValueError('Must use Artifact name as key, {} not equal to {}'.format(
+                key, artifact.spec.name))
 
         self.add(artifact)
 

@@ -23,10 +23,12 @@ from __future__ import division
 from __future__ import print_function
 
 import uuid
+import json
 from time import time
 from flask import Flask, url_for, jsonify, Response, request
 from prometheus_client import generate_latest, Summary
 from bentoml.server.prediction_logger import initialize_prediction_logger, log_prediction
+from bentoml.server.feedback_logger import initialize_feedback_logger, log_feedback
 
 CONTENT_TYPE_LATEST = str('text/plain; version=0.0.4; charset=utf-8')
 
@@ -87,6 +89,7 @@ class BentoModelApiServer():
 
         self.app = Flask(name)
         self.prediction_logger = initialize_prediction_logger()
+        self.feedback_logger = initialize_feedback_logger()
 
         self.setup_routes()
 
@@ -125,6 +128,19 @@ class BentoModelApiServer():
         User send feedback along with the request Id. It will be stored and
         ready for further process.
         """
+        if request.content_type != 'application/json':
+            return Response(response='Incorrect content format, require JSON', status=400)
+
+        data = json.loads(request.data.decode('utf-8'))
+        if 'request_id' not in data.keys():
+            return Response(response='Missing request id', status=400)
+
+        if len(data.keys()) <= 1:
+            return Response(response='Missing feedback data', status=400)
+
+        log_feedback(self.feedback_logger, data)
+        return Response(response='success', status=200)
+
 
     def setup_api_func_route(self, model_name, model_version, route_name, api):
         """

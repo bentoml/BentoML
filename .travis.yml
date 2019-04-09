@@ -9,6 +9,7 @@ python:
 install:
   - "pip install --upgrade pip"
   - "pip install -e .[test]"
+  - "pip install -e .[optional]"
   - "pip install ."
 script:
   - pytest

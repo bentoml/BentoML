@@ -24,12 +24,12 @@ import tempfile
 
 from ruamel.yaml import YAML
 
-from bentoml.service import BentoService
+from bentoml.service import BentoServiceBase
 from bentoml.version import __version__ as BENTOML_VERSION
 from bentoml.utils.s3 import is_s3_url, download_from_s3
 
 
-class _LoadedBentoServiceWrapper(BentoService):
+class _LoadedBentoServiceWrapper(BentoServiceBase):
 
     def __init__(self, bento_service_class, path, config):
         self._path = path

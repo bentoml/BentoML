@@ -1,5 +1,5 @@
 # BentoML
-From a model in ipython notebook, to production ready API service in 5 minutes
+> From a model in ipython notebook to production ready API service in 5 minutes.
 
 ![project status](https://www.repostatus.org/badges/latest/active.svg)
 ![build status](https://travis-ci.org/bentoml/BentoML.svg?branch=master)
@@ -102,7 +102,7 @@ bento_svc.predict(X[0])
 
 #### Import as a python package
 
-First install your exported model service with `pip`:
+First install your exported bentoml service with `pip`:
 
 ```bash
 pip install ./saved_bento/IrisClassifier/v0.0.1/
@@ -135,6 +135,7 @@ pip install ./saved_bento/IrisClassifier/v0.0.1/
 
 IrisClassifier --help
 
+# This is not yet available in current release
 IrisClassifier predict --input='[5.1, 3.5, 1.4, 0.2]'
 ```
 
@@ -150,6 +151,10 @@ serve` command:
 bentoml serve --archive-path="./saved_bento/IrisClassifier/v0.0.1/"
 ```
 
+Note: you must ensure the pip/conda dependencies are available in your python
+environment when using `bentoml serve` command. More commonly we recommand using
+BentoML API server with Docker(see below).
+
 #### Build API server Docker Image
 
 To make it easier for your DevOps colleagues, a image containing the API server
@@ -159,6 +164,8 @@ can be build directly using the archive folder as docker build context:
 cd ./saved_bento/IrisClassifier/v0.0.1/
 
 docker build -t myorg/iris-classifier .
+
+docker run -p 5000:5000 myorg/iris-classifier
 ```
 
 
@@ -182,8 +189,8 @@ engineering teams to re-implement their models for production environment or
 build complex feature pipelines for experimental models.
 
 Our vision is to empower Machine Learning scientists to build and ship their own
-models as production services, just like software engineers do. BentoML is
-enssentially this missing 'build tool' for Machine Learing projects.
+models end-to-end as production services, just like software engineers do.
+BentoML is enssentially this missing 'build tool' for Machine Learing projects.
 
 With that in mind, here is the top design goals for BentoML:
 

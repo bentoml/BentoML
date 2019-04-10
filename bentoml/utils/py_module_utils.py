@@ -109,10 +109,12 @@ def copy_used_py_modules(target_module, destination):
             # For modules within current top level package, module_file here should be a
             # relative path to the src file
             target_file = os.path.join(destination, module_file)
+
         elif os.path.split(module_file)[1] == '__init__.py':
             # for module a.b.c in 'some_path/a/b/c/__init__.py', copy file to
             # 'destination/a/b/c/__init__.py'
             target_file = os.path.join(destination, module_name.replace('.', os.sep), '__init__.py')
+
         else:
             # for module a.b.c in 'some_path/a/b/c.py', copy file to 'destination/a/b/c.py'
             target_file = os.path.join(destination, module_name.replace('.', os.sep) + '.py')

@@ -64,15 +64,15 @@ by subclassing it, and provides artifacts and env definition for it:
 %%writefile iris_classifier.py
 from bentoml import BentoService, api, env, artifacts
 from bentoml.artifact import PickleArtifact
-from bentoml.handlers import JsonHandler
+from bentoml.handlers import DataframeHandler
 
 @artifacts([PickleArtifact('model')])
 @env(conda_dependencies=["scikit-learn"])
 class IrisClassifier(BentoService):
 
-    @api(JsonHandler)
-    def predict(self, parsed_json):
-        return self.artifacts.model.predict(parsed_json)
+    @api(DataframeHandler)
+    def predict(self, df):
+        return self.artifacts.model.predict(df)
 ```
 
 Now, to save your trained model for prodcution use, simply import your

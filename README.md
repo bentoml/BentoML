@@ -10,7 +10,7 @@
 BentoML is a python library for packaging and deploying machine learning models.
 It does two things without changing your model training workflow:
 
-* Standarlize how to package your ML model for production, including its
+* Standardize how to package your ML model for production, including its
   preprocessing/feature-fetching code, dependencies and configurations.
 
 * Easily distribute your ML model as PyPI package, API Server(in a Docker Image)
@@ -78,7 +78,7 @@ class IrisClassifier(BentoService):
 Now, to save your trained model for prodcution use, simply import your
 BentoService class and `pack` it with required artifacts:
 
-```
+```python
 from iris_classifier import IrisClassifier
 
 svc = IrisClassifier.pack(model=clf)
@@ -98,6 +98,12 @@ import bentoml
 
 bento_svc = bentoml.load('./saved_bento/IrisClassifier/v0.0.1/')
 bento_svc.predict(X[0])
+```
+
+BentoML also supports loading an archive from s3 location directly:
+
+```python
+bento_svc = bentoml.load('s3://my-bento-svc/iris_classifier/')
 ```
 
 #### Import as a python package

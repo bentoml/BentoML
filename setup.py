@@ -1,13 +1,15 @@
+import os
+import sys
+import imp
 import setuptools
 
-__version__ = None
-exec(open('bentoml/version.py').read()) # load and overwrite __version__
+__version__ = imp.load_source(
+        'bentoml.version', os.path.join('bentoml', 'version.py')).__version__
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+with open("README.md", "r") as f:
+    long_description = f.read()
 
 install_requires = [
-    'pathlib2',  # TODO: only install this when python version < (3.4)
     'prometheus_client',
     'ruamel.yaml>=0.15.0',
     'numpy',
@@ -19,14 +21,8 @@ install_requires = [
     'dill',
     'python-json-logger',
     'boto3',
-    'Werkzeug'
-]
-
-optional_requires = [
-    'torch',
-    'torchvision',
-    'tensorflow',
-    'opencv-python'
+    'Werkzeug',
+    'pathlib2'
 ]
 
 dev_requires = [
@@ -37,10 +33,18 @@ dev_requires = [
     'tox-conda==0.2.0',
     'twine',
     'setuptools',
-    'pycodestyle'
+    'pycodestyle',
+    'gitpython>=2.0.2'
 ]
 
-test_requires = [
+cv2 = [ 'opencv-python' ]
+pytorch  = [ 'torch', 'torchvision' ]
+tensorflow = [ 'tensorflow' ]
+
+optional_requires = cv2 + pytorch + tensorflow
+dev_all = install_requires + dev_requires + optional_requires
+
+tests_require = [
     'pytest==4.4.0',
     'snapshottest==0.5.0',
     'mock==2.0.0',
@@ -49,6 +53,7 @@ test_requires = [
     # 'coverage',
     # 'codecov'
 ]
+tests_require += cv2
 
 setuptools.setup(
     name="BentoML",
@@ -60,9 +65,12 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     install_requires=install_requires,
     extras_require={
-        'optional': optional_requires,
+        'all': dev_all,
         'dev': dev_requires,
-        'test': test_requires,
+        'pytorch': pytorch,
+        'tensorflow': tensorflow,
+        'cv2': cv2,
+        'test': tests_require,
     },
     url="https://github.com/atalaya-io/BentoML",
     packages=setuptools.find_packages(exclude=['tests*']),

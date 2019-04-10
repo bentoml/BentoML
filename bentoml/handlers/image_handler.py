@@ -29,7 +29,7 @@ from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
 
 default_options = {
     'input_names': ['image'],
-    'accept_multiply_files': False,
+    'accept_multiple_files': False,
     'accept_file_extensions': ['.jpg', '.png', '.jpeg'],
     'output_format': 'json'
 }
@@ -65,7 +65,7 @@ class ImageHandler(RequestHandler, CliHandler):
 
         if request.method == 'POST':
             options = merge_dicts(default_options, options)
-            if not options.accept_multiply_files:
+            if not options.accept_multiple_files:
                 input_file = request.files[options.input_name]
                 file_name = secure_filename(input_file.filename)
 

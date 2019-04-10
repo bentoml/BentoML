@@ -113,39 +113,57 @@ class BentoServiceBase(object):
     def get_service_apis(self):
         return self._service_apis
 
-    @staticmethod
-    def api(handler, api_name=None, options=None):
-        """
-        Decorator for adding api to a BentoService
 
-        >>> from bentoml import BentoService, api
-        >>> from bentoml.handlers import JsonHandler, DataframeHandler
-        >>>
-        >>> class FraudDetectionAndIdentityService(BentoService):
-        >>>
-        >>>     @api(JsonHandler)
-        >>>     def fraud_detect(self, parsed_json):
-        >>>         # do something
-        >>>
-        >>>     @api(DataframeHandler)
-        >>>     def identity(self, df):
-        >>>         # do something
-        """
+def api_decorator(handler, api_name=None, options=None):
+    """
+    Decorator for adding api to a BentoService
 
-        def api_decorator(func):
-            _set_func_attr(func, '_is_api', True)
-            _set_func_attr(func, '_handler', handler)
-            # TODO: validate api_name
-            if api_name is None:
-                _set_func_attr(func, '_api_name', func.__name__)
-            else:
-                _set_func_attr(func, '_api_name', api_name)
+    >>> from bentoml import BentoService, api
+    >>> from bentoml.handlers import JsonHandler, DataframeHandler
+    >>>
+    >>> class FraudDetectionAndIdentityService(BentoService):
+    >>>
+    >>>     @api(JsonHandler)
+    >>>     def fraud_detect(self, parsed_json):
+    >>>         # do something
+    >>>
+    >>>     @api(DataframeHandler)
+    >>>     def identity(self, df):
+    >>>         # do something
+    """
 
-            _set_func_attr(func, '_options', options)
+    def decorator(func):
+        _set_func_attr(func, '_is_api', True)
+        _set_func_attr(func, '_handler', handler)
+        # TODO: validate api_name
+        if api_name is None:
+            _set_func_attr(func, '_api_name', func.__name__)
+        else:
+            _set_func_attr(func, '_api_name', api_name)
 
-            return func
+        _set_func_attr(func, '_options', options)
 
-        return api_decorator
+        return func
+
+    return decorator
+
+
+def artifacts_decorator(artifact_specs):
+
+    def decorator(bento_service_cls):
+        bento_service_cls._artifacts_spec = artifact_specs
+        return bento_service_cls
+
+    return decorator
+
+
+def env_decorator(**kwargs):
+
+    def decorator(bento_service_cls):
+        bento_service_cls._env = BentoServiceEnv.fromDict(kwargs)
+        return bento_service_cls
+
+    return decorator
 
 
 class BentoService(BentoServiceBase):
@@ -155,14 +173,14 @@ class BentoService(BentoServiceBase):
     users can customize the artifacts and environments required for
     a ML service.
 
-    >>>  from bentoml import BentoService, env
+    >>>  from bentoml import BentoService, env, api, artifacts
     >>>  from bentoml.handlers import DataframeHandler
     >>>
     >>>  @artifacts([PickleArtifact('clf')])
     >>>  @env(conda_dependencies: [ 'scikit-learn' ])
     >>>  class MyMLService(BentoService):
     >>>
-    >>>     @BentoService.api(DataframeHandler)
+    >>>     @api(DataframeHandler)
     >>>     def predict(self, df):
     >>>         return self.artifacts.clf.predict(df)
     >>>
@@ -258,21 +276,3 @@ class BentoService(BentoServiceBase):
 
         artifacts = ArtifactCollection.load(path, cls._artifacts_spec)
         return cls(artifacts)
-
-
-def artifacts_decorator(artifact_specs):
-
-    def decorator(bento_service_cls):
-        bento_service_cls._artifacts_spec = artifact_specs
-        return bento_service_cls
-
-    return decorator
-
-
-def env_decorator(**kwargs):
-
-    def decorator(bento_service_cls):
-        bento_service_cls._env = BentoServiceEnv.fromDict(kwargs)
-        return bento_service_cls
-
-    return decorator

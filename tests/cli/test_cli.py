@@ -1,6 +1,7 @@
 import os
 import tempfile
 import sys
+import json
 import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -29,12 +30,5 @@ def test_run_command_with_input_file():
         run, ['--model-path', saved_path, '--api-name', 'predict', '--input', input_path])
 
     assert result.exit_code == 0
-    expect_result = ('[\n'
-                     '  {\n'
-                     '    "age": 6\n'
-                     '  },\n'
-                     '  {\n'
-                     '    "age": 7\n'
-                     '  }\n'
-                     ']')
-    assert result.output == expect_result
+    result_json = json.loads(result.output)
+    assert result_json[0]['age'] == 6

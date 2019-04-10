@@ -64,15 +64,15 @@ by subclassing it, and provides artifacts and env definition for it:
 %%writefile iris_classifier.py
 from bentoml import BentoService, api, env, artifacts
 from bentoml.artifact import PickleArtifact
-from bentoml.handlers import JsonHandler
+from bentoml.handlers import DataframeHandler
 
 @artifacts([PickleArtifact('model')])
 @env(conda_dependencies=["scikit-learn"])
 class IrisClassifier(BentoService):
 
-    @api(JsonHandler)
-    def predict(self, parsed_json):
-        return self.artifacts.model.predict(parsed_json)
+    @api(DataframeHandler)
+    def predict(self, df):
+        return self.artifacts.model.predict(df)
 ```
 
 Now, to save your trained model for prodcution use, simply import your
@@ -157,16 +157,22 @@ BentoML API server with Docker(see below).
 
 #### Build API server Docker Image
 
-To make it easier for your DevOps colleagues, a image containing the API server
-can be build directly using the archive folder as docker build context:
+You can build a Docker Image for running API server hosting your BentoML archive
+by using the archive folder as docker build context:
 
 ```bash
 cd ./saved_bento/IrisClassifier/v0.0.1/
 
 docker build -t myorg/iris-classifier .
+```
 
+Now you can `docker push` the docker image to your choice of registry for
+deployment, or run it locally for development and testing:
+
+```
 docker run -p 5000:5000 myorg/iris-classifier
 ```
+
 
 
 ## Examples

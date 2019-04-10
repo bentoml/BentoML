@@ -132,7 +132,7 @@ def api_decorator(handler, api_name=None, options=None):
     >>>         # do something
     """
 
-    def wrapped_api_decorator(func):
+    def decorator(func):
         _set_func_attr(func, '_is_api', True)
         _set_func_attr(func, '_handler', handler)
         # TODO: validate api_name
@@ -145,7 +145,7 @@ def api_decorator(handler, api_name=None, options=None):
 
         return func
 
-    return wrapped_api_decorator
+    return decorator
 
 
 def artifacts_decorator(artifact_specs):

@@ -75,8 +75,8 @@ class IrisClassifier(BentoService):
         return self.artifacts.model.predict(parsed_json)
 ```
 
-Now to pack your trained model with  your BentoService class, simply import it
-and `pack` it with required artifacts:
+Now, to save your trained model for prodcution use, simply import your
+BentoService class and `pack` it with required artifacts:
 
 ```
 from iris_classifier import IrisClassifier
@@ -88,10 +88,10 @@ svc.save('./saved_bento', version='v0.0.1') # Saving archive to ./saved_bento/Ir
 
 That's it. Now you have created your first BentoML archive. It's a directory
 containing all the source code, data files and configurations required to run
-this model in production. There are a few ways you could you this archive:
+this model in production. There are a few ways you could use this archive:
 
 
-### Loading archive in Python
+### Load BentoML archive in Python
 
 ```
 import bentoml
@@ -113,6 +113,16 @@ from IrisClassifier import IrisClassifier
 
 installed_svc = IrisClassifier.load()
 installed_svc.predict(X[0])
+```
+
+Note that you could also publish your exported BentoService as a PyPI package as
+a public python package on pypi.org or upload to your organization's private
+PyPI index:
+
+```bash
+cd ./saved_bento/IrisClassifier/v0.0.1/
+
+python setup.py sdist upload
 ```
 
 ### Run as a CLI tool
@@ -150,13 +160,13 @@ docker build -t myorg/iris-classifier .
 
 ## Examples
 
-More examples can be found in the
+All examples can be found in the
 [BentoML/examples](https://github.com/bentoml/BentoML/tree/master/examples)
 directory.
 
-- [Quick Start Sklearn](https://github.com/bentoml/BentoML/blob/master/examples/quick-start/main.py)
-- [Sentiment Analysis with Scikit-learn](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
-- [Text Classification with Tensorflow Keras¶](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb)
+- [Quick Start with sklearn](https://github.com/bentoml/BentoML/blob/master/examples/quick-start/main.py)
+- [Sentiment Analysis with Scikit-Learn](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
+- [Text Classification with Tensorflow Keras](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb)
 - More examples coming soon!
 
 

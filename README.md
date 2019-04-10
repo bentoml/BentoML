@@ -91,7 +91,39 @@ containing all the source code, data files and configurations required to run
 this model in production. There are a few ways you could use this archive:
 
 
-#### Load BentoML archive in Python
+### Start REST API server with a BentoML archive
+
+For exposing your model as a HTTP API endpoint, you can simply use the `bentoml
+serve` command:
+
+```bash
+bentoml serve --archive-path="./saved_bento/IrisClassifier/v0.0.1/"
+```
+
+Note: you must ensure the pip and conda dependencies are available in your python
+environment when using `bentoml serve` command. More commonly we recommand using
+BentoML API server with Docker(see below).
+
+
+### Build API server Docker Image
+
+You can build a Docker Image for running API server hosting your BentoML archive
+by using the archive folder as docker build context:
+
+```bash
+cd ./saved_bento/IrisClassifier/v0.0.1/
+
+docker build -t myorg/iris-classifier .
+```
+
+Next, you can `docker push` the image to your choice of registry for deployment,
+or run it locally for development and testing:
+
+```
+docker run -p 5000:5000 myorg/iris-classifier
+```
+
+### Loading BentoML archive in Python
 
 ```python
 import bentoml
@@ -106,7 +138,7 @@ BentoML also supports loading an archive from s3 location directly:
 bento_svc = bentoml.load('s3://my-bento-svc/iris_classifier/')
 ```
 
-#### Import as a python package
+### Install archive as PyPI package
 
 First install your exported bentoml service with `pip`:
 
@@ -132,7 +164,7 @@ cd ./saved_bento/IrisClassifier/v0.0.1/
 python setup.py sdist upload
 ```
 
-#### Run as a CLI tool
+### Use BentoML archive from CLI
 
 When `pip install` a BentoML archive, it also provides you with a CLI tool for
 accsing your BentoService's apis from command line:
@@ -141,44 +173,11 @@ pip install ./saved_bento/IrisClassifier/v0.0.1/
 
 IrisClassifier --help
 
-# This is not yet available in current release
 IrisClassifier predict --input='[5.1, 3.5, 1.4, 0.2]'
 ```
 
 The CLI access also made it very easy to put your saved BentoService into an
 Airflow DAG or use it in combination with other shell tools.
-
-#### Run archive as a REST API server
-
-For exposing your model as a HTTP API endpoint, you can simply use the `bentoml
-serve` command:
-
-```bash
-bentoml serve --archive-path="./saved_bento/IrisClassifier/v0.0.1/"
-```
-
-Note: you must ensure the pip/conda dependencies are available in your python
-environment when using `bentoml serve` command. More commonly we recommand using
-BentoML API server with Docker(see below).
-
-#### Build API server Docker Image
-
-You can build a Docker Image for running API server hosting your BentoML archive
-by using the archive folder as docker build context:
-
-```bash
-cd ./saved_bento/IrisClassifier/v0.0.1/
-
-docker build -t myorg/iris-classifier .
-```
-
-Now you can `docker push` the docker image to your choice of registry for
-deployment, or run it locally for development and testing:
-
-```
-docker run -p 5000:5000 myorg/iris-classifier
-```
-
 
 
 ## Examples

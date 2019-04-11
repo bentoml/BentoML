@@ -26,9 +26,7 @@ from datetime import datetime
 
 from bentoml.utils import Path
 from bentoml.utils.py_module_utils import copy_used_py_modules
-from bentoml.utils.exceptions import BentoMLException
-from bentoml.utils.s3 import is_s3_url, upload_to_s3, download_from_s3
-from bentoml.loader import load_bentoml_config
+from bentoml.utils.s3 import is_s3_url, upload_to_s3
 from bentoml.version import __version__ as BENTOML_VERSION
 
 BENTO_MODEL_SETUP_PY_TEMPLATE = """\

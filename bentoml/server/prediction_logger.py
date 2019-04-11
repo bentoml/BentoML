@@ -34,7 +34,7 @@ LOG_FILE_MAX_SIZE = 100 * 1000 * 1000
 LOG_FILE_NUM_BACKUPS = 10
 
 
-def initialize_prediction_logger():
+def get_prediction_logger():
     """
     initialize logger for logging prediction results
     """

@@ -21,14 +21,18 @@ from __future__ import print_function
 import uuid
 import json
 from time import time
+from functools import partial
 
 from flask import Flask, url_for, jsonify, Response, request
 from prometheus_client import generate_latest, Summary
 
-from bentoml.server.prediction_logger import initialize_prediction_logger, log_prediction
-from bentoml.server.feedback_logger import initialize_feedback_logger, log_feedback
+from bentoml.server.prediction_logger import get_prediction_logger, log_prediction
+from bentoml.server.feedback_logger import get_feedback_logger, log_feedback
 
 CONTENT_TYPE_LATEST = str('text/plain; version=0.0.4; charset=utf-8')
+
+prediction_logger = get_prediction_logger()
+feedback_logger = get_feedback_logger()
 
 
 def has_empty_params(rule):
@@ -38,6 +42,51 @@ def has_empty_params(rule):
     defaults = rule.defaults if rule.defaults is not None else ()
     arguments = rule.arguments if rule.arguments is not None else ()
     return len(defaults) < len(arguments)
+
+
+def index_view_func(app):
+    """
+    The index route for bento model server, it display all avaliable routes
+    """
+    # TODO: Generate a html page for user and swagger definitions
+    links = []
+    for rule in app.url_map.iter_rules():
+        if "GET" in rule.methods and not has_empty_params(rule):
+            url = url_for(rule.endpoint, **(rule.defaults or {}))
+            links.append(url)
+
+    return jsonify(links=links)
+
+
+def healthz_view_func():
+    """
+    Health check for bento model server.
+    Make sure it works with Kubernetes liveness probe
+    """
+    return Response(response='\n', status=200, mimetype='application/json')
+
+
+def metrics_view_func():
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+
+
+def feedback_view_func():
+    """
+    User send feedback along with the request Id. It will be stored and
+    ready for further process.
+    """
+    if request.content_type != 'application/json':
+        return Response(response='Incorrect content format, require JSON', status=400)
+
+    data = json.loads(request.data.decode('utf-8'))
+    if 'request_id' not in data.keys():
+        return Response(response='Missing request id', status=400)
+
+    if len(data.keys()) <= 1:
+        return Response(response='Missing feedback data', status=400)
+
+    log_feedback(feedback_logger, data)
+    return Response(response='success', status=200)
 
 
 def bento_service_api_wrapper(api, service_name, service_version, logger):
@@ -76,6 +125,40 @@ def bento_service_api_wrapper(api, service_name, service_version, logger):
     return wrapper
 
 
+def setup_bento_service_api_route(app, bento_service, api):
+    """
+    Setup a route for one BentoServiceAPI object defined in bento_service
+    """
+    route_function = bento_service_api_wrapper(api, bento_service.name, bento_service.version,
+                                               prediction_logger)
+
+    app.add_url_rule(rule='/{}'.format(api.name), endpoint=api.name, view_func=route_function,
+                     methods=['POST', 'GET'])
+
+
+def setup_routes(app, bento_service):
+    """
+    Setup routes for bento model server, including:
+
+    /               Index Page
+    /healthz        Health check ping
+    /feedback       Submitting feedback
+    /metrics        Prometheus metrics endpoint
+
+    And user defined BentoServiceAPI list into flask routes, e.g.:
+    /classify
+    /predict
+    """
+
+    app.add_url_rule('/', 'index', partial(index_view_func, app))
+    app.add_url_rule('/healthz', 'healthz', healthz_view_func)
+    app.add_url_rule('/feedback', 'feedback', feedback_view_func, methods=['POST', 'GET'])
+    app.add_url_rule('/metrics', 'metrics', metrics_view_func)
+
+    for api in bento_service.get_service_apis():
+        setup_bento_service_api_route(app, bento_service, api)
+
+
 class BentoAPIServer():
     """
     BentoAPIServer creates a REST API server based on APIs defined with a BentoService
@@ -85,88 +168,19 @@ class BentoAPIServer():
     request data into a Service API function
     """
 
-    def __init__(self, name, bento_service, port=8000):
+    _DEFAULT_PORT = 5000
+
+    def __init__(self, bento_service, port=_DEFAULT_PORT, app_name=None):
+        app_name = bento_service.name if app_name is None else app_name
+
         self.port = port
         self.bento_service = bento_service
 
-        self.app = Flask(name)
-        self.prediction_logger = initialize_prediction_logger()
-        self.feedback_logger = initialize_feedback_logger()
+        self.app = Flask(app_name)
+        setup_routes(self.app, self.bento_service)
 
-        self._setup_routes()
-
-    def _index_view_func(self):
-        """
-        The index route for bento model server, it display all avaliable routes
-        """
-        # TODO: Generate a html page for user and swagger definitions
-        links = []
-        for rule in self.app.url_map.iter_rules():
-            if "GET" in rule.methods and not has_empty_params(rule):
-                url = url_for(rule.endpoint, **(rule.defaults or {}))
-                links.append(url)
-        response = jsonify(links=links)
-        return response
-
-    def _healthz_view_func(self):
-        """
-        Health check for bento model server.
-        Make sure it works with Kubernetes liveness probe
-        """
-        return Response(response='\n', status=200, mimetype='application/json')
-
-    @staticmethod
-    def _metrics_view_func():
-        return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
-
-    def _feedback_view_func(self):
-        """
-        User send feedback along with the request Id. It will be stored and
-        ready for further process.
-        """
-        if request.content_type != 'application/json':
-            return Response(response='Incorrect content format, require JSON', status=400)
-
-        data = json.loads(request.data.decode('utf-8'))
-        if 'request_id' not in data.keys():
-            return Response(response='Missing request id', status=400)
-
-        if len(data.keys()) <= 1:
-            return Response(response='Missing feedback data', status=400)
-
-        log_feedback(self.feedback_logger, data)
-        return Response(response='success', status=200)
-
-    def _setup_bento_service_api_route(self, bento_service, api):
-        """
-        Setup a route for one BentoServiceAPI object defined in bento_service
-        """
-        route_function = bento_service_api_wrapper(api, bento_service.name, bento_service.version,
-                                                   self.prediction_logger)
-
-        self.app.add_url_rule(rule='/{}'.format(api.name), endpoint=api.name,
-                              view_func=route_function, methods=['POST', 'GET'])
-
-    def _setup_routes(self):
-        """
-        Setup routes for bento model server.
-        /, /healthz, /feedback, /metrics, /predict
-
-        And user defined BentoServiceAPI list into flask routes
-        """
-
-        self.app.add_url_rule('/', 'index', self._index_view_func)
-        self.app.add_url_rule('/healthz', 'healthz', self._healthz_view_func)
-        self.app.add_url_rule('/feedback', 'feedback', self._feedback_view_func,
-                              methods=['POST', 'GET'])
-        self.app.add_url_rule('/metrics', 'metrics', BentoAPIServer._metrics_view_func)
-
-        for api in self.bento_service.get_service_apis():
-            self._setup_bento_service_api_route(self.bento_service, api)
-
-    def start(self, port=None):
+    def start(self):
         """
         Start an REST server at the specific port on the instance or parameter.
         """
-        port = port if port is not None else self.port
-        self.app.run(port=port)
+        self.app.run(port=self.port)

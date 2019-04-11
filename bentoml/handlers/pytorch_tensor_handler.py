@@ -24,7 +24,7 @@ from __future__ import print_function
 from bentoml.handlers.base_handlers import CliHandler, RequestHandler
 
 
-class PytorchTensorHanlder(RequestHandler, CliHandler):
+class PytorchTensorHandler(RequestHandler, CliHandler):
     """
     Tensor handlers for Pytorch models
     """

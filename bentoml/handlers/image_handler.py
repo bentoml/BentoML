@@ -20,10 +20,11 @@ from __future__ import print_function
 
 import json
 import os
-import sys
 import numpy as np
+
 from werkzeug.utils import secure_filename
-from flask import request, Response
+from flask import Response
+
 from bentoml.handlers.base_handlers import RequestHandler, CliHandler
 from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
 
@@ -40,7 +41,7 @@ def check_file_format(file_name, accept_format_list):
     Raise error if file's extension is not in the accept_format_list
     """
     if accept_format_list:
-        name, extension = os.path.splitext(file_name)
+        _, extension = os.path.splitext(file_name)
         if extension not in accept_format_list:
             raise ValueError('File format does not include in the white list')
 

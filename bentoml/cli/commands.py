@@ -24,7 +24,7 @@ import click
 
 from bentoml.loader import load
 from bentoml.server import BentoAPIServer
-from bentoml.cli.utils import DefaultCommandGroup
+from bentoml.cli.default_command_group import DefaultCommandGroup
 
 
 @click.group(cls=DefaultCommandGroup)
@@ -33,6 +33,7 @@ def cli():
     """
     BentoML CLI tool
     """
+
 
 # Example Usage: bentoml API_NAME /SAVED_ARCHIVE_PATH --input=INPUT
 @cli.command(default_command=True, context_settings=dict(
@@ -62,17 +63,16 @@ def run(ctx, api_name, archive_path):
 
 @cli.command()
 @click.argument('archive-path', type=click.STRING)
-@click.pass_context
-def info(ctx, archive_path):
+def info(archive_path):
     """
     List all APIs definied in the BentoService loaded from archive
     """
     model_service = load(archive_path)
     service_apis = model_service.get_service_apis()
-    info = json.dumps(
+    output = json.dumps(
         dict(name=model_service.name, version=model_service.version,
              apis=[api.name for api in service_apis]), indent=2)
-    print(info)
+    print(output)
 
 
 # Example Usage: bentoml serve ./SAVED_ARCHIVE_PATH --port=PORT
@@ -90,4 +90,3 @@ def serve(archive_path, port):
 
 if __name__ == '__main__':
     cli()
-

@@ -48,10 +48,7 @@ def test_save_and_load_model():
     model_path = os.path.join(BASE_TEST_PATH, 'MyTestBentoService', version)
     assert os.path.exists(model_path)
 
-    model_service = bentoml.load(saved_path, lazy_load=True)
-    assert not model_service.loaded
-    model_service.load()
-    assert model_service.loaded
+    model_service = bentoml.load(saved_path)
 
     assert len(model_service.get_service_apis()) == 1
     api = model_service.get_service_apis()[0]
@@ -71,8 +68,5 @@ def test_save_and_load_model_from_s3():
     s3_location = 's3://bentoml/test'
     s3_saved_path = ms.save(base_path=s3_location)
 
-    download_model_service = bentoml.load(s3_saved_path, lazy_load=True)
-    assert not download_model_service.loaded
-    download_model_service.load()
-    assert download_model_service.loaded
+    download_model_service = bentoml.load(s3_saved_path)
     assert download_model_service.get_service_apis()[0].func(1) == 2

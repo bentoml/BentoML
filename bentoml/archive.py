@@ -26,9 +26,7 @@ from datetime import datetime
 
 from bentoml.utils import Path
 from bentoml.utils.py_module_utils import copy_used_py_modules
-from bentoml.utils.exceptions import BentoMLException
-from bentoml.utils.s3 import is_s3_url, upload_to_s3, download_from_s3
-from bentoml.loader import load_bentoml_config
+from bentoml.utils.s3 import is_s3_url, upload_to_s3
 from bentoml.version import __version__ as BENTOML_VERSION
 
 BENTO_MODEL_SETUP_PY_TEMPLATE = """\
@@ -126,9 +124,9 @@ sys.path.insert(0, __module_path)
 import {module_name}
 sys.path.remove(__module_path)
 
-# Set _bento_module_path, which tells the model where to load its artifacts
+# Set _bento_archive_path, which tells the model where to load its artifacts
 {service_name} = {module_name}.{service_name}
-{service_name}._bento_module_path = __module_path
+{service_name}._bento_archive_path = __module_path
 
 __all__ = ['__version__', '{service_name}']
 """
@@ -259,37 +257,3 @@ def save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
         return s3_url
     else:
         return path
-
-
-# TODO: consolidate this with loader module
-def load(bento_service_cls, path=None):
-    # TODO: add model.env.verify() to check dependencies and python version etc
-
-    if bento_service_cls._bento_module_path is not None:
-        # When calling load from pip installled bento model, use installed
-        # python package for loading and the same path for '/artifacts'
-
-        # TODO: warn user that 'path' parameter is ignored if it's not None here
-        path = bento_service_cls._bento_module_path
-        artifacts_path = path
-    else:
-        if path is None:
-            raise BentoMLException("Loading path is required for BentoArchive: {}.".format(
-                bento_service_cls.name()))
-
-        # When calling load on generated archive directory, look for /artifacts
-        # directory under module sub-directory
-        if is_s3_url(path):
-            temporary_path = tempfile.mkdtemp()
-            download_from_s3(path, temporary_path)
-            # Use loacl temp path for the following loading operations
-            path = temporary_path
-
-        artifacts_path = os.path.join(path, bento_service_cls.name())
-
-    bentoml_config = load_bentoml_config(path)
-
-    bento_service = bento_service_cls.load(artifacts_path)
-
-    bento_service._version = bentoml_config['service_version']
-    return bento_service

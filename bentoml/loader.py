@@ -24,44 +24,8 @@ import tempfile
 
 from ruamel.yaml import YAML
 
-from bentoml.service import BentoServiceBase
 from bentoml.version import __version__ as BENTOML_VERSION
 from bentoml.utils.s3 import is_s3_url, download_from_s3
-
-
-class _LoadedBentoServiceWrapper(BentoServiceBase):
-
-    def __init__(self, bento_service_class, path, config):
-        self._path = path
-        self._config = config
-        self._bento_service_class = bento_service_class
-        self._bento_service = None
-        self.loaded = False
-
-    def load(self):
-        from bentoml import archive
-        self._bento_service = archive.load(self._bento_service_class, self._path)
-        self._wrap_api_funcs()
-        self.loaded = True
-
-    def get_service_apis(self):
-        return self._bento_service.get_service_apis()
-
-    @property
-    def name(self):
-        return self._config['service_name']
-
-    @property
-    def version(self):
-        return self._config['service_version']
-
-    def _wrap_api_funcs(self):
-        """
-        Add target BentoService's API methods to the returned wrapper class
-        """
-        for api in self.get_service_apis():
-            setattr(self, api.name,
-                    self._bento_service.__getattribute__(api.name).__get__(self._bento_service))
 
 
 def load_bentoml_config(path):
@@ -85,7 +49,7 @@ def load_bentoml_config(path):
     return bentoml_config
 
 
-def load(path, lazy_load=False):
+def load(path):
     """
     Load a BentoService or BentoModel from saved archive in given path
 
@@ -121,9 +85,5 @@ def load(path, lazy_load=False):
         module = imp.load_source(module_name, module_file_path)
 
     model_service_class = module.__getattribute__(config['service_name'])
-    loaded_model = _LoadedBentoServiceWrapper(model_service_class, path, config)
 
-    if not lazy_load:
-        loaded_model.load()
-
-    return loaded_model
+    return model_service_class.from_archive(path)

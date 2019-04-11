@@ -54,7 +54,8 @@ class ImageHandler(RequestHandler, CliHandler):
     @staticmethod
     def handle_request(request, func, options=None):
         """
-        Handle http request that has image file/s.  It will convert image into a ndarray for the function to consume.
+        Handle http request that has image file/s.  It will convert image into a
+        ndarray for the function to consume.
 
         Args:
             request: incoming request object.

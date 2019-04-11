@@ -18,8 +18,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import sys
 import inspect
+import tempfile
 
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
@@ -27,6 +29,7 @@ from abc import abstractmethod, ABCMeta
 from bentoml.utils.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
+from bentoml.utils.s3 import is_s3_url, download_from_s3
 
 
 def _get_func_attr(func, attribute_name):
@@ -191,6 +194,7 @@ class BentoService(BentoServiceBase):
     # User may override this if they don't want the generated model to
     # have the same name as their Python model class name
     _bento_service_name = None
+    # _bento_service_version = None
 
     # This is overwritten when user install exported bento model as a
     # pip package, in that case, #load method will load from the installed
@@ -270,9 +274,39 @@ class BentoService(BentoServiceBase):
         return cls(artifacts)
 
     @classmethod
-    def load(cls, path=None):
-        if cls._bento_module_path is not None:
-            path = cls._bento_module_path
+    def from_archive(cls, path):
+        from bentoml.loader import load_bentoml_config
 
-        artifacts = ArtifactCollection.load(path, cls._artifacts_spec)
-        return cls(artifacts)
+        # TODO: add model.env.verify() to check dependencies and python version etc
+        if cls._bento_module_path is not None:
+            # When calling load from pip installled bento model, use installed
+            # python package for loading and the same path for '/artifacts'
+
+            # TODO: warn user that 'path' parameter is ignored if it's not None here
+            path = cls._bento_module_path
+            artifacts_path = path
+        else:
+            if path is None:
+                raise BentoMLException("Loading path is required for BentoArchive: {}.".format(
+                    cls.name()))
+
+            # When calling load on generated archive directory, look for /artifacts
+            # directory under module sub-directory
+            if is_s3_url(path):
+                temporary_path = tempfile.mkdtemp()
+                download_from_s3(path, temporary_path)
+                # Use loacl temp path for the following loading operations
+                path = temporary_path
+
+            artifacts_path = os.path.join(path, cls.name())
+
+        bentoml_config = load_bentoml_config(path)
+
+        if bentoml_config['service_name'] != cls.name():
+            raise BentoMLException(
+                'BentoService name does not match with BentoML Archive in path: {}'.format(path))
+
+        artifacts = ArtifactCollection.load(artifacts_path, cls._artifacts_spec)
+        svc = cls(artifacts)
+        svc._version = bentoml_config['service_version']
+        return svc

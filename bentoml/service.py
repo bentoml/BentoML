@@ -211,10 +211,11 @@ class BentoService(BentoServiceBase):
     def __init__(self, artifacts=None, env=None):
         if artifacts is None:
             if self._bento_archive_path:
-                artifacts = ArtifactCollection.load(self._bento_archive_path, self.__class__._artifacts_spec)
+                artifacts = ArtifactCollection.load(self._bento_archive_path,
+                                                    self.__class__._artifacts_spec)
             else:
-                raise BentoMLException("Must provide artifacts or set cls._bento_archive_path before"
-                                       " instantiating a BentoService class")
+                raise BentoMLException("Must provide artifacts or set cls._bento_archive_path"
+                                       "before instantiating a BentoService class")
 
         # TODO: validate artifacts arg matches self.__class__._artifacts_spec definition
         if isinstance(artifacts, ArtifactCollection):
@@ -224,10 +225,10 @@ class BentoService(BentoServiceBase):
             for artifact in artifacts:
                 self._artifacts[artifact.name] = artifact
 
+        self._version = None # Can only be set by BentoML library when loading from archive
         self._init_env(env)
         self._config_service_apis()
         self.name = self.__class__.name()
-
 
     def _init_env(self, env=None):
         if env is None:

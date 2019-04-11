@@ -23,6 +23,7 @@ import click
 from bentoml.loader import load
 from bentoml.server import BentoModelApiServer
 
+
 @click.group()
 @click.version_option()
 def cli():

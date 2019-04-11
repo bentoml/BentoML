@@ -22,25 +22,29 @@ import click
 
 from bentoml.loader import load
 from bentoml.server import BentoAPIServer
+from bentoml.cli.utils import DefaultCommandGroup
 
 
-@click.group()
+@click.group(cls=DefaultCommandGroup)
 @click.version_option()
 def cli():
-    pass
+    """
+    BentoML CLI tool
+    """
 
-
-# TODO: allow string to be a value for input as well
-# bentoml serve --archive-path=/MODEL_PATH --api-name=API_FUNC_NAME --input=/INPUT_PATH
-@cli.command(context_settings=dict(
+# Example Usage: bentoml API_NAME /SAVED_ARCHIVE_PATH --input=INPUT
+@cli.command(default_command=True, context_settings=dict(
     ignore_unknown_options=True,
     allow_extra_args=True,
 ))
-@click.option('--archive-path', type=click.Path(exists=True), required=True)
-@click.option('--api-name', type=click.STRING)
+@click.argument('api-name', type=click.STRING)
+@click.argument('archive-path', type=click.STRING)
 @click.pass_context
-def run(ctx, model_path, api_name):
-    model_service = load(model_path)
+def run(ctx, api_name, archive_path):
+    """
+    Run an API definied in the BentoService loaded from archive
+    """
+    model_service = load(archive_path)
     service_apis = model_service.get_service_apis()
 
     matched_api_index = next(
@@ -54,21 +58,16 @@ def run(ctx, model_path, api_name):
     matched_api.handler.handle_cli(ctx.args, matched_api.func, matched_api.options)
 
 
-# bentoml serve --archive-path=/MODEL_PATH --port=PORT_NUM
+# Example Usage: bentoml serve ./SAVED_ARCHIVE_PATH --port=PORT
 @cli.command()
-@click.option('--archive-path', type=click.Path(exists=True), required=True)
-@click.option('--port', type=click.INT)
-def serve(model_path, port):
+@click.argument('archive-path', type=click.STRING)
+@click.option('--port', type=click.INT, default=BentoAPIServer._DEFAULT_PORT)
+def serve(archive_path, port):
     """
-    serve command for bentoml cli tool.  It will start a rest API server
-
+    Start REST API server, hosting BentoService loaded from archive
     """
-    port = port if port is not None else 5000
-
-    model_service = load(model_path)
-    name = "bento_rest_api_server"
-
-    server = BentoAPIServer(name, model_service, port)
+    model_service = load(archive_path)
+    server = BentoAPIServer(model_service, port=port)
     server.start()
 
 

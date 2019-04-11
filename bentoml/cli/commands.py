@@ -18,6 +18,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
+
 import click
 
 from bentoml.loader import load
@@ -58,6 +60,21 @@ def run(ctx, api_name, archive_path):
     matched_api.handler.handle_cli(ctx.args, matched_api.func, matched_api.options)
 
 
+@cli.command()
+@click.argument('archive-path', type=click.STRING)
+@click.pass_context
+def info(ctx, archive_path):
+    """
+    List all APIs definied in the BentoService loaded from archive
+    """
+    model_service = load(archive_path)
+    service_apis = model_service.get_service_apis()
+    info = json.dumps(
+        dict(name=model_service.name, version=model_service.version,
+             apis=[api.name for api in service_apis]), indent=2)
+    print(info)
+
+
 # Example Usage: bentoml serve ./SAVED_ARCHIVE_PATH --port=PORT
 @cli.command()
 @click.argument('archive-path', type=click.STRING)
@@ -73,3 +90,4 @@ def serve(archive_path, port):
 
 if __name__ == '__main__':
     cli()
+

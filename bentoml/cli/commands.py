@@ -21,7 +21,7 @@ from __future__ import print_function
 import click
 
 from bentoml.loader import load
-from bentoml.server import BentoModelApiServer
+from bentoml.server import BentoAPIServer
 
 
 @click.group()
@@ -31,12 +31,12 @@ def cli():
 
 
 # TODO: allow string to be a value for input as well
-# bentoml serve --model=/MODEL_PATH --api-name=API_FUNC_NAME --input=/INPUT_PATH
+# bentoml serve --archive-path=/MODEL_PATH --api-name=API_FUNC_NAME --input=/INPUT_PATH
 @cli.command(context_settings=dict(
     ignore_unknown_options=True,
     allow_extra_args=True,
 ))
-@click.option('--model-path', type=click.Path(exists=True), required=True)
+@click.option('--archive-path', type=click.Path(exists=True), required=True)
 @click.option('--api-name', type=click.STRING)
 @click.pass_context
 def run(ctx, model_path, api_name):
@@ -54,9 +54,9 @@ def run(ctx, model_path, api_name):
     matched_api.handler.handle_cli(ctx.args, matched_api.func, matched_api.options)
 
 
-# bentoml serve --model=/MODEL_PATH --port=PORT_NUM
+# bentoml serve --archive-path=/MODEL_PATH --port=PORT_NUM
 @cli.command()
-@click.option('--model-path', type=click.Path(exists=True), required=True)
+@click.option('--archive-path', type=click.Path(exists=True), required=True)
 @click.option('--port', type=click.INT)
 def serve(model_path, port):
     """
@@ -68,7 +68,7 @@ def serve(model_path, port):
     model_service = load(model_path)
     name = "bento_rest_api_server"
 
-    server = BentoModelApiServer(name, model_service, port)
+    server = BentoAPIServer(name, model_service, port)
     server.start()
 
 

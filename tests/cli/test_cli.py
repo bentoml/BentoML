@@ -27,7 +27,7 @@ def test_run_command_with_input_file():
     input_path = generate_test_input_file()
     runner = CliRunner()
     result = runner.invoke(
-        run, ['--model-path', saved_path, '--api-name', 'predict', '--input', input_path])
+        run, ['--archive-path', saved_path, '--api-name', 'predict', '--input', input_path])
 
     assert result.exit_code == 0
     result_json = json.loads(result.output)

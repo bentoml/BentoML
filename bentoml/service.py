@@ -225,7 +225,7 @@ class BentoService(BentoServiceBase):
             for artifact in artifacts:
                 self._artifacts[artifact.name] = artifact
 
-        self._version = None # Can only be set by BentoML library when loading from archive
+        self._version = None  # Can only be set by BentoML library when loading from archive
         self._init_env(env)
         self._config_service_apis()
         self.name = self.__class__.name()

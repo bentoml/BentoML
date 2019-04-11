@@ -107,7 +107,7 @@ ENV PATH /opt/conda/envs/$conda_env/bin:$PATH
 RUN conda install pip && pip install -r /bento/requirements.txt
 
 # Run bento server with path to bento archive
-CMD ["bentoml serve --model-path=/bento"]
+CMD ["bentoml serve --archive-path=/bento"]
 """
 
 # TODO: improve this with import hooks PEP302?

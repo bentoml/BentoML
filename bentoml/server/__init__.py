@@ -18,10 +18,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.server.model_api_server import BentoModelApiServer
+from bentoml.server.bento_api_server import BentoAPIServer
 from bentoml.server import metrics
 
 __all__ = [
-    'BentoModelApiServer',
+    'BentoAPIServer',
     'metrics',
 ]

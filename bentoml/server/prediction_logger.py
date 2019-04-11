@@ -41,7 +41,7 @@ def initialize_prediction_logger():
 
     # prediction.log json fields - request / result / time
     formatter = jsonlogger.JsonFormatter(
-        '(model_name) (model_version) (api_name) (request_id) (request) (response) (asctime)')
+        '(service_name) (service_version) (api_name) (request_id) (request) (response) (asctime)')
 
     prediction_logger = logging.getLogger(PREDICTION_LOGGER_NAME)
 
@@ -97,9 +97,9 @@ def parse_response(response):
 
 class PredictionLoggingMetaData():
 
-    def __init__(self, model_name, model_version, api_name, request_id, asctime):
-        self.model_name = model_name
-        self.model_version = model_version
+    def __init__(self, service_name, service_version, api_name, request_id, asctime):
+        self.service_name = service_name
+        self.service_version = service_version
         self.api_name = api_name
         self.request_id = request_id
         self.asctime = asctime
@@ -111,8 +111,8 @@ def log_prediction(logger, metadata, request, response):
     """
 
     logger.info({
-        "model_name": metadata['model_name'],
-        "model_version": metadata['model_version'],
+        "service_name": metadata['service_name'],
+        "service_version": metadata['service_version'],
         "api_name": metadata['api_name'],
         "request_id": metadata['request_id'],
         "request": parse_request(request),

@@ -42,11 +42,11 @@ def has_no_empty_params(rule):
     return len(defaults) >= len(arguments)
 
 
-def create_api_function_wrapper(logger, model_name, model_version, api):
+def create_api_function_wrapper(logger, service_name, service_version, api):
     """
     Create api function for flask route
     """
-    summary_name = str(model_name) + '_' + str(model_version) + '_' + str(api.name)
+    summary_name = str(service_name) + '_' + str(service_version) + '_' + str(api.name)
     request_metric_time = Summary(summary_name, summary_name + ' request latency')
 
     def wrapper():
@@ -57,8 +57,8 @@ def create_api_function_wrapper(logger, model_name, model_version, api):
             response.headers['request_id'] = request_id
             if response.status_code == 200:
                 metadata = {
-                    'model_name': model_name,
-                    'model_version': model_version,
+                    'service_name': service_name,
+                    'service_version': service_version,
                     'api_name': api.name,
                     'request_id': request_id,
                     'asctime': request_time,
@@ -83,9 +83,9 @@ class BentoModelApiServer():
     Bento Model API Server defines how to start a REST API server with Bento Model.
     """
 
-    def __init__(self, name, model_service, port=8000):
+    def __init__(self, name, bento_service, port=8000):
         self.port = port
-        self.model_service = model_service
+        self.bento_service = bento_service
 
         self.app = Flask(name)
         self.prediction_logger = initialize_prediction_logger()
@@ -141,12 +141,12 @@ class BentoModelApiServer():
         log_feedback(self.feedback_logger, data)
         return Response(response='success', status=200)
 
-    def setup_api_func_route(self, model_name, model_version, route_name, api):
+    def setup_api_func_route(self, service_name, service_version, route_name, api):
         """
         Setup a route for the api function from model service
         """
-        route_function = create_api_function_wrapper(self.prediction_logger, model_name,
-                                                     model_version, api)
+        route_function = create_api_function_wrapper(self.prediction_logger, service_name,
+                                                     service_version, api)
         self.app.add_url_rule(rule='/' + route_name.replace('.', '/'), endpoint=route_name,
                               view_func=route_function, methods=['POST', 'GET'])
 
@@ -155,17 +155,17 @@ class BentoModelApiServer():
         Setup user defined endpoints into flask routes
         When there is only one api object on the model, we will create a /api_name route.
         If user defined more than 1 apis on the model, we will create routes in the format of
-        model_name/model_version/api_name
+        service_name/service_version/api_name
         """
-        model_service = self.model_service
-        apis = self.model_service.get_service_apis()
+        bento_service = self.bento_service
+        apis = self.bento_service.get_service_apis()
         if len(apis) == 1:
-            self.setup_api_func_route(model_service.name, model_service.version, apis[0].name,
+            self.setup_api_func_route(bento_service.name, bento_service.version, apis[0].name,
                                       apis[0])
         else:
             for api in apis:
-                route_name = model_service.name + '.' + model_service.version + '.' + api.name
-                self.setup_api_func_route(model_service.name, model_service.version, route_name,
+                route_name = bento_service.name + '.' + bento_service.version + '.' + api.name
+                self.setup_api_func_route(bento_service.name, bento_service.version, route_name,
                                           api)
 
     def setup_routes(self):

@@ -21,7 +21,7 @@ from __future__ import print_function
 import click
 
 from bentoml.loader import load
-from bentoml.server import BentoModelApiServer
+from bentoml.server import BentoAPIServer
 
 
 @click.group()
@@ -68,7 +68,7 @@ def serve(model_path, port):
     model_service = load(model_path)
     name = "bento_rest_api_server"
 
-    server = BentoModelApiServer(name, model_service, port)
+    server = BentoAPIServer(name, model_service, port)
     server.start()
 
 

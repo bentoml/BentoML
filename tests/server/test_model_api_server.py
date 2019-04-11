@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import bentoml
-from bentoml.server import BentoModelApiServer
+from bentoml.server import BentoAPIServer
 from bentoml.artifact import PickleArtifact
 from tests.utils import generate_fake_dataframe_model
 
@@ -13,7 +13,7 @@ def create_rest_server():
     saved_path = generate_fake_dataframe_model()
     model_service = bentoml.load(saved_path)
 
-    rest_server = BentoModelApiServer('test_rest_server', model_service, 5000)
+    rest_server = BentoAPIServer('test_rest_server', model_service, 5000)
     return rest_server
 
 

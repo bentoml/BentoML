@@ -139,15 +139,11 @@ class BentoAPIServer():
         """
         Setup a route for one BentoServiceAPI object defined in bento_service
         """
-        route_function = bento_service_api_wrapper(api,
-                                                   bento_service.name,
-                                                   bento_service.version,
+        route_function = bento_service_api_wrapper(api, bento_service.name, bento_service.version,
                                                    self.prediction_logger)
 
-        self.app.add_url_rule(rule='/{}'.format(api.name),
-                              endpoint=api.name,
-                              view_func=route_function,
-                              methods=['POST', 'GET'])
+        self.app.add_url_rule(rule='/{}'.format(api.name), endpoint=api.name,
+                              view_func=route_function, methods=['POST', 'GET'])
 
     def _setup_routes(self):
         """
@@ -159,12 +155,12 @@ class BentoAPIServer():
 
         self.app.add_url_rule('/', 'index', self._index_view_func)
         self.app.add_url_rule('/healthz', 'healthz', self._healthz_view_func)
-        self.app.add_url_rule('/feedback', 'feedback', self._feedback_view_func, methods=['POST', 'GET'])
+        self.app.add_url_rule('/feedback', 'feedback', self._feedback_view_func,
+                              methods=['POST', 'GET'])
         self.app.add_url_rule('/metrics', 'metrics', BentoAPIServer._metrics_view_func)
 
         for api in self.bento_service.get_service_apis():
             self._setup_bento_service_api_route(self.bento_service, api)
-
 
     def start(self, port=None):
         """

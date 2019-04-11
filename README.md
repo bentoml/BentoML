@@ -150,7 +150,7 @@ Now you can import it and used it as a python module:
 ```python
 from IrisClassifier import IrisClassifier
 
-installed_svc = IrisClassifier.load()
+installed_svc = IrisClassifier()
 installed_svc.predict(X[0])
 ```
 

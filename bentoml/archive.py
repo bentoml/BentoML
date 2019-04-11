@@ -124,9 +124,9 @@ sys.path.insert(0, __module_path)
 import {module_name}
 sys.path.remove(__module_path)
 
-# Set _bento_module_path, which tells the model where to load its artifacts
+# Set _bento_archive_path, which tells the model where to load its artifacts
 {service_name} = {module_name}.{service_name}
-{service_name}._bento_module_path = __module_path
+{service_name}._bento_archive_path = __module_path
 
 __all__ = ['__version__', '{service_name}']
 """

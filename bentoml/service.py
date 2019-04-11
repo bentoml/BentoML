@@ -196,10 +196,10 @@ class BentoService(BentoServiceBase):
     _bento_service_name = None
     # _bento_service_version = None
 
-    # This is overwritten when user install exported bento model as a
-    # pip package, in that case, #load method will load from the installed
-    # python package location
-    _bento_module_path = None
+    # For BentoService loaded from achive directory, this will be set to archive path
+    # when user install exported bento model as a PyPI package, this will be set to
+    # the python installed site-package location
+    _bento_archive_path = None
 
     # list of artifact spec describing required artifacts for this BentoService
     _artifacts_spec = []
@@ -208,9 +208,15 @@ class BentoService(BentoServiceBase):
     # `bentoml.service_env.BentoServiceEnv`
     _env = {}
 
-    def __init__(self, artifacts, env=None):
-        # TODO: validate artifacts arg matches self.__class__._artifacts_spec definition
+    def __init__(self, artifacts=None, env=None):
+        if artifacts is None:
+            if self._bento_archive_path:
+                artifacts = ArtifactCollection.load(self._bento_archive_path, self.__class__._artifacts_spec)
+            else:
+                raise BentoMLException("Must provide artifacts or set cls._bento_archive_path before"
+                                       " instantiating a BentoService class")
 
+        # TODO: validate artifacts arg matches self.__class__._artifacts_spec definition
         if isinstance(artifacts, ArtifactCollection):
             self._artifacts = artifacts
         else:
@@ -218,6 +224,12 @@ class BentoService(BentoServiceBase):
             for artifact in artifacts:
                 self._artifacts[artifact.name] = artifact
 
+        self._init_env(env)
+        self._config_service_apis()
+        self.name = self.__class__.name()
+
+
+    def _init_env(self, env=None):
         if env is None:
             # By default use BentoServiceEnv defined on class via @env decorator
             env = self.__class__._env
@@ -226,9 +238,6 @@ class BentoService(BentoServiceBase):
             self._env = BentoServiceEnv.fromDict(env)
         else:
             self._env = env
-
-        self._config_service_apis()
-        self.name = self.__class__.name()
 
     @property
     def artifacts(self):
@@ -278,12 +287,12 @@ class BentoService(BentoServiceBase):
         from bentoml.loader import load_bentoml_config
 
         # TODO: add model.env.verify() to check dependencies and python version etc
-        if cls._bento_module_path is not None:
+        if cls._bento_archive_path is not None:
             # When calling load from pip installled bento model, use installed
             # python package for loading and the same path for '/artifacts'
 
             # TODO: warn user that 'path' parameter is ignored if it's not None here
-            path = cls._bento_module_path
+            path = cls._bento_archive_path
             artifacts_path = path
         else:
             if path is None:

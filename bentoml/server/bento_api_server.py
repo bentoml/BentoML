@@ -28,7 +28,6 @@ from prometheus_client import generate_latest, Summary
 from bentoml.server.prediction_logger import initialize_prediction_logger, log_prediction
 from bentoml.server.feedback_logger import initialize_feedback_logger, log_feedback
 
-
 CONTENT_TYPE_LATEST = str('text/plain; version=0.0.4; charset=utf-8')
 
 

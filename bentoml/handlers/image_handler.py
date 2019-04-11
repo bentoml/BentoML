@@ -104,10 +104,4 @@ class ImageHandler(RequestHandler, CliHandler):
             raise ImportError("opencv-python package is required to use ImageHandler")
 
         image = cv2.imread(file_path)
-        output = func(image)
-
-        if options['output_format'] == 'json':
-            result = json.dumps(output)
-            sys.stdout.write(result)
-        else:
-            raise NotImplementedError
+        print(func(image))

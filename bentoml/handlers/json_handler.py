@@ -69,24 +69,4 @@ class JsonHandler(RequestHandler, CliHandler):
         with open(parsed_args.input, 'r') as content_file:
             content = content_file.read()
             input_json = json.loads(content)
-            output = func(input_json)
-
-            try:
-                result = json.dumps(output)
-            except Exception as e:  # pylint:disable=W0703
-                if isinstance(e, TypeError):
-                    if type(output).__module__ == 'numpy':
-                        output = output.tolist()
-                        result = json.dumps(output)
-                    else:
-                        raise e
-                else:
-                    raise e
-
-            if parsed_args.output == 'json' or not parsed_args.output:
-                try:
-                    sys.stdout.write(result)
-                except Exception as e:
-                    raise e
-            else:
-                raise NotImplementedError
+            print(func(input_json))

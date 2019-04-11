@@ -19,26 +19,9 @@ from __future__ import division
 from __future__ import print_function
 
 import click
-import os
-import tempfile
 
 from bentoml.loader import load
 from bentoml.server import BentoModelApiServer
-from bentoml.utils.s3 import is_s3_url, download_from_s3
-
-
-def load_model_service(model_path):
-    if is_s3_url(model_path):
-        temp_dir = tempfile.mkdtemp()
-        download_from_s3(model_path, temp_dir)
-        model_path = temp_dir
-    else:
-        if not os.path.isabs(model_path):
-            model_path = os.path.abspath(model_path)
-
-    model_service = load(model_path)
-    return model_service
-
 
 @click.group()
 @click.version_option()
@@ -56,7 +39,7 @@ def cli():
 @click.option('--api-name', type=click.STRING)
 @click.pass_context
 def run(ctx, model_path, api_name):
-    model_service = load_model_service(model_path)
+    model_service = load(model_path)
     service_apis = model_service.get_service_apis()
 
     matched_api_index = next(
@@ -81,7 +64,7 @@ def serve(model_path, port):
     """
     port = port if port is not None else 5000
 
-    model_service = load_model_service(model_path)
+    model_service = load(model_path)
     name = "bento_rest_api_server"
 
     server = BentoModelApiServer(name, model_service, port)

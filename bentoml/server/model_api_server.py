@@ -186,8 +186,4 @@ class BentoModelApiServer():
         Start an REST server at the specific port on the instance or parameter.
         """
         port = port if port is not None else self.port
-
-        if self.model_service.loaded is True:
-            self.app.run(port=port)
-        else:
-            raise Exception('model service is not loaded')
+        self.app.run(port=port)

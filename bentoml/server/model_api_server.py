@@ -33,16 +33,16 @@ from bentoml.server.feedback_logger import initialize_feedback_logger, log_feedb
 CONTENT_TYPE_LATEST = str('text/plain; version=0.0.4; charset=utf-8')
 
 
-def has_no_empty_params(rule):
+def has_empty_params(rule):
     """
-    return boolean if the rules have empty params or not
+    return True if the rule has empty params
     """
     defaults = rule.defaults if rule.defaults is not None else ()
     arguments = rule.arguments if rule.arguments is not None else ()
-    return len(defaults) >= len(arguments)
+    return len(defaults) < len(arguments)
 
 
-def create_api_function_wrapper(logger, service_name, service_version, api):
+def bento_service_api_wrapper(api, service_name, service_version, logger):
     """
     Create api function for flask route
     """
@@ -100,7 +100,7 @@ class BentoModelApiServer():
         # TODO: Generate a html page for user and swagger definitions
         links = []
         for rule in self.app.url_map.iter_rules():
-            if "GET" in rule.methods and has_no_empty_params(rule):
+            if "GET" in rule.methods and not has_empty_params(rule):
                 url = url_for(rule.endpoint, **(rule.defaults or {}))
                 links.append(url)
         response = jsonify(links=links)
@@ -145,8 +145,10 @@ class BentoModelApiServer():
         """
         Setup a route for the api function from model service
         """
-        route_function = create_api_function_wrapper(self.prediction_logger, service_name,
-                                                     service_version, api)
+        route_function = bento_service_api_wrapper(api,
+                                                   service_name,
+                                                   service_version,
+                                                   self.prediction_logger)
         self.app.add_url_rule(rule='/' + route_name.replace('.', '/'), endpoint=route_name,
                               view_func=route_function, methods=['POST', 'GET'])
 

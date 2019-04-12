@@ -1,12 +1,16 @@
 import os
 import json
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-import bentoml
-from bentoml.server import BentoAPIServer
-from bentoml.artifact import PickleArtifact
-from tests.utils import generate_fake_dataframe_model
+try:
+    import bentoml
+    from bentoml.server import BentoAPIServer
+    from tests.utils import generate_fake_dataframe_model
+except ImportError:
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+    import bentoml
+    from bentoml.server import BentoAPIServer
+    from tests.utils import generate_fake_dataframe_model
 
 
 def create_rest_server():
@@ -21,11 +25,11 @@ def test_api_function_route():
     rest_server = create_rest_server()
     test_client = rest_server.app.test_client()
 
-    list = []
+    index_list = []
     for rule in rest_server.app.url_map.iter_rules():
-        list.append(rule.endpoint)
+        index_list.append(rule.endpoint)
 
-    assert 'predict' in list
+    assert 'predict' in index_list
     data = [{'age': 10}]
 
     response = test_client.post('/predict', data=json.dumps(data), content_type='application/json')

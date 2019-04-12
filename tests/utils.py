@@ -1,13 +1,15 @@
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import bentoml
-from bentoml.artifact import PickleArtifact
 
+try:
+    from bentoml.artifact import PickleArtifact
+except ImportError:
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from bentoml.artifact import PickleArtifact
 
 
 BASE_TEST_PATH = "/tmp/bentoml-test"
-
 
 
 class MyFakeModel(object):

@@ -2,12 +2,14 @@ import os
 import tempfile
 import sys
 import json
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from click.testing import CliRunner
-
-from bentoml.cli import create_bentoml_cli
 from tests.utils import generate_fake_dataframe_model
+
+try:
+    from bentoml.cli import create_bentoml_cli
+except ImportError:
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from bentoml.cli import create_bentoml_cli
 
 
 def generate_test_input_file():

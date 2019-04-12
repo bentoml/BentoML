@@ -1,11 +1,16 @@
 import os
 import sys
 import pytest
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import bentoml
-from bentoml.artifact import PickleArtifact
-from bentoml.archive.archiver import _validate_version_str
+
+try:
+    from bentoml.artifact import PickleArtifact
+    from bentoml.archive.archiver import _validate_version_str
+except ImportError:
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from bentoml.artifact import PickleArtifact
+    from bentoml.archive.archiver import _validate_version_str
+
 
 def test_validate_version_str_fails():
     with pytest.raises(ValueError):
@@ -15,11 +20,13 @@ def test_validate_version_str_fails():
 def test_validate_version_str_pass():
     _validate_version_str('abc_123')
 
-class MyTestModel(object):
-    def predict(self, input):
-        return int(input) * 2
 
-@bentoml.env(conda_pip_dependencies = ['scikit-learn'])
+class MyTestModel(object):
+    def predict(self, input_data):
+        return int(input_data) * 2
+
+
+@bentoml.env(conda_pip_dependencies=['scikit-learn'])
 @bentoml.artifacts([
     PickleArtifact('model')
 ])
@@ -34,6 +41,7 @@ class MyTestBentoService(bentoml.BentoService):
 
 
 BASE_TEST_PATH = "/tmp/bentoml-test"
+
 
 def test_save_and_load_model():
     test_model = MyTestModel()

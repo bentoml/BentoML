@@ -6,3 +6,4 @@ cd $GIT_ROOT
 
 pylint --rcfile="./pylintrc" bentoml
 pycodestyle bentoml
+pycodestyle tests

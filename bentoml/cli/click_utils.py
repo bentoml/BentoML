@@ -24,7 +24,6 @@ import click
 class DefaultCommandGroup(click.Group):
     """
     Allow a default command for a group, based on:
-    https://stackoverflow.com/questions/52053491/a-command-without-name-in-click
     """
 
     def command(self, *args, **kwargs):
@@ -51,3 +50,14 @@ class DefaultCommandGroup(click.Group):
             args.insert(0, self.default_command)
             return super(DefaultCommandGroup, self).resolve_command(ctx, args)
 
+
+def conditional_argument(condition, *param_decls, **attrs):
+    """
+    Attaches an argument to the command only when condition is True
+    """
+    def decorator(f):
+        if condition:
+            f = click.argument(*param_decls, **attrs)(f)
+        return f
+
+    return decorator

@@ -18,10 +18,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
 import json
+
 import pandas as pd
+import numpy as np
 from flask import Response, make_response
+
 from bentoml.handlers.base_handlers import CliHandler, RequestHandler
 from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
 
@@ -78,6 +80,8 @@ class DataframeHandler(RequestHandler, CliHandler):
         parser.add_argument('--input_json_orient', default='records')
         parsed_args = parser.parse_args(args)
         options = merge_dicts(default_options, options)
+
+        # TODO: Add support for parsing cli argument string as input
         file_path = parsed_args.input
 
         if parsed_args.input_json_orient:
@@ -87,19 +91,19 @@ class DataframeHandler(RequestHandler, CliHandler):
             df = pd.read_csv(file_path)
         elif file_path.endswith('.json'):
             df = pd.read_json(file_path, orient=options['input_json_orient'], dtype=False)
+        else:
+            raise ValueError("BentoML DataframeHandler currently only supports '.csv'"
+                             "and '.json' files as cli input.")
 
         if options['input_columns_require']:
             check_missing_columns(options['input_columns_require'], df.columns)
 
-        output = func(df)
+        result = func(df)
 
-        if parsed_args.output == 'json' or not parsed_args.output:
-            if isinstance(output, pd.DataFrame):
-                result = output.to_json(orient=options['output_json_orient'])
-                result = json.loads(result)
-                result = json.dumps(result, indent=2)
-            else:
-                result = json.dumps(output)
-            sys.stdout.write(result)
+        # TODO: revisit cli handler output format and options
+        if isinstance(result, pd.DataFrame):
+            print(result.to_json())
+        elif isinstance(result, np.ndarray):
+            print(json.dumps(result.tolist()))
         else:
-            raise NotImplementedError
+            print(result)

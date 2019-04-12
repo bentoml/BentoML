@@ -21,7 +21,8 @@ from __future__ import print_function
 from bentoml import handlers
 from bentoml.version import __version__
 
-from bentoml.service import BentoService, api_decorator as api, env_decorator as env, artifacts_decorator as artifacts
+from bentoml.service import BentoService, api_decorator as api, \
+    env_decorator as env, artifacts_decorator as artifacts
 from bentoml.server import metrics
 from bentoml.loader import load
 from bentoml.archive import save

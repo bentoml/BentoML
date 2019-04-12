@@ -28,7 +28,7 @@ FEEDBACK_LOG_FILE_PATH = "/tmp/logs"
 FEEDBACK_LOG_FILE = "/tmp/logs/bentoml_feedback.log"
 
 
-def initialize_feedback_logger():
+def get_feedback_logger():
     formatter = jsonlogger.JsonFormatter('(request_id) (result)')
     feedback_logger = logging.getLogger(FEEDBACK_LOGGER_NAME)
 
@@ -45,10 +45,6 @@ def initialize_feedback_logger():
         handler.setFormatter(formatter)
         feedback_logger.addHandler(handler)
 
-    return get_feedback_logger()
-
-
-def get_feedback_logger():
     return logging.getLogger(FEEDBACK_LOGGER_NAME)
 
 

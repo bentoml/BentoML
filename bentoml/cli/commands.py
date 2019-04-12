@@ -48,17 +48,13 @@ def run(ctx, api_name, archive_path):
     Run an API definied in the BentoService loaded from archive
     """
     model_service = load(archive_path)
-    service_apis = model_service.get_service_apis()
 
-    matched_api_index = next(
-        (index for (index, d) in enumerate(service_apis) if d.name == api_name), None)
+    try:
+        api = next((api for api in model_service.get_service_apis() if api.name == api_name))
+    except StopIteration:
+        raise ValueError("Can't find API '{}' in Service '{}'".format(api_name, model_service.name))
 
-    if matched_api_index is None:
-        raise ValueError("Can't find api name inside model {}".format(api_name))
-    else:
-        matched_api = service_apis[matched_api_index]
-
-    matched_api.handler.handle_cli(ctx.args, matched_api.func, matched_api.options)
+    api.handler.handle_cli(ctx.args, api.func, api.options)
 
 
 # Example Usage: bentoml info /SAVED_ARCHIVE_PATH

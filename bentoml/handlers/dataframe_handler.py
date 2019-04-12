@@ -19,8 +19,11 @@ from __future__ import division
 from __future__ import print_function
 
 import json
+
 import pandas as pd
+import numpy as np
 from flask import Response, make_response
+
 from bentoml.handlers.base_handlers import CliHandler, RequestHandler
 from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
 
@@ -95,4 +98,12 @@ class DataframeHandler(RequestHandler, CliHandler):
         if options['input_columns_require']:
             check_missing_columns(options['input_columns_require'], df.columns)
 
-        print(func(df))
+        result = func(df)
+
+        # TODO: revisit cli handler output format and options
+        if isinstance(result, pd.DataFrame):
+            print(result.to_json())
+        elif isinstance(result, np.ndarray):
+            print(json.dumps(result.tolist()))
+        else:
+            print(result)

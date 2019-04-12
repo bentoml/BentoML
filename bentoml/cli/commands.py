@@ -60,7 +60,7 @@ def run(ctx, api_name, archive_path):
 
     matched_api.handler.handle_cli(ctx.args, matched_api.func, matched_api.options)
 
-
+# Example Usage: bentoml info /SAVED_ARCHIVE_PATH
 @cli.command()
 @click.argument('archive-path', type=click.STRING)
 def info(archive_path):

@@ -13,7 +13,7 @@ def create_rest_server():
     saved_path = generate_fake_dataframe_model()
     model_service = bentoml.load(saved_path)
 
-    rest_server = BentoAPIServer('test_rest_server', model_service, 5000)
+    rest_server = BentoAPIServer(model_service)
     return rest_server
 
 
@@ -30,11 +30,5 @@ def test_api_function_route():
 
     response = test_client.post('/predict', data=json.dumps(data), content_type='application/json')
 
-    if sys.version_info.major < 3:
-        import ast
-        loaded_json = json.loads(response.data)
-        response_data = ast.literal_eval(str(response.data))
-    else:
-        print(response.data)
-        response_data = json.loads(response.data)
+    response_data = json.loads(response.data)
     assert 15 == response_data[0]['age']

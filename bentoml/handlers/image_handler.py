@@ -20,8 +20,9 @@ from __future__ import print_function
 
 import json
 import os
-import numpy as np
 
+import numpy as np
+import pandas as pd
 from werkzeug.utils import secure_filename
 from flask import Response
 
@@ -106,4 +107,12 @@ class ImageHandler(RequestHandler, CliHandler):
             raise ImportError("opencv-python package is required to use ImageHandler")
 
         image = cv2.imread(file_path)
-        print(func(image))
+
+        result = func(image)
+        # TODO: revisit cli handler output format and options
+        if isinstance(result, pd.DataFrame):
+            print(result.to_json())
+        elif isinstance(result, np.ndarray):
+            print(json.dumps(result.tolist()))
+        else:
+            print(result)

@@ -1,11 +1,8 @@
 import os
-import io
-import argparse
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-import pytest
 
-from bentoml import BentoService, load, api, artifacts
+from bentoml import BentoService, api, artifacts
 from bentoml.artifact import PickleArtifact
 from bentoml.handlers import ImageHandler
 
@@ -36,4 +33,4 @@ def test_image_handler(capsys):
     api.handler.handle_cli(fake_args, api.func, {})
     out, err = capsys.readouterr()
 
-    assert out.endswith('[360, 480, 3]')
+    assert out.strip().endswith('(360, 480, 3)')

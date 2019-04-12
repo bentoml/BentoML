@@ -19,6 +19,8 @@ from __future__ import division
 from __future__ import print_function
 
 import json
+import pandas as pd
+import numpy as np
 from flask import Response, make_response
 
 from bentoml.handlers.base_handlers import RequestHandler, CliHandler
@@ -67,5 +69,14 @@ class JsonHandler(RequestHandler, CliHandler):
 
         with open(parsed_args.input, 'r') as content_file:
             content = content_file.read()
-            input_json = json.loads(content)
-            print(func(input_json))
+
+        input_json = json.loads(content)
+        result = func(input_json)
+
+        # TODO: revisit cli handler output format and options
+        if isinstance(result, pd.DataFrame):
+            print(result.to_json())
+        elif isinstance(result, np.ndarray):
+            print(json.dumps(result.tolist()))
+        else:
+            print(result)

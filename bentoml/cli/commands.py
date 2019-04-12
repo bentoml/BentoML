@@ -22,7 +22,7 @@ import json
 
 import click
 
-from bentoml.loader import load
+from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.cli.default_command_group import DefaultCommandGroup
 
@@ -59,6 +59,7 @@ def run(ctx, api_name, archive_path):
         matched_api = service_apis[matched_api_index]
 
     matched_api.handler.handle_cli(ctx.args, matched_api.func, matched_api.options)
+
 
 # Example Usage: bentoml info /SAVED_ARCHIVE_PATH
 @cli.command()

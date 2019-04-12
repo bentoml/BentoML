@@ -285,7 +285,7 @@ class BentoService(BentoServiceBase):
 
     @classmethod
     def from_archive(cls, path):
-        from bentoml.loader import load_bentoml_config
+        from bentoml.archive import load_bentoml_config
 
         # TODO: add model.env.verify() to check dependencies and python version etc
         if cls._bento_archive_path is not None:

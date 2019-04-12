@@ -18,18 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.handlers.base_handlers import CliHandler, RequestHandler
+from bentoml.archive.archiver import save
+from bentoml.archive.loader import load, load_bentoml_config
 
-
-class PytorchTensorHandler(RequestHandler, CliHandler):
-    """
-    Tensor handlers for Pytorch models
-    """
-
-    @staticmethod
-    def handle_request(request, func, options=None):
-        raise NotImplementedError
-
-    @staticmethod
-    def handle_cli(args, func, options=None):
-        raise NotImplementedError
+__all__ = ['save', 'load', 'load_bentoml_config']

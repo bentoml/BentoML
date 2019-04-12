@@ -25,9 +25,9 @@ import uuid
 from datetime import datetime
 
 from bentoml.utils import Path
-from bentoml.utils.py_module_utils import copy_used_py_modules
 from bentoml.utils.s3 import is_s3_url, upload_to_s3
 from bentoml.version import __version__ as BENTOML_VERSION
+from bentoml.archive.py_module_utils import copy_used_py_modules
 
 BENTO_MODEL_SETUP_PY_TEMPLATE = """\
 import os

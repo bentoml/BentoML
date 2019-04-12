@@ -14,7 +14,6 @@ def generate_test_input_file():
     import uuid
     random_id = uuid.uuid4().hex
     tempdir = tempfile.mkdtemp()
-    print(tempdir)
     file_path = os.path.join(tempdir, random_id + '.json')
 
     with open(file_path, 'w') as f:

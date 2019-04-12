@@ -36,6 +36,7 @@ class DefaultCommandGroup(click.Group):
         decorator = super(DefaultCommandGroup, self).command(*args, **kwargs)
 
         if default_command:
+
             def default_command_format_usage(ctx, formatter):
                 formatter.write_usage(ctx.parent.command_path, default_command_usage)
 
@@ -44,6 +45,7 @@ class DefaultCommandGroup(click.Group):
                 cmd.format_usage = default_command_format_usage
                 self.default_command = cmd.name  # pylint:disable=attribute-defined-outside-init
                 return cmd
+
             return new_decorator
 
         return decorator
@@ -62,6 +64,7 @@ def conditional_argument(condition, *param_decls, **attrs):
     """
     Attaches an argument to the command only when condition is True
     """
+
     def decorator(f):
         if condition:
             f = click.argument(*param_decls, **attrs)(f)

@@ -1,0 +1,18 @@
+scanner:
+    diff_only: True
+    linter: pycodestyle
+
+pycodestyle:
+    max-line-length: 100
+
+only_mention_files_with_errors: True
+
+message:
+    opened:
+        header: "Hello @{name}! Thanks for opening this PR."
+        footer: "Please update this PR"
+    updated:
+        header: "Hello @{name}, Thanks for updating this PR."
+        footer:
+          no_errors: "There are currently no PEP 8 issues detected in this PR. Cheers! :beers:"
+        

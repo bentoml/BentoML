@@ -33,8 +33,8 @@ def load_bentoml_config(path):
         with open(os.path.join(path, 'bentoml.yml'), 'r') as f:
             bentml_yml_content = f.read()
     except FileNotFoundError:
-        raise ValueError("Bentoml can't locate bentoml config file 'bentoml.yml' "
-                         " in the give path: {}".format(path))
+        raise ValueError("BentoML can't locate config file 'bentoml.yml'"
+                         " in archive path: {}".format(path))
 
     yaml = YAML()
     # load bentoml.yml as config

@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import bentoml
 from bentoml.artifact import PickleArtifact
-from bentoml.archive import _validate_version_str
+from bentoml.archive.archiver import _validate_version_str
 
 def test_validate_version_str_fails():
     with pytest.raises(ValueError):

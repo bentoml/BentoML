@@ -21,20 +21,28 @@ from __future__ import print_function
 import click
 
 
-# based on https://stackoverflow.com/questions/52053491/a-command-without-name-in-click
 class DefaultCommandGroup(click.Group):
-    """allow a default command for a group"""
+    """
+    Allow a default command for a group, based on:
+    """
 
     def command(self, *args, **kwargs):
         default_command = kwargs.pop('default_command', False)
+        default_command_usage = kwargs.pop('default_command_usage', '')
+        default_command_display_name = kwargs.pop('default_command_display_name', '<>')
+
         if default_command and not args:
-            kwargs['name'] = kwargs.get('name', '<>')
+            kwargs['name'] = kwargs.get('name', default_command_display_name)
         decorator = super(DefaultCommandGroup, self).command(*args, **kwargs)
 
         if default_command:
 
+            def default_command_format_usage(ctx, formatter):
+                formatter.write_usage(ctx.parent.command_path, default_command_usage)
+
             def new_decorator(f):
                 cmd = decorator(f)
+                cmd.format_usage = default_command_format_usage
                 self.default_command = cmd.name  # pylint:disable=attribute-defined-outside-init
                 return cmd
 
@@ -50,3 +58,16 @@ class DefaultCommandGroup(click.Group):
             # command did not parse, assume it is the default command
             args.insert(0, self.default_command)
             return super(DefaultCommandGroup, self).resolve_command(ctx, args)
+
+
+def conditional_argument(condition, *param_decls, **attrs):
+    """
+    Attaches an argument to the command only when condition is True
+    """
+
+    def decorator(f):
+        if condition:
+            f = click.argument(*param_decls, **attrs)(f)
+        return f
+
+    return decorator

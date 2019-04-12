@@ -86,12 +86,12 @@ svc = IrisClassifier.pack(model=clf)
 svc.save('./saved_bento', version='v0.0.1') # Saving archive to ./saved_bento/IrisClassifier/v0.0.1/
 ```
 
-That's it. Now you have created your first BentoML archive. It's a directory
-containing all the source code, data files and configurations required to run
+That's it. Now you have created your first BentoArchive. It's a directory
+containing all the source code, data and configurations files required to run
 this model in production. There are a few ways you could use this archive:
 
 
-### Start REST API server with a BentoML archive
+### Serving a BentoArchive via REST API
 
 For exposing your model as a HTTP API endpoint, you can simply use the `bentoml
 serve` command:
@@ -105,7 +105,7 @@ environment when using `bentoml serve` command. More commonly we recommand using
 BentoML API server with Docker(see below).
 
 
-### Build API server Docker Image
+### Build API server Docker Image from BentoArchive
 
 You can build a Docker Image for running API server hosting your BentoML archive
 by using the archive folder as docker build context:
@@ -123,7 +123,7 @@ or run it locally for development and testing:
 docker run -p 5000:5000 myorg/iris-classifier
 ```
 
-### Loading BentoML archive in Python
+### Loading BentoArchive in Python
 
 ```python
 import bentoml
@@ -138,7 +138,7 @@ BentoML also supports loading an archive from s3 location directly:
 bento_svc = bentoml.load('s3://my-bento-svc/iris_classifier/')
 ```
 
-### Install archive as PyPI package
+### Install BentoArchive as PyPI package
 
 First install your exported bentoml service with `pip`:
 
@@ -164,20 +164,30 @@ cd ./saved_bento/IrisClassifier/v0.0.1/
 python setup.py sdist upload
 ```
 
-### Use BentoML archive from CLI
+### Loading BentoArchive from CLI
 
 When `pip install` a BentoML archive, it also provides you with a CLI tool for
 accsing your BentoService's apis from command line:
 ```bash
 pip install ./saved_bento/IrisClassifier/v0.0.1/
 
-IrisClassifier --help
+IrisClassifier info
 
-IrisClassifier predict --input='[5.1, 3.5, 1.4, 0.2]'
+IrisClassifier predict --input='./test.csv'
 ```
 
-The CLI access also made it very easy to put your saved BentoService into an
-Airflow DAG or use it in combination with other shell tools.
+Alternatively, you can also use the `bentoml` cli to load and run a BentoArchive
+directly:
+
+```bash
+bentoml info ./saved_bento/IrisClassifier/v0.0.1/
+
+bentoml predict ./saved_bento/IrisClassifier/v0.0.1/ --input='./test.csv'
+```
+
+CLI access made it very easy to put your saved BentoArchive into an Airflow
+DAG, integrate your packaged ML model into testing environment or use it in
+combination with other shell tools.
 
 
 ## Examples

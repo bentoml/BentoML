@@ -18,18 +18,21 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.handlers.base_handlers import CliHandler, RequestHandler
+from bentoml.handlers.base_handlers import BentoHandler
 
 
-class PytorchTensorHandler(RequestHandler, CliHandler):
+class PytorchTensorHandler(BentoHandler):
     """
     Tensor handlers for Pytorch models
     """
 
-    @staticmethod
-    def handle_request(request, func, options=None):
+    def __init__(self, signature_def):
+        self.signature_def = signature_def
+
+
+    def handle_request(self, request):
         raise NotImplementedError
 
-    @staticmethod
-    def handle_cli(args, func, options=None):
+
+    def handle_cli(self, args):
         raise NotImplementedError

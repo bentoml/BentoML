@@ -18,23 +18,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from abc import ABCMeta, abstractmethod
-from six import add_metaclass
 
+class BentoHandler():
 
-@add_metaclass(ABCMeta)
-class RequestHandler():
+    @property
+    def func(self):
+        return self._func
 
-    @staticmethod
-    @abstractmethod
-    def handle_request(request, func, options):
-        pass
+    @func.setter
+    def func(self, f):
+        self._func = f
 
+    def handle_request(self, request):
+        raise NotImplementedError
 
-@add_metaclass(ABCMeta)
-class CliHandler():
-
-    @staticmethod
-    @abstractmethod
-    def handle_cli(args, func, options):
-        pass
+    def handle_cli(self, args):
+        raise NotImplementedError

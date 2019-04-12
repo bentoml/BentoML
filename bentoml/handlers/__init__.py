@@ -18,7 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.handlers.base_handlers import RequestHandler, CliHandler
+from bentoml.handlers.base_handlers import BentoHandler
 
 from bentoml.handlers.dataframe_handler import DataframeHandler
 from bentoml.handlers.pytorch_tensor_handler import PytorchTensorHandler
@@ -27,6 +27,6 @@ from bentoml.handlers.json_handler import JsonHandler
 from bentoml.handlers.image_handler import ImageHandler
 
 __all__ = [
-    'RequestHandler', 'CliHandler', 'DataframeHandler', 'PytorchTensorHandler',
+    'BentoHandler', 'DataframeHandler', 'PytorchTensorHandler',
     'TensorflowTensorHandler', 'JsonHandler', 'ImageHandler'
 ]

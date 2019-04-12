@@ -51,7 +51,7 @@ class BentoServiceAPI(object):
     with BentoAPIServer and BentoCLI
     """
 
-    def __init__(self, name, handler, func, options):
+    def __init__(self, name, handler, func):
         """
         :param name: API name
         :param handler: A BentoHandler that transforms HTTP Request and/or
@@ -62,7 +62,6 @@ class BentoServiceAPI(object):
         self._name = name
         self._handler = handler
         self._func = func
-        self._options = options
 
     @property
     def name(self):
@@ -75,10 +74,6 @@ class BentoServiceAPI(object):
     @property
     def func(self):
         return self._func
-
-    @property
-    def options(self):
-        return self._options
 
 
 @add_metaclass(ABCMeta)
@@ -110,14 +105,13 @@ class BentoServiceBase(object):
                 api_name = _get_func_attr(function, '_api_name')
                 handler = _get_func_attr(function, '_handler')
                 func = function.__get__(self)
-                options = _get_func_attr(function, '_options')
-                self._service_apis.append(BentoServiceAPI(api_name, handler, func, options))
+                self._service_apis.append(BentoServiceAPI(api_name, handler, func))
 
     def get_service_apis(self):
         return self._service_apis
 
 
-def api_decorator(handler, api_name=None, options=None):
+def api_decorator(handler_class, *args, **kwargs):
     """
     Decorator for adding api to a BentoService
 
@@ -130,21 +124,20 @@ def api_decorator(handler, api_name=None, options=None):
     >>>     def fraud_detect(self, parsed_json):
     >>>         # do something
     >>>
-    >>>     @api(DataframeHandler)
+    >>>     @api(DataframeHandler, input_json_orient='records')
     >>>     def identity(self, df):
     >>>         # do something
     """
 
     def decorator(func):
+        api_name = kwargs.pop('api_name', func.__name__)
+        handler = handler_class(*args, **kwargs)
+        handler.func = func
+
         _set_func_attr(func, '_is_api', True)
         _set_func_attr(func, '_handler', handler)
         # TODO: validate api_name
-        if api_name is None:
-            _set_func_attr(func, '_api_name', func.__name__)
-        else:
-            _set_func_attr(func, '_api_name', api_name)
-
-        _set_func_attr(func, '_options', options)
+        _set_func_attr(func, '_api_name', api_name)
 
         return func
 

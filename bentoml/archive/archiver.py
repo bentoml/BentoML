@@ -65,10 +65,11 @@ setuptools.setup(
     package_data={{
         '{name}': ['bentoml.yml', 'artifacts/*']
     }},
-    # TODO: add console entry_point for using model from cli
-    # entry_points={{
-    #
-    # }}
+    entry_points={{
+        'console_scripts': [
+            '{name}={name}:cli',
+        ],
+    }}
 )
 """
 
@@ -115,6 +116,8 @@ INIT_PY_TEMPLATE = """\
 import os
 import sys
 
+from bentoml.cli import create_bentoml_cli
+
 __VERSION__ = "{pypi_package_version}"
 
 __module_path = os.path.abspath(os.path.split(__file__)[0])
@@ -127,6 +130,8 @@ sys.path.remove(__module_path)
 # Set _bento_archive_path, which tells the model where to load its artifacts
 {service_name} = {module_name}.{service_name}
 {service_name}._bento_archive_path = __module_path
+
+cli=create_bentoml_cli(__module_path)
 
 __all__ = ['__version__', '{service_name}']
 """

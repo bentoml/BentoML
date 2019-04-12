@@ -21,9 +21,11 @@ from __future__ import print_function
 import click
 
 
-# based on https://stackoverflow.com/questions/52053491/a-command-without-name-in-click
 class DefaultCommandGroup(click.Group):
-    """allow a default command for a group"""
+    """
+    Allow a default command for a group, based on:
+    https://stackoverflow.com/questions/52053491/a-command-without-name-in-click
+    """
 
     def command(self, *args, **kwargs):
         default_command = kwargs.pop('default_command', False)
@@ -32,12 +34,10 @@ class DefaultCommandGroup(click.Group):
         decorator = super(DefaultCommandGroup, self).command(*args, **kwargs)
 
         if default_command:
-
             def new_decorator(f):
                 cmd = decorator(f)
                 self.default_command = cmd.name  # pylint:disable=attribute-defined-outside-init
                 return cmd
-
             return new_decorator
 
         return decorator
@@ -50,3 +50,4 @@ class DefaultCommandGroup(click.Group):
             # command did not parse, assume it is the default command
             args.insert(0, self.default_command)
             return super(DefaultCommandGroup, self).resolve_command(ctx, args)
+

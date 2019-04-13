@@ -72,7 +72,7 @@ setuptools.setup(
         'cv2': cv2,
         'test': tests_require,
     },
-    url="https://github.com/atalaya-io/BentoML",
+    url="https://github.com/bentoml/BentoML",
     packages=setuptools.find_packages(exclude=['tests*']),
     classifiers=[
         "Programming Language :: Python :: 2.7",

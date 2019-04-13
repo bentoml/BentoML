@@ -6,6 +6,7 @@ import bentoml  # noqa: E402
 from bentoml.artifact import PickleArtifact  # noqa: E402
 
 
+
 BASE_TEST_PATH = "/tmp/bentoml-test"
 
 

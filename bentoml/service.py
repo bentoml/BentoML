@@ -117,7 +117,8 @@ class BentoServiceBase(object):
                 api_name = _get_func_attr(function, '_api_name')
                 handler = _get_func_attr(function, '_handler')
 
-                func = function.__get__(self) # Bind api method call with self(BentoService instance)
+                # Bind api method call with self(BentoService instance)
+                func = function.__get__(self)
 
                 self._service_apis.append(BentoServiceAPI(self, api_name, handler, func))
 
@@ -145,7 +146,7 @@ def api_decorator(handler_cls, *args, **kwargs):
 
     def decorator(func):
         api_name = kwargs.pop('api_name', func.__name__)
-        handler = handler_cls(*args, **kwargs) # create handler instance and attach to api method
+        handler = handler_cls(*args, **kwargs)  # create handler instance and attach to api method
 
         _set_func_attr(func, '_is_api', True)
         _set_func_attr(func, '_handler', handler)

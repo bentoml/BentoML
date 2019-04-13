@@ -29,10 +29,8 @@ class PytorchTensorHandler(BentoHandler):
     def __init__(self, signature_def):
         self.signature_def = signature_def
 
-
     def handle_request(self, request, func):
         raise NotImplementedError
-
 
     def handle_cli(self, args, func):
         raise NotImplementedError

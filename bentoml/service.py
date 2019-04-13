@@ -51,17 +51,23 @@ class BentoServiceAPI(object):
     with BentoAPIServer and BentoCLI
     """
 
-    def __init__(self, name, handler, func):
+    def __init__(self, service, name, handler, func):
         """
+        :param service: ref to service containing this API
         :param name: API name
         :param handler: A BentoHandler that transforms HTTP Request and/or
             CLI options into parameters for API func
         :param func: API func contains the actual API callback, this is
             typically the 'predict' method on a model
         """
+        self._service = service
         self._name = name
         self._handler = handler
         self._func = func
+
+    @property
+    def service(self):
+        return self._service
 
     @property
     def name(self):
@@ -74,6 +80,12 @@ class BentoServiceAPI(object):
     @property
     def func(self):
         return self._func
+
+    def handle_request(self, request):
+        return self.handler.handle_request(request, self.func)
+
+    def handle_cli(self, args):
+        return self.handler.handle_request(args, self.func)
 
 
 @add_metaclass(ABCMeta)
@@ -104,14 +116,16 @@ class BentoServiceBase(object):
             if hasattr(function, '_is_api'):
                 api_name = _get_func_attr(function, '_api_name')
                 handler = _get_func_attr(function, '_handler')
-                func = function.__get__(self)
-                self._service_apis.append(BentoServiceAPI(api_name, handler, func))
+
+                func = function.__get__(self) # Bind api method call with self(BentoService instance)
+
+                self._service_apis.append(BentoServiceAPI(self, api_name, handler, func))
 
     def get_service_apis(self):
         return self._service_apis
 
 
-def api_decorator(handler_class, *args, **kwargs):
+def api_decorator(handler_cls, *args, **kwargs):
     """
     Decorator for adding api to a BentoService
 
@@ -131,8 +145,7 @@ def api_decorator(handler_class, *args, **kwargs):
 
     def decorator(func):
         api_name = kwargs.pop('api_name', func.__name__)
-        handler = handler_class(*args, **kwargs)
-        handler.func = func
+        handler = handler_cls(*args, **kwargs) # create handler instance and attach to api method
 
         _set_func_attr(func, '_is_api', True)
         _set_func_attr(func, '_handler', handler)

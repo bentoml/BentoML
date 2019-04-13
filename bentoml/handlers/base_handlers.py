@@ -21,16 +21,8 @@ from __future__ import print_function
 
 class BentoHandler():
 
-    @property
-    def func(self):
-        return self._func
-
-    @func.setter
-    def func(self, f):
-        self._func = f
-
-    def handle_request(self, request):
+    def handle_request(self, request, func):
         raise NotImplementedError
 
-    def handle_cli(self, args):
+    def handle_cli(self, args, func):
         raise NotImplementedError

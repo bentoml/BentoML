@@ -1,12 +1,10 @@
 import os
 import sys
-import bentoml
 
-try:
-    from bentoml.artifact import PickleArtifact
-except ImportError:
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from bentoml.artifact import PickleArtifact
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import bentoml  # noqa: E402
+from bentoml.artifact import PickleArtifact  # noqa: E402
+
 
 
 BASE_TEST_PATH = "/tmp/bentoml-test"
@@ -27,7 +25,7 @@ class MyFakeBentoModel(bentoml.BentoService):
     My RestServiceTestModel packaging with BentoML
     """
 
-    @bentoml.api(bentoml.handlers.DataframeHandler, options={'input_columns_require': ['age']})
+    @bentoml.api(bentoml.handlers.DataframeHandler, input_columns_require=['age'])
     def predict(self, df):
         """
         predict expects dataframe as input

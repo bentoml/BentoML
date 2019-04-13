@@ -35,7 +35,7 @@ def test_image_handler(capsys):
     api = ms.get_service_apis()[0]
 
     fake_args = ['--input=./tests/test_image_1.jpg']
-    api.handler.handle_cli(fake_args, api.func, {})
+    api.handle_cli(fake_args)
     out, err = capsys.readouterr()
 
     assert out.strip().endswith('(360, 480, 3)')

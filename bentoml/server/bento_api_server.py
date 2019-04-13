@@ -100,7 +100,7 @@ def bento_service_api_wrapper(api, service_name, service_version, logger):
         with request_metric_time.time():
             request_time = time()
             request_id = str(uuid.uuid4())
-            response = api.handler.handle_request(request, api.func, api.options)
+            response = api.handle_request(request)
             response.headers['request_id'] = request_id
             if response.status_code == 200:
                 metadata = {

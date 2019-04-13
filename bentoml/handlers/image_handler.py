@@ -26,15 +26,8 @@ import pandas as pd
 from werkzeug.utils import secure_filename
 from flask import Response
 
-from bentoml.handlers.base_handlers import RequestHandler, CliHandler
-from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
-
-default_options = {
-    'input_names': ['image'],
-    'accept_multiple_files': False,
-    'accept_file_extensions': ['.jpg', '.png', '.jpeg'],
-    'output_format': 'json'
-}
+from bentoml.handlers.base_handlers import BentoHandler
+from bentoml.handlers.utils import generate_cli_default_parser
 
 
 def check_file_format(file_name, accept_format_list):
@@ -47,13 +40,19 @@ def check_file_format(file_name, accept_format_list):
             raise ValueError('File format does not include in the white list')
 
 
-class ImageHandler(RequestHandler, CliHandler):
+class ImageHandler(BentoHandler):
     """
     Image handler take input image and process them and return response or stdout.
     """
 
-    @staticmethod
-    def handle_request(request, func, options=None):
+    def __init__(self, input_names=["image"], accept_multiple_files=False,
+                 accept_file_extensions=['.jpg', 'png', 'jpeg'], output_format='json'):
+        self.input_names = input_names
+        self.accept_multiple_files = accept_multiple_files
+        self.accept_file_extensions = accept_file_extensions
+        self.output_format = output_format
+
+    def handle_request(self, request, func):
         """
         Handle http request that has image file/s.  It will convert image into a
         ndarray for the function to consume.
@@ -67,12 +66,11 @@ class ImageHandler(RequestHandler, CliHandler):
         """
 
         if request.method == 'POST':
-            options = merge_dicts(default_options, options)
-            if not options.accept_multiple_files:
-                input_file = request.files[options.input_name]
+            if not self.accept_multiple_files:
+                input_file = request.files[self.input_names[0]]
                 file_name = secure_filename(input_file.filename)
 
-                check_file_format(file_name, options['accept_file_extensions'])
+                check_file_format(file_name, self.accept_file_extensions)
 
                 input_data_string = input_file.read()
                 input_data = np.fromstring(input_data_string, np.uint8)
@@ -81,7 +79,7 @@ class ImageHandler(RequestHandler, CliHandler):
 
             output = func(input_data)
 
-            if options['output_format'] == 'json':
+            if self.output_format == 'json':
                 result = json.dumps(output)
                 response = Response(response=result, status=200, mimetype='applications/json')
                 return response
@@ -90,14 +88,12 @@ class ImageHandler(RequestHandler, CliHandler):
         else:
             return Response(response="Only accept POST request", status=400)
 
-    @staticmethod
-    def handle_cli(args, func, options=None):
-        options = merge_dicts(default_options, options)
+    def handle_cli(self, args, func):
         parser = generate_cli_default_parser()
         parsed_args = parser.parse_args(args)
         file_path = parsed_args.input
 
-        check_file_format(file_path, options['accept_file_extensions'])
+        check_file_format(file_path, self.accept_file_extensions)
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(file_path)
 

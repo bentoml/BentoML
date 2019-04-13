@@ -51,18 +51,23 @@ class BentoServiceAPI(object):
     with BentoAPIServer and BentoCLI
     """
 
-    def __init__(self, name, handler, func, options):
+    def __init__(self, service, name, handler, func):
         """
+        :param service: ref to service containing this API
         :param name: API name
         :param handler: A BentoHandler that transforms HTTP Request and/or
             CLI options into parameters for API func
         :param func: API func contains the actual API callback, this is
             typically the 'predict' method on a model
         """
+        self._service = service
         self._name = name
         self._handler = handler
         self._func = func
-        self._options = options
+
+    @property
+    def service(self):
+        return self._service
 
     @property
     def name(self):
@@ -76,9 +81,11 @@ class BentoServiceAPI(object):
     def func(self):
         return self._func
 
-    @property
-    def options(self):
-        return self._options
+    def handle_request(self, request):
+        return self.handler.handle_request(request, self.func)
+
+    def handle_cli(self, args):
+        return self.handler.handle_cli(args, self.func)
 
 
 @add_metaclass(ABCMeta)
@@ -109,15 +116,17 @@ class BentoServiceBase(object):
             if hasattr(function, '_is_api'):
                 api_name = _get_func_attr(function, '_api_name')
                 handler = _get_func_attr(function, '_handler')
+
+                # Bind api method call with self(BentoService instance)
                 func = function.__get__(self)
-                options = _get_func_attr(function, '_options')
-                self._service_apis.append(BentoServiceAPI(api_name, handler, func, options))
+
+                self._service_apis.append(BentoServiceAPI(self, api_name, handler, func))
 
     def get_service_apis(self):
         return self._service_apis
 
 
-def api_decorator(handler, api_name=None, options=None):
+def api_decorator(handler_cls, *args, **kwargs):
     """
     Decorator for adding api to a BentoService
 
@@ -130,21 +139,19 @@ def api_decorator(handler, api_name=None, options=None):
     >>>     def fraud_detect(self, parsed_json):
     >>>         # do something
     >>>
-    >>>     @api(DataframeHandler)
+    >>>     @api(DataframeHandler, input_json_orient='records')
     >>>     def identity(self, df):
     >>>         # do something
     """
 
     def decorator(func):
+        api_name = kwargs.pop('api_name', func.__name__)
+        handler = handler_cls(*args, **kwargs)  # create handler instance and attach to api method
+
         _set_func_attr(func, '_is_api', True)
         _set_func_attr(func, '_handler', handler)
         # TODO: validate api_name
-        if api_name is None:
-            _set_func_attr(func, '_api_name', func.__name__)
-        else:
-            _set_func_attr(func, '_api_name', api_name)
-
-        _set_func_attr(func, '_options', options)
+        _set_func_attr(func, '_api_name', api_name)
 
         return func
 

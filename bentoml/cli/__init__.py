@@ -61,7 +61,7 @@ def create_bentoml_cli(installed_archive_path=None):
             raise ValueError("Can't find API '{}' in Service '{}'".format(
                 api_name, model_service.name))
 
-        api.handler.handle_cli(ctx.args, api.func, api.options)
+        api.handle_cli(ctx.args)
 
     # Example Usage: bentoml info /SAVED_ARCHIVE_PATH
     @bentoml_cli.command()

@@ -18,18 +18,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.handlers.base_handlers import RequestHandler, CliHandler
+from bentoml.handlers.base_handlers import BentoHandler
 
 
-class TensorflowTensorHandler(RequestHandler, CliHandler):
+class TensorflowTensorHandler(BentoHandler):
     """
     Tensor handlers for Tensorflow models
     """
 
-    @staticmethod
-    def handle_request(request, func, options=None):
+    def handle_request(self, request, func):
         raise NotImplementedError
 
-    @staticmethod
-    def handle_cli(args, func, options=None):
+    def handle_cli(self, args, func):
         raise NotImplementedError

@@ -24,8 +24,8 @@ import pandas as pd
 import numpy as np
 from flask import Response, make_response
 
-from bentoml.handlers.base_handlers import CliHandler, RequestHandler
-from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
+from bentoml.handlers.base_handlers import BentoHandler
+from bentoml.handlers.utils import generate_cli_default_parser
 
 
 def check_missing_columns(required_columns, df_columns):
@@ -34,69 +34,67 @@ def check_missing_columns(required_columns, df_columns):
         raise ValueError('Missing columns: {}'.format(','.join(missing_columns)))
 
 
-default_options = {
-    'input_json_orient': 'records',
-    'output_json_orient': 'records',
-    'input_columns_require': []
-}
-
-
-class DataframeHandler(RequestHandler, CliHandler):
+class DataframeHandler(BentoHandler):
     """
     Create Data frame handler.  Dataframe handler will take inputs from rest request
     or cli options and return response for REST or stdout for CLI
     """
 
-    @staticmethod
-    def handle_request(request, func, options=None):
-        options = merge_dicts(default_options, options)
+    def __init__(self, input_json_orient='records', output_json_orient='records',
+                 input_columns_require=[]):
+        self.input_json_orient = input_json_orient
+        self.output_json_orient = output_json_orient
+        self.input_columns_require = input_columns_require
+
+    def handle_request(self, request, func):
+
         if request.headers.get('input_json_orient'):
-            options['input_json_orient'] = request.headers['input_json_orient']
+            self.input_json_orient = request.headers['input_json_orient']
 
         if request.content_type == 'application/json':
             df = pd.read_json(
-                request.data.decode('utf-8'), orient=options['input_json_orient'], dtype=False)
+                request.data.decode('utf-8'), orient=self.input_json_orient, dtype=False)
         elif request.content_type == 'text/csv':
             df = pd.read_csv(request.data.decode('utf-8'))
         else:
             return make_response(400)
 
-        if options['input_columns_require']:
-            check_missing_columns(options['input_columns_require'], df.columns)
+        if self.input_columns_require:
+            check_missing_columns(self.input_columns_require, df.columns)
 
         output = func(df)
 
         if isinstance(output, pd.DataFrame):
-            result = output.to_json(orient=options['output_json_orient'])
+            result = output.to_json(orient=self.output_json_orient)
+        elif isinstance(output, np.ndarray):
+            result = json.dumps(output.tolist())
         else:
             result = json.dumps(output)
 
         response = Response(response=result, status=200, mimetype="application/json")
         return response
 
-    @staticmethod
-    def handle_cli(args, func, options=None):
+    def handle_cli(self, args, func):
         parser = generate_cli_default_parser()
         parser.add_argument('--input_json_orient', default='records')
         parsed_args = parser.parse_args(args)
-        options = merge_dicts(default_options, options)
 
         # TODO: Add support for parsing cli argument string as input
         file_path = parsed_args.input
 
         if parsed_args.input_json_orient:
-            options['input_json_orient'] = parsed_args.input_json_orient
+            self.input_json_orient = parsed_args.input_json_orient
 
         if file_path.endswith('.csv'):
             df = pd.read_csv(file_path)
         elif file_path.endswith('.json'):
-            df = pd.read_json(file_path, orient=options['input_json_orient'], dtype=False)
+            df = pd.read_json(file_path, orient=self.input_json_orient, dtype=False)
         else:
             raise ValueError("BentoML DataframeHandler currently only supports '.csv'"
                              "and '.json' files as cli input.")
 
-        if options['input_columns_require']:
-            check_missing_columns(options['input_columns_require'], df.columns)
+        if self.input_columns_require:
+            check_missing_columns(self.input_columns_require, df.columns)
 
         result = func(df)
 

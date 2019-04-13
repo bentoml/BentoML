@@ -23,23 +23,20 @@ import pandas as pd
 import numpy as np
 from flask import Response, make_response
 
-from bentoml.handlers.base_handlers import RequestHandler, CliHandler
-from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
-
-default_options = {
-    'input_json_orient': 'records',
-    'output_json_orient': 'records',
-}
+from bentoml.handlers.base_handlers import BentoHandler
+from bentoml.handlers.utils import generate_cli_default_parser
 
 
-class JsonHandler(RequestHandler, CliHandler):
+class JsonHandler(BentoHandler):
     """
     Json handler take input json str and process them and return response or stdout.
     """
 
-    @staticmethod
-    def handle_request(request, func, options=None):
-        options = merge_dicts(default_options, options)
+    def __init__(self, input_json_orient='records', output_json_orient='records'):
+        self.input_json_orient = input_json_orient
+        self.output_json_orient = output_json_orient
+
+    def handle_request(self, request, func):
         if request.content_type == 'application/json':
             parsed_json = json.loads(request.data.decode('utf-8'))
         else:
@@ -61,9 +58,7 @@ class JsonHandler(RequestHandler, CliHandler):
         response = Response(response=result, status=200, mimetype="application/json")
         return response
 
-    @staticmethod
-    def handle_cli(args, func, options=None):
-        options = merge_dicts(default_options, options)
+    def handle_cli(self, args, func):
         parser = generate_cli_default_parser()
         parsed_args = parser.parse_args(args)
 

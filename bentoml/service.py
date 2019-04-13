@@ -85,7 +85,7 @@ class BentoServiceAPI(object):
         return self.handler.handle_request(request, self.func)
 
     def handle_cli(self, args):
-        return self.handler.handle_request(args, self.func)
+        return self.handler.handle_cli(args, self.func)
 
 
 @add_metaclass(ABCMeta)

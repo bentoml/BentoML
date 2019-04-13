@@ -34,4 +34,5 @@ if __name__ == "__main__":
     print("BentoML model archive saved to path: {}".format(saved_path))
 
     bento_service = load(saved_path)
+    print(X[0:1])
     print("Loaded BentoService #predict output: {}".format(bento_service.predict(X[0:1])))

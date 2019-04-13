@@ -21,16 +21,6 @@ from __future__ import print_function
 import argparse
 
 
-def merge_dicts(x, y):
-    """
-    Merge 2 dictionaries into one. The second directory override first dictionary's key
-    """
-    y = y if y is not None else {}
-    temp = x.copy()
-    temp.update(y)
-    return temp
-
-
 def generate_cli_default_parser():
     """
     Create default parser for CLI tool.  With input and output option

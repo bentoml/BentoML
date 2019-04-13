@@ -1,16 +1,11 @@
 import os
 import json
 import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+from tests.utils import generate_fake_dataframe_model  # noqa; E402
 
-try:
-    import bentoml
-    from bentoml.server import BentoAPIServer
-    from tests.utils import generate_fake_dataframe_model
-except ImportError:
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-    import bentoml
-    from bentoml.server import BentoAPIServer
-    from tests.utils import generate_fake_dataframe_model
+import bentoml  # noqa: E402
+from bentoml.server import BentoAPIServer  # noqa: E402
 
 
 def create_rest_server():

@@ -25,20 +25,13 @@ import numpy as np
 from flask import Response, make_response
 
 from bentoml.handlers.base_handlers import BentoHandler
-from bentoml.handlers.utils import merge_dicts, generate_cli_default_parser
+from bentoml.handlers.utils import generate_cli_default_parser
 
 
 def check_missing_columns(required_columns, df_columns):
     missing_columns = set(required_columns) - set(df_columns)
     if missing_columns:
         raise ValueError('Missing columns: {}'.format(','.join(missing_columns)))
-
-
-default_options = {
-    'input_json_orient': 'records',
-    'output_json_orient': 'records',
-    'input_columns_require': []
-}
 
 
 class DataframeHandler(BentoHandler):
@@ -53,10 +46,10 @@ class DataframeHandler(BentoHandler):
         self.output_json_orient = output_json_orient
         self.input_columns_require = input_columns_require
 
-    def handle_request(self, request):
+    def handle_request(self, request, func):
 
         if request.headers.get('input_json_orient'):
-           self.input_json_orient = request.headers['input_json_orient']
+            self.input_json_orient = request.headers['input_json_orient']
 
         if request.content_type == 'application/json':
             df = pd.read_json(
@@ -69,7 +62,7 @@ class DataframeHandler(BentoHandler):
         if self.input_columns_require:
             check_missing_columns(self.input_columns_require, df.columns)
 
-        output = self.func(df)
+        output = func(df)
 
         if isinstance(output, pd.DataFrame):
             result = output.to_json(orient=self.output_json_orient)
@@ -81,7 +74,7 @@ class DataframeHandler(BentoHandler):
         response = Response(response=result, status=200, mimetype="application/json")
         return response
 
-    def handle_cli(self, args):
+    def handle_cli(self, args, func):
         parser = generate_cli_default_parser()
         parser.add_argument('--input_json_orient', default='records')
         parsed_args = parser.parse_args(args)
@@ -103,7 +96,7 @@ class DataframeHandler(BentoHandler):
         if self.input_columns_require:
             check_missing_columns(self.input_columns_require, df.columns)
 
-        result = self.func(df)
+        result = func(df)
 
         # TODO: revisit cli handler output format and options
         if isinstance(result, pd.DataFrame):

@@ -1,15 +1,11 @@
 import os
 import sys
 import pytest
-import bentoml
 
-try:
-    from bentoml.artifact import PickleArtifact
-    from bentoml.archive.archiver import _validate_version_str
-except ImportError:
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from bentoml.artifact import PickleArtifact
-    from bentoml.archive.archiver import _validate_version_str
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import bentoml  # noqa: E402
+from bentoml.artifact import PickleArtifact  # noqa: E402
+from bentoml.archive.archiver import _validate_version_str  # noqa: E402
 
 
 def test_validate_version_str_fails():
@@ -61,7 +57,7 @@ def test_save_and_load_model():
     assert len(model_service.get_service_apis()) == 1
     api = model_service.get_service_apis()[0]
     assert api.name == 'predict'
-    assert api.handler == bentoml.handlers.DataframeHandler
+    assert isinstance(api.handler, bentoml.handlers.DataframeHandler)
     assert api.func(1) == 2
 
     # Check api methods are available

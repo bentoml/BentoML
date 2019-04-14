@@ -307,7 +307,7 @@ class BentoService(BentoServiceBase):
             path = temporary_path
 
         artifacts_path = path
-        if os.path.isdir(os.path.join(artifacts_path, 'artifacts')):
+        if not os.path.isdir(os.path.join(artifacts_path, 'artifacts')):
             artifacts_path = os.path.join(path, cls.name())
 
         bentoml_config = load_bentoml_config(path)

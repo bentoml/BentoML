@@ -100,7 +100,7 @@ def load_bento_service_class(archive_path):
 
     model_service_class = module.__getattribute__(config['service_name'])
     # Set _bento_archive_path, which tells BentoService where to load its artifacts
-    model_service_class._bento_archive_path = archive_path
+    model_service_class._bento_archive_path = os.path.join(archive_path, config['service_name'])
 
     return model_service_class
 

@@ -26,6 +26,7 @@ from ruamel.yaml import YAML
 
 from bentoml.version import __version__ as BENTOML_VERSION
 from bentoml.utils.s3 import is_s3_url, download_from_s3
+from bentoml.utils.exceptions import BentoMLException
 
 
 def load_bentoml_config(path):
@@ -49,22 +50,32 @@ def load_bentoml_config(path):
     return bentoml_config
 
 
-def load(path):
+def load_bento_service_class(archive_path):
     """
-    Load a BentoService or BentoModel from saved archive in given path
+    Load a BentoService class from saved archive in given path
 
-    :param path: A BentoArchive path generated from BentoService.save call
-    :return: BentoService
+    :param archive_path: A BentoArchive path generated from BentoService.save call
+    :return: BentoService class
     """
-    if is_s3_url(path):
+    if is_s3_url(archive_path):
         tempdir = tempfile.mkdtemp()
-        download_from_s3(path, tempdir)
-        path = tempdir
+        download_from_s3(archive_path, tempdir)
+        archive_path = tempdir
 
-    config = load_bentoml_config(path)
+    config = load_bentoml_config(archive_path)
 
     # Load target module containing BentoService class from given path
-    module_file_path = os.path.join(path, config['service_name'], config['module_file'])
+    module_file_path = os.path.join(archive_path, config['service_name'], config['module_file'])
+    if not os.path.isfile(module_file_path):
+        # Try loading without service_name prefix, for loading from a installed PyPi
+        module_file_path = os.path.join(archive_path, config['module_file'])
+
+    if not os.path.isfile(module_file_path):
+        raise BentoMLException('Can not locate module_file {} in archive {}'.format(
+            config['module_file'], archive_path))
+
+    # Prepend archive_path to sys.path, to make python code deps avaiable
+    sys.path.insert(0, archive_path)
 
     module_name = config['module_name']
     if module_name in sys.modules:
@@ -84,6 +95,16 @@ def load(path):
         import imp
         module = imp.load_source(module_name, module_file_path)
 
-    model_service_class = module.__getattribute__(config['service_name'])
+    # Remove archive_path from sys.path to avoid import naming conflicts
+    sys.path.remove(archive_path)
 
-    return model_service_class.from_archive(path)
+    model_service_class = module.__getattribute__(config['service_name'])
+    # Set _bento_archive_path, which tells BentoService where to load its artifacts
+    model_service_class._bento_archive_path = archive_path
+
+    return model_service_class
+
+
+def load(archive_path):
+    svc_cls = load_bento_service_class(archive_path)
+    return svc_cls()

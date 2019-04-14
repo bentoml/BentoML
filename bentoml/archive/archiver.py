@@ -116,20 +116,14 @@ INIT_PY_TEMPLATE = """\
 import os
 import sys
 
+from bentoml.archive.loader import load_bento_service_class
 from bentoml.cli import create_bentoml_cli
 
 __VERSION__ = "{pypi_package_version}"
 
-__module_path = os.path.abspath(os.path.split(__file__)[0])
+__module_path = os.path.abspath(os.path.dirname(__file__))
 
-# Prepend __module_path to sys.path, to avoid name conflicts with other installed modules
-sys.path.insert(0, __module_path)
-import {module_name}
-sys.path.remove(__module_path)
-
-# Set _bento_archive_path, which tells the model where to load its artifacts
-{service_name} = {module_name}.{service_name}
-{service_name}._bento_archive_path = __module_path
+{service_name} = load_bento_service_class(__module_path)
 
 cli=create_bentoml_cli(__module_path)
 
@@ -220,9 +214,6 @@ def save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
     # copy over all custom model code
     module_name, module_file = copy_used_py_modules(bento_service.__class__.__module__,
                                                     os.path.join(path, bento_service.name))
-
-    if os.path.isabs(module_file):
-        module_file = module_name.replace('.', os.sep) + '.py'
 
     # create __init__.py
     with open(os.path.join(path, bento_service.name, '__init__.py'), "w") as f:

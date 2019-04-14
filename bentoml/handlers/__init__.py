@@ -27,6 +27,6 @@ from bentoml.handlers.json_handler import JsonHandler
 from bentoml.handlers.image_handler import ImageHandler
 
 __all__ = [
-    'BentoHandler', 'DataframeHandler', 'PytorchTensorHandler',
-    'TensorflowTensorHandler', 'JsonHandler', 'ImageHandler'
+    'BentoHandler', 'DataframeHandler', 'PytorchTensorHandler', 'TensorflowTensorHandler',
+    'JsonHandler', 'ImageHandler'
 ]

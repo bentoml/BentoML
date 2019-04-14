@@ -295,30 +295,23 @@ class BentoService(BentoServiceBase):
         from bentoml.archive import load_bentoml_config
 
         # TODO: add model.env.verify() to check dependencies and python version etc
-        if cls._bento_archive_path is not None:
-            # When calling load from pip installled bento model, use installed
-            # python package for loading and the same path for '/artifacts'
+        if cls._bento_archive_path is not None and cls._bento_archive_path != path:
+            raise BentoMLException(
+                "Loaded BentoArchive(from {}) can't be loaded again from a different"
+                "archive path {}".format(cls._bento_archive_path, path))
 
-            # TODO: warn user that 'path' parameter is ignored if it's not None here
-            path = cls._bento_archive_path
-            artifacts_path = path
-        else:
-            if path is None:
-                raise BentoMLException("Loading path is required for BentoArchive: {}.".format(
-                    cls.name()))
+        if is_s3_url(path):
+            temporary_path = tempfile.mkdtemp()
+            download_from_s3(path, temporary_path)
+            # Use loacl temp path for the following loading operations
+            path = temporary_path
 
-            # When calling load on generated archive directory, look for /artifacts
-            # directory under module sub-directory
-            if is_s3_url(path):
-                temporary_path = tempfile.mkdtemp()
-                download_from_s3(path, temporary_path)
-                # Use loacl temp path for the following loading operations
-                path = temporary_path
-
+        artifacts_path = path
+        if os.path.isdir(os.path.join(artifacts_path, 'artifacts')):
             artifacts_path = os.path.join(path, cls.name())
 
         bentoml_config = load_bentoml_config(path)
-
+        # TODO: check archive type and allow loading archive only
         if bentoml_config['service_name'] != cls.name():
             raise BentoMLException(
                 'BentoService name does not match with BentoML Archive in path: {}'.format(path))

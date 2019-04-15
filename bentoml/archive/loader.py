@@ -102,6 +102,8 @@ def load_bento_service_class(archive_path):
     model_service_class = module.__getattribute__(config['service_name'])
     # Set _bento_archive_path, which tells BentoService where to load its artifacts
     model_service_class._bento_archive_path = archive_path
+    # Set cls._version, service instance can access it via svc.version
+    model_service_class._bento_service_version = config['service_version']
 
     return model_service_class
 

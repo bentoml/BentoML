@@ -63,6 +63,8 @@ def test_save_and_load_model():
     # Check api methods are available
     assert model_service.predict(1) == 2
 
+    assert model_service.version == version
+
 
 @pytest.mark.skip(reason="Setup s3 creds in travis or use a mock")
 def test_save_and_load_model_from_s3():

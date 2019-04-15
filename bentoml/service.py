@@ -201,7 +201,6 @@ class BentoService(BentoServiceBase):
     # User may override this if they don't want the generated model to
     # have the same name as their Python model class name
     _bento_service_name = None
-    # _bento_service_version = None
 
     # For BentoService loaded from achive directory, this will be set to archive path
     # when user install exported bento model as a PyPI package, this will be set to
@@ -214,6 +213,9 @@ class BentoService(BentoServiceBase):
     # Describe the desired environment for this BentoService using
     # `bentoml.service_env.BentoServiceEnv`
     _env = {}
+
+    # This can only be set by BentoML library when loading from archive
+    _bento_service_version = None
 
     def __init__(self, artifacts=None, env=None):
         if artifacts is None:
@@ -232,7 +234,6 @@ class BentoService(BentoServiceBase):
             for artifact in artifacts:
                 self._artifacts[artifact.name] = artifact
 
-        self._version = None  # Can only be set by BentoML library when loading from archive
         self._init_env(env)
         self._config_service_apis()
         self.name = self.__class__.name()
@@ -268,7 +269,7 @@ class BentoService(BentoServiceBase):
     @property
     def version(self):
         try:
-            return self._version
+            return self.__class__._bento_service_version
         except AttributeError:
             raise BentoMLException("Only BentoService loaded from archive has version attribute")
 
@@ -321,5 +322,4 @@ class BentoService(BentoServiceBase):
 
         artifacts = ArtifactCollection.load(artifacts_path, cls._artifacts_spec)
         svc = cls(artifacts)
-        svc._version = bentoml_config['service_version']
         return svc

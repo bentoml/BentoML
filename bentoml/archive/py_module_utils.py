@@ -117,7 +117,11 @@ def copy_used_py_modules(target_module, destination):
     # prefix used to find installed Python library
     site_or_dist_package_path += [sys.prefix]
     # prefix used to find machine-specific Python library
-    site_or_dist_package_path += [sys.base_prefix]
+    try:
+        site_or_dist_package_path += [sys.base_prefix]
+    except AttributeError:
+        # ignore when in PY2 there is no sys.base_prefix
+        pass
 
     # Look for dependencies that are not distributed python package, but users'
     # local python code, all other dependencies must be defined with @env

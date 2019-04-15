@@ -116,18 +116,21 @@ INIT_PY_TEMPLATE = """\
 import os
 import sys
 
-from bentoml.archive.loader import load_bento_service_class
+from bentoml.archive import loader
 from bentoml.cli import create_bentoml_cli
 
 __VERSION__ = "{pypi_package_version}"
 
 __module_path = os.path.abspath(os.path.dirname(__file__))
 
-{service_name} = load_bento_service_class(__module_path)
+{service_name} = loader.load_bento_service_class(__module_path)
 
 cli=create_bentoml_cli(__module_path)
 
-__all__ = ['__version__', '{service_name}']
+def load():
+    return loader.load(__module_path)
+
+__all__ = ['__version__', '{service_name}', 'load']
 """
 
 BENTOML_CONFIG_YAML_TEMPLATE = """\
@@ -176,8 +179,8 @@ def save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
 
     s3_url = None
     if is_s3_url(dst):
-        s3_url = os.path.join(dst, bento_service.name, version)
         # TODO: check s3_url not exist, otherwise raise exception
+        s3_url = os.path.join(dst, bento_service.name, version)
         temp_dir = tempfile.mkdtemp()
         Path(temp_dir, bento_service.name).mkdir(parents=True, exist_ok=True)
         # Update path to subfolder in the form of 'base/service_name/version/'

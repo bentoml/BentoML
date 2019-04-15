@@ -148,9 +148,9 @@ pip install ./saved_bento/IrisClassifier/v0.0.1/
 
 Now you can import it and used it as a python module:
 ```python
-from IrisClassifier import IrisClassifier
+import IrisClassifier
 
-installed_svc = IrisClassifier()
+installed_svc = IrisClassifier.load()
 installed_svc.predict(X[0])
 ```
 

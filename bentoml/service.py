@@ -307,7 +307,10 @@ class BentoService(BentoServiceBase):
             path = temporary_path
 
         artifacts_path = path
-        if not os.path.isdir(os.path.join(artifacts_path, 'artifacts')):
+        # For pip installed BentoService, artifacts directory is located at
+        # 'package_path/artifacts/', but for loading from BentoArchive, it is
+        # in 'path/{service_name}/artifacts/'
+        if not os.path.isdir(os.path.join(path, 'artifacts')):
             artifacts_path = os.path.join(path, cls.name())
 
         bentoml_config = load_bentoml_config(path)

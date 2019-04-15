@@ -55,6 +55,7 @@ def load_bento_service_class(archive_path):
     Load a BentoService class from saved archive in given path
 
     :param archive_path: A BentoArchive path generated from BentoService.save call
+        or the path to pip installed BentoArchive directory
     :return: BentoService class
     """
     if is_s3_url(archive_path):
@@ -74,7 +75,7 @@ def load_bento_service_class(archive_path):
         raise BentoMLException('Can not locate module_file {} in archive {}'.format(
             config['module_file'], archive_path))
 
-    # Prepend archive_path to sys.path, to make python code deps avaiable
+    # Prepend archive_path to sys.path for loading extra python dependencies
     sys.path.insert(0, archive_path)
 
     module_name = config['module_name']
@@ -100,11 +101,11 @@ def load_bento_service_class(archive_path):
 
     model_service_class = module.__getattribute__(config['service_name'])
     # Set _bento_archive_path, which tells BentoService where to load its artifacts
-    model_service_class._bento_archive_path = os.path.join(archive_path, config['service_name'])
+    model_service_class._bento_archive_path = archive_path
 
     return model_service_class
 
 
 def load(archive_path):
     svc_cls = load_bento_service_class(archive_path)
-    return svc_cls()
+    return svc_cls.from_archive(archive_path)

@@ -19,9 +19,11 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import re
 import sys
 import inspect
 import importlib
+from shutil import copyfile
 from modulefinder import ModuleFinder
 
 from six import string_types, iteritems
@@ -31,7 +33,19 @@ from bentoml.utils.exceptions import BentoMLException
 
 
 def _get_module_src_file(module):
+    """
+    Return module.__file__, change extension to '.py' if __file__ is ending with '.pyc'
+    """
     return module.__file__[:-1] if module.__file__.endswith('.pyc') else module.__file__
+
+
+def _is_valid_py_identifier(s):
+    """
+    Return true if string is in a valid python identifier format:
+
+    https://docs.python.org/2/reference/lexical_analysis.html#identifiers
+    """
+    return re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', s) is not None
 
 
 def copy_used_py_modules(target_module, destination):
@@ -40,27 +54,33 @@ def copy_used_py_modules(target_module, destination):
     and copy all source files to destination path, essentially creating
     a source distribution of target_module
     """
-    if isinstance(target_module, string_types):
-        target_module = importlib.import_module(target_module)
-    else:
-        target_module = inspect.getmodule(target_module)
 
-    if target_module.__name__ == '__main__' and not target_module.__file__:
+    # When target_module is a string, try import it
+    if isinstance(target_module, string_types):
+        try:
+            target_module = importlib.import_module(target_module)
+        except ImportError:
+            pass
+    target_module = inspect.getmodule(target_module)
+
+    # When target module is defined in interactive session, we can not easily
+    # get the class definition into a python module file and distribute it
+    if target_module.__name__ == '__main__' and not hasattr(target_module, '__file__'):
         raise BentoMLException(
             "Custom BentoModel class can not be defined in Python interactive REPL, try "
-            "writing the class definition to a file and import, e.g. my_bentoml_model.py")
+            "writing the class definition to a file and import it.")
 
     try:
         target_module_name = target_module.__spec__.name
     except AttributeError:
         target_module_name = target_module.__name__
 
-    # TODO: handle when __main__ script filename starts with numbers
     target_module_file = _get_module_src_file(target_module)
 
-    # TODO: Remove this two lines?
     if target_module_name == '__main__':
-        target_module_name = target_module_file[:-3].replace(os.sep, '.')
+        # Assuming no relative import in this case
+        target_module_file_name = os.path.split(target_module_file)[1]
+        target_module_name = target_module_file_name[:-3]  # remove '.py'
 
     # Find all modules must be imported for target module to run
     finder = ModuleFinder()
@@ -73,13 +93,19 @@ def copy_used_py_modules(target_module, destination):
         # with current python version. And that may result in SyntaxError.
         pass
 
-    # Remove dependencies not in current project source code
-    # all third party dependencies must be defined in BentoEnv when creating model
-    user_packages_and_modules = {}
-    site_or_dist_package_path = [f for f in sys.path if f.endswith('-packages')] + [sys.prefix]
+    # extra site-packages or dist-packages directory
+    site_or_dist_package_path = [f for f in sys.path if f.endswith('-packages')]
+    # prefix used to find installed Python library
+    site_or_dist_package_path += [sys.prefix]
+    # prefix used to find machine-specific Python library
+    site_or_dist_package_path += [sys.base_prefix]
 
+    # Look for dependencies that are not distributed python package, but users'
+    # local python code, all other dependencies must be defined with @env
+    # decorator when creating a new BentoService class
+    user_packages_and_modules = {}
     for name, module in iteritems(finder.modules):
-        if module.__file__ is not None:
+        if hasattr(module, '__file__') and module.__file__ is not None:
             module_src_file = _get_module_src_file(module)
 
             is_module_in_site_or_dist_package = False
@@ -101,32 +127,38 @@ def copy_used_py_modules(target_module, destination):
 
     for module_name, module in iteritems(user_packages_and_modules):
         module_file = _get_module_src_file(module)
+        relative_path = _get_module_relative_file_path(module_name, module_file)
+        target_file = os.path.join(destination, relative_path)
 
-        with open(module_file, "rb") as f:
-            src_code = f.read()
+        # Create target directory if not exist
+        Path(os.path.dirname(target_file)).mkdir(parents=True, exist_ok=True)
 
-        if not os.path.isabs(module_file):
-            # For modules within current top level package, module_file here should be a
-            # relative path to the src file
-            target_file = os.path.join(destination, module_file)
-
-        elif os.path.split(module_file)[1] == '__init__.py':
-            # for module a.b.c in 'some_path/a/b/c/__init__.py', copy file to
-            # 'destination/a/b/c/__init__.py'
-            target_file = os.path.join(destination, module_name.replace('.', os.sep), '__init__.py')
-
-        else:
-            # for module a.b.c in 'some_path/a/b/c.py', copy file to 'destination/a/b/c.py'
-            target_file = os.path.join(destination, module_name.replace('.', os.sep) + '.py')
-
-        target_path = os.path.dirname(target_file)
-        Path(target_path).mkdir(parents=True, exist_ok=True)
-
-        with open(target_file, 'wb') as f:
-            f.write(src_code)
+        # Copy module file to BentoArchive for distribution
+        copyfile(module_file, target_file)
 
     for root, _, files in os.walk(destination):
         if '__init__.py' not in files:
             Path(os.path.join(root, '__init__.py')).touch()
 
-    return target_module_name, target_module_file
+    target_module_relative_path = _get_module_relative_file_path(target_module_name, target_module_file)
+
+    return target_module_name, target_module_relative_path
+
+
+def _get_module_relative_file_path(module_name, module_file):
+
+    if not os.path.isabs(module_file):
+        # For modules within current top level package, module_file here should
+        # already be a relative path to the src file
+        relative_path = module_file
+
+    elif os.path.split(module_file)[1] == '__init__.py':
+        # for module a.b.c in 'some_path/a/b/c/__init__.py', copy file to
+        # 'destination/a/b/c/__init__.py'
+        relative_path = os.path.join(module_name.replace('.', os.sep), '__init__.py')
+
+    else:
+        # for module a.b.c in 'some_path/a/b/c.py', copy file to 'destination/a/b/c.py'
+        relative_path = os.path.join(module_name.replace('.', os.sep) + '.py')
+
+    return relative_path

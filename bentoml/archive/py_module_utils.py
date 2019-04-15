@@ -48,6 +48,25 @@ def _is_valid_py_identifier(s):
     return re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', s) is not None
 
 
+def _get_module_relative_file_path(module_name, module_file):
+
+    if not os.path.isabs(module_file):
+        # For modules within current top level package, module_file here should
+        # already be a relative path to the src file
+        relative_path = module_file
+
+    elif os.path.split(module_file)[1] == '__init__.py':
+        # for module a.b.c in 'some_path/a/b/c/__init__.py', copy file to
+        # 'destination/a/b/c/__init__.py'
+        relative_path = os.path.join(module_name.replace('.', os.sep), '__init__.py')
+
+    else:
+        # for module a.b.c in 'some_path/a/b/c.py', copy file to 'destination/a/b/c.py'
+        relative_path = os.path.join(module_name.replace('.', os.sep) + '.py')
+
+    return relative_path
+
+
 def copy_used_py_modules(target_module, destination):
     """
     bundle given module, and all its dependencies within top level package,
@@ -140,25 +159,7 @@ def copy_used_py_modules(target_module, destination):
         if '__init__.py' not in files:
             Path(os.path.join(root, '__init__.py')).touch()
 
-    target_module_relative_path = _get_module_relative_file_path(target_module_name, target_module_file)
+    target_module_relative_path = _get_module_relative_file_path(target_module_name,
+                                                                 target_module_file)
 
     return target_module_name, target_module_relative_path
-
-
-def _get_module_relative_file_path(module_name, module_file):
-
-    if not os.path.isabs(module_file):
-        # For modules within current top level package, module_file here should
-        # already be a relative path to the src file
-        relative_path = module_file
-
-    elif os.path.split(module_file)[1] == '__init__.py':
-        # for module a.b.c in 'some_path/a/b/c/__init__.py', copy file to
-        # 'destination/a/b/c/__init__.py'
-        relative_path = os.path.join(module_name.replace('.', os.sep), '__init__.py')
-
-    else:
-        # for module a.b.c in 'some_path/a/b/c.py', copy file to 'destination/a/b/c.py'
-        relative_path = os.path.join(module_name.replace('.', os.sep) + '.py')
-
-    return relative_path

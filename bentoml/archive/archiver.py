@@ -123,10 +123,7 @@ __VERSION__ = "{pypi_package_version}"
 
 __module_path = os.path.abspath(os.path.dirname(__file__))
 
-# Prepend __module_path to sys.path for loading extra python dependencies
-sys.path.insert(0, __module_path)
 {service_name} = load_bento_service_class(__module_path)
-sys.path.remove(__module_path)
 
 cli=create_bentoml_cli(__module_path)
 

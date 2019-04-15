@@ -97,7 +97,7 @@ For exposing your model as a HTTP API endpoint, you can simply use the `bentoml
 serve` command:
 
 ```bash
-bentoml serve --archive-path="./saved_bento/IrisClassifier/v0.0.1/"
+bentoml serve ./saved_bento/IrisClassifier/v0.0.1/
 ```
 
 Note: you must ensure the pip and conda dependencies are available in your python

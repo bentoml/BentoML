@@ -46,7 +46,7 @@ class ImageHandler(BentoHandler):
     """
 
     def __init__(self, input_names=["image"], accept_multiple_files=False,
-                 accept_file_extensions=['.jpg', 'png', 'jpeg'], output_format='json'):
+                 accept_file_extensions=['.jpg', '.png', '.jpeg'], output_format='json'):
         self.input_names = input_names
         self.accept_multiple_files = accept_multiple_files
         self.accept_file_extensions = accept_file_extensions

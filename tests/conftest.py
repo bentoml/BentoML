@@ -1,23 +1,23 @@
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import bentoml  # noqa: E402
 from bentoml.artifact import PickleArtifact  # noqa: E402
 
-BASE_TEST_PATH = "/tmp/bentoml-test"
 
-
-class MyFakeModel(object):
+class TestModel(object):
 
     def predict(self, df):
         df['age'] = df['age'].add(5)
         return df
 
 
-@bentoml.artifacts([PickleArtifact('fake_model')])
+@bentoml.artifacts([PickleArtifact('model')])
 @bentoml.env()
-class MyFakeBentoModel(bentoml.BentoService):
+class TestBentoService(bentoml.BentoService):
     """
     My RestServiceTestModel packaging with BentoML
     """
@@ -27,15 +27,22 @@ class MyFakeBentoModel(bentoml.BentoService):
         """
         predict expects dataframe as input
         """
-        return self.artifacts.fake_model.predict(df)
+        return self.artifacts.model.predict(df)
 
 
-def generate_fake_dataframe_model():
+@pytest.fixture()
+def bento_service():
     """
-    Generate a fake model, saved it to tmp and return saved_path
+    Create a new TestBentoService
     """
-    fake_model = MyFakeModel()
-    ms = MyFakeBentoModel.pack(fake_model=fake_model)
-    saved_path = ms.save(BASE_TEST_PATH)
+    test_model = TestModel()
+    return TestBentoService.pack(model=test_model)
 
+
+@pytest.fixture()
+def bento_archive_path(bento_service, tmpdir):
+    """
+    Create a new TestBentoService, saved it to tmpdir, and return full saved_path
+    """
+    saved_path = bento_service.save(str(tmpdir))
     return saved_path

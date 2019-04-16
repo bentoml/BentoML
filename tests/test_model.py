@@ -25,10 +25,7 @@ class MyTestBentoService(bentoml.BentoService):
         return self.artifacts.model.predict(df)
 
 
-BASE_TEST_PATH = "/tmp/bentoml-test"
-
-
-def test_save_and_load_model():
+def test_save_and_load_model(tmpdir):
     test_model = MyTestModel()
     ms = MyTestBentoService.pack(model=test_model)
 
@@ -36,9 +33,9 @@ def test_save_and_load_model():
 
     import uuid
     version = "test_" + uuid.uuid4().hex
-    saved_path = ms.save(BASE_TEST_PATH, version=version)
+    saved_path = ms.save(str(tmpdir), version=version)
 
-    model_path = os.path.join(BASE_TEST_PATH, 'MyTestBentoService', version)
+    model_path = os.path.join(str(tmpdir), 'MyTestBentoService', version)
     assert os.path.exists(model_path)
 
     model_service = bentoml.load(saved_path)

@@ -6,6 +6,7 @@ from bentoml import BentoService, api, artifacts
 from bentoml.artifact import PickleArtifact
 from bentoml.handlers import ImageHandler
 
+
 class TestImageModel(object):
 
     def predict(self, image_ndarray):
@@ -29,7 +30,7 @@ def test_image_handler(capsys, tmp_path):
     import numpy as np
     img_file = os.path.join(tmp_path, 'img.png')
     cv2.imwrite(img_file, np.zeros((10, 10)))
-    
+
     test_args = ['--input={}'.format(img_file)]
     api.handle_cli(test_args)
     out, err = capsys.readouterr()

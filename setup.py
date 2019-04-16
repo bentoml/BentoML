@@ -22,7 +22,9 @@ install_requires = [
     'python-json-logger',
     'boto3',
     'Werkzeug',
-    'pathlib2'
+    'pathlib2',
+    'distlib',
+    'requests'
 ]
 
 dev_requires = [

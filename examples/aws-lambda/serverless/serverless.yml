@@ -1,0 +1,31 @@
+service: bentoml-aws-lambda-example
+
+provider:
+  name: aws
+  runtime: python3.7
+  stage: dev
+  region: us-west-2
+
+package:
+  include:
+    - handler.py
+    - vendors
+  exclude:
+    - '**/*'
+
+functions:
+  predict:
+    handler: handler.predict
+    events:
+      - http:
+          path: /predict
+          method: post
+
+plugins:
+  - serverless-offline
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: false
+    pythonBin: ${opt:pytonBin, self:provider.runtime}

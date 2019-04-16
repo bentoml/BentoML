@@ -116,19 +116,19 @@ INIT_PY_TEMPLATE = """\
 import os
 import sys
 
-from bentoml.archive import loader
+from bentoml import archive
 from bentoml.cli import create_bentoml_cli
 
 __VERSION__ = "{pypi_package_version}"
 
 __module_path = os.path.abspath(os.path.dirname(__file__))
 
-{service_name} = loader.load_bento_service_class(__module_path)
+{service_name} = archive.load_bento_service_class(__module_path)
 
 cli=create_bentoml_cli(__module_path)
 
 def load():
-    return loader.load(__module_path)
+    return archive.load(__module_path)
 
 __all__ = ['__version__', '{service_name}', 'load']
 """

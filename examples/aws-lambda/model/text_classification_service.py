@@ -9,7 +9,10 @@ from bentoml.handlers import JsonHandler
     TfKerasModelArtifact('model'),
     PickleArtifact('word_index')
 ])
-@env(conda_dependencies=['tensorflow', 'numpy', 'pandas'])
+@env(requirements_txt="""tensorflow>=1.13.1 
+numpy>=1.16.2
+pandas>=0.24.2
+""")
 class TextClassificationService(BentoService):
    
     def word_to_index(self, word):

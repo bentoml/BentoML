@@ -9,6 +9,7 @@ provider:
 package:
   include:
     - handler.py
+    - vendors
   exclude:
     - '**/*'
 

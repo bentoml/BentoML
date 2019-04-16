@@ -36,6 +36,7 @@ def check_file_format(file_name, accept_format_list):
     """
     if accept_format_list:
         _, extension = os.path.splitext(file_name)
+        print("################", extension, accept_format_list)
         if extension not in accept_format_list:
             raise ValueError('File format does not include in the white list')
 
@@ -46,7 +47,7 @@ class ImageHandler(BentoHandler):
     """
 
     def __init__(self, input_names=["image"], accept_multiple_files=False,
-                 accept_file_extensions=['.jpg', 'png', 'jpeg'], output_format='json'):
+                 accept_file_extensions=['.jpg', '.png', '.jpeg'], output_format='json'):
         self.input_names = input_names
         self.accept_multiple_files = accept_multiple_files
         self.accept_file_extensions = accept_file_extensions

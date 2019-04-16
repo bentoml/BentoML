@@ -5,20 +5,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import bentoml  # noqa: E402
 from bentoml.artifact import PickleArtifact  # noqa: E402
 
-
-
 BASE_TEST_PATH = "/tmp/bentoml-test"
 
 
 class MyFakeModel(object):
+
     def predict(self, df):
         df['age'] = df['age'].add(5)
         return df
 
 
-@bentoml.artifacts([
-    PickleArtifact('fake_model')
-])
+@bentoml.artifacts([PickleArtifact('fake_model')])
 @bentoml.env()
 class MyFakeBentoModel(bentoml.BentoService):
     """

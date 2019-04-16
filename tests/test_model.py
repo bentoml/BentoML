@@ -8,14 +8,13 @@ from bentoml.artifact import PickleArtifact  # noqa: E402
 
 
 class MyTestModel(object):
+
     def predict(self, input_data):
         return int(input_data) * 2
 
 
 @bentoml.env(conda_pip_dependencies=['scikit-learn'])
-@bentoml.artifacts([
-    PickleArtifact('model')
-])
+@bentoml.artifacts([PickleArtifact('model')])
 class MyTestBentoService(bentoml.BentoService):
 
     @bentoml.api(bentoml.handlers.DataframeHandler)

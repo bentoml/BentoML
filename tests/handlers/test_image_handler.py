@@ -13,14 +13,14 @@ except ImportError:
 
 
 class TestImageModel(object):
+
     def predict(self, image_ndarray):
         return image_ndarray.shape
 
 
-@artifacts([
-    PickleArtifact('clf')
-])
+@artifacts([PickleArtifact('clf')])
 class ImageHandlerModel(BentoService):
+
     @api(ImageHandler)
     def predict(self, input_data):
         return self.artifacts.clf.predict(input_data)

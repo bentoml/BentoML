@@ -30,8 +30,7 @@ def test_run_command_with_input_file():
 
     cli = create_bentoml_cli()
     run_cmd = cli.commands["<API_NAME>"]
-    result = runner.invoke(
-        run_cmd, ['predict', saved_path, '--input', input_path])
+    result = runner.invoke(run_cmd, ['predict', saved_path, '--input', input_path])
 
     assert result.exit_code == 0
     result_json = json.loads(result.output)

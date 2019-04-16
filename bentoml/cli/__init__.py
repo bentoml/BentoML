@@ -19,12 +19,13 @@ from __future__ import division
 from __future__ import print_function
 
 import json
-
+import os
 import click
 
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
+from bentoml.cli.utils import read_requirment_txt, download_manylinux_wheel_from_url, get_manylinux_wheel_url
 
 
 def create_bentoml_cli(installed_archive_path=None):
@@ -89,12 +90,40 @@ def create_bentoml_cli(installed_archive_path=None):
         server = BentoAPIServer(model_service, port=port)
         server.start()
 
+
     # pylint: enable=unused-variable
     return bentoml_cli
 
 
 def cli():
     _cli = create_bentoml_cli()
+
+    # pylint: disable=unused-variable
+
+    # Example Usage: bentoml build-aws-lambda-archive ./SAVED_ARCHIVE_PATH ./NEW_PATH
+    @_cli.command()
+    @click.argument('archive-path', type=click.STRING)
+    @click.argument('output-path', type=click.STRING)
+    @click.option('python-version', type=click.STRING, default='python3.7')
+    def build_aws_lambda_archive(archive_path, output_path, python_version):
+        """
+        Download AWS lambda compatilably packages into the target output path
+
+        It will go through, requirements_txt, to get a list of packages,
+        then download the manylinux wheels from pypi to the output path.
+        """
+        requirment_package_list = read_requirment_txt(os.path.join(archive_path, 'requirments.txt'))
+        for i in requirment_package_list:
+            desired_min_version = i.constraints[0][1]
+            url = get_manylinux_wheel_url(python_version, i.name, desired_min_version)
+            if url:
+                file_name = url.split('/').pop()
+                wheel_path = os.path.join(output_path, file_name)
+                download_manylinux_wheel_from_url(url, wheel_path)
+        return
+
+    # pylint: enable=unused-variable
+
     _cli()
 
 

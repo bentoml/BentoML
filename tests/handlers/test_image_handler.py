@@ -2,9 +2,9 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from bentoml import BentoService, api, artifacts
-from bentoml.artifact import PickleArtifact
-from bentoml.handlers import ImageHandler
+from bentoml import BentoService, api, artifacts  # noqa: E402
+from bentoml.artifact import PickleArtifact  # noqa: E402
+from bentoml.handlers import ImageHandler  # noqa: E402
 
 
 class TestImageModel(object):

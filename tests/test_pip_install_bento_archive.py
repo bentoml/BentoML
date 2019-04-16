@@ -1,12 +1,18 @@
+import sys
 import pandas as pd
 
 
-def test_pip_install_bento_archive(bento_archive_path):
+def test_pip_install_bento_archive(bento_archive_path, tmpdir):
+    install_path = str(tmpdir.mkdir('pip_local'))
     import subprocess
-    subprocess.call(['pip', 'install', bento_archive_path])
+    output = subprocess.check_output(
+        ['pip', 'install', '--target={}'.format(install_path), bento_archive_path]).decode()
+    assert 'Successfully installed TestBentoService' in output
 
-    test_bento_service_module = __import__('TestBentoService')
-    svc = test_bento_service_module.load()
+    sys.path.insert(0, install_path)
+    import TestBentoService
+    sys.path.remove(install_path)
+
+    svc = TestBentoService.load()
     df = svc.predict(pd.DataFrame(pd.DataFrame([1], columns=['age'])))
     assert df['age'].values[0] == 6
-    subprocess.call(['pip', 'uninstall', 'TestBentoService'])

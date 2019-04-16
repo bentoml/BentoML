@@ -20,12 +20,12 @@ from __future__ import print_function
 
 import re
 import os
-import tempfile
 import uuid
 from datetime import datetime
 
 from bentoml.utils import Path
 from bentoml.utils.s3 import is_s3_url, upload_to_s3
+from bentoml.utils.tempdir import TempDirectory
 from bentoml.version import __version__ as BENTOML_VERSION
 from bentoml.archive.py_module_utils import copy_used_py_modules
 
@@ -177,22 +177,30 @@ def save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
         version = _generate_new_version_str()
     _validate_version_str(version)
 
-    s3_url = None
-    if is_s3_url(dst):
-        # TODO: check s3_url not exist, otherwise raise exception
-        s3_url = os.path.join(dst, bento_service.name, version)
-        temp_dir = tempfile.mkdtemp()
-        Path(temp_dir, bento_service.name).mkdir(parents=True, exist_ok=True)
-        # Update path to subfolder in the form of 'base/service_name/version/'
-        path = os.path.join(temp_dir, bento_service.name, version)
-    else:
-        Path(os.path.join(dst), bento_service.name).mkdir(parents=True, exist_ok=True)
-        # Update path to subfolder in the form of 'base/service_name/version/'
-        path = os.path.join(dst, bento_service.name, version)
+    # Full path containing saved BentoArchive, it the dst path with service name
+    # and service version as prefix. e.g.:
+    # - s3://my-bucket/base_path => s3://my-bucket/base_path/service_name/version/
+    # - /tmp/my_bento_archive/ => /tmp/my_bento_archive/service_name/version/
+    full_saved_path = os.path.join(dst, bento_service.name, version)
 
-        if os.path.exists(path):
-            raise ValueError("Version {version} in Path: {dst} already "
-                             "exist.".format(version=version, dst=dst))
+    if is_s3_url(dst):
+        with TempDirectory() as tempdir:
+            _save(bento_service, tempdir, version, pypi_package_version)
+            upload_to_s3(full_saved_path, tempdir)
+    else:
+        _save(bento_service, dst, version, pypi_package_version)
+
+    return full_saved_path
+
+
+def _save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
+    Path(os.path.join(dst), bento_service.name).mkdir(parents=True, exist_ok=True)
+    # Update path to subfolder in the form of 'base/service_name/version/'
+    path = os.path.join(dst, bento_service.name, version)
+
+    if os.path.exists(path):
+        raise ValueError("Version {version} in Path: {dst} already "
+                         "exist.".format(version=version, dst=dst))
 
     os.mkdir(path)
     module_base_path = os.path.join(path, bento_service.name)
@@ -251,8 +259,3 @@ def save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
     with open(os.path.join(module_base_path, 'bentoml.yml'), 'w') as f:
         f.write(bentoml_yml_content)
 
-    if s3_url:
-        upload_to_s3(s3_url, path)
-        return s3_url
-    else:
-        return path

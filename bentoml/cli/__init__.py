@@ -22,6 +22,9 @@ import json
 import os
 import click
 
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
@@ -90,7 +93,6 @@ def create_bentoml_cli(installed_archive_path=None):
         server = BentoAPIServer(model_service, port=port)
         server.start()
 
-
     # pylint: enable=unused-variable
     return bentoml_cli
 
@@ -98,13 +100,17 @@ def create_bentoml_cli(installed_archive_path=None):
 def cli():
     _cli = create_bentoml_cli()
 
+    # Commands created here are mean to be used from generated service archive.  They
+    # are used as part of BentoML cli commands only.
+
+
     # pylint: disable=unused-variable
 
     # Example Usage: bentoml build-aws-lambda-archive ./SAVED_ARCHIVE_PATH ./NEW_PATH
     @_cli.command()
     @click.argument('archive-path', type=click.STRING)
     @click.argument('output-path', type=click.STRING)
-    @click.option('python-version', type=click.STRING, default='python3.7')
+    @click.option('--python-version', type=click.STRING, default='python3.6')
     def build_aws_lambda_archive(archive_path, output_path, python_version):
         """
         Download AWS lambda compatilably packages into the target output path
@@ -112,10 +118,14 @@ def cli():
         It will go through, requirements_txt, to get a list of packages,
         then download the manylinux wheels from pypi to the output path.
         """
-        requirment_package_list = read_requirment_txt(os.path.join(archive_path, 'requirments.txt'))
-        for i in requirment_package_list:
-            desired_min_version = i.constraints[0][1]
-            url = get_manylinux_wheel_url(python_version, i.name, desired_min_version)
+        if not os.path.isdir(output_path):
+            os.mkdir(output_path)
+
+        requirment_package_list = read_requirment_txt(
+            os.path.join(archive_path, 'requirements.txt'))
+        for name in requirment_package_list:
+            desired_min_version = requirment_package_list[name].constraints[0][1]
+            url = get_manylinux_wheel_url(python_version, name, desired_min_version)
             if url:
                 file_name = url.split('/').pop()
                 wheel_path = os.path.join(output_path, file_name)

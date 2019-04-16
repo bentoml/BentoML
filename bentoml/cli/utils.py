@@ -1,13 +1,12 @@
 import requests
 import os
 import zipfile
-from ruamel.yaml import YAML
 from distlib.util import parse_requirement
 
 manylinux_whell_file_suffix = {
-        'ptyhon2.7': 'cp27mu-manylinux_x86_64.whl',
-        'ptyhon3.6': 'cp36m-manylinux_x86_64.whl',
-        'ptyhon3.7': 'cp37m-manylinux_x86_64.whl'
+        'python2.7': 'cp27mu-manylinux1_x86_64.whl',
+        'python3.6': 'cp36m-manylinux1_x86_64.whl',
+        'python3.7': 'cp37m-manylinux1_x86_64.whl'
 }
 
 
@@ -19,15 +18,17 @@ def get_manylinux_wheel_url(python_version, package_name, package_version):
     res = requests.get(url, timeout=1.5)
     data = res.json()
 
-    if package_version not in data['release']:
+    if package_version not in data['releases']:
         return None
 
     for f in data['releases'][package_version]:
         if f['filename'].endswith(manylinux_whell_file_suffix[python_version]):
-            return f['url']
-        else:
-            return None
+            wheel_url = f['url']
 
+    if package_name == 'bentoml':
+        wheel_url = data['releases'][package_version][0]['url']
+
+    return wheel_url
 
 def download_manylinux_wheel_from_url(url, wheel_path):
     if not os.path.exists(wheel_path) or not zipfile.is_zipfile(wheel_path):

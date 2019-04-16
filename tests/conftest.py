@@ -2,7 +2,6 @@ import os
 import sys
 
 import pytest
-from bentoml.utils import Path
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import bentoml  # noqa: E402

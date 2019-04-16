@@ -36,7 +36,6 @@ def check_file_format(file_name, accept_format_list):
     """
     if accept_format_list:
         _, extension = os.path.splitext(file_name)
-        print("################", extension, accept_format_list)
         if extension not in accept_format_list:
             raise ValueError('File format does not include in the white list')
 

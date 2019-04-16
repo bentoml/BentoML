@@ -2,7 +2,6 @@ import os
 import json
 import sys
 
-
 try:
     import bentoml
     from bentoml.server import BentoAPIServer

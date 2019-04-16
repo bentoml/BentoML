@@ -21,15 +21,15 @@ class ImageHandlerModel(BentoService):
         return self.artifacts.clf.predict(input_data)
 
 
-def test_image_handler(capsys, tmp_path):
+def test_image_handler(capsys, tmpdir):
     test_model = TestImageModel()
     ms = ImageHandlerModel.pack(clf=test_model)
     api = ms.get_service_apis()[0]
 
     import cv2
     import numpy as np
-    img_file = os.path.join(tmp_path, 'img.png')
-    cv2.imwrite(img_file, np.zeros((10, 10)))
+    img_file = tmpdir.join('img.png')
+    cv2.imwrite(str(img_file), np.zeros((10, 10)))
 
     test_args = ['--input={}'.format(img_file)]
     api.handle_cli(test_args)

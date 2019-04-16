@@ -258,4 +258,3 @@ def _save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
     # as package data after pip installed as a python package
     with open(os.path.join(module_base_path, 'bentoml.yml'), 'w') as f:
         f.write(bentoml_yml_content)
-

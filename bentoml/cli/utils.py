@@ -4,9 +4,9 @@ import zipfile
 from distlib.util import parse_requirement
 
 manylinux_whell_file_suffix = {
-        'python2.7': 'cp27mu-manylinux1_x86_64.whl',
-        'python3.6': 'cp36m-manylinux1_x86_64.whl',
-        'python3.7': 'cp37m-manylinux1_x86_64.whl'
+    'python2.7': 'cp27mu-manylinux1_x86_64.whl',
+    'python3.6': 'cp36m-manylinux1_x86_64.whl',
+    'python3.7': 'cp37m-manylinux1_x86_64.whl'
 }
 
 
@@ -29,6 +29,7 @@ def get_manylinux_wheel_url(python_version, package_name, package_version):
         wheel_url = data['releases'][package_version][0]['url']
 
     return wheel_url
+
 
 def download_manylinux_wheel_from_url(url, wheel_path):
     if not os.path.exists(wheel_path) or not zipfile.is_zipfile(wheel_path):

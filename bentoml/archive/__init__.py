@@ -19,6 +19,6 @@ from __future__ import division
 from __future__ import print_function
 
 from bentoml.archive.archiver import save
-from bentoml.archive.loader import load, load_bentoml_config
+from bentoml.archive.loader import load, load_bentoml_config, load_bento_service_class
 
-__all__ = ['save', 'load', 'load_bentoml_config']
+__all__ = ['save', 'load', 'load_bentoml_config', 'load_bento_service_class']

@@ -12,7 +12,7 @@ except ImportError:
     from bentoml.handlers import ImageHandler
 
 
-class FakeImageModel(object):
+class TestImageModel(object):
     def predict(self, image_ndarray):
         return image_ndarray.shape
 
@@ -30,12 +30,12 @@ BASE_TEST_PATH = "/tmp/bentoml-test"
 
 
 def test_image_handler(capsys):
-    fake_model = FakeImageModel()
-    ms = ImageHandlerModel.pack(clf=fake_model)
+    test_model = TestImageModel()
+    ms = ImageHandlerModel.pack(clf=test_model)
     api = ms.get_service_apis()[0]
 
-    fake_args = ['--input=./tests/test_image_1.jpg']
-    api.handle_cli(fake_args)
+    test_args = ['--input=./tests/test_image_1.jpg']
+    api.handle_cli(test_args)
     out, err = capsys.readouterr()
 
     assert out.strip().endswith('(360, 480, 3)')

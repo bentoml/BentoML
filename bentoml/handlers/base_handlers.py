@@ -26,3 +26,6 @@ class BentoHandler():
 
     def handle_cli(self, args, func):
         raise NotImplementedError
+
+    def handle_aws_lambda_event(self, event, func):
+        raise NotImplementedError

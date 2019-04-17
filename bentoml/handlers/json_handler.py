@@ -75,3 +75,32 @@ class JsonHandler(BentoHandler):
             print(json.dumps(result.tolist()))
         else:
             print(result)
+
+    def handle_aws_lambda_event(self, event, func):
+        if event['headers']['Content-Type'] == 'application/json':
+            parsed_json = json.loads(event['body'])
+        else:
+            return {
+                "statusCode": 400,
+                "body": 'Only accept json as content type'
+            }
+
+        output = func(parsed_json)
+
+        try:
+            result = json.dumps(output)
+        except Exception as e:  # pylint:disable=W0703
+            if isinstance(e, TypeError):
+                if type(output).__module__ == 'numpy':
+                    output = output.tolist()
+                    result = json.dumps(output)
+                else:
+                    raise e
+            else:
+                raise e
+
+        response = {
+            "statusCode": 200,
+            "body": result
+        }
+        return response

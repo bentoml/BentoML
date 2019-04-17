@@ -13,6 +13,7 @@ class MyTestModel(object):
         return int(input_data) * 2
 
 
+@bentoml.ver(major=2, minor=10)
 @bentoml.env(conda_pip_dependencies=['scikit-learn'])
 @bentoml.artifacts([PickleArtifact('model')])
 class MyTestBentoService(bentoml.BentoService):
@@ -35,8 +36,9 @@ def test_save_and_load_model(tmpdir):
     version = "test_" + uuid.uuid4().hex
     saved_path = ms.save(str(tmpdir), version=version)
 
-    model_path = os.path.join(str(tmpdir), 'MyTestBentoService', version)
-    assert os.path.exists(model_path)
+    expected_version = "2.10.{}".format(version)
+    assert saved_path == os.path.join(str(tmpdir), 'MyTestBentoService', expected_version)
+    assert os.path.exists(saved_path)
 
     model_service = bentoml.load(saved_path)
 
@@ -48,8 +50,7 @@ def test_save_and_load_model(tmpdir):
 
     # Check api methods are available
     assert model_service.predict(1) == 2
-
-    assert model_service.version == version
+    assert model_service.version == expected_version
 
 
 @pytest.mark.skip(reason="Setup s3 creds in travis or use a mock")

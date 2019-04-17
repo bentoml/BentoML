@@ -22,7 +22,8 @@ from bentoml import handlers
 from bentoml.version import __version__
 
 from bentoml.service import BentoService, api_decorator as api, \
-    env_decorator as env, artifacts_decorator as artifacts
+    env_decorator as env, artifacts_decorator as artifacts, \
+    ver_decorator as ver
 from bentoml.server import metrics
 from bentoml.archive import save, load
 

@@ -176,6 +176,36 @@ def env_decorator(**kwargs):
     return decorator
 
 
+def ver_decorator(major, minor):
+    """Decorator for specifying the version of a custom BentoService, BentoML
+    uses semantic versioning for BentoService distribution:
+
+    MAJOR is incremented when you make breaking API changes
+    MINOR is incremented when you add new functionality without breaking the
+        existing API or functionality
+    PATCH is incremented when you make backwards-compatible bug fixes
+
+    'Patch' is provided(or auto generated) when calling BentoService#save,
+    while 'Major' and 'Minor' can be defined with '@ver' decorator
+
+    >>>  @ver(major=1, minor=4)
+    >>>  @artifacts([PickleArtifact('model')])
+    >>>  class MyMLService(BentoService):
+    >>>     pass
+    >>>
+    >>>  svc = MyMLService.pack(model="my ML model object")
+    >>>  svc.save('/path_to_archive', version="2019-08.iteration20")
+    >>>  # The final produced BentoArchive verion will be "1.4.2019-08.iteration20"
+    """
+
+    def decorator(bento_service_cls):
+        bento_service_cls._version_major = major
+        bento_service_cls._version_minor = minor
+        return bento_service_cls
+
+    return decorator
+
+
 class BentoService(BentoServiceBase):
     """
     BentoService packs a list of artifacts and exposes service APIs
@@ -183,9 +213,10 @@ class BentoService(BentoServiceBase):
     users can customize the artifacts and environments required for
     a ML service.
 
-    >>>  from bentoml import BentoService, env, api, artifacts
+    >>>  from bentoml import BentoService, env, api, artifacts, ver
     >>>  from bentoml.handlers import DataframeHandler
     >>>
+    >>>  @ver(major=1, minor=4)
     >>>  @artifacts([PickleArtifact('clf')])
     >>>  @env(conda_dependencies: [ 'scikit-learn' ])
     >>>  class MyMLService(BentoService):
@@ -216,6 +247,10 @@ class BentoService(BentoServiceBase):
 
     # This can only be set by BentoML library when loading from archive
     _bento_service_version = None
+
+    # See `ver_decorator` function above for more information
+    _version_major = 0
+    _version_minor = 0
 
     def __init__(self, artifacts=None, env=None):
         if artifacts is None:

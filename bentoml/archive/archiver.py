@@ -149,26 +149,30 @@ DEFAULT_BENTO_ARCHIVE_DESCRIPTION = """\
 
 def _validate_version_str(version_str):
     """
-    Validate that version str starts with char, has length >= 4
+    Validate that version str format:
+    * Consist of only ALPHA / DIGIT / "-" / "." / "_"
+    * Length between 1-128
     """
-    regex = r"^[a-zA-Z][a-zA-Z0-9_]{3,}"
+    regex = r"[A-Za-z0-9_.-]{1,128}\Z"
     if re.match(regex, version_str) is None:
-        raise ValueError('Invalid version format: "{}"'.format(version_str))
+        raise ValueError('Invalid BentoArchive version: "{}", it can only consist'
+                         ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'
+                         '128 characthers'.format(version_str))
 
 
 def _generate_new_version_str():
     """
-    Generate a version string in the format of YYYY_MM_DD_RandomHash
+    Generate a version string in the format of YYYY-MM-DD-Hash
     """
     time_obj = datetime.now()
     date_string = time_obj.strftime('%Y_%m_%d')
     random_hash = uuid.uuid4().hex[:8]
 
-    return 'b' + date_string + '_' + random_hash
+    return date_string + '_' + random_hash
 
 
 # TODO: make pypi version consistent with archive version, and use Semantic versioning for both
-def save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
+def save(bento_service, dst, version=None):
     """
     Save given BentoService along with all artifacts to target path
     """
@@ -176,6 +180,14 @@ def save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
     if version is None:
         version = _generate_new_version_str()
     _validate_version_str(version)
+
+    # BentoML uses semantic versioning for BentoService distribution
+    # The parameter version(or auto generated version) will be used as
+    # PATCH field in the final version, where MAJOR and MINOR are specified
+    # along with the BentoService class definition with @version decorator
+    version = '.'.join(
+        [str(bento_service._version_major),
+         str(bento_service._version_minor), version])
 
     # Full path containing saved BentoArchive, it the dst path with service name
     # and service version as prefix. e.g.:
@@ -185,15 +197,15 @@ def save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
 
     if is_s3_url(dst):
         with TempDirectory() as tempdir:
-            _save(bento_service, tempdir, version, pypi_package_version)
+            _save(bento_service, tempdir, version)
             upload_to_s3(full_saved_path, tempdir)
     else:
-        _save(bento_service, dst, version, pypi_package_version)
+        _save(bento_service, dst, version)
 
     return full_saved_path
 
 
-def _save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
+def _save(bento_service, dst, version=None):
     Path(os.path.join(dst), bento_service.name).mkdir(parents=True, exist_ok=True)
     # Update path to subfolder in the form of 'base/service_name/version/'
     path = os.path.join(dst, bento_service.name, version)
@@ -230,12 +242,11 @@ def _save(bento_service, dst, version=None, pypi_package_version="1.0.0"):
     with open(os.path.join(path, bento_service.name, '__init__.py'), "w") as f:
         f.write(
             INIT_PY_TEMPLATE.format(service_name=bento_service.name, module_name=module_name,
-                                    pypi_package_version=pypi_package_version))
+                                    pypi_package_version=version))
 
     # write setup.py, make exported model pip installable
     setup_py_content = BENTO_MODEL_SETUP_PY_TEMPLATE.format(
-        name=bento_service.name, pypi_package_version=pypi_package_version,
-        long_description=model_description)
+        name=bento_service.name, pypi_package_version=version, long_description=model_description)
     with open(os.path.join(path, 'setup.py'), 'w') as f:
         f.write(setup_py_content)
 

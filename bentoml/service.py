@@ -181,7 +181,8 @@ def ver_decorator(major, minor):
     uses semantic versioning for BentoService distribution:
 
     MAJOR is incremented when you make breaking API changes
-    MINOR is incremented when you add new functionality without breaking the existing API or functionality
+    MINOR is incremented when you add new functionality without breaking the
+        existing API or functionality
     PATCH is incremented when you make backwards-compatible bug fixes
 
     'Patch' is provided(or auto generated) when calling BentoService#save,

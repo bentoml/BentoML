@@ -153,8 +153,8 @@ def _validate_version_str(version_str):
     * Consist of only ALPHA / DIGIT / "-" / "." / "_"
     * Length between 1-128
     """
-    regex = r"[A-Za-z0-9_.-]{1,128}"
-    if re.fullmatch(regex, version_str) is None:
+    regex = r"[A-Za-z0-9_.-]{1,128}\Z"
+    if re.match(regex, version_str) is None:
         raise ValueError('Invalid BentoArchive version: "{}", it can only consist'
                          ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'
                          '128 characthers'.format(version_str))

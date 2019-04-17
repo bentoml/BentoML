@@ -93,7 +93,8 @@ def bento_service_api_wrapper(api, service_name, service_version, logger):
     """
     Create api function for flask route
     """
-    summary_name = str(service_name) + '_' + str(service_version) + '_' + str(api.name)
+    summary_name = str(service_name) + '_' + str(service_version.replace('.', '_')) + '_' + str(
+        api.name)
     request_metric_time = Summary(summary_name, summary_name + ' request latency')
 
     def wrapper():

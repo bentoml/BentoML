@@ -198,8 +198,8 @@ def ver_decorator(major, minor):
     """
 
     def decorator(bento_service_cls):
-        bento_service_cls.__version_major = major
-        bento_service_cls.__version_minor = minor
+        bento_service_cls._version_major = major
+        bento_service_cls._version_minor = minor
         return bento_service_cls
 
     return decorator

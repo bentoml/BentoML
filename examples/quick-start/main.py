@@ -5,12 +5,13 @@ from sklearn import datasets
 
 # Use local bentoml code
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from bentoml import BentoService, load, api, env, artifacts
+from bentoml import BentoService, load, api, env, artifacts, ver
 from bentoml.artifact import PickleArtifact
 from bentoml.handlers import JsonHandler
 
 @artifacts([PickleArtifact('clf')])
 @env(conda_dependencies=["scikit-learn"])
+@ver(major=1, minor=0)
 class IrisClassifier(BentoService):
     """
     Iris SVM Classifier

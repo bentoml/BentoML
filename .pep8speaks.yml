@@ -5,8 +5,7 @@ scanner:
 pycodestyle:
     max-line-length: 100
 
-    exclude:
-      - examples
+    exclude: [ 'examples' ]
 
 only_mention_files_with_errors: True
 

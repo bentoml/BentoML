@@ -28,7 +28,7 @@ def test_pip_install_bento_archive(bento_archive_path, tmpdir):
 
     # add install_path and local bentoml module to PYTHONPATH to make them
     # available in subprocess call
-    env = { 'PYTHONPATH': install_path + ':' + bentoml_path }
+    env = {'PYTHONPATH': install_path + ':' + bentoml_path}
 
     output = subprocess.check_output([cli_bin_path, 'info'], env=env).decode()
     output = json.loads(output)

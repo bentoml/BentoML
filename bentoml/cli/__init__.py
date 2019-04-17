@@ -27,6 +27,9 @@ from bentoml.server import BentoAPIServer
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 from bentoml.cli.utils import read_requirment_txt, download_manylinux_wheel_from_url, get_manylinux_wheel_url
 
+from bentoml.cli.whichcraft import which
+from bentoml.cli.serverless import generate_base_serverless_files, add_model_service_archive, generate_handler_py
+
 
 def create_bentoml_cli(installed_archive_path=None):
     # pylint: disable=unused-variable
@@ -126,6 +129,23 @@ def cli():
                 file_name = url.split('/').pop()
                 wheel_path = os.path.join(output_path, file_name)
                 download_manylinux_wheel_from_url(url, wheel_path)
+        return
+
+    @_cli.command()
+    @click.argument('archive-path', type=click.STRING)
+    @click.argument('output-path', type=click.STRING)
+    @click.option('--platform', type=click.Choice(['aws-python', 'aws-python3', 'google-python']),
+                  default='aws-python3')
+    def build_serverless_archive(archive_path, output_path, platform):
+        if which('serverless') is None:
+            click.echo('You need to install serverless framework for this')
+            return
+        name = 'test'
+
+        generate_base_serverless_files(output_path, platform, name)
+        add_model_service_archive(archive_path)
+        generate_handler_py(output_path)
+
         return
 
     # pylint: enable=unused-variable

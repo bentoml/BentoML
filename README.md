@@ -1,5 +1,5 @@
 # BentoML
-> From a model in ipython notebook to production ready API service in 5 minutes.
+> From a model in ipython notebook to production API service in 5 minutes.
 
 ![project status](https://www.repostatus.org/badges/latest/active.svg)
 ![build status](https://travis-ci.org/bentoml/BentoML.svg?branch=master)
@@ -7,14 +7,34 @@
 ![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)
 
 
-BentoML is a python library for packaging and deploying machine learning models.
-It does two things without changing your model training workflow:
+BentoML is a python library for packaging and deploying machine learning
+models. It provides high-level APIs for defining a machine service,
+including its artifacts, source code, dependencies, metrics, and supports
+bundling them into a production-system-friendly format that are ready for
+deployment.
 
-* Standardize how to package your ML model for production, including its
-  preprocessing/feature-fetching code, dependencies and configurations.
 
-* Easily distribute your ML model as PyPI package, API Server(in a Docker Image)
-  , command line tool or Spark/Flink UDF.
+## Feature Highlights
+
+* Distribute for different inference scenarios - Easily distribute your
+  Machine Learning model as PyPI package, API Server(as a Docker Image),
+  CLI tool or Spark UDF.
+
+* Multiple Framework Support - BentoML supports a wide range of ML frameworks
+  out-of-the-box including Tensorflow, PyTorch, Scikit-Learn, xgboost and can be
+  easily extended to work with new or custom frameworks.
+
+* Deploy Anywhere - BentoML bundled ML service can be easily deploy with platforms
+  such as [Docker](https://www.docker.com/), [Kubernetes](https://kubernetes.io/),
+  [Serverless](https://github.com/serverless/serverless),
+  [Airflow](https://airflow.apache.org) and [Clipper](http://clipper.ai),
+  on cloud platforms including AWS Lambda/ECS/SageMaker, Gogole Cloud Functions, and
+  Azure ML.
+
+* Custom model runtime - Easily integrate your python preprocessing code with
+  high-performance deep learning model runtime backend (such as
+  [tensorflow-serving](https://github.com/tensorflow/serving)) to deploy low-latancy
+  serving endpoint. 
 
 ---
 
@@ -214,24 +234,6 @@ build complex feature pipelines for experimental models.
 Our vision is to empower Machine Learning scientists to build and ship their own
 models end-to-end as production services, just like software engineers do.
 BentoML is enssentially this missing 'build tool' for Machine Learing projects.
-
-With that in mind, here is the top design goals for BentoML:
-
-* Multiple framework support - BentoML should supports a wide range of ML
-frameworks out-of-the-box including Tensorflow, PyTorch, Scikit-Learn, xgboost
-and can be easily extended to work with new or custom frameworks.
-
-* Best Practice built-in - BentoML users can easily customize telemetrics and
-logging for their model, and make it easy to integrate with production systems.
-
-* Streamlines deployment workflows - BentoML supports deploying models into REST
-API endpoints with Docker, Kubernetes, AWS EC2, ECS, Google Cloud Platform, AWS
-SageMaker, and Azure ML.
-
-* Custom model runtime - Easily integrate your python code with high-performance
-model runtime backend(e.g. tf-serving, tensorrt-inference-server) in real-time
-model serving.
-
 
 
 ## Releases and Contributing

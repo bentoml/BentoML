@@ -26,7 +26,7 @@ production-system-friendly format that are ready for deployment.
 
 ## Feature Highlights
 
-* __Multiple Distribution Format__ - Easily bundle your Machine Learning models
+* __Multiple Distribution Format__ - Easily package your Machine Learning models
   into format that works best with your inference scenario:
   * Docker Image - include built-in REST API Server
   * PyPI Package - integrate with your python applications seamlessly
@@ -93,21 +93,40 @@ from bentoml import BentoService, api, env, artifacts
 from bentoml.artifact import PickleArtifact
 from bentoml.handlers import DataframeHandler
 
+# You can also import your own python module here and BentoML will automatically
+# figure out the dependency chain and package all those python modules
+
 @artifacts([PickleArtifact('model')])
 @env(conda_pip_dependencies=["scikit-learn"])
 class IrisClassifier(BentoService):
 
     @api(DataframeHandler)
     def predict(self, df):
+        # arbitrary preprocessing or feature fetching code can be placed here 
         return self.artifacts.model.predict(df)
 ```
 
 The `@artifacts` decorator here tells BentoML what artifacts are required for
-bundling this BentoService. `@env` allows specifying all the python or system
-dependencies, and `@api` adds an entry point for accessing this BentoService,
+bundling this BentoService. `@env` allows specifying list of python or system
+dependencies, alternatively:
+
+* If you already have a requirement.txt file listing all python libraries you
+need:
+```python
+@env(requirement_txt='../myproject/requirement_txt')
+```
+
+* Or if you are running this code within a Conda environment that matches the
+desired production environment:
+```python
+@env(with_current_conda_env=True)
+```
+
+Lastly `@api` adds an entry point for accessing this BentoService,
 which will be translated into a REST endpoint when [deploying as API
 server](#serving-via-rest-api), or a CLI command when [running as a CLI
 tool](#use-as-cli-tool).
+
 
 Now you can save your trained model for prodcution use with this custom
 BentoService class:
@@ -125,8 +144,8 @@ svc.save('./bento_archive', version='v0.0.1')
 ```
 
 _That's it._ You've just created your first BentoArchive. It's a directory
-containing all the source code, data and configurations files required to run
-this model in production. You will also find three 'magic' files generated
+containing all the source code, data and configurations files required to load
+and run a BentoService. You will also find three 'magic' files generated
 within the archive directory:
 
 * `bentoml.yml` - a YAML file containing all metadata related to this
@@ -135,7 +154,7 @@ within the archive directory:
   API endpoint
 * `setup.py` - the config file that makes a BentoArchive 'pip' installable
 
-### Deployment & Inference Scenario
+### Deployment & Inference Scenarios
 
 - [Serving via REST API](#serving-via-rest-api)
 - [Loading BentoService in Python](#loading-bentoservice-in-python)

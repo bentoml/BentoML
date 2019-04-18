@@ -104,9 +104,10 @@ class IrisClassifier(BentoService):
 
 The `@artifacts` decorator here tells BentoML what artifacts are required for
 bundling this BentoService. `@env` allows specifying all the python or system
-dependencies, and `@api` adds entry point for accessing this model service. It
-will be translated into a REST endpoint when deploying as API server, or a CLI
-command when deploying as a CLI tool.
+dependencies, and `@api` adds an entry point for accessing this BentoService,
+which will be translated into a REST endpoint when [deploying as API
+server](#serving-via-rest-api), or a CLI command when [running as a CLI
+tool](#use-as-cli-tool).
 
 Now you can save your trained model for prodcution use with this custom
 BentoService class:
@@ -125,21 +126,21 @@ svc.save('./bento_archive', version='v0.0.1')
 
 _That's it._ You've just created your first BentoArchive. It's a directory
 containing all the source code, data and configurations files required to run
-this model in production. You will also find a few 'magic' files generated
+this model in production. You will also find three 'magic' files generated
 within the archive directory:
 
 * `bentoml.yml` - a YAML file containing all metadata related to this
   BentoArchive
-* `Dockerfile` - a Dockerfile that can be used to build a Docker Image
-  exposes this model service as REST API endpoint
-* `setup.py` - the config file which makes the archive 'pip' installable
+* `Dockerfile` - for building a Docker Image exposing this BentoService as REST
+  API endpoint
+* `setup.py` - the config file that makes a BentoArchive 'pip' installable
 
-### Inference Scenario
+### Deployment & Inference Scenario
 
 - [Serving via REST API](#serving-via-rest-api)
 - [Loading BentoService in Python](#loading-bentoservice-in-python)
 - [Use as PyPI Package](#use-as-pypi-package)
-- [Use as a CLI tool](#use-as-cli-tool)
+- [Use as CLI tool](#use-as-cli-tool)
 
 
 #### Serving via REST API
@@ -212,7 +213,7 @@ cd ./bento_archive/IrisClassifier/v0.0.1/
 python setup.py sdist upload
 ```
 
-#### Use as a CLI tool
+#### Use as CLI tool
 
 When `pip install` a BentoML archive, it also provides you with a CLI tool for
 accsing your BentoService's APIs from command line:

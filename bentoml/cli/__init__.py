@@ -22,14 +22,16 @@ import json
 import os
 import click
 
-from bentoml.archive import load
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from bentoml.archive import load, load_bentoml_config
 from bentoml.server import BentoAPIServer
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 from bentoml.cli.utils import read_requirment_txt, download_manylinux_wheel_from_url, get_manylinux_wheel_url
 
 from bentoml.cli.whichcraft import which
-from bentoml.cli.serverless import generate_base_serverless_files, add_model_service_archive, generate_handler_py
-
+from bentoml.cli.serverless import generate_serverless_bundle
 
 def create_bentoml_cli(installed_archive_path=None):
     # pylint: disable=unused-variable
@@ -140,12 +142,9 @@ def cli():
         if which('serverless') is None:
             click.echo('You need to install serverless framework for this')
             return
-        name = 'test'
-
-        generate_base_serverless_files(output_path, platform, name)
-        add_model_service_archive(archive_path)
-        generate_handler_py(output_path)
-
+        bento_service = load(archive_path)
+        generate_serverless_bundle(bento_service, platform, archive_path, output_path)
+        click.echo('Completed')
         return
 
     # pylint: enable=unused-variable

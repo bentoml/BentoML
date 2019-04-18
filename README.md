@@ -16,28 +16,29 @@ deployment.
 
 ## Feature Highlights
 
-* Distribute for different inference scenarios - Easily bundle your
-  Machine Learning models into
-  * PyPI package
-  * API Server(as a Docker Image),
-  * CLI tool
-  * Spark UDF.
+* __Multiple Distribution Format__ - Easily bundle your Machine Learning models
+  into format that works best with your inference scenario:
+  * Docker Image - include built-in REST API Server
+  * PyPI Package - integrate with your python applications seamlessly
+  * CLI tool - put your model into Airflow DAG or CI/CD pipeline
+  * Spark UDF - run batch serving on large dataset with Spark
+  * Serverless Function - host your model with serverless cloud platforms
 
-* Multiple Framework Support - BentoML supports a wide range of ML frameworks
+* __Multiple Framework Support__ - BentoML supports a wide range of ML frameworks
   out-of-the-box including [Tensorflow](https://github.com/tensorflow/tensorflow/),
   [PyTorch](https://github.com/pytorch/pytorch),
   [Scikit-Learn](https://github.com/scikit-learn/scikit-learn),
   [xgboost](https://github.com/dmlc/xgboost) and can be easily extended to work
   with new or custom frameworks.
 
-* Deploy Anywhere - BentoML bundled ML service can be easily deploy with platforms
+* __Deploy Anywhere__ - BentoML bundled ML service can be easily deploy with platforms
   such as [Docker](https://www.docker.com/), [Kubernetes](https://kubernetes.io/),
   [Serverless](https://github.com/serverless/serverless),
   [Airflow](https://airflow.apache.org) and [Clipper](http://clipper.ai),
   on cloud platforms including AWS Lambda/ECS/SageMaker, Gogole Cloud Functions, and
   Azure ML.
 
-* Custom model runtime - Easily integrate your python preprocessing code with
+* __Custom Runtime Backend__ - Easily integrate your python preprocessing code with
   high-performance deep learning model runtime backend (such as
   [tensorflow-serving](https://github.com/tensorflow/serving)) to deploy low-latancy
   serving endpoint. 

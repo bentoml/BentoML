@@ -106,7 +106,7 @@ class IrisClassifier(BentoService):
 ```
 
 The `@artifacts` decorator here tells BentoML what artifacts are required when 
-packaging this BentoService. Besides `PickleArtifact`, bentoml also provides
+packaging this BentoService. Besides `PickleArtifact`, BentoML also provides
 `TfKerasModelArtifact`, `PytorchModelArtifact`, and `TfSavedModelArtifact` etc.
 
 `@env` is designed for specifying the desired system environment in order for this
@@ -124,14 +124,15 @@ desired production environment:
 @env(with_current_conda_env=True)
 ```
 
-Lastly `@api` adds an entry point for accessing this BentoService,
-which will be translated into a REST endpoint when [deploying as API
+Lastly `@api` adds an entry point for accessing this BentoService. Each
+`api` will be translated into a REST endpoint when [deploying as API
 server](#serving-via-rest-api), or a CLI command when [running as a CLI
 tool](#use-as-cli-tool).
 
-The `DataframeHandler` will transform either HTTP request or CLI command
-arguments into a pandas Dataframe and pass it down to user defined API function.
-BentoML also provides `JsonHandler`, 'ImageHandler' and `TensorHandler`.
+Each API also requires a `Handler` for defining the expected input format. In
+this case, `DataframeHandler` will transform either a HTTP request or CLI
+command arguments into a pandas Dataframe and pass it down to ther user defined
+API function. BentoML also supports `JsonHandler`, 'ImageHandler' and `TensorHandler`.
 
 Next, to save your trained model for prodcution use with this custom
 BentoService class:

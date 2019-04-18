@@ -17,6 +17,7 @@ production-system-friendly format that is ready for deployment.
 - [Feature Highlights](#feature-highlights)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
+- [Documentation (Coming soon!)](#getting-started)
 - [Examples](#examples)
 - [More About BentoML](#more-about-bentoml)
 - [Releases and Contributing](#releases-and-contributing)
@@ -118,7 +119,7 @@ need:
 @env(requirement_txt='../myproject/requirement.txt')
 ```
 
-* Or if you are running this code within a Conda environment that matches the
+* Or if you are running this code in a Conda environment that matches the
 desired production environment:
 ```python
 @env(with_current_conda_env=True)
@@ -132,7 +133,8 @@ tool](#use-as-cli-tool).
 Each API also requires a `Handler` for defining the expected input format. In
 this case, `DataframeHandler` will transform either a HTTP request or CLI
 command arguments into a pandas Dataframe and pass it down to ther user defined
-API function. BentoML also supports `JsonHandler`, 'ImageHandler' and `TensorHandler`.
+API function. BentoML also supports `JsonHandler`, `ImageHandler` and
+`TensorHandler`.
 
 Next, to save your trained model for prodcution use with this custom
 BentoService class:

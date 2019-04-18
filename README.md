@@ -24,8 +24,11 @@ deployment.
   * Spark UDF.
 
 * Multiple Framework Support - BentoML supports a wide range of ML frameworks
-  out-of-the-box including Tensorflow, PyTorch, Scikit-Learn, xgboost and can be
-  easily extended to work with new or custom frameworks.
+  out-of-the-box including [Tensorflow](https://github.com/tensorflow/tensorflow/),
+  [PyTorch](https://github.com/pytorch/pytorch),
+  [Scikit-Learn](https://github.com/scikit-learn/scikit-learn),
+  [xgboost](https://github.com/dmlc/xgboost) and can be easily extended to work
+  with new or custom frameworks.
 
 * Deploy Anywhere - BentoML bundled ML service can be easily deploy with platforms
   such as [Docker](https://www.docker.com/), [Kubernetes](https://kubernetes.io/),

@@ -8,10 +8,9 @@
 
 
 BentoML is a python library for packaging and deploying machine learning
-models. It provides high-level APIs for defining a ML service and bundling
+models. It provides high-level APIs for defining a ML service and packaging
 its artifacts, source code, dependencies, and configurations into a
-production-system-friendly format that are ready for deployment.
-
+production-system-friendly format that is ready for deployment.
 
 ---
 
@@ -28,8 +27,8 @@ production-system-friendly format that are ready for deployment.
 
 * __Multiple Distribution Format__ - Easily package your Machine Learning models
   into format that works best with your inference scenario:
-  * Docker Image - include built-in REST API Server
-  * PyPI Package - integrate with your python applications seamlessly
+  * Docker Image - deploy as containers running REST API Server
+  * PyPI Package - integrate into your python applications seamlessly
   * CLI tool - put your model into Airflow DAG or CI/CD pipeline
   * Spark UDF - run batch serving on large dataset with Spark
   * Serverless Function - host your model with serverless cloud platforms

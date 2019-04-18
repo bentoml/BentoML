@@ -72,8 +72,7 @@ bentoml --version
 
 ## Getting Started
 
-BentoML does not change your training workflow. Let's train a simple
-scikit-learn model as example:
+Let's get started with a simple scikit-learn model as example:
 
 ```python
 from sklearn import svm
@@ -85,8 +84,8 @@ X, y = iris.data, iris.target
 clf.fit(X, y)
 ```
 
-To package this model with BentoML, you will need to create a new BentoService
-by subclassing it, and provides artifacts and env definition for it:
+To package this model with BentoML, you don't need to change anything in your
+training code. Simply create a new BentoService by subclassing it:
 
 ```python
 %%writefile iris_classifier.py
@@ -95,7 +94,7 @@ from bentoml.artifact import PickleArtifact
 from bentoml.handlers import DataframeHandler
 
 @artifacts([PickleArtifact('model')])
-@env(conda_dependencies=["scikit-learn"])
+@env(conda_pip_dependencies=["scikit-learn"])
 class IrisClassifier(BentoService):
 
     @api(DataframeHandler)
@@ -103,78 +102,98 @@ class IrisClassifier(BentoService):
         return self.artifacts.model.predict(df)
 ```
 
-Now, to save your trained model for prodcution use, simply import your
-BentoService class and `pack` it with required artifacts:
+The `@artifacts` decorator here tells BentoML what artifacts are required for
+bundling this BentoService. `@env` allows specifying all the python or system
+dependencies, and `@api` adds an entry point for accessing this BentoService,
+which will be translated into a REST endpoint when [deploying as API
+server](#serving-via-rest-api), or a CLI command when [running as a CLI
+tool](#use-as-cli-tool).
+
+Now you can save your trained model for prodcution use with this custom
+BentoService class:
 
 ```python
+# 1) import the custom BentoService defined above
 from iris_classifier import IrisClassifier
 
+# 2) `pack` it with required artifacts
 svc = IrisClassifier.pack(model=clf)
 
-svc.save('./saved_bento', version='v0.0.1') # Saving archive to ./saved_bento/IrisClassifier/v0.0.1/
+# 3) save packed BentoService as archive
+svc.save('./bento_archive', version='v0.0.1')
+# archive will saved to ./bento_archive/IrisClassifier/v0.0.1/
 ```
 
-That's it. Now you have created your first BentoArchive. It's a directory
+_That's it._ You've just created your first BentoArchive. It's a directory
 containing all the source code, data and configurations files required to run
-this model in production. There are a few ways you could use this archive:
+this model in production. You will also find three 'magic' files generated
+within the archive directory:
+
+* `bentoml.yml` - a YAML file containing all metadata related to this
+  BentoArchive
+* `Dockerfile` - for building a Docker Image exposing this BentoService as REST
+  API endpoint
+* `setup.py` - the config file that makes a BentoArchive 'pip' installable
+
+### Deployment & Inference Scenario
+
+- [Serving via REST API](#serving-via-rest-api)
+- [Loading BentoService in Python](#loading-bentoservice-in-python)
+- [Use as PyPI Package](#use-as-pypi-package)
+- [Use as CLI tool](#use-as-cli-tool)
 
 
-### Serving a BentoArchive via REST API
+#### Serving via REST API
 
 For exposing your model as a HTTP API endpoint, you can simply use the `bentoml
 serve` command:
 
 ```bash
-bentoml serve ./saved_bento/IrisClassifier/v0.0.1/
+bentoml serve ./bento_archive/IrisClassifier/v0.0.1/
 ```
 
-Note: you must ensure the pip and conda dependencies are available in your python
+Note you must ensure the pip and conda dependencies are available in your python
 environment when using `bentoml serve` command. More commonly we recommand using
-BentoML API server with Docker(see below).
-
-
-### Build API server Docker Image from BentoArchive
+BentoML API server with Docker:
 
 You can build a Docker Image for running API server hosting your BentoML archive
 by using the archive folder as docker build context:
 
 ```bash
-cd ./saved_bento/IrisClassifier/v0.0.1/
+cd ./bento_archive/IrisClassifier/v0.0.1/
 
-docker build -t myorg/iris-classifier .
+docker build -t iris-classifier .
 ```
 
 Next, you can `docker push` the image to your choice of registry for deployment,
 or run it locally for development and testing:
 
 ```
-docker run -p 5000:5000 myorg/iris-classifier
+docker run -p 5000:5000 iris-classifier
 ```
 
-### Loading BentoArchive in Python
+#### Loading BentoService in Python
+
+`bentoml.load` is the enssential API for loading a BentoArchive into your
+python application:
 
 ```python
 import bentoml
 
-bento_svc = bentoml.load('./saved_bento/IrisClassifier/v0.0.1/')
+# yes it works with BentoArchive saved to s3 ;)
+bento_svc = bentoml.load('s3://my-bento-svc/iris_classifier/')
 bento_svc.predict(X[0])
 ```
 
-BentoML also supports loading an archive from s3 location directly:
+#### Use as PyPI Package
 
-```python
-bento_svc = bentoml.load('s3://my-bento-svc/iris_classifier/')
-```
-
-### Install BentoArchive as PyPI package
-
-First install your exported bentoml service with `pip`:
+BentoML also supports distributing a BentoService as PyPI package, with the
+generated `setup.py` file. A BentoArchive can be installed with `pip`:
 
 ```bash
-pip install ./saved_bento/IrisClassifier/v0.0.1/
+pip install ./bento_archive/IrisClassifier/v0.0.1/
 ```
 
-Now you can import it and used it as a python module:
 ```python
 import IrisClassifier
 
@@ -182,24 +201,27 @@ installed_svc = IrisClassifier.load()
 installed_svc.predict(X[0])
 ```
 
-Note that you could also publish your exported BentoService as a PyPI package as
-a public python package on pypi.org or upload to your organization's private
-PyPI index:
+With the `setup.py` config, a BentoArchive can also be uploaded to pypi.org
+as a public python package, or to your organization's private PyPI index for all
+developers in your organization to use:
 
 ```bash
-cd ./saved_bento/IrisClassifier/v0.0.1/
+cd ./bento_archive/IrisClassifier/v0.0.1/
 
+# You will need a ".pypirc" config file before doing this:
+# https://docs.python.org/2/distutils/packageindex.html
 python setup.py sdist upload
 ```
 
-### Loading BentoArchive from CLI
+#### Use as CLI tool
 
 When `pip install` a BentoML archive, it also provides you with a CLI tool for
-accsing your BentoService's apis from command line:
-```bash
-pip install ./saved_bento/IrisClassifier/v0.0.1/
+accsing your BentoService's APIs from command line:
 
-IrisClassifier info
+```bash
+pip install ./bento_archive/IrisClassifier/v0.0.1/
+
+IrisClassifier info  # this will also print out all APIs available
 
 IrisClassifier predict --input='./test.csv'
 ```
@@ -208,14 +230,10 @@ Alternatively, you can also use the `bentoml` cli to load and run a BentoArchive
 directly:
 
 ```bash
-bentoml info ./saved_bento/IrisClassifier/v0.0.1/
+bentoml info ./bento_archive/IrisClassifier/v0.0.1/
 
-bentoml predict ./saved_bento/IrisClassifier/v0.0.1/ --input='./test.csv'
+bentoml predict ./bento_archive/IrisClassifier/v0.0.1/ --input='./test.csv'
 ```
-
-CLI access made it very easy to put your saved BentoArchive into an Airflow
-DAG, integrate your packaged ML model into testing environment or use it in
-combination with other shell tools.
 
 
 ## Examples

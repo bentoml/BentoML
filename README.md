@@ -8,28 +8,26 @@
 
 
 BentoML is a python library for packaging and deploying machine learning
-models. It provides high-level APIs for defining a ML service and bundling
+models. It provides high-level APIs for defining a ML service and packaging
 its artifacts, source code, dependencies, and configurations into a
-production-system-friendly format that are ready for deployment.
-
+production-system-friendly format that is ready for deployment.
 
 ---
 
-- [Feature Highlights](#feature-highlights)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
+- [Documentation (Coming soon!)](#getting-started)
 - [Examples](#examples)
-- [More About BentoML](#more-about-bentoml)
 - [Releases and Contributing](#releases-and-contributing)
 - [License](#license)
 
 
 ## Feature Highlights
 
-* __Multiple Distribution Format__ - Easily bundle your Machine Learning models
+* __Multiple Distribution Format__ - Easily package your Machine Learning models
   into format that works best with your inference scenario:
-  * Docker Image - include built-in REST API Server
-  * PyPI Package - integrate with your python applications seamlessly
+  * Docker Image - deploy as containers running REST API Server
+  * PyPI Package - integrate into your python applications seamlessly
   * CLI tool - put your model into Airflow DAG or CI/CD pipeline
   * Spark UDF - run batch serving on large dataset with Spark
   * Serverless Function - host your model with serverless cloud platforms
@@ -93,23 +91,50 @@ from bentoml import BentoService, api, env, artifacts
 from bentoml.artifact import PickleArtifact
 from bentoml.handlers import DataframeHandler
 
+# You can also import your own python module here and BentoML will automatically
+# figure out the dependency chain and package all those python modules
+
 @artifacts([PickleArtifact('model')])
 @env(conda_pip_dependencies=["scikit-learn"])
 class IrisClassifier(BentoService):
 
     @api(DataframeHandler)
     def predict(self, df):
+        # arbitrary preprocessing or feature fetching code can be placed here 
         return self.artifacts.model.predict(df)
 ```
 
-The `@artifacts` decorator here tells BentoML what artifacts are required for
-bundling this BentoService. `@env` allows specifying all the python or system
-dependencies, and `@api` adds an entry point for accessing this BentoService,
-which will be translated into a REST endpoint when [deploying as API
+The `@artifacts` decorator here tells BentoML what artifacts are required when 
+packaging this BentoService. Besides `PickleArtifact`, BentoML also provides
+`TfKerasModelArtifact`, `PytorchModelArtifact`, and `TfSavedModelArtifact` etc.
+
+`@env` is designed for specifying the desired system environment in order for this
+BentoService to load. Other ways you can use this decorator:
+
+* If you already have a requirement.txt file listing all python libraries you
+need:
+```python
+@env(requirement_txt='../myproject/requirement.txt')
+```
+
+* Or if you are running this code in a Conda environment that matches the
+desired production environment:
+```python
+@env(with_current_conda_env=True)
+```
+
+Lastly `@api` adds an entry point for accessing this BentoService. Each
+`api` will be translated into a REST endpoint when [deploying as API
 server](#serving-via-rest-api), or a CLI command when [running as a CLI
 tool](#use-as-cli-tool).
 
-Now you can save your trained model for prodcution use with this custom
+Each API also requires a `Handler` for defining the expected input format. In
+this case, `DataframeHandler` will transform either a HTTP request or CLI
+command arguments into a pandas Dataframe and pass it down to ther user defined
+API function. BentoML also supports `JsonHandler`, `ImageHandler` and
+`TensorHandler`.
+
+Next, to save your trained model for prodcution use with this custom
 BentoService class:
 
 ```python
@@ -125,8 +150,8 @@ svc.save('./bento_archive', version='v0.0.1')
 ```
 
 _That's it._ You've just created your first BentoArchive. It's a directory
-containing all the source code, data and configurations files required to run
-this model in production. You will also find three 'magic' files generated
+containing all the source code, data and configurations files required to load
+and run a BentoService. You will also find three 'magic' files generated
 within the archive directory:
 
 * `bentoml.yml` - a YAML file containing all metadata related to this
@@ -135,7 +160,7 @@ within the archive directory:
   API endpoint
 * `setup.py` - the config file that makes a BentoArchive 'pip' installable
 
-### Deployment & Inference Scenario
+### Deployment & Inference Scenarios
 
 - [Serving via REST API](#serving-via-rest-api)
 - [Loading BentoService in Python](#loading-bentoservice-in-python)
@@ -235,6 +260,17 @@ bentoml info ./bento_archive/IrisClassifier/v0.0.1/
 bentoml predict ./bento_archive/IrisClassifier/v0.0.1/ --input='./test.csv'
 ```
 
+### More About BentoML
+
+We build BentoML because we think there should be a much simpler way for machine
+learning teams to ship models for production. They should not wait for
+engineering teams to re-implement their models for production environment or
+build complex feature pipelines for experimental models.
+
+Our vision is to empower Machine Learning scientists to build and ship their own
+models end-to-end as production services, just like software engineers do.
+BentoML is enssentially this missing 'build tool' for Machine Learing projects.
+
 
 ## Examples
 
@@ -249,17 +285,6 @@ directory.
 - [Fashion MNIST classification with Tensorflow Keras](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-fashion-mnist/tf-keras-fashion-mnist-classification.ipynb)
 - More examples coming soon!
 
-
-## More About BentoML
-
-We build BentoML because we think there should be a much simpler way for machine
-learning teams to ship models for production. They should not wait for
-engineering teams to re-implement their models for production environment or
-build complex feature pipelines for experimental models.
-
-Our vision is to empower Machine Learning scientists to build and ship their own
-models end-to-end as production services, just like software engineers do.
-BentoML is enssentially this missing 'build tool' for Machine Learing projects.
 
 
 ## Releases and Contributing

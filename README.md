@@ -17,8 +17,8 @@ deployment.
 ## Feature Highlights
 
 * Distribute for different inference scenarios - Easily distribute your
-  Machine Learning model as PyPI package, API Server(as a Docker Image),
-  CLI tool or Spark UDF.
+  Machine Learning model as 1) PyPI package, 2) API Server(as a Docker Image),
+  3) CLI tool and 3) Spark UDF.
 
 * Multiple Framework Support - BentoML supports a wide range of ML frameworks
   out-of-the-box including Tensorflow, PyTorch, Scikit-Learn, xgboost and can be

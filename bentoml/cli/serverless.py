@@ -6,47 +6,6 @@ from collections import OrderedDict
 from bentoml.utils import Path
 from ruamel.yaml import YAML
 
-WITH_SERVERLESS_PYTHON_REQUIREMENT_PLUGIN = """\
-package:
-  include:
-    - 'handler.py'
-    - '{class_name}/*'
-    - 'requirements.txt'
-
-custom:
-  pythonRequirements:
-    slime: true
-    layer: true
-    dockerizePip: true
-    zip: true
-
-functions:
-  {api_name}:
-    layers:
-      - {Ref: PythonRequirementsLambdaLayer}
-    handler: handler.predict
-    events:
-      - http:
-          path: /predict
-          method: post
-"""
-
-WITHOUT_SERVERLESS_PYTHON_REQUIREMENT_PLUGIN = """\
-package:
-  include:
-    - '*.py'
-    - '{class_name}/*'
-    - 'requirements.txt'
-
-functions:
-  {api_name}:
-    handler: handler.predict
-    events:
-      - http:
-          path: /predict
-          method: post
-"""
-
 AWS_HANDLER_PY_TEMPLATE = """\
 try:
     import unzip_requirements:

@@ -8,10 +8,20 @@
 
 
 BentoML is a python library for packaging and deploying machine learning
-models. It provides high-level APIs for defining a machine service,
-including its artifacts, source code, dependencies, metrics, and supports
-bundling them into a production-system-friendly format that are ready for
-deployment.
+models. It provides high-level APIs for defining a ML service and bundling
+its artifacts, source code, dependencies, and configurations into a
+production-system-friendly format that are ready for deployment.
+
+
+---
+
+- [Feature Highlights](#feature-highlights)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Examples](#examples)
+- [More About BentoML](#more-about-bentoml)
+- [Releases and Contributing](#releases-and-contributing)
+- [License](#license)
 
 
 ## Feature Highlights
@@ -42,15 +52,6 @@ deployment.
   high-performance deep learning model runtime backend (such as
   [tensorflow-serving](https://github.com/tensorflow/serving)) to deploy low-latancy
   serving endpoint. 
-
----
-
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-- [Examples](#examples)
-- [More About BentoML](#more-about-bentoml)
-- [Releases and Contributing](#releases-and-contributing)
-- [License](#license)
 
 
 ## Installation

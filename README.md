@@ -106,9 +106,12 @@ class IrisClassifier(BentoService):
         return self.artifacts.model.predict(df)
 ```
 
-The `@artifacts` decorator here tells BentoML what artifacts are required for
-bundling this BentoService. `@env` allows specifying list of python or system
-dependencies, alternatively:
+The `@artifacts` decorator here tells BentoML what artifacts are required when 
+packaging this BentoService. Other than `PickleArtifact`, bentoml also provides
+`TfKerasModelArtifact`, `PytorchModelArtifact`, and `TfSavedModelArtifact` etc.
+
+`@env` is designed for specifying the desired system environment in order for this
+BentoService to load. Other ways you can use this decorator:
 
 * If you already have a requirement.txt file listing all python libraries you
 need:
@@ -127,8 +130,11 @@ which will be translated into a REST endpoint when [deploying as API
 server](#serving-via-rest-api), or a CLI command when [running as a CLI
 tool](#use-as-cli-tool).
 
+The `DataframeHandler` will transform either HTTP request or CLI command
+arguments into a pandas Dataframe and pass it down to user defined API function.
+BentoML also provides `JsonHandler`, 'ImageHandler' and `TensorHandler`.
 
-Now you can save your trained model for prodcution use with this custom
+Next, to save your trained model for prodcution use with this custom
 BentoService class:
 
 ```python

@@ -14,12 +14,10 @@ production-system-friendly format that is ready for deployment.
 
 ---
 
-- [Feature Highlights](#feature-highlights)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
 - [Documentation (Coming soon!)](#getting-started)
 - [Examples](#examples)
-- [More About BentoML](#more-about-bentoml)
 - [Releases and Contributing](#releases-and-contributing)
 - [License](#license)
 
@@ -262,6 +260,17 @@ bentoml info ./bento_archive/IrisClassifier/v0.0.1/
 bentoml predict ./bento_archive/IrisClassifier/v0.0.1/ --input='./test.csv'
 ```
 
+### More About BentoML
+
+We build BentoML because we think there should be a much simpler way for machine
+learning teams to ship models for production. They should not wait for
+engineering teams to re-implement their models for production environment or
+build complex feature pipelines for experimental models.
+
+Our vision is to empower Machine Learning scientists to build and ship their own
+models end-to-end as production services, just like software engineers do.
+BentoML is enssentially this missing 'build tool' for Machine Learing projects.
+
 
 ## Examples
 
@@ -276,17 +285,6 @@ directory.
 - [Fashion MNIST classification with Tensorflow Keras](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-fashion-mnist/tf-keras-fashion-mnist-classification.ipynb)
 - More examples coming soon!
 
-
-## More About BentoML
-
-We build BentoML because we think there should be a much simpler way for machine
-learning teams to ship models for production. They should not wait for
-engineering teams to re-implement their models for production environment or
-build complex feature pipelines for experimental models.
-
-Our vision is to empower Machine Learning scientists to build and ship their own
-models end-to-end as production services, just like software engineers do.
-BentoML is enssentially this missing 'build tool' for Machine Learing projects.
 
 
 ## Releases and Contributing

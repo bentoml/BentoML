@@ -107,7 +107,7 @@ class IrisClassifier(BentoService):
 ```
 
 The `@artifacts` decorator here tells BentoML what artifacts are required when 
-packaging this BentoService. Other than `PickleArtifact`, bentoml also provides
+packaging this BentoService. Besides `PickleArtifact`, bentoml also provides
 `TfKerasModelArtifact`, `PytorchModelArtifact`, and `TfSavedModelArtifact` etc.
 
 `@env` is designed for specifying the desired system environment in order for this
@@ -116,7 +116,7 @@ BentoService to load. Other ways you can use this decorator:
 * If you already have a requirement.txt file listing all python libraries you
 need:
 ```python
-@env(requirement_txt='../myproject/requirement_txt')
+@env(requirement_txt='../myproject/requirement.txt')
 ```
 
 * Or if you are running this code within a Conda environment that matches the

@@ -115,10 +115,7 @@ class DataframeHandler(BentoHandler):
         elif event['headers']['Content-Type'] == 'text/csv':
             df = pd.read_csv(event['body'])
         else:
-            return {
-                    "statusCode": 400,
-                    "body": 'Only accept json or csv content type'
-            }
+            return {"statusCode": 400, "body": 'Only accept json or csv content type'}
 
         if self.input_columns_require:
             check_missing_columns(self.input_columns_require, df.columns)
@@ -132,8 +129,5 @@ class DataframeHandler(BentoHandler):
         else:
             result = json.dumps(output)
 
-        response = {
-            "statusCode": 200,
-            "body": result
-        }
+        response = {"statusCode": 200, "body": result}
         return response

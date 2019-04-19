@@ -1,7 +1,6 @@
 import os
 import shutil
 import subprocess
-from collections import OrderedDict
 
 from bentoml.utils import Path
 from ruamel.yaml import YAML
@@ -57,19 +56,15 @@ def update_serverless_configuration_for_aws(bento_service, output_path):
         content = f.read()
     serverless_config = yaml.load(content)
 
-    package_config = { 
-        'include': ['handler.py', bento_service.name + '/*', 'requirements.txt']
-    }
+    package_config = {'include': ['handler.py', bento_service.name + '/*', 'requirements.txt']}
     function_config = {
         'handler': 'handler.predict',
-        'events': [
-            {
-                'http': {
-                    'path': '/predict',
-                    'method': 'post'
-                }
+        'events': [{
+            'http': {
+                'path': '/predict',
+                'method': 'post'
             }
-        ]
+        }]
     }
 
     serverless_config['package'] = package_config

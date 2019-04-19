@@ -32,6 +32,7 @@ from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 from bentoml.cli.whichcraft import which
 from bentoml.cli.serverless import generate_serverless_bundle
 
+
 def create_bentoml_cli(installed_archive_path=None):
     # pylint: disable=unused-variable
 
@@ -113,11 +114,14 @@ def cli():
                   default='aws-python3')
     def build_serverless_archive(archive_path, output_path, platform):
         if which('serverless') is None:
-            click.echo('You need to install serverless framework for this')
+            click.echo('Serverless framework is not installed', err=True)
+            click.echo('Please visit www.serverless.com for install instructions')
             return
+
         bento_service = load(archive_path)
         generate_serverless_bundle(bento_service, platform, archive_path, output_path)
-        click.echo('Completed')
+        click.echo('BentoML: ', nl=False)
+        click.secho('Build serverless archive complete!', fg='green')
         return
 
     # pylint: enable=unused-variable

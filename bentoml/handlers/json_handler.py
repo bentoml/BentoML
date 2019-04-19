@@ -80,10 +80,7 @@ class JsonHandler(BentoHandler):
         if event['headers']['Content-Type'] == 'application/json':
             parsed_json = json.loads(event['body'])
         else:
-            return {
-                "statusCode": 400,
-                "body": 'Only accept json as content type'
-            }
+            return {"statusCode": 400, "body": 'Only accept json as content type'}
 
         output = func(parsed_json)
 
@@ -99,8 +96,5 @@ class JsonHandler(BentoHandler):
             else:
                 raise e
 
-        response = {
-            "statusCode": 200,
-            "body": result
-        }
+        response = {"statusCode": 200, "body": result}
         return response

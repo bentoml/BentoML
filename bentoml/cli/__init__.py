@@ -22,9 +22,6 @@ import json
 import os
 import click
 
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-
 from bentoml.archive import load, load_bentoml_config
 from bentoml.server import BentoAPIServer
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument

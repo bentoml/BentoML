@@ -1,1 +1,0 @@
-vendors/TextClassificationService/v1_0_0/requirements.txt

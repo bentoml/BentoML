@@ -23,7 +23,6 @@ install_requires = [
     'boto3',
     'Werkzeug',
     'pathlib2',
-    'distlib',
     'requests'
 ]
 

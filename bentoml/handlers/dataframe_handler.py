@@ -105,3 +105,29 @@ class DataframeHandler(BentoHandler):
             print(json.dumps(result.tolist()))
         else:
             print(result)
+
+    def handle_aws_lambda_event(self, event, func):
+        if event['headers']['input_json_orient']:
+            self.input_json_orient = event['headers']['input_json_orient']
+
+        if event['headers']['Content-Type'] == 'application/json':
+            df = pd.read_json(event['body'], orient=self.input_json_orient, dtype=False)
+        elif event['headers']['Content-Type'] == 'text/csv':
+            df = pd.read_csv(event['body'])
+        else:
+            return {"statusCode": 400, "body": 'Only accept json or csv content type'}
+
+        if self.input_columns_require:
+            check_missing_columns(self.input_columns_require, df.columns)
+
+        output = func(df)
+
+        if isinstance(output, pd.DataFrame):
+            result = output.to_json(orient=self.output_json_orient)
+        elif isinstance(output, np.ndarray):
+            result = json.dumps(output.tolist())
+        else:
+            result = json.dumps(output)
+
+        response = {"statusCode": 200, "body": result}
+        return response

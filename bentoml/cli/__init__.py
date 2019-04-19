@@ -25,7 +25,9 @@ import click
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
-from bentoml.cli.utils import read_requirment_txt, download_manylinux_wheel_from_url, get_manylinux_wheel_url
+
+from bentoml.cli.whichcraft import which
+from bentoml.cli.serverless import generate_serverless_bundle
 
 
 def create_bentoml_cli(installed_archive_path=None):
@@ -102,30 +104,21 @@ def cli():
 
     # pylint: disable=unused-variable
 
-    # Example Usage: bentoml build-aws-lambda-archive ./SAVED_ARCHIVE_PATH ./NEW_PATH
     @_cli.command()
     @click.argument('archive-path', type=click.STRING)
     @click.argument('output-path', type=click.STRING)
-    @click.option('--python-version', type=click.STRING, default='python3.6')
-    def build_aws_lambda_archive(archive_path, output_path, python_version):
-        """
-        Download AWS lambda compatilably packages into the target output path
+    @click.option('--platform', type=click.Choice(['aws-python', 'aws-python3', 'google-python']),
+                  default='aws-python3')
+    def build_serverless_archive(archive_path, output_path, platform):
+        if which('serverless') is None:
+            click.echo('Serverless framework is not installed', err=True)
+            click.echo('Please visit www.serverless.com for install instructions')
+            return
 
-        It will go through, requirements_txt, to get a list of packages,
-        then download the manylinux wheels from pypi to the output path.
-        """
-        if not os.path.isdir(output_path):
-            os.mkdir(output_path)
-
-        requirment_package_list = read_requirment_txt(
-            os.path.join(archive_path, 'requirements.txt'))
-        for name in requirment_package_list:
-            desired_min_version = requirment_package_list[name].constraints[0][1]
-            url = get_manylinux_wheel_url(python_version, name, desired_min_version)
-            if url:
-                file_name = url.split('/').pop()
-                wheel_path = os.path.join(output_path, file_name)
-                download_manylinux_wheel_from_url(url, wheel_path)
+        bento_service = load(archive_path)
+        generate_serverless_bundle(bento_service, platform, archive_path, output_path)
+        click.echo('BentoML: ', nl=False)
+        click.secho('Build serverless archive complete!', fg='green')
         return
 
     # pylint: enable=unused-variable

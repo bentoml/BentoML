@@ -22,7 +22,7 @@ import json
 import os
 import click
 
-from bentoml.archive import load, load_bentoml_config
+from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 

@@ -19,7 +19,6 @@ from __future__ import division
 from __future__ import print_function
 
 import json
-import os
 import click
 
 from bentoml.archive import load
@@ -104,19 +103,25 @@ def cli():
 
     # pylint: disable=unused-variable
 
-    @_cli.command()
+    @_cli.command(help='Generate serverless project with BentoML service archive.',
+                  context_settings=dict(
+                     ignore_unknown_options=True,
+                     allow_extra_args=True)
+                  )
     @click.argument('archive-path', type=click.STRING)
     @click.argument('output-path', type=click.STRING)
     @click.option('--platform', type=click.Choice(['aws-python', 'aws-python3', 'google-python']),
                   default='aws-python3')
-    def build_serverless_archive(archive_path, output_path, platform):
+    @click.pass_context
+    def build_serverless_archive(ctx, archive_path, output_path, platform):
         if which('serverless') is None:
             click.echo('Serverless framework is not installed', err=True)
             click.echo('Please visit www.serverless.com for install instructions')
             return
 
         bento_service = load(archive_path)
-        generate_serverless_bundle(bento_service, platform, archive_path, output_path)
+        generate_serverless_bundle(
+            bento_service, platform, archive_path, output_path, ctx.args)
         click.echo('BentoML: ', nl=False)
         click.secho('Build serverless archive complete!', fg='green')
         return

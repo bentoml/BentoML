@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: bento-example
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: bento-example
+  template:
+    metadata:
+      labels:
+        name: bento-example
+    spec:
+      containers:
+        - name: bento-service
+          image: MY_BENTO_SERVICE_IMAGE:TAG
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+              protocol: TCP

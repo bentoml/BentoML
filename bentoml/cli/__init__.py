@@ -106,8 +106,8 @@ def cli():
     @_cli.command(help='Generate serverless project with BentoML service archive.',
                   context_settings=dict(
                      ignore_unknown_options=True,
-                     allow_extra_args=True,
-                 ))
+                     allow_extra_args=True)
+                  )
     @click.argument('archive-path', type=click.STRING)
     @click.argument('output-path', type=click.STRING)
     @click.option('--platform', type=click.Choice(['aws-python', 'aws-python3', 'google-python']),

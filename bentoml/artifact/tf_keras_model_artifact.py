@@ -39,12 +39,13 @@ class TfKerasModelArtifact(ArtifactSpec):
         return _TfKerasModelArtifactInstance(self, model)
 
     def load(self, path):
-        try:
-            from tensorflow.python.keras.models import load_model
-        except ImportError:
-            raise ImportError("tensorflow package is required to use TfKerasModelArtifact")
+        #   try:
+        #       from tensorflow.python.keras.models import load_model
+        #   except ImportError:
+        #       raise ImportError("tensorflow package is required to use TfKerasModelArtifact")
 
-        model = load_model(self._model_file_path(path))
+        model = _TfKerasModelWrapper(self._model_file_path(path))
+        # model = load_model(self._model_file_path(path))
         return self.pack(model)
 
 
@@ -58,8 +59,8 @@ class _TfKerasModelArtifactInstance(ArtifactInstance):
         except ImportError:
             raise ImportError("tensorflow package is required to use TfKerasModelArtifact")
 
-        if not isinstance(model, training.Model):
-            raise ValueError('Expected `model` argument to be a `Model` instance')
+        #   if not isinstance(model, training.Model):
+        #       raise ValueError('Expected `model` argument to be a `Model` instance')
 
         self._model = model
 
@@ -68,3 +69,30 @@ class _TfKerasModelArtifactInstance(ArtifactInstance):
 
     def get(self):
         return self._model
+
+
+class _TfKerasModelWrapper(object):
+
+    def __init__(self, model):
+        try:
+            import tensorflow as tf
+            from tensorflow.python.keras.models import load_model
+        except ImportError:
+            raise ImportError("tensorflow package is required to use TfKerasModelArtifact")
+        self.session = tf.Session()
+        self.graph = tf.get_default_graph()
+        with self.graph.as_default():
+            with self.session.as_default():
+                self.model = load_model(model)
+
+    def predict(self, x):
+        with self.graph.as_default():
+            with self.session.as_default():
+                result = self.model.predict(x)
+        return result
+
+    def predict_classes(self, x):
+        with self.graph.as_default():
+            with self.session.as_default():
+                result = self.model.predict_classes(x)
+        return result

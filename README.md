@@ -296,6 +296,9 @@ change APIs in future releases**.
 Want to help build BentoML? Check out our
 [contributing documentation](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md).
 
+To make sure you have a pleasant experience, please read the [code of conduct](https://github.com/bentoml/BentoML/blob/master/CODE_OF_CONDUCT.md).
+It outlines core values and beliefs and will make working together a happier experience.
+
 
 
 ## License

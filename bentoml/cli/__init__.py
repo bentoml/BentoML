@@ -104,10 +104,7 @@ def cli():
     # pylint: disable=unused-variable
 
     @_cli.command(help='Generate serverless project with BentoML service archive.',
-                  context_settings=dict(
-                     ignore_unknown_options=True,
-                     allow_extra_args=True)
-                  )
+                  context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
     @click.argument('archive-path', type=click.STRING)
     @click.argument('output-path', type=click.STRING)
     @click.option('--platform', type=click.Choice(['aws-python', 'aws-python3', 'google-python']),
@@ -120,8 +117,7 @@ def cli():
             return
 
         bento_service = load(archive_path)
-        generate_serverless_bundle(
-            bento_service, platform, archive_path, output_path, ctx.args)
+        generate_serverless_bundle(bento_service, platform, archive_path, output_path, ctx.args)
         click.echo('BentoML: ', nl=False)
         click.secho('Build serverless archive complete!', fg='green')
         return

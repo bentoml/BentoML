@@ -112,14 +112,7 @@ def update_serverless_configuration_for_google(bento_service, output_path, extra
         serverless_config['provider']['stage'] = extra_args.stage
     serverless_config['provider']['project'] = bento_service.name
 
-    function_config = {
-            'handler': api.name,
-            'events': [
-                {
-                    'http': 'path'
-                }
-            ]
-    }
+    function_config = {'handler': api.name, 'events': [{'http': 'path'}]}
     serverless_config['functions'][api.name] = function_config
     del serverless_config['functions']['first']
     yaml.dump(serverless_config, Path(output_path))
@@ -129,8 +122,8 @@ def update_serverless_configuration_for_google(bento_service, output_path, extra
 def generate_main_py(bento_service, output_path):
     main_file = os.path.join(output_path, 'main.py')
     api = bento_service.get_service_apis()[0]
-    main_py_content = GOOGLE_MAIN_PY_TEMPLATE.format(
-            class_name=bento_service.name, api_name=api.name)
+    main_py_content = GOOGLE_MAIN_PY_TEMPLATE.format(class_name=bento_service.name,
+                                                     api_name=api.name)
 
     with open(main_file, 'w') as f:
         f.write(main_py_content)
@@ -143,12 +136,12 @@ def generate_serverless_bundle(bento_service, platform, archive_path, output_pat
     generate_base_serverless_files(output_path, platform, bento_service.name)
 
     if platform != 'google-python':
-        update_serverless_configuration_for_aws(
-                bento_service, serverless_config_file, parsed_extra_args)
+        update_serverless_configuration_for_aws(bento_service, serverless_config_file,
+                                                parsed_extra_args)
         generate_handler_py(bento_service, output_path)
     else:
-        update_serverless_configuration_for_google(
-                bento_service, serverless_config_file, parsed_extra_args)
+        update_serverless_configuration_for_google(bento_service, serverless_config_file,
+                                                   parsed_extra_args)
         generate_main_py(bento_service, output_path)
 
     shutil.copy(os.path.join(archive_path, 'requirements.txt'), output_path)

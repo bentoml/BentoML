@@ -23,8 +23,10 @@ from bentoml.artifact.pickle_artifact import PickleArtifact
 from bentoml.artifact.pytorch_model_artifact import PytorchModelArtifact
 from bentoml.artifact.text_file_artifact import TextFileArtifact
 from bentoml.artifact.tf_keras_model_artifact import TfKerasModelArtifact
+from bentoml.artifact.xgboost_artifact import XgboostModelArtifact
 
 __all__ = [
     'ArtifactSpec', 'ArtifactInstance', 'ArtifactCollection', 'PickleArtifact',
-    'PytorchModelArtifact', 'TextFileArtifact', 'TfKerasModelArtifact'
+    'PytorchModelArtifact', 'TextFileArtifact', 'TfKerasModelArtifact',
+    'XgboostModelArtifact'
 ]

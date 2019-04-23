@@ -252,8 +252,8 @@ class BentoService(BentoServiceBase):
     _bento_service_version = None
 
     # See `ver_decorator` function above for more information
-    _version_major = 0
-    _version_minor = 0
+    _version_major = None
+    _version_minor = None
 
     def __init__(self, artifacts=None, env=None):
         if artifacts is None:

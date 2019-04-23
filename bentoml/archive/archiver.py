@@ -171,7 +171,6 @@ def _generate_new_version_str():
     return date_string + '_' + random_hash
 
 
-# TODO: make pypi version consistent with archive version, and use Semantic versioning for both
 def save(bento_service, dst, version=None):
     """
     Save given BentoService along with all artifacts to target path
@@ -181,13 +180,15 @@ def save(bento_service, dst, version=None):
         version = _generate_new_version_str()
     _validate_version_str(version)
 
-    # BentoML uses semantic versioning for BentoService distribution
-    # The parameter version(or auto generated version) will be used as
-    # PATCH field in the final version, where MAJOR and MINOR are specified
-    # along with the BentoService class definition with @version decorator
-    version = '.'.join(
-        [str(bento_service._version_major),
-         str(bento_service._version_minor), version])
+    if bento_service._version_major is not None and bento_service._version_minor is not None:
+        # BentoML uses semantic versioning for BentoService distribution
+        # when user specified the MAJOR and MINOR version number along with
+        # the BentoService class definition with '@ver' decorator.
+        # The parameter version(or auto generated version) here will be used as
+        # PATCH field in the final version:
+        version = '.'.join(
+            [str(bento_service._version_major),
+             str(bento_service._version_minor), version])
 
     # Full path containing saved BentoArchive, it the dst path with service name
     # and service version as prefix. e.g.:

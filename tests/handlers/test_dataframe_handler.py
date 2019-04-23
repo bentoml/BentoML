@@ -6,7 +6,6 @@ from bentoml.handlers import DataframeHandler  # noqa: E402
 
 
 def test_dataframe_handle_cli(capsys, tmpdir):
-    test_content = '[{"name": "john","game": "mario","city": "sf"}]'
 
     def test_func(df):
         return df['name'][0]
@@ -15,8 +14,8 @@ def test_dataframe_handle_cli(capsys, tmpdir):
 
     import json
     json_file = tmpdir.join('test.json')
-    with open(json_file, 'w') as f:
-        f.write(test_content)
+    with open(str(json_file), 'w') as f:
+        f.write('[{"name": "john","game": "mario","city": "sf"}]')
 
     test_args = ['--input={}'.format(json_file)]
     handler.handle_cli(test_args, test_func)

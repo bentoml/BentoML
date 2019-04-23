@@ -107,8 +107,11 @@ class DataframeHandler(BentoHandler):
             print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        if event['headers']['input_json_orient']:
-            self.input_json_orient = event['headers']['input_json_orient']
+        try:
+            if event['headers']['input_json_orient']:
+                self.input_json_orient = event['headers']['input_json_orient']
+        except KeyError:
+            pass
 
         if event['headers']['Content-Type'] == 'application/json':
             df = pd.read_json(event['body'], orient=self.input_json_orient, dtype=False)

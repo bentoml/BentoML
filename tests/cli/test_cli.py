@@ -4,7 +4,7 @@ import sys
 import json
 from click.testing import CliRunner
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from bentoml.cli import create_bentoml_cli  # noqa: E402
 
 

@@ -6,15 +6,7 @@ from bentoml.handlers import DataframeHandler  # noqa: E402
 
 
 def test_dataframe_handle_cli(capsys, tmpdir):
-    test_content = """
-    [
-      {
-        "name": "john",
-        "game": "mario",
-        "city": "sf"
-      }
-    ]
-    """
+    test_content = '[{"name": "john","game": "mario","city": "sf"}]'
 
     def test_func(df):
         return df['name'][0]
@@ -33,15 +25,7 @@ def test_dataframe_handle_cli(capsys, tmpdir):
 
 
 def test_dataframe_handle_aws_lambda_event():
-    test_content = """
-    [
-      {
-        "name": "john",
-        "game": "mario",
-        "city": "sf"
-      }
-    ]
-    """
+    test_content = '[{"name": "john","game": "mario","city": "sf"}]'
 
     def test_func(df):
         return df['name'][0]

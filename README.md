@@ -8,7 +8,7 @@
 
 
 BentoML is a python library for packaging and deploying machine learning
-models. It provides high-level APIs for defining a ML service and packaging
+models. It provides high-level APIs for defining an ML service and packaging
 its artifacts, source code, dependencies, and configurations into a
 production-system-friendly format that is ready for deployment.
 
@@ -25,12 +25,12 @@ production-system-friendly format that is ready for deployment.
 ## Feature Highlights
 
 * __Multiple Distribution Format__ - Easily package your Machine Learning models
-  into format that works best with your inference scenario:
+  into a format that works best with your inference scenario:
   * Docker Image - deploy as containers running REST API Server
   * PyPI Package - integrate into your python applications seamlessly
   * CLI tool - put your model into Airflow DAG or CI/CD pipeline
-  * Spark UDF - run batch serving on large dataset with Spark
-  * Serverless Function - host your model with serverless cloud platforms
+  * Spark UDF - run batch serving on a large dataset with Spark
+  * Serverless Function - host your model on serverless platforms such as AWS Lambda
 
 * __Multiple Framework Support__ - BentoML supports a wide range of ML frameworks
   out-of-the-box including [Tensorflow](https://github.com/tensorflow/tensorflow/),
@@ -39,17 +39,16 @@ production-system-friendly format that is ready for deployment.
   [xgboost](https://github.com/dmlc/xgboost) and can be easily extended to work
   with new or custom frameworks.
 
-* __Deploy Anywhere__ - BentoML bundled ML service can be easily deploy with platforms
-  such as [Docker](https://www.docker.com/), [Kubernetes](https://kubernetes.io/),
+* __Deploy Anywhere__ - BentoML bundled ML service can be easily deployed with
+  platforms such as [Docker](https://www.docker.com/),
+  [Kubernetes](https://kubernetes.io/),
   [Serverless](https://github.com/serverless/serverless),
   [Airflow](https://airflow.apache.org) and [Clipper](http://clipper.ai),
-  on cloud platforms including AWS Lambda/ECS/SageMaker, Gogole Cloud Functions, and
-  Azure ML.
+  on cloud platforms including AWS, Gogole Cloud, and Azure.
 
-* __Custom Runtime Backend__ - Easily integrate your python preprocessing code with
-  high-performance deep learning model runtime backend (such as
-  [tensorflow-serving](https://github.com/tensorflow/serving)) to deploy low-latancy
-  serving endpoint. 
+* __Custom Runtime Backend__ - Easily integrate your python pre-processing code with
+  high-performance deep learning runtime backend, such as
+  [tensorflow-serving](https://github.com/tensorflow/serving).
 
 
 ## Installation
@@ -70,7 +69,7 @@ bentoml --version
 
 ## Getting Started
 
-Let's get started with a simple scikit-learn model as example:
+Let's get started with a simple scikit-learn model as an example:
 
 ```python
 from sklearn import svm
@@ -129,12 +128,12 @@ server](#serving-via-rest-api), or a CLI command when [running as a CLI
 tool](#use-as-cli-tool).
 
 Each API also requires a `Handler` for defining the expected input format. In
-this case, `DataframeHandler` will transform either a HTTP request or CLI
-command arguments into a pandas Dataframe and pass it down to ther user defined
+this case, `DataframeHandler` will transform either an HTTP request or CLI
+command arguments into a pandas Dataframe and pass it down to the user defined
 API function. BentoML also supports `JsonHandler`, `ImageHandler` and
 `TensorHandler`.
 
-Next, to save your trained model for prodcution use with this custom
+Next, to save your trained model for production use with this custom
 BentoService class:
 
 ```python
@@ -163,6 +162,7 @@ within the archive directory:
 ### Deployment & Inference Scenarios
 
 - [Serving via REST API](#serving-via-rest-api)
+- [Run REST API server with Docker](#run-rest-api-server-with-docker)
 - [Loading BentoService in Python](#loading-bentoservice-in-python)
 - [Use as PyPI Package](#use-as-pypi-package)
 - [Use as CLI tool](#use-as-cli-tool)
@@ -178,8 +178,10 @@ bentoml serve ./bento_archive/IrisClassifier/v0.0.1/
 ```
 
 Note you must ensure the pip and conda dependencies are available in your python
-environment when using `bentoml serve` command. More commonly we recommand using
+environment when using `bentoml serve` command. More commonly we recommend using
 BentoML API server with Docker:
+
+#### Run REST API server with Docker
 
 You can build a Docker Image for running API server hosting your BentoML archive
 by using the archive folder as docker build context:
@@ -241,7 +243,7 @@ python setup.py sdist upload
 #### Use as CLI tool
 
 When `pip install` a BentoML archive, it also provides you with a CLI tool for
-accsing your BentoService's APIs from command line:
+accessing your BentoService's APIs from the command line:
 
 ```bash
 pip install ./bento_archive/IrisClassifier/v0.0.1/
@@ -269,7 +271,7 @@ build complex feature pipelines for experimental models.
 
 Our vision is to empower Machine Learning scientists to build and ship their own
 models end-to-end as production services, just like software engineers do.
-BentoML is enssentially this missing 'build tool' for Machine Learing projects.
+BentoML is essentially this missing 'build tool' for Machine Learning projects.
 
 
 ## Examples
@@ -281,17 +283,17 @@ directory.
 - [Quick Start with sklearn](https://github.com/bentoml/BentoML/blob/master/examples/quick-start/main.py)
 - [Sentiment Analysis with Scikit-Learn](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
 - [Text Classification with Tensorflow Keras](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb)
-- [Fashion MNIST classification with Pytorch](https://github.com/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb)
-- [Fashion MNIST classification with Tensorflow Keras](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-fashion-mnist/tf-keras-fashion-mnist-classification.ipynb)
-- [Deploy with Serverless framework](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-serverless)
+- [Fashion MNIST classification with Pytorch](https://github.com/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb) (Alpha)
+- [Fashion MNIST classification with Tensorflow Keras](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-fashion-mnist/tf-keras-fashion-mnist-classification.ipynb) (Alpha)
+- [Deploy with Serverless framework](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-serverless) (Alpha)
 - More examples coming soon!
 
 
 
 ## Releases and Contributing
 
-BentoML is under active development. Current version is a beta release, **we may
-change APIs in future releases**.
+BentoML is under active development and is evolving rapidly. **Currently it is a
+Beta release, we may change APIs in future releases**.
 
 Want to help build BentoML? Check out our
 [contributing documentation](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md).

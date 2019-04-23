@@ -6,7 +6,7 @@ import os
 import sys
 
 try:  # Forced testing
-    from shutil import which
+    from shutil import which  # pylint: disable=unused-import
 except ImportError:  # Forced testing
     # Versions prior to Python 3.3 don't have shutil.which
 
@@ -64,7 +64,7 @@ except ImportError:  # Forced testing
             files = [cmd]
 
         seen = set()
-        for dir in path:
+        for dir in path:  # pylint: disable=redefined-builtin
             normdir = os.path.normcase(dir)
             if normdir not in seen:
                 seen.add(normdir)

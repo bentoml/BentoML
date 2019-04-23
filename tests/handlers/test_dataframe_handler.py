@@ -15,6 +15,10 @@ def test_dataframe_handle_cli(capsys, tmpdir):
       }
     ]
     """
+
+    def test_func(df):
+        return df[0]['name']
+
     handler = DataframeHandler()
 
     import json
@@ -23,7 +27,7 @@ def test_dataframe_handle_cli(capsys, tmpdir):
         f.write(test_content)
 
     test_args = ['--input={}'.format(json_file)]
-    handler.handle_cli(test_args)
+    handler.handle_cli(test_args, test_func)
     out, err = capsys.readouterr()
     assert out.strip().endswith('john')
 
@@ -36,16 +40,17 @@ def test_dataframe_handle_aws_lambda_event():
       "city": "sf"
     }
     """
+
     def test_func(json_obj):
         return json_obj['name']
 
     handler = DataframeHandler()
     success_event_obj = {'headers': {'Content-Type': 'application/json'}, 'body': test_content}
-    success_response = handler.handle_aws_lambda_event(success_event_objevent_obj, test_func)
+    success_response = handler.handle_aws_lambda_event(success_event_obj, test_func)
 
-    assert success_response.statusCode == 200
-    assert success_response.body == 'john'
+    assert success_response['statusCode'] == 200
+    assert success_response['body'] == 'john'
 
     error_event_obj = {'headers': {'Content-Type': 'this_will_fail'}, 'body': test_content}
     error_response = handler.handle_aws_lambda_event(error_event_obj, test_func)
-    assert error_response.statusCode == 400
+    assert error_response['statusCode'] == 400

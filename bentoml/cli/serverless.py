@@ -5,6 +5,7 @@ import argparse
 
 from bentoml.utils import Path
 from ruamel.yaml import YAML
+from packaging import version
 
 AWS_HANDLER_PY_TEMPLATE = """\
 try:
@@ -130,8 +131,33 @@ def generate_main_py(bento_service, output_path):
     return
 
 
+def check_serverless_compatiable_version():
+    version_result = subprocess.check_output(['serverless', '-v'])
+    parsed_version = version.parse(version_result.decode('utf-8')[:-1])
+
+    if parsed_version >= version.parse('1.40.0'):
+        return
+    else:
+        raise ValueError(
+            'Incompatiable serverless version, please install version 1.40.0 or greater')
+
+
 def generate_serverless_bundle(bento_service, platform, archive_path, output_path, extra_args):
+    TEMP_FOLDER_PATH = './temp_bento_serverless'
+    check_serverless_compatiable_version()
     parsed_extra_args = default_serverless_parser.parse_args(extra_args)
+
+    # Because Serverless framework will modify even absolute path with CWD.
+    # So, if user provide an absolute path as parameter, we will generate the serverless
+    # in the current directory and after our modification we will copy to user's desired
+    # path and delete the temporary one we created.
+    if os.path.isabs(output_path):
+        is_absolute_path = True
+        original_output_path = output_path
+        output_path = TEMP_FOLDER_PATH
+    else:
+        is_absolute_path = False
+
     serverless_config_file = os.path.join(output_path, 'serverless.yml')
     generate_base_serverless_files(output_path, platform, bento_service.name)
 
@@ -146,4 +172,9 @@ def generate_serverless_bundle(bento_service, platform, archive_path, output_pat
 
     shutil.copy(os.path.join(archive_path, 'requirements.txt'), output_path)
     add_model_service_archive(bento_service, archive_path, output_path)
+
+    if is_absolute_path:
+        shutil.copytree(output_path, original_output_path)
+        shutil.rmtree(output_path)
+
     return

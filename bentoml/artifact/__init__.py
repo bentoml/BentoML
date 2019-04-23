@@ -27,6 +27,5 @@ from bentoml.artifact.xgboost_artifact import XgboostModelArtifact
 
 __all__ = [
     'ArtifactSpec', 'ArtifactInstance', 'ArtifactCollection', 'PickleArtifact',
-    'PytorchModelArtifact', 'TextFileArtifact', 'TfKerasModelArtifact',
-    'XgboostModelArtifact'
+    'PytorchModelArtifact', 'TextFileArtifact', 'TfKerasModelArtifact', 'XgboostModelArtifact'
 ]

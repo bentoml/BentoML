@@ -308,7 +308,8 @@ def _save(bento_service, dst, version=None):
     with open(os.path.join(path, 'Dockerfile'), 'w') as f:
         f.write(
             BENTO_SERVER_SINGLE_MODEL_DOCKERFILE_TEMPLATE.format(
-                conda_env_name=bento_service.env.get_conda_env_name(), service_name=bento_service.name))
+                conda_env_name=bento_service.env.get_conda_env_name(),
+                service_name=bento_service.name))
 
     # write bentoml.yml
     bentoml_yml_content = BENTOML_CONFIG_YAML_TEMPLATE.format(

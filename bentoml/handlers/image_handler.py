@@ -98,3 +98,6 @@ class ImageHandler(BentoHandler):
         result = func(image)
         result = get_output_str(result, output_format=parsed_args.output)
         print(result)
+
+    def handle_aws_lambda_event(self, event, func):
+        raise NotImplementedError

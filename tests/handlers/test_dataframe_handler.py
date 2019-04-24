@@ -45,7 +45,7 @@ def test_dataframe_handle_aws_lambda_event():
 
 
 def test_check_dataframe_column_contains():
-    df = pd.DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), columns = ['a', 'b', 'c'])
+    df = pd.DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), columns=['a', 'b', 'c'])
 
     # this should pass
     check_dataframe_column_contains(['a', 'b', 'c'], df)

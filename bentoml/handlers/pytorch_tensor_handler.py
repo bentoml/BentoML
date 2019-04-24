@@ -26,11 +26,11 @@ class PytorchTensorHandler(BentoHandler):
     Tensor handlers for Pytorch models
     """
 
-    def __init__(self, signature_def):
-        self.signature_def = signature_def
-
     def handle_request(self, request, func):
         raise NotImplementedError
 
     def handle_cli(self, args, func):
+        raise NotImplementedError
+
+    def handle_aws_lambda_event(self, event, func):
         raise NotImplementedError

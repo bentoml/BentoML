@@ -20,6 +20,10 @@ from __future__ import print_function
 
 import json
 import click
+import multiprocessing
+import gunicorn.app.base
+
+from gunicorn.six import iteritems
 
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer
@@ -27,6 +31,26 @@ from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 
 from bentoml.cli.whichcraft import which
 from bentoml.cli.serverless import generate_serverless_bundle
+
+
+class GunicornApplication(gunicorn.app.base.BaseApplication):  # pylint: disable=abstract-method
+    """
+    A custom Gunicorn application.
+    """
+
+    def __init__(self, app, port, workers):
+        self.options = {'workers': workers, 'bind': '%s:%s' % ('127.0.0.1', port)}
+        self.application = app
+        super(GunicornApplication, self).__init__()
+
+    def load_config(self):
+        config = dict([(key, value) for key, value in iteritems(self.options)
+                       if key in self.cfg.settings and value is not None])
+        for key, value in iteritems(config):
+            self.cfg.set(key.lower(), value)
+
+    def load(self):
+        return self.application
 
 
 def create_bentoml_cli(installed_archive_path=None):
@@ -90,6 +114,20 @@ def create_bentoml_cli(installed_archive_path=None):
         model_service = load(archive_path)
         server = BentoAPIServer(model_service, port=port)
         server.start()
+
+    # Example Usage: bentoml serve-gunicorn ./SAVED_ARCHIVE_PATH --port=PORT --workers=WORKERS
+    @bentoml_cli.command()
+    @conditional_argument(installed_archive_path is None, 'archive-path', type=click.STRING)
+    @click.option('-p', '--port', type=click.INT, default=BentoAPIServer._DEFAULT_PORT)
+    @click.option('-w', '--workers', type=click.INT, default=(multiprocessing.cpu_count() // 2) + 1)
+    def serve_gunicorn(port, workers, archive_path=installed_archive_path):
+        """
+        Start REST API gunicorn server hosting BentoService loaded from archive
+        """
+        model_service = load(archive_path)
+        server = BentoAPIServer(model_service, port=port)
+        gunicorn_app = GunicornApplication(server.app, port, workers)
+        gunicorn_app.run()
 
     # pylint: enable=unused-variable
     return bentoml_cli

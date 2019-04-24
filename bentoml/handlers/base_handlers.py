@@ -58,3 +58,17 @@ class BentoHandler():
         :param func: user API function
         """
         raise NotImplementedError
+
+
+def get_output_str(result, output_format, output_orient='records'):
+    if output_format == 'str':
+        return str(result)
+    elif output_format == 'json':
+        if isinstance(result, pd.DataFrame):
+            return result.to_json(orient=output_orient)
+        elif isinstance(result, np.ndarray):
+            return json.dumps(result.tolist())
+        else:
+            return json.dumps(result)
+    else:
+        raise ValueError("Output format {} is not supported".format(output_format))

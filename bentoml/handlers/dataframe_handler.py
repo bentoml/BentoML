@@ -18,119 +18,112 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import json
+import os
+import argparse
 
 import pandas as pd
-import numpy as np
-from flask import Response, make_response
+from flask import Response, make_response, jsonify
 
-from bentoml.handlers.base_handlers import BentoHandler
-from bentoml.handlers.utils import generate_cli_default_parser
+from bentoml.handlers.base_handlers import BentoHandler, get_output_str
+from bentoml.utils.s3 import is_s3_url
 
 
-def check_missing_columns(required_columns, df_columns):
-    missing_columns = set(required_columns) - set(df_columns)
-    if missing_columns:
-        raise ValueError('Missing columns: {}'.format(','.join(missing_columns)))
+def check_dataframe_column_contains(required_column_names, df):
+    df_columns = set(df.columns)
+    for col in required_column_names:
+        if col not in df_columns:
+            raise ValueError('Missing columns: {}'.format(
+                ','.join(set(required_column_names) - df_columns)))
 
 
 class DataframeHandler(BentoHandler):
-    """
-    Create Data frame handler.  Dataframe handler will take inputs from rest request
-    or cli options and return response for REST or stdout for CLI
+    """Dataframe handler expects inputs from rest request or cli options that
+     can be converted into a pandas Dataframe, and pass down the dataframe
+     to user defined API function. It also returns response for REST API call
+     or print result for CLI call
     """
 
-    def __init__(self, input_json_orient='records', output_json_orient='records',
-                 input_columns_require=[]):
-        self.input_json_orient = input_json_orient
-        self.output_json_orient = output_json_orient
-        self.input_columns_require = input_columns_require
+    def __init__(self, orient='records', output_orient='records', typ='frame', input_columns=None):
+        self.orient = orient
+        self.output_orient = output_orient or orient
+        self.typ = typ
+        self.input_columns = input_columns
 
     def handle_request(self, request, func):
-
-        if request.headers.get('input_json_orient'):
-            self.input_json_orient = request.headers['input_json_orient']
+        orient = request.headers.get('orient', self.orient)
+        output_orient = request.headers.get('output_orient', self.output_orient)
 
         if request.content_type == 'application/json':
             df = pd.read_json(
-                request.data.decode('utf-8'), orient=self.input_json_orient, dtype=False)
+                request.data.decode('utf-8'), orient=orient, typ=self.typ, dtype=False)
         elif request.content_type == 'text/csv':
             df = pd.read_csv(request.data.decode('utf-8'))
         else:
-            return make_response(400)
+            return make_response(
+                jsonify(message="Request content-type not supported, "
+                        "only application/json and text/csv are "
+                        "supported"), 400)
 
-        if self.input_columns_require:
-            check_missing_columns(self.input_columns_require, df.columns)
-
-        output = func(df)
-
-        if isinstance(output, pd.DataFrame):
-            result = output.to_json(orient=self.output_json_orient)
-        elif isinstance(output, np.ndarray):
-            result = json.dumps(output.tolist())
-        else:
-            result = json.dumps(output)
-
-        response = Response(response=result, status=200, mimetype="application/json")
-        return response
-
-    def handle_cli(self, args, func):
-        parser = generate_cli_default_parser()
-        parser.add_argument('--input_json_orient', default='records')
-        parsed_args = parser.parse_args(args)
-
-        # TODO: Add support for parsing cli argument string as input
-        file_path = parsed_args.input
-
-        if parsed_args.input_json_orient:
-            self.input_json_orient = parsed_args.input_json_orient
-
-        if file_path.endswith('.csv'):
-            df = pd.read_csv(file_path)
-        elif file_path.endswith('.json'):
-            df = pd.read_json(file_path, orient=self.input_json_orient, dtype=False)
-        else:
-            raise ValueError("BentoML DataframeHandler currently only supports '.csv'"
-                             "and '.json' files as cli input.")
-
-        if self.input_columns_require:
-            check_missing_columns(self.input_columns_require, df.columns)
+        if self.typ == 'frame' and self.input_columns is not None:
+            check_dataframe_column_contains(self.input_columns, df)
 
         result = func(df)
+        result = get_output_str(result, request.headers.get('output', 'json'), output_orient)
+        return Response(response=result, status=200, mimetype="application/json")
 
-        # TODO: revisit cli handler output format and options
-        if isinstance(result, pd.DataFrame):
-            print(result.to_json())
-        elif isinstance(result, np.ndarray):
-            print(json.dumps(result.tolist()))
+    def handle_cli(self, args, func):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--input', required=True)
+        parser.add_argument('-o', '--output', default="str", choices=['str', 'json', 'yaml'])
+        parser.add_argument('--orient', default=self.orient)
+        parser.add_argument('--output_orient', default=self.output_orient)
+        parsed_args = parser.parse_args(args)
+
+        orient = parsed_args.orient
+        output_orient = parsed_args.output_orient
+        cli_input = parsed_args.input
+
+        if os.path.isfile(cli_input) or is_s3_url(cli_input):
+            if cli_input.endswith('.csv'):
+                df = pd.read_csv(cli_input)
+            elif cli_input.endswith('.json'):
+                df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
+            else:
+                raise ValueError(
+                    "Input file format not supported, BentoML cli only accepts .json and .csv file")
         else:
-            print(result)
+            # Assuming input string is JSON format
+            try:
+                df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
+            except ValueError as e:
+                raise ValueError(
+                    "Unexpected input format, BentoML DataframeHandler expects json string as"
+                    "input: {}".format(e))
+
+        if self.typ == 'frame' and self.input_columns is not None:
+            check_dataframe_column_contains(self.input_columns, df)
+
+        result = func(df)
+        result = get_output_str(result, parsed_args.output, output_orient)
+        print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        try:
-            if event['headers']['input_json_orient']:
-                self.input_json_orient = event['headers']['input_json_orient']
-        except KeyError:
-            pass
+        orient = event['headers'].get('orient', self.orient)
+        output_orient = event['headers'].get('output_orient', self.output_orient)
 
         if event['headers']['Content-Type'] == 'application/json':
-            df = pd.read_json(event['body'], orient=self.input_json_orient, dtype=False)
+            df = pd.read_json(event['body'], orient=orient, typ=self.typ, dtype=False)
         elif event['headers']['Content-Type'] == 'text/csv':
             df = pd.read_csv(event['body'])
         else:
-            return {"statusCode": 400, "body": 'Only accept json or csv content type'}
+            return {
+                "statusCode": 400,
+                "body": "Request content-type not supported, only application/json and text/csv are supported"
+            }
 
-        if self.input_columns_require:
-            check_missing_columns(self.input_columns_require, df.columns)
+        if self.typ == 'frame' and self.input_columns is not None:
+            check_dataframe_column_contains(self.input_columns, df)
 
-        output = func(df)
-
-        if isinstance(output, pd.DataFrame):
-            result = output.to_json(orient=self.output_json_orient)
-        elif isinstance(output, np.ndarray):
-            result = json.dumps(output.tolist())
-        else:
-            result = json.dumps(output)
-
-        response = {"statusCode": 200, "body": result}
-        return response
+        result = func(df)
+        result = get_output_str(result, event['headers'].get('output', 'json'), output_orient)
+        return {"statusCode": 200, "body": result}

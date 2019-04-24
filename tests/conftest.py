@@ -22,7 +22,7 @@ class TestBentoService(bentoml.BentoService):
     My RestServiceTestModel packaging with BentoML
     """
 
-    @bentoml.api(bentoml.handlers.DataframeHandler, input_columns_require=['age'])
+    @bentoml.api(bentoml.handlers.DataframeHandler, input_columns=['age'])
     def predict(self, df):
         """
         predict expects dataframe as input

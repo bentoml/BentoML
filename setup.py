@@ -24,7 +24,8 @@ install_requires = [
     'Werkzeug',
     'pathlib2',
     'requests',
-    'packaging'
+    'packaging',
+    'gunicorn'
 ]
 
 dev_requires = [

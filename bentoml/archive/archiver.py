@@ -107,16 +107,23 @@ ENV PATH /opt/conda/envs/$conda_env/bin:$PATH
 
 RUN conda install pip && pip install -r /bento/requirements.txt
 
-# Run bento server with path to bento archive
-CMD ["bentoml serve /bento"]
+# Run Gunicorn server with path to module.
+CMD ["python /bento/{service_name}/__init__.py"]
 """
 
 # TODO: improve this with import hooks PEP302?
 INIT_PY_TEMPLATE = """\
+from __future__ import unicode_literals
 import os
 import sys
 
+import argparse
+import multiprocessing
+import gunicorn.app.base
+from gunicorn.six import iteritems
+
 from bentoml import archive
+from bentoml.server import BentoAPIServer
 from bentoml.cli import create_bentoml_cli
 
 __VERSION__ = "{pypi_package_version}"
@@ -127,10 +134,53 @@ __module_path = os.path.abspath(os.path.dirname(__file__))
 
 cli=create_bentoml_cli(__module_path)
 
+
 def load():
     return archive.load(__module_path)
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-p', '--port')
+parser.add_argument('-w', '--workers')
+
+
+class GunicornApplication(gunicorn.app.base.BaseApplication):
+    def __init__(self, app, args=None):
+        if args:
+            parsed_args = parser.parse_args(args)
+            print(parsed_args)
+            self.options = {{}}
+            if parsed_args.workers:
+                self.options['workers'] = parsed_args.workers or (
+                    multiprocessing.cpu_count() // 2) + 1
+            if parsed_args.port:
+                self.options['bind'] = '%s:%s' % ('127.0.0.1', parsed_args.port) or '%s:%s' % (
+                    '127.0.0.1', '5000')
+        else:
+            self.options = {{
+                'workers': (multiprocessing.cpu_count() // 2) + 1,
+                'bind': '%s:%s' % ('127.0.0.1', '5000')
+            }}
+        self.application = app
+        super(GunicornApplication, self).__init__()
+
+    def load_config(self):
+        config = dict([(key, value) for key, value in iteritems(self.options)
+                       if key in self.cfg.settings and value is not None])
+        for key, value in iteritems(config):
+            self.cfg.set(key.lower(), value)
+
+    def load(self):
+        return self.application
+
+
 __all__ = ['__version__', '{service_name}', 'load']
+
+
+if __name__ == '__main__':
+    ms = load()
+    server = BentoAPIServer(ms)
+    GunicornApplication(server.app, sys.argv[1:]).run()
 """
 
 BENTOML_CONFIG_YAML_TEMPLATE = """\
@@ -258,7 +308,7 @@ def _save(bento_service, dst, version=None):
     with open(os.path.join(path, 'Dockerfile'), 'w') as f:
         f.write(
             BENTO_SERVER_SINGLE_MODEL_DOCKERFILE_TEMPLATE.format(
-                conda_env_name=bento_service.env.get_conda_env_name()))
+                conda_env_name=bento_service.env.get_conda_env_name(), service_name=bento_service.name))
 
     # write bentoml.yml
     bentoml_yml_content = BENTOML_CONFIG_YAML_TEMPLATE.format(

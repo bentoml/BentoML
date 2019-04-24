@@ -23,6 +23,7 @@ import click
 
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer
+from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 
 from bentoml.cli.whichcraft import which
@@ -90,6 +91,20 @@ def create_bentoml_cli(installed_archive_path=None):
         model_service = load(archive_path)
         server = BentoAPIServer(model_service, port=port)
         server.start()
+
+    # Example Usage: bentoml serve-gunicorn ./SAVED_ARCHIVE_PATH --port=PORT --workers=WORKERS
+    @bentoml_cli.command()
+    @conditional_argument(installed_archive_path is None, 'archive-path', type=click.STRING)
+    @click.option('-p', '--port', type=click.INT, default=BentoAPIServer._DEFAULT_PORT)
+    @click.option('-w', '--workers', type=click.INT, default=get_gunicorn_worker_count())
+    def serve_gunicorn(port, workers, archive_path=installed_archive_path):
+        """
+        Start REST API gunicorn server hosting BentoService loaded from archive
+        """
+        model_service = load(archive_path)
+        server = BentoAPIServer(model_service, port=port)
+        gunicorn_app = GunicornApplication(server.app, port, workers)
+        gunicorn_app.run()
 
     # pylint: enable=unused-variable
     return bentoml_cli

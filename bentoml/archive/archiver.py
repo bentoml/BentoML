@@ -105,10 +105,10 @@ RUN conda env create -f /bento/environment.yml
 
 ENV PATH /opt/conda/envs/$conda_env/bin:$PATH
 
-RUN conda install pip && pip install -r /bento/requirements.txt
+RUN conda install pip && pip install -r /bento/requirements.txt && pip install gunicorn
 
-# Run bento server with path to bento archive
-CMD ["bentoml serve /bento"]
+# Run Gunicorn server with path to module.
+CMD ["bentoml serve-gunicorn /bento"]
 """
 
 # TODO: improve this with import hooks PEP302?
@@ -127,8 +127,10 @@ __module_path = os.path.abspath(os.path.dirname(__file__))
 
 cli=create_bentoml_cli(__module_path)
 
+
 def load():
     return archive.load(__module_path)
+
 
 __all__ = ['__version__', '{service_name}', 'load']
 """

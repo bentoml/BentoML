@@ -42,8 +42,9 @@ dev_requires = [
 cv2 = [ 'opencv-python' ]
 pytorch  = [ 'torch', 'torchvision' ]
 tensorflow = [ 'tensorflow' ]
+gunicorn = [ 'gunicorn' ]
 
-optional_requires = cv2 + pytorch + tensorflow
+optional_requires = cv2 + pytorch + tensorflow + gunicorn
 dev_all = install_requires + dev_requires + optional_requires
 
 tests_require = [

@@ -21,8 +21,8 @@ from __future__ import print_function
 import json
 import click
 import multiprocessing
-import gunicorn.app.base
 
+import gunicorn.app.base
 from gunicorn.six import iteritems
 
 from bentoml.archive import load

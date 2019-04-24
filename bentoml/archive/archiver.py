@@ -105,7 +105,7 @@ RUN conda env create -f /bento/environment.yml
 
 ENV PATH /opt/conda/envs/$conda_env/bin:$PATH
 
-RUN conda install pip && pip install -r /bento/requirements.txt
+RUN conda install pip && pip install -r /bento/requirements.txt && pip install gunicorn
 
 # Run Gunicorn server with path to module.
 CMD ["bentoml serve-gunicorn /bento"]

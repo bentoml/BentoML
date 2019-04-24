@@ -117,7 +117,6 @@ import os
 import sys
 
 from bentoml import archive
-from bentoml.server import BentoAPIServer
 from bentoml.cli import create_bentoml_cli
 
 __VERSION__ = "{pypi_package_version}"

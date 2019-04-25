@@ -18,63 +18,48 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import json
-import pandas as pd
-import numpy as np
-from flask import Response, make_response
+import argparse
 
-from bentoml.handlers.base_handlers import BentoHandler
-from bentoml.handlers.utils import generate_cli_default_parser
+from flask import Response, make_response, jsonify
+
+from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 
 
 class JsonHandler(BentoHandler):
+    """JsonHandler parses REST API request or CLI command into parsed_json(a
+    dict in python) and pass down to user defined API function
     """
-    Json handler take input json str and process them and return response or stdout.
-    """
-
-    def __init__(self, input_json_orient='records', output_json_orient='records'):
-        self.input_json_orient = input_json_orient
-        self.output_json_orient = output_json_orient
 
     def handle_request(self, request, func):
         if request.content_type == 'application/json':
             parsed_json = json.loads(request.data.decode('utf-8'))
         else:
-            return make_response(400)
+            return make_response(
+                jsonify(message="Request content-type must be 'application/json'"
+                        "for this BentoService API"), 400)
 
-        output = func(parsed_json)
-        try:
-            result = json.dumps(output)
-        except Exception as e:  # pylint:disable=W0703
-            if isinstance(e, TypeError):
-                if type(output).__module__ == 'numpy':
-                    output = output.tolist()
-                    result = json.dumps(output)
-                else:
-                    raise e
-            else:
-                raise e
-
-        response = Response(response=result, status=200, mimetype="application/json")
-        return response
+        result = func(parsed_json)
+        result = get_output_str(result, request.headers.get('output', 'json'))
+        return Response(response=result, status=200, mimetype="application/json")
 
     def handle_cli(self, args, func):
-        parser = generate_cli_default_parser()
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--input', required=True)
+        parser.add_argument('-o', '--output', default="str", choices=['str', 'json', 'yaml'])
         parsed_args = parser.parse_args(args)
 
-        with open(parsed_args.input, 'r') as content_file:
-            content = content_file.read()
+        if os.path.isfile(parsed_args.input):
+            with open(parsed_args.input, 'r') as content_file:
+                content = content_file.read()
+        else:
+            content = parsed_args.input
 
         input_json = json.loads(content)
         result = func(input_json)
-
-        # TODO: revisit cli handler output format and options
-        if isinstance(result, pd.DataFrame):
-            print(result.to_json())
-        elif isinstance(result, np.ndarray):
-            print(json.dumps(result.tolist()))
-        else:
-            print(result)
+        result = get_output_str(result, parsed_args.output)
+        print(result)
 
     def handle_aws_lambda_event(self, event, func):
         if event['headers']['Content-Type'] == 'application/json':
@@ -82,19 +67,6 @@ class JsonHandler(BentoHandler):
         else:
             return {"statusCode": 400, "body": 'Only accept json as content type'}
 
-        output = func(parsed_json)
-
-        try:
-            result = json.dumps(output)
-        except Exception as e:  # pylint:disable=W0703
-            if isinstance(e, TypeError):
-                if type(output).__module__ == 'numpy':
-                    output = output.tolist()
-                    result = json.dumps(output)
-                else:
-                    raise e
-            else:
-                raise e
-
-        response = {"statusCode": 200, "body": result}
-        return response
+        result = func(parsed_json)
+        result = get_output_str(result, event['headers'].get('output', 'json'))
+        return {"statusCode": 200, "body": result}

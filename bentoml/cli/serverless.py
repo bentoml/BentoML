@@ -133,7 +133,7 @@ def generate_main_py(bento_service, output_path):
 
 def check_serverless_compatiable_version():
     version_result = subprocess.check_output(['serverless', '-v'])
-    parsed_version = version.parse(version_result.decode('utf-8')[:-1])
+    parsed_version = version.parse(version_result.decode('utf-8').strip())
 
     if parsed_version >= version.parse('1.40.0'):
         return

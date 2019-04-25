@@ -18,16 +18,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import json
 import os
+import argparse
 
 import numpy as np
-import pandas as pd
 from werkzeug.utils import secure_filename
 from flask import Response
 
-from bentoml.handlers.base_handlers import BentoHandler
-from bentoml.handlers.utils import generate_cli_default_parser
+from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 
 
 def check_file_format(file_name, accept_format_list):
@@ -37,24 +35,21 @@ def check_file_format(file_name, accept_format_list):
     if accept_format_list:
         _, extension = os.path.splitext(file_name)
         if extension not in accept_format_list:
-            raise ValueError('File format does not include in the white list')
+            raise ValueError(
+                'Input file not in supported format list: {}'.format(accept_format_list))
 
 
 class ImageHandler(BentoHandler):
-    """
-    Image handler take input image and process them and return response or stdout.
+    """Image handler take input image and process them and return response or stdout.
     """
 
-    def __init__(self, input_names=["image"], accept_multiple_files=False,
-                 accept_file_extensions=['.jpg', '.png', '.jpeg'], output_format='json'):
-        self.input_names = input_names
+    def __init__(self, input_names=None, accept_file_extensions=None, accept_multiple_files=False):
+        self.input_names = input_names or ["image"]
+        self.accept_file_extensions = accept_file_extensions or ['.jpg', '.png', '.jpeg']
         self.accept_multiple_files = accept_multiple_files
-        self.accept_file_extensions = accept_file_extensions
-        self.output_format = output_format
 
     def handle_request(self, request, func):
-        """
-        Handle http request that has image file/s.  It will convert image into a
+        """Handle http request that has image file/s.  It will convert image into a
         ndarray for the function to consume.
 
         Args:
@@ -65,31 +60,28 @@ class ImageHandler(BentoHandler):
             response object
         """
 
-        if request.method == 'POST':
-            if not self.accept_multiple_files:
-                input_file = request.files[self.input_names[0]]
-                file_name = secure_filename(input_file.filename)
-
-                check_file_format(file_name, self.accept_file_extensions)
-
-                input_data_string = input_file.read()
-                input_data = np.fromstring(input_data_string, np.uint8)
-            else:
-                return Response(response="Only support single file input", status=400)
-
-            output = func(input_data)
-
-            if self.output_format == 'json':
-                result = json.dumps(output)
-                response = Response(response=result, status=200, mimetype='applications/json')
-                return response
-            else:
-                return Response(response="Only support json output", status=400)
-        else:
+        if request.method != 'POST':
             return Response(response="Only accept POST request", status=400)
 
+        if not self.accept_multiple_files:
+            input_file = request.files[self.input_names[0]]
+            file_name = secure_filename(input_file.filename)
+
+            check_file_format(file_name, self.accept_file_extensions)
+
+            input_data_string = input_file.read()
+            input_data = np.fromstring(input_data_string, np.uint8)
+        else:
+            return Response(response="Only support single file input", status=400)
+
+        result = func(input_data)
+        result = get_output_str(result, request.headers.get('output', 'json'))
+        return Response(response=result, status=200, mimetype="application/json")
+
     def handle_cli(self, args, func):
-        parser = generate_cli_default_parser()
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--input', required=True)
+        parser.add_argument('-o', '--output', default="str", choices=['str', 'json', 'yaml'])
         parsed_args = parser.parse_args(args)
         file_path = parsed_args.input
 
@@ -103,12 +95,9 @@ class ImageHandler(BentoHandler):
             raise ImportError("opencv-python package is required to use ImageHandler")
 
         image = cv2.imread(file_path)
-
         result = func(image)
-        # TODO: revisit cli handler output format and options
-        if isinstance(result, pd.DataFrame):
-            print(result.to_json())
-        elif isinstance(result, np.ndarray):
-            print(json.dumps(result.tolist()))
-        else:
-            print(result)
+        result = get_output_str(result, output_format=parsed_args.output)
+        print(result)
+
+    def handle_aws_lambda_event(self, event, func):
+        raise NotImplementedError

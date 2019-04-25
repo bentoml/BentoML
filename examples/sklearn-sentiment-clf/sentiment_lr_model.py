@@ -7,9 +7,9 @@ from bentoml.handlers import DataframeHandler
 @bentoml.env(conda_dependencies=["scikit-learn", "pandas"])
 class SentimentLRModel(bentoml.BentoService):
 
-    @bentoml.api(DataframeHandler)
-    def predict(self, df):
+    @bentoml.api(DataframeHandler, typ='series')
+    def predict(self, series):
         """
-        predict expects dataframe as input
+        predict expects pandas.Series as input
         """        
-        return self.artifacts.sentiment_lr.predict(df)
+        return self.artifacts.sentiment_lr.predict(series)

@@ -78,7 +78,6 @@ include {service_name}/bentoml.yml
 graft {service_name}/artifacts
 """
 
-# TODO: add setup.sh and run
 BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE = """\
 FROM continuumio/miniconda3
 
@@ -103,6 +102,9 @@ WORKDIR /bento
 # update conda base env
 RUN conda env update -n base -f /bento/environment.yml
 RUN pip install -r /bento/requirements.txt
+
+# run user defined setup script
+RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
 
 # Run Gunicorn server with path to module.
 CMD ["bentoml serve-gunicorn /bento"]

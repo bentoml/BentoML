@@ -78,34 +78,33 @@ include {service_name}/bentoml.yml
 graft {service_name}/artifacts
 """
 
-# TODO: add setup.sh and run
-BENTO_SERVER_SINGLE_MODEL_DOCKERFILE_TEMPLATE = """\
+BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE = """\
 FROM continuumio/miniconda3
 
 ENTRYPOINT [ "/bin/bash", "-c" ]
 
 EXPOSE 5000
 
-RUN apt-get update && apt-get install -y \
-      libpq-dev \
-      build-essential \
-      && rm -rf /var/lib/apt/lists/*
+RUN set -x \
+     && apt-get update \
+     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential \
+     && rm -rf /var/lib/apt/lists/*
+
+# update conda and setup environment and pre-install common ML libraries to speed up docker build
+RUN conda update conda -y \
+      && conda install pip numpy scipy \
+      && pip install gunicorn six
 
 # copy over model files
 COPY . /bento
 WORKDIR /bento
 
-ARG conda_env={conda_env_name}
+# update conda base env
+RUN conda env update -n base -f /bento/environment.yml
+RUN pip install -r /bento/requirements.txt
 
-# update conda and setup environment
-RUN conda update conda -y
-
-# create conda env
-RUN conda env create -f /bento/environment.yml
-
-ENV PATH /opt/conda/envs/$conda_env/bin:$PATH
-
-RUN conda install pip && pip install -r /bento/requirements.txt && pip install gunicorn
+# run user defined setup script
+RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
 
 # Run Gunicorn server with path to module.
 CMD ["bentoml serve-gunicorn /bento"]
@@ -258,9 +257,7 @@ def _save(bento_service, dst, version=None):
 
     # write Dockerfile
     with open(os.path.join(path, 'Dockerfile'), 'w') as f:
-        f.write(
-            BENTO_SERVER_SINGLE_MODEL_DOCKERFILE_TEMPLATE.format(
-                conda_env_name=bento_service.env.get_conda_env_name()))
+        f.write(BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE)
 
     # write bentoml.yml
     bentoml_yml_content = BENTOML_CONFIG_YAML_TEMPLATE.format(

@@ -23,7 +23,7 @@ import json
 from time import time
 from functools import partial
 
-from flask import Flask, url_for, jsonify, Response, request
+from flask import Flask, jsonify, Response, request
 from prometheus_client import generate_latest, Summary
 
 from bentoml.server.prediction_logger import get_prediction_logger, log_prediction
@@ -44,18 +44,31 @@ def has_empty_params(rule):
     return len(defaults) < len(arguments)
 
 
-def index_view_func(app):
+def index_view_func(bento_service):
     """
     The index route for bento model server, it display all avaliable routes
     """
     # TODO: Generate a html page for user and swagger definitions
-    links = []
-    for rule in app.url_map.iter_rules():
-        if "GET" in rule.methods and not has_empty_params(rule):
-            url = url_for(rule.endpoint, **(rule.defaults or {}))
-            links.append(url)
-
-    return jsonify(links=links)
+    endpoints = {
+        "/feedback": {
+            "description": "Predictions feedback endpoint. Expecting feedback request in JSON"
+            "format and must contain a `request_id` field, which can be obtained from "
+            "any BentoService API response header"
+        },
+        "/healthz": {
+            "description": "Health check endpoint. Expecting an empty response with status code "
+            "200 when the service is in health state"
+        },
+        "/metrics": {
+            "description": "Prometheus metrics endpoint"
+        }
+    }
+    for api in bento_service.get_service_apis():
+        path = "/{}".format(api.name)
+        endpoints[path] = {
+            "description": api.doc,
+        }
+    return jsonify(endpoints)
 
 
 def healthz_view_func():
@@ -150,7 +163,7 @@ def setup_routes(app, bento_service):
     /predict
     """
 
-    app.add_url_rule('/', 'index', partial(index_view_func, app))
+    app.add_url_rule('/', 'index', partial(index_view_func, bento_service))
     app.add_url_rule('/healthz', 'healthz', healthz_view_func)
     app.add_url_rule('/feedback', 'feedback', feedback_view_func, methods=['POST', 'GET'])
     app.add_url_rule('/metrics', 'metrics', metrics_view_func)

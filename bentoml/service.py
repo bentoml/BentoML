@@ -29,6 +29,7 @@ from abc import abstractmethod, ABCMeta
 from bentoml.utils.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
+from bentoml.utils import isidentifier
 from bentoml.utils.s3 import is_s3_url, download_from_s3
 
 
@@ -153,7 +154,7 @@ def api_decorator(handler_cls, *args, **kwargs):
 
         _set_func_attr(func, '_is_api', True)
         _set_func_attr(func, '_handler', handler)
-        if not api_name.isidentifier():
+        if not isidentifier(api_name):
             raise ValueError(
                 "Invalid API name: '{}', a valid identifier must contains only letters, "
                 "numbers, underscores and not starting with a number.".format(api_name))

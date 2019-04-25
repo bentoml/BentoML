@@ -59,4 +59,4 @@ def test_check_dataframe_column_contains():
 
     with pytest.raises(ValueError) as e:
         check_dataframe_column_contains(['a', 'b', 'd', 'e'], df)
-    assert str(e.value).startswith("Missing columns: e,d")
+    assert str(e.value).startswith("Missing columns:")

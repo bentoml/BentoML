@@ -119,7 +119,7 @@ class DataframeHandler(BentoHandler):
             return {
                 "statusCode": 400,
                 "body": "Request content-type not supported, only application/json and text/csv"
-                        " are supported"
+                " are supported"
             }
 
         if self.typ == 'frame' and self.input_columns is not None:

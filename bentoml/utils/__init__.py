@@ -18,8 +18,23 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import re
+
 try:
     from pathlib import Path
     Path().expanduser()
 except (ImportError, AttributeError):
     from pathlib2 import Path
+
+
+def isidentifier(s):
+    """
+    Return true if string is in a valid python identifier format:
+
+    https://docs.python.org/2/reference/lexical_analysis.html#identifiers
+    """
+    try:
+        return s.isidentifier()
+    except AttributeError:
+        # str#isidentifier is only available in python 3
+        return re.match(r"[A-Za-z_][A-Za-z_0-9]*\Z", s) is not None

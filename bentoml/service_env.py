@@ -34,6 +34,7 @@ channels:
   - defaults
 dependencies:
   - python={python_version}
+  - pip
   - pip:
     - bentoml=={bentoml_version}
 """

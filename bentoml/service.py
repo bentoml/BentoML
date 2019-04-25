@@ -52,7 +52,7 @@ class BentoServiceAPI(object):
     with BentoAPIServer and BentoCLI
     """
 
-    def __init__(self, service, name, handler, func):
+    def __init__(self, service, name, doc, handler, func):
         """
         :param service: ref to service containing this API
         :param name: API name
@@ -63,6 +63,7 @@ class BentoServiceAPI(object):
         """
         self._service = service
         self._name = name
+        self._doc = doc
         self._handler = handler
         self._func = func
 
@@ -73,6 +74,10 @@ class BentoServiceAPI(object):
     @property
     def name(self):
         return self._name
+
+    @property
+    def doc(self):
+        return self._doc
 
     @property
     def handler(self):
@@ -119,12 +124,13 @@ class BentoServiceBase(object):
                 self.__class__, predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x)):
             if hasattr(function, '_is_api'):
                 api_name = _get_func_attr(function, '_api_name')
+                api_doc = _get_func_attr(function, '_api_doc')
                 handler = _get_func_attr(function, '_handler')
 
                 # Bind api method call with self(BentoService instance)
                 func = function.__get__(self)
 
-                self._service_apis.append(BentoServiceAPI(self, api_name, handler, func))
+                self._service_apis.append(BentoServiceAPI(self, api_name, api_doc, handler, func))
 
     def get_service_apis(self):
         return self._service_apis
@@ -148,8 +154,12 @@ def api_decorator(handler_cls, *args, **kwargs):
     >>>         # do something
     """
 
+    DEFAULT_API_DOC = "BentoML generated API endpoint"
+
     def decorator(func):
         api_name = kwargs.pop('api_name', func.__name__)
+        api_doc = kwargs.pop('api_doc', func.__doc__ or DEFAULT_API_DOC).strip()
+
         handler = handler_cls(*args, **kwargs)  # create handler instance and attach to api method
 
         _set_func_attr(func, '_is_api', True)
@@ -159,6 +169,7 @@ def api_decorator(handler_cls, *args, **kwargs):
                 "Invalid API name: '{}', a valid identifier must contains only letters, "
                 "numbers, underscores and not starting with a number.".format(api_name))
         _set_func_attr(func, '_api_name', api_name)
+        _set_func_attr(func, '_api_doc', api_doc)
 
         return func
 
@@ -214,8 +225,7 @@ def ver_decorator(major, minor):
 
 
 class BentoService(BentoServiceBase):
-    """
-    BentoService packs a list of artifacts and exposes service APIs
+    """BentoService packs a list of artifacts and exposes service APIs
     for BentoAPIServer and BentoCLI to execute. By subclassing BentoService,
     users can customize the artifacts and environments required for
     a ML service.

@@ -24,4 +24,4 @@ python3 setup.py sdist bdist_wheel
 REPO=${REPO:=testpypi}
 
 echo "Uploading package to $REPO..."
-twine upload --repository $REPO dist/*
+twine upload --repository $REPO dist/* --verbose

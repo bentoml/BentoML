@@ -153,7 +153,9 @@ def api_decorator(handler_cls, *args, **kwargs):
 
         _set_func_attr(func, '_is_api', True)
         _set_func_attr(func, '_handler', handler)
-        # TODO: validate api_name
+        if not api_name.isidentifier():
+            raise ValueError("Invalid API name: '{}', a valid identifier must contains only letters, "
+                             "numbers, underscores and not starting with a number.".format(api_name))
         _set_func_attr(func, '_api_name', api_name)
 
         return func

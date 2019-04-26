@@ -26,122 +26,10 @@ from datetime import datetime
 from bentoml.utils import Path
 from bentoml.utils.s3 import is_s3_url, upload_to_s3
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.version import __version__ as BENTOML_VERSION
 from bentoml.archive.py_module_utils import copy_used_py_modules
-
-BENTO_MODEL_SETUP_PY_TEMPLATE = """\
-import os
-import pip
-import logging
-import pkg_resources
-import setuptools
-
-def _parse_requirements(file_path):
-    pip_ver = pkg_resources.get_distribution('pip').version
-    pip_version = list(map(int, pip_ver.split('.')[:2]))
-    if pip_version >= [6, 0]:
-        raw = pip.req.parse_requirements(file_path,
-                                         session=pip.download.PipSession())
-    else:
-        raw = pip.req.parse_requirements(file_path)
-    return [str(i.req) for i in raw]
-
-try:
-    install_reqs = _parse_requirements("requirements.txt")
-except Exception:
-    logging.warning('Fail load requirements file, so using default ones.')
-    install_reqs = []
-
-setuptools.setup(
-    name='{name}',
-    version='{pypi_package_version}',
-    description="BentoML generated model module",
-    long_description=\"\"\"{long_description}\"\"\",
-    long_description_content_type="text/markdown",
-    url="https://github.com/atalaya-io/BentoML",
-    packages=setuptools.find_packages(),
-    install_requires=install_reqs,
-    include_package_data=True,
-    package_data={{
-        '{name}': ['bentoml.yml', 'artifacts/*']
-    }},
-    entry_points={{
-        'console_scripts': [
-            '{name}={name}:cli',
-        ],
-    }}
-)
-"""
-
-MANIFEST_IN_TEMPLATE = """\
-include {service_name}/bentoml.yml
-graft {service_name}/artifacts
-"""
-
-BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE = """\
-FROM continuumio/miniconda3
-
-ENTRYPOINT [ "/bin/bash", "-c" ]
-
-EXPOSE 5000
-
-RUN set -x \
-     && apt-get update \
-     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential \
-     && rm -rf /var/lib/apt/lists/*
-
-# update conda and setup environment and pre-install common ML libraries to speed up docker build
-RUN conda update conda -y \
-      && conda install pip numpy scipy \
-      && pip install gunicorn six
-
-# copy over model files
-COPY . /bento
-WORKDIR /bento
-
-# update conda base env
-RUN conda env update -n base -f /bento/environment.yml
-RUN pip install -r /bento/requirements.txt
-
-# run user defined setup script
-RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
-
-# Run Gunicorn server with path to module.
-CMD ["bentoml serve-gunicorn /bento"]
-"""
-
-# TODO: improve this with import hooks PEP302?
-INIT_PY_TEMPLATE = """\
-import os
-import sys
-
-from bentoml import archive
-from bentoml.cli import create_bentoml_cli
-
-__VERSION__ = "{pypi_package_version}"
-
-__module_path = os.path.abspath(os.path.dirname(__file__))
-
-{service_name} = archive.load_bento_service_class(__module_path)
-
-cli=create_bentoml_cli(__module_path)
-
-
-def load():
-    return archive.load(__module_path)
-
-
-__all__ = ['__version__', '{service_name}', 'load']
-"""
-
-BENTOML_CONFIG_YAML_TEMPLATE = """\
-service_name: {service_name}
-service_version: {service_version}
-module_name: {module_name}
-module_file: {module_file}
-created_at: {created_at}
-bentoml_version: {bentoml_version}
-"""
+from bentoml.archive.templates import BENTO_MODEL_SETUP_PY_TEMPLATE, \
+    MANIFEST_IN_TEMPLATE, BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE, INIT_PY_TEMPLATE
+from bentoml.archive.config import BentoArchiveConfig
 
 DEFAULT_BENTO_ARCHIVE_DESCRIPTION = """\
 # BentoML(bentoml.ai) generated model archive
@@ -260,12 +148,16 @@ def _save(bento_service, dst, version=None):
         f.write(BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE)
 
     # write bentoml.yml
-    bentoml_yml_content = BENTOML_CONFIG_YAML_TEMPLATE.format(
-        service_name=bento_service.name, bentoml_version=BENTOML_VERSION, service_version=version,
-        module_name=module_name, module_file=module_file, created_at=str(datetime.now()))
-    with open(os.path.join(path, 'bentoml.yml'), 'w') as f:
-        f.write(bentoml_yml_content)
+    config = BentoArchiveConfig()
+    config["metadata"].update({
+        'service_name': bento_service.name,
+        'service_version': version,
+        'module_name': module_name,
+        'module_file': module_file,
+    })
+    config['env'] = bento_service.env.to_dict()
+
+    config.write_to_path(path)
     # Also write bentoml.yml to module base path to make it accessible
     # as package data after pip installed as a python package
-    with open(os.path.join(module_base_path, 'bentoml.yml'), 'w') as f:
-        f.write(bentoml_yml_content)
+    config.write_to_path(module_base_path)

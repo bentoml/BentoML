@@ -43,9 +43,8 @@ CONDA_ENV_DEFAULT_NAME = 'bentoml-custom-conda-env'
 
 
 class CondaEnv(object):
-    """
-    A wrapper around conda environment settings file, allows adding/removing conda
-    or pip dependencies to env configuration, and supports load/export those
+    """A wrapper around conda environment settings file, allows adding/removing
+    conda or pip dependencies to env configuration, and supports load/export those
     settings from/to yaml files. The generated file is the same format as yaml file
     generated from `conda env export` command.
     """
@@ -96,8 +95,7 @@ class CondaEnv(object):
 
 
 class BentoServiceEnv(object):
-    """
-    Defines all aspect of the system environment requirements for a custom
+    """Defines all aspect of the system environment requirements for a custom
     BentoService to be used. This includes:
 
     conda environment - for most python third-party packages and libraries
@@ -164,7 +162,7 @@ class BentoServiceEnv(object):
                 f.write(self._setup_sh)
 
     @classmethod
-    def fromDict(cls, env_dict):
+    def from_dict(cls, env_dict):
         env = cls()
 
         if 'setup_sh' in env_dict:
@@ -183,3 +181,16 @@ class BentoServiceEnv(object):
             env.add_conda_pip_dependencies(env_dict['conda_pip_dependencies'])
 
         return env
+
+    def to_dict(self):
+        env_dict = dict()
+
+        if self._setup_sh:
+            env_dict['setup_sh'] = self._setup_sh
+
+        if self._requirements_txt:
+            env_dict['requirements_txt'] = self._requirements_txt
+
+        env_dict['conda_env'] = self._conda_env._conda_env
+
+        return env_dict

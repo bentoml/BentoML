@@ -22,32 +22,17 @@ import os
 import sys
 import tempfile
 
-from ruamel.yaml import YAML
-
-from bentoml.version import __version__ as BENTOML_VERSION
 from bentoml.utils.s3 import is_s3_url, download_from_s3
 from bentoml.utils.exceptions import BentoMLException
+from bentoml.archive.config import BentoArchiveConfig
 
 
 def load_bentoml_config(path):
     try:
-        with open(os.path.join(path, 'bentoml.yml'), 'r') as f:
-            bentml_yml_content = f.read()
+        return BentoArchiveConfig.load(os.path.join(path, 'bentoml.yml'))
     except FileNotFoundError:
         raise ValueError("BentoML can't locate config file 'bentoml.yml'"
                          " in archive path: {}".format(path))
-
-    yaml = YAML()
-    # load bentoml.yml as config
-    bentoml_config = yaml.load(bentml_yml_content)
-
-    if bentoml_config['bentoml_version'] != BENTOML_VERSION:
-        # TODO: warn about bentoml version mismatch
-        pass
-
-    # TODO: also check python version here
-
-    return bentoml_config
 
 
 def load_bento_service_class(archive_path):
@@ -64,21 +49,22 @@ def load_bento_service_class(archive_path):
         archive_path = tempdir
 
     config = load_bentoml_config(archive_path)
+    metadata = config["metadata"]
 
     # Load target module containing BentoService class from given path
-    module_file_path = os.path.join(archive_path, config['service_name'], config['module_file'])
+    module_file_path = os.path.join(archive_path, metadata['service_name'], metadata['module_file'])
     if not os.path.isfile(module_file_path):
         # Try loading without service_name prefix, for loading from a installed PyPi
-        module_file_path = os.path.join(archive_path, config['module_file'])
+        module_file_path = os.path.join(archive_path, metadata['module_file'])
 
     if not os.path.isfile(module_file_path):
         raise BentoMLException('Can not locate module_file {} in archive {}'.format(
-            config['module_file'], archive_path))
+            metadata['module_file'], archive_path))
 
     # Prepend archive_path to sys.path for loading extra python dependencies
     sys.path.insert(0, archive_path)
 
-    module_name = config['module_name']
+    module_name = metadata['module_name']
     if module_name in sys.modules:
         # module already loaded, TODO: add warning
         module = sys.modules[module_name]
@@ -99,11 +85,11 @@ def load_bento_service_class(archive_path):
     # Remove archive_path from sys.path to avoid import naming conflicts
     sys.path.remove(archive_path)
 
-    model_service_class = module.__getattribute__(config['service_name'])
+    model_service_class = module.__getattribute__(metadata['service_name'])
     # Set _bento_archive_path, which tells BentoService where to load its artifacts
     model_service_class._bento_archive_path = archive_path
     # Set cls._version, service instance can access it via svc.version
-    model_service_class._bento_service_version = config['service_version']
+    model_service_class._bento_service_version = metadata['service_version']
 
     return model_service_class
 

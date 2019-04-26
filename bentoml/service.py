@@ -188,7 +188,7 @@ def artifacts_decorator(artifact_specs):
 def env_decorator(**kwargs):
 
     def decorator(bento_service_cls):
-        bento_service_cls._env = BentoServiceEnv.fromDict(kwargs)
+        bento_service_cls._env = BentoServiceEnv.from_dict(kwargs)
         return bento_service_cls
 
     return decorator
@@ -296,7 +296,7 @@ class BentoService(BentoServiceBase):
             env = self.__class__._env
 
         if isinstance(env, dict):
-            self._env = BentoServiceEnv.fromDict(env)
+            self._env = BentoServiceEnv.from_dict(env)
         else:
             self._env = env
 
@@ -367,10 +367,14 @@ class BentoService(BentoServiceBase):
             artifacts_path = os.path.join(path, cls.name())
 
         bentoml_config = load_bentoml_config(path)
-        # TODO: check archive type and allow loading archive only
-        if bentoml_config['service_name'] != cls.name():
+        if bentoml_config['metadata']['service_name'] != cls.name():
             raise BentoMLException(
                 'BentoService name does not match with BentoML Archive in path: {}'.format(path))
+
+        if bentoml_config['kind'] != 'BentoService':
+            raise BentoMLException(
+                "BentoArchive type '{}' can not be loaded as a BentoService".format(
+                    bentoml_config['kind']))
 
         artifacts = ArtifactCollection.load(artifacts_path, cls._artifacts_spec)
         svc = cls(artifacts)

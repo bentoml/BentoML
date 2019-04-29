@@ -25,9 +25,7 @@ from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
-
-from bentoml.cli.whichcraft import which
-from bentoml.cli.serverless import generate_serverless_bundle
+from bentoml.cli.serverless import generate_serverless_bundle, deploy_with_serverless
 
 
 def create_bentoml_cli(installed_archive_path=None):
@@ -118,23 +116,19 @@ def cli():
 
     # pylint: disable=unused-variable
 
-    @_cli.command(help='Generate serverless project with BentoML service archive.',
-                  context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+    @_cli.command(help='Deploy BentoML archive to AWS Lambda or Google Cloud Function as ' +
+                  'REST endpoint with Serverless Framework', context_settings=dict(
+                      ignore_unknown_options=True, allow_extra_args=True))
     @click.argument('archive-path', type=click.STRING)
-    @click.argument('output-path', type=click.STRING)
     @click.option('--platform', type=click.Choice(['aws-python', 'aws-python3', 'google-python']),
                   default='aws-python3')
     @click.pass_context
-    def build_serverless_archive(ctx, archive_path, output_path, platform):
-        if which('serverless') is None:
-            click.echo('Serverless framework is not installed', err=True)
-            click.echo('Please visit www.serverless.com for install instructions')
-            return
-
+    def deploy(ctx, archive_path, platform):
+        output_path = './serverless-bundle'
         bento_service = load(archive_path)
-        generate_serverless_bundle(bento_service, platform, archive_path, output_path, ctx.args)
+        deploy_with_serverless(bento_service, platform, archive_path, output_path, ctx.args)
         click.echo('BentoML: ', nl=False)
-        click.secho('Build serverless archive complete!', fg='green')
+        click.secho('Deploy to {platform} complete!'.format(platform=platform), fg='green')
         return
 
     # pylint: enable=unused-variable

@@ -3,36 +3,13 @@ import shutil
 import subprocess
 import argparse
 
-from bentoml.utils import Path
-from ruamel.yaml import YAML
 from packaging import version
 
-AWS_HANDLER_PY_TEMPLATE = """\
-try:
-    import unzip_requirements:
-except ImportError:
-    pass
-import json
-
-import {class_name}
-
-bento_service = {class_name}.load()
-
-def {api_name}(event, context):
-    result = bento_service.{api_name}.handle_aws_lambda_event(event)
-
-    return result
-"""
-
-GOOGLE_MAIN_PY_TEMPLATE = """\
-import {class_name}
-
-bento_service = {class_name}.load()
-
-def {api_name}(request):
-    result = bento_service.{api_name}.handle_request(request)
-    return result
-"""
+from bentoml.cli.whichcraft import which
+from bentoml.cli.aws_lambda_template import AWS_HANDLER_PY_TEMPLATE, \
+     update_serverless_configuration_for_aws
+from bentoml.cli.google_cf_template import GOOGLE_MAIN_PY_TEMPLATE, \
+     update_serverless_configuration_for_google
 
 default_serverless_parser = argparse.ArgumentParser()
 default_serverless_parser.add_argument('--region')
@@ -45,6 +22,13 @@ def generate_base_serverless_files(output_path, platform, name):
     if platform != 'google-python':
         subprocess.call(['serverless', 'plugin', 'install', '-n', 'serverless-python-requirements'],
                         cwd=output_path)
+        subprocess.call(['serverless', 'plugin', 'install', '-n', 'serverless-apigw-binary'],
+                        cwd=output_path)
+    return
+
+
+def deploy_serverless_file(output_path):
+    subprocess.call(['serverless', 'deploy'], cwd=output_path)
     return
 
 
@@ -54,84 +38,31 @@ def add_model_service_archive(bento_service, archive_path, output_path):
     return
 
 
-def generate_handler_py(bento_service, output_path):
-    handler_file = os.path.join(output_path, 'handler.py')
+def generate_handler_py(bento_service, output_path, platform):
     api = bento_service.get_service_apis()[0]
-    handler_py_content = AWS_HANDLER_PY_TEMPLATE.format(class_name=bento_service.name,
-                                                        api_name=api.name)
+    if platform == 'google-python':
+        file_name = 'main.py'
+        handler_py_content = GOOGLE_MAIN_PY_TEMPLATE.format(class_name=bento_service.name,
+                                                            api_name=api.name)
+    else:
+        file_name = 'handler.py'
+        handler_py_content = AWS_HANDLER_PY_TEMPLATE.format(class_name=bento_service.name,
+                                                            api_name=api.name)
+
+    handler_file = os.path.join(output_path, file_name)
 
     with open(handler_file, 'w') as f:
         f.write(handler_py_content)
     return
 
 
-def update_serverless_configuration_for_aws(bento_service, output_path, extra_args):
-    yaml = YAML()
-    api = bento_service.get_service_apis()[0]
-    with open(output_path, 'r') as f:
-        content = f.read()
-    serverless_config = yaml.load(content)
-
-    if extra_args.region:
-        serverless_config['provider']['region'] = extra_args.region
-    else:
-        serverless_config['provider']['region'] = 'us-west-2'
-
-    if extra_args.stage:
-        serverless_config['provider']['stage'] = extra_args.stage
-    else:
-        serverless_config['provider']['stage'] = 'dev'
-
-    package_config = {'include': ['handler.py', bento_service.name + '/*', 'requirements.txt']}
-    function_config = {
-        'handler': 'handler.predict',
-        'events': [{
-            'http': {
-                'path': '/predict',
-                'method': 'post'
-            }
-        }]
-    }
-
-    serverless_config['package'] = package_config
-    serverless_config['functions'][api.name] = function_config
-    del serverless_config['functions']['hello']
-
-    yaml.dump(serverless_config, Path(output_path))
-    return
-
-
-def update_serverless_configuration_for_google(bento_service, output_path, extra_args):
-    yaml = YAML()
-    api = bento_service.get_service_apis()[0]
-    with open(output_path, 'r') as f:
-        content = f.read()
-    serverless_config = yaml.load(content)
-    if extra_args.region:
-        serverless_config['provider']['region'] = extra_args.region
-    if extra_args.stage:
-        serverless_config['provider']['stage'] = extra_args.stage
-    serverless_config['provider']['project'] = bento_service.name
-
-    function_config = {'handler': api.name, 'events': [{'http': 'path'}]}
-    serverless_config['functions'][api.name] = function_config
-    del serverless_config['functions']['first']
-    yaml.dump(serverless_config, Path(output_path))
-    return
-
-
-def generate_main_py(bento_service, output_path):
-    main_file = os.path.join(output_path, 'main.py')
-    api = bento_service.get_service_apis()[0]
-    main_py_content = GOOGLE_MAIN_PY_TEMPLATE.format(class_name=bento_service.name,
-                                                     api_name=api.name)
-
-    with open(main_file, 'w') as f:
-        f.write(main_py_content)
-    return
-
-
 def check_serverless_compatiable_version():
+    if which('serverless') is None:
+        raise ValueError(
+            'Serverless framework is not installed, please visit ' +
+            'www.serverless.com for install instructions.'
+        )
+
     version_result = subprocess.check_output(['serverless', '-v'])
     parsed_version = version.parse(version_result.decode('utf-8').strip())
 
@@ -164,11 +95,11 @@ def generate_serverless_bundle(bento_service, platform, archive_path, output_pat
     if platform != 'google-python':
         update_serverless_configuration_for_aws(bento_service, serverless_config_file,
                                                 parsed_extra_args)
-        generate_handler_py(bento_service, output_path)
     else:
         update_serverless_configuration_for_google(bento_service, serverless_config_file,
                                                    parsed_extra_args)
-        generate_main_py(bento_service, output_path)
+
+    generate_handler_py(bento_service, output_path, platform)
 
     shutil.copy(os.path.join(archive_path, 'requirements.txt'), output_path)
     add_model_service_archive(bento_service, archive_path, output_path)
@@ -177,4 +108,10 @@ def generate_serverless_bundle(bento_service, platform, archive_path, output_pat
         shutil.copytree(output_path, original_output_path)
         shutil.rmtree(output_path)
 
+    return
+
+
+def deploy_with_serverless(bento_service, platform, archive_path, output_path, extra_args):
+    generate_serverless_bundle(bento_service, platform, archive_path, output_path, extra_args)
+    deploy_serverless_file(output_path)
     return

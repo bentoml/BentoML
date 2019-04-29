@@ -25,6 +25,7 @@ import numpy as np
 from werkzeug.utils import secure_filename
 from flask import Response
 
+from bentoml.utils.exceptions import BentoMLException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 
 
@@ -100,4 +101,19 @@ class ImageHandler(BentoHandler):
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        raise NotImplementedError
+        import base64
+        try:
+            import cv2
+        except ImportError:
+            raise ImportError("opencv-python package is required to use ImageHandler")
+
+        if 'multipart/form-data' not in event['headers']['Content-Type']:
+            nparr = np.fromstring(base64.b64decode(event['body']), np.uint8)
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        else:
+            raise BentoMLException(
+                "BentoML currently doesn't support multipart form files for AWS Lambda")
+
+        result = func(image)
+        result = get_output_str(result, event['headers'].get('output', 'json'))
+        return {'statusCode': 200, 'body': result}

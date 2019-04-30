@@ -109,13 +109,13 @@ class ImageHandler(BentoHandler):
         except ImportError:
             raise ImportError("opencv-python package is required to use ImageHandler")
 
-        if event['headers']['Content-Type'] in ACCEPTED_CONTENT_TYPES:
+        if event['headers'].get('Content-Type', None) in ACCEPTED_CONTENT_TYPES:
             nparr = np.fromstring(base64.b64decode(event['body']), np.uint8)
             image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         else:
             raise BentoMLException(
-                "BentoML currently doesn't support {content_type} for AWS Lambda".format(
-                    content_type=event['headers']['Content-Type']))
+                "BentoML currently doesn't support Content-Type: {content_type} for AWS Lambda".
+                format(content_type=event['headers']['Content-Type']))
 
         result = func(image)
         result = get_output_str(result, event['headers'].get('output', 'json'))

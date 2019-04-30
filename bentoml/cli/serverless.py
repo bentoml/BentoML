@@ -1,31 +1,43 @@
+# BentoML - Machine Learning Toolkit for packaging and deploying models
+# Copyright (C) 2019 Atalaya Tech, Inc.
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import shutil
 import subprocess
-import argparse
 
-from datetime import datetime
 from packaging import version
 
+from bentoml.utils import Path
 from bentoml.cli.whichcraft import which
 from bentoml.cli.aws_lambda_template import AWS_HANDLER_PY_TEMPLATE, \
      update_serverless_configuration_for_aws
 from bentoml.cli.gcp_function_template import GOOGLE_MAIN_PY_TEMPLATE, \
      update_serverless_configuration_for_google
-
-default_serverless_parser = argparse.ArgumentParser()
-default_serverless_parser.add_argument('--region')
-default_serverless_parser.add_argument('--stage')
+from bentoml.cli.utils import generate_bentoml_deployment_snapshot_path
 
 SERVERLESS_PROVIDER = {
-    'aws-lambda': 'aws-python',
-    'aws-lambda-py3': 'aws-python3',
+    'aws-lambda': 'aws-python3',
+    'aws-lambda-py2': 'aws-python',
     'gcp-function': 'google-python',
 }
 
 
 def generate_base_serverless_files(output_path, platform, name):
     subprocess.call(
-        ['serverless', 'create', '--template', platform, '--path', output_path, '--name', name])
+        ['serverless', 'create', '--template', platform, '--name', name], cwd=output_path)
     if platform != 'google-python':
         subprocess.call(['serverless', 'plugin', 'install', '-n', 'serverless-python-requirements'],
                         cwd=output_path)
@@ -80,35 +92,30 @@ def check_serverless_compatiable_version():
             'Incompatiable serverless version, please install version 1.40.0 or greater')
 
 
-def generate_serverless_bundle(bento_service, platform, archive_path, extra_args):
+def generate_serverless_bundle(bento_service, platform, archive_path, additional_options):
     check_serverless_compatiable_version()
 
     provider = SERVERLESS_PROVIDER[platform]
-    TEMP_FOLDER_PATH = './temp_bento_serverless_' + datetime.now().isoformat()
-    parsed_extra_args = default_serverless_parser.parse_args(extra_args)
+    output_path = generate_bentoml_deployment_snapshot_path(bento_service.name, platform)
+    Path(output_path).mkdir(parents=True, exist_ok=False)
 
-    # Because Serverless framework will modify even absolute path with CWD.
-    # So, if user provide an absolute path as parameter, we will generate the serverless
-    # in the current directory and after our modification we will copy to user's desired
-    # path and delete the temporary one we created.
-    output_path = TEMP_FOLDER_PATH
 
     serverless_config_file = os.path.join(output_path, 'serverless.yml')
     generate_base_serverless_files(output_path, provider, bento_service.name)
 
     if provider != 'google-python':
         update_serverless_configuration_for_aws(bento_service, serverless_config_file,
-                                                parsed_extra_args)
+                                                additional_options)
     else:
         update_serverless_configuration_for_google(bento_service, serverless_config_file,
-                                                   parsed_extra_args)
+                                                   additional_options)
 
     generate_handler_py(bento_service, output_path, provider)
 
     shutil.copy(os.path.join(archive_path, 'requirements.txt'), output_path)
     add_model_service_archive(bento_service, archive_path, output_path)
 
-    return os.path.realpath(TEMP_FOLDER_PATH)
+    return os.path.realpath(output_path)
 
 
 def deploy_with_serverless(bento_service, platform, archive_path, extra_args):

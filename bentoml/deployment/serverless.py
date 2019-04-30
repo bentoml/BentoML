@@ -14,6 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
 import shutil
 import subprocess
@@ -23,6 +27,7 @@ from packaging import version
 from bentoml.archive import load
 from bentoml.utils import Path
 from bentoml.utils.whichcraft import which
+from bentoml.utils.exceptions import BentoMLException
 from bentoml.deployment.aws_lambda_template import update_aws_lambda_configuration
 from bentoml.deployment.gcp_function_template import update_gcp_function_configuration
 from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
@@ -80,10 +85,13 @@ def generate_serverless_bundle(bento_service, platform, archive_path, additional
 
     generate_base_serverless_files(output_path, provider, bento_service.name)
 
-    if provider != 'google-python':
+    if provider == 'google-python':
+        update_gcp_function_configuration(bento_service, output_path, additional_options)
+    elif provider == 'aws-lambda' or provider == 'aws-lambda-py3':
         update_aws_lambda_configuration(bento_service, output_path, additional_options)
     else:
-        update_gcp_function_configuration(bento_service, output_path, additional_options)
+        raise BentoMLException(("{provider} is not supported in current version of BentoML",
+                                 provider))
 
     shutil.copy(os.path.join(archive_path, 'requirements.txt'), output_path)
     add_model_service_archive(bento_service, archive_path, output_path)

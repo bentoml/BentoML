@@ -14,12 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import os
 
 from datetime import datetime
 
 from bentoml.utils import Path
+
 
 def generate_bentoml_deployment_snapshot_path(service_name, platform):
     return os.path.join(

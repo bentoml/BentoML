@@ -25,7 +25,7 @@ from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
-from bentoml.cli.serverless import generate_serverless_bundle, deploy_with_serverless
+from bentoml.deployment.serverless import generate_serverless_bundle, deploy_with_serverless
 from bentoml.utils.exceptions import BentoMLException
 
 SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py3', 'gcp-function']
@@ -129,19 +129,20 @@ def cli():
     @click.option('--stage', type=click.STRING)
     def deploy(archive_path, platform, region, stage):
         if platform in SERVERLESS_PLATFORMS:
-            bento_service = load(archive_path)
-            output_path = deploy_with_serverless(bento_service, platform, archive_path, {
+            output_path = deploy_with_serverless(platform, archive_path, {
                 "region": region,
                 "stage": stage
             })
             click.echo('BentoML: ', nl=False)
             click.secho('Deploy to {platform} complete!'.format(platform=platform), fg='green')
-            click.secho('Deployment archive is saved at {output_path}'.format(output_path=output_path),
-                        fg='green')
+            click.secho(
+                'Deployment archive is saved at {output_path}'.format(output_path=output_path),
+                fg='green')
             return
         else:
             raise BentoMLException(
-                '{platform} is not supported at the moment'.format(platform=platform))
+                'Deploying with "--platform={platform}" is not supported in the current version of BentoML'
+                .format(platform=platform))
 
     # pylint: enable=unused-variable
 

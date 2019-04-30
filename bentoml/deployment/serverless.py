@@ -20,13 +20,12 @@ import subprocess
 
 from packaging import version
 
+from bentoml.archive import load
 from bentoml.utils import Path
-from bentoml.cli.whichcraft import which
-from bentoml.cli.aws_lambda_template import AWS_HANDLER_PY_TEMPLATE, \
-     update_serverless_configuration_for_aws
-from bentoml.cli.gcp_function_template import GOOGLE_MAIN_PY_TEMPLATE, \
-     update_serverless_configuration_for_google
-from bentoml.cli.utils import generate_bentoml_deployment_snapshot_path
+from bentoml.utils.whichcraft import which
+from bentoml.deployment.aws_lambda_template import update_aws_lambda_configuration
+from bentoml.deployment.gcp_function_template import update_gcp_function_configuration
+from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
 
 SERVERLESS_PROVIDER = {
     'aws-lambda': 'aws-python3',
@@ -36,8 +35,8 @@ SERVERLESS_PROVIDER = {
 
 
 def generate_base_serverless_files(output_path, platform, name):
-    subprocess.call(
-        ['serverless', 'create', '--template', platform, '--name', name], cwd=output_path)
+    subprocess.call(['serverless', 'create', '--template', platform, '--name', name],
+                    cwd=output_path)
     if platform != 'google-python':
         subprocess.call(['serverless', 'plugin', 'install', '-n', 'serverless-python-requirements'],
                         cwd=output_path)
@@ -57,30 +56,10 @@ def add_model_service_archive(bento_service, archive_path, output_path):
     return
 
 
-def generate_handler_py(bento_service, output_path, platform):
-    api = bento_service.get_service_apis()[0]
-    if platform == 'google-python':
-        file_name = 'main.py'
-        handler_py_content = GOOGLE_MAIN_PY_TEMPLATE.format(class_name=bento_service.name,
-                                                            api_name=api.name)
-    else:
-        file_name = 'handler.py'
-        handler_py_content = AWS_HANDLER_PY_TEMPLATE.format(class_name=bento_service.name,
-                                                            api_name=api.name)
-
-    handler_file = os.path.join(output_path, file_name)
-
-    with open(handler_file, 'w') as f:
-        f.write(handler_py_content)
-    return
-
-
 def check_serverless_compatiable_version():
     if which('serverless') is None:
-        raise ValueError(
-            'Serverless framework is not installed, please visit ' +
-            'www.serverless.com for install instructions.'
-        )
+        raise ValueError('Serverless framework is not installed, please visit ' +
+                         'www.serverless.com for install instructions.')
 
     version_result = subprocess.check_output(['serverless', '-v'])
     parsed_version = version.parse(version_result.decode('utf-8').strip())
@@ -99,18 +78,12 @@ def generate_serverless_bundle(bento_service, platform, archive_path, additional
     output_path = generate_bentoml_deployment_snapshot_path(bento_service.name, platform)
     Path(output_path).mkdir(parents=True, exist_ok=False)
 
-
-    serverless_config_file = os.path.join(output_path, 'serverless.yml')
     generate_base_serverless_files(output_path, provider, bento_service.name)
 
     if provider != 'google-python':
-        update_serverless_configuration_for_aws(bento_service, serverless_config_file,
-                                                additional_options)
+        update_aws_lambda_configuration(bento_service, output_path, additional_options)
     else:
-        update_serverless_configuration_for_google(bento_service, serverless_config_file,
-                                                   additional_options)
-
-    generate_handler_py(bento_service, output_path, provider)
+        update_gcp_function_configuration(bento_service, output_path, additional_options)
 
     shutil.copy(os.path.join(archive_path, 'requirements.txt'), output_path)
     add_model_service_archive(bento_service, archive_path, output_path)
@@ -118,7 +91,8 @@ def generate_serverless_bundle(bento_service, platform, archive_path, additional
     return os.path.realpath(output_path)
 
 
-def deploy_with_serverless(bento_service, platform, archive_path, extra_args):
+def deploy_with_serverless(platform, archive_path, extra_args):
+    bento_service = load(archive_path)
     output_path = generate_serverless_bundle(bento_service, platform, archive_path, extra_args)
     deploy_serverless_file(output_path)
     return output_path

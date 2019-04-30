@@ -60,7 +60,7 @@ def update_serverless_configuration_for_aws(bento_service, output_path, extra_ar
 
     serverless_config['custom'] = custom_config
     serverless_config['functions'][api.name] = function_config
-    del serverless_config['functions']['hello']
+    #del serverless_config['functions']['hello']
 
     yaml.dump(serverless_config, Path(output_path))
     return

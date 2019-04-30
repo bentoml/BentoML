@@ -26,6 +26,11 @@ from bentoml.server import BentoAPIServer
 from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 from bentoml.cli.serverless import generate_serverless_bundle, deploy_with_serverless
+from bentoml.cli.utils import save_deployment_archive
+from bentoml.utils.exceptions import BentoMLException
+from bentoml.utils.tempdir import TempDirectory
+
+SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py3', 'gcp-function']
 
 
 def create_bentoml_cli(installed_archive_path=None):
@@ -120,16 +125,22 @@ def cli():
                   'REST endpoint with Serverless Framework', context_settings=dict(
                       ignore_unknown_options=True, allow_extra_args=True))
     @click.argument('archive-path', type=click.STRING)
-    @click.option('--platform', type=click.Choice(['aws-python', 'aws-python3', 'google-python']),
-                  default='aws-python3')
+    @click.option('--platform', type=click.Choice([
+        'aws-lambda', 'aws-lambda-py3', 'gcp-function', 'aws-sagemaker', 'azure-ml', 'algorithmia'
+    ]), required=True)
     @click.pass_context
     def deploy(ctx, archive_path, platform):
-        output_path = './serverless-bundle'
-        bento_service = load(archive_path)
-        deploy_with_serverless(bento_service, platform, archive_path, output_path, ctx.args)
-        click.echo('BentoML: ', nl=False)
-        click.secho('Deploy to {platform} complete!'.format(platform=platform), fg='green')
-        return
+        if platform in SERVERLESS_PLATFORMS:
+            bento_service = load(archive_path)
+            output_path = deploy_with_serverless(bento_service, platform, archive_path, ctx.args)
+            saved_path = save_deployment_archive(archive_path, output_path, platform)
+            click.echo('BentoML: ', nl=False)
+            click.secho('Deploy to {platform} complete!'.format(platform=platform), fg='green')
+            click.secho('Deployment archive is saved at {saved_path}'.format(saved_path=saved_path), fg='green')
+            return
+        else:
+            raise BentoMLException(
+                '{platform} is not supported at the moment'.format(platform=platform))
 
     # pylint: enable=unused-variable
 

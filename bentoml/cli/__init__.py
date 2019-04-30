@@ -28,7 +28,7 @@ from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 from bentoml.deployment.serverless import generate_serverless_bundle, deploy_with_serverless
 from bentoml.utils.exceptions import BentoMLException
 
-SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py3', 'gcp-function']
+SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
 
 
 def create_bentoml_cli(installed_archive_path=None):

@@ -60,11 +60,13 @@ def generate_serverless_configuration_for_google(bento_service, apis, output_pat
         serverless_config['provider']['stage'] = additional_options['stage']
         logger.info(('Using user defined Google stage: {0}', additional_options['stage']))
 
+    serverless_config['functions'] = {}
     for api in apis:
+        if api.name == 'first':
+            user_function_with_first_name = True
+
         function_config = {'handler': api.name, 'events': [{'http': 'path'}]}
         serverless_config['functions'][api.name] = function_config
-
-    del serverless_config['functions']['first']
 
     yaml.dump(serverless_config, Path(config_path))
     return

@@ -70,6 +70,7 @@ def generate_serverless_configuration_for_aws(apis, output_path, additional_opti
     else:
         serverless_config['provider']['stage'] = 'dev'
 
+    serverless_config['functions'] = {}
     for api in apis:
         function_config = {
             'handler': 'handler.{name}'.format(name=api.name),
@@ -81,10 +82,6 @@ def generate_serverless_configuration_for_aws(apis, output_path, additional_opti
             }]
         }
         serverless_config['functions'][api.name] = function_config
-
-    # ifff
-    if serverless_config['functions']['hello']:
-        del serverless_config['functions']['hello']
 
     custom_config = {
         'apigwBinary': ['image/jpg', 'image/jpeg', 'image/png'],

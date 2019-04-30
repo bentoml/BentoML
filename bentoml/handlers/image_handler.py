@@ -20,12 +20,16 @@ from __future__ import print_function
 
 import os
 import argparse
+import base64
 
 import numpy as np
 from werkzeug.utils import secure_filename
 from flask import Response
 
+from bentoml.utils.exceptions import BentoMLException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
+
+ACCEPTED_CONTENT_TYPES = ['images/png', 'images/jpeg', 'images/jpg']
 
 
 def check_file_format(file_name, accept_format_list):
@@ -100,4 +104,19 @@ class ImageHandler(BentoHandler):
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        raise NotImplementedError
+        try:
+            import cv2
+        except ImportError:
+            raise ImportError("opencv-python package is required to use ImageHandler")
+
+        if event['headers'].get('Content-Type', None) in ACCEPTED_CONTENT_TYPES:
+            nparr = np.fromstring(base64.b64decode(event['body']), np.uint8)
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        else:
+            raise BentoMLException(
+                "BentoML currently doesn't support Content-Type: {content_type} for AWS Lambda".
+                format(content_type=event['headers']['Content-Type']))
+
+        result = func(image)
+        result = get_output_str(result, event['headers'].get('output', 'json'))
+        return {'statusCode': 200, 'body': result}

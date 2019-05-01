@@ -32,14 +32,12 @@ import {class_name}
 
 bento_service = {class_name}.load()
 
-
 """
 
-GOOGLE_FUNCTION_TEMPLATE = """\
+GOOGLE_FUNCTION_TEMPLATE = """
 def {api_name}(request):
     result = bento_service.{api_name}.handle_request(request)
     return result
-
 
 """
 
@@ -84,7 +82,7 @@ def generate_main_py(bento_service, apis, output_path):
     return
 
 
-def update_gcp_function_configuration(bento_service, output_path, additional_options):
+def create_gcp_function_bundle(bento_service, output_path, additional_options):
     apis = bento_service.get_service_apis()
     generate_main_py(bento_service, apis, output_path)
     generate_serverless_configuration_for_google(bento_service, apis, output_path,

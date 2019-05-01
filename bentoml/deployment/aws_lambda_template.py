@@ -38,15 +38,13 @@ import {class_name}
 
 bento_service = {class_name}.load()
 
-
 """
 
-AWS_FUNCTION_TEMPLATE = """\
+AWS_FUNCTION_TEMPLATE = """
 def {api_name}(event, context):
     result = bento_service.{api_name}.handle_aws_lambda_event(event)
 
     return result
-
 
 """
 
@@ -74,6 +72,9 @@ def generate_serverless_configuration_for_aws(apis, output_path, additional_opti
     for api in apis:
         function_config = {
             'handler': 'handler.{name}'.format(name=api.name),
+            'layers': [
+                '{Ref: PythonRequirementsLambdaLayer}'
+            ],
             'events': [{
                 'http': {
                     'path': '/{name}'.format(name=api.name),
@@ -112,7 +113,7 @@ def generate_handler_py(bento_service, apis, output_path):
     return
 
 
-def update_aws_lambda_configuration(bento_service, output_path, additional_options):
+def create_aws_lambda_bundle(bento_service, output_path, additional_options):
     apis = bento_service.get_service_apis()
     generate_handler_py(bento_service, apis, output_path)
     generate_serverless_configuration_for_aws(apis, output_path, additional_options)

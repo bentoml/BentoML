@@ -28,8 +28,8 @@ from bentoml.archive import load
 from bentoml.utils import Path
 from bentoml.utils.whichcraft import which
 from bentoml.utils.exceptions import BentoMLException
-from bentoml.deployment.aws_lambda_template import update_aws_lambda_configuration
-from bentoml.deployment.gcp_function_template import update_gcp_function_configuration
+from bentoml.deployment.aws_lambda_template import create_aws_lambda_bundle
+from bentoml.deployment.gcp_function_template import create_gcp_function_bundle
 from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
 
 SERVERLESS_PROVIDER = {
@@ -61,16 +61,20 @@ def generate_serverless_bundle(bento_service, platform, archive_path, additional
     output_path = generate_bentoml_deployment_snapshot_path(bento_service.name, platform)
     Path(output_path).mkdir(parents=True, exist_ok=False)
 
+    # Calling serverless command to generate templated project
     subprocess.call(['serverless', 'create', '--template', provider, '--name', bento_service.name],
                     cwd=output_path)
     if platform == 'google-python':
-        update_gcp_function_configuration(bento_service, output_path, additional_options)
+        create_gcp_function_bundle(bento_service, output_path, additional_options)
     elif platform == 'aws-lambda' or platform == 'aws-lambda-py2':
+        # Installing two additional plugins to make it works for AWS lambda
+        # serverless-python-requirements will packaging required python modules, and automatically
+        # compress and create layer
         subprocess.call(['serverless', 'plugin', 'install', '-n', 'serverless-python-requirements'],
                         cwd=output_path)
         subprocess.call(['serverless', 'plugin', 'install', '-n', 'serverless-apigw-binary'],
                         cwd=output_path)
-        update_aws_lambda_configuration(bento_service, output_path, additional_options)
+        create_aws_lambda_bundle(bento_service, output_path, additional_options)
     else:
         raise BentoMLException(("{provider} is not supported in current version of BentoML",
                                 provider))

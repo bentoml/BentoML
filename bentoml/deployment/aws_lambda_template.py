@@ -73,7 +73,7 @@ def generate_serverless_configuration_for_aws(apis, output_path, additional_opti
         function_config = {
             'handler': 'handler.{name}'.format(name=api.name),
             'layers': [
-                '{Ref: PythonRequirementsLambdaLayer}'
+                {"Ref": "PythonRequirementsLambdaLayer"}
             ],
             'events': [{
                 'http': {

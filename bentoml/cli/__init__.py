@@ -25,9 +25,10 @@ from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
+from bentoml.deployment.serverless import generate_serverless_bundle, deploy_with_serverless
+from bentoml.utils.exceptions import BentoMLException
 
-from bentoml.cli.whichcraft import which
-from bentoml.cli.serverless import generate_serverless_bundle
+SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
 
 
 def create_bentoml_cli(installed_archive_path=None):
@@ -118,24 +119,30 @@ def cli():
 
     # pylint: disable=unused-variable
 
-    @_cli.command(help='Generate serverless project with BentoML service archive.',
-                  context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+    @_cli.command(help='Deploy BentoML archive to AWS Lambda or Google Cloud Function as ' +
+                  'REST endpoint with Serverless Framework')
     @click.argument('archive-path', type=click.STRING)
-    @click.argument('output-path', type=click.STRING)
-    @click.option('--platform', type=click.Choice(['aws-python', 'aws-python3', 'google-python']),
-                  default='aws-python3')
-    @click.pass_context
-    def build_serverless_archive(ctx, archive_path, output_path, platform):
-        if which('serverless') is None:
-            click.echo('Serverless framework is not installed', err=True)
-            click.echo('Please visit www.serverless.com for install instructions')
+    @click.option('--platform', type=click.Choice([
+        'aws-lambda', 'aws-lambda-py2', 'gcp-function', 'aws-sagemaker', 'azure-ml', 'algorithmia'
+    ]), required=True)
+    @click.option('--region', type=click.STRING)
+    @click.option('--stage', type=click.STRING)
+    def deploy(archive_path, platform, region, stage):
+        if platform in SERVERLESS_PLATFORMS:
+            output_path = deploy_with_serverless(platform, archive_path, {
+                "region": region,
+                "stage": stage
+            })
+            click.echo('BentoML: ', nl=False)
+            click.secho('Deploy to {platform} complete!'.format(platform=platform), fg='green')
+            click.secho(
+                'Deployment archive is saved at {output_path}'.format(output_path=output_path),
+                fg='green')
             return
-
-        bento_service = load(archive_path)
-        generate_serverless_bundle(bento_service, platform, archive_path, output_path, ctx.args)
-        click.echo('BentoML: ', nl=False)
-        click.secho('Build serverless archive complete!', fg='green')
-        return
+        else:
+            raise BentoMLException(
+                'Deploying with "--platform={platform}" is not supported in the current version of BentoML'
+                .format(platform=platform))
 
     # pylint: enable=unused-variable
 

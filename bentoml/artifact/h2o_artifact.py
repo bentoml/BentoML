@@ -29,9 +29,6 @@ class H2oModelArtifact(ArtifactSpec):
     Abstraction for saving/loading objects with h2o.save_model and xgb.load_model
     """
 
-    def __init__(self, name):
-        super(H2oModelArtifact, self).__init__(name)
-
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)
 

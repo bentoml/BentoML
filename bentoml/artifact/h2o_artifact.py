@@ -41,6 +41,7 @@ class H2oModelArtifact(ArtifactSpec):
         except ImportError:
             raise ImportError("h2o package is required to use H2oModelArtifact")
 
+        h2o.init()
         model = h2o.load_model(self._model_file_path(path))
         return self.pack(model)
 
@@ -57,15 +58,9 @@ class _H2oModelArtifactInstance(ArtifactInstance):
         except ImportError:
             raise ImportError("h2o package is required to use H2oModelArtifact")
 
-        # H2o will generate model into a directory instead of to file
-        # We will save to the location move the artifact out and rename it.
-        # Then remove the directory
-        tmp_dst = dst + '_temp'
-        h2o_saved_path = h2o.save_model(model=self._model, path=self.spec._model_file_path(tmp_dst),
+        h2o_saved_path = h2o.save_model(model=self._model, path=dst,
                                         force=True)
-
-        shutil.copyfile(h2o_saved_path, self.spec._model_file_path(dst))
-        shutil.rmtree(os.path.dirname(h2o_saved_path))
+        shutil.move(h2o_saved_path, self.spec._model_file_path(dst))
         return
 
     def get(self):

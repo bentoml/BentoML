@@ -23,5 +23,5 @@ from bentoml.server import metrics
 
 __all__ = [
     'BentoAPIServer',
-    'metrics',
+    'metrics'
 ]

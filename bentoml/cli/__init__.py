@@ -21,11 +21,17 @@ from __future__ import print_function
 import json
 import click
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer
+from bentoml.server.bento_sagemaker_server import BentoSagemakerServer
 from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 from bentoml.deployment.serverless import ServerlessDeployment
+from bentoml.deployment.sagemaker import deploy_with_sagemaker
 from bentoml.utils.exceptions import BentoMLException
 
 SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
@@ -107,6 +113,20 @@ def create_bentoml_cli(installed_archive_path=None):
         gunicorn_app = GunicornApplication(server.app, port, workers)
         gunicorn_app.run()
 
+    # Example Usage: bentoml serve-sagemaker ./SAVED_ARCHIVE_PATH
+    @bentoml_cli.command()
+    @conditional_argument(installed_archive_path is None, 'archive-path', type=click.STRING)
+    @click.option('-p', '--port', type=click.INT, default=BentoSagemakerServer._DEFAULT_PORT)
+    @click.option('-w', '--workers', type=click.INT, default=get_gunicorn_worker_count())
+    def serve_sagemaker(port, workers, archive_path=installed_archive_path):
+        """
+        Start REST API gunicorn server hosting BentoService loaded from archive
+        """
+        model_service = load(archive_path)
+        server = BentoSagemakerServer(model_service)
+        gunicorn_app = GunicornApplication(server.app, BentoSagemakerServer._DEFAULT_PORT, workers)
+        gunicorn_app.run()
+
     # pylint: enable=unused-variable
     return bentoml_cli
 
@@ -131,6 +151,11 @@ def cli():
     def deploy(archive_path, platform, region, stage):
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(platform, archive_path, region, stage)
+        elif platform == 'aws-sagemaker':
+            deploy_with_sagemaker(archive_path, {'region': region})
+            click.echo('BentoML: ', nl=False)
+            click.secho('Deploy to {platform} complete!'.format(platform=platform), fg='green')
+            return
         else:
             raise BentoMLException(
                 'Deploying with "--platform=%s" is not supported ' % platform +

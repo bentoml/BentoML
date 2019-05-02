@@ -27,5 +27,5 @@ from bentoml.utils import Path
 
 def generate_bentoml_deployment_snapshot_path(service_name, platform):
     return os.path.join(
-        str(Path.home()), '.bentoml', 'deployment-snapshot', service_name, platform,
+        str(Path.home()), '.bentoml', 'deployment-snapshots', service_name, platform,
         datetime.now().isoformat())

@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import shutil
 
 from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
@@ -51,15 +52,6 @@ class _H2oModelArtifactInstance(ArtifactInstance):
 
     def __init__(self, spec, model):
         super(_H2oModelArtifactInstance, self).__init__(spec)
-
-        try:
-            import h2o
-        except ImportError:
-            raise ImportError("h2o package is required to use H2oModelArtifact")
-
-        if not isinstance(model, h2o.model):
-            raise ValueError('Expect `model` argumen to be a `h2o.model` instance')
-
         self._model = model
 
     def save(self, dst):
@@ -68,7 +60,16 @@ class _H2oModelArtifactInstance(ArtifactInstance):
         except ImportError:
             raise ImportError("h2o package is required to use H2oModelArtifact")
 
-        return h2o.save_model(model=self._model, path=self.spec._model_file_path(dst), force=True)
+        # H2o will generate model into a directory instead of to file
+        # We will save to the location move the artifact out and rename it.
+        # Then remove the directory
+        tmp_dst = dst + '_temp'
+        h2o_saved_path = h2o.save_model(model=self._model, path=self.spec._model_file_path(tmp_dst),
+                                        force=True)
+
+        shutil.copyfile(h2o_saved_path, self.spec._model_file_path(dst))
+        shutil.rmtree(os.path.dirname(h2o_saved_path))
+        return
 
     def get(self):
         return self._model

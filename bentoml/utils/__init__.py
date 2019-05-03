@@ -20,7 +20,7 @@ from __future__ import print_function
 
 import re
 
-from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
+from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 try:
     from pathlib import Path

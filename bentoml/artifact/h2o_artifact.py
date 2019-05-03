@@ -58,8 +58,7 @@ class _H2oModelArtifactInstance(ArtifactInstance):
         except ImportError:
             raise ImportError("h2o package is required to use H2oModelArtifact")
 
-        h2o_saved_path = h2o.save_model(model=self._model, path=dst,
-                                        force=True)
+        h2o_saved_path = h2o.save_model(model=self._model, path=dst, force=True)
         shutil.move(h2o_saved_path, self.spec._model_file_path(dst))
         return
 

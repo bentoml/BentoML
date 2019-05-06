@@ -30,7 +30,7 @@ from bentoml.utils.whichcraft import which
 from bentoml.utils.exceptions import BentoMLException
 from bentoml.deployment.aws_lambda_template import create_aws_lambda_bundle
 from bentoml.deployment.gcp_function_template import create_gcp_function_bundle
-from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
+from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path, update_deployment_status
 
 SERVERLESS_PROVIDER = {
     'aws-lambda': 'aws-python3',
@@ -91,4 +91,6 @@ def deploy_with_serverless(platform, archive_path, extra_args):
     bento_service = load(archive_path)
     output_path = generate_serverless_bundle(bento_service, platform, archive_path, extra_args)
     subprocess.call(['serverless', 'deploy'], cwd=output_path)
+    update_deployment_status('deploy', bento_service.name, bento_service.version, platform,
+                             extra_args)
     return output_path

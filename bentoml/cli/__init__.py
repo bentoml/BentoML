@@ -144,6 +144,18 @@ def cli():
                 'Deploying with "--platform={platform}" is not supported in the current version of BentoML'
                 .format(platform=platform))
 
+
+    @_cli.command(help='Deploy BentoML archive to AWS Lambda or Google Cloud Function as ' +
+                  'REST endpoint with Serverless Framework')
+    @click.argument('service-name', type=click.STRING)
+    @click.option('--platform', type=click.Choice([
+        'aws-lambda', 'aws-lambda-py2', 'gcp-function', 'aws-sagemaker', 'azure-ml', 'algorithmia'
+    ]), required=True)
+    @click.option('--region', type=click.STRING)
+    @click.option('--stage', type=click.STRING)
+    def stop_deployment(service_name, platform, region, stage):
+        return
+
     # pylint: enable=unused-variable
 
     _cli()

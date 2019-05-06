@@ -20,11 +20,23 @@ from __future__ import print_function
 
 import re
 
+from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
+
 try:
     from pathlib import Path
     Path().expanduser()
 except (ImportError, AttributeError):
     from pathlib2 import Path
+
+_VALID_URLS = set(uses_relative + uses_netloc + uses_params)
+_VALID_URLS.discard('')
+
+
+def is_url(url):
+    try:
+        return urlparse(url).scheme in _VALID_URLS
+    except Exception:  # pylint:disable=broad-except
+        return False
 
 
 def isidentifier(s):

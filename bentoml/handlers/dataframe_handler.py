@@ -25,6 +25,7 @@ import pandas as pd
 from flask import Response, make_response, jsonify
 
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
+from bentoml.utils import is_url
 from bentoml.utils.s3 import is_s3_url
 
 
@@ -83,7 +84,7 @@ class DataframeHandler(BentoHandler):
         output_orient = parsed_args.output_orient
         cli_input = parsed_args.input
 
-        if os.path.isfile(cli_input) or is_s3_url(cli_input):
+        if os.path.isfile(cli_input) or is_s3_url(cli_input) or is_url(cli_input):
             if cli_input.endswith('.csv'):
                 df = pd.read_csv(cli_input)
             elif cli_input.endswith('.json'):

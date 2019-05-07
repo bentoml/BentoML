@@ -100,7 +100,7 @@ def deploy_with_serverless(platform, archive_path, extra_args):
     return output_path
 
 
-def stop_serverless_deployment(platform, service_name, additional_info):
+def remove_serverless_deployment(platform, service_name, additional_info):
     yaml = YAML()
     temp_dir = tempfile.mkdtemp()
     saved_path = os.path.join(temp_dir, 'serverless.yml')

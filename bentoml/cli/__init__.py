@@ -25,7 +25,7 @@ from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
-from bentoml.deployment.serverless import deploy_with_serverless, remove_serverless_deployment
+from bentoml.deployment.serverless import deploy_with_serverless, delete_serverless_deployment
 from bentoml.utils.exceptions import BentoMLException
 
 SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
@@ -153,9 +153,9 @@ def cli():
     ]), required=True)
     @click.option('--region', type=click.STRING)
     @click.option('--stage', type=click.STRING)
-    def remove_deployment(service_name, platform, region, stage):
+    def delete_deployment(service_name, platform, region, stage):
         if platform in SERVERLESS_PLATFORMS:
-            remove_serverless_deployment(platform, service_name, {'region': region, 'stage': stage})
+            delete_serverless_deployment(platform, service_name, {'region': region, 'stage': stage})
         else:
             raise BentoMLException(
                 'Remove deployment with --platform={} is not supported in the current version of BentoML'

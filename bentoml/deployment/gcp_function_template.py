@@ -94,7 +94,3 @@ def create_gcp_function_bundle(bento_service, output_path, additional_options):
     generate_serverless_configuration_for_google(bento_service, apis, output_path,
                                                  additional_options)
     return
-
-
-def stop_serverless_gcp_function():
-    return

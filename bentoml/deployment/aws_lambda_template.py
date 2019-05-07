@@ -119,11 +119,3 @@ def create_aws_lambda_bundle(bento_service, output_path, additional_options):
     generate_handler_py(bento_service, apis, output_path)
     generate_serverless_configuration_for_aws(apis, output_path, additional_options)
     return
-
-
-def create_stop_aws_lambda_config(temp_dir, service_name, additional_info):
-    temp_config = {
-    }
-    saved_path = os.path.join(temp_dir, 'serverless.yml')
-    yaml.dump(temp_config, Path(saved_path))
-    return saved_path

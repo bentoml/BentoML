@@ -151,7 +151,7 @@ def cli():
     @click.option('--platform', type=click.Choice([
         'aws-lambda', 'aws-lambda-py2', 'gcp-function', 'aws-sagemaker', 'azure-ml', 'algorithmia'
     ]), required=True)
-    @click.option('--region', type=click.STRING)
+    @click.option('--region', type=click.STRING, required=True)
     @click.option('--stage', type=click.STRING)
     def delete_deployment(service_name, platform, region, stage):
         if platform in SERVERLESS_PLATFORMS:

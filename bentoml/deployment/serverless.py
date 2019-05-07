@@ -21,7 +21,9 @@ from __future__ import print_function
 import os
 import shutil
 import subprocess
+import tempfile
 
+from ruamel.yaml import YAML
 from packaging import version
 
 from bentoml.archive import load
@@ -30,13 +32,17 @@ from bentoml.utils.whichcraft import which
 from bentoml.utils.exceptions import BentoMLException
 from bentoml.deployment.aws_lambda_template import create_aws_lambda_bundle
 from bentoml.deployment.gcp_function_template import create_gcp_function_bundle
-from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path, update_deployment_status
+from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
 
 SERVERLESS_PROVIDER = {
     'aws-lambda': 'aws-python3',
     'aws-lambda-py2': 'aws-python',
     'gcp-function': 'google-python',
 }
+
+DEFAULT_AWS_REGION = 'us-west-2'
+DEFAULT_GCP_REGION = 'us-west2'
+DEFAULT_DEPLOY_STAGE = 'dev'
 
 
 def check_serverless_compatiable_version():
@@ -91,6 +97,29 @@ def deploy_with_serverless(platform, archive_path, extra_args):
     bento_service = load(archive_path)
     output_path = generate_serverless_bundle(bento_service, platform, archive_path, extra_args)
     subprocess.call(['serverless', 'deploy'], cwd=output_path)
-    update_deployment_status('deploy', bento_service.name, bento_service.version, platform,
-                             extra_args)
     return output_path
+
+
+def stop_serverless_deployment(platform, service_name, additional_info):
+    yaml = YAML()
+    temp_dir = tempfile.mkdtemp()
+    saved_path = os.path.join(temp_dir, 'serverless.yml')
+    if platform == 'google-python':
+        config = {
+            "service": service_name,
+            "provider": {
+                "name": "google",
+                "region": additional_info.get('region', DEFAULT_GCP_REGION)
+            }
+        }
+    elif platform == 'aws-lambda' or platform == 'aws-lambda-py2':
+        config = {
+            "service": service_name,
+            "provider": {
+                "name": "aws",
+                "region": additional_info.get('region', DEFAULT_AWS_REGION)
+            }
+        }
+    yaml.dump(config, Path(saved_path))
+    subprocess.call(['serverless', 'remove'], cwd=temp_dir)
+    return

@@ -24,6 +24,7 @@ import logging
 from ruamel.yaml import YAML
 
 from bentoml.utils import Path
+from bentoml.deployment.serverless import DEFAULT_GCP_REGION, DEFAULT_DEPLOY_STAGE
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +55,14 @@ def generate_serverless_configuration_for_google(bento_service, apis, output_pat
     if additional_options.get('region', None):
         serverless_config['provider']['region'] = additional_options['region']
         logger.info(('Using user defined Google region: {0}', additional_options['region']))
+    else:
+        serverless_config['provider']['region'] = DEFAULT_GCP_REGION
+
     if additional_options.get('stage', None):
         serverless_config['provider']['stage'] = additional_options['stage']
         logger.info(('Using user defined Google stage: {0}', additional_options['stage']))
+    else:
+        serverless_config['provider']['stage'] = DEFAULT_DEPLOY_STAGE
 
     serverless_config['functions'] = {}
     for api in apis:
@@ -87,4 +93,8 @@ def create_gcp_function_bundle(bento_service, output_path, additional_options):
     generate_main_py(bento_service, apis, output_path)
     generate_serverless_configuration_for_google(bento_service, apis, output_path,
                                                  additional_options)
+    return
+
+
+def stop_serverless_gcp_function():
     return

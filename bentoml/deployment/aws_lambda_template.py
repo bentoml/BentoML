@@ -25,6 +25,7 @@ import os
 from ruamel.yaml import YAML
 
 from bentoml.utils import Path
+from bentoml.deployment.serverless import DEFAULT_AWS_REGION, DEFAULT_DEPLOY_STAGE
 
 logger = logging.getLogger(__name__)
 
@@ -60,13 +61,13 @@ def generate_serverless_configuration_for_aws(apis, output_path, additional_opti
         serverless_config['provider']['region'] = additional_options['region']
         logger.info(('Using user defined AWS region: {0}', additional_options['region']))
     else:
-        serverless_config['provider']['region'] = 'us-west-2'
+        serverless_config['provider']['region'] = DEFAULT_AWS_REGION
 
     if additional_options.get('stage', None):
         serverless_config['provider']['stage'] = additional_options['stage']
         logger.info(('Using user defined AWS stage: {0}', additional_options['stage']))
     else:
-        serverless_config['provider']['stage'] = 'dev'
+        serverless_config['provider']['stage'] = DEFAULT_DEPLOY_STAGE
 
     serverless_config['functions'] = {}
     for api in apis:
@@ -118,3 +119,11 @@ def create_aws_lambda_bundle(bento_service, output_path, additional_options):
     generate_handler_py(bento_service, apis, output_path)
     generate_serverless_configuration_for_aws(apis, output_path, additional_options)
     return
+
+
+def create_stop_aws_lambda_config(temp_dir, service_name, additional_info):
+    temp_config = {
+    }
+    saved_path = os.path.join(temp_dir, 'serverless.yml')
+    yaml.dump(temp_config, Path(saved_path))
+    return saved_path

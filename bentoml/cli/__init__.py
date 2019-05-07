@@ -145,7 +145,7 @@ def cli():
                 'Deploying with "--platform={platform}" is not supported in the current version of BentoML'
                 .format(platform=platform))
 
-    # Example useage: bentoml stop-deployment SERVICE_NAME --platform=aws-lambda
+    # Example useage: bentoml delete-deployment SERVICE_NAME --platform=aws-lambda
     @_cli.command()
     @click.argument('service-name', type=click.STRING)
     @click.option('--platform', type=click.Choice([

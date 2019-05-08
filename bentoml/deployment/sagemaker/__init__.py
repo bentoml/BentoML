@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import shutil
 import base64
 import subprocess
@@ -30,8 +31,12 @@ import docker
 
 from bentoml.archive import load
 from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
+from bentoml.utils.whichcraft import which
+from bentoml.deployment.sagemaker.templates import DEFAULT_NGINX_CONFIG, DEFAULT_WSGI_PY, \
+    DEFAULT_SERVE_SCRIPT
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 DEFAULT_REGION = 'us-west-2'
 DEFAULT_INSTANCE_TYPE = 'ml.m4.xlarge'
@@ -82,16 +87,15 @@ def get_arn_role_from_current_user():
 def create_push_image_to_ecr(bento_service, snapshot_path):
     """Create BentoService sagemaker image and push to AWS ECR
 
+    Example: https://github.com/awslabs/amazon-sagemaker-examples/blob/master/advanced_functionality/scikit_bring_your_own/container/build_and_push.sh
+    1. get aws account info and login ecr
+    2. create ecr repository, if not exist
+    3. build tag and push docker image
+
     :param bento_service: Bento Service
     :param snapshot_path: Path
     :return: ecr_tag: String
     """
-
-    # Example:
-    # https://github.com/awslabs/amazon-sagemaker-examples/blob/master/advanced_functionality/scikit_bring_your_own/container/build_and_push.sh
-    # 1. get aws account info and login ecr
-    # 2. create ecr repository, if not exist
-    # 3. build tag and push docker image
 
     ecr_client = boto3.client('ecr')
     token = ecr_client.get_authorization_token()
@@ -114,12 +118,13 @@ def create_push_image_to_ecr(bento_service, snapshot_path):
     except ecr_client.exceptions.RepositoryNotFoundException:
         ecr_client.create_repository(repositoryName=image_name)
 
-    print('Building docker image: {}'.format(image_name))
-    built_image = docker_client.images.build(path=snapshot_path, tag=image_name)
+    logger.info('Building docker image: %s', image_name)
+    built_image = docker_client.images.build(dockerfile='Dockerfile-sagemaker', tag=image_name,
+                                             path=snapshot_path)
     built_image[0].tag(ecr_tag)
-    print('Pushing image to AWS ECR at {}'.format(ecr_tag))
+    logger.info('Pushing image to AWS ECR at %s', ecr_tag)
     docker_client.api.push(repository=ecr_tag)
-    print('Finished pushing image: {}'.format(ecr_tag))
+    logger.info('Finished pushing image: %s', ecr_tag)
     return ecr_tag
 
 
@@ -127,19 +132,30 @@ def deploy_with_sagemaker(archive_path, additional_info):
     """Deploy BentoML service to AWS Sagemaker.
     Your AWS credential must have the correct permissions for sagemaker and ECR
 
+    1. Create docker image and push to ECR
+    2. Create sagemaker model base on the ECR image
+    3. Create sagemaker endpoint configuration base on sagemaker model
+    4. Create sagemaker endpoint base on sagemaker endpoint configuration
+
     :param archive_path: Path
     :param additional_info: Dict
-    :return:
+    :return: T/F
     """
+    if which('docker') is None:
+        raise ValueError('docker is not installed, please install docker and then try again')
 
-    # 1. Create docker image and push to ECR
-    # 2. Create sagemaker model base on the ECR image
-    # 2. Create sagemaker endpoint configuration base on sagemaker model
-    # 3. Create sagemaker endpoint base on sagemaker endpoint configuration
     bento_service = load(archive_path)
     snapshot_path = generate_bentoml_deployment_snapshot_path(bento_service.name, 'aws-sagemaker')
     shutil.copytree(archive_path, snapshot_path)
+    with open(os.path.join(snapshot_path, 'nginx.conf'), 'w') as f:
+        f.write(DEFAULT_NGINX_CONFIG)
+    with open(os.path.join(snapshot_path, 'wsgi.py'), 'w') as f:
+        f.write(DEFAULT_WSGI_PY)
+    with open(os.path.join(snapshot_path, 'serve'), 'w') as f:
+        f.write(DEFAULT_SERVE_SCRIPT)
+    os.chmod(os.path.join(snapshot_path, 'serve'), 509)
     region = additional_info.get('region', DEFAULT_REGION)
+    api_name = additional_info.get('api_name', '')
     execution_role_arn = get_arn_role_from_current_user()
     ecr_image_path = create_push_image_to_ecr(bento_service, snapshot_path)
     sagemaker_model_name = generate_aws_compatible_string('bentoml-' + bento_service.name + '-' +
@@ -151,12 +167,15 @@ def deploy_with_sagemaker(archive_path, additional_info):
         "PrimaryContainer": {
             "ContainerHostname": sagemaker_model_name,
             "Image": ecr_image_path,
+            "Environment": {
+                "API_NAME": api_name
+            }
         },
         "ExecutionRoleArn": execution_role_arn,
     }
-    print('Creating sagemaker model {}'.format(sagemaker_model_name))
+    logger.info('Creating sagemaker model %s', sagemaker_model_name)
     model_response = sagemaker_client.create_model(**sagemaker_model_info)
-    logger.info(model_response)
+    logger.debug(model_response)
 
     endpoint_config_name = generate_aws_compatible_string(bento_service.name + '-' +
                                                           bento_service.version + '-configuration')
@@ -166,16 +185,24 @@ def deploy_with_sagemaker(archive_path, additional_info):
         "InitialInstanceCount": DEFAULT_INITIAL_INSTANCE_COUNT,
         "InstanceType": DEFAULT_INSTANCE_TYPE,
     }]
-    print('Creating sagemaker endpoint {} configuration'.format(endpoint_config_name))
+    logger.info('Creating sagemaker endpoint %s configuration', endpoint_config_name)
     create_endpoint_config_response = sagemaker_client.create_endpoint_config(
         EndpointConfigName=endpoint_config_name, ProductionVariants=production_variants)
-    logger.info(create_endpoint_config_response)
-    print('Creating sagemaker endpoint {}'.format(bento_service.name))
+    logger.debug(create_endpoint_config_response)
+    logger.info('Creating sagemaker endpoint %s', bento_service.name)
     create_endpoint_response = sagemaker_client.create_endpoint(
         EndpointName=bento_service.name, EndpointConfigName=endpoint_config_name)
-    logger.info(create_endpoint_response)
+    logger.debug(create_endpoint_response)
 
     endpoint_status = sagemaker_client.describe_endpoint(EndpointName=bento_service.name)
+    logger.debug(endpoint_status)
     logger.info(endpoint_status)
-    print(endpoint_status)
-    return
+    return True
+
+
+# def delete_sagemaker_endpoint(archive_path, region):
+#     bento_service = load(archive_path)
+#     sagemaker_client = boto3.client('sagemaker', region_name=region)
+#     sagemaker_model_name = generate_aws_compatible_string('bentoml-' + bento_service.name + '-' +
+#                                                           bento_service.version)
+#     delete_response = sagemaker_client.delete_endpoint(EndpointName=bento_service.name)

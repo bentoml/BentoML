@@ -38,14 +38,19 @@ def ping_view_func():
     return Response(response='\n', status=200, mimetype='application/json')
 
 
-def setup_routes(app, bento_service):
+def setup_routes(app, bento_service, api_name):
     """
     Setup routes required for AWS sagemaker
     /ping
-    /invocation
+    /invocations
     """
     app.add_url_rule('/ping', 'ping', ping_view_func)
-    for api in bento_service.get_service_apis():
+
+    apis = bento_service.get_service_apis()
+    if api_name is None:
+        setup_bento_service_api_route(app, apis[0])
+    else:
+        api = next(item for item in apis if item.name == api_name)
         setup_bento_service_api_route(app, api)
 
 
@@ -56,12 +61,12 @@ class BentoSagemakerServer():
 
     _DEFAULT_PORT = 8080
 
-    def __init__(self, bento_service, app_name=None):
+    def __init__(self, bento_service, api_name, app_name=None):
         app_name = bento_service.name if app_name is None else app_name
 
         self.bento_service = bento_service
         self.app = Flask(app_name)
-        setup_routes(self.app, self.bento_service)
+        setup_routes(self.app, self.bento_service, api_name)
 
     def start(self):
         self.app.run(port=BentoSagemakerServer._DEFAULT_PORT)

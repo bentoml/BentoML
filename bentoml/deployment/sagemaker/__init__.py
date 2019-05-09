@@ -32,6 +32,7 @@ import docker
 from bentoml.archive import load
 from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
 from bentoml.utils.whichcraft import which
+from bentoml.utils.exceptions import BentoMLException
 from bentoml.deployment.sagemaker.templates import DEFAULT_NGINX_CONFIG, DEFAULT_WSGI_PY, \
     DEFAULT_SERVE_SCRIPT
 
@@ -145,6 +146,14 @@ def deploy_with_sagemaker(archive_path, additional_info):
         raise ValueError('docker is not installed, please install docker and then try again')
 
     bento_service = load(archive_path)
+    apis = bento_service.get_service_apis()
+    if additional_info['api_name']:
+        api = next(item for item in apis if item.name == additional_info['api_name'])
+    elif len(apis) == 1:
+        api = apis[0]
+    else:
+        raise BentoMLException('Please specify api-name, when more than one API is present in the archive')
+
     snapshot_path = generate_bentoml_deployment_snapshot_path(bento_service.name, 'aws-sagemaker')
     shutil.copytree(archive_path, snapshot_path)
     with open(os.path.join(snapshot_path, 'nginx.conf'), 'w') as f:
@@ -155,7 +164,6 @@ def deploy_with_sagemaker(archive_path, additional_info):
         f.write(DEFAULT_SERVE_SCRIPT)
     os.chmod(os.path.join(snapshot_path, 'serve'), 509)
     region = additional_info.get('region', DEFAULT_REGION)
-    api_name = additional_info.get('api_name', '')
     execution_role_arn = get_arn_role_from_current_user()
     ecr_image_path = create_push_image_to_ecr(bento_service, snapshot_path)
     sagemaker_model_name = generate_aws_compatible_string('bentoml-' + bento_service.name + '-' +
@@ -168,7 +176,7 @@ def deploy_with_sagemaker(archive_path, additional_info):
             "ContainerHostname": sagemaker_model_name,
             "Image": ecr_image_path,
             "Environment": {
-                "API_NAME": api_name
+                "API_NAME": api.name
             }
         },
         "ExecutionRoleArn": execution_role_arn,

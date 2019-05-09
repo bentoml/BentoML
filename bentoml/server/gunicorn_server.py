@@ -33,7 +33,7 @@ class GunicornApplication(gunicorn.app.base.BaseApplication):  # pylint: disable
     """
 
     def __init__(self, app, port, workers):
-        self.options = {'workers': workers, 'bind': '%s:%s' % ('127.0.0.1', port)}
+        self.options = {'workers': workers, 'bind': '%s:%s' % ('0.0.0.0', port)}
         self.application = app
         super(GunicornApplication, self).__init__()
 

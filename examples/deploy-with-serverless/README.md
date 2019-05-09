@@ -1,4 +1,4 @@
-# Deploy BentoML service with Serverless
+# Deploy BentoML service as serverless function on AWS Lambda or Google Cloud Function
 
 ## Overview
 
@@ -12,50 +12,25 @@ with the Serverless framework.
 
 ## Prerequisites
 
-1. Install Serverless framework.  You can find instructions [here](https://serverless.com/framework/docs/getting-started/)
-2. Have AWS account setup.
+1. Install Node.JS. Follow the instructions on [Nodejs.org](https://nodejs.org/en)
+2. Install Serverless framework.  You can find instructions [here](https://serverless.com/framework/docs/getting-started/)
+3. AWS account configured on your machine
+   1. Install AWS CLI. [Instructions](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
+   2. Configuring with your AWS account. [Instructions](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
 
 
-## Workflow
-There are few steps to get model deployed to AWS lambda after finish training
-model.
+## Deploy to AWS lambda
+It is simple to deploy to AWS Lambda with BentoML. After you saved your model as BentoML bundle, you invoke a single command.
 
-1. Write BentoService configuration that include the artifacts you want to pack
-   and write the prediction function.
-2. Save the trained model to filesystem with the BentoService class you just created, 
-3. Call `bentoml build-serverless-archive` command to generate serverless
-   project based on the saved BentoService
-4. [Optional] Update serverless configuration that suit for your deployment
-   needs
-5. Deploy to AWS lambda with 'serverless deploy' command
+```bash
+bentoml deploy /ARCHIVE_PATH --platform aws-lambda --region us-west2
+```
 
+BentoML will create a deployment snapshot at your home directory's `.bentoml` directory.
+BentoML then will use serverless framework to deploy to AWS lambda.
 
-## Anatomy of bentoml build-serverless-archive command
-The command is building serverless project base on the already archived bento
-service.  It will update serverless configuration with BentoService info, also
-generate handler file that use your bento service to predict.
-
-The commands take two arguments, an path to the BentoService that you want to
-generate serverless project from, and a directory path for the serverless
-project to be saved at.
-
-You could also pass in `stage` and `region` as options
-
-
-## Anatomy of generated serverless project
-The generated servereless project includes:
-
-* your bento service archive. It is a copy of the archive directory you saved.
-* requirements.txt.  Your bento service dependencies are copied to the top level
-  for 'serverless-python-requirements' plugin to consume.
-* an updated servereless configuration.  Preinstalled with plugin
-  `serverless-python-requirements`, updated functions section.
-* handler.py.  The generated handler.py file setup to do inferencing with the
-  Bento service.  It will work out of the box.
-
-
-## Conclusion
-
-As you can see, train a model and deploy to a serverless service is very easy
-with BentoML.  You can generate a complete serverless project with a single
-command.
+## Delete deployment from AWS lambda
+Delete deployment from AWS lambda is as simple as deploy it. To delete deployment use `bentoml delete-deployment` command.
+```bash
+bentoml delete-deployment /ARCHIVE_PATH --platform aws-lambda --region us-west-2
+```

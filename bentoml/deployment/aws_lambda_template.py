@@ -25,7 +25,9 @@ import os
 from ruamel.yaml import YAML
 
 from bentoml.utils import Path
-from bentoml.deployment.serverless import DEFAULT_AWS_REGION, DEFAULT_DEPLOY_STAGE
+
+DEFAULT_AWS_REGION = 'us-west-2'
+DEFAULT_AWS_DEPLOY_STAGE = 'dev'
 
 logger = logging.getLogger(__name__)
 
@@ -59,15 +61,17 @@ def generate_serverless_configuration_for_aws(apis, output_path, additional_opti
 
     if additional_options.get('region', None):
         serverless_config['provider']['region'] = additional_options['region']
-        logger.info(('Using user defined AWS region: {0}', additional_options['region']))
+        logger.info('Using user defined AWS region: %s', additional_options['region'])
     else:
         serverless_config['provider']['region'] = DEFAULT_AWS_REGION
+        logger.info('Using default AWS region: %s', DEFAULT_AWS_REGION)
 
     if additional_options.get('stage', None):
         serverless_config['provider']['stage'] = additional_options['stage']
-        logger.info(('Using user defined AWS stage: {0}', additional_options['stage']))
+        logger.info('Using user defined AWS stage: %s', additional_options['stage'])
     else:
-        serverless_config['provider']['stage'] = DEFAULT_DEPLOY_STAGE
+        serverless_config['provider']['stage'] = DEFAULT_AWS_DEPLOY_STAGE
+        logger.info('Using default AWS stage: %s', DEFAULT_AWS_DEPLOY_STAGE)
 
     serverless_config['functions'] = {}
     for api in apis:

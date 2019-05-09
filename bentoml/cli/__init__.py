@@ -147,15 +147,15 @@ def cli():
 
     # Example useage: bentoml delete-deployment SERVICE_NAME --platform=aws-lambda
     @_cli.command()
-    @click.argument('service-name', type=click.STRING)
+    @click.argument('archive-path', type=click.STRING)
     @click.option('--platform', type=click.Choice([
         'aws-lambda', 'aws-lambda-py2', 'gcp-function', 'aws-sagemaker', 'azure-ml', 'algorithmia'
     ]), required=True)
     @click.option('--region', type=click.STRING, required=True)
     @click.option('--stage', type=click.STRING)
-    def delete_deployment(service_name, platform, region, stage):
+    def delete_deployment(archive_path, platform, region, stage):
         if platform in SERVERLESS_PLATFORMS:
-            delete_serverless_deployment(platform, service_name, {'region': region, 'stage': stage})
+            delete_serverless_deployment(platform, archive_path, region, stage)  # pylint:disable=too-many-function-args
         else:
             raise BentoMLException(
                 'Remove deployment with --platform={} is not supported in the current version of BentoML'

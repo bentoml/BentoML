@@ -24,7 +24,9 @@ import logging
 from ruamel.yaml import YAML
 
 from bentoml.utils import Path
-from bentoml.deployment.serverless import DEFAULT_GCP_REGION, DEFAULT_DEPLOY_STAGE
+
+DEFAULT_GCP_REGION = 'us-west2'
+DEFAULT_GCP_DEPLOY_STAGE = 'dev'
 
 logger = logging.getLogger(__name__)
 
@@ -54,21 +56,20 @@ def generate_serverless_configuration_for_google(bento_service, apis, output_pat
 
     if additional_options.get('region', None):
         serverless_config['provider']['region'] = additional_options['region']
-        logger.info(('Using user defined Google region: {0}', additional_options['region']))
+        logger.info('Using user defined Google region: %s', additional_options['region'])
     else:
         serverless_config['provider']['region'] = DEFAULT_GCP_REGION
+        logger.info('Using default Google region: %s', DEFAULT_GCP_REGION)
 
     if additional_options.get('stage', None):
         serverless_config['provider']['stage'] = additional_options['stage']
-        logger.info(('Using user defined Google stage: {0}', additional_options['stage']))
+        logger.info('Using user defined Google stage: %s', additional_options['stage'])
     else:
-        serverless_config['provider']['stage'] = DEFAULT_DEPLOY_STAGE
+        serverless_config['provider']['stage'] = DEFAULT_GCP_DEPLOY_STAGE
+        logger.info('Using default Google stage: %s', DEFAULT_GCP_DEPLOY_STAGE)
 
     serverless_config['functions'] = {}
     for api in apis:
-        if api.name == 'first':
-            user_function_with_first_name = True
-
         function_config = {'handler': api.name, 'events': [{'http': 'path'}]}
         serverless_config['functions'][api.name] = function_config
 

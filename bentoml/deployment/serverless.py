@@ -21,18 +21,21 @@ from __future__ import print_function
 import os
 import shutil
 import subprocess
-import tempfile
 
 from ruamel.yaml import YAML
 from packaging import version
 
 from bentoml.archive import load
 from bentoml.utils import Path
+from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
 from bentoml.utils.exceptions import BentoMLException
 from bentoml.deployment.aws_lambda_template import create_aws_lambda_bundle
 from bentoml.deployment.gcp_function_template import create_gcp_function_bundle
 from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
+
+from bentoml.deployment.aws_lambda_template import DEFAULT_AWS_REGION, DEFAULT_AWS_DEPLOY_STAGE
+from bentoml.deployment.gcp_function_template import DEFAULT_GCP_REGION, DEFAULT_GCP_DEPLOY_STAGE
 
 SERVERLESS_PROVIDER = {
     'aws-lambda': 'aws-python3',
@@ -40,9 +43,7 @@ SERVERLESS_PROVIDER = {
     'gcp-function': 'google-python',
 }
 
-DEFAULT_AWS_REGION = 'us-west-2'
 DEFAULT_GCP_REGION = 'us-west2'
-DEFAULT_DEPLOY_STAGE = 'dev'
 
 
 def check_serverless_compatiable_version():
@@ -100,26 +101,29 @@ def deploy_with_serverless(platform, archive_path, extra_args):
     return output_path
 
 
-def delete_serverless_deployment(platform, service_name, additional_info):
-    yaml = YAML()
-    temp_dir = tempfile.mkdtemp()
-    saved_path = os.path.join(temp_dir, 'serverless.yml')
+def delete_serverless_deployment(platform, archive, region, stage):
+    bento_server = load(archive)
     if platform == 'google-python':
         config = {
-            "service": service_name,
+            "service": bento_server.name,
             "provider": {
                 "name": "google",
-                "region": additional_info.get('region', DEFAULT_GCP_REGION)
+                "region": DEFAULT_GCP_REGION if region is None else region,
+                "stage": DEFAULT_GCP_DEPLOY_STAGE if stage is None else stage
             }
         }
     elif platform == 'aws-lambda' or platform == 'aws-lambda-py2':
         config = {
-            "service": service_name,
+            "service": bento_server.name,
             "provider": {
                 "name": "aws",
-                "region": additional_info.get('region', DEFAULT_AWS_REGION)
+                "region": DEFAULT_AWS_REGION if region is None else region,
+                "stage": DEFAULT_AWS_DEPLOY_STAGE if stage is None else stage
             }
         }
-    yaml.dump(config, Path(saved_path))
-    subprocess.call(['serverless', 'remove'], cwd=temp_dir)
-    return
+    yaml = YAML()
+    with TempDirectory() as tempdir:
+        saved_path = os.path.join(tempdir, 'serverless.yml')
+        yaml.dump(config, Path(saved_path))
+        subprocess.call(['serverless', 'remove'], cwd=tempdir)
+    return True

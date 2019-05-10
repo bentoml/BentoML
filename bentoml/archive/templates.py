@@ -116,15 +116,15 @@ RUN conda update conda -y \
       && pip install gunicorn six gevent
 
 # copy over model files
-COPY . /bento
-WORKDIR /bento
+COPY . /opt/program
+WORKDIR /opt/program
 
 # update conda base env
-RUN conda env update -n base -f /bento/environment.yml
-RUN pip install -r /bento/requirements.txt
+RUN conda env update -n base -f /opt/program/environment.yml
+RUN pip install -r /opt/program/requirements.txt
 
 # run user defined setup script
-RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
+RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
 """
 
 INIT_PY_TEMPLATE = """\

@@ -64,7 +64,7 @@ from bentoml.archive import load
 from bentoml.server.bento_sagemaker_server import BentoSagemakerServer
 
 api_name = os.environ.get('API_NAME', None)
-model_service = load('/bento')
+model_service = load('/opt/program')
 server = BentoSagemakerServer(model_service, api_name)
 app = server.app
 """

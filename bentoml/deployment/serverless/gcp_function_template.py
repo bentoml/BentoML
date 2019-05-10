@@ -46,7 +46,7 @@ def {api_name}(request):
 
 
 def generate_serverless_configuration_for_google(bento_service, apis, output_path,
-                                                 additional_options):
+                                                 region, stage):
     config_path = os.path.join(output_path, 'serverless.yml')
     yaml = YAML()
     with open(config_path, 'r') as f:
@@ -54,19 +54,11 @@ def generate_serverless_configuration_for_google(bento_service, apis, output_pat
     serverless_config = yaml.load(content)
     serverless_config['provider']['project'] = bento_service.name
 
-    if additional_options.get('region', None):
-        serverless_config['provider']['region'] = additional_options['region']
-        logger.info('Using user defined Google region: %s', additional_options['region'])
-    else:
-        serverless_config['provider']['region'] = DEFAULT_GCP_REGION
-        logger.info('Using default Google region: %s', DEFAULT_GCP_REGION)
+    serverless_config['provider']['region'] = region
+    logger.info('Using user defined Google region: %s', region)
 
-    if additional_options.get('stage', None):
-        serverless_config['provider']['stage'] = additional_options['stage']
-        logger.info('Using user defined Google stage: %s', additional_options['stage'])
-    else:
-        serverless_config['provider']['stage'] = DEFAULT_GCP_DEPLOY_STAGE
-        logger.info('Using default Google stage: %s', DEFAULT_GCP_DEPLOY_STAGE)
+    serverless_config['provider']['stage'] = stage
+    logger.info('Using user defined Google stage: %s', stage)
 
     serverless_config['functions'] = {}
     for api in apis:
@@ -89,9 +81,9 @@ def generate_main_py(bento_service, apis, output_path):
     return
 
 
-def create_gcp_function_bundle(bento_service, output_path, additional_options):
+def create_gcp_function_bundle(bento_service, output_path, region, stage):
     apis = bento_service.get_service_apis()
     generate_main_py(bento_service, apis, output_path)
     generate_serverless_configuration_for_google(bento_service, apis, output_path,
-                                                 additional_options)
+                                                 region, stage)
     return

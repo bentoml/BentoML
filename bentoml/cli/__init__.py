@@ -25,8 +25,7 @@ from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
-from bentoml.deployment.serverless import deploy_with_serverless, delete_serverless_deployment, \
-    check_serverless_deployment_status
+from bentoml.deployment.serverless import ServerlessDeployment
 from bentoml.utils.exceptions import BentoMLException
 
 SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
@@ -131,20 +130,19 @@ def cli():
     @click.option('--stage', type=click.STRING)
     def deploy(archive_path, platform, region, stage):
         if platform in SERVERLESS_PLATFORMS:
-            output_path = deploy_with_serverless(platform, archive_path, {
-                "region": region,
-                "stage": stage
-            })
-            click.echo('BentoML: ', nl=False)
-            click.secho('Deploy to {platform} complete!'.format(platform=platform), fg='green')
-            click.secho(
-                'Deployment archive is saved at {output_path}'.format(output_path=output_path),
-                fg='green')
-            return
+            deployment = ServerlessDeployment(platform, archive_path, region, stage)
         else:
             raise BentoMLException(
                 'Deploying with "--platform={platform}" is not supported in the current version of BentoML'
                 .format(platform=platform))
+
+        output_path = deployment.deploy()
+        click.echo('BentoML: ', nl=False)
+        click.secho('Deploy to {platform} complete!'.format(platform=platform), fg='green')
+        click.secho(
+            'Deployment archive is saved at {output_path}'.format(output_path=output_path),
+            fg='green')
+        return
 
     # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
     @_cli.command()
@@ -156,11 +154,12 @@ def cli():
     @click.option('--stage', type=click.STRING)
     def delete_deployment(archive_path, platform, region, stage):
         if platform in SERVERLESS_PLATFORMS:
-            delete_serverless_deployment(platform, archive_path, region, stage)  # pylint:disable=too-many-function-args
+            deployment = ServerlessDeployment(platform, archive_path, region, stage)
         else:
             raise BentoMLException(
                 'Remove deployment with --platform={} is not supported in the current version of BentoML'
                 .format(platform))
+        deployment.delete()
         return
 
 

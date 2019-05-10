@@ -25,7 +25,8 @@ from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
-from bentoml.deployment.serverless import deploy_with_serverless, delete_serverless_deployment
+from bentoml.deployment.serverless import deploy_with_serverless, delete_serverless_deployment, \
+    check_serverless_deployment_status
 from bentoml.utils.exceptions import BentoMLException
 
 SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
@@ -145,7 +146,7 @@ def cli():
                 'Deploying with "--platform={platform}" is not supported in the current version of BentoML'
                 .format(platform=platform))
 
-    # Example useage: bentoml delete-deployment SERVICE_NAME --platform=aws-lambda
+    # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
     @_cli.command()
     @click.argument('archive-path', type=click.STRING)
     @click.option('--platform', type=click.Choice([
@@ -162,8 +163,25 @@ def cli():
                 .format(platform))
         return
 
-    # pylint: enable=unused-variable
 
+    # Example usage: bentoml check-deployment-status ARCHIVE_PATH --platform=aws-lambda
+    @_cli.command()
+    @click.argument('archive-path', type=click.STRING)
+    @click.option('--platform', type=click.Choice([
+        'aws-lambda', 'aws-lambda-py2', 'gcp-function', 'aws-sagemaker', 'azure-ml', 'algorithmia'
+    ]), required=True)
+    @click.option('--region', type=click.STRING, required=True)
+    def check_deployment_status(archive_path, platform, region, stage):
+        if platform in SERVERLESS_PLATFORMS:
+            check_serverless_deployment_status(platform, archive_path, region, stage)  # pylint:disable=too-many-function-args
+        else:
+            raise BentoMLException(
+                'check deployment status with --platform={} is not supported in the current version of BentoML'
+                .format(platform))
+        return
+
+
+    # pylint: enable=unused-variable
     _cli()
 
 

@@ -21,11 +21,12 @@ from __future__ import print_function
 import os
 import shutil
 import subprocess
+from subprocess import PIPE
 
 from ruamel.yaml import YAML
 from packaging import version
 
-from bentoml.archive import load
+from bentoml.archive import load, load_bentoml_config
 from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
@@ -102,10 +103,12 @@ def deploy_with_serverless(platform, archive_path, extra_args):
 
 
 def delete_serverless_deployment(platform, archive, region, stage):
-    bento_server = load(archive)
+    check_serverless_compatiable_version()
+
+    service_name = load_bentoml_config(archive)['metadata']['service_name']
     if platform == 'google-python':
         config = {
-            "service": bento_server.name,
+            "service": service_name,
             "provider": {
                 "name": "google",
                 "region": DEFAULT_GCP_REGION if region is None else region,
@@ -114,7 +117,7 @@ def delete_serverless_deployment(platform, archive, region, stage):
         }
     elif platform == 'aws-lambda' or platform == 'aws-lambda-py2':
         config = {
-            "service": bento_server.name,
+            "service": service_name,
             "provider": {
                 "name": "aws",
                 "region": DEFAULT_AWS_REGION if region is None else region,
@@ -127,3 +130,36 @@ def delete_serverless_deployment(platform, archive, region, stage):
         yaml.dump(config, Path(saved_path))
         subprocess.call(['serverless', 'remove'], cwd=tempdir)
     return True
+
+
+def check_serverless_deployment_status(platform, archive_path, region, stage):
+    check_serverless_compatiable_version()
+
+    service_name = load_bentoml_config(archive_path)['metadata']['service_name']
+    if platform == 'google-python':
+        config = {
+            "service": service_name,
+            "provider": {
+                "name": "google",
+                "region": DEFAULT_GCP_REGION if region is None else region,
+                "stage": DEFAULT_GCP_DEPLOY_STAGE if stage is None else stage
+            }
+        }
+    elif platform == 'aws-lambda' or platform == 'aws-lambda-py2':
+        config = {
+            "service": service_name,
+            "provider": {
+                "name": "aws",
+                "region": DEFAULT_AWS_REGION if region is None else region,
+                "stage": DEFAULT_AWS_DEPLOY_STAGE if stage is None else stage
+            }
+        }
+    else:
+        raise BentoMLException('check serverless does not support platform %s at the moment' % platform)
+    yaml = YAML()
+    with TempDirectory() as tempdir:
+        saved_path = os.path.join(tempdir, 'serverless.yml')
+        yaml.dump(config, Path(saved_path))
+        with subprocess.Popen(['serverless', 'info'], cwd=tempdir, stdout=PIPE, stderr=PIPE) as proc:
+            content = proc.stdout.read()
+            # WIP

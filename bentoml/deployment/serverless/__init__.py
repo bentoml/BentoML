@@ -187,6 +187,7 @@ class ServerlessDeployment(object):
             yaml.dump(config, Path(saved_path))
             with subprocess.Popen(['serverless', 'info'], cwd=tempdir, stdout=PIPE,
                                 stderr=PIPE) as proc:
+                # We don't use the parse_response function here. Instead of raising error, we will just return false
                 content = proc.stdout.read().decode('utf-8')
                 response = content.strip().split('\n')
                 logger.debug('Serverless response: %s', '\n'.join(response))
@@ -195,10 +196,6 @@ class ServerlessDeployment(object):
                     return False
                 else:
                     return True
-
-    def _is_deployment_active(self):
-        self.check_status()
-        return
 
     def delete(self):
         check_serverless_compatiable_version()

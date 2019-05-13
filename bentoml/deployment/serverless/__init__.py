@@ -40,6 +40,7 @@ from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 SERVERLESS_PROVIDER = {
     'aws-lambda': 'aws-python3',
@@ -82,6 +83,8 @@ class ServerlessDeployment(object):
     """
 
     def __init__(self, platform, archive_path, region, stage):
+        check_serverless_compatiable_version()
+
         self.platform = platform
         self.provider = SERVERLESS_PROVIDER[platform]
         self.archive_path = archive_path
@@ -131,8 +134,6 @@ class ServerlessDeployment(object):
         return os.path.realpath(output_path)
 
     def deploy(self):
-        check_serverless_compatiable_version()
-
         output_path = self.generate_bundle()
         with subprocess.Popen(['serverless', 'deploy'], cwd=output_path, stdout=PIPE, stderr=PIPE) as proc:
             response = parse_serverless_response(proc.stdout.read().decode('utf-8'))
@@ -142,11 +143,10 @@ class ServerlessDeployment(object):
             logger.info('BentoML: %s', '\n'.join(service_info))
             return output_path
 
-    def check_status(self):
+    def check_status(self, display_info=True):
         """Check deployment status for the bentoml service.
         return True, if it is active else return false
         """
-        check_serverless_compatiable_version()
 
         apis = self.bento_service.get_service_apis()
         config = {
@@ -172,7 +172,8 @@ class ServerlessDeployment(object):
                     'events': [
                         {
                            'http': {
-                               "path": '/' + api.name
+                               "path": '/' + api.name,
+                               "method": 'post'
                            }
                         }
                     ] 
@@ -195,12 +196,12 @@ class ServerlessDeployment(object):
                 if error:
                     return False
                 else:
+                    if display_info:
+                        logger.info('BentoML: %s', '\n'.join(response))
                     return True
 
     def delete(self):
-        check_serverless_compatiable_version()
-
-        if not self.check_status():
+        if not self.check_status(display_info=False):
             raise BentoMLException('No active deployment for service %s' % self.bento_service.name)
 
         if self.platform == 'google-python':

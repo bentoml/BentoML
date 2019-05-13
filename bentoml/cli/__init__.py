@@ -170,13 +170,16 @@ def cli():
         'aws-lambda', 'aws-lambda-py2', 'gcp-function', 'aws-sagemaker', 'azure-ml', 'algorithmia'
     ]), required=True)
     @click.option('--region', type=click.STRING, required=True)
+    @click.option('--stage', type=click.STRING)
     def check_deployment_status(archive_path, platform, region, stage):
         if platform in SERVERLESS_PLATFORMS:
-            check_serverless_deployment_status(platform, archive_path, region, stage)  # pylint:disable=too-many-function-args
+            deployment = ServerlessDeployment(platform, archive_path, region, stage)
         else:
             raise BentoMLException(
                 'check deployment status with --platform={} is not supported in the current version of BentoML'
                 .format(platform))
+
+        deployment.check_status()
         return
 
 

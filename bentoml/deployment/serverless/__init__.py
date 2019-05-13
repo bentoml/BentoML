@@ -40,7 +40,6 @@ from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 SERVERLESS_PROVIDER = {
     'aws-lambda': 'aws-python3',

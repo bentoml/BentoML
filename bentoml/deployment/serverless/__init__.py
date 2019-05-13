@@ -139,7 +139,7 @@ class ServerlessDeployment(object):
             logger.debug('Serverless response: %s', '\n'.join(response))
             service_info_index = response.index('Service Information')
             service_info = response[service_info_index:]
-            logger.info(service_info)
+            logger.info('BentoML: %s', '\n'.join(service_info))
             return output_path
 
     def check_status(self):

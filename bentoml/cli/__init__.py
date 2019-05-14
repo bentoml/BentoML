@@ -31,7 +31,7 @@ from bentoml.server.bento_sagemaker_server import BentoSagemakerServer
 from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 from bentoml.deployment.serverless import ServerlessDeployment
-from bentoml.deployment.sagemaker import deploy_with_sagemaker
+from bentoml.deployment.sagemaker import SagemakerDeployment
 from bentoml.utils.exceptions import BentoMLException
 
 SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
@@ -135,14 +135,13 @@ def cli():
     @click.option('--region', type=click.STRING)
     @click.option('--stage', type=click.STRING)
     @click.option('--api-name', type=click.STRING)
-    def deploy(archive_path, platform, region, stage, api_name):
+    @click.option('--instance-type', type=click.STRING)
+    @click.option('--initial-instance-count', type=click.INT)
+    def deploy(archive_path, platform, region, stage, api_name, instance_type, initial_instance_count):
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(platform, archive_path, region, stage)
         elif platform == 'aws-sagemaker':
-            deploy_with_sagemaker(archive_path, {'region': region, 'api_name': api_name})
-            click.echo('BentoML: ', nl=False)
-            click.secho('Deploy to {platform} complete!'.format(platform=platform), fg='green')
-            return
+            deployment = SagemakerDeployment(archive_path, api_name, region, initial_instance_count, instance_type)
         else:
             raise BentoMLException(
                 'Deploying with "--platform=%s" is not supported ' % platform +

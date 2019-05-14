@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -25,6 +24,9 @@ import os
 from ruamel.yaml import YAML
 
 from bentoml.utils import Path
+
+DEFAULT_AWS_REGION = 'us-west-2'
+DEFAULT_AWS_DEPLOY_STAGE = 'dev'
 
 logger = logging.getLogger(__name__)
 
@@ -49,32 +51,26 @@ def {api_name}(event, context):
 """
 
 
-def generate_serverless_configuration_for_aws(apis, output_path, additional_options):
+def generate_serverless_configuration_for_aws(apis, output_path, region, stage):
     config_path = os.path.join(output_path, 'serverless.yml')
     yaml = YAML()
     with open(config_path, 'r') as f:
         content = f.read()
     serverless_config = yaml.load(content)
 
-    if additional_options.get('region', None):
-        serverless_config['provider']['region'] = additional_options['region']
-        logger.info(('Using user defined AWS region: {0}', additional_options['region']))
-    else:
-        serverless_config['provider']['region'] = 'us-west-2'
+    serverless_config['provider']['region'] = region
+    logger.info('Using user AWS region: %s', region)
 
-    if additional_options.get('stage', None):
-        serverless_config['provider']['stage'] = additional_options['stage']
-        logger.info(('Using user defined AWS stage: {0}', additional_options['stage']))
-    else:
-        serverless_config['provider']['stage'] = 'dev'
+    serverless_config['provider']['stage'] = stage
+    logger.info('Using AWS stage: %s', stage)
 
     serverless_config['functions'] = {}
     for api in apis:
         function_config = {
             'handler': 'handler.{name}'.format(name=api.name),
-            'layers': [
-                {"Ref": "PythonRequirementsLambdaLayer"}
-            ],
+            'layers': [{
+                "Ref": "PythonRequirementsLambdaLayer"
+            }],
             'events': [{
                 'http': {
                     'path': '/{name}'.format(name=api.name),
@@ -113,8 +109,8 @@ def generate_handler_py(bento_service, apis, output_path):
     return
 
 
-def create_aws_lambda_bundle(bento_service, output_path, additional_options):
+def create_aws_lambda_bundle(bento_service, output_path, region, stage):
     apis = bento_service.get_service_apis()
     generate_handler_py(bento_service, apis, output_path)
-    generate_serverless_configuration_for_aws(apis, output_path, additional_options)
+    generate_serverless_configuration_for_aws(apis, output_path, region, stage)
     return

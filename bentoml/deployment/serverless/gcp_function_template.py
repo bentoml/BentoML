@@ -25,6 +25,9 @@ from ruamel.yaml import YAML
 
 from bentoml.utils import Path
 
+DEFAULT_GCP_REGION = 'us-west2'
+DEFAULT_GCP_DEPLOY_STAGE = 'dev'
+
 logger = logging.getLogger(__name__)
 
 GOOGLE_MAIN_PY_TEMPLATE_HEADER = """\
@@ -42,8 +45,7 @@ def {api_name}(request):
 """
 
 
-def generate_serverless_configuration_for_google(bento_service, apis, output_path,
-                                                 additional_options):
+def generate_serverless_configuration_for_google(bento_service, apis, output_path, region, stage):
     config_path = os.path.join(output_path, 'serverless.yml')
     yaml = YAML()
     with open(config_path, 'r') as f:
@@ -51,18 +53,14 @@ def generate_serverless_configuration_for_google(bento_service, apis, output_pat
     serverless_config = yaml.load(content)
     serverless_config['provider']['project'] = bento_service.name
 
-    if additional_options.get('region', None):
-        serverless_config['provider']['region'] = additional_options['region']
-        logger.info(('Using user defined Google region: {0}', additional_options['region']))
-    if additional_options.get('stage', None):
-        serverless_config['provider']['stage'] = additional_options['stage']
-        logger.info(('Using user defined Google stage: {0}', additional_options['stage']))
+    serverless_config['provider']['region'] = region
+    logger.info('Using user defined Google region: %s', region)
+
+    serverless_config['provider']['stage'] = stage
+    logger.info('Using user defined Google stage: %s', stage)
 
     serverless_config['functions'] = {}
     for api in apis:
-        if api.name == 'first':
-            user_function_with_first_name = True
-
         function_config = {'handler': api.name, 'events': [{'http': 'path'}]}
         serverless_config['functions'][api.name] = function_config
 
@@ -82,9 +80,8 @@ def generate_main_py(bento_service, apis, output_path):
     return
 
 
-def create_gcp_function_bundle(bento_service, output_path, additional_options):
+def create_gcp_function_bundle(bento_service, output_path, region, stage):
     apis = bento_service.get_service_apis()
     generate_main_py(bento_service, apis, output_path)
-    generate_serverless_configuration_for_google(bento_service, apis, output_path,
-                                                 additional_options)
+    generate_serverless_configuration_for_google(bento_service, apis, output_path, region, stage)
     return

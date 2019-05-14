@@ -94,8 +94,10 @@ class ServerlessDeployment(object):
         elif platform == 'aws-lambda' or platform == 'aws-lambda-py':
             self.region = DEFAULT_AWS_REGION if region is None else region
             self.stage = DEFAULT_AWS_DEPLOY_STAGE if stage is None else stage
+        else:
+            raise ValueError("This version of BentoML doesn't support platform %s" % platform)
 
-    def generate_bundle(self):
+    def _generate_bundle(self):
         output_path = generate_bentoml_deployment_snapshot_path(self.bento_service.name, self.platform)
         Path(output_path).mkdir(parents=True, exist_ok=False)
 
@@ -133,7 +135,7 @@ class ServerlessDeployment(object):
         return os.path.realpath(output_path)
 
     def deploy(self):
-        output_path = self.generate_bundle()
+        output_path = self._generate_bundle()
         with subprocess.Popen(['serverless', 'deploy'], cwd=output_path, stdout=PIPE, stderr=PIPE) as proc:
             response = parse_serverless_response(proc.stdout.read().decode('utf-8'))
             logger.debug('Serverless response: %s', '\n'.join(response))
@@ -224,7 +226,7 @@ class ServerlessDeployment(object):
                 response = parse_serverless_response(proc.stdout.read().decode('utf-8'))
                 logger.debug('Serverless response: %s', '\n'.join(response))
                 if self.platform == 'google-python':
-                    pass
+                    return True
                 elif self.platform == 'aws-lambda' or self.platform == 'aws-lambda-py2':
                     if 'Serverless: Stack removal finished...' in response:
                         return True

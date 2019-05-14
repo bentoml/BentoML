@@ -45,8 +45,7 @@ def {api_name}(request):
 """
 
 
-def generate_serverless_configuration_for_google(bento_service, apis, output_path,
-                                                 region, stage):
+def generate_serverless_configuration_for_google(bento_service, apis, output_path, region, stage):
     config_path = os.path.join(output_path, 'serverless.yml')
     yaml = YAML()
     with open(config_path, 'r') as f:
@@ -84,6 +83,5 @@ def generate_main_py(bento_service, apis, output_path):
 def create_gcp_function_bundle(bento_service, output_path, region, stage):
     apis = bento_service.get_service_apis()
     generate_main_py(bento_service, apis, output_path)
-    generate_serverless_configuration_for_google(bento_service, apis, output_path,
-                                                 region, stage)
+    generate_serverless_configuration_for_google(bento_service, apis, output_path, region, stage)
     return

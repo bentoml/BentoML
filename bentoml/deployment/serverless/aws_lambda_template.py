@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -69,9 +68,9 @@ def generate_serverless_configuration_for_aws(apis, output_path, region, stage):
     for api in apis:
         function_config = {
             'handler': 'handler.{name}'.format(name=api.name),
-            'layers': [
-                {"Ref": "PythonRequirementsLambdaLayer"}
-            ],
+            'layers': [{
+                "Ref": "PythonRequirementsLambdaLayer"
+            }],
             'events': [{
                 'http': {
                     'path': '/{name}'.format(name=api.name),

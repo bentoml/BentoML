@@ -38,7 +38,6 @@ from bentoml.deployment.serverless.gcp_function_template import create_gcp_funct
     DEFAULT_GCP_REGION, DEFAULT_GCP_DEPLOY_STAGE
 from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
 
-
 logger = logging.getLogger(__name__)
 
 SERVERLESS_PROVIDER = {
@@ -77,6 +76,7 @@ def parse_serverless_response(serverless_response):
         raise BentoMLException(error_message)
     return str_list
 
+
 class ServerlessDeployment(object):
     """Managing deployment operations for serverless
     """
@@ -98,12 +98,15 @@ class ServerlessDeployment(object):
             raise ValueError("This version of BentoML doesn't support platform %s" % platform)
 
     def _generate_bundle(self):
-        output_path = generate_bentoml_deployment_snapshot_path(self.bento_service.name, self.platform)
+        output_path = generate_bentoml_deployment_snapshot_path(self.bento_service.name,
+                                                                self.platform)
         Path(output_path).mkdir(parents=True, exist_ok=False)
 
         # Calling serverless command to generate templated project
-        with subprocess.Popen(['serverless', 'create', '--template', self.provider, '--name', self.bento_service.name],
-                        cwd=output_path, stdout=PIPE, stderr=PIPE) as proc:
+        with subprocess.Popen([
+                'serverless', 'create', '--template', self.provider, '--name',
+                self.bento_service.name
+        ], cwd=output_path, stdout=PIPE, stderr=PIPE) as proc:
             response = parse_serverless_response(proc.stdout.read().decode('utf-8'))
             logger.debug('Serverless response: %s', '\n'.join(response))
 
@@ -111,21 +114,24 @@ class ServerlessDeployment(object):
             create_gcp_function_bundle(self.bento_service, output_path, self.region, self.stage)
         elif self.platform == 'aws-lambda' or self.platform == 'aws-lambda-py2':
             # Installing two additional plugins to make it works for AWS lambda
-            # serverless-python-requirements will packaging required python modules, and automatically
-            # compress and create layer
-            with subprocess.Popen(['serverless', 'plugin', 'install', '-n', 'serverless-python-requirements'],
-                            cwd=output_path, stdout=PIPE, stderr=PIPE) as proc:
+            # serverless-python-requirements will packaging required python modules,
+            # and automatically compress and create layer
+            with subprocess.Popen(
+                ['serverless', 'plugin', 'install', '-n', 'serverless-python-requirements'],
+                    cwd=output_path, stdout=PIPE, stderr=PIPE) as proc:
                 response = parse_serverless_response(proc.stdout.read().decode('utf-8'))
                 logger.debug('Serverless response: %s', '\n'.join(response))
 
-            with subprocess.Popen(['serverless', 'plugin', 'install', '-n', 'serverless-apigw-binary'],
-                            cwd=output_path, stdout=PIPE, stderr=PIPE) as proc:
+            with subprocess.Popen(
+                ['serverless', 'plugin', 'install', '-n', 'serverless-apigw-binary'],
+                    cwd=output_path, stdout=PIPE, stderr=PIPE) as proc:
                 response = parse_serverless_response(proc.stdout.read().decode('utf-8'))
                 logger.debug('Serverless response: %s', '\n'.join(response))
 
             create_aws_lambda_bundle(self.bento_service, output_path, self.region, self.stage)
         else:
-            raise BentoMLException("%s is not supported in current version of BentoML" % self.provider)
+            raise BentoMLException(
+                "%s is not supported in current version of BentoML" % self.provider)
 
         shutil.copy(os.path.join(self.archive_path, 'requirements.txt'), output_path)
 
@@ -136,7 +142,8 @@ class ServerlessDeployment(object):
 
     def deploy(self):
         output_path = self._generate_bundle()
-        with subprocess.Popen(['serverless', 'deploy'], cwd=output_path, stdout=PIPE, stderr=PIPE) as proc:
+        with subprocess.Popen(['serverless', 'deploy'], cwd=output_path, stdout=PIPE,
+                              stderr=PIPE) as proc:
             response = parse_serverless_response(proc.stdout.read().decode('utf-8'))
             logger.debug('Serverless response: %s', '\n'.join(response))
             service_info_index = response.index('Service Information')
@@ -161,23 +168,18 @@ class ServerlessDeployment(object):
         if self.platform == 'google-python':
             config['provider']['name'] = 'google'
             for api in apis:
-                config['functions'][api.name] = {
-                    'handler': api.name,
-                    'events': [{'http': 'path'}] 
-                }
+                config['functions'][api.name] = {'handler': api.name, 'events': [{'http': 'path'}]}
         elif self.platform == 'aws-lambda' or self.platform == 'aws-lambda-py2':
             config['provider']['name'] = 'aws'
             for api in apis:
                 config['functions'][api.name] = {
                     'handler': 'handler.' + api.name,
-                    'events': [
-                        {
-                           'http': {
-                               "path": '/' + api.name,
-                               "method": 'post'
-                           }
+                    'events': [{
+                        'http': {
+                            "path": '/' + api.name,
+                            "method": 'post'
                         }
-                    ] 
+                    }]
                 }
         else:
             raise BentoMLException(
@@ -188,8 +190,9 @@ class ServerlessDeployment(object):
             saved_path = os.path.join(tempdir, 'serverless.yml')
             yaml.dump(config, Path(saved_path))
             with subprocess.Popen(['serverless', 'info'], cwd=tempdir, stdout=PIPE,
-                                stderr=PIPE) as proc:
-                # We don't use the parse_response function here. Instead of raising error, we will just return false
+                                  stderr=PIPE) as proc:
+                # We don't use the parse_response function here.
+                # Instead of raising error, we will just return false
                 content = proc.stdout.read().decode('utf-8')
                 response = content.strip().split('\n')
                 logger.debug('Serverless response: %s', '\n'.join(response))
@@ -222,10 +225,12 @@ class ServerlessDeployment(object):
             saved_path = os.path.join(tempdir, 'serverless.yml')
             yaml.dump(config, Path(saved_path))
 
-            with subprocess.Popen(['serverless', 'remove'], cwd=tempdir, stdout=PIPE, stderr=PIPE) as proc:
+            with subprocess.Popen(['serverless', 'remove'], cwd=tempdir, stdout=PIPE,
+                                  stderr=PIPE) as proc:
                 response = parse_serverless_response(proc.stdout.read().decode('utf-8'))
                 logger.debug('Serverless response: %s', '\n'.join(response))
                 if self.platform == 'google-python':
+                    # TODO: Add check for Google's response
                     return True
                 elif self.platform == 'aws-lambda' or self.platform == 'aws-lambda-py2':
                     if 'Serverless: Stack removal finished...' in response:

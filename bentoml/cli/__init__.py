@@ -133,15 +133,15 @@ def cli():
             deployment = ServerlessDeployment(platform, archive_path, region, stage)
         else:
             raise BentoMLException(
-                'Deploying with "--platform={platform}" is not supported in the current version of BentoML'
-                .format(platform=platform))
+                'Deploying with "--platform=%s" is not supported ' % platform +
+                'in the current version of BentoML'
+                )
 
         output_path = deployment.deploy()
         click.echo('BentoML: ', nl=False)
         click.secho('Deploy to {platform} complete!'.format(platform=platform), fg='green')
-        click.secho(
-            'Deployment archive is saved at {output_path}'.format(output_path=output_path),
-            fg='green')
+        click.secho('Deployment archive is saved at {output_path}'.format(output_path=output_path),
+                    fg='green')
         return
 
     # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
@@ -157,11 +157,11 @@ def cli():
             deployment = ServerlessDeployment(platform, archive_path, region, stage)
         else:
             raise BentoMLException(
-                'Remove deployment with --platform={} is not supported in the current version of BentoML'
-                .format(platform))
+                'Remove deployment with --platform=%s' % platform +
+                'is not supported in the current version of BentoML'
+                )
         deployment.delete()
         return
-
 
     # Example usage: bentoml check-deployment-status ARCHIVE_PATH --platform=aws-lambda
     @_cli.command()
@@ -176,12 +176,12 @@ def cli():
             deployment = ServerlessDeployment(platform, archive_path, region, stage)
         else:
             raise BentoMLException(
-                'check deployment status with --platform={} is not supported in the current version of BentoML'
-                .format(platform))
+                'check deployment status with --platform=%s' % platform +
+                'is not supported in the current version of BentoML'
+                )
 
         deployment.check_status()
         return
-
 
     # pylint: enable=unused-variable
     _cli()

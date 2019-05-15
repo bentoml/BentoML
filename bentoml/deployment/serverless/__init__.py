@@ -32,6 +32,7 @@ from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
 from bentoml.utils.exceptions import BentoMLException
+from bentoml.deployment.base_deployment import Deployment
 from bentoml.deployment.serverless.aws_lambda_template import create_aws_lambda_bundle, \
     DEFAULT_AWS_DEPLOY_STAGE, DEFAULT_AWS_REGION
 from bentoml.deployment.serverless.gcp_function_template import create_gcp_function_bundle, \
@@ -77,17 +78,16 @@ def parse_serverless_response(serverless_response):
     return str_list
 
 
-class ServerlessDeployment(object):
+class ServerlessDeployment(Deployment):
     """Managing deployment operations for serverless
     """
 
-    def __init__(self, platform, archive_path, region, stage):
+    def __init__(self, archive_path, platform, region, stage):
         check_serverless_compatiable_version()
+        super(ServerlessDeployment, self).__init__(archive_path)
 
         self.platform = platform
         self.provider = SERVERLESS_PROVIDER[platform]
-        self.archive_path = archive_path
-        self.bento_service = load(archive_path)
         if platform == 'google-python':
             self.region = DEFAULT_GCP_REGION if region is None else region
             self.stage = DEFAULT_GCP_DEPLOY_STAGE if stage is None else stage
@@ -151,7 +151,7 @@ class ServerlessDeployment(object):
             logger.info('BentoML: %s', '\n'.join(service_info))
             return output_path
 
-    def check_status(self, display_info=True):
+    def check_status(self, display_cli_message=True):
         """Check deployment status for the bentoml service.
         return True, if it is active else return false
         """
@@ -200,12 +200,12 @@ class ServerlessDeployment(object):
                 if error:
                     return False
                 else:
-                    if display_info:
+                    if display_cli_message:
                         logger.info('BentoML: %s', '\n'.join(response))
                     return True
 
     def delete(self):
-        if not self.check_status(display_info=False):
+        if not self.check_status(display_cli_message=False):
             raise BentoMLException('No active deployment for service %s' % self.bento_service.name)
 
         if self.platform == 'google-python':

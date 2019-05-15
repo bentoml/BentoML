@@ -125,6 +125,8 @@ RUN pip install -r /opt/program/requirements.txt
 
 # run user defined setup script
 RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
+
+ENV PATH="/opt/program:${PATH}"
 """
 
 INIT_PY_TEMPLATE = """\

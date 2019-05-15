@@ -112,7 +112,7 @@ def _serve():
     subprocess.check_call(['ln', '-sf', '/dev/stdout', '/var/log/nginx/access.log'])
     subprocess.check_call(['ln', '-sf', '/dev/stderr', '/var/log/nginx/error.log'])
 
-    nginx = subprocess.Popen(['nginx', '-c', '/bento/nginx.conf'])
+    nginx = subprocess.Popen(['nginx', '-c', '/opt/program/nginx.conf'])
     gunicorn_app = subprocess.Popen(['gunicorn',
                                      '--timeout', str(model_server_timeout),
                                      '-k', 'gevent',

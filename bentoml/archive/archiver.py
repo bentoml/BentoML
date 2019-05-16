@@ -28,7 +28,8 @@ from bentoml.utils.s3 import is_s3_url, upload_to_s3
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.archive.py_module_utils import copy_used_py_modules
 from bentoml.archive.templates import BENTO_MODEL_SETUP_PY_TEMPLATE, \
-    MANIFEST_IN_TEMPLATE, BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE, INIT_PY_TEMPLATE
+    MANIFEST_IN_TEMPLATE, BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE, \
+    BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE, INIT_PY_TEMPLATE
 from bentoml.archive.config import BentoArchiveConfig
 
 DEFAULT_BENTO_ARCHIVE_DESCRIPTION = """\
@@ -146,6 +147,8 @@ def _save(bento_service, dst, version=None):
     # write Dockerfile
     with open(os.path.join(path, 'Dockerfile'), 'w') as f:
         f.write(BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE)
+    with open(os.path.join(path, 'Dockerfile-sagemaker'), 'w') as f:
+        f.write(BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE)
 
     # write bentoml.yml
     config = BentoArchiveConfig()

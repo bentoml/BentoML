@@ -18,12 +18,35 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-
-from bentoml.utils import Path
+from bentoml.archive import load
 
 
-def generate_bentoml_deployment_snapshot_path(service_name, service_version, platform):
-    return os.path.join(
-        str(Path.home()), '.bentoml', 'deployment-snapshots', platform, service_name,
-        service_version)
+class Deployment(object):
+    """Deployment is spec for describing what actions deployment should have
+    to interact with BentoML cli and BentoML service archive.
+    """
+
+    def __init__(self, archive_path):
+        self.bento_service = load(archive_path)
+        self.archive_path = archive_path
+
+    def deploy(self):
+        """Deploy bentoml service.
+
+        :return: Boolean, True if success
+        """
+        raise NotImplementedError
+
+    def check_status(self):
+        """Check deployment status
+
+        :params
+        :return: Boolean, True if success Status Message String
+        """
+        raise NotImplementedError
+
+    def delete(self):
+        """Delete deployment, if deployment is active
+        :return: Boolean, True if success
+        """
+        raise NotImplementedError

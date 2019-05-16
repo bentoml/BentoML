@@ -99,6 +99,36 @@ RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
 CMD ["bentoml serve-gunicorn /bento"]
 """
 
+BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE = """\
+FROM continuumio/miniconda3
+
+EXPOSE 8080
+
+RUN set -x \
+     && apt-get update \
+     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential\
+     && apt-get install -y nginx \
+     && rm -rf /var/lib/apt/lists/*
+
+# update conda and setup environment and pre-install common ML libraries to speed up docker build
+RUN conda update conda -y \
+      && conda install pip numpy scipy \
+      && pip install gunicorn six gevent
+
+# copy over model files
+COPY . /opt/program
+WORKDIR /opt/program
+
+# update conda base env
+RUN conda env update -n base -f /opt/program/environment.yml
+RUN pip install -r /opt/program/requirements.txt
+
+# run user defined setup script
+RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
+
+ENV PATH="/opt/program:${PATH}"
+"""
+
 INIT_PY_TEMPLATE = """\
 import os
 import sys

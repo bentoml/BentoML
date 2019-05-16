@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 DEFAULT_NGINX_CONFIG = """\
 worker_processes 1;
 daemon off; # Prevent forking
@@ -30,7 +29,7 @@ http {
   include /etc/nginx/mime.types;
   default_type application/octet-stream;
   access_log /var/log/nginx/access.log combined;
-  
+
   upstream gunicorn {
     server unix:/tmp/gunicorn.sock;
   }
@@ -56,7 +55,6 @@ http {
 }
 """
 
-
 DEFAULT_WSGI_PY = """\
 import os
 
@@ -69,12 +67,10 @@ server = BentoSagemakerServer(model_service, api_name)
 app = server.app
 """
 
-
 DEFAULT_SERVE_SCRIPT = """\
 #!/usr/bin/env python
 
 # This implement the sagemaker serving service shell.  It starts nginx and gunicorn.
-# 
 # Parameter                    Env Var                          Default Value
 # number of workers            MODEL_SERVER_TIMEOUT             60s
 # timeout                      MODEL_SERVER_WORKERS             number of cpu cores / 2 + 1
@@ -103,7 +99,7 @@ def sigterm_handler(nginx_pid, gunicorn_pid):
         os.kill(gunicorn_pid, signal.SIGTERM)
     except OSError:
         pass
-    
+
     sys.exit(0)
 
 

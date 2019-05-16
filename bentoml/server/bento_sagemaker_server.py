@@ -22,9 +22,11 @@ from flask import Flask, Response, request
 
 
 def bento_sagemaker_api_wrapper(api):
+
     def wrapper():
         response = api.handle_request(request)
         return response
+
     return wrapper
 
 

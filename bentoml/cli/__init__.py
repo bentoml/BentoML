@@ -21,10 +21,6 @@ from __future__ import print_function
 import json
 import click
 
-import os
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.bento_sagemaker_server import BentoSagemakerServer
@@ -35,6 +31,7 @@ from bentoml.deployment.sagemaker import SagemakerDeployment
 from bentoml.utils.exceptions import BentoMLException
 
 SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
+
 
 def display_bentoml_cli_message(message, message_type='success'):
     if message_type == 'success':
@@ -146,23 +143,23 @@ def cli():
     @click.option('--stage', type=click.STRING)
     @click.option('--api-name', type=click.STRING)
     @click.option('--instance-type', type=click.STRING)
-    @click.option('--initial-instance-count', type=click.INT)
-    def deploy(archive_path, platform, region, stage, api_name, instance_type, initial_instance_count):
+    @click.option('--instance-count', type=click.INT)
+    def deploy(archive_path, platform, region, stage, api_name, instance_type, instance_count):
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(archive_path, platform, region, stage)
         elif platform == 'aws-sagemaker':
-            deployment = SagemakerDeployment(archive_path, api_name, region, initial_instance_count, instance_type)
+            deployment = SagemakerDeployment(archive_path, api_name, region, instance_count,
+                                             instance_type)
         else:
-            raise BentoMLException(
-                'Deploying with "--platform=%s" is not supported ' % platform +
-                'in the current version of BentoML'
-                )
+            raise BentoMLException('Deploying with "--platform=%s" is not supported ' % platform +
+                                   'in the current version of BentoML')
         output_path = deployment.deploy()
 
+        display_bentoml_cli_message('Deploy to {platform} complete!'.format(platform=platform),
+                                    'success')
         display_bentoml_cli_message(
-            'Deploy to {platform} complete!'.format(platform=platform), 'success')
-        display_bentoml_cli_message(
-            'Deployment archive is saved at {output_path}'.format(output_path=output_path), 'success')
+            'Deployment archive is saved at {output_path}'.format(output_path=output_path),
+            'success')
         return
 
     # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
@@ -180,15 +177,15 @@ def cli():
         elif platform == 'aws-sagemaker':
             deployment = SagemakerDeployment(archive_path, api_name, region)
         else:
-            raise BentoMLException(
-                'Remove deployment with --platform=%s' % platform +
-                'is not supported in the current version of BentoML'
-                )
+            raise BentoMLException('Remove deployment with --platform=%s' % platform +
+                                   'is not supported in the current version of BentoML')
         result = deployment.delete()
         if result is True:
-            display_bentoml_cli_message('Delete {platform} deployment successful'.format(platform=platform), 'success')
+            display_bentoml_cli_message(
+                'Delete {platform} deployment successful'.format(platform=platform), 'success')
         else:
-            display_bentoml_cli_message('Delete {platform} deployment unsuccessful'.format(platform=platform), 'error')
+            display_bentoml_cli_message(
+                'Delete {platform} deployment unsuccessful'.format(platform=platform), 'error')
         return
 
     # Example usage: bentoml check-deployment-status ARCHIVE_PATH --platform=aws-lambda
@@ -206,10 +203,8 @@ def cli():
         elif platform == 'aws-sagemaker':
             deployment = SagemakerDeployment(archive_path, api_name, region)
         else:
-            raise BentoMLException(
-                'check deployment status with --platform=%s' % platform +
-                'is not supported in the current version of BentoML'
-                )
+            raise BentoMLException('check deployment status with --platform=%s' % platform +
+                                   'is not supported in the current version of BentoML')
 
         deployment.check_status()
         return

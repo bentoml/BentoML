@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_REGION = 'us-west-2'
 DEFAULT_INSTANCE_TYPE = 'ml.m4.xlarge'
-DEFAULT_INITIAL_INSTANCE_COUNT = 1
+DEFAULT_INSTANCE_COUNT = 1
 
 
 def strip_scheme(url):
@@ -65,16 +65,16 @@ def process_docker_api_line(payload):
         if line:
             try:
                 line_payload = json.loads(line)
-            except ValueError as ex:
-                print("Could not decipher payload from API: " + ex.message)
+            except ValueError as e:
+                print("Could not decipher payload from API: " + e)
             if line_payload:
                 if "errorDetail" in line_payload:
                     error = line_payload["errorDetail"]
                     sys.stderr.write(error["message"])
-                    raise RuntimeError("Error on build - code %s", error['code'])
+                    raise RuntimeError("Error on build - code %s" % error['code'])
                 elif "stream" in line_payload:
+                    # TODO: move this to logger.info
                     sys.stdout.write(line_payload["stream"])
-
 
 
 def generate_aws_compatible_string(item):
@@ -110,7 +110,8 @@ def get_arn_role_from_current_user():
 def create_push_image_to_ecr(bento_service, snapshot_path):
     """Create BentoService sagemaker image and push to AWS ECR
 
-    Example: https://github.com/awslabs/amazon-sagemaker-examples/blob/master/advanced_functionality/scikit_bring_your_own/container/build_and_push.sh
+    Example: https://github.com/awslabs/amazon-sagemaker-examples/blob/\
+        master/advanced_functionality/scikit_bring_your_own/container/build_and_push.sh
     1. get aws account info and login ecr
     2. create ecr repository, if not exist
     3. build tag and push docker image
@@ -128,10 +129,6 @@ def create_push_image_to_ecr(bento_service, snapshot_path):
     auth_config_payload = {'username': username, 'password': password}
 
     docker_api = docker.APIClient()
-    # https://github.com/docker/docker-py/issues/2256
-    subprocess.call(['docker', 'login', '-u', username, '-p', password, registry_url])
-    docker_client = docker.from_env()
-    docker_client.login(username, password, email='', registry=registry_url)
 
     image_name = bento_service.name.lower() + '-sagemaker'
     ecr_tag = strip_scheme('{registry_url}/{image_name}:{version}'.format(
@@ -164,7 +161,7 @@ class SagemakerDeployment(Deployment):
             raise ValueError('docker is not installed, please install docker and then try again')
         super(SagemakerDeployment, self).__init__(archive_path)
         self.region = DEFAULT_REGION if region is None else region
-        self.initial_instance_count = DEFAULT_INITIAL_INSTANCE_COUNT if instance_count is None else instance_count
+        self.instance_count = DEFAULT_INSTANCE_COUNT if instance_count is None else instance_count
         self.instant_type = DEFAULT_INSTANCE_TYPE if instance_type is None else instance_type
         apis = self.bento_service.get_service_apis()
         if api_name:
@@ -176,7 +173,7 @@ class SagemakerDeployment(Deployment):
                 'Please specify api-name, when more than one API is present in the archive')
         self.sagemaker_client = boto3.client('sagemaker', region_name=self.region)
         self.model_name = generate_aws_compatible_string('bentoml-' + self.bento_service.name +
-                                                              '-' + self.bento_service.version)
+                                                         '-' + self.bento_service.version)
         self.endpoint_config_name = generate_aws_compatible_string(
             self.bento_service.name + '-' + self.bento_service.version + '-configuration')
 
@@ -228,56 +225,67 @@ class SagemakerDeployment(Deployment):
         production_variants = [{
             "VariantName": self.bento_service.name,
             "ModelName": self.model_name,
-            "InitialInstanceCount": self.initial_instance_count,
+            "InitialInstanceCount": self.instance_count,
             "InstanceType": self.instant_type,
         }]
         logger.info('Creating sagemaker endpoint %s configuration', self.endpoint_config_name)
         create_endpoint_config_response = self.sagemaker_client.create_endpoint_config(
             EndpointConfigName=self.endpoint_config_name, ProductionVariants=production_variants)
         logger.debug(create_endpoint_config_response)
-        logger.info('Creating sagemaker endpoint %s',self. bento_service.name)
+        logger.info('Creating sagemaker endpoint %s', self.bento_service.name)
         create_endpoint_response = self.sagemaker_client.create_endpoint(
             EndpointName=self.bento_service.name, EndpointConfigName=self.endpoint_config_name)
         logger.debug(create_endpoint_response)
 
         # TODO: maybe wait for this endpoint from creating to running and then return
-        endpoint_status = self.sagemaker_client.describe_endpoint(EndpointName=self.bento_service.name)
+        endpoint_status = self.sagemaker_client.describe_endpoint(
+            EndpointName=self.bento_service.name)
         logger.debug(endpoint_status)
         logger.info(endpoint_status)
         return snapshot_path
 
     def check_status(self, display_cli_message=True):
-        endpoint_status_response = self.sagemaker_client.describe_endpoint(EndpointName=self.bento_service.name)
+        endpoint_status_response = self.sagemaker_client.describe_endpoint(
+            EndpointName=self.bento_service.name)
         logger.info(endpoint_status_response)
         endpoint_in_service = False
         if endpoint_status_response['EndpointStatus'] == 'InService':
             endpoint_in_service = True
 
         if display_cli_message:
-            logger.info('BentoML: {service} is {status}'.format(
-                service=self.bento_service.name, status=endpoint_status_response['EndpointStatus']))
+            status_message = 'BentoML: {service} is {status}'.format(
+                service=self.bento_service.name, status=endpoint_status_response['EndpointStatus'])
+            logger.info(status_message)
             if endpoint_in_service is True:
                 logger.info('BentoML: %s', endpoint_status_response['EndpointArn'])
 
         return endpoint_in_service
 
     def delete(self):
-        """Delete Sagemaker endpoint for the bentoml service. It will also delete the model or the endpoint 
-        configuration.
+        """Delete Sagemaker endpoint for the bentoml service.
+        It will also delete the model or the endpoint configuration.
 
         return: Boolean, True if the deletion is successful
         """
         if not self.check_status(display_cli_message=False):
-            raise BentoMLException('No active AWS Sagemaker deployment for service %s' % self.bento_service.name)
+            raise BentoMLException(
+                'No active AWS Sagemaker deployment for service %s' % self.bento_service.name)
 
-        delete_endpoint_response = self.sagemaker_client.delete_endpoint(EndpointName=self.bento_service.name)
+        delete_endpoint_response = self.sagemaker_client.delete_endpoint(
+            EndpointName=self.bento_service.name)
         logger.debug(delete_endpoint_response)
         if delete_endpoint_response['ResponseMetadata']['HTTPStatusCode'] == 200:
             delete_model_response = self.sagemaker_client.delete_model(ModelName=self.model_name)
             logger.debug(delete_model_response)
+            if delete_model_response['ResponseMetadata']['HTTPStatusCode'] != 200:
+                logger.error('Encounter error when deleting model: %s', delete_model_response)
+
             delete_endpoint_config_response = self.sagemaker_client.delete_endpoint_config(
                 EndpointConfigName=self.endpoint_config_name)
             logger.debug(delete_endpoint_config_response)
+            if delete_endpoint_config_response['ResponseMetadata']['HTTPStatusCode'] != 200:
+                logger.error('Encounter error when deleting endpoint configuration: %s',
+                             delete_endpoint_config_response)
             return True
         else:
             return False

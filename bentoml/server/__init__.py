@@ -21,7 +21,4 @@ from __future__ import print_function
 from bentoml.server.bento_api_server import BentoAPIServer
 from bentoml.server import metrics
 
-__all__ = [
-    'BentoAPIServer',
-    'metrics'
-]
+__all__ = ['BentoAPIServer', 'metrics']

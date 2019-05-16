@@ -20,6 +20,7 @@ from __future__ import print_function
 
 from bentoml.archive import load
 
+
 class Deployment(object):
     """Deployment is spec for describing what actions deployment should have
     to interact with BentoML cli and BentoML service archive.
@@ -36,7 +37,7 @@ class Deployment(object):
         """
         raise NotImplementedError
 
-    def check_status(self, display_cli_message=True):  
+    def check_status(self, display_cli_message=True):
         """Check deployment status
 
         :params

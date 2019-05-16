@@ -21,6 +21,8 @@ from __future__ import print_function
 import json
 import click
 
+from enum import Enum
+
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.bento_sagemaker_server import BentoSagemakerServer
@@ -32,11 +34,14 @@ from bentoml.utils.exceptions import BentoMLException
 
 SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
 
+class CLI_MESSAGE_TYPE(Enum):
+    SUCCESS = 1
+    ERROR = 2
 
-def display_bentoml_cli_message(message, message_type='success'):
-    if message_type == 'success':
+def display_bentoml_cli_message(message, message_type=CLI_MESSAGE_TYPE.SUCCESS):
+    if message_type == CLI_MESSAGE_TYPE.SUCCESS:
         color = 'green'
-    elif message_type == 'error':
+    elif message_type == CLI_MESSAGE_TYPE.ERROR:
         color = 'red'
     else:
         color = 'green'
@@ -155,11 +160,9 @@ def cli():
                                    'in the current version of BentoML')
         output_path = deployment.deploy()
 
-        display_bentoml_cli_message('Deploy to {platform} complete!'.format(platform=platform),
-                                    'success')
+        display_bentoml_cli_message('Deploy to {platform} complete!'.format(platform=platform))
         display_bentoml_cli_message(
-            'Deployment archive is saved at {output_path}'.format(output_path=output_path),
-            'success')
+            'Deployment archive is saved at {output_path}'.format(output_path=output_path))
         return
 
     # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
@@ -182,10 +185,10 @@ def cli():
         result = deployment.delete()
         if result is True:
             display_bentoml_cli_message(
-                'Delete {platform} deployment successful'.format(platform=platform), 'success')
+                'Delete {platform} deployment successful'.format(platform=platform))
         else:
             display_bentoml_cli_message(
-                'Delete {platform} deployment unsuccessful'.format(platform=platform), 'error')
+                'Delete {platform} deployment unsuccessful'.format(platform=platform), CLI_MESSAGE_TYPE.ERROR)
         return
 
     # Example usage: bentoml check-deployment-status ARCHIVE_PATH --platform=aws-lambda

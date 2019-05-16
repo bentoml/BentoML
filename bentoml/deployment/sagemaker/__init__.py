@@ -190,8 +190,8 @@ class SagemakerDeployment(Deployment):
         :param additional_info: Dict
         :return: String, location to the output snapshot's path
         """
-        snapshot_path = generate_bentoml_deployment_snapshot_path(self.bento_service.name,
-                                                                  'aws-sagemaker')
+        snapshot_path = generate_bentoml_deployment_snapshot_path(
+            self.bento_service.name, self.bento_service.version, 'aws-sagemaker')
         shutil.copytree(self.archive_path, snapshot_path)
         with open(os.path.join(snapshot_path, 'nginx.conf'), 'w') as f:
             f.write(DEFAULT_NGINX_CONFIG)
@@ -220,7 +220,7 @@ class SagemakerDeployment(Deployment):
         }
         logger.info('Creating sagemaker model %s', self.model_name)
         create_model_response = self.sagemaker_client.create_model(**sagemaker_model_info)
-        logger.debug(create_model_response)
+        logger.info('AWS create model response: %s', create_model_response)
 
         production_variants = [{
             "VariantName": self.bento_service.name,
@@ -231,35 +231,29 @@ class SagemakerDeployment(Deployment):
         logger.info('Creating sagemaker endpoint %s configuration', self.endpoint_config_name)
         create_endpoint_config_response = self.sagemaker_client.create_endpoint_config(
             EndpointConfigName=self.endpoint_config_name, ProductionVariants=production_variants)
-        logger.debug(create_endpoint_config_response)
+        logger.info('AWS create endpoint config response: %s', create_endpoint_config_response)
         logger.info('Creating sagemaker endpoint %s', self.bento_service.name)
         create_endpoint_response = self.sagemaker_client.create_endpoint(
             EndpointName=self.bento_service.name, EndpointConfigName=self.endpoint_config_name)
-        logger.debug(create_endpoint_response)
+        logger.info('AWS create endpoint response: %s', create_endpoint_response)
 
         # TODO: maybe wait for this endpoint from creating to running and then return
-        endpoint_status = self.sagemaker_client.describe_endpoint(
-            EndpointName=self.bento_service.name)
-        logger.debug(endpoint_status)
-        logger.info(endpoint_status)
         return snapshot_path
 
-    def check_status(self, display_cli_message=True):
+    def check_status(self):
         endpoint_status_response = self.sagemaker_client.describe_endpoint(
             EndpointName=self.bento_service.name)
-        logger.info(endpoint_status_response)
+        logger.info('AWS describe endpoint response: %s', endpoint_status_response)
         endpoint_in_service = False
         if endpoint_status_response['EndpointStatus'] == 'InService':
             endpoint_in_service = True
 
-        if display_cli_message:
-            status_message = 'BentoML: {service} is {status}'.format(
-                service=self.bento_service.name, status=endpoint_status_response['EndpointStatus'])
-            logger.info(status_message)
-            if endpoint_in_service is True:
-                logger.info('BentoML: %s', endpoint_status_response['EndpointArn'])
+        status_message = '{service} is {status}'.format(
+            service=self.bento_service.name, status=endpoint_status_response['EndpointStatus'])
+        if endpoint_in_service is True:
+            status_message += '\nEndpoint ARN: ' + endpoint_status_response['EndpointArn']
 
-        return endpoint_in_service
+        return endpoint_in_service, status_message
 
     def delete(self):
         """Delete Sagemaker endpoint for the bentoml service.
@@ -267,22 +261,23 @@ class SagemakerDeployment(Deployment):
 
         return: Boolean, True if the deletion is successful
         """
-        if not self.check_status(display_cli_message=False):
+        active_status, _ = self.check_status()
+        if not active_status:
             raise BentoMLException(
                 'No active AWS Sagemaker deployment for service %s' % self.bento_service.name)
 
         delete_endpoint_response = self.sagemaker_client.delete_endpoint(
             EndpointName=self.bento_service.name)
-        logger.debug(delete_endpoint_response)
+        logger.info('AWS delete endpoint response: %s', delete_endpoint_response)
         if delete_endpoint_response['ResponseMetadata']['HTTPStatusCode'] == 200:
             delete_model_response = self.sagemaker_client.delete_model(ModelName=self.model_name)
-            logger.debug(delete_model_response)
+            logger.info('AWS delete model response: %s', delete_model_response)
             if delete_model_response['ResponseMetadata']['HTTPStatusCode'] != 200:
                 logger.error('Encounter error when deleting model: %s', delete_model_response)
 
             delete_endpoint_config_response = self.sagemaker_client.delete_endpoint_config(
                 EndpointConfigName=self.endpoint_config_name)
-            logger.debug(delete_endpoint_config_response)
+            logger.info('AWS delete endpoint config response: %s', delete_endpoint_config_response)
             if delete_endpoint_config_response['ResponseMetadata']['HTTPStatusCode'] != 200:
                 logger.error('Encounter error when deleting endpoint configuration: %s',
                              delete_endpoint_config_response)

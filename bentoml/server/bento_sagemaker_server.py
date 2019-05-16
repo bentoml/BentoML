@@ -21,19 +21,13 @@ from __future__ import print_function
 from flask import Flask, Response, request
 
 
-def bento_sagemaker_api_wrapper(api):
-
-    def wrapper():
-        response = api.handle_request(request)
-        return response
-
-    return wrapper
-
-
 def setup_bento_service_api_route(app, api):
-    route_function = bento_sagemaker_api_wrapper(api)
-    app.add_url_rule(rule='/invocations/{}'.format(api.name), endpoint=api.name,
-                     view_func=route_function, methods=['POST'])
+
+    def view_function():
+        return api.handle_request(request)
+
+    app.add_url_rule(rule='/invocations', endpoint=api.name, view_func=view_function,
+                     methods=['POST'])
 
 
 def ping_view_func():
@@ -49,11 +43,13 @@ def setup_routes(app, bento_service, api_name):
     app.add_url_rule('/ping', 'ping', ping_view_func)
 
     apis = bento_service.get_service_apis()
-    if api_name is None:
-        setup_bento_service_api_route(app, apis[0])
-    else:
+    if api_name:
         api = next(item for item in apis if item.name == api_name)
         setup_bento_service_api_route(app, api)
+    elif len(apis) == 1:
+        setup_bento_service_api_route(app, apis[0])
+    else:
+        raise ValueError('Must define api name or provide bento service with one API function')
 
 
 class BentoSagemakerServer():

@@ -98,8 +98,8 @@ class ServerlessDeployment(Deployment):
             raise ValueError("This version of BentoML doesn't support platform %s" % platform)
 
     def _generate_bundle(self):
-        output_path = generate_bentoml_deployment_snapshot_path(self.bento_service.name,
-                                                                self.platform)
+        output_path = generate_bentoml_deployment_snapshot_path(
+            self.bento_service.name, self.bento_service.version, self.platform)
         Path(output_path).mkdir(parents=True, exist_ok=False)
 
         # Calling serverless command to generate templated project
@@ -151,7 +151,7 @@ class ServerlessDeployment(Deployment):
             logger.info('BentoML: %s', '\n'.join(service_info))
             return output_path
 
-    def check_status(self, display_cli_message=True):
+    def check_status(self):
         """Check deployment status for the bentoml service.
         return True, if it is active else return false
         """
@@ -198,14 +198,13 @@ class ServerlessDeployment(Deployment):
                 logger.debug('Serverless response: %s', '\n'.join(response))
                 error = [s for s in response if 'Serverless Error' in s]
                 if error:
-                    return False
+                    return False, '\n'.join(response)
                 else:
-                    if display_cli_message:
-                        logger.info('BentoML: %s', '\n'.join(response))
-                    return True
+                    return True, '\n'.join(response)
 
     def delete(self):
-        if not self.check_status(display_cli_message=False):
+        active_status, _ = self.check_status()
+        if not active_status:
             raise BentoMLException('No active deployment for service %s' % self.bento_service.name)
 
         if self.platform == 'google-python':

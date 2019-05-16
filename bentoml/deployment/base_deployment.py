@@ -37,12 +37,11 @@ class Deployment(object):
         """
         raise NotImplementedError
 
-    def check_status(self, display_cli_message=True):
+    def check_status(self):
         """Check deployment status
 
         :params
-        :display_cli_message: Boolean, default True
-        :return: Boolean, True if success
+        :return: Boolean, True if success Status Message String
         """
         raise NotImplementedError
 

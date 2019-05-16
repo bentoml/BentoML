@@ -20,12 +20,10 @@ from __future__ import print_function
 
 import os
 
-from datetime import datetime
-
 from bentoml.utils import Path
 
 
-def generate_bentoml_deployment_snapshot_path(service_name, platform):
+def generate_bentoml_deployment_snapshot_path(service_name, service_version, platform):
     return os.path.join(
-        str(Path.home()), '.bentoml', 'deployment-snapshots', service_name, platform,
-        datetime.now().isoformat())
+        str(Path.home()), '.bentoml', 'deployment-snapshots', platform, service_name,
+        service_version)

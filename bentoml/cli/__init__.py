@@ -34,9 +34,11 @@ from bentoml.utils.exceptions import BentoMLException
 
 SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
 
+
 class CLI_MESSAGE_TYPE(Enum):
     SUCCESS = 1
     ERROR = 2
+
 
 def display_bentoml_cli_message(message, message_type=CLI_MESSAGE_TYPE.SUCCESS):
     if message_type == CLI_MESSAGE_TYPE.SUCCESS:
@@ -188,7 +190,8 @@ def cli():
                 'Delete {platform} deployment successful'.format(platform=platform))
         else:
             display_bentoml_cli_message(
-                'Delete {platform} deployment unsuccessful'.format(platform=platform), CLI_MESSAGE_TYPE.ERROR)
+                'Delete {platform} deployment unsuccessful'.format(platform=platform),
+                CLI_MESSAGE_TYPE.ERROR)
         return
 
     # Example usage: bentoml check-deployment-status ARCHIVE_PATH --platform=aws-lambda

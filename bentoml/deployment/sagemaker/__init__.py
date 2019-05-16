@@ -231,7 +231,7 @@ class SagemakerDeployment(Deployment):
         logger.info('Creating sagemaker endpoint %s configuration', self.endpoint_config_name)
         create_endpoint_config_response = self.sagemaker_client.create_endpoint_config(
             EndpointConfigName=self.endpoint_config_name, ProductionVariants=production_variants)
-        logger.info('AWS create endpoint config response: %s', create_endpoint_config_response)
+        logger.info('AWS create endpoint config response: %s\n', create_endpoint_config_response)
         logger.info('Creating sagemaker endpoint %s', self.bento_service.name)
         create_endpoint_response = self.sagemaker_client.create_endpoint(
             EndpointName=self.bento_service.name, EndpointConfigName=self.endpoint_config_name)
@@ -261,8 +261,8 @@ class SagemakerDeployment(Deployment):
 
         return: Boolean, True if the deletion is successful
         """
-        active_status, _ = self.check_status()
-        if not active_status:
+        is_active, _ = self.check_status()
+        if not is_active:
             raise BentoMLException(
                 'No active AWS Sagemaker deployment for service %s' % self.bento_service.name)
 
@@ -270,6 +270,9 @@ class SagemakerDeployment(Deployment):
             EndpointName=self.bento_service.name)
         logger.info('AWS delete endpoint response: %s', delete_endpoint_response)
         if delete_endpoint_response['ResponseMetadata']['HTTPStatusCode'] == 200:
+            # We will also try to delete both model and endpoint configuration for user.
+            # Since they are not critical, even they failed, we will still count delete deployment
+            # a success
             delete_model_response = self.sagemaker_client.delete_model(ModelName=self.model_name)
             logger.info('AWS delete model response: %s', delete_model_response)
             if delete_model_response['ResponseMetadata']['HTTPStatusCode'] != 200:

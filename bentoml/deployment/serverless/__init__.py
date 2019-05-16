@@ -203,8 +203,8 @@ class ServerlessDeployment(Deployment):
                     return True, '\n'.join(response)
 
     def delete(self):
-        active_status, _ = self.check_status()
-        if not active_status:
+        is_active, _ = self.check_status()
+        if not is_active:
             raise BentoMLException('No active deployment for service %s' % self.bento_service.name)
 
         if self.platform == 'google-python':

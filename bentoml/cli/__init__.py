@@ -183,7 +183,7 @@ def cli():
             raise BentoMLException('Remove deployment with --platform=%s' % platform +
                                    'is not supported in the current version of BentoML')
         result = deployment.delete()
-        if result is True:
+        if result:
             display_bentoml_cli_message(
                 'Delete {platform} deployment successful'.format(platform=platform))
         else:

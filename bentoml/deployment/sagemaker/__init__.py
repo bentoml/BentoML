@@ -231,7 +231,8 @@ class SagemakerDeployment(Deployment):
         logger.info('Creating sagemaker endpoint %s configuration', self.endpoint_config_name)
         create_endpoint_config_response = self.sagemaker_client.create_endpoint_config(
             EndpointConfigName=self.endpoint_config_name, ProductionVariants=production_variants)
-        logger.info('AWS create endpoint config response: %s\n', create_endpoint_config_response)
+        logger.info('AWS create endpoint config response: %s', create_endpoint_config_response)
+
         logger.info('Creating sagemaker endpoint %s', self.bento_service.name)
         create_endpoint_response = self.sagemaker_client.create_endpoint(
             EndpointName=self.bento_service.name, EndpointConfigName=self.endpoint_config_name)
@@ -244,13 +245,11 @@ class SagemakerDeployment(Deployment):
         endpoint_status_response = self.sagemaker_client.describe_endpoint(
             EndpointName=self.bento_service.name)
         logger.info('AWS describe endpoint response: %s', endpoint_status_response)
-        endpoint_in_service = False
-        if endpoint_status_response['EndpointStatus'] == 'InService':
-            endpoint_in_service = True
+        endpoint_in_service = endpoint_status_response['EndpointStatus'] == 'InService'
 
         status_message = '{service} is {status}'.format(
             service=self.bento_service.name, status=endpoint_status_response['EndpointStatus'])
-        if endpoint_in_service is True:
+        if endpoint_in_service:
             status_message += '\nEndpoint ARN: ' + endpoint_status_response['EndpointArn']
 
         return endpoint_in_service, status_message
@@ -261,8 +260,7 @@ class SagemakerDeployment(Deployment):
 
         return: Boolean, True if the deletion is successful
         """
-        is_active, _ = self.check_status()
-        if not is_active:
+        if not self.check_status()[0]:
             raise BentoMLException(
                 'No active AWS Sagemaker deployment for service %s' % self.bento_service.name)
 

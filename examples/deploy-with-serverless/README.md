@@ -57,7 +57,7 @@ BentoML will invoke AWS to create different services.  Those services managed by
 
 [cloud-formation](https://github.com/bentoml/bentoml/examples/deploy-with-serverless/cloud-formation.png)
 
-[lambda-dash](https://github.com/bentoml/bentoml/examples/deploy-with-serverless/lambda-dash.png)
+[lambda-dash](./lambda-dash.png)
 
 
 ## Check deployment status

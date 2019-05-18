@@ -51,13 +51,13 @@ BentoML does serveal things under the hood that help data scientists to deploy t
 BentoML will first generate a serverless project and store it in the snapshot directory.
 The snapshot contains your BentoML model archive and configuration files for AWS Lambda
 
-[file_struc](https://github.com/bentoml/bentoml/examples/deploy-with-serverless/file-structures.png)
+[](https://github.com/bentoml/bentoml/examples/deploy-with-serverless/file-structures.png?raw=true)
 
 BentoML will invoke AWS to create different services.  Those services managed by CloudFormation.  When the process complete, you will see the Lambda function in service.
 
-[cloud-formation](https://github.com/bentoml/bentoml/examples/deploy-with-serverless/cloud-formation.png)
+[](https://github.com/bentoml/bentoml/examples/deploy-with-serverless/cloud-formation.png?raw=true)
 
-[lambda-dash](./lambda-dash.png)
+[](https://github.com/bentoml/bentoml/examples/deploy-with-serverless/lambda-dash.png?raw=true)
 
 
 ## Check deployment status

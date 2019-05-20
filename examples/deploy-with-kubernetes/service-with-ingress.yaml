@@ -15,7 +15,7 @@ spec:
       targetPort: 5000
   selector:
     name: bento-example
-  type: ClusterPort
+  type: ClusterIP
 
 
 

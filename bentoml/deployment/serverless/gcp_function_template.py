@@ -31,15 +31,18 @@ DEFAULT_GCP_DEPLOY_STAGE = 'dev'
 logger = logging.getLogger(__name__)
 
 GOOGLE_MAIN_PY_TEMPLATE_HEADER = """\
-import {class_name}
+from {class_name} import {class_name}
 
 bento_service = {class_name}.load()
 
+apis = bento_service.get_service_apis()
 """
 
-GOOGLE_FUNCTION_TEMPLATE = """
+GOOGLE_FUNCTION_TEMPLATE = """\
 def {api_name}(request):
-    result = bento_service.{api_name}.handle_request(request)
+    api = next(item for item in apis if item.name == '{api_name}')
+
+    result = api.handle_request(request)
     return result
 
 """

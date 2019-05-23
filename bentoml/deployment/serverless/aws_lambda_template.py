@@ -32,20 +32,22 @@ logger = logging.getLogger(__name__)
 
 AWS_HANDLER_PY_TEMPLATE_HEADER = """\
 try:
-    import unzip_requirements:
+    import unzip_requirements
 except ImportError:
     pass
 
-import {class_name}
+from {class_name} import {class_name}
 
 bento_service = {class_name}.load()
+apis = bento_service.get_service_apis()
 
 """
 
-AWS_FUNCTION_TEMPLATE = """
+AWS_FUNCTION_TEMPLATE = """\
 def {api_name}(event, context):
-    result = bento_service.{api_name}.handle_aws_lambda_event(event)
+    api = next(item for item in apis if item.name == '{api_name}')
 
+    result = api.handle_aws_lambda_event(request)
     return result
 
 """

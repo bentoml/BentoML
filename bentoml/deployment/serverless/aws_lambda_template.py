@@ -47,7 +47,7 @@ AWS_FUNCTION_TEMPLATE = """\
 def {api_name}(event, context):
     api = next(item for item in apis if item.name == '{api_name}')
 
-    result = api.handle_aws_lambda_event(request)
+    result = api.handle_aws_lambda_event(event)
     return result
 
 """

@@ -60,6 +60,18 @@ BentoML will invoke AWS to create different services.  Those services managed by
 Finally, you will see the Lambda function show up on your AWS Dashboard.
 ![ScreenShot](./lambda-dash.png)
 
+To make a prediction request, you can use CURL command. Copy and paste the following command and update `data` and `url`
+base on your deployment
+
+```bash
+curl -i \
+--header "Content-Type: application/json" \
+--request POST \
+--data '["good movie", "bad food"]' \
+https://URL.amazonaws.com/dev/predict
+```
+
+![ScreenShot](./make-prediction-curl.png)
 
 ## Check deployment status
 ```bash

@@ -68,7 +68,7 @@ curl -i \
 --header "Content-Type: application/json" \
 --request POST \
 --data '["good movie", "bad food"]' \
-https://URL.amazonaws.com/dev/predict
+https://URL
 ```
 
 ![ScreenShot](./make-prediction-curl.png)

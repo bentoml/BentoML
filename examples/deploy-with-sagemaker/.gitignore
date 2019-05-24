@@ -1,0 +1,5 @@
+*.csv
+*.zip
+output.json
+
+/model

@@ -134,14 +134,13 @@ def create_bentoml_cli(installed_archive_path=None):
 def cli():
     _cli = create_bentoml_cli()
 
-    # Commands created here are mean to be used from generated service archive.  They
+    # Commands created here aren't mean to be used from generated service archive.  They
     # are used as part of BentoML cli commands only.
 
     # pylint: disable=unused-variable
 
     # Example usage: bentoml deploy /ARCHIVE_PATH --platform=aws-lambda
-    @_cli.command(help='Deploy BentoML archive to AWS Lambda or Google Cloud Function as ' +
-                  'REST endpoint with Serverless Framework')
+    @_cli.command(help='Deploy BentoML archive as REST endpoint')
     @click.argument('archive-path', type=click.STRING)
     @click.option('--platform', type=click.Choice([
         'aws-lambda', 'aws-lambda-py2', 'gcp-function', 'aws-sagemaker', 'azure-ml', 'algorithmia'
@@ -168,7 +167,7 @@ def cli():
         return
 
     # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
-    @_cli.command()
+    @_cli.command(help='Delete active BentoML deployment')
     @click.argument('archive-path', type=click.STRING)
     @click.option('--platform', type=click.Choice([
         'aws-lambda', 'aws-lambda-py2', 'gcp-function', 'aws-sagemaker', 'azure-ml', 'algorithmia'
@@ -195,7 +194,7 @@ def cli():
         return
 
     # Example usage: bentoml check-deployment-status ARCHIVE_PATH --platform=aws-lambda
-    @_cli.command()
+    @_cli.command(help='Check deployment status of BentoML archive')
     @click.argument('archive-path', type=click.STRING)
     @click.option('--platform', type=click.Choice([
         'aws-lambda', 'aws-lambda-py2', 'gcp-function', 'aws-sagemaker', 'azure-ml', 'algorithmia'

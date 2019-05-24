@@ -53,7 +53,7 @@ def {api_name}(event, context):
 """
 
 
-def generate_serverless_configuration_for_aws(apis, output_path, region, stage):
+def generate_serverless_configuration_for_aws(service_name, apis, output_path, region, stage):
     config_path = os.path.join(output_path, 'serverless.yml')
     yaml = YAML()
     with open(config_path, 'r') as f:
@@ -70,9 +70,6 @@ def generate_serverless_configuration_for_aws(apis, output_path, region, stage):
     for api in apis:
         function_config = {
             'handler': 'handler.{name}'.format(name=api.name),
-            'layers': [{
-                "Ref": "PythonRequirementsLambdaLayer"
-            }],
             'events': [{
                 'http': {
                     'path': '/{name}'.format(name=api.name),
@@ -88,12 +85,19 @@ def generate_serverless_configuration_for_aws(apis, output_path, region, stage):
             'useDownloadCache': True,
             'useStaticCache': True,
             'dockerizePip': True,
-            'layer': True,
+            'slim': True,
+            'strip': True,
             'zip': True
         }
     }
 
     serverless_config['custom'] = custom_config
+    package_config = {
+        'include': [
+            'handler.py',
+            service_name + '/**'
+        ]
+    }
 
     yaml.dump(serverless_config, Path(config_path))
     return
@@ -114,5 +118,5 @@ def generate_handler_py(bento_service, apis, output_path):
 def create_aws_lambda_bundle(bento_service, output_path, region, stage):
     apis = bento_service.get_service_apis()
     generate_handler_py(bento_service, apis, output_path)
-    generate_serverless_configuration_for_aws(apis, output_path, region, stage)
+    generate_serverless_configuration_for_aws(bento_service.name, apis, output_path, region, stage)
     return

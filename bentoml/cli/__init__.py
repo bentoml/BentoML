@@ -29,6 +29,7 @@ from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 from bentoml.deployment.serverless import ServerlessDeployment
 from bentoml.deployment.sagemaker import SagemakerDeployment
 from bentoml.exceptions import BentoMLException
+from bentoml.deployment.clipper import ClipperDeployment
 
 SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 

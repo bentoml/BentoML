@@ -285,7 +285,8 @@ directory.
 - [Text Classification with Tensorflow Keras](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb)
 - [Fashion MNIST classification with Pytorch](https://github.com/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb) (Alpha)
 - [Fashion MNIST classification with Tensorflow Keras](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-fashion-mnist/tf-keras-fashion-mnist-classification.ipynb) (Alpha)
-- [Deploy with Serverless framework](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-serverless) (Alpha)
+- [Deploy with Serverless framework](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-serverless)
+- [Deploy with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-sagemaker)
 - More examples coming soon!
 
 

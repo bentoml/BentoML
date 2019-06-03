@@ -195,3 +195,13 @@ class DataframeHandler(BentoHandler):
             result, event["headers"].get("output", "json"), output_orient
         )
         return {"statusCode": 200, "body": result}
+
+    def handle_clipper_strings(self, inputs, func):
+        return func(inputs)
+
+    def handle_clipper_bytes(self, inputs, func):
+        return func(inputs)
+
+    def handle_clipper_numbers(self, inputs, func):
+        return func(inputs)
+

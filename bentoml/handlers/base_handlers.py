@@ -61,6 +61,28 @@ class BentoHandler:
     def request_schema(self):
         return {"application/json": {"schema": {"type": "object"}}}
 
+    def handle_clipper_strings(self, inputs, func):
+        """Handle incoming input data for clipper cluster.
+
+        :param inputs: Incoming inputs from clipper cluster, "strings" format.
+        """
+        raise NotImplementedError
+
+    def handle_clipper_bytes(self, inputs, func):
+        """Handle incoming input data for clipper cluster.
+
+        :param inputs: Incoming inputs from clipper cluster, "bytes" format.
+        """
+        raise NotImplementedError
+
+    def handle_clipper_numbers(self, inputs, func):
+        """Handle incoming input data for clipper cluster.
+
+        :param inputs: Incoming inputs from clipper cluster, One of "integers",
+                      "floats", "doubles" format.
+        """
+        raise NotImplementedError
+
 
 def get_output_str(result, output_format, output_orient="records"):
     if output_format == "str":

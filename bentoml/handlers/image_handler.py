@@ -164,5 +164,8 @@ class ImageHandler(BentoHandler):
             )
 
         result = func(image)
-        result = get_output_str(result, event["headers"].get("output", "json"))
-        return {"statusCode": 200, "body": result}
+        result = get_output_str(result, event['headers'].get('output', 'json'))
+        return {'statusCode': 200, 'body': result}
+
+    def handle_clipper_bytes(self, inputs, func):
+        return func(inputs)

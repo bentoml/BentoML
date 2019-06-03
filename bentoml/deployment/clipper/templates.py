@@ -1,39 +1,71 @@
-# BentoML - Machine Learning Toolkit for packaging and deploying models
-# Copyright (C) 2019 Atalaya Tech, Inc.
+# Copyright 2019 Atalaya Tech, Inc.
 
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# http://www.apache.org/licenses/LICENSE-2.0
 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
-DEFAULT_CLIPPER_DEPLOYER_PY = """\
-from clipper_admin import ClipperConnection, DockerContainerManager
-from clipper_admin.deployers.python import deploy_python_closure
+DEFAULT_CLIPPER_ENTRY = """\
+from __future__ import print_function
 
-from {class_name} import {class_name}
+import rpc # this is copied from clipper
+import os
+import sys
 
-service = {class_name}.load()
+from bentoml import load
 
-apis = service.get_service_apis()
-api = next(item for item in apis if item.name == env_api_name)
+IMPORT_ERROR_RETURN_CODE = 3
 
-clipper_connection = ClipperConnection(DockerContainerManager())
+bento_service = load('/bento_model')
+apis = bento_service.get_service_apis()
 
-clipper_conn.connect()
+api = next(item for item in apis if item.name == '{api_name}')
+if not api:
+    raise BentoMLException("Can't find api with name %s" % {api_name})
 
-deploy_python_closure(
-    clipper_connection,
-    name='{class_name}-{api_name}',
-    input_type="{input_typ}"
-    func=api.handle_cli
-)
+class BentoClipperContainer(rpc.ModelContainerBase):
+    def __init__(self):
+        self.input_type = '{input_type}'
+
+    def predict_ints(self, inputs):
+        preds = api.handle_clipper_numbers(inputs)
+        return [str(p) for p in preds]
+
+    def predict_floats(self, inputs):
+        preds = api.handle_clipper_numbers(inputs)
+        return [str(p) for p in preds]
+
+    def predict_doubles(self, inputs):
+        preds = api.handle_clipper_numbers(inputs)
+        return [str(p) for p in preds]
+
+    def predict_bytes(self, inputs):
+        preds = api.handle_clipper_bytes(inputs)
+        return [str(p) for p in preds]
+
+    def predict_(self, inputs):
+        preds = api.handle_clipper_strings(inputs)
+        return [str(p) for p in preds]
+
+
+if __name__ == "__main__":
+    print("Starting Bento service Clipper Containter")
+    rpc_service = rpc.RPCService()
+    
+    try:
+        model = BentoClipperContainer()
+        sys.stdout.flush()
+        sys.stderr.flush()
+    except ImportError:
+        sys.exit(IMPORT_ERROR_RETURN_CODE)
+
+    rpc_service.start(model)
 """

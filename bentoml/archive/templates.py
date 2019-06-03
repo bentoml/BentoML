@@ -151,3 +151,56 @@ def load():
 
 __all__ = ['__version__', '{service_name}', 'load']
 """
+
+BENTO_SERVICE_DOCKERFILE_CLIPPER_TEMPLATE = """\
+FROM clipper/python36-closure-container:0.3
+
+
+##### Miniconda3
+# Install miniconda3 for python 3.6. Copied from
+# https://github.com/ContinuumIO/docker-images/blob/master/miniconda3/debian/Dockerfile
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV PATH /opt/conda/bin:$PATH
+
+RUN apt-get update --fix-missing && \
+    apt-get install -y wget bzip2 ca-certificates curl git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.6.14-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh && \
+    /opt/conda/bin/conda clean -tipsy && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc
+
+ENV TINI_VERSION v0.16.1
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
+RUN chmod +x /usr/bin/tini
+##### End installation for miniconda3
+
+RUN set -x \
+     && apt-get update \
+     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential \
+     && rm -rf /var/lib/apt/lists/*
+
+# update conda and setup environment and pre-install common ML libraries to speed up docker build
+RUN conda update conda -y \
+      && conda install pip numpy scipy \
+      && pip install six bentoml
+
+# copy over model files
+COPY . /container
+WORKDIR /container
+
+# update conda base env
+RUN conda env update -n base -f /container/environment.yml
+RUN pip install -r /container/requirements.txt
+
+# run user defined setup script
+RUN if [ -f /container/setup.sh ]; then /bin/bash -c /container/setup.sh; fi
+
+# Run BentoML bundle for clipper
+CMD ["python", "/container/clipper_entry.py"]
+"""

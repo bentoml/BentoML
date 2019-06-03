@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -24,7 +23,8 @@ import docker
 from bentoml.archive import load
 from bentoml.handlers import ImageHandler
 from bentoml.deployment.base_deployment import Deployment
-from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
+from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path, \
+    process_docker_api_line
 from bentoml.deployment.clipper.templates import DEFAULT_CLIPPER_ENTRY
 from bentoml.utils.exceptions import BentoMLException
 
@@ -32,8 +32,7 @@ from bentoml.utils.exceptions import BentoMLException
 def build_docker_image(snapshot_path):
     docker_api = docker.APIClient()
     tag = "something"
-    for line in docker_api.build(path=snapshot_path, dockerfile='Dockerfile-clipper', 
-                                 tag=tag):
+    for line in docker_api.build(path=snapshot_path, dockerfile='Dockerfile-clipper', tag=tag):
         process_docker_api_line(line)
     return tag
 
@@ -46,6 +45,7 @@ class ClipperDeployment(Deployment):
         super(ClipperDeployment, self).__init__(archive_path)
         self.slo_micros = slo_micros
         self.clipper_conn = clipper_conn
+        self.is_deployed = False
         apis = self.bento_service.get_service_apis()
 
         if api_name:
@@ -74,31 +74,32 @@ class ClipperDeployment(Deployment):
         snapshot_path = generate_bentoml_deployment_snapshot_path(
             self.bento_service.name, self.bento_service.version, 'clipper')
 
-        entry_py_content = DEFAULT_CLIPPER_ENTRY.format(
-                api_name=self.api.name, input_type=self.input_type)
+        entry_py_content = DEFAULT_CLIPPER_ENTRY.format(api_name=self.api.name,
+                                                        input_type=self.input_type)
         with open(os.path.join(snapshot_path, 'entry.py'), 'w') as f:
             f.write(entry_py_content)
 
         image = build_docker_image(snapshot_path)
-        self.clipper_conn.register_application(
-                name=self.application_name,
-                input_type=self.input_type,
-                default_output="0",
-                slo_micros=self.slo_micros)
+        self.clipper_conn.register_application(name=self.application_name,
+                                               input_type=self.input_type, default_output="0",
+                                               slo_micros=self.slo_micros)
 
-        self.clipper_conn.deploy_model(
-                name=self.application_name,
-                version=self.bento_service.version,
-                input_type=self.input_type,
-                image=image)
+        self.clipper_conn.deploy_model(name=self.application_name,
+                                       version=self.bento_service.version,
+                                       input_type=self.input_type, image=image)
 
         self.clipper_conn.link_model_to_app(self.application_name, self.application_name)
+        self.is_deployed = True
         return
 
     def check_status(self):
+        if self.is_deployed:
+            return self.clipper_conn.get_app_info(self.application_name)
         return
 
     def delete(self):
+        if self.is_deployed:
+            self.clipper_conn.stop_models(self.application_name)
         return
 
 
@@ -113,3 +114,4 @@ def deploy_bentoml(clipper_conn, archive_path, api_name, input_type):
 
     deployment = ClipperDeployment(clipper_conn, archive_path, api_name, input_type)
     deployment.deploy()
+    return deployment

@@ -169,3 +169,11 @@ class ImageHandler(BentoHandler):
 
     def handle_clipper_bytes(self, inputs, func):
         return func(inputs)
+
+    def handle_clipper_numbers(self, inputs, func):
+        raise RuntimeError("Image handler does not support 'ints', 'doubles', \
+                 or 'floats' input_type for Clipper deployment at the moment")
+
+    def handle_clipper_strings(self, inputs, func):
+        raise RuntimeError("Image handler does not support 'strings' input_type \
+                for Clipper deployment at the moment")

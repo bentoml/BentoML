@@ -78,3 +78,11 @@ class JsonHandler(BentoHandler):
 
     def handle_clipper_strings(self, inputs, func):
         return func(inputs)
+
+    def handle_clipper_numbers(self, inputs, func):
+        raise RuntimeError("JsonHandler doesn't support 'ints', 'doubles' or \
+                'floats' input type for clipper deployment at the moment")
+
+    def handle_clipper_bytes(self, inputs, func):
+        raise RuntimeError("JsonHandler doesn't support 'bytes' input type \
+                for clipper deployment at the moment")

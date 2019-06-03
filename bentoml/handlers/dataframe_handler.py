@@ -204,4 +204,3 @@ class DataframeHandler(BentoHandler):
 
     def handle_clipper_numbers(self, inputs, func):
         return func(inputs)
-

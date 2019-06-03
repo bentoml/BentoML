@@ -115,3 +115,6 @@ yarn.lock
 
 # docs
 built-docs
+
+# MacOS X
+.DS_Store

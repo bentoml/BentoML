@@ -35,6 +35,7 @@ def generate_bentoml_deployment_snapshot_path(service_name, service_version, pla
         datetime.now().isoformat(),
     )
 
+
 def process_docker_api_line(payload):
     """ Process the output from API stream, throw an Exception if there is an error """
     # Sometimes Docker sends to "{}\n" blocks together...

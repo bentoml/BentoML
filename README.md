@@ -1,14 +1,15 @@
 # BentoML
-> From a model in ipython notebook to production API service in 5 minutes.
+> From a model in jupyter notebook to production API service in 5 minutes.
 
-![project status](https://www.repostatus.org/badges/latest/active.svg)
-![build status](https://travis-ci.org/bentoml/BentoML.svg?branch=master)
-![pypi status](https://img.shields.io/pypi/v/bentoml.svg)
-![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)
+[![project status](https://www.repostatus.org/badges/latest/active.svg)](http://bentoml.ai/)
+[![build status](https://travis-ci.org/bentoml/BentoML.svg?branch=master)](https://travis-ci.org/bentoml/BentoML)
+[![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
+[![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)](https://travis-ci.org/bentoml/BentoML)
+[![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
 
 
-BentoML is a python library for packaging and deploying machine learning
-models. It provides high-level APIs for defining an ML service and packaging
+BentoML is a python framework for building, shipping and running machine learning
+services. It provides high-level APIs for defining an ML service and packaging
 its artifacts, source code, dependencies, and configurations into a
 production-system-friendly format that is ready for deployment.
 
@@ -25,7 +26,7 @@ production-system-friendly format that is ready for deployment.
 ## Feature Highlights
 
 * __Multiple Distribution Format__ - Easily package your Machine Learning models
-  into a format that works best with your inference scenario:
+  and preprocessing code into a format that works best with your inference scenario:
   * Docker Image - deploy as containers running REST API Server
   * PyPI Package - integrate into your python applications seamlessly
   * CLI tool - put your model into Airflow DAG or CI/CD pipeline
@@ -55,7 +56,6 @@ production-system-friendly format that is ready for deployment.
 
 ![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)
 ![pypi status](https://img.shields.io/pypi/v/bentoml.svg)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_shield)
 
 ```python
 pip install bentoml
@@ -83,7 +83,8 @@ clf.fit(X, y)
 ```
 
 To package this model with BentoML, you don't need to change anything in your
-training code. Simply create a new BentoService by subclassing it:
+training code. Following your training workflow, create a new BentoML Service by
+subclassing it:
 
 ```python
 %%writefile iris_classifier.py
@@ -282,14 +283,22 @@ All examples can be found in the
 directory.
 
 - [Quick Start with sklearn](https://github.com/bentoml/BentoML/blob/master/examples/quick-start/main.py)
-- [Sentiment Analysis with Scikit-Learn](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
-- [Text Classification with Tensorflow Keras](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb)
-- [Fashion MNIST classification with Pytorch](https://github.com/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb) (Alpha)
-- [Fashion MNIST classification with Tensorflow Keras](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-fashion-mnist/tf-keras-fashion-mnist-classification.ipynb) (Alpha)
-- [Deploy with Serverless framework](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-serverless)
-- [Deploy with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-sagemaker)
-- More examples coming soon!
+- [Scikit-learn Sentiment Analysis](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
+- [Keras Text Classification](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb)
+- [PyTorch Fashion MNIST classification](https://github.com/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb)
+- [Tensorflow Keras Fashion MNIST classification](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-fashion-mnist/tf-keras-fashion-mnist-classification.ipynb)
+- [XGBoost Titanic Survival Prediction](https://github.com/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb)
+- [H2O Classification](https://github.com/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-example.ipynb)
 
+
+Deployment guides:
+- [Serverless deployment with AWS Lambda](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-serverless)
+- [API server deployment with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-sagemaker)
+- [API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/examples/deploy-with-kubernetes)
+- [API server deployment with Clipper (coming soon)]()
+
+
+More tutorials and examples coming soon!
 
 
 ## Releases and Contributing
@@ -308,7 +317,6 @@ It outlines core values and beliefs and will make working together a happier exp
 ## License
 
 BentoML is GPL-3.0 licensed, as found in the COPYING file.
-
 
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)

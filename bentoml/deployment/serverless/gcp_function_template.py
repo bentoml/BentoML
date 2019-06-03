@@ -53,6 +53,8 @@ def generate_serverless_configuration_for_google(bento_service, apis, output_pat
     with open(config_path, 'r') as f:
         content = f.read()
     serverless_config = yaml.load(content)
+
+    serverless_config['service'] = bento_service.name
     serverless_config['provider']['project'] = bento_service.name
 
     serverless_config['provider']['region'] = region

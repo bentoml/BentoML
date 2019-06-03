@@ -55,6 +55,7 @@ production-system-friendly format that is ready for deployment.
 
 ![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)
 ![pypi status](https://img.shields.io/pypi/v/bentoml.svg)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_shield)
 
 ```python
 pip install bentoml
@@ -308,3 +309,6 @@ It outlines core values and beliefs and will make working together a happier exp
 
 BentoML is GPL-3.0 licensed, as found in the COPYING file.
 
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)

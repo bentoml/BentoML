@@ -67,10 +67,10 @@ tests_require = [
     'pytest==4.4.0',
     'snapshottest==0.5.0',
     'mock==2.0.0',
-    'tox==3.8.4'
-    # 'pytest-cov',
-    # 'coverage',
-    # 'codecov'
+    'tox==3.8.4',
+    'pytest-cov',
+    'coverage',
+    'codecov'
 ]
 tests_require += cv2
 

@@ -1,14 +1,21 @@
 language: python
-sudo: true
+
 dist: xenial
+
 cache: pip
+
 python:
   - 2.7
   - 3.6
   - 3.7
+
 install:
   - "pip install --upgrade pip"
-  - "pip install -e .[test]"
+  - "pip install .[test]"
   - "pip install ."
+
 script:
-  - pytest
+  - pytest --cov=bentoml
+
+after_success:
+  - codecov

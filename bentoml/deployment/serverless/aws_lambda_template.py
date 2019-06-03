@@ -59,6 +59,7 @@ def generate_serverless_configuration_for_aws(service_name, apis, output_path, r
         content = f.read()
     serverless_config = yaml.load(content)
 
+    serverless_config['service'] = service_name
     serverless_config['provider']['region'] = region
     logger.info('Using user AWS region: %s', region)
 

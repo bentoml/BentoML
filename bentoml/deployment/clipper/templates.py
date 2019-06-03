@@ -23,7 +23,7 @@ from bentoml import load
 
 IMPORT_ERROR_RETURN_CODE = 3
 
-bento_service = load('/bento_model')
+bento_service = load('/container/bento')
 apis = bento_service.get_service_apis()
 
 api = next(item for item in apis if item.name == '{api_name}')

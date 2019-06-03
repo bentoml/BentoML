@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import shutil
 
 import docker
 
@@ -41,7 +42,7 @@ class ClipperDeployment(Deployment):
     """Clipper deployment for BentoML bundle
     """
 
-    def __init__(self, clipper_conn, archive_path, api_name, input_type=None, slo_micros=100000):
+    def __init__(self, clipper_conn, archive_path, api_name, slo_micros=100000):
         super(ClipperDeployment, self).__init__(archive_path)
         self.slo_micros = slo_micros
         self.clipper_conn = clipper_conn
@@ -57,7 +58,7 @@ class ClipperDeployment(Deployment):
                 'Please specify api-name, when more than one API is present in the archive')
         self.application_name = self.bento_service.name + '-' + self.api.name
 
-        self.input_type = 'strings' if input_type is None else input_type
+        self.input_type = 'strings'
 
         if isinstance(self.api.handler, ImageHandler):
             self.input_type = 'bytes'
@@ -76,8 +77,10 @@ class ClipperDeployment(Deployment):
 
         entry_py_content = DEFAULT_CLIPPER_ENTRY.format(api_name=self.api.name,
                                                         input_type=self.input_type)
-        with open(os.path.join(snapshot_path, 'entry.py'), 'w') as f:
+        with open(os.path.join(snapshot_path, 'clipper_entry.py'), 'w') as f:
             f.write(entry_py_content)
+        model_path = os.path.join(snapshot_path, 'bento')
+        shutil.copytree(self.archive_path, model_path)
 
         image = build_docker_image(snapshot_path)
         self.clipper_conn.register_application(name=self.application_name,
@@ -103,15 +106,14 @@ class ClipperDeployment(Deployment):
         return
 
 
-def deploy_bentoml(clipper_conn, archive_path, api_name, input_type):
+def deploy_bentoml(clipper_conn, archive_path, api_name):
     """Deploy bentoml bundle to clipper cluster
 
     :param clipper_conn: Clipper connection.
     :param archive_path: String, Path to bentoml bundle, it could be local filepath or s3 path
     :param api_name: String, Name of the api that will be running in the clipper cluster
-    :param input_type: String, one of the bytes, strings, ints, doubles, floats
     """
 
-    deployment = ClipperDeployment(clipper_conn, archive_path, api_name, input_type)
+    deployment = ClipperDeployment(clipper_conn, archive_path, api_name)
     deployment.deploy()
     return deployment

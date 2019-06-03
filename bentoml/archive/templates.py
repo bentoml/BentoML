@@ -191,7 +191,8 @@ RUN conda update conda -y \
       && pip install six bentoml
 
 # copy over model files
-COPY . /container
+COPY ./bento /container/bento
+COPY ./clipper_entry.py /container/clipper_entry.py
 WORKDIR /container
 
 # update conda base env

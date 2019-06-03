@@ -316,7 +316,7 @@ It outlines core values and beliefs and will make working together a happier exp
 
 ## License
 
-BentoML is GPL-3.0 licensed, as found in the COPYING file.
+BentoML is under Apache License 2.0, as found in the LICENSE file.
 
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)

@@ -1,6 +1,16 @@
-"""
-Module is copied from https://github.com/pydanny/whichcraft.
-"""
+# Copyright 2019 Atalaya Tech, Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+# http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from __future__ import absolute_import
 from __future__ import division
@@ -13,7 +23,7 @@ try:  # Forced testing
     from shutil import which  # pylint: disable=unused-import
 except ImportError:  # Forced testing
     # Versions prior to Python 3.3 don't have shutil.which
-
+    # Source code copied from https://github.com/pydanny/whichcraft.
     def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         """Given a command, mode, and a PATH string, return the path which
         conforms to the given mode on the PATH, or None if there is no such

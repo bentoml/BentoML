@@ -5,7 +5,6 @@ import pytest
 import pandas as pd
 import numpy as np
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from bentoml.handlers.dataframe_handler import DataframeHandler, check_dataframe_column_contains  # noqa: E402
 
 

@@ -12,7 +12,6 @@ python:
 install:
   - "pip install --upgrade pip"
   - "pip install .[test]"
-  - "pip install ."
 
 script:
   - pytest --cov=bentoml

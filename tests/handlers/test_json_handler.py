@@ -1,7 +1,6 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from bentoml import BentoService, api, artifacts  # noqa: E402
 from bentoml.handlers import JsonHandler  # noqa: E402
 

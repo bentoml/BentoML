@@ -319,4 +319,4 @@ It outlines core values and beliefs and will make working together a happier exp
 BentoML is under Apache License 2.0, as found in the LICENSE file.
 
 
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large) [![Join the chat at https://gitter.im/bentoml/BentoML](https://badges.gitter.im/bentoml/BentoML.svg)](https://gitter.im/bentoml/BentoML?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)

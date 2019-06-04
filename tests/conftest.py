@@ -3,7 +3,6 @@ import sys
 
 import pytest
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import bentoml  # noqa: E402
 from bentoml.artifact import PickleArtifact  # noqa: E402
 

@@ -2,7 +2,6 @@ import os
 import json
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from bentoml.server import BentoAPIServer  # noqa: E402
 
 

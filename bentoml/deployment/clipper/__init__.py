@@ -26,7 +26,7 @@ from bentoml.handlers import ImageHandler
 from bentoml.deployment.base_deployment import Deployment
 from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path, \
     process_docker_api_line
-from bentoml.deployment.clipper.templates import DEFAULT_CLIPPER_ENTRY
+from bentoml.deployment.clipper.templates import DEFAULT_CLIPPER_ENTRY, DOCKERFILE_CLIPPER
 from bentoml.utils.exceptions import BentoMLException
 
 
@@ -42,9 +42,8 @@ class ClipperDeployment(Deployment):
     """Clipper deployment for BentoML bundle
     """
 
-    def __init__(self, clipper_conn, archive_path, api_name, slo_micros=100000):
+    def __init__(self, clipper_conn, archive_path, api_name):
         super(ClipperDeployment, self).__init__(archive_path)
-        self.slo_micros = slo_micros
         self.clipper_conn = clipper_conn
         self.is_deployed = False
         apis = self.bento_service.get_service_apis()
@@ -77,33 +76,23 @@ class ClipperDeployment(Deployment):
 
         entry_py_content = DEFAULT_CLIPPER_ENTRY.format(api_name=self.api.name,
                                                         input_type=self.input_type)
-        with open(os.path.join(snapshot_path, 'clipper_entry.py'), 'w') as f:
-            f.write(entry_py_content)
         model_path = os.path.join(snapshot_path, 'bento')
         shutil.copytree(self.archive_path, model_path)
 
+        with open(os.path.join(snapshot_path, 'clipper_entry.py'), 'w') as f:
+            f.write(entry_py_content)
+
+        with open(os.path.join(snapshot_path, 'Dockerfile-clipper'), 'w') as f:
+            f.write(DOCKERFILE_CLIPPER)
+
+
         image = build_docker_image(snapshot_path)
-        self.clipper_conn.register_application(name=self.application_name,
-                                               input_type=self.input_type, default_output="0",
-                                               slo_micros=self.slo_micros)
 
         self.clipper_conn.deploy_model(name=self.application_name,
                                        version=self.bento_service.version,
                                        input_type=self.input_type, image=image)
 
-        self.clipper_conn.link_model_to_app(self.application_name, self.application_name)
-        self.is_deployed = True
-        return
-
-    def check_status(self):
-        if self.is_deployed:
-            return self.clipper_conn.get_app_info(self.application_name)
-        return
-
-    def delete(self):
-        if self.is_deployed:
-            self.clipper_conn.stop_models(self.application_name)
-        return
+        return self.application_name
 
 
 def deploy_bentoml(clipper_conn, archive_path, api_name):

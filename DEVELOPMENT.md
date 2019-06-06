@@ -65,3 +65,20 @@ $ tox -e py2.7
 // or
 $ tox -e py3.6
 ```
+
+## Style check and auto-formatting your code
+
+Make sure to install all dev dependencies:
+```bash
+$ pip install -e .[dev]
+
+# For zsh users, use:
+$ pip install -e .\[dev\]
+```
+
+Run linter/format script:
+```bash
+./script/format.sh
+
+./script/lint.sh
+```

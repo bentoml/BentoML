@@ -1,5 +1,3 @@
-import os
-import sys
 import pytest
 
 from bentoml.archive.archiver import _validate_version_str  # noqa: E402

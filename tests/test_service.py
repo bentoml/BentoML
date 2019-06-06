@@ -1,5 +1,3 @@
-import os
-import sys
 import pytest
 
 import bentoml  # noqa: E402

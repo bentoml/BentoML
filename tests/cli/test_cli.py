@@ -1,6 +1,5 @@
 import os
 import tempfile
-import sys
 import json
 from click.testing import CliRunner
 

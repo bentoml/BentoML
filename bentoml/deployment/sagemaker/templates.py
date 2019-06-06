@@ -130,4 +130,4 @@ def _serve():
 
 if __name__ == '__main__':
   _serve()
-"""
+"""  # noqa: E501

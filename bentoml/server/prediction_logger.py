@@ -39,7 +39,7 @@ def get_prediction_logger():
 
     # prediction.log json fields - request / result / time
     formatter = jsonlogger.JsonFormatter(
-        "(service_name) (service_version) (api_name) (request_id) (request) (response) (asctime)"
+        "(service_name) (service_version) (api_name) (request_id) (request) (response) (asctime)"  # noqa: E501
     )
 
     prediction_logger = logging.getLogger(PREDICTION_LOGGER_NAME)

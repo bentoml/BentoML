@@ -101,7 +101,8 @@ def get_arn_role_from_current_user():
                 arn = role["Arn"]
         if arn is None:
             raise ValueError(
-                "Can't find proper Arn role for Sagemaker, please create one and try again"
+                "Can't find proper Arn role for Sagemaker, please create one and try "
+                "again"
             )
         return arn
     elif type_role[0] == "role":
@@ -192,7 +193,8 @@ class SagemakerDeployment(Deployment):
             self.api = apis[0]
         else:
             raise BentoMLException(
-                "Please specify api-name, when more than one API is present in the archive"
+                "Please specify api-name, when more than one API is present in the "
+                "archive"
             )
         self.sagemaker_client = boto3.client("sagemaker", region_name=self.region)
         self.model_name = generate_aws_compatible_string(
@@ -229,7 +231,7 @@ class SagemakerDeployment(Deployment):
         with open(os.path.join(snapshot_path, "serve"), "w") as f:
             f.write(DEFAULT_SERVE_SCRIPT)
 
-        # We want to give serve '755' permission. Since chmod take octal number, 755 => 493
+        # permission 755 is required for entry script 'serve'
         permission = "755"
         octal_permission = int(permission, 8)
         os.chmod(os.path.join(snapshot_path, "serve"), octal_permission)
@@ -316,8 +318,8 @@ class SagemakerDeployment(Deployment):
         logger.info("AWS delete endpoint response: %s", delete_endpoint_response)
         if delete_endpoint_response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             # We will also try to delete both model and endpoint configuration for user.
-            # Since they are not critical, even they failed, we will still count delete deployment
-            # a success
+            # Since they are not critical, even they failed, we will still count delete
+            # deployment a success action
             delete_model_response = self.sagemaker_client.delete_model(
                 ModelName=self.model_name
             )
@@ -327,7 +329,7 @@ class SagemakerDeployment(Deployment):
                     "Encounter error when deleting model: %s", delete_model_response
                 )
 
-            delete_endpoint_config_response = self.sagemaker_client.delete_endpoint_config(
+            delete_endpoint_config_response = self.sagemaker_client.delete_endpoint_config(  # noqa: E501
                 EndpointConfigName=self.endpoint_config_name
             )
             logger.info(

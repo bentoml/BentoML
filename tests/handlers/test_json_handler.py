@@ -1,8 +1,4 @@
-import os
-import sys
-
-from bentoml import BentoService, api, artifacts  # noqa: E402
-from bentoml.handlers import JsonHandler  # noqa: E402
+from bentoml.handlers import JsonHandler
 
 
 def test_json_handle_cli(capsys, tmpdir):
@@ -10,8 +6,6 @@ def test_json_handle_cli(capsys, tmpdir):
         return obj[0]["name"]
 
     handler = JsonHandler()
-
-    import json
 
     json_file = tmpdir.join("test.json")
     with open(str(json_file), "w") as f:

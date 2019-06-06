@@ -122,7 +122,8 @@ def create_bentoml_cli(installed_archive_path=None):
         server = BentoAPIServer(model_service, port=port)
         server.start()
 
-    # Example Usage: bentoml serve-gunicorn ./SAVED_ARCHIVE_PATH --port=PORT --workers=WORKERS
+    # Example Usage:
+    # bentoml serve-gunicorn ./SAVED_ARCHIVE_PATH --port=PORT --workers=WORKERS
     @bentoml_cli.command()
     @conditional_argument(
         installed_archive_path is None, "archive-path", type=click.STRING
@@ -147,7 +148,7 @@ def create_bentoml_cli(installed_archive_path=None):
 def cli():
     _cli = create_bentoml_cli()
 
-    # Commands created here aren't mean to be used from generated service archive.  They
+    # Commands created here aren't mean to be used from generated service archive. They
     # are used as part of BentoML cli commands only.
 
     # pylint: disable=unused-variable
@@ -265,8 +266,8 @@ def cli():
             deployment = SagemakerDeployment(archive_path, api_name, region)
         else:
             raise BentoMLException(
-                "check deployment status with --platform=%s" % platform
-                + "is not supported in the current version of BentoML"
+                "check deployment status with --platform=%s is not supported in the "
+                "current version of BentoML" % platform
             )
 
         deployment.check_status()

@@ -66,9 +66,8 @@ class DataframeHandler(BentoHandler):
         else:
             return make_response(
                 jsonify(
-                    message="Request content-type not supported, "
-                    "only application/json and text/csv are "
-                    "supported"
+                    message="Request content-type not supported, only application/json "
+                    "and text/csv are supported"
                 ),
                 400,
             )
@@ -103,7 +102,8 @@ class DataframeHandler(BentoHandler):
                 df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
             else:
                 raise ValueError(
-                    "Input file format not supported, BentoML cli only accepts .json and .csv file"
+                    "Input file format not supported, BentoML cli only accepts .json "
+                    "and .csv file"
                 )
         else:
             # Assuming input string is JSON format
@@ -111,8 +111,8 @@ class DataframeHandler(BentoHandler):
                 df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
             except ValueError as e:
                 raise ValueError(
-                    "Unexpected input format, BentoML DataframeHandler expects json string as"
-                    "input: {}".format(e)
+                    "Unexpected input format, BentoML DataframeHandler expects json "
+                    "string as input: {}".format(e)
                 )
 
         if self.typ == "frame" and self.input_columns is not None:
@@ -133,8 +133,8 @@ class DataframeHandler(BentoHandler):
         else:
             return {
                 "statusCode": 400,
-                "body": "Request content-type not supported, only application/json and text/csv"
-                " are supported",
+                "body": "Request content-type not supported, only application/json and "
+                "text/csv are supported",
             }
 
         if self.typ == "frame" and self.input_columns is not None:

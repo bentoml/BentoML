@@ -1,8 +1,6 @@
-import os
 import json
-import sys
 
-from bentoml.server import BentoAPIServer  # noqa: E402
+from bentoml.server import BentoAPIServer
 
 
 def test_api_function_route(bento_service):

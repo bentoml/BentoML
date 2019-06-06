@@ -123,8 +123,8 @@ class ArtifactCollection(dict):
 
     @classmethod
     def load(cls, path, artifacts_spec):
-        """
-        bulk operation for loading all artifacts from path based on a list of ArtifactSpec
+        """bulk operation for loading all artifacts from path based on a list of
+        ArtifactSpec
         """
         load_path = os.path.join(path, ARTIFACTS_SUBPATH)
         artifacts = cls()

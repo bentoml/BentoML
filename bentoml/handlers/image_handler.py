@@ -121,9 +121,8 @@ class ImageHandler(BentoHandler):
             image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         else:
             raise BentoMLException(
-                "BentoML currently doesn't support Content-Type: {content_type} for AWS Lambda".format(
-                    content_type=event["headers"]["Content-Type"]
-                )
+                "BentoML currently doesn't support Content-Type: {content_type} for "
+                "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
             )
 
         result = func(image)

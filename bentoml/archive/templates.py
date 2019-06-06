@@ -16,6 +16,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 BENTO_MODEL_SETUP_PY_TEMPLATE = """\
 import os
 import pip
@@ -95,7 +96,7 @@ RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
 
 # Run Gunicorn server with path to module.
 CMD ["bentoml serve-gunicorn /bento"]
-"""
+"""  # noqa: E501
 
 BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE = """\
 FROM continuumio/miniconda3
@@ -125,7 +126,7 @@ RUN pip install -r /opt/program/requirements.txt
 RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
 
 ENV PATH="/opt/program:${PATH}"
-"""
+"""  # noqa: E501
 
 
 INIT_PY_TEMPLATE = """\

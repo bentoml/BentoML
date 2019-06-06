@@ -1,9 +1,6 @@
-import os
-import sys
-
-from bentoml import BentoService, api, artifacts  # noqa: E402
-from bentoml.artifact import PickleArtifact  # noqa: E402
-from bentoml.handlers import ImageHandler  # noqa: E402
+from bentoml import BentoService, api, artifacts
+from bentoml.artifact import PickleArtifact
+from bentoml.handlers import ImageHandler
 
 
 class TestImageModel(object):

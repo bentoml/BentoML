@@ -49,13 +49,13 @@ def index_view_func(bento_service):
     # TODO: Generate a html page for user and swagger definitions
     endpoints = {
         "/feedback": {
-            "description": "Predictions feedback endpoint. Expecting feedback request in JSON"
-            "format and must contain a `request_id` field, which can be obtained from "
-            "any BentoService API response header"
+            "description": "Predictions feedback endpoint. Expecting feedback request "
+            "in JSON format and must contain a `request_id` field, which can be "
+            "obtained from any BentoService API response header"
         },
         "/healthz": {
-            "description": "Health check endpoint. Expecting an empty response with status code "
-            "200 when the service is in health state"
+            "description": "Health check endpoint. Expecting an empty response with"
+            "status code 200 when the service is in health state"
         },
         "/metrics": {"description": "Prometheus metrics endpoint"},
     }

@@ -1,6 +1,3 @@
-import os
-import sys
-
 import pytest
 import pandas as pd
 import numpy as np
@@ -8,7 +5,7 @@ import numpy as np
 from bentoml.handlers.dataframe_handler import (
     DataframeHandler,
     check_dataframe_column_contains,
-)  # noqa: E402
+)
 
 
 def test_dataframe_handle_cli(capsys, tmpdir):

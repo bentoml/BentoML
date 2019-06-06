@@ -47,7 +47,7 @@ def upload_to_s3(s3_url, file_path):
     for root, _, files in os.walk(file_path):
         for file_name in files:
             abs_file_path = os.path.join(root, file_name)
-            relative_file_path = abs_file_path[(len(file_path) + 1):]
+            relative_file_path = abs_file_path[(len(file_path) + 1) :]
             s3_path = os.path.join(base_path, relative_file_path)
             s3_client.upload_file(Filename=abs_file_path, Bucket=bucket, Key=s3_path)
 
@@ -65,7 +65,7 @@ def download_from_s3(s3_url, file_path):
     result_content = list_object_result["Contents"]
 
     for content in result_content:
-        relative_file_path = content["Key"][(len(base_path) + 1):]
+        relative_file_path = content["Key"][(len(base_path) + 1) :]
         local_file_path = os.path.join(file_path, relative_file_path)
         Path(os.path.dirname(local_file_path)).mkdir(parents=True, exist_ok=True)
         s3_client.download_file(

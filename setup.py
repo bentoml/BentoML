@@ -43,13 +43,13 @@ install_requires = [
 ]
 
 dev_requires = [
-    "yapf==0.26.0",
     "pylint==2.3.1",
-    "pytest==4.4.0",
+    "flake8",
+    "pytest==4.6.0",
     "tox-conda==0.2.0",
     "twine",
+    "black",
     "setuptools",
-    "pycodestyle",
     "gitpython>=2.0.2",
 ]
 
@@ -62,11 +62,11 @@ optional_requires = api_server + cv2 + pytorch + tensorflow
 dev_all = install_requires + dev_requires + optional_requires
 
 tests_require = [
-    "pytest==4.4.0",
+    "pytest==4.6.0",
     "snapshottest==0.5.0",
     "mock==2.0.0",
     "tox==3.8.4",
-    "pytest-cov",
+    "pytest-cov==2.7.1",
     "coverage",
     "codecov",
 ]
@@ -106,11 +106,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
-    entry_points={
-        "console_scripts": [
-            "bentoml=bentoml.cli:cli"
-        ]
-    },
+    entry_points={"console_scripts": ["bentoml=bentoml.cli:cli"]},
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",
         "Source Code": "https://github.com/bentoml/BentoML",

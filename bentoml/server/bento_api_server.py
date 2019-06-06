@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -28,7 +27,7 @@ from prometheus_client import generate_latest, Summary
 from bentoml.server.prediction_logger import get_prediction_logger, log_prediction
 from bentoml.server.feedback_logger import get_feedback_logger, log_feedback
 
-CONTENT_TYPE_LATEST = str('text/plain; version=0.0.4; charset=utf-8')
+CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
 prediction_logger = get_prediction_logger()
 feedback_logger = get_feedback_logger()
@@ -50,23 +49,19 @@ def index_view_func(bento_service):
     # TODO: Generate a html page for user and swagger definitions
     endpoints = {
         "/feedback": {
-            "description": "Predictions feedback endpoint. Expecting feedback request in JSON"
-            "format and must contain a `request_id` field, which can be obtained from "
-            "any BentoService API response header"
+            "description": "Predictions feedback endpoint. Expecting feedback request "
+            "in JSON format and must contain a `request_id` field, which can be "
+            "obtained from any BentoService API response header"
         },
         "/healthz": {
-            "description": "Health check endpoint. Expecting an empty response with status code "
-            "200 when the service is in health state"
+            "description": "Health check endpoint. Expecting an empty response with"
+            "status code 200 when the service is in health state"
         },
-        "/metrics": {
-            "description": "Prometheus metrics endpoint"
-        }
+        "/metrics": {"description": "Prometheus metrics endpoint"},
     }
     for api in bento_service.get_service_apis():
         path = "/{}".format(api.name)
-        endpoints[path] = {
-            "description": api.doc,
-        }
+        endpoints[path] = {"description": api.doc}
     return jsonify(endpoints)
 
 
@@ -75,7 +70,7 @@ def healthz_view_func():
     Health check for bento model server.
     Make sure it works with Kubernetes liveness probe
     """
-    return Response(response='\n', status=200, mimetype='application/json')
+    return Response(response="\n", status=200, mimetype="application/json")
 
 
 def metrics_view_func():
@@ -87,47 +82,42 @@ def feedback_view_func():
     User send feedback along with the request Id. It will be stored and
     ready for further process.
     """
-    if request.content_type != 'application/json':
-        return Response(response='Incorrect content format, require JSON', status=400)
+    if request.content_type != "application/json":
+        return Response(response="Incorrect content format, require JSON", status=400)
 
-    data = json.loads(request.data.decode('utf-8'))
-    if 'request_id' not in data.keys():
-        return Response(response='Missing request id', status=400)
+    data = json.loads(request.data.decode("utf-8"))
+    if "request_id" not in data.keys():
+        return Response(response="Missing request id", status=400)
 
     if len(data.keys()) <= 1:
-        return Response(response='Missing feedback data', status=400)
+        return Response(response="Missing feedback data", status=400)
 
     log_feedback(feedback_logger, data)
-    return Response(response='success', status=200)
+    return Response(response="success", status=200)
 
 
 def bento_service_api_wrapper(api, service_name, service_version, logger):
     """
     Create api function for flask route
     """
-    summary_name = str(service_name) + '_' + str(api.name)
-    request_metric_time = Summary(summary_name, summary_name + ' request latency')
+    summary_name = str(service_name) + "_" + str(api.name)
+    request_metric_time = Summary(summary_name, summary_name + " request latency")
 
     def wrapper():
         with request_metric_time.time():
             request_time = time()
             request_id = str(uuid.uuid4())
             response = api.handle_request(request)
-            response.headers['request_id'] = request_id
+            response.headers["request_id"] = request_id
             if response.status_code == 200:
                 metadata = {
-                    'service_name': service_name,
-                    'service_version': service_version,
-                    'api_name': api.name,
-                    'request_id': request_id,
-                    'asctime': request_time,
+                    "service_name": service_name,
+                    "service_version": service_version,
+                    "api_name": api.name,
+                    "request_id": request_id,
+                    "asctime": request_time,
                 }
-                log_prediction(
-                    logger,
-                    metadata,
-                    request,
-                    response,
-                )
+                log_prediction(logger, metadata, request, response)
             else:
                 # TODO: log errors as well.
                 pass
@@ -141,11 +131,16 @@ def setup_bento_service_api_route(app, bento_service, api):
     """
     Setup a route for one BentoServiceAPI object defined in bento_service
     """
-    route_function = bento_service_api_wrapper(api, bento_service.name, bento_service.version,
-                                               prediction_logger)
+    route_function = bento_service_api_wrapper(
+        api, bento_service.name, bento_service.version, prediction_logger
+    )
 
-    app.add_url_rule(rule='/{}'.format(api.name), endpoint=api.name, view_func=route_function,
-                     methods=['POST', 'GET'])
+    app.add_url_rule(
+        rule="/{}".format(api.name),
+        endpoint=api.name,
+        view_func=route_function,
+        methods=["POST", "GET"],
+    )
 
 
 def setup_routes(app, bento_service):
@@ -162,16 +157,18 @@ def setup_routes(app, bento_service):
     /predict
     """
 
-    app.add_url_rule('/', 'index', partial(index_view_func, bento_service))
-    app.add_url_rule('/healthz', 'healthz', healthz_view_func)
-    app.add_url_rule('/feedback', 'feedback', feedback_view_func, methods=['POST', 'GET'])
-    app.add_url_rule('/metrics', 'metrics', metrics_view_func)
+    app.add_url_rule("/", "index", partial(index_view_func, bento_service))
+    app.add_url_rule("/healthz", "healthz", healthz_view_func)
+    app.add_url_rule(
+        "/feedback", "feedback", feedback_view_func, methods=["POST", "GET"]
+    )
+    app.add_url_rule("/metrics", "metrics", metrics_view_func)
 
     for api in bento_service.get_service_apis():
         setup_bento_service_api_route(app, bento_service, api)
 
 
-class BentoAPIServer():
+class BentoAPIServer:
     """
     BentoAPIServer creates a REST API server based on APIs defined with a BentoService
     via BentoService#get_service_apis call. Each BentoServiceAPI will become one

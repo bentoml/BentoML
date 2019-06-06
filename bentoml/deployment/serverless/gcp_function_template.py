@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -24,8 +23,8 @@ from ruamel.yaml import YAML
 
 from bentoml.utils import Path
 
-DEFAULT_GCP_REGION = 'us-west2'
-DEFAULT_GCP_DEPLOY_STAGE = 'dev'
+DEFAULT_GCP_REGION = "us-west2"
+DEFAULT_GCP_DEPLOY_STAGE = "dev"
 
 logger = logging.getLogger(__name__)
 
@@ -47,39 +46,43 @@ def {api_name}(request):
 """
 
 
-def generate_serverless_configuration_for_google(bento_service, apis, output_path, region, stage):
-    config_path = os.path.join(output_path, 'serverless.yml')
+def generate_serverless_configuration_for_google(
+    bento_service, apis, output_path, region, stage
+):
+    config_path = os.path.join(output_path, "serverless.yml")
     yaml = YAML()
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         content = f.read()
     serverless_config = yaml.load(content)
 
-    serverless_config['service'] = bento_service.name
-    serverless_config['provider']['project'] = bento_service.name
+    serverless_config["service"] = bento_service.name
+    serverless_config["provider"]["project"] = bento_service.name
 
-    serverless_config['provider']['region'] = region
-    logger.info('Using user defined Google region: %s', region)
+    serverless_config["provider"]["region"] = region
+    logger.info("Using user defined Google region: %s", region)
 
-    serverless_config['provider']['stage'] = stage
-    logger.info('Using user defined Google stage: %s', stage)
+    serverless_config["provider"]["stage"] = stage
+    logger.info("Using user defined Google stage: %s", stage)
 
-    serverless_config['functions'] = {}
+    serverless_config["functions"] = {}
     for api in apis:
-        function_config = {'handler': api.name, 'events': [{'http': 'path'}]}
-        serverless_config['functions'][api.name] = function_config
+        function_config = {"handler": api.name, "events": [{"http": "path"}]}
+        serverless_config["functions"][api.name] = function_config
 
     yaml.dump(serverless_config, Path(config_path))
     return
 
 
 def generate_main_py(bento_service, apis, output_path):
-    handler_py_content = GOOGLE_MAIN_PY_TEMPLATE_HEADER.format(class_name=bento_service.name)
+    handler_py_content = GOOGLE_MAIN_PY_TEMPLATE_HEADER.format(
+        class_name=bento_service.name
+    )
 
     for api in apis:
         api_content = GOOGLE_FUNCTION_TEMPLATE.format(api_name=api.name)
         handler_py_content = handler_py_content + api_content
 
-    with open(os.path.join(output_path, 'main.py'), 'w') as f:
+    with open(os.path.join(output_path, "main.py"), "w") as f:
         f.write(handler_py_content)
     return
 
@@ -87,5 +90,7 @@ def generate_main_py(bento_service, apis, output_path):
 def create_gcp_function_bundle(bento_service, output_path, region, stage):
     apis = bento_service.get_service_apis()
     generate_main_py(bento_service, apis, output_path)
-    generate_serverless_configuration_for_google(bento_service, apis, output_path, region, stage)
+    generate_serverless_configuration_for_google(
+        bento_service, apis, output_path, region, stage
+    )
     return

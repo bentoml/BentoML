@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -26,6 +25,10 @@ from bentoml.handlers.json_handler import JsonHandler
 from bentoml.handlers.image_handler import ImageHandler
 
 __all__ = [
-    'BentoHandler', 'DataframeHandler', 'PytorchTensorHandler', 'TensorflowTensorHandler',
-    'JsonHandler', 'ImageHandler'
+    "BentoHandler",
+    "DataframeHandler",
+    "PytorchTensorHandler",
+    "TensorflowTensorHandler",
+    "JsonHandler",
+    "ImageHandler",
 ]

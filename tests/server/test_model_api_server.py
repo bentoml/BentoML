@@ -1,8 +1,6 @@
-import os
 import json
-import sys
 
-from bentoml.server import BentoAPIServer  # noqa: E402
+from bentoml.server import BentoAPIServer
 
 
 def test_api_function_route(bento_service):
@@ -13,10 +11,12 @@ def test_api_function_route(bento_service):
     for rule in rest_server.app.url_map.iter_rules():
         index_list.append(rule.endpoint)
 
-    assert 'predict' in index_list
-    data = [{'age': 10}]
+    assert "predict" in index_list
+    data = [{"age": 10}]
 
-    response = test_client.post('/predict', data=json.dumps(data), content_type='application/json')
+    response = test_client.post(
+        "/predict", data=json.dumps(data), content_type="application/json"
+    )
 
     response_data = json.loads(response.data)
-    assert 15 == response_data[0]['age']
+    assert 15 == response_data[0]["age"]

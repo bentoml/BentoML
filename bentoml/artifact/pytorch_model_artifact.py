@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -28,7 +27,7 @@ class PytorchModelArtifact(ArtifactSpec):
     Abstraction for saving/loading objects with torch.save and torch.load
     """
 
-    def __init__(self, name, pickle_module='dill', file_extension='.pt'):
+    def __init__(self, name, pickle_module="dill", file_extension=".pt"):
         super(PytorchModelArtifact, self).__init__(name)
         self._file_extension = file_extension
         if isinstance(pickle_module, string_types):
@@ -53,7 +52,6 @@ class PytorchModelArtifact(ArtifactSpec):
 
 
 class _PytorchModelArtifactInstance(ArtifactInstance):
-
     def __init__(self, spec, model):
         super(_PytorchModelArtifactInstance, self).__init__(spec)
 
@@ -76,4 +74,6 @@ class _PytorchModelArtifactInstance(ArtifactInstance):
         except ImportError:
             raise ImportError("torch package is required to use PytorchModelArtifact")
 
-        return torch.save(self._model, self.spec._file_path(dst), pickle_module=self.spec._pickle)
+        return torch.save(
+            self._model, self.spec._file_path(dst), pickle_module=self.spec._pickle
+        )

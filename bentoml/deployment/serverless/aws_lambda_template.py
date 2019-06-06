@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -24,8 +23,8 @@ from ruamel.yaml import YAML
 
 from bentoml.utils import Path
 
-DEFAULT_AWS_REGION = 'us-west-2'
-DEFAULT_AWS_DEPLOY_STAGE = 'dev'
+DEFAULT_AWS_REGION = "us-west-2"
+DEFAULT_AWS_DEPLOY_STAGE = "dev"
 
 logger = logging.getLogger(__name__)
 
@@ -52,65 +51,61 @@ def {api_name}(event, context):
 """
 
 
-def generate_serverless_configuration_for_aws(service_name, apis, output_path, region, stage):
-    config_path = os.path.join(output_path, 'serverless.yml')
+def generate_serverless_configuration_for_aws(
+    service_name, apis, output_path, region, stage
+):
+    config_path = os.path.join(output_path, "serverless.yml")
     yaml = YAML()
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         content = f.read()
     serverless_config = yaml.load(content)
 
-    serverless_config['service'] = service_name
-    serverless_config['provider']['region'] = region
-    logger.info('Using user AWS region: %s', region)
+    serverless_config["service"] = service_name
+    serverless_config["provider"]["region"] = region
+    logger.info("Using user AWS region: %s", region)
 
-    serverless_config['provider']['stage'] = stage
-    logger.info('Using AWS stage: %s', stage)
+    serverless_config["provider"]["stage"] = stage
+    logger.info("Using AWS stage: %s", stage)
 
-    serverless_config['functions'] = {}
+    serverless_config["functions"] = {}
     for api in apis:
         function_config = {
-            'handler': 'handler.{name}'.format(name=api.name),
-            'events': [{
-                'http': {
-                    'path': '/{name}'.format(name=api.name),
-                    'method': 'post'
-                }
-            }]
+            "handler": "handler.{name}".format(name=api.name),
+            "events": [
+                {"http": {"path": "/{name}".format(name=api.name), "method": "post"}}
+            ],
         }
-        serverless_config['functions'][api.name] = function_config
+        serverless_config["functions"][api.name] = function_config
 
     custom_config = {
-        'apigwBinary': ['image/jpg', 'image/jpeg', 'image/png'],
-        'pythonRequirements': {
-            'useDownloadCache': True,
-            'useStaticCache': True,
-            'dockerizePip': True,
-            'slim': True,
-            'strip': True,
-            'zip': True
-        }
+        "apigwBinary": ["image/jpg", "image/jpeg", "image/png"],
+        "pythonRequirements": {
+            "useDownloadCache": True,
+            "useStaticCache": True,
+            "dockerizePip": True,
+            "slim": True,
+            "strip": True,
+            "zip": True,
+        },
     }
 
-    serverless_config['custom'] = custom_config
-    package_config = {
-        'include': [
-            'handler.py',
-            service_name + '/**'
-        ]
-    }
+    serverless_config["custom"] = custom_config
+    # package_config = {"include": ["handler.py", service_name + "/**"]}
 
     yaml.dump(serverless_config, Path(config_path))
     return
 
 
 def generate_handler_py(bento_service, apis, output_path):
-    handler_py_content = AWS_HANDLER_PY_TEMPLATE_HEADER.format(class_name=bento_service.name)
+    handler_py_content = AWS_HANDLER_PY_TEMPLATE_HEADER.format(
+        class_name=bento_service.name
+    )
 
     for api in apis:
         api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api.name)
         handler_py_content = handler_py_content + api_content
 
-    with open(os.path.join(output_path, 'handler.py'), 'w') as f:
+    with open(os.path.join(output_path, "handler.py"), "w") as f:
         f.write(handler_py_content)
     return
 
@@ -118,5 +113,7 @@ def generate_handler_py(bento_service, apis, output_path):
 def create_aws_lambda_bundle(bento_service, output_path, region, stage):
     apis = bento_service.get_service_apis()
     generate_handler_py(bento_service, apis, output_path)
-    generate_serverless_configuration_for_aws(bento_service.name, apis, output_path, region, stage)
+    generate_serverless_configuration_for_aws(
+        bento_service.name, apis, output_path, region, stage
+    )
     return

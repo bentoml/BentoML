@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -27,7 +26,7 @@ class XgboostModelArtifact(ArtifactSpec):
     Abstraction for saving/loading objects with xgb.save_model and xgb.load_model
     """
 
-    def __init__(self, name, model_extension='.model'):
+    def __init__(self, name, model_extension=".model"):
         super(XgboostModelArtifact, self).__init__(name)
         self._model_extension = model_extension
 
@@ -49,7 +48,6 @@ class XgboostModelArtifact(ArtifactSpec):
 
 
 class _XgboostModelArtifactInstance(ArtifactInstance):
-
     def __init__(self, spec, model):
         super(_XgboostModelArtifactInstance, self).__init__(spec)
 
@@ -59,7 +57,9 @@ class _XgboostModelArtifactInstance(ArtifactInstance):
             raise ImportError("xgboost package is required to use XgboostModelArtifact")
 
         if not isinstance(model, xgb.core.Booster):
-            raise ValueError('Expect `model` argument to be a `xgboost.core.Booster` instance')
+            raise ValueError(
+                "Expect `model` argument to be a `xgboost.core.Booster` instance"
+            )
 
         self._model = model
 

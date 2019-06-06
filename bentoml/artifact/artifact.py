@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -92,8 +91,11 @@ class ArtifactCollection(dict):
 
     def __setitem__(self, key, artifact):
         if key != artifact.spec.name:
-            raise ValueError('Must use Artifact name as key, {} not equal to {}'.format(
-                key, artifact.spec.name))
+            raise ValueError(
+                "Must use Artifact name as key, {} not equal to {}".format(
+                    key, artifact.spec.name
+                )
+            )
 
         self.add(artifact)
 
@@ -102,9 +104,11 @@ class ArtifactCollection(dict):
 
     def add(self, artifact):
         if not isinstance(artifact, ArtifactInstance):
-            raise TypeError('ArtifactCollection only accepts type bentoml.ArtifactInstance,'
-                            'Must call Artifact#pack or Artifact#load before adding to'
-                            'an ArtifactCollection')
+            raise TypeError(
+                "ArtifactCollection only accepts type bentoml.ArtifactInstance,"
+                "Must call Artifact#pack or Artifact#load before adding to"
+                "an ArtifactCollection"
+            )
 
         super(ArtifactCollection, self).__setitem__(artifact.spec.name, artifact)
 
@@ -119,8 +123,8 @@ class ArtifactCollection(dict):
 
     @classmethod
     def load(cls, path, artifacts_spec):
-        """
-        bulk operation for loading all artifacts from path based on a list of ArtifactSpec
+        """bulk operation for loading all artifacts from path based on a list of
+        ArtifactSpec
         """
         load_path = os.path.join(path, ARTIFACTS_SUBPATH)
         artifacts = cls()

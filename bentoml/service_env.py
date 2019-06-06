@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -25,7 +24,8 @@ from bentoml.utils import Path
 from bentoml.version import __version__ as BENTOML_VERSION
 
 PYTHON_VERSION = "{major}.{minor}.{micro}".format(
-    major=version_info.major, minor=version_info.minor, micro=version_info.micro)
+    major=version_info.major, minor=version_info.minor, micro=version_info.micro
+)
 
 CONDA_ENV_BASE_YAML = """
 name: {name}
@@ -38,7 +38,7 @@ dependencies:
     - bentoml[api_server]=={bentoml_version}
 """
 
-CONDA_ENV_DEFAULT_NAME = 'bentoml-custom-conda-env'
+CONDA_ENV_DEFAULT_NAME = "bentoml-custom-conda-env"
 
 
 class CondaEnv(object):
@@ -48,13 +48,21 @@ class CondaEnv(object):
     generated from `conda env export` command.
     """
 
-    def __init__(self, name=CONDA_ENV_DEFAULT_NAME, python_version=PYTHON_VERSION,
-                 bentoml_version=BENTOML_VERSION):
+    def __init__(
+        self,
+        name=CONDA_ENV_DEFAULT_NAME,
+        python_version=PYTHON_VERSION,
+        bentoml_version=BENTOML_VERSION,
+    ):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
         self._conda_env = self._yaml.load(
-            CONDA_ENV_BASE_YAML.format(name=name, python_version=python_version,
-                                       bentoml_version=bentoml_version))
+            CONDA_ENV_BASE_YAML.format(
+                name=name,
+                python_version=python_version,
+                bentoml_version=bentoml_version,
+            )
+        )
 
     def set_name(self, name):
         self._conda_env["name"] = name
@@ -67,9 +75,9 @@ class CondaEnv(object):
 
     def add_pip_dependencies(self, extra_pip_dependencies):
         for dep in self._conda_env["dependencies"]:
-            if isinstance(dep, dict) and 'pip' in dep:
+            if isinstance(dep, dict) and "pip" in dep:
                 # there is already a pip list in conda_env, append extra deps
-                dep['pip'] += extra_pip_dependencies
+                dep["pip"] += extra_pip_dependencies
                 return self
 
         self._conda_env["dependencies"] += [{"pip": extra_pip_dependencies}]
@@ -133,51 +141,51 @@ class BentoServiceEnv(object):
         setup_sh_file = Path(setup_sh_path_or_content)
 
         if setup_sh_file.is_file():
-            with setup_sh_file.open('rb') as f:
+            with setup_sh_file.open("rb") as f:
                 self._setup_sh = f.read()
         else:
-            self._setup_sh = setup_sh_path_or_content.encode('utf-8')
+            self._setup_sh = setup_sh_path_or_content.encode("utf-8")
 
     def set_requirements_txt(self, requirements_txt_path_or_content):
         requirements_txt_file = Path(requirements_txt_path_or_content)
 
         if requirements_txt_file.is_file():
-            with requirements_txt_file.open('rb') as f:
+            with requirements_txt_file.open("rb") as f:
                 self._requirements_txt = f.read()
         else:
-            self._requirements_txt = requirements_txt_path_or_content.encode('utf-8')
+            self._requirements_txt = requirements_txt_path_or_content.encode("utf-8")
 
     def save(self, path):
-        conda_yml_file = os.path.join(path, 'environment.yml')
+        conda_yml_file = os.path.join(path, "environment.yml")
         self._conda_env.write_to_yaml_file(conda_yml_file)
 
-        requirements_txt_file = os.path.join(path, 'requirements.txt')
-        with open(requirements_txt_file, 'wb') as f:
-            f.write(self._requirements_txt or b'')
+        requirements_txt_file = os.path.join(path, "requirements.txt")
+        with open(requirements_txt_file, "wb") as f:
+            f.write(self._requirements_txt or b"")
 
         if self._setup_sh:
-            setup_sh_file = os.path.join(path, 'setup.sh')
-            with open(setup_sh_file, 'wb') as f:
+            setup_sh_file = os.path.join(path, "setup.sh")
+            with open(setup_sh_file, "wb") as f:
                 f.write(self._setup_sh)
 
     @classmethod
     def from_dict(cls, env_dict):
         env = cls()
 
-        if 'setup_sh' in env_dict:
-            env.set_setup_sh(env_dict['setup_sh'])
+        if "setup_sh" in env_dict:
+            env.set_setup_sh(env_dict["setup_sh"])
 
-        if 'requirements_txt' in env_dict:
-            env.set_requirements_txt(env_dict['requirements_txt'])
+        if "requirements_txt" in env_dict:
+            env.set_requirements_txt(env_dict["requirements_txt"])
 
-        if 'conda_channels' in env_dict:
-            env.add_conda_channels(env_dict['conda_channels'])
+        if "conda_channels" in env_dict:
+            env.add_conda_channels(env_dict["conda_channels"])
 
-        if 'conda_dependencies' in env_dict:
-            env.add_conda_dependencies(env_dict['conda_dependencies'])
+        if "conda_dependencies" in env_dict:
+            env.add_conda_dependencies(env_dict["conda_dependencies"])
 
-        if 'conda_pip_dependencies' in env_dict:
-            env.add_conda_pip_dependencies(env_dict['conda_pip_dependencies'])
+        if "conda_pip_dependencies" in env_dict:
+            env.add_conda_pip_dependencies(env_dict["conda_pip_dependencies"])
 
         return env
 
@@ -185,11 +193,11 @@ class BentoServiceEnv(object):
         env_dict = dict()
 
         if self._setup_sh:
-            env_dict['setup_sh'] = self._setup_sh
+            env_dict["setup_sh"] = self._setup_sh
 
         if self._requirements_txt:
-            env_dict['requirements_txt'] = self._requirements_txt
+            env_dict["requirements_txt"] = self._requirements_txt
 
-        env_dict['conda_env'] = self._conda_env._conda_env
+        env_dict["conda_env"] = self._conda_env._conda_env
 
         return env_dict

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -120,16 +119,20 @@ class BentoServiceBase(object):
     def _config_service_apis(self):
         self._service_apis = []  # pylint:disable=attribute-defined-outside-init
         for _, function in inspect.getmembers(
-                self.__class__, predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x)):
-            if hasattr(function, '_is_api'):
-                api_name = _get_func_attr(function, '_api_name')
-                api_doc = _get_func_attr(function, '_api_doc')
-                handler = _get_func_attr(function, '_handler')
+            self.__class__,
+            predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x),
+        ):
+            if hasattr(function, "_is_api"):
+                api_name = _get_func_attr(function, "_api_name")
+                api_doc = _get_func_attr(function, "_api_doc")
+                handler = _get_func_attr(function, "_handler")
 
                 # Bind api method call with self(BentoService instance)
                 func = function.__get__(self)
 
-                self._service_apis.append(BentoServiceAPI(self, api_name, api_doc, handler, func))
+                self._service_apis.append(
+                    BentoServiceAPI(self, api_name, api_doc, handler, func)
+                )
 
     def get_service_apis(self):
         return self._service_apis
@@ -156,19 +159,22 @@ def api_decorator(handler_cls, *args, **kwargs):
     DEFAULT_API_DOC = "BentoML generated API endpoint"
 
     def decorator(func):
-        api_name = kwargs.pop('api_name', func.__name__)
-        api_doc = kwargs.pop('api_doc', func.__doc__ or DEFAULT_API_DOC).strip()
+        api_name = kwargs.pop("api_name", func.__name__)
+        api_doc = kwargs.pop("api_doc", func.__doc__ or DEFAULT_API_DOC).strip()
 
-        handler = handler_cls(*args, **kwargs)  # create handler instance and attach to api method
+        handler = handler_cls(
+            *args, **kwargs
+        )  # create handler instance and attach to api method
 
-        _set_func_attr(func, '_is_api', True)
-        _set_func_attr(func, '_handler', handler)
+        _set_func_attr(func, "_is_api", True)
+        _set_func_attr(func, "_handler", handler)
         if not isidentifier(api_name):
             raise ValueError(
-                "Invalid API name: '{}', a valid identifier must contains only letters, "
-                "numbers, underscores and not starting with a number.".format(api_name))
-        _set_func_attr(func, '_api_name', api_name)
-        _set_func_attr(func, '_api_doc', api_doc)
+                "Invalid API name: '{}', a valid identifier must contains only letters,"
+                " numbers, underscores and not starting with a number.".format(api_name)
+            )
+        _set_func_attr(func, "_api_name", api_name)
+        _set_func_attr(func, "_api_doc", api_doc)
 
         return func
 
@@ -176,7 +182,6 @@ def api_decorator(handler_cls, *args, **kwargs):
 
 
 def artifacts_decorator(artifact_specs):
-
     def decorator(bento_service_cls):
         bento_service_cls._artifacts_spec = artifact_specs
         return bento_service_cls
@@ -185,7 +190,6 @@ def artifacts_decorator(artifact_specs):
 
 
 def env_decorator(**kwargs):
-
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv.from_dict(kwargs)
         return bento_service_cls
@@ -271,11 +275,14 @@ class BentoService(BentoServiceBase):
     def __init__(self, artifacts=None, env=None):
         if artifacts is None:
             if self._bento_archive_path:
-                artifacts = ArtifactCollection.load(self._bento_archive_path,
-                                                    self.__class__._artifacts_spec)
+                artifacts = ArtifactCollection.load(
+                    self._bento_archive_path, self.__class__._artifacts_spec
+                )
             else:
-                raise BentoMLException("Must provide artifacts or set cls._bento_archive_path"
-                                       "before instantiating a BentoService class")
+                raise BentoMLException(
+                    "Must provide artifacts or set cls._bento_archive_path"
+                    "before instantiating a BentoService class"
+                )
 
         # TODO: validate artifacts arg matches self.__class__._artifacts_spec definition
         if isinstance(artifacts, ArtifactCollection):
@@ -310,8 +317,8 @@ class BentoService(BentoServiceBase):
     @classmethod
     def name(cls):  # pylint:disable=method-hidden
         if cls._bento_service_name is not None:
-            # TODO: verify self.__class__._bento_service_name format, can't have space in it
-            #  and can be valid folder name
+            # TODO: verify self.__class__._bento_service_name format, can't have space
+            # in it and can be valid folder name
             return cls._bento_service_name
         else:
             # Use python class name as service name
@@ -322,10 +329,13 @@ class BentoService(BentoServiceBase):
         try:
             return self.__class__._bento_service_version
         except AttributeError:
-            raise BentoMLException("Only BentoService loaded from archive has version attribute")
+            raise BentoMLException(
+                "Only BentoService loaded from archive has version attribute"
+            )
 
     def save(self, *args, **kwargs):
         from bentoml import archive
+
         return archive.save(self, *args, **kwargs)
 
     @classmethod
@@ -350,7 +360,8 @@ class BentoService(BentoServiceBase):
         if cls._bento_archive_path is not None and cls._bento_archive_path != path:
             raise BentoMLException(
                 "Loaded BentoArchive(from {}) can't be loaded again from a different"
-                "archive path {}".format(cls._bento_archive_path, path))
+                "archive path {}".format(cls._bento_archive_path, path)
+            )
 
         if is_s3_url(path):
             temporary_path = tempfile.mkdtemp()
@@ -362,18 +373,23 @@ class BentoService(BentoServiceBase):
         # For pip installed BentoService, artifacts directory is located at
         # 'package_path/artifacts/', but for loading from BentoArchive, it is
         # in 'path/{service_name}/artifacts/'
-        if not os.path.isdir(os.path.join(path, 'artifacts')):
+        if not os.path.isdir(os.path.join(path, "artifacts")):
             artifacts_path = os.path.join(path, cls.name())
 
         bentoml_config = load_bentoml_config(path)
-        if bentoml_config['metadata']['service_name'] != cls.name():
+        if bentoml_config["metadata"]["service_name"] != cls.name():
             raise BentoMLException(
-                'BentoService name does not match with BentoML Archive in path: {}'.format(path))
+                "BentoService name does not match with BentoArchive in path: {}".format(
+                    path
+                )
+            )
 
-        if bentoml_config['kind'] != 'BentoService':
+        if bentoml_config["kind"] != "BentoService":
             raise BentoMLException(
                 "BentoArchive type '{}' can not be loaded as a BentoService".format(
-                    bentoml_config['kind']))
+                    bentoml_config["kind"]
+                )
+            )
 
         artifacts = ArtifactCollection.load(artifacts_path, cls._artifacts_spec)
         svc = cls(artifacts)

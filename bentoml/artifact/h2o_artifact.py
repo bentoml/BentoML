@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -46,7 +45,6 @@ class H2oModelArtifact(ArtifactSpec):
 
 
 class _H2oModelArtifactInstance(ArtifactInstance):
-
     def __init__(self, spec, model):
         super(_H2oModelArtifactInstance, self).__init__(spec)
         self._model = model

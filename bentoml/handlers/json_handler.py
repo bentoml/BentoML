@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -32,25 +31,31 @@ class JsonHandler(BentoHandler):
     """
 
     def handle_request(self, request, func):
-        if request.content_type == 'application/json':
-            parsed_json = json.loads(request.data.decode('utf-8'))
+        if request.content_type == "application/json":
+            parsed_json = json.loads(request.data.decode("utf-8"))
         else:
             return make_response(
-                jsonify(message="Request content-type must be 'application/json'"
-                        "for this BentoService API"), 400)
+                jsonify(
+                    message="Request content-type must be 'application/json'"
+                    "for this BentoService API"
+                ),
+                400,
+            )
 
         result = func(parsed_json)
-        result = get_output_str(result, request.headers.get('output', 'json'))
+        result = get_output_str(result, request.headers.get("output", "json"))
         return Response(response=result, status=200, mimetype="application/json")
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--input', required=True)
-        parser.add_argument('-o', '--output', default="str", choices=['str', 'json', 'yaml'])
+        parser.add_argument("--input", required=True)
+        parser.add_argument(
+            "-o", "--output", default="str", choices=["str", "json", "yaml"]
+        )
         parsed_args = parser.parse_args(args)
 
         if os.path.isfile(parsed_args.input):
-            with open(parsed_args.input, 'r') as content_file:
+            with open(parsed_args.input, "r") as content_file:
                 content = content_file.read()
         else:
             content = parsed_args.input
@@ -61,11 +66,11 @@ class JsonHandler(BentoHandler):
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        if event['headers']['Content-Type'] == 'application/json':
-            parsed_json = json.loads(event['body'])
+        if event["headers"]["Content-Type"] == "application/json":
+            parsed_json = json.loads(event["body"])
         else:
-            return {"statusCode": 400, "body": 'Only accept json as content type'}
+            return {"statusCode": 400, "body": "Only accept json as content type"}
 
         result = func(parsed_json)
-        result = get_output_str(result, event['headers'].get('output', 'json'))
+        result = get_output_str(result, event["headers"].get("output", "json"))
         return {"statusCode": 200, "body": result}

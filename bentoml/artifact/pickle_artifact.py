@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -30,7 +29,7 @@ class PickleArtifact(ArtifactSpec):
     Abstraction for saving/loading python objects with pickle serialization
     """
 
-    def __init__(self, name, pickle_module=dill, pickle_extension='.pkl'):
+    def __init__(self, name, pickle_module=dill, pickle_extension=".pkl"):
         super(PickleArtifact, self).__init__(name)
 
         self._pickle_extension = pickle_extension
@@ -53,7 +52,6 @@ class PickleArtifact(ArtifactSpec):
 
 
 class _PickleArtifactInstance(ArtifactInstance):
-
     def __init__(self, spec, obj):
         super(_PickleArtifactInstance, self).__init__(spec)
 

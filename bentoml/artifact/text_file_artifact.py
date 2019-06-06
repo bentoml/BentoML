@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -27,7 +26,7 @@ class TextFileArtifact(ArtifactSpec):
     Abstraction for saving/loading string to/from text files
     """
 
-    def __init__(self, name, file_extension='.txt', encoding='utf8'):
+    def __init__(self, name, file_extension=".txt", encoding="utf8"):
         # TODO: validate file name and extension?
         super(TextFileArtifact, self).__init__(name)
         self._file_extension = file_extension
@@ -46,7 +45,6 @@ class TextFileArtifact(ArtifactSpec):
 
 
 class _TextFileArtifactInstance(ArtifactInstance):
-
     def __init__(self, spec, content):
         super(_TextFileArtifactInstance, self).__init__(spec)
 

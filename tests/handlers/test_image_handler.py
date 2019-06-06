@@ -1,20 +1,15 @@
-import os
-import sys
-
-from bentoml import BentoService, api, artifacts  # noqa: E402
-from bentoml.artifact import PickleArtifact  # noqa: E402
-from bentoml.handlers import ImageHandler  # noqa: E402
+from bentoml import BentoService, api, artifacts
+from bentoml.artifact import PickleArtifact
+from bentoml.handlers import ImageHandler
 
 
 class TestImageModel(object):
-
     def predict(self, image_ndarray):
         return image_ndarray.shape
 
 
-@artifacts([PickleArtifact('clf')])
+@artifacts([PickleArtifact("clf")])
 class ImageHandlerModel(BentoService):
-
     @api(ImageHandler)
     def predict(self, input_data):
         return self.artifacts.clf.predict(input_data)
@@ -27,11 +22,12 @@ def test_image_handler(capsys, tmpdir):
 
     import cv2
     import numpy as np
-    img_file = tmpdir.join('img.png')
+
+    img_file = tmpdir.join("img.png")
     cv2.imwrite(str(img_file), np.zeros((10, 10)))
 
-    test_args = ['--input={}'.format(img_file)]
+    test_args = ["--input={}".format(img_file)]
     api.handle_cli(test_args)
     out, err = capsys.readouterr()
 
-    assert out.strip().endswith('(10, 10, 3)')
+    assert out.strip().endswith("(10, 10, 3)")

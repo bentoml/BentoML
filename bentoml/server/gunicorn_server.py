@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -35,7 +34,9 @@ def get_gunicorn_worker_count():
     return (multiprocessing.cpu_count() // 2) + 1
 
 
-class GunicornApplication(gunicorn.app.base.BaseApplication):  # pylint: disable=abstract-method
+class GunicornApplication(
+    gunicorn.app.base.BaseApplication
+):  # pylint: disable=abstract-method
     """
     A custom Gunicorn application.
 
@@ -52,13 +53,18 @@ class GunicornApplication(gunicorn.app.base.BaseApplication):  # pylint: disable
     """
 
     def __init__(self, app, port, workers):
-        self.options = {'workers': workers, 'bind': '%s:%s' % ('0.0.0.0', port)}
+        self.options = {"workers": workers, "bind": "%s:%s" % ("0.0.0.0", port)}
         self.application = app
         super(GunicornApplication, self).__init__()
 
     def load_config(self):
-        config = dict([(key, value) for key, value in iteritems(self.options)
-                       if key in self.cfg.settings and value is not None])
+        config = dict(
+            [
+                (key, value)
+                for key, value in iteritems(self.options)
+                if key in self.cfg.settings and value is not None
+            ]
+        )
         for key, value in iteritems(config):
             self.cfg.set(key.lower(), value)
 

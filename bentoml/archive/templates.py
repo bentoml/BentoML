@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 
 BENTO_MODEL_SETUP_PY_TEMPLATE = """\
 import os
@@ -78,7 +78,7 @@ RUN set -x \
      && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential \
      && rm -rf /var/lib/apt/lists/*
 
-# update conda and setup environment and pre-install common ML libraries to speed up docker build
+# update conda, pre-install BentoML base dependencies
 RUN conda update conda -y \
       && conda install pip numpy scipy \
       && pip install gunicorn six
@@ -96,7 +96,7 @@ RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
 
 # Run Gunicorn server with path to module.
 CMD ["bentoml serve-gunicorn /bento"]
-"""
+"""  # noqa: E501
 
 BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE = """\
 FROM continuumio/miniconda3
@@ -109,7 +109,7 @@ RUN set -x \
      && apt-get install -y nginx \
      && rm -rf /var/lib/apt/lists/*
 
-# update conda and setup environment and pre-install common ML libraries to speed up docker build
+# update conda, pre-install BentoML base dependencies
 RUN conda update conda -y \
       && conda install pip numpy scipy \
       && pip install gunicorn six gevent
@@ -126,7 +126,8 @@ RUN pip install -r /opt/program/requirements.txt
 RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
 
 ENV PATH="/opt/program:${PATH}"
-"""
+"""  # noqa: E501
+
 
 INIT_PY_TEMPLATE = """\
 import os

@@ -43,11 +43,11 @@ install_requires = [
 ]
 
 dev_requires = [
-    "yapf==0.26.0",
     "pylint==2.3.1",
     "pytest==4.4.0",
     "tox-conda==0.2.0",
     "twine",
+    "black",
     "setuptools",
     "pycodestyle",
     "gitpython>=2.0.2",

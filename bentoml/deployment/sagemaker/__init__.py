@@ -19,7 +19,6 @@ from __future__ import print_function
 import os
 import shutil
 import base64
-import subprocess
 import logging
 import re
 import json
@@ -29,7 +28,6 @@ from six.moves.urllib.parse import urlparse
 import boto3
 import docker
 
-from bentoml.archive import load
 from bentoml.deployment.base_deployment import Deployment
 from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
 from bentoml.utils.whichcraft import which

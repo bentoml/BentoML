@@ -25,7 +25,6 @@ from subprocess import PIPE
 from ruamel.yaml import YAML
 from packaging import version
 
-from bentoml.archive import load
 from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
@@ -50,8 +49,6 @@ SERVERLESS_PROVIDER = {
     "aws-lambda-py2": "aws-python",
     "gcp-function": "google-python",
 }
-
-DEFAULT_GCP_REGION = "us-west2"
 
 
 def check_serverless_compatiable_version():

@@ -136,8 +136,8 @@ def _save(bento_service, dst, version=None):
     # write conda environment, requirement.txt
     bento_service.env.save(path)
 
-    # TODO: add bentoml.find_packages helper for more fine grained control over
-    # this process, e.g. packages=find_packages(base, [], exclude=[], used_module_only=True)
+    # TODO: add bentoml.find_packages helper for more fine grained control over this
+    # process, e.g. packages=find_packages(base, [], exclude=[], used_module_only=True)
     # copy over all custom model code
     module_name, module_file = copy_used_py_modules(
         bento_service.__class__.__module__, os.path.join(path, bento_service.name)

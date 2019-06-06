@@ -41,9 +41,10 @@ class DefaultCommandGroup(click.Group):
             def new_decorator(f):
                 cmd = decorator(f)
                 cmd.format_usage = default_command_format_usage
-                self.default_command = (
-                    cmd.name
-                )  # pylint:disable=attribute-defined-outside-init
+                # pylint:disable=attribute-defined-outside-init
+                self.default_command = cmd.name
+                # pylint:enable=attribute-defined-outside-init
+
                 return cmd
 
             return new_decorator

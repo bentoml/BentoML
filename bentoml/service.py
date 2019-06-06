@@ -170,8 +170,8 @@ def api_decorator(handler_cls, *args, **kwargs):
         _set_func_attr(func, "_handler", handler)
         if not isidentifier(api_name):
             raise ValueError(
-                "Invalid API name: '{}', a valid identifier must contains only letters, "
-                "numbers, underscores and not starting with a number.".format(api_name)
+                "Invalid API name: '{}', a valid identifier must contains only letters,"
+                " numbers, underscores and not starting with a number.".format(api_name)
             )
         _set_func_attr(func, "_api_name", api_name)
         _set_func_attr(func, "_api_doc", api_doc)
@@ -317,8 +317,8 @@ class BentoService(BentoServiceBase):
     @classmethod
     def name(cls):  # pylint:disable=method-hidden
         if cls._bento_service_name is not None:
-            # TODO: verify self.__class__._bento_service_name format, can't have space in it
-            #  and can be valid folder name
+            # TODO: verify self.__class__._bento_service_name format, can't have space
+            # in it and can be valid folder name
             return cls._bento_service_name
         else:
             # Use python class name as service name
@@ -379,7 +379,7 @@ class BentoService(BentoServiceBase):
         bentoml_config = load_bentoml_config(path)
         if bentoml_config["metadata"]["service_name"] != cls.name():
             raise BentoMLException(
-                "BentoService name does not match with BentoML Archive in path: {}".format(
+                "BentoService name does not match with BentoArchive in path: {}".format(
                     path
                 )
             )

@@ -77,7 +77,7 @@ RUN set -x \
      && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential \
      && rm -rf /var/lib/apt/lists/*
 
-# update conda and setup environment and pre-install common ML libraries to speed up docker build
+# update conda, pre-install BentoML base dependencies
 RUN conda update conda -y \
       && conda install pip numpy scipy \
       && pip install gunicorn six
@@ -108,7 +108,7 @@ RUN set -x \
      && apt-get install -y nginx \
      && rm -rf /var/lib/apt/lists/*
 
-# update conda and setup environment and pre-install common ML libraries to speed up docker build
+# update conda, pre-install BentoML base dependencies
 RUN conda update conda -y \
       && conda install pip numpy scipy \
       && pip install gunicorn six gevent
@@ -126,6 +126,7 @@ RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
 
 ENV PATH="/opt/program:${PATH}"
 """
+
 
 INIT_PY_TEMPLATE = """\
 import os

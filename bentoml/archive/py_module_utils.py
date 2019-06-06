@@ -84,8 +84,8 @@ def copy_used_py_modules(target_module, destination):
     # get the class definition into a python module file and distribute it
     if target_module.__name__ == "__main__" and not hasattr(target_module, "__file__"):
         raise BentoMLException(
-            "Custom BentoModel class can not be defined in Python interactive REPL, try "
-            "writing the class definition to a file and import it."
+            "Custom BentoModel class can not be defined in Python interactive REPL, try"
+            " writing the class definition to a file and import it."
         )
 
     try:

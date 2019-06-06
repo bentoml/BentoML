@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,4 +19,4 @@ from __future__ import print_function
 from bentoml.server.bento_api_server import BentoAPIServer
 from bentoml.server import metrics
 
-__all__ = ['BentoAPIServer', 'metrics']
+__all__ = ["BentoAPIServer", "metrics"]

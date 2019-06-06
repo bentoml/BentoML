@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,12 +19,24 @@ from __future__ import print_function
 from bentoml import handlers
 from bentoml.version import __version__
 
-from bentoml.service import BentoService, api_decorator as api, \
-    env_decorator as env, artifacts_decorator as artifacts, \
-    ver_decorator as ver
+from bentoml.service import (
+    BentoService,
+    api_decorator as api,
+    env_decorator as env,
+    artifacts_decorator as artifacts,
+    ver_decorator as ver,
+)
 from bentoml.server import metrics
 from bentoml.archive import save, load
 
 __all__ = [
-    '__version__', 'api', 'env', 'artifacts', 'BentoService', 'save', 'load', 'handlers', 'metrics'
+    "__version__",
+    "api",
+    "env",
+    "artifacts",
+    "BentoService",
+    "save",
+    "load",
+    "handlers",
+    "metrics",
 ]

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -34,7 +33,7 @@ class TempDirectory(object):
     >>>     print(os.path.isdir(tempdir))
     """
 
-    def __init__(self, cleanup=True, prefix='temp'):
+    def __init__(self, cleanup=True, prefix="temp"):
         self._cleanup = cleanup
         self._prefix = prefix
         self.path = None

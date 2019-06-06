@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -21,16 +20,19 @@ from flask import Flask, Response, request
 
 
 def setup_bento_service_api_route(app, api):
-
     def view_function():
         return api.handle_request(request)
 
-    app.add_url_rule(rule='/invocations', endpoint=api.name, view_func=view_function,
-                     methods=['POST'])
+    app.add_url_rule(
+        rule="/invocations",
+        endpoint=api.name,
+        view_func=view_function,
+        methods=["POST"],
+    )
 
 
 def ping_view_func():
-    return Response(response='\n', status=200, mimetype='application/json')
+    return Response(response="\n", status=200, mimetype="application/json")
 
 
 def setup_routes(app, bento_service, api_name):
@@ -39,7 +41,7 @@ def setup_routes(app, bento_service, api_name):
     /ping
     /invocations
     """
-    app.add_url_rule('/ping', 'ping', ping_view_func)
+    app.add_url_rule("/ping", "ping", ping_view_func)
 
     apis = bento_service.get_service_apis()
     if api_name:
@@ -48,10 +50,12 @@ def setup_routes(app, bento_service, api_name):
     elif len(apis) == 1:
         setup_bento_service_api_route(app, apis[0])
     else:
-        raise ValueError('Must define api name or provide bento service with one API function')
+        raise ValueError(
+            "Must define api name or provide bento service with one API function"
+        )
 
 
-class BentoSagemakerServer():
+class BentoSagemakerServer:
     """
     BentoSagemakerServer create an AWS sagemaker compatibility reset server.
     """

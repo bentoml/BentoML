@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -23,7 +22,7 @@ import pandas as pd
 import numpy as np
 
 
-class BentoHandler():
+class BentoHandler:
     """Handler in BentoML is the layer between a user API request and
     the input to user's API function.
     """
@@ -59,10 +58,10 @@ class BentoHandler():
         raise NotImplementedError
 
 
-def get_output_str(result, output_format, output_orient='records'):
-    if output_format == 'str':
+def get_output_str(result, output_format, output_orient="records"):
+    if output_format == "str":
         return str(result)
-    elif output_format == 'json':
+    elif output_format == "json":
         if isinstance(result, pd.DataFrame):
             return result.to_json(orient=output_orient)
         elif isinstance(result, np.ndarray):

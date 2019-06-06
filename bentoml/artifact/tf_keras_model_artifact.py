@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -27,7 +26,7 @@ class TfKerasModelArtifact(ArtifactSpec):
     Abstraction for saving/loading tensorflow keras model
     """
 
-    def __init__(self, name, model_extension='.h5'):
+    def __init__(self, name, model_extension=".h5"):
         super(TfKerasModelArtifact, self).__init__(name)
         self._model_extension = model_extension
 
@@ -41,24 +40,27 @@ class TfKerasModelArtifact(ArtifactSpec):
         try:
             from tensorflow.python.keras.models import load_model
         except ImportError:
-            raise ImportError("tensorflow package is required to use TfKerasModelArtifact")
+            raise ImportError(
+                "tensorflow package is required to use TfKerasModelArtifact"
+            )
 
         model = load_model(self._model_file_path(path))
         return self.pack(model)
 
 
 class _TfKerasModelArtifactInstance(ArtifactInstance):
-
     def __init__(self, spec, model):
         super(_TfKerasModelArtifactInstance, self).__init__(spec)
 
         try:
             from tensorflow.python.keras.engine import training
         except ImportError:
-            raise ImportError("tensorflow package is required to use TfKerasModelArtifact")
+            raise ImportError(
+                "tensorflow package is required to use TfKerasModelArtifact"
+            )
 
         if not isinstance(model, training.Model):
-            raise ValueError('Expected `model` argument to be a `Model` instance')
+            raise ValueError("Expected `model` argument to be a `Model` instance")
 
         self._model = model
 

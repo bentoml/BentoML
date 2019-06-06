@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -28,7 +27,7 @@ FEEDBACK_LOG_FILE = "/tmp/logs/bentoml_feedback.log"
 
 
 def get_feedback_logger():
-    formatter = jsonlogger.JsonFormatter('(request_id) (result)')
+    formatter = jsonlogger.JsonFormatter("(request_id) (result)")
     feedback_logger = logging.getLogger(FEEDBACK_LOGGER_NAME)
 
     if not feedback_logger.handlers:
@@ -38,7 +37,7 @@ def get_feedback_logger():
         if os.path.isdir(FEEDBACK_LOG_FILE_PATH) is False:
             os.mkdir(FEEDBACK_LOG_FILE_PATH)
         if os.path.exists(FEEDBACK_LOG_FILE) is False:
-            open(FEEDBACK_LOG_FILE, 'a').close()
+            open(FEEDBACK_LOG_FILE, "a").close()
 
         handler = RotatingFileHandler(filename=FEEDBACK_LOG_FILE)
         handler.setFormatter(formatter)

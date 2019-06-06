@@ -5,19 +5,18 @@ from bentoml.artifact import PickleArtifact  # noqa: E402
 
 
 class TestModel(object):
-
     def predict(self, df):
-        df['age'] = df['age'].add(5)
+        df["age"] = df["age"].add(5)
         return df
 
 
-@bentoml.artifacts([PickleArtifact('model')])
+@bentoml.artifacts([PickleArtifact("model")])
 @bentoml.env()
 class TestBentoService(bentoml.BentoService):
     """My RestServiceTestModel packaging with BentoML
     """
 
-    @bentoml.api(bentoml.handlers.DataframeHandler, input_columns=['age'])
+    @bentoml.api(bentoml.handlers.DataframeHandler, input_columns=["age"])
     def predict(self, df):
         """predict expects dataframe as input
         """

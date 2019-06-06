@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -26,7 +25,13 @@ from bentoml.artifact.xgboost_artifact import XgboostModelArtifact
 from bentoml.artifact.h2o_artifact import H2oModelArtifact
 
 __all__ = [
-    'ArtifactSpec', 'ArtifactInstance', 'ArtifactCollection', 'PickleArtifact',
-    'PytorchModelArtifact', 'TextFileArtifact', 'TfKerasModelArtifact', 'XgboostModelArtifact',
-    'H2oModelArtifact'
+    "ArtifactSpec",
+    "ArtifactInstance",
+    "ArtifactCollection",
+    "PickleArtifact",
+    "PytorchModelArtifact",
+    "TextFileArtifact",
+    "TfKerasModelArtifact",
+    "XgboostModelArtifact",
+    "H2oModelArtifact",
 ]

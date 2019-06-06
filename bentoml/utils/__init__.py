@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -23,12 +22,13 @@ from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_rela
 
 try:
     from pathlib import Path
+
     Path().expanduser()
 except (ImportError, AttributeError):
     from pathlib2 import Path
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
-_VALID_URLS.discard('')
+_VALID_URLS.discard("")
 
 
 def is_url(url):

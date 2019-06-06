@@ -8,11 +8,12 @@ from bentoml.cli import create_bentoml_cli  # noqa: E402
 
 def generate_test_input_file():
     import uuid
+
     random_id = uuid.uuid4().hex
     tempdir = tempfile.mkdtemp()
-    file_path = os.path.join(tempdir, random_id + '.json')
+    file_path = os.path.join(tempdir, random_id + ".json")
 
-    with open(file_path, 'w') as f:
+    with open(file_path, "w") as f:
         f.write('[{"age": 1}, {"age": 2}]')
     return file_path
 
@@ -23,9 +24,10 @@ def test_run_command_with_input_file(bento_archive_path):
 
     cli = create_bentoml_cli()
     run_cmd = cli.commands["<API_NAME>"]
-    result = runner.invoke(run_cmd,
-                           ['predict', bento_archive_path, '--input', input_path, '-o', 'json'])
+    result = runner.invoke(
+        run_cmd, ["predict", bento_archive_path, "--input", input_path, "-o", "json"]
+    )
 
     assert result.exit_code == 0
     result_json = json.loads(result.output)
-    assert result_json[0]['age'] == 6
+    assert result_json[0]["age"] == 6

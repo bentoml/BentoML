@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -34,28 +33,33 @@ metadata:
 
 
 class BentoArchiveConfig(object):
-
-    def __init__(self, kind='BentoService'):
+    def __init__(self, kind="BentoService"):
         self.kind = kind
         self._yaml = YAML()
         self._yaml.default_flow_style = False
         self.config = self._yaml.load(
-            BENTOML_CONFIG_YAML_TEPMLATE.format(kind=self.kind, bentoml_version=BENTOML_VERSION,
-                                                created_at=str(datetime.now())))
+            BENTOML_CONFIG_YAML_TEPMLATE.format(
+                kind=self.kind,
+                bentoml_version=BENTOML_VERSION,
+                created_at=str(datetime.now()),
+            )
+        )
 
-    def write_to_path(self, path, filename='bentoml.yml'):
+    def write_to_path(self, path, filename="bentoml.yml"):
         return self._yaml.dump(self.config, Path(os.path.join(path, filename)))
 
     @classmethod
     def load(cls, filepath):
         conf = cls()
-        with open(filepath, 'rb') as config_file:
+        with open(filepath, "rb") as config_file:
             yml_content = config_file.read()
         conf.config = conf._yaml.load(yml_content)
 
-        if conf['version'] != BENTOML_VERSION:
-            raise ValueError("BentoArchive version mismatch: loading archive bundled in version {},"
-                             "but loading from version {}".format(conf['version'], BENTOML_VERSION))
+        if conf["version"] != BENTOML_VERSION:
+            raise ValueError(
+                "BentoArchive version mismatch: loading archive bundled in version {},"
+                "but loading from version {}".format(conf["version"], BENTOML_VERSION)
+            )
 
         return conf
 

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -26,5 +25,11 @@ from bentoml.utils import Path
 
 def generate_bentoml_deployment_snapshot_path(service_name, service_version, platform):
     return os.path.join(
-        str(Path.home()), '.bentoml', 'deployment-snapshots', platform, service_name,
-        service_version, datetime.now().isoformat())
+        str(Path.home()),
+        ".bentoml",
+        "deployment-snapshots",
+        platform,
+        service_name,
+        service_version,
+        datetime.now().isoformat(),
+    )

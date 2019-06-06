@@ -33,6 +33,7 @@ install_requires = [
     "click",
     "pandas",
     "dill",
+    "prometheus_client",
     "python-json-logger",
     "boto3",
     "pathlib2",

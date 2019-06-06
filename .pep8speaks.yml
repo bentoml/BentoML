@@ -1,10 +1,13 @@
 scanner:
     diff_only: True
-    linter: pycodestyle
+    linter: flake8
 
 pycodestyle:
     max-line-length: 88
-
+    ignore:
+      - E203
+      - E266
+      - W503
     exclude: [ 'examples' ]
 
 only_mention_files_with_errors: True

@@ -33,6 +33,7 @@ __all__ = [
     "__version__",
     "api",
     "env",
+    "ver",
     "artifacts",
     "BentoService",
     "save",

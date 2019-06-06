@@ -75,11 +75,24 @@ class BentoHandler:
         """
         raise NotImplementedError
 
-    def handle_clipper_numbers(self, inputs, func):
+    def handle_clipper_ints(self, inputs, func):
         """Handle incoming input data for clipper cluster.
 
-        :param inputs: Incoming inputs from clipper cluster, One of "integers",
-                      "floats", "doubles" format.
+        :param inputs: Incoming inputs from clipper cluster, "integers" format,
+        """
+        raise NotImplementedError
+
+    def handle_clipper_doubles(self, inputs, func):
+        """Handle incoming input data for clipper cluster.
+
+        :param inputs: Incoming inputs from clipper cluster, "doubles" format,
+        """
+        raise NotImplementedError
+
+    def handle_clipper_floats(self, inputs, func):
+        """Handle incoming input data for clipper cluster.
+
+        :param inputs: Incoming inputs from clipper cluster, "floats" format,
         """
         raise NotImplementedError
 

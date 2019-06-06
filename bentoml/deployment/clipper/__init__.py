@@ -18,23 +18,35 @@ from __future__ import print_function
 
 import os
 import shutil
+import re
 
 import docker
 
 from bentoml.archive import load
 from bentoml.handlers import ImageHandler
-from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path, \
-    process_docker_api_line
-from bentoml.deployment.clipper.templates import DEFAULT_CLIPPER_ENTRY, DOCKERFILE_CLIPPER
+from bentoml.deployment.utils import (
+    generate_bentoml_deployment_snapshot_path,
+    process_docker_api_line,
+)
+from bentoml.deployment.clipper.templates import (
+    DEFAULT_CLIPPER_ENTRY,
+    DOCKERFILE_CLIPPER,
+)
 from bentoml.utils.exceptions import BentoMLException
 
 
-def build_docker_image(snapshot_path):
-    docker_api = docker.APIClient()
-    tag = "something"
-    for line in docker_api.build(path=snapshot_path, dockerfile='Dockerfile-clipper', tag=tag):
-        process_docker_api_line(line)
-    return tag
+def generate_clipper_compatiable_string(item):
+    """Generate clipper compatiable string. It must be a valid DNS-1123.
+    It must consist of lower case alphanumeric characters, '-' or '.',
+    and must start and end with an alphanumeric character
+
+    :param item: String
+    :return: string
+    """
+
+    pattern = re.compile("[^a-zA-Z0-9-]")
+    result = re.sub(pattern, "-", item)
+    return result.lower()
 
 
 def deploy_bentoml(clipper_conn, archive_path, api_name):
@@ -53,12 +65,16 @@ def deploy_bentoml(clipper_conn, archive_path, api_name):
         api = apis[0]
     else:
         raise BentoMLException(
-            'Please specify api-name, when more than one API is present in the archive')
-    application_name = bento_service.name + '-' + api.name
-    input_type = 'strings'
+            "Please specify api-name, when more than one API is present in the archive"
+        )
+    application_name = generate_clipper_compatiable_string(
+        bento_service.name + "-" + api.name
+    )
+    version = generate_clipper_compatiable_string(bento_service.version)
+    input_type = "strings"
 
     if isinstance(api.handler, ImageHandler):
-        input_type = 'bytes'
+        input_type = "bytes"
 
     try:
         clipper_conn.start_clipper()
@@ -69,26 +85,35 @@ def deploy_bentoml(clipper_conn, archive_path, api_name):
         raise BentoMLException("Can't start or connect with clipper cluster")
 
     snapshot_path = generate_bentoml_deployment_snapshot_path(
-        bento_service.name, bento_service.version, 'clipper')
+        bento_service.name, bento_service.version, "clipper"
+    )
+    print("saved path", snapshot_path)
 
-    entry_py_content = DEFAULT_CLIPPER_ENTRY.format(api_name=api.name,
-                                                    input_type=input_type)
-    model_path = os.path.join(snapshot_path, 'bento')
+    entry_py_content = DEFAULT_CLIPPER_ENTRY.format(
+        api_name=api.name, input_type=input_type
+    )
+    model_path = os.path.join(snapshot_path, "bento")
     shutil.copytree(archive_path, model_path)
 
-    with open(os.path.join(snapshot_path, 'clipper_entry.py'), 'w') as f:
+    with open(os.path.join(snapshot_path, "clipper_entry.py"), "w") as f:
         f.write(entry_py_content)
 
-    with open(os.path.join(snapshot_path, 'Dockerfile-clipper'), 'w') as f:
-        f.write(DOCKERFILE_CLIPPER)
+    docker_content = DOCKERFILE_CLIPPER.format(
+        model_name=application_name, model_version=version
+    )
+    with open(os.path.join(snapshot_path, "Dockerfile-clipper"), "w") as f:
+        f.write(docker_content)
 
     docker_api = docker.APIClient()
-    image_tag = bento_service.name + '-clipper:' + bento_service.version
-    for line in docker_api.build(path=snapshot_path, dockerfile='Dockerfile-clipper', tag=image_tag):
+    image_tag = bento_service.name.lower() + "-clipper:" + bento_service.version
+    for line in docker_api.build(
+        path=snapshot_path, dockerfile="Dockerfile-clipper", tag=image_tag
+    ):
         process_docker_api_line(line)
 
-    clipper_conn.deploy_model(name=application_name,
-                              version=bento_service.version,
-                              input_type=input_type, image=image_tag)
+    print(application_name.lower(), version.lower())
+    clipper_conn.deploy_model(
+        name=application_name, version=version, input_type=input_type, image=image_tag
+    )
 
-    return application_name
+    return application_name, version

@@ -164,16 +164,36 @@ class ImageHandler(BentoHandler):
             )
 
         result = func(image)
-        result = get_output_str(result, event['headers'].get('output', 'json'))
-        return {'statusCode': 200, 'body': result}
+        result = get_output_str(result, event["headers"].get("output", "json"))
+        return {"statusCode": 200, "body": result}
 
     def handle_clipper_bytes(self, inputs, func):
-        return func(inputs)
+        def transform_and_predict(input_string):
+            data = input_string
+            return func(data)
 
-    def handle_clipper_numbers(self, inputs, func):
-        raise RuntimeError("Image handler does not support 'ints', 'doubles', \
-                 or 'floats' input_type for Clipper deployment at the moment")
+        return map(transform_and_predict, inputs)
 
     def handle_clipper_strings(self, inputs, func):
-        raise RuntimeError("Image handler does not support 'strings' input_type \
-                for Clipper deployment at the moment")
+        raise RuntimeError(
+            "Image handler does not support 'strings' input_type \
+                for Clipper deployment at the moment"
+        )
+
+    def handle_clipper_ints(self, inputs, func):
+        raise RuntimeError(
+            "ImageHandler doesn't support ints input types \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_doubles(self, inputs, func):
+        raise RuntimeError(
+            "ImageHandler doesn't support doubles input types \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_floats(self, inputs, func):
+        raise RuntimeError(
+            "ImageHandler doesn't support floats input types \
+                for clipper deployment at the moment"
+        )

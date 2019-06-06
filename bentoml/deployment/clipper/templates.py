@@ -35,15 +35,15 @@ class BentoClipperContainer(rpc.ModelContainerBase):
         self.input_type = '{input_type}'
 
     def predict_ints(self, inputs):
-        preds = api.handle_clipper_numbers(inputs)
+        preds = api.handle_clipper_ints(inputs)
         return [str(p) for p in preds]
 
     def predict_floats(self, inputs):
-        preds = api.handle_clipper_numbers(inputs)
+        preds = api.handle_clipper_floats(inputs)
         return [str(p) for p in preds]
 
     def predict_doubles(self, inputs):
-        preds = api.handle_clipper_numbers(inputs)
+        preds = api.handle_clipper_doubles(inputs)
         return [str(p) for p in preds]
 
     def predict_bytes(self, inputs):
@@ -80,7 +80,8 @@ ENV PATH /opt/conda/bin:$PATH
 
 RUN set -x \
     && apt-get update --fix-missing \
-    && apt-get install --non-install-recommends --no-install-suggests -y wget bzip2 ca-certificates curl git libpq-dev build-essential \
+    && apt-get install -y wget bzip2 ca-certificates curl git libpq-dev build-essential \
+                          libzmq3-dev libzmq5 libzmq5-dev redis-server libsodium18 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.6.14-Linux-x86_64.sh -O ~/miniconda.sh && \
@@ -94,7 +95,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.6.14-Linux-x86
 
 # update conda and setup environment and pre-install common ML libraries to speed up docker build
 RUN conda update conda -y \
-      && conda install pip numpy scipy \
+      && conda install pip numpy scipy\
       && pip install six bentoml
 
 # copy over model files
@@ -104,10 +105,16 @@ WORKDIR /container
 # update conda base env
 RUN conda env update -n base -f /container/bento/environment.yml
 RUN pip install -r /container/bento/requirements.txt
+RUN pip install clipper_admin pyzmq==17.0.* prometheus_client==0.1.* pyyaml>=4.2b1 jsonschema==2.6.* redis==2.10.* psutil==5.4.* flask==0.12.2
 
 # run user defined setup script
 RUN if [ -f /container/bento/setup.sh ]; then /bin/bash -c /container/bento/setup.sh; fi
 
+ENV CLIPPER_MODEL_NAME={model_name}
+ENV CLIPPER_MODEL_VERSION={model_version}
+
+# Stop running entry point from base image
+ENTRYPOINT []
 # Run BentoML bundle for clipper
 CMD ["python", "/container/clipper_entry.py"]
 """

@@ -77,12 +77,36 @@ class JsonHandler(BentoHandler):
         return {"statusCode": 200, "body": result}
 
     def handle_clipper_strings(self, inputs, func):
-        return func(inputs)
+        def transform_and_predict(input_string):
+            print("inside transform", input_string)
+            data = input_string
+            print(func)
+            result = func(data)
+            print("result from func", result)
+            return result
 
-    def handle_clipper_numbers(self, inputs, func):
-        raise RuntimeError("JsonHandler doesn't support 'ints', 'doubles' or \
-                'floats' input type for clipper deployment at the moment")
+        return map(transform_and_predict, inputs)
 
     def handle_clipper_bytes(self, inputs, func):
-        raise RuntimeError("JsonHandler doesn't support 'bytes' input type \
-                for clipper deployment at the moment")
+        raise RuntimeError(
+            "JsonHandler doesn't support 'bytes' input type \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_ints(self, inputs, func):
+        raise RuntimeError(
+            "JsonHandler doesn't support ints input types \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_doubles(self, inputs, func):
+        raise RuntimeError(
+            "JsonHandler doesn't support doubles input types \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_floats(self, inputs, func):
+        raise RuntimeError(
+            "JsonHandler doesn't support floats input types \
+                for clipper deployment at the moment"
+        )

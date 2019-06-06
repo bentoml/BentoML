@@ -29,8 +29,10 @@ import boto3
 import docker
 
 from bentoml.deployment.base_deployment import Deployment
-from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path, \
-    process_docker_api_line
+from bentoml.deployment.utils import (
+    generate_bentoml_deployment_snapshot_path,
+    process_docker_api_line,
+)
 from bentoml.utils.whichcraft import which
 from bentoml.exceptions import BentoMLException
 from bentoml.deployment.sagemaker.templates import (

@@ -89,7 +89,7 @@ def generate_serverless_configuration_for_aws(
         },
     }
 
-    serverless_config['custom'] = custom_config
+    serverless_config["custom"] = custom_config
 
     yaml.dump(serverless_config, Path(config_path))
     return

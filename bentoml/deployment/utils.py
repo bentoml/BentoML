@@ -39,7 +39,7 @@ def generate_bentoml_deployment_snapshot_path(service_name, service_version, pla
 def process_docker_api_line(payload):
     """ Process the output from API stream, throw an Exception if there is an error """
     # Sometimes Docker sends to "{}\n" blocks together...
-    for segment in payload.decode('utf-8').split('\n'):
+    for segment in payload.decode("utf-8").split("\n"):
         line = segment.strip()
         if line:
             try:
@@ -50,7 +50,7 @@ def process_docker_api_line(payload):
                 if "errorDetail" in line_payload:
                     error = line_payload["errorDetail"]
                     sys.stderr.write(error["message"])
-                    raise RuntimeError("Error on build - code %s" % error['code'])
+                    raise RuntimeError("Error on build - code %s" % error["code"])
                 elif "stream" in line_payload:
                     # TODO: move this to logger.info
                     sys.stdout.write(line_payload["stream"])

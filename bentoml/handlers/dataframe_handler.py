@@ -197,10 +197,33 @@ class DataframeHandler(BentoHandler):
         return {"statusCode": 200, "body": result}
 
     def handle_clipper_strings(self, inputs, func):
-        return func(inputs)
+        def transform_and_predict(input_string):
+            data = input_string
+            return func(data)
+
+        return map(transform_and_predict, inputs)
 
     def handle_clipper_bytes(self, inputs, func):
-        return func(inputs)
+        def transform_and_predict(input_string):
+            data = input_string
+            return func(data)
 
-    def handle_clipper_numbers(self, inputs, func):
-        return func(inputs)
+        return map(transform_and_predict, inputs)
+
+    def handle_clipper_ints(self, inputs, func):
+        raise RuntimeError(
+            "DataframeHandler doesn't support ints input types \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_doubles(self, inputs, func):
+        raise RuntimeError(
+            "DataframeHandler doesn't support doubles input types \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_floats(self, inputs, func):
+        raise RuntimeError(
+            "DataframeHandler doesn't support floats input types \
+                for clipper deployment at the moment"
+        )

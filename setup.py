@@ -45,7 +45,7 @@ install_requires = [
 dev_requires = [
     "pylint==2.3.1",
     "flake8",
-    "pytest==4.4.0",
+    "pytest==4.6.0",
     "tox-conda==0.2.0",
     "twine",
     "black",
@@ -62,11 +62,11 @@ optional_requires = api_server + cv2 + pytorch + tensorflow
 dev_all = install_requires + dev_requires + optional_requires
 
 tests_require = [
-    "pytest==4.4.0",
+    "pytest==4.6.0",
     "snapshottest==0.5.0",
     "mock==2.0.0",
     "tox==3.8.4",
-    "pytest-cov",
+    "pytest-cov==2.7.1",
     "coverage",
     "codecov",
 ]

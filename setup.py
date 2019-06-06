@@ -73,6 +73,7 @@ tests_require += cv2
 
 extras_require = {
     "all": dev_all,
+    "api_server": api_server,
     "dev": dev_requires,
     "pytorch": pytorch,
     "tensorflow": tensorflow,

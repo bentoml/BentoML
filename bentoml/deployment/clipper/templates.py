@@ -121,4 +121,4 @@ ENV CLIPPER_MODEL_VERSION={model_version}
 ENTRYPOINT []
 # Run BentoML bundle for clipper
 CMD ["python", "/container/clipper_entry.py"]
-"""
+"""  # noqa: E501

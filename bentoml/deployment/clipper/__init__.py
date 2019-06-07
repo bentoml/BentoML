@@ -53,9 +53,11 @@ def deploy_bentoml(clipper_conn, archive_path, api_name, labels=["bentoml"]):
     """Deploy bentoml bundle to clipper cluster
 
     :param clipper_conn: Clipper connection.
-    :param archive_path: String, Path to bentoml bundle, it could be local filepath or s3 path
+    :param archive_path: String, Path to bentoml bundle, it could be local
+                         filepath or s3 path
     :param api_name: String, Name of the api that will be running in the clipper cluster
-    :param labels: [String], labels for clipper model, they are used purely for user annotations on clipper.
+    :param labels: [String], labels for clipper model, they are used purely
+                   for user annotations on clipper.
     """
     bento_service = load(archive_path)
     apis = bento_service.get_service_apis()

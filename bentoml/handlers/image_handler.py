@@ -168,8 +168,13 @@ class ImageHandler(BentoHandler):
         return {"statusCode": 200, "body": result}
 
     def handle_clipper_bytes(self, inputs, func):
-        def transform_and_predict(input_string):
-            data = input_string
+        try:
+            import cv2
+        except ImportError:
+            raise ImportError("opencv-python package is required to use ImageHandler")
+
+        def transform_and_predict(input_bytes):
+            data = cv2.imdecode(input_bytes, cv2.IMREAD_COLOR)
             return func(data)
 
         return map(transform_and_predict, inputs)

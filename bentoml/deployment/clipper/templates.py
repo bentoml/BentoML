@@ -69,6 +69,8 @@ if __name__ == "__main__":
     rpc_service.start(model)
 """
 
+# We are using clipper python 3.6 instead of other 3.x python or python 2.7, because we are using conda.
+# It will helps us manage python environment instead of specific which python version
 DOCKERFILE_CLIPPER = """\
 FROM clipper/python36-closure-container:0.3
 
@@ -105,6 +107,8 @@ WORKDIR /container
 # update conda base env
 RUN conda env update -n base -f /container/bento/environment.yml
 RUN pip install -r /container/bento/requirements.txt
+
+# Install packages for clipper
 RUN pip install clipper_admin pyzmq==17.0.* prometheus_client==0.1.* pyyaml>=4.2b1 jsonschema==2.6.* redis==2.10.* psutil==5.4.* flask==0.12.2
 
 # run user defined setup script

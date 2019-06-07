@@ -198,17 +198,25 @@ class DataframeHandler(BentoHandler):
 
     def handle_clipper_strings(self, inputs, func):
         def transform_and_predict(input_string):
-            data = input_string
-            return func(data)
+            # Assuming input string is JSON format
+            try:
+                df = pd.read_json(
+                    input_string, orient=self.orient, typ=self.typ, dtype=False
+                )
+            except ValueError as e:
+                raise ValueError(
+                    "Unexpected input format, BentoML DataframeHandler expects json "
+                    "string as input: {}".format(e)
+                )
+            return func(df)
 
         return map(transform_and_predict, inputs)
 
     def handle_clipper_bytes(self, inputs, func):
-        def transform_and_predict(input_string):
-            data = input_string
-            return func(data)
-
-        return map(transform_and_predict, inputs)
+        raise RuntimeError(
+            "DataframeHandler doesn't support bytes input types \
+                for clipper deployment at the moment"
+        )
 
     def handle_clipper_ints(self, inputs, func):
         raise RuntimeError(

@@ -49,12 +49,13 @@ def generate_clipper_compatiable_string(item):
     return result.lower()
 
 
-def deploy_bentoml(clipper_conn, archive_path, api_name):
+def deploy_bentoml(clipper_conn, archive_path, api_name, labels=["bentoml"]):
     """Deploy bentoml bundle to clipper cluster
 
     :param clipper_conn: Clipper connection.
     :param archive_path: String, Path to bentoml bundle, it could be local filepath or s3 path
     :param api_name: String, Name of the api that will be running in the clipper cluster
+    :param labels: [String], labels for clipper model, they are used purely for user annotations on clipper.
     """
     bento_service = load(archive_path)
     apis = bento_service.get_service_apis()
@@ -87,7 +88,6 @@ def deploy_bentoml(clipper_conn, archive_path, api_name):
     snapshot_path = generate_bentoml_deployment_snapshot_path(
         bento_service.name, bento_service.version, "clipper"
     )
-    print("saved path", snapshot_path)
 
     entry_py_content = DEFAULT_CLIPPER_ENTRY.format(
         api_name=api.name, input_type=input_type
@@ -111,9 +111,12 @@ def deploy_bentoml(clipper_conn, archive_path, api_name):
     ):
         process_docker_api_line(line)
 
-    print(application_name.lower(), version.lower())
     clipper_conn.deploy_model(
-        name=application_name, version=version, input_type=input_type, image=image_tag
+        name=application_name,
+        version=version,
+        input_type=input_type,
+        image=image_tag,
+        labels=labels,
     )
 
     return application_name, version

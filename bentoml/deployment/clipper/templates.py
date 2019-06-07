@@ -58,7 +58,7 @@ class BentoClipperContainer(rpc.ModelContainerBase):
 if __name__ == "__main__":
     print("Starting Bento service Clipper Containter")
     rpc_service = rpc.RPCService()
-    
+
     try:
         model = BentoClipperContainer()
         sys.stdout.flush()
@@ -69,8 +69,10 @@ if __name__ == "__main__":
     rpc_service.start(model)
 """
 
-# We are using clipper python 3.6 instead of other 3.x python or python 2.7, because we are using conda.
-# It will helps us manage python environment instead of specific which python version
+# We are using clipper python 3.6 instead of other 3.x python or python 2.7,
+# because we are using conda. It will helps us manage python environment
+# instead of specific which python version
+
 DOCKERFILE_CLIPPER = """\
 FROM clipper/python36-closure-container:0.3
 

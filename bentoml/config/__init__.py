@@ -36,7 +36,7 @@ def expand_env_var(env_var):
             env_var = interpolated
 
 
-BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/.bentoml"))
+BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
 try:
     os.makedirs(BENTOML_HOME, exist_ok=True)
 except OSError as err:

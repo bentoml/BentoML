@@ -19,6 +19,7 @@ from __future__ import print_function
 import os
 import logging
 
+from bentoml.utils import Path
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.config.configparser import BentoConfigParser
 
@@ -41,7 +42,7 @@ def expand_env_var(env_var):
 
 BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
 try:
-    os.makedirs(BENTOML_HOME, exist_ok=True)
+    Path(BENTOML_HOME).mkdir(exist_ok=True)
 except OSError as err:
     raise BentoMLConfigException(
         "Error creating bentoml home dir '{}': {}".format(BENTOML_HOME, err.strerror)
@@ -49,8 +50,8 @@ except OSError as err:
 
 # Default bentoml config comes with the library bentoml/config/default_bentoml.cfg
 DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.cfg")
-with open(DEFAULT_CONFIG_FILE, "r") as f:
-    DEFAULT_CONFIG = f.read()
+with open(DEFAULT_CONFIG_FILE, "rb") as f:
+    DEFAULT_CONFIG = f.read().decode("utf-8")
 
 if "BENTML_CONFIG" in os.environ:
     # User local config file for customizing bentoml

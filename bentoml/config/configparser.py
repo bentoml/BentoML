@@ -20,7 +20,7 @@ import os
 import logging
 from collections import OrderedDict
 
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 
 from bentoml.exceptions import BentoMLConfigException
 
@@ -35,7 +35,7 @@ class BentoConfigParser(ConfigParser):
     """
 
     def __init__(self, default_config, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        ConfigParser.__init__(self, *args, **kwargs)
 
         self.bentoml_defaults = ConfigParser(*args, **kwargs)
         if default_config is not None:
@@ -58,8 +58,8 @@ class BentoConfigParser(ConfigParser):
         if env_var in os.environ:
             return os.environ[env_var]
 
-        if super().has_option(section, key):
-            return super().get(section, key, **kwargs)
+        if ConfigParser.has_option(self, section, key):
+            return ConfigParser.get(self, section, key, **kwargs)
 
         if self.bentoml_defaults.has_option(section, key):
             return self.bentoml_defaults.get(section, key, **kwargs)

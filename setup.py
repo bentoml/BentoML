@@ -39,6 +39,7 @@ install_requires = [
     "requests",
     "packaging",
     "docker",
+    "configparser",
 ]
 
 dev_requires = [

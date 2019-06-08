@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 
 
 class BentoConfigParser(ConfigParser):
-    """ Configuration needs:
-        * run component with different confs in test
-        * run tests with different conf
-        * run cli with overwritten conf
+    """ BentoML configuration parser
+
+    :param default_config string - serve as default value when conf key not presented in
+        environment var or user local config file
     """
 
     def __init__(self, default_config, *args, **kwargs):

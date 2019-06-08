@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import sys
 import imp
 import setuptools
 
@@ -87,7 +86,8 @@ setuptools.setup(
     version=__version__,
     author="atalaya.io",
     author_email="contact@atalaya.io",
-    description="BentoML: Package and Deploy Your Machine Learning Models",
+    description="An open framework for building, shipping and running machine learning "
+    "services",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=install_requires,
@@ -112,4 +112,5 @@ setuptools.setup(
         "Source Code": "https://github.com/bentoml/BentoML",
         "Gitter Chat Room": "https://gitter.im/bentoml/BentoML",
     },
+    include_package_data=True,  # Required for '.cfg' files under bentoml/config
 )

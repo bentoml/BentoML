@@ -17,7 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 from bentoml import handlers
-from bentoml.utils import config
+from bentoml.config import config
 from bentoml.version import __version__
 
 from bentoml.service import (

@@ -17,10 +17,12 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import logging
 
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.config.configparser import BentoConfigParser
 
+logger = logging.getLogger(__name__)
 
 def expand_env_var(env_var):
     """Expands potentially nested env var by repeatedly applying `expandvars` and
@@ -44,15 +46,20 @@ except OSError as err:
         "Error creating bentoml home dir '{}': {}".format(BENTOML_HOME, err.strerror)
     )
 
-# User local config file for customizing bentoml
-BENTOML_CONFIG_FILE = expand_env_var(
-    os.environ.get("BENTML_CONFIG", os.path.join(BENTOML_HOME, "bentoml.cfg"))
-)
-
 # Default bentoml config comes with the library bentoml/config/default_bentoml.cfg
 DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.cfg")
 with open(DEFAULT_CONFIG_FILE, "r") as f:
     DEFAULT_CONFIG = f.read()
+
+if "BENTML_CONFIG" in os.environ:
+    # User local config file for customizing bentoml
+    BENTOML_CONFIG_FILE = expand_env_var(os.environ.get("BENTML_CONFIG"))
+else:
+    BENTOML_CONFIG_FILE = os.path.join(BENTOML_HOME, "bentoml.cfg")
+    if not os.path.isfile(BENTOML_CONFIG_FILE):
+        logger.info("Creating new Bentoml config file: %s", BENTOML_CONFIG_FILE)
+        with open(BENTOML_CONFIG_FILE, "w") as f:
+            f.write(DEFAULT_CONFIG)
 
 config = BentoConfigParser(default_config=DEFAULT_CONFIG)
 config.read(BENTOML_CONFIG_FILE)

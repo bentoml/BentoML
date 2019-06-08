@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 from bentoml import handlers
+from bentoml.config import config
 from bentoml.version import __version__
 
 from bentoml.service import (
@@ -32,12 +33,13 @@ from bentoml.archive import save, load
 __all__ = [
     "__version__",
     "api",
+    "artifacts",
+    "config",
     "env",
     "ver",
-    "artifacts",
-    "BentoService",
     "save",
     "load",
     "handlers",
     "metrics",
+    "BentoService",
 ]

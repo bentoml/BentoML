@@ -21,7 +21,7 @@ import sys
 import tempfile
 
 from bentoml.utils.s3 import is_s3_url, download_from_s3
-from bentoml.utils.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException
 from bentoml.archive.config import BentoArchiveConfig
 
 

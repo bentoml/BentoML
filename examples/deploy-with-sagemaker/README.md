@@ -32,7 +32,7 @@ After you invoke the command, BentoML will first generated a snapshot of this mo
 
 After you invoke deploy command, BentoML will perform serveal operations for SageMaker deployment.
 
-First, BentoML will generate snapshot of this deployment in your local file system.  The default snapshot location is `~/.bentoml/deployments`.
+First, BentoML will generate snapshot of this deployment in your local file system.  The default snapshot location is `~/bentoml/deployments`.
 It will place the snapshot in the format of `platform/model_archive_name/model_archive_version/timestamp`
 
 ![ScreenShot](./file-struc.png)

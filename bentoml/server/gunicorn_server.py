@@ -18,7 +18,7 @@ from __future__ import print_function
 
 import multiprocessing
 
-import gunicorn.app.base
+from gunicorn.app.base import BaseApplication
 from gunicorn.six import iteritems
 
 
@@ -34,15 +34,13 @@ def get_gunicorn_worker_count():
     return (multiprocessing.cpu_count() // 2) + 1
 
 
-class GunicornApplication(
-    gunicorn.app.base.BaseApplication
-):  # pylint: disable=abstract-method
+class GunicornApplication(BaseApplication):  # pylint: disable=abstract-method
     """
     A custom Gunicorn application.
 
     Usage::
 
-        >>> import GunicornApplication
+        >>> from bentoml.server.gunicorn_server import GunicornApplication
         >>>
         >>> gunicorn_app = GunicornApplication(app, 5000, 2)
         >>> gunicorn_app.run()

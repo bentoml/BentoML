@@ -24,7 +24,7 @@ import tempfile
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
-from bentoml.utils.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
 from bentoml.utils import isidentifier

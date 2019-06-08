@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import sys
 import imp
 import setuptools
 
@@ -40,17 +39,7 @@ install_requires = [
     "requests",
     "packaging",
     "docker",
-]
-
-dev_requires = [
-    "pylint==2.3.1",
-    "flake8",
-    "pytest==4.6.0",
-    "tox-conda==0.2.0",
-    "twine",
-    "black",
-    "setuptools",
-    "gitpython>=2.0.2",
+    "configparser",
 ]
 
 cv2 = ["opencv-python"]
@@ -59,18 +48,28 @@ tensorflow = ["tensorflow"]
 api_server = ["gunicorn", "prometheus_client", "Werkzeug"]
 
 optional_requires = api_server + cv2 + pytorch + tensorflow
-dev_all = install_requires + dev_requires + optional_requires
 
 tests_require = [
-    "pytest==4.6.0",
+    "pytest==4.1.0",
+    "pytest-cov==2.7.1",
     "snapshottest==0.5.0",
     "mock==2.0.0",
-    "tox==3.8.4",
-    "pytest-cov==2.7.1",
-    "coverage",
+    "tox==3.12.1",
+    "coverage>=4.4",
     "codecov",
-]
-tests_require += cv2
+] + cv2
+
+dev_requires = [
+    "pylint==2.3.1",
+    "flake8",
+    "tox-conda==0.2.0",
+    "twine",
+    "black",
+    "setuptools",
+    "gitpython>=2.0.2",
+] + tests_require
+
+dev_all = install_requires + dev_requires + optional_requires
 
 extras_require = {
     "all": dev_all,
@@ -87,7 +86,8 @@ setuptools.setup(
     version=__version__,
     author="atalaya.io",
     author_email="contact@atalaya.io",
-    description="BentoML: Package and Deploy Your Machine Learning Models",
+    description="An open framework for building, shipping and running machine learning "
+    "services",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=install_requires,
@@ -112,4 +112,5 @@ setuptools.setup(
         "Source Code": "https://github.com/bentoml/BentoML",
         "Gitter Chat Room": "https://gitter.im/bentoml/BentoML",
     },
+    include_package_data=True,  # Required for '.cfg' files under bentoml/config
 )

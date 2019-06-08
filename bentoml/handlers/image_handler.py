@@ -24,7 +24,7 @@ import numpy as np
 from werkzeug.utils import secure_filename
 from flask import Response
 
-from bentoml.utils.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 
 ACCEPTED_CONTENT_TYPES = ["images/png", "images/jpeg", "images/jpg"]

@@ -27,7 +27,7 @@ from modulefinder import ModuleFinder
 from six import string_types, iteritems
 
 from bentoml.utils import Path
-from bentoml.utils.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException
 
 
 def _get_module_src_file(module):

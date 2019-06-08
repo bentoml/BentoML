@@ -1,9 +1,10 @@
 include README.md
-graft docs
+graft bentoml/config
 
 # Don't include examples, tests directory
 prune examples
 prune tests
+prune docs
 
 # Patterns to exclude from any directory
 global-exclude *~

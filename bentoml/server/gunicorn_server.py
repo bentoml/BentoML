@@ -34,7 +34,7 @@ def get_gunicorn_worker_count():
     return (multiprocessing.cpu_count() // 2) + 1
 
 
-class GunicornApplication(BaseApplication): # pylint: disable=abstract-method
+class GunicornApplication(BaseApplication):  # pylint: disable=abstract-method
     """
     A custom Gunicorn application.
 

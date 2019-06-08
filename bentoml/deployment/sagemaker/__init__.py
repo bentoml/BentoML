@@ -31,7 +31,7 @@ import docker
 from bentoml.deployment.base_deployment import Deployment
 from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
 from bentoml.utils.whichcraft import which
-from bentoml.utils.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException
 from bentoml.deployment.sagemaker.templates import (
     DEFAULT_NGINX_CONFIG,
     DEFAULT_WSGI_PY,

@@ -24,6 +24,7 @@ from bentoml.config.configparser import BentoConfigParser
 
 logger = logging.getLogger(__name__)
 
+
 def expand_env_var(env_var):
     """Expands potentially nested env var by repeatedly applying `expandvars` and
     `expanduser` until interpolation stops having any effect.

@@ -68,25 +68,6 @@ class BentoConfigParser(ConfigParser):
                 "section/key '{}/{}' not found in BentoML config".format(section, key)
             )
 
-    def getint(self, section, key, **kwargs):
-        return int(self.get(section, key, **kwargs))
-
-    def getfloat(self, section, key, **kwargs):
-        return float(self.get(section, key, **kwargs))
-
-    def getboolean(self, section, key, **kwargs):
-        val = str(self.get(section, key, **kwargs)).lower().strip()
-
-        if val is "true":
-            return True
-        elif val is "false":
-            return False
-        else:
-            raise BentoMLConfigException(
-                'The value for configuration option "{}:{}" is not a boolean (received '
-                '"{}").'.format(section, key, val)
-            )
-
     def as_dict(self, display_source=False):
         cfg = {}
 
@@ -113,3 +94,6 @@ class BentoConfigParser(ConfigParser):
                 )
 
         return cfg
+
+    def __repr__(self):
+        return "<BentoML config: {}>".format(str(self.as_dict()))

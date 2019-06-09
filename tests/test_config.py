@@ -5,9 +5,9 @@ from bentoml.config.configparser import BentoMLConfigParser
 
 
 @contextlib.contextmanager
-def env_vars(**env_vars):
+def env_vars(**kwargs):
     original = {}
-    for key, value in env_vars.items():
+    for key, value in kwargs.items():
         original[key] = os.environ.get(key)
         if value is not None:
             os.environ[key] = value

@@ -1,6 +1,8 @@
 import os
 import contextlib
 
+from configparser import ConfigParser
+
 from bentoml.config.configparser import BentoMLConfigParser
 
 
@@ -65,3 +67,13 @@ e = value ii
         assert not config["test"].getboolean("c")
         assert config["test"].get("e") == "value iii"
         assert config["test2"].get("foo") == "new bar"
+
+        config_copy = ConfigParser()
+        config_copy.read_dict(config.as_dict())
+
+        assert config_copy["test"].getint("a") == 123
+        assert config_copy["test"].getboolean("b")
+        assert not config_copy["test"].getboolean("c")
+        assert config_copy["test"].getfloat("d") == 1.01
+        assert config_copy["test"].get("e") == "value iii"
+        assert config_copy["test2"].get("foo") == "new bar"

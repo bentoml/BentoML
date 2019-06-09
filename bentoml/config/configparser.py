@@ -27,7 +27,7 @@ from bentoml.exceptions import BentoMLConfigException
 logger = logging.getLogger(__name__)
 
 
-class BentoConfigParser(ConfigParser):
+class BentoMLConfigParser(ConfigParser):
     """ BentoML configuration parser
 
     :param default_config string - serve as default value when conf key not presented in
@@ -37,9 +37,8 @@ class BentoConfigParser(ConfigParser):
     def __init__(self, default_config, *args, **kwargs):
         ConfigParser.__init__(self, *args, **kwargs)
 
-        self.bentoml_defaults = ConfigParser(*args, **kwargs)
         if default_config is not None:
-            self.bentoml_defaults.read_string(default_config)
+            self.read_string(default_config)
 
     @staticmethod
     def _env_var_name(section, key):
@@ -60,9 +59,6 @@ class BentoConfigParser(ConfigParser):
 
         if ConfigParser.has_option(self, section, key):
             return ConfigParser.get(self, section, key, **kwargs)
-
-        if self.bentoml_defaults.has_option(section, key):
-            return self.bentoml_defaults.get(section, key, **kwargs)
         else:
             raise BentoMLConfigException(
                 "section/key '{}/{}' not found in BentoML config".format(section, key)
@@ -71,17 +67,13 @@ class BentoConfigParser(ConfigParser):
     def as_dict(self, display_source=False):
         cfg = {}
 
-        def add_config(cfg, source, config):
-            for section in config:
-                cfg.setdefault(section, OrderedDict())
-                for k, val in config.items(section=section, raw=False):
-                    if display_source:
-                        cfg[section][k] = (val, source)
-                    else:
-                        cfg[section][k] = val
-
-        add_config(cfg, "default", self.bentoml_defaults)
-        add_config(cfg, "bentoml.cfg", self)
+        for section in self:
+            cfg.setdefault(section, OrderedDict())
+            for k, val in self.items(section=section, raw=False):
+                if display_source:
+                    cfg[section][k] = (val, "<bentoml.cg>")
+                else:
+                    cfg[section][k] = val
 
         for ev in os.environ:
             if ev.startswith("BENTOML__"):

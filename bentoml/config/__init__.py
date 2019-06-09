@@ -21,7 +21,7 @@ import logging
 
 from bentoml.utils import Path
 from bentoml.exceptions import BentoMLConfigException
-from bentoml.config.configparser import BentoConfigParser
+from bentoml.config.configparser import BentoMLConfigParser
 
 logger = logging.getLogger(__name__)
 
@@ -63,5 +63,5 @@ else:
         with open(BENTOML_CONFIG_FILE, "w") as f:
             f.write(DEFAULT_CONFIG)
 
-config = BentoConfigParser(default_config=DEFAULT_CONFIG)
+config = BentoMLConfigParser(default_config=DEFAULT_CONFIG)
 config.read(BENTOML_CONFIG_FILE)

@@ -20,12 +20,12 @@ import os
 
 from datetime import datetime
 
-from bentoml import config
+from bentoml.config import BENTOML_HOME
 
 
 def generate_bentoml_deployment_snapshot_path(service_name, service_version, platform):
     return os.path.join(
-        config.BENTOML_HOME,
+        BENTOML_HOME,
         "deployment-snapshots",
         platform,
         service_name,

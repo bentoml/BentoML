@@ -61,9 +61,9 @@ $ tox
 
 If you want to run tests under conda for specific version, use `-e` option:
 ```bash
-$ tox -e py2.7
+$ tox -e py27
 // or
-$ tox -e py3.6
+$ tox -e py36
 ```
 
 ## Style check and auto-formatting your code

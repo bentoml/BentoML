@@ -1,14 +1,13 @@
 import os
-import pytest
 import contextlib
 
 from bentoml.config.configparser import BentoMLConfigParser
 
 
 @contextlib.contextmanager
-def env_vars(**vars):
+def env_vars(**env_vars):
     original = {}
-    for key, value in vars.items():
+    for key, value in env_vars.items():
         original[key] = os.environ.get(key)
         if value is not None:
             os.environ[key] = value
@@ -39,8 +38,8 @@ foo = bar
     config = BentoMLConfigParser(default_config=test_default_config)
 
     assert config["test"].getint("a") == 123
-    assert config["test"].getboolean("b") == True
-    assert config["test"].getboolean("c") == False
+    assert config["test"].getboolean("b")
+    assert not config["test"].getboolean("c")
     assert config["test"].getfloat("d") == 1.01
     assert config["test"].get("e") == "value"
     assert config["test2"].get("foo") == "bar"
@@ -55,7 +54,7 @@ e = value ii
         )
     )
 
-    assert config["test"].getboolean("c") == True
+    assert config["test"].getboolean("c")
     assert config["test"].get("e") == "value ii"
 
     with env_vars(
@@ -63,6 +62,6 @@ e = value ii
         BENTOML__TEST__E="value iii",
         BENTOML__TEST2__FOO="new bar",
     ):
-        assert config["test"].getboolean("c") == False
+        assert not config["test"].getboolean("c")
         assert config["test"].get("e") == "value iii"
         assert config["test2"].get("foo") == "new bar"

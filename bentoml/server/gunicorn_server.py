@@ -50,8 +50,12 @@ class GunicornApplication(BaseApplication):  # pylint: disable=abstract-method
     :param workers: number of worker processes
     """
 
-    def __init__(self, app, port, workers):
-        self.options = {"workers": workers, "bind": "%s:%s" % ("0.0.0.0", port)}
+    def __init__(self, app, port, workers, timeout):
+        self.options = {
+            "workers": workers,
+            "bind": "%s:%s" % ("0.0.0.0", port),
+            "timeout": timeout,
+        }
         self.application = app
         super(GunicornApplication, self).__init__()
 

@@ -57,6 +57,7 @@ tests_require = [
     "tox==3.12.1",
     "coverage>=4.4",
     "codecov",
+    "imageio"
 ] + cv2
 
 dev_requires = [

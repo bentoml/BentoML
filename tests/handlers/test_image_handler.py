@@ -40,4 +40,4 @@ def test_image_handler(capsys, tmpdir):
 
     aws_result = api.handle_aws_lambda_event(aws_lambda_event)
     assert aws_result['statusCode'] == 200
-    assert aws_result['body'] == '[10, 10]'
+    assert aws_result['body'] == '[10, 10, 3]'

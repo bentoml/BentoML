@@ -89,7 +89,7 @@ class ImageHandler(BentoHandler):
 
             input_stream = BytesIO()
             input_file.save(input_stream)
-            input_data = imread(input_file, mode=self.pilmode)
+            input_data = imread(input_file, pilmode=self.pilmode)
         else:
             return Response(response="Only support single file input", status=400)
 
@@ -122,13 +122,12 @@ class ImageHandler(BentoHandler):
 
     def handle_aws_lambda_event(self, event, func):
         try:
-            import cv2
+            from imageio import imread
         except ImportError:
-            raise ImportError("opencv-python package is required to use ImageHandler")
+            raise ImportError("imageio package is required to use ImageHandler")
 
         if event["headers"].get("Content-Type", None) in ACCEPTED_CONTENT_TYPES:
-            nparr = np.fromstring(base64.b64decode(event["body"]), np.uint8)
-            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            image = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

@@ -23,7 +23,6 @@ def test_image_handler(capsys, tmpdir):
     api = ms.get_service_apis()[0]
 
     import cv2
-    import imageio
     import numpy as np
 
     img_file = tmpdir.join("img.png")

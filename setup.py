@@ -43,6 +43,7 @@ install_requires = [
 ]
 
 imageio = ["imageio"]
+cv2 = ["opencv-python"]
 pytorch = ["torch", "torchvision"]
 tensorflow = ["tensorflow"]
 api_server = ["gunicorn", "prometheus_client", "Werkzeug"]
@@ -57,7 +58,7 @@ tests_require = [
     "tox==3.12.1",
     "coverage>=4.4",
     "codecov"
-] + imageio
+] + imageio + cv2
 
 dev_requires = [
     "pylint==2.3.1",

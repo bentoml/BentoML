@@ -13,7 +13,8 @@ services. It provides high-level APIs for defining an ML service and packaging
 its artifacts, source code, dependencies, and configurations into a
 production-system-friendly format that is ready for deployment.
 
-Run our [Quick Start Guide](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb) in your browser!
+
+[![Google Colab Badge](https://badgen.net/badge/Launch%20Quick%20Start%20Guide/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
 
 ---
 
@@ -282,7 +283,7 @@ BentoML is essentially this missing 'build tool' for Machine Learning projects.
 
 All examples can be found in the
 [BentoML/examples](https://github.com/bentoml/BentoML/tree/master/examples)
-directory.
+directory. More tutorials and examples coming soon!
 
 - [Scikit-learn Sentiment Analysis](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb) - [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
 - [H2O Classification](https://github.com/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-example.ipynb) - [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-example.ipynb)
@@ -299,13 +300,18 @@ Deployment guides:
 - [API server deployment with Clipper (coming soon)](https://github.com/bentoml/BentoML/pull/151)
 
 
-More tutorials and examples coming soon!
+We collect example notebook page views to help us improve this project.
+To opt-out of tracking, delete the `[Impression]` line in the first markdown cell of any example notebook:
+
+~~!\[Impression\]\(https://www.google-analytics.com/collect?v=...~~
 
 
 ## Releases and Contributing
 
 BentoML is under active development and is evolving rapidly. **Currently it is a
 Beta release, we may change APIs in future releases**.
+
+Have questions or feedback? Join our gitter chat room: [![join the chat at https://gitter.im/bentoml/BentoML](https://badges.gitter.im/bentoml/BentoML.svg)](https://gitter.im/bentoml/BentoML?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Want to help build BentoML? Check out our
 [contributing documentation](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md).
@@ -320,4 +326,4 @@ It outlines core values and beliefs and will make working together a happier exp
 BentoML is under Apache License 2.0, as found in the LICENSE file.
 
 
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large) [![Join the chat at https://gitter.im/bentoml/BentoML](https://badges.gitter.im/bentoml/BentoML.svg)](https://gitter.im/bentoml/BentoML?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)

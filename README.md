@@ -73,11 +73,7 @@ bentoml --version
 
 ## Getting Started
 
-Read our [Quick Start Guide](https://github.com/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb)
-showcasing how to productionize a scikit-learn model as a production ready
-machine learning serice, and deploy it to AWS Lambda as a serverless endpoint.
-
-[![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb)
+Defining a machine learning service with BentoML is as simple as a few lines of code:
 
 ```python
 @artifacts([PickleArtifact('model')])
@@ -88,6 +84,11 @@ class IrisClassifier(BentoService):
     def predict(self, df):
         return self.artifacts.model.predict(df)
 ```
+
+Read our 5-mins [Quick Start Guide](https://github.com/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb),
+showcasing how to productionize a scikit-learn model and deploy it to AWS Lambda.
+
+[![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb)
 
 
 ## Examples

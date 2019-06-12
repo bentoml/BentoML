@@ -112,9 +112,7 @@ Deployment guides:
 
 
 We collect example notebook page views to help us improve this project.
-To opt-out of tracking, delete the `[Impression]` line in the first markdown cell of any example notebook:
-
-~~!\[Impression\]\(http...~~
+To opt-out of tracking, delete the `[Impression]` line in the first markdown cell of any example notebook: ~~!\[Impression\]\(http...~~
 
 
 ## Releases and Contributing
@@ -122,14 +120,18 @@ To opt-out of tracking, delete the `[Impression]` line in the first markdown cel
 BentoML is under active development and is evolving rapidly. **Currently it is a
 Beta release, we may change APIs in future releases**.
 
-Have questions or feedback? Join our gitter chat room: [![join the chat at https://gitter.im/bentoml/BentoML](https://badges.gitter.im/bentoml/BentoML.svg)](https://gitter.im/bentoml/BentoML?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-Want to help build BentoML? Check out our
-[contributing documentation](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md).
-
 To make sure you have a pleasant experience, please read the [code of conduct](https://github.com/bentoml/BentoML/blob/master/CODE_OF_CONDUCT.md).
 It outlines core values and beliefs and will make working together a happier experience.
 
+Have questions or feedback? Post a [new github issue](https://github.com/bentoml/BentoML/issues/new/choose)
+or join our gitter chat room: [![join the chat at https://gitter.im/bentoml/BentoML](https://badges.gitter.im/bentoml/BentoML.svg)](https://gitter.im/bentoml/BentoML?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+Want to help build BentoML? Check out our
+[contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md) and the
+[development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md)
+for setting up local development and testing environments for BentoML.
+
+Happy hacking!
 
 
 ## License

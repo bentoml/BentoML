@@ -14,7 +14,8 @@ its artifacts, source code, dependencies, and configurations into a
 production-system-friendly format that is ready for deployment.
 
 
-[![Google Colab Badge](http://bit.ly/2ID50XP)
+[![Google Colab Badge](https://badgen.net/badge/Launch%20Quick%20Start%20Guide/on%20Google%20Colab/blue?icon=terminal)](http://bit.ly/2ID50XP)
+
 
 ---
 

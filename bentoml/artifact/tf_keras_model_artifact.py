@@ -45,6 +45,7 @@ class TfKerasModelArtifact(ArtifactSpec):
             )
 
         model = load_model(self._model_file_path(path))
+        model._make_predict_function()
         return self.pack(model)
 
 

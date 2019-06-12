@@ -19,6 +19,7 @@ from __future__ import print_function
 import os
 import argparse
 import base64
+from io import BytesIO
 
 import numpy as np
 from werkzeug.utils import secure_filename
@@ -47,9 +48,14 @@ class ImageHandler(BentoHandler):
     """
 
     def __init__(
-        self, input_names=None, accept_file_extensions=None, accept_multiple_files=False
+        self,
+        input_names=None,
+        accept_file_extensions=None,
+        accept_multiple_files=False,
+        pilmode=None,
     ):
-        self.input_names = input_names or ["image"]
+        self.input_names = input_names or "image"
+        self.pilmode = pilmode or "RGB"
         self.accept_file_extensions = accept_file_extensions or [
             ".jpg",
             ".png",
@@ -58,7 +64,7 @@ class ImageHandler(BentoHandler):
         self.accept_multiple_files = accept_multiple_files
 
     def handle_request(self, request, func):
-        """Handle http request that has image file/s.  It will convert image into a
+        """Handle http request that has image file/s. It will convert image into a
         ndarray for the function to consume.
 
         Args:
@@ -68,18 +74,22 @@ class ImageHandler(BentoHandler):
         Return:
             response object
         """
+        try:
+            from imageio import imread
+        except ImportError:
+            raise ImportError("imageio package is required to use ImageHandler")
 
         if request.method != "POST":
             return Response(response="Only accept POST request", status=400)
 
         if not self.accept_multiple_files:
-            input_file = request.files[self.input_names[0]]
+            input_file = request.files.get(self.input_names)
             file_name = secure_filename(input_file.filename)
-
             check_file_format(file_name, self.accept_file_extensions)
 
-            input_data_string = input_file.read()
-            input_data = np.fromstring(input_data_string, np.uint8)
+            input_stream = BytesIO()
+            input_file.save(input_stream)
+            input_data = imread(input_file, pilmode=self.pilmode)
         else:
             return Response(response="Only support single file input", status=400)
 
@@ -101,24 +111,27 @@ class ImageHandler(BentoHandler):
             file_path = os.path.abspath(file_path)
 
         try:
-            import cv2
+            from imageio import imread
         except ImportError:
-            raise ImportError("opencv-python package is required to use ImageHandler")
+            raise ImportError("imageio package is required to use ImageHandler")
 
-        image = cv2.imread(file_path)
-        result = func(image)
+        image_array = imread(file_path, pilmode=self.pilmode)
+        result = func(image_array)
         result = get_output_str(result, output_format=parsed_args.output)
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
         try:
-            import cv2
+            from imageio import imread
         except ImportError:
-            raise ImportError("opencv-python package is required to use ImageHandler")
+            raise ImportError("imageio package is required to use ImageHandler")
 
         if event["headers"].get("Content-Type", None) in ACCEPTED_CONTENT_TYPES:
-            nparr = np.fromstring(base64.b64decode(event["body"]), np.uint8)
-            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            # decodebytes introduced at python3.1
+            try:
+                image = imread(base64.decodebytes(event['body']), pilmode=self.pilmode)
+            except AttributeError:
+                image = imread(base64.decodestring(event['body']), pilmode=self.pilmode)
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

@@ -132,13 +132,14 @@ def create_bentoml_cli(installed_archive_path=None):
     @click.option(
         "-w", "--workers", type=click.INT, default=get_gunicorn_worker_count()
     )
-    def serve_gunicorn(port, workers, archive_path=installed_archive_path):
+    @click.option("--timeout", type=click.INT, default=60)
+    def serve_gunicorn(port, workers, timeout, archive_path=installed_archive_path):
         """
         Start REST API gunicorn server hosting BentoService loaded from archive
         """
         model_service = load(archive_path)
         server = BentoAPIServer(model_service, port=port)
-        gunicorn_app = GunicornApplication(server.app, port, workers)
+        gunicorn_app = GunicornApplication(server.app, port, workers, timeout)
         gunicorn_app.run()
 
     # pylint: enable=unused-variable

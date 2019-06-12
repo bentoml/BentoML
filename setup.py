@@ -42,7 +42,7 @@ install_requires = [
     "configparser",
 ]
 
-imageio = ["imageio"]
+imageio = ["imageio>=2.5.0"]
 cv2 = ["opencv-python"]
 pytorch = ["torch", "torchvision"]
 tensorflow = ["tensorflow"]

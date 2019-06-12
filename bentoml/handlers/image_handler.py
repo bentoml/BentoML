@@ -127,7 +127,11 @@ class ImageHandler(BentoHandler):
             raise ImportError("imageio package is required to use ImageHandler")
 
         if event["headers"].get("Content-Type", None) in ACCEPTED_CONTENT_TYPES:
-            image = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
+            # decodebytes introduced at python3.1
+            try:
+                image = imread(base64.decodebytes(event['body']), pilmode=self.pilmode)
+            except AttributeError:
+                image = imread(base64.decodestring(event['body']), pilmode=self.pilmode)
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

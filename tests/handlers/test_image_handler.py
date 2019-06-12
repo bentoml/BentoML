@@ -34,8 +34,12 @@ def test_image_handler(capsys, tmpdir):
 
     assert out.strip().endswith("(10, 10, 3)")
 
-    with open(img_file, 'rb') as imageFile:
-        imageStr = base64.encodebytes(imageFile.read())
+    with open(str(img_file), 'rb') as imageFile:
+        content = imageFile.read()
+        try:
+            imageStr = base64.encodebytes(content)
+        except AttributeError:
+            imageStr = base64.encodestring(content)
     aws_lambda_event = {"body": imageStr, "headers": {"Content-Type": "images/png"}}
 
     aws_result = api.handle_aws_lambda_event(aws_lambda_event)

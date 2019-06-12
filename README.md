@@ -79,7 +79,7 @@ machine learning serice, and deploy it to AWS Lambda as a serverless endpoint.
 
 [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb)
 
-```
+```python
 @artifacts([PickleArtifact('model')])
 @env(conda_pip_dependencies=["scikit-learn"])
 class IrisClassifier(BentoService):
@@ -96,10 +96,10 @@ All examples can be found under the
 [BentoML/examples](https://github.com/bentoml/BentoML/tree/master/examples)
 directory. More tutorials and examples coming soon!
 
-- [Scikit-learn Sentiment Analysis](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb) - [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
-- [H2O Classification](https://github.com/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-example.ipynb) - [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-example.ipynb)
-- [Keras Text Classification](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb) - [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb)
-- [XGBoost Titanic Survival Prediction](https://github.com/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb) - [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb)
+- [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb) - [Scikit-learn Sentiment Analysis](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
+- [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-example.ipynb) - [H2O Classification](https://github.com/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-example.ipynb)
+- [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb) - [Keras Text Classification](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb)
+- [![Google Colab Badge](https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb) - [XGBoost Titanic Survival Prediction](https://github.com/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb)
 - [(WIP) PyTorch Fashion MNIST classification](https://github.com/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb)
 - [(WIP) Tensorflow Keras Fashion MNIST classification](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-fashion-mnist/tf-keras-fashion-mnist-classification.ipynb)
 

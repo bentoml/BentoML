@@ -32,7 +32,7 @@ from bentoml.exceptions import BentoMLException
 
 SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 
-CLICK_COLOR_SUCCESS = "greeen"
+CLICK_COLOR_SUCCESS = "green"
 CLICK_COLOR_ERROR = "red"
 
 

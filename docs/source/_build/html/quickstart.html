@@ -47,7 +47,7 @@
 </div>
 <div class="section" id="running-the-quick-start-project">
 <h2>Running the quick start project<a class="headerlink" href="#running-the-quick-start-project" title="Permalink to this headline">¶</a></h2>
-<p>The easiest way to try out the quick start project is using Google’s CoLab to run the
+<p>The easiest way to try out the quick start project is using Google’s Colab to run the
 quick start project. You can use this <a class="reference external" href="http://bit.ly/2ID50XP">link</a> to launch it from your browser</p>
 <p>You can also run the quick start project locally. Download the quick start
 example by git clone the BentoML repo, and navigate to the quick start project
@@ -190,7 +190,7 @@ API service.</p></li>
 </div>
 <div class="section" id="using-bentoml-archive">
 <h3>Using BentoML archive<a class="headerlink" href="#using-bentoml-archive" title="Permalink to this headline">¶</a></h3>
-<p><em>For demoing purpurse, copy the generated service archive into ./model folder</em></p>
+<p><em>For demoing purpose, copy the generated service archive into ./model folder</em></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">shutil</span>
 <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="s1">&#39;./model&#39;</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">saved_path</span><span class="p">,</span> <span class="s1">&#39;./model)</span>
@@ -203,24 +203,63 @@ bentoml serve command:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!bentoml serve ./model
 </pre></div>
 </div>
-<p>more info</p>
-<p>testing</p>
+<p>With <cite>bentoml serve</cite> command, a web server will start locally at the port 5000.
+We created additional endpoints that make this server ready for production.</p>
+<ul class="simple">
+<li><p><cite>/</cite>: The index page with swagger definition.</p></li>
+<li><p><cite>/metrics</cite>: Expose system and latency metrics with Prometheus.</p></li>
+<li><p><cite>/healthz</cite>: Check on your service health.</p></li>
+<li><p><cite>/feedback</cite>: Add business feedback for the predicted results.</p></li>
+</ul>
 </div>
 <div class="section" id="run-rest-api-server-with-docker">
 <h4>Run REST API server with Docker<a class="headerlink" href="#run-rest-api-server-with-docker" title="Permalink to this headline">¶</a></h4>
+<p>To deploy the Bento service as REST api server for production use, we can use
+the generated Dockerfile to create Docker image for that.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!cd ./model &amp;&amp; docker build -t iris-classifier .
-!docker run -p 5000:5000 iris-classifier
 </pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!docker run -p 5000:5000 iris-classifier
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To generate Docker image, you will need to install Docker on your system. Please
+follow direction from this link: <a class="reference external" href="https://docs.docker.com/install">https://docs.docker.com/install</a></p>
 </div>
 </div>
 <div class="section" id="loading-bento-service-archive-in-python">
 <h4>Loading Bento service archive in Python<a class="headerlink" href="#loading-bento-service-archive-in-python" title="Permalink to this headline">¶</a></h4>
+<p>The easiest to use Bento service archive in your python application is using
+<cite>bentoml.load</cite>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bentoml</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+
+<span class="n">bento_svc</span> <span class="o">=</span> <span class="n">bentoml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;./model&#39;</span><span class="p">)</span>
+<span class="n">bento_svc</span><span class="o">.</span><span class="n">predict</span><span class="p">([</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="pip-install-a-bentoml-service-archive">
 <h4><cite>pip install</cite> a BentoML service archive<a class="headerlink" href="#pip-install-a-bentoml-service-archive" title="Permalink to this headline">¶</a></h4>
+<p>BentoML support distributing Bento service as PyPi package, with the generated
+<cite>setup.py</cite> file. Bento service archive can be installed with pip:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!pip install ./model
 </pre></div>
 </div>
+<p>Bento service archive can be uploaded to pypi.org as public python package or
+to your organization’s private PyPi index for all developers in your org to
+use.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> ./model <span class="p">&amp;</span> python setup.py sdist upload
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You will have to configure “.pypirc” file before uploading to pypi index.
+You can find more information about distributing python package at:
+<a class="reference external" href="https://docs.python.org/3.7/distributing/index.html#distributing-index">https://docs.python.org/3.7/distributing/index.html#distributing-index</a></p>
+</div>
+<p>After pip install, we can import the Bento service as regular python package.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">IrisClassifier</span>
 
 <span class="n">installed_svc</span> <span class="o">=</span> <span class="n">IrisClassifier</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
@@ -230,6 +269,24 @@ bentoml serve command:</p>
 </div>
 <div class="section" id="cli-access-with-bentoml-service-archive">
 <h4>CLI access with BentoML service archive<a class="headerlink" href="#cli-access-with-bentoml-service-archive" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!IrisClassifier info
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!IrisClassifier --help
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!IrisClassifier predict --help
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!IrisClassifier predict --input=&#39;[[5.1, 3.5, 1.4, 0.2]]&#39;
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!bentoml info ./model
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!bentoml predict ./model --input=&#39;[[5.1, 3.5, 1.4, 0.2]]&#39;
+</pre></div>
+</div>
 </div>
 </div>
 </div>

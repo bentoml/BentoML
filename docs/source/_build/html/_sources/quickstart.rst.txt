@@ -17,7 +17,7 @@ Install BentoML is straightforward.
 Running the quick start project
 -------------------------------
 
-The easiest way to try out the quick start project is using Google's CoLab to run the
+The easiest way to try out the quick start project is using Google's Colab to run the
 quick start project. You can use this `link <http://bit.ly/2ID50XP>`_ to launch it from your browser
 
 You can also run the quick start project locally. Download the quick start
@@ -174,7 +174,7 @@ files that generated within the archive directory:
 Using BentoML archive
 *********************
 
-*For demoing purpurse, copy the generated service archive into ./model folder*
+*For demoing purpose, copy the generated service archive into ./model folder*
 
 .. code-block:: python
 
@@ -192,30 +192,79 @@ bentoml serve command:
 
     !bentoml serve ./model
 
-more info
+With `bentoml serve` command, a web server will start locally at the port 5000.
+We created additional endpoints that make this server ready for production.
 
-testing
+- `/`: The index page with swagger definition.
+
+- `/metrics`: Expose system and latency metrics with Prometheus.
+
+- `/healthz`: Check on your service health.
+
+- `/feedback`: Add business feedback for the predicted results.
+
 
 Run REST API server with Docker
 +++++++++++++++++++++++++++++++
+To deploy the Bento service as REST api server for production use, we can use
+the generated Dockerfile to create Docker image for that.
 
 .. code-block:: python
 
     !cd ./model && docker build -t iris-classifier .
+
+.. code-block:: python
+
     !docker run -p 5000:5000 iris-classifier
+
+
+.. note::
+
+    To generate Docker image, you will need to install Docker on your system. Please
+    follow direction from this link: https://docs.docker.com/install
+
 
 
 Loading Bento service archive in Python
 +++++++++++++++++++++++++++++++++++++++
 
+The easiest to use Bento service archive in your python application is using
+`bentoml.load`.
+
+.. code-block:: python
+
+    import bentoml
+    import pandas as pd
+
+    bento_svc = bentoml.load('./model')
+    bento_svc.predict([X[0]]
+
 
 `pip install` a BentoML service archive
 +++++++++++++++++++++++++++++++++++++
+BentoML support distributing Bento service as PyPi package, with the generated
+`setup.py` file. Bento service archive can be installed with pip:
 
 .. code-block:: python
 
     !pip install ./model
 
+Bento service archive can be uploaded to pypi.org as public python package or
+to your organization's private PyPi index for all developers in your org to
+use.
+
+.. code-block:: bash
+
+    cd ./model & python setup.py sdist upload
+
+.. note::
+
+    You will have to configure ".pypirc" file before uploading to pypi index.
+    You can find more information about distributing python package at:
+    https://docs.python.org/3.7/distributing/index.html#distributing-index
+
+
+After pip install, we can import the Bento service as regular python package.
 
 .. code-block:: python
 
@@ -229,5 +278,25 @@ CLI access with BentoML service archive
 +++++++++++++++++++++++++++++++++++++
 
 .. code-block:: python
+
     !IrisClassifier info
+
+.. code-block:: python
+
     !IrisClassifier --help
+
+.. code-block:: python
+
+    !IrisClassifier predict --help
+
+.. code-block:: python
+
+    !IrisClassifier predict --input='[[5.1, 3.5, 1.4, 0.2]]'
+
+.. code-block:: python
+
+    !bentoml info ./model
+
+.. code-block:: python
+
+    !bentoml predict ./model --input='[[5.1, 3.5, 1.4, 0.2]]'

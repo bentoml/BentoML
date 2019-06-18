@@ -27,7 +27,7 @@ class XgboostModelArtifact(ArtifactSpec):
     Args:
         name (string): name of the artifact
         model_extension (string): Extension name for saved xgboost model
-   
+
     Raises:
         ImportError: xgboost package is required for using XgboostModelArtifact
     """

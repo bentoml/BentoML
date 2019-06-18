@@ -46,7 +46,7 @@ def check_file_format(file_name, accept_format_list):
 class ImageHandler(BentoHandler):
     """Transform incoming image data from http request, cli or lambda event into numpy
     array.
-   
+  
     Handle incoming image data from different sources, transform them into numpy array
     and pass down to user defined API functions
 
@@ -55,10 +55,10 @@ class ImageHandler(BentoHandler):
             Default value is image
         accept_file_extensions (string[]):  A list of acceptable image extensions.
             Default value is [.jpg, .jpeg, .png]
-        accept_multiple_files (boolean):  Accept multiple files in single request or not.
-            Default value is False
-        pilmode (string): The pilmode to be used for reading image file into numpy array.
-            Default value is RGB.  Find more information at
+        accept_multiple_files (boolean):  Accept multiple files in single request or
+            not. Default value is False
+        pilmode (string): The pilmode to be used for reading image file into numpy
+            array. Default value is RGB.  Find more information at
             https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
 
     Raises:

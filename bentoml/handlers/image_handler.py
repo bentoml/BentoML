@@ -46,7 +46,7 @@ def check_file_format(file_name, accept_format_list):
 class ImageHandler(BentoHandler):
     """Transform incoming image data from http request, cli or lambda event into numpy
     array.
-  
+
     Handle incoming image data from different sources, transform them into numpy array
     and pass down to user defined API functions
 

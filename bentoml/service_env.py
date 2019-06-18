@@ -119,7 +119,7 @@ class BentoServiceEnv(object):
     def get_conda_env_name(self):
         return self._conda_env.get_name()
 
-    def set_codna_env_name(self, name):
+    def set_conda_env_name(self, name):
         self._conda_env.set_name(name)
 
     def add_conda_channels(self, channels):

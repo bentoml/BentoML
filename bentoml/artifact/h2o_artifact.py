@@ -23,8 +23,13 @@ from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
 
 class H2oModelArtifact(ArtifactSpec):
-    """
-    Abstraction for saving/loading objects with h2o.save_model and xgb.load_model
+    """Abstraction for saving/loading objects with h2o.save_model and h2o.load_model
+
+    Args:
+        name (str): Name for this h2o artifact..
+
+    Raises:
+        ImportError: h2o package is required to use H2o model artifact
     """
 
     def _model_file_path(self, base_path):

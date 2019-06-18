@@ -66,8 +66,16 @@ def _generate_new_version_str():
 
 
 def save(bento_service, dst, version=None):
-    """
-    Save given BentoService along with all artifacts to target path
+    """Save given BentoService along with all artifacts to target path
+
+    Args:
+        bento_service (bentoml.service.BentoService): a Bento Service instance
+        dst (string): Destination of where the bento service will be saved. It could
+            be a local file path or a s3 path.
+        version (string): user defined version.
+
+    Returns:
+        string: The complete path of saved Bento service.
     """
 
     if version is None:

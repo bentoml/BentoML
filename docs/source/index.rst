@@ -37,5 +37,5 @@ Content
 
    quickstart
    concept
+   api
    cli
-   api/bentoml

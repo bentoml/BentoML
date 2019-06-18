@@ -275,15 +275,18 @@ After pip install, we can import the Bento service as regular python package.
 
 
 CLI access with BentoML service archive
-+++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++
+
+`pip install` includes a CLI tool for accessing the Bento service.
+
+From terminal, you can use `info` command to list all APIs defined in the
+service.
 
 .. code-block:: python
 
     !IrisClassifier info
 
-.. code-block:: python
-
-    !IrisClassifier --help
+Call prediction with user defined API function.
 
 .. code-block:: python
 
@@ -293,6 +296,9 @@ CLI access with BentoML service archive
 
     !IrisClassifier predict --input='[[5.1, 3.5, 1.4, 0.2]]'
 
+Alternatively, use ``bentoml cli`` to load and run Bento service archive
+without installing.
+
 .. code-block:: python
 
     !bentoml info ./model
@@ -300,3 +306,7 @@ CLI access with BentoML service archive
 .. code-block:: python
 
     !bentoml predict ./model --input='[[5.1, 3.5, 1.4, 0.2]]'
+
+
+Congratulation! You've train, build, and running your first Bento
+service.

@@ -49,9 +49,10 @@ class DataframeHandler(BentoHandler):
             records.
         output_orient (string): Prefer json orient format for output result. Default is
             records.
-        typ (string): Type of object to recover for read json with pandas. Default is frame
+        typ (string): Type of object to recover for read json with pandas. Default is
+            frame
         input_columns ([string]): A list of column names that input data need to have.
-    
+
     Raises:
         ValueError: Incoming data is missing required columns in input_columns
         ValueError: Incoming data format is not handled. Only json and csv

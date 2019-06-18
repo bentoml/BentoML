@@ -26,8 +26,10 @@ class TextFileArtifact(ArtifactSpec):
 
     Args:
         name (string): Name of the artifact
-        file_extension (string): The file format artifact will be saved as. Default is .txt
-        encoding (string): The encoding will be used for saving/loading text. Default is utf8
+        file_extension (string): The file format artifact will be saved as.
+            Default is .txt
+        encoding (string): The encoding will be used for saving/loading text.
+            Default is utf8
 
     """
 

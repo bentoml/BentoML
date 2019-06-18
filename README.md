@@ -3,6 +3,7 @@
 
 [![project status](https://www.repostatus.org/badges/latest/active.svg)](http://bentoml.ai/)
 [![build status](https://travis-ci.org/bentoml/BentoML.svg?branch=master)](https://travis-ci.org/bentoml/BentoML)
+[![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://bentoml.readthedocs.io/en/latest/?badge=latest)
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)](https://travis-ci.org/bentoml/BentoML)
 [![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
@@ -21,7 +22,7 @@ production-system-friendly format that is ready for deployment.
 
 - [Installation](#installation)
 - [Getting Started](#getting-started)
-- [Documentation (Coming soon!)](#getting-started)
+- [Documentation (Coming soon!)](#documentation)
 - [Examples](#examples)
 - [Releases and Contributing](#releases-and-contributing)
 - [License](#license)
@@ -88,6 +89,11 @@ class IrisClassifier(BentoService):
 
 Read our 5-mins [Quick Start Guide](http://bit.ly/2ID50XP),
 showcasing how to productionize a scikit-learn model and deploy it to AWS Lambda.
+
+
+## Documentation
+
+Official BentoML documentation can be found at [bentoml.readthedocs.io](http://bentoml.readthedocs.io)
 
 
 ## Examples

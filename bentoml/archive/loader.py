@@ -106,7 +106,7 @@ def load_bento_service_class(archive_path):
 
 def load(archive_path):
     """Load bento service from local file path or s3 path
-    
+
     Args:
         archive_path (string): The path that contains archived bento service.
             It could be local file path or aws s3 path

@@ -167,7 +167,6 @@ def api_decorator(handler_cls, *args, **kwargs):
 
     """
 
-
     DEFAULT_API_DOC = "BentoML generated API endpoint"
 
     def decorator(func):
@@ -195,10 +194,11 @@ def api_decorator(handler_cls, *args, **kwargs):
 
 def artifacts_decorator(artifact_specs):
     """Define artifact spec for BentoService
-    
+
     Args:
         artifact_specs ([bentoml.artifact]): A list of initialized Bentoml artifacts
     """
+
     def decorator(bento_service_cls):
         bento_service_cls._artifacts_spec = artifact_specs
         return bento_service_cls
@@ -217,10 +217,11 @@ def env_decorator(**kwargs):
         conda_channels (string): User defined conda channels
         conda_dependencies ([string]): Defined dependencies to be installed with conda
             environment.
-        conda_pip_dependencies (string): Additional python modules to be install with pip
-            inside conda environment.
+        conda_pip_dependencies (string): Additional python modules to be install with
+            pip inside conda environment.
 
     """
+
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv.from_dict(kwargs)
         return bento_service_cls
@@ -238,10 +239,10 @@ def ver_decorator(major, minor):
     BentoML uses semantic versioning for BentoService distribution:
 
     * MAJOR is incremented when you make breaking API changes
-    
+
     * MINOR is incremented when you add new functionality without breaking the 
       existing API or functionality
-    
+ 
     * PATCH is incremented when you make backwards-compatible bug fixes
 
     'Patch' is provided(or auto generated) when calling BentoService#save,

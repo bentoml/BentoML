@@ -8,16 +8,6 @@ BentoService
 ++++++++++++
 .. autoclass:: bentoml.service.BentoService
 
-save
-++++
-.. autofunction:: bentoml.archive.archiver.save
-
-load
-++++
-.. autofunction:: bentoml.archive.loader.load
-
-Decorators
-**********
 
 api
 +++
@@ -34,6 +24,14 @@ artifacts
 ver
 +++
 .. autofunction:: bentoml.service.ver_decorator
+
+save
+++++
+.. autofunction:: bentoml.archive.archiver.save
+
+load
+++++
+.. autofunction:: bentoml.archive.loader.load
 
 Handlers
 ********
@@ -59,7 +57,7 @@ PickleArtifact
 .. autoclass:: bentoml.artifact.PickleArtifact
 
 TextFileArtifact
-++++++++++++
+++++++++++++++++
 .. autoclass:: bentoml.artifact.TextFileArtifact
 
 PytorchModelArtifact

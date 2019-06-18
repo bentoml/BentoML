@@ -231,7 +231,7 @@ class ServerlessDeployment(Deployment):
                 logger.debug("Serverless response: %s", "\n".join(response))
                 error = [s for s in response if "Serverless Error" in s]
                 if error:
-                    print('has error', "\n".join(response))
+                    print("has error", "\n".join(response))
                     return False, "\n".join(response)
                 else:
                     print("\n".join(response))

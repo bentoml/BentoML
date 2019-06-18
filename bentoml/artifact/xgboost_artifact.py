@@ -23,11 +23,11 @@ from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
 class XgboostModelArtifact(ArtifactSpec):
     """Abstraction for save/load object with Xgboost.
-    
+
     Args:
         name (string): name of the artifact
         model_extension (string): Extension name for saved xgboost model
-    
+   
     Raises:
         ImportError: xgboost package is required for using XgboostModelArtifact
     """

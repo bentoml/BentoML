@@ -9,16 +9,16 @@ Install BentoML is straightforward.
 
     pip install bentoml
 
-.. note::
-
-    We recommend use conda to manage python environment
-
 
 Running the quick start project
 -------------------------------
 
 The easiest way to try out the quick start project is using Google's Colab to run the
-quick start project. You can use this `link <http://bit.ly/2ID50XP>`_ to launch it from your browser
+quick start project.
+
+.. image:: https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal
+    :target: http://bit.ly/2ID50XP
+    :alt: Launch on Colab
 
 You can also run the quick start project locally. Download the quick start
 example by git clone the BentoML repo, and navigate to the quick start project
@@ -29,8 +29,8 @@ inside the `example` folder
 
     $ pip install jupyter
     $ git clone http://github.com/bentoml/bentoml
-    $ cd bentoml/examples/quick-start
-    $ jupyter notebook bentoml-quick-start-guide.ipynb
+    $ cd bentoml
+    $ jupyter notebook examples/quick-start/bentoml-quick-start-guide.ipynb
 
 
 We will go through each cell inside the notebook with explanation follows

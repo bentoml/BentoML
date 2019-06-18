@@ -44,22 +44,23 @@ def check_file_format(file_name, accept_format_list):
 
 
 class ImageHandler(BentoHandler):
-    """Transform incoming image data from http request, cli or lambda event into numpy array.
-    
-    Handle incoming image data from different sources, transform them into numpy array and pass
-    down to user defined API functions
+    """Transform incoming image data from http request, cli or lambda event into numpy
+    array.
+   
+    Handle incoming image data from different sources, transform them into numpy array
+    and pass down to user defined API functions
 
     Args:
-        input_name (string[]]): A list of acceptable input name for HTTP request. Default value
-            is image
-        accept_file_extensions (string[]):  A list of acceptable image extensions. Default value
-            is [.jpg, .jpeg, .png]
-        accept_multiple_files (boolean):  Accept multiple files in single request or not. Default
-            value is False
-        pilmode (string): The pilmode to be used for reading image file into numpy array. Default
-            value is RGB.  Find more information at
+        input_name (string[]]): A list of acceptable input name for HTTP request.
+            Default value is image
+        accept_file_extensions (string[]):  A list of acceptable image extensions.
+            Default value is [.jpg, .jpeg, .png]
+        accept_multiple_files (boolean):  Accept multiple files in single request or not.
+            Default value is False
+        pilmode (string): The pilmode to be used for reading image file into numpy array.
+            Default value is RGB.  Find more information at
             https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
-    
+
     Raises:
         ImportError: imageio package is required to use ImageHandler
     """
@@ -146,9 +147,9 @@ class ImageHandler(BentoHandler):
         if event["headers"].get("Content-Type", None) in ACCEPTED_CONTENT_TYPES:
             # decodebytes introduced at python3.1
             try:
-                image = imread(base64.decodebytes(event['body']), pilmode=self.pilmode)
+                image = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
             except AttributeError:
-                image = imread(base64.decodestring(event['body']), pilmode=self.pilmode)
+                image = imread(base64.decodestring(event["body"]), pilmode=self.pilmode)
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

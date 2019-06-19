@@ -82,3 +82,18 @@ Run linter/format script:
 
 ./script/lint.sh
 ```
+
+## How to edit, run, build documentation site
+
+Install all dev dependencies:
+```bash
+$ pip install -e .[dev]
+```
+
+To build documentation for locally:
+```bash
+$ cd docs
+$ sphinx-build -b html source build
+```
+
+Modify *.rst files inside the `docs/source` folder to update content.

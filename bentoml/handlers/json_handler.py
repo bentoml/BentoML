@@ -28,6 +28,7 @@ from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 class JsonHandler(BentoHandler):
     """JsonHandler parses REST API request or CLI command into parsed_json(a
     dict in python) and pass down to user defined API function
+
     """
 
     def handle_request(self, request, func):

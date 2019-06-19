@@ -25,8 +25,13 @@ from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
 
 class PickleArtifact(ArtifactSpec):
-    """
-    Abstraction for saving/loading python objects with pickle serialization
+    """Abstraction for saving/loading python objects with pickle serialization
+
+    Args:
+        name (string): Name for the artifact
+        pickle_module (python module): The python module will be used for pickle
+            and unpickle artifact
+        pickle_extension (string): The extension format for pickled file.
     """
 
     def __init__(self, name, pickle_module=dill, pickle_extension=".pkl"):

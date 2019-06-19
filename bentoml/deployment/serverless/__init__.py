@@ -183,6 +183,7 @@ class ServerlessDeployment(Deployment):
             service_info_index = response.index("Service Information")
             service_info = response[service_info_index:]
             logger.info("BentoML: %s", "\n".join(service_info))
+            print("\n".join(service_info))
             return output_path
 
     def check_status(self):
@@ -230,8 +231,10 @@ class ServerlessDeployment(Deployment):
                 logger.debug("Serverless response: %s", "\n".join(response))
                 error = [s for s in response if "Serverless Error" in s]
                 if error:
+                    print("has error", "\n".join(response))
                     return False, "\n".join(response)
                 else:
+                    print("\n".join(response))
                     return True, "\n".join(response)
 
     def delete(self):

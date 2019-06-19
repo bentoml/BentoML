@@ -22,8 +22,15 @@ from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
 
 class TextFileArtifact(ArtifactSpec):
-    """
-    Abstraction for saving/loading string to/from text files
+    """Abstraction for saving/loading string to/from text files
+
+    Args:
+        name (string): Name of the artifact
+        file_extension (string): The file format artifact will be saved as.
+            Default is .txt
+        encoding (string): The encoding will be used for saving/loading text.
+            Default is utf8
+
     """
 
     def __init__(self, name, file_extension=".txt", encoding="utf8"):

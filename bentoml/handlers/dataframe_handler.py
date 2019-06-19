@@ -43,6 +43,19 @@ class DataframeHandler(BentoHandler):
      can be converted into a pandas Dataframe, and pass down the dataframe
      to user defined API function. It also returns response for REST API call
      or print result for CLI call
+
+    Args:
+        orient (string): Incoming json orient format for reading json data. Default is
+            records.
+        output_orient (string): Prefer json orient format for output result. Default is
+            records.
+        typ (string): Type of object to recover for read json with pandas. Default is
+            frame
+        input_columns ([string]): A list of column names that input data need to have.
+
+    Raises:
+        ValueError: Incoming data is missing required columns in input_columns
+        ValueError: Incoming data format is not handled. Only json and csv
     """
 
     def __init__(

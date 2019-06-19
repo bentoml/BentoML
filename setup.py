@@ -50,15 +50,19 @@ api_server = ["gunicorn", "prometheus_client", "Werkzeug"]
 
 optional_requires = api_server + imageio + pytorch + tensorflow
 
-tests_require = [
-    "pytest==4.1.0",
-    "pytest-cov==2.7.1",
-    "snapshottest==0.5.0",
-    "mock==2.0.0",
-    "tox==3.12.1",
-    "coverage>=4.4",
-    "codecov"
-] + imageio + cv2
+tests_require = (
+    [
+        "pytest==4.1.0",
+        "pytest-cov==2.7.1",
+        "snapshottest==0.5.0",
+        "mock==2.0.0",
+        "tox==3.12.1",
+        "coverage>=4.4",
+        "codecov",
+    ]
+    + imageio
+    + cv2
+)
 
 dev_requires = [
     "pylint==2.3.1",
@@ -68,6 +72,8 @@ dev_requires = [
     "black",
     "setuptools",
     "gitpython>=2.0.2",
+    "sphinx",
+    "sphinx-click"
 ] + tests_require
 
 dev_all = install_requires + dev_requires + optional_requires

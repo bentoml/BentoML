@@ -139,8 +139,18 @@ class BentoServiceBase(object):
 
 
 def api_decorator(handler_cls, *args, **kwargs):
-    """
-    Decorator for adding api to a BentoService
+    """Decorator for adding api to a BentoService
+
+    Args:
+        handler_cls (bentoml.handlers): The handler class for the API
+            function.
+        api_name (string): API name to replace function name.
+        api_doc (string): Docstring for API function.
+        kwargs... : Additional keyword arguments for handler class. Please reference
+            to what arguments are available for the particular handler
+
+    Raises:
+        ValueError: API name must contains only letters
 
     >>> from bentoml import BentoService, api
     >>> from bentoml.handlers import JsonHandler, DataframeHandler
@@ -154,6 +164,7 @@ def api_decorator(handler_cls, *args, **kwargs):
     >>>     @api(DataframeHandler, input_json_orient='records')
     >>>     def identity(self, df):
     >>>         # do something
+
     """
 
     DEFAULT_API_DOC = "BentoML generated API endpoint"
@@ -182,6 +193,12 @@ def api_decorator(handler_cls, *args, **kwargs):
 
 
 def artifacts_decorator(artifact_specs):
+    """Define artifact spec for BentoService
+
+    Args:
+        artifact_specs ([bentoml.artifact]): A list of initialized Bentoml artifacts
+    """
+
     def decorator(bento_service_cls):
         bento_service_cls._artifacts_spec = artifact_specs
         return bento_service_cls
@@ -190,6 +207,21 @@ def artifacts_decorator(artifact_specs):
 
 
 def env_decorator(**kwargs):
+    """Define environment spec for Bento Service.
+
+    Args:
+        setup_sh (string): User defined shell script to run before running BentoService.
+            It could be local file path or the shell script content.
+        requirements_text (string): User defined requirement text to install before
+            running BentoService.  It could be local file path or requirements' content
+        conda_channels (string): User defined conda channels
+        conda_dependencies ([string]): Defined dependencies to be installed with conda
+            environment.
+        conda_pip_dependencies (string): Additional python modules to be install with
+            pip inside conda environment.
+
+    """
+
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv.from_dict(kwargs)
         return bento_service_cls
@@ -198,13 +230,20 @@ def env_decorator(**kwargs):
 
 
 def ver_decorator(major, minor):
-    """Decorator for specifying the version of a custom BentoService, BentoML
-    uses semantic versioning for BentoService distribution:
+    """Decorator for specifying the version of a custom BentoService.
 
-    MAJOR is incremented when you make breaking API changes
-    MINOR is incremented when you add new functionality without breaking the
-        existing API or functionality
-    PATCH is incremented when you make backwards-compatible bug fixes
+    Args:
+        major (int): Major version number for Bento Service
+        minor (int): Minor version number for Bento Service
+
+    BentoML uses semantic versioning for BentoService distribution:
+
+    * MAJOR is incremented when you make breaking API changes
+
+    * MINOR is incremented when you add new functionality without breaking the
+      existing API or functionality
+
+    * PATCH is incremented when you make backwards-compatible bug fixes
 
     'Patch' is provided(or auto generated) when calling BentoService#save,
     while 'Major' and 'Minor' can be defined with '@ver' decorator
@@ -216,7 +255,8 @@ def ver_decorator(major, minor):
     >>>
     >>>  svc = MyMLService.pack(model="my ML model object")
     >>>  svc.save('/path_to_archive', version="2019-08.iteration20")
-    >>>  # The final produced BentoArchive verion will be "1.4.2019-08.iteration20"
+    >>>  # The final produced BentoArchive version will be "1.4.2019-08.iteration20"
+
     """
 
     def decorator(bento_service_cls):

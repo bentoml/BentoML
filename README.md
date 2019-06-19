@@ -22,7 +22,7 @@ production-system-friendly format that is ready for deployment.
 
 - [Installation](#installation)
 - [Getting Started](#getting-started)
-- [Documentation (Coming soon!)](#documentation)
+- [Documentation](#documentation)
 - [Examples](#examples)
 - [Releases and Contributing](#releases-and-contributing)
 - [License](#license)

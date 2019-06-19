@@ -72,6 +72,8 @@ dev_requires = [
     "black",
     "setuptools",
     "gitpython>=2.0.2",
+    "sphinx",
+    "sphinx-click"
 ] + tests_require
 
 dev_all = install_requires + dev_requires + optional_requires

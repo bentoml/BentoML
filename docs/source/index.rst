@@ -36,6 +36,7 @@ Content
    :maxdepth: 4
 
    quickstart
-   concept
    api
    cli
+   deployments
+   bento_archive

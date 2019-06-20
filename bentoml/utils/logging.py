@@ -21,6 +21,7 @@ import sys
 import logging.config
 
 from bentoml import config
+from bentoml.utils import Path
 
 conf = config["logging"]  # proxy to logging section in bentoml config file
 
@@ -102,4 +103,5 @@ LOGGING_CONFIG = {
 
 
 def configure_logging():
+    Path(BASE_LOG_FOLDER).mkdir(parents=True, exist_ok=True)
     logging.config.dictConfig(LOGGING_CONFIG)

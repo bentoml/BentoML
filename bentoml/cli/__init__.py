@@ -35,8 +35,6 @@ SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 CLICK_COLOR_SUCCESS = "green"
 CLICK_COLOR_ERROR = "red"
 
-_test = None
-
 
 def _echo(message, color=CLICK_COLOR_SUCCESS):
     click.echo("BentoML: ", nl=False)

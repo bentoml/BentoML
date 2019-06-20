@@ -56,6 +56,14 @@ LOGGING_CONFIG = {
             'class': 'logging.StreamHandler',
             "stream": sys.stdout,
         },
+        "local": {
+            "level": LOG_LEVEL,
+            "formatter": "bentoml",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": os.path.join(BASE_LOG_FOLDER, "active.log"),
+            "maxBytes": 100 * 1000 * 1000,
+            "backupCount": 2,
+        },
         "prediction": {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "prediction",
@@ -74,7 +82,11 @@ LOGGING_CONFIG = {
         },
     },
     "loggers": {
-        "bentoml": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "bentoml": {
+            "handlers": ["console", "local"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
         "bentoml.prediction": {
             "handlers": ["prediction"],
             "level": "INFO",

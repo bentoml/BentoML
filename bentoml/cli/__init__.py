@@ -41,7 +41,7 @@ def _echo(message, color=CLICK_COLOR_SUCCESS):
     click.secho(message, fg=color)
 
 
-def create_archive_cli(installed_archive_path=None):
+def create_bento_service_cli(archive_path=None):
     # pylint: disable=unused-variable
 
     @click.group(cls=DefaultCommandGroup)
@@ -62,10 +62,10 @@ def create_archive_cli(installed_archive_path=None):
     )
     @click.argument("api-name", type=click.STRING)
     @conditional_argument(
-        installed_archive_path is None, "archive-path", type=click.STRING
+        archive_path is None, "archive-path", type=click.STRING
     )
     @click.pass_context
-    def run(ctx, api_name, archive_path=installed_archive_path):
+    def run(ctx, api_name, archive_path=archive_path):
         model_service = load(archive_path)
 
         try:
@@ -91,9 +91,9 @@ def create_archive_cli(installed_archive_path=None):
         short_help="List APIs",
     )
     @conditional_argument(
-        installed_archive_path is None, "archive-path", type=click.STRING
+        archive_path is None, "archive-path", type=click.STRING
     )
-    def info(archive_path=installed_archive_path):
+    def info(archive_path=archive_path):
         """
         List all APIs defined in the BentoService loaded from archive
         """
@@ -115,7 +115,7 @@ def create_archive_cli(installed_archive_path=None):
         short_help="Start local rest server",
     )
     @conditional_argument(
-        installed_archive_path is None, "archive-path", type=click.STRING
+        archive_path is None, "archive-path", type=click.STRING
     )
     @click.option(
         "--port",
@@ -123,7 +123,7 @@ def create_archive_cli(installed_archive_path=None):
         default=BentoAPIServer._DEFAULT_PORT,
         help="The port to listen on for the REST api server, default is 5000.",
     )
-    def serve(port, archive_path=installed_archive_path):
+    def serve(port, archive_path=archive_path):
         model_service = load(archive_path)
         server = BentoAPIServer(model_service, port=port)
         server.start()
@@ -135,7 +135,7 @@ def create_archive_cli(installed_archive_path=None):
         short_help="Start local gunicorn server",
     )
     @conditional_argument(
-        installed_archive_path is None, "archive-path", type=click.STRING
+        archive_path is None, "archive-path", type=click.STRING
     )
     @click.option("-p", "--port", type=click.INT, default=BentoAPIServer._DEFAULT_PORT)
     @click.option(
@@ -146,7 +146,7 @@ def create_archive_cli(installed_archive_path=None):
         help="Number of workers will start for the gunicorn server",
     )
     @click.option("--timeout", type=click.INT, default=60)
-    def serve_gunicorn(port, workers, timeout, archive_path=installed_archive_path):
+    def serve_gunicorn(port, workers, timeout, archive_path=archive_path):
         model_service = load(archive_path)
         server = BentoAPIServer(model_service, port=port)
         gunicorn_app = GunicornApplication(server.app, port, workers, timeout)
@@ -157,7 +157,7 @@ def create_archive_cli(installed_archive_path=None):
 
 
 def create_bentoml_cli():
-    _cli = create_archive_cli()
+    _cli = create_bento_service_cli()
 
     # Commands created here aren't mean to be used from generated service archive. They
     # are used as part of BentoML cli commands only.

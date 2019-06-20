@@ -61,9 +61,7 @@ def create_bento_service_cli(archive_path=None):
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
     @click.argument("api-name", type=click.STRING)
-    @conditional_argument(
-        archive_path is None, "archive-path", type=click.STRING
-    )
+    @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
     @click.pass_context
     def run(ctx, api_name, archive_path=archive_path):
         model_service = load(archive_path)
@@ -90,9 +88,7 @@ def create_bento_service_cli(archive_path=None):
         help="List all APIs defined in the BentoService loaded from archive.",
         short_help="List APIs",
     )
-    @conditional_argument(
-        archive_path is None, "archive-path", type=click.STRING
-    )
+    @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
     def info(archive_path=archive_path):
         """
         List all APIs defined in the BentoService loaded from archive
@@ -114,9 +110,7 @@ def create_bento_service_cli(archive_path=None):
         help="Start REST API server hosting BentoService loaded from archive",
         short_help="Start local rest server",
     )
-    @conditional_argument(
-        archive_path is None, "archive-path", type=click.STRING
-    )
+    @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
     @click.option(
         "--port",
         type=click.INT,
@@ -134,9 +128,7 @@ def create_bento_service_cli(archive_path=None):
         help="Start REST API gunicorn server hosting BentoService loaded from archive",
         short_help="Start local gunicorn server",
     )
-    @conditional_argument(
-        archive_path is None, "archive-path", type=click.STRING
-    )
+    @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
     @click.option("-p", "--port", type=click.INT, default=BentoAPIServer._DEFAULT_PORT)
     @click.option(
         "-w",

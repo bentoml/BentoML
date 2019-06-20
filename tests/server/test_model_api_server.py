@@ -11,6 +11,12 @@ def test_api_function_route(bento_service):
     for rule in rest_server.app.url_map.iter_rules():
         index_list.append(rule.endpoint)
 
+    response = test_client.get("/")
+    assert 200 == response.status_code
+
+    response = test_client.get("/docs.json")
+    assert 200 == response.status_code
+
     assert "predict" in index_list
     data = [{"age": 10}]
 

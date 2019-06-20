@@ -43,7 +43,11 @@ def expand_env_var(env_var):
 def parameterized_config(template):
     """Generates a configuration from the provided template + variables defined in
     current scope
-    :param template: a config content templated with {{variables}}
+
+    Args:
+        :param template: a config content templated with {{variables}}
+    Returns:
+	    string: config content after templated with locals() and globals()
     """
     all_vars = {k: v for d in [globals(), locals()] for k, v in d.items()}
     return template.format(**all_vars)

@@ -116,8 +116,8 @@ def feedback_view_func(bento_service):
     if len(data.keys()) <= 1:
         return Response(response="Missing feedback data", status=400)
 
-    bento_service["service_name"] = bento_service.name
-    bento_service["service_version"] = bento_service.version
+    data["service_name"] = bento_service.name
+    data["service_version"] = bento_service.version
 
     feedback_logger.info(data)
     return Response(response="success", status=200)

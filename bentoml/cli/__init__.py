@@ -202,7 +202,8 @@ def bentoml_cli():
     @click.option(
         "--instance-count",
         type=click.INT,
-        help="Sagemaker deployment ONLY. Number of instances will be used for deployment",
+        help="Sagemaker deployment ONLY. Number of instances will be used for \
+            deployment",
     )
     def deploy(
         archive_path, platform, region, stage, api_name, instance_type, instance_count
@@ -300,7 +301,8 @@ def bentoml_cli():
             ]
         ),
         required=True,
-        help="Target platform that Bento archive will be deployed to as a REST api service",
+        help="Target platform that Bento archive will be deployed to as a REST api \
+            service",
     )
     @click.option(
         "--region",

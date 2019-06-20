@@ -22,7 +22,7 @@ import logging.config
 
 from bentoml import config
 
-conf = config["logging"] # proxy to logging section in bentoml config file
+conf = config["logging"]  # proxy to logging section in bentoml config file
 
 LOG_LEVEL = conf.get("LOGGING_LEVEL").upper()
 LOG_FORMAT = conf.get("LOG_FORMAT")
@@ -39,9 +39,7 @@ LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "bentoml": {
-            "format": LOG_FORMAT
-        },
+        "bentoml": {"format": LOG_FORMAT},
         "prediction": {
             "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
             "fmt": PREDICTION_LOG_JSON_FORMAT,
@@ -70,17 +68,13 @@ LOGGING_CONFIG = {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "feedback",
             "level": "INFO",
-            "filename":  os.path.join(BASE_LOG_FOLDER, FEEDBACK_LOG_FILENAME),
+            "filename": os.path.join(BASE_LOG_FOLDER, FEEDBACK_LOG_FILENAME),
             "maxBytes": 100 * 1000 * 1000,
             "backupCount": 10,
         },
     },
     "loggers": {
-        "bentoml": {
-            "handlers": ["console"],
-            "level": LOG_LEVEL,
-            "propagate": False,
-        },
+        "bentoml": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
         "bentoml.prediction": {
             "handlers": ["prediction"],
             "level": "INFO",
@@ -90,13 +84,11 @@ LOGGING_CONFIG = {
             "handlers": ["feedback"],
             "level": "INFO",
             "propagate": False,
-        }
+        },
     },
-    "root": {
-        "handlers": ["console"],
-        "level": LOG_LEVEL
-    },
+    "root": {"handlers": ["console"], "level": LOG_LEVEL},
 }
+
 
 def configure_logging():
     logging.config.dictConfig(LOGGING_CONFIG)

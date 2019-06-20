@@ -34,6 +34,7 @@ prediction_logger = logging.getLogger("bentoml.prediction")
 feedback_logger = logging.getLogger("bentoml.feedback")
 LOG = logging.getLogger(__name__)
 
+
 def _request_to_json(request):
     """
     Return request data for log prediction
@@ -48,6 +49,7 @@ def _request_to_json(request):
         return {"data": "dont handle"}
 
     return {"data": request.get_data().decode("utf-8")}
+
 
 def has_empty_params(rule):
     """
@@ -132,14 +134,16 @@ def bento_service_api_wrapper(api, service_name, service_version):
             request_id = str(uuid.uuid4())
             response = api.handle_request(request)
             if response.status_code == 200:
-                prediction_logger.info({
-                    "uuid": request_id,
-                    "service_name": service_name,
-                    "service_version": service_version,
-                    "api": api.name,
-                    "request": _request_to_json(request),
-                    "response": response.response
-                })
+                prediction_logger.info(
+                    {
+                        "uuid": request_id,
+                        "service_name": service_name,
+                        "service_version": service_version,
+                        "api": api.name,
+                        "request": _request_to_json(request),
+                        "response": response.response,
+                    }
+                )
 
             response.headers["request_id"] = request_id
             return response
@@ -185,8 +189,10 @@ def setup_routes(app, bento_service):
 
     if conf.getboolean("enable_feedback"):
         app.add_url_rule(
-            "/feedback", "feedback", partial(feedback_view_func, bento_service),
-            methods=["POST", "GET"]
+            "/feedback",
+            "feedback",
+            partial(feedback_view_func, bento_service),
+            methods=["POST", "GET"],
         )
 
     for api in bento_service.get_service_apis():

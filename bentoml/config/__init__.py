@@ -68,7 +68,7 @@ if "BENTML_CONFIG" in os.environ:
     # User local config file for customizing bentoml
     BENTOML_CONFIG_FILE = expand_env_var(os.environ.get("BENTML_CONFIG"))
     logger.info("Using BentoML config file $BENTML_CONFIG: %s", BENTOML_CONFIG_FILE)
-    with open (BENTOML_CONFIG_FILE, "rb") as f:
+    with open(BENTOML_CONFIG_FILE, "rb") as f:
         config.read_string(parameterized_config(f.read().decode("utf-8")))
 else:
     BENTOML_CONFIG_FILE = os.path.join(BENTOML_HOME, "bentoml.cfg")

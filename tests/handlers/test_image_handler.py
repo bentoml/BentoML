@@ -34,7 +34,7 @@ def test_image_handler(capsys, tmpdir):
 
     assert out.strip().endswith("(10, 10, 3)")
 
-    with open(str(img_file), 'rb') as imageFile:
+    with open(str(img_file), "rb") as imageFile:
         content = imageFile.read()
         try:
             imageStr = base64.encodebytes(content)
@@ -43,5 +43,5 @@ def test_image_handler(capsys, tmpdir):
     aws_lambda_event = {"body": imageStr, "headers": {"Content-Type": "images/png"}}
 
     aws_result = api.handle_aws_lambda_event(aws_lambda_event)
-    assert aws_result['statusCode'] == 200
-    assert aws_result['body'] == '[10, 10, 3]'
+    assert aws_result["statusCode"] == 200
+    assert aws_result["body"] == "[10, 10, 3]"

@@ -30,6 +30,10 @@ from bentoml.service import (
 from bentoml.server import metrics
 from bentoml.archive import save, load
 
+from bentoml.utils.logging import configure_logging
+
+configure_logging()
+
 __all__ = [
     "__version__",
     "api",

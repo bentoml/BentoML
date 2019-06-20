@@ -134,7 +134,7 @@ import os
 import sys
 
 from bentoml import archive
-from bentoml.cli import create_bentoml_cli
+from bentoml.cli import create_bento_service_cli
 
 __VERSION__ = "{pypi_package_version}"
 
@@ -142,7 +142,7 @@ __module_path = os.path.abspath(os.path.dirname(__file__))
 
 {service_name} = archive.load_bento_service_class(__module_path)
 
-cli=create_bentoml_cli(__module_path)
+cli=create_bento_service_cli(__module_path)
 
 
 def load():

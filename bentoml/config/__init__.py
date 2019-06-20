@@ -40,6 +40,19 @@ def expand_env_var(env_var):
             env_var = interpolated
 
 
+def parameterized_config(template):
+    """Generates a configuration from the provided template + variables defined in
+    current scope
+
+    Args:
+        :param template: a config content templated with {{variables}}
+    Returns:
+        string: config content after templated with locals() and globals()
+    """
+    all_vars = {k: v for d in [globals(), locals()] for k, v in d.items()}
+    return template.format(**all_vars)
+
+
 BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
 try:
     Path(BENTOML_HOME).mkdir(exist_ok=True)
@@ -53,15 +66,19 @@ DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.c
 with open(DEFAULT_CONFIG_FILE, "rb") as f:
     DEFAULT_CONFIG = f.read().decode("utf-8")
 
+config = BentoMLConfigParser(default_config=parameterized_config(DEFAULT_CONFIG))
+
 if "BENTML_CONFIG" in os.environ:
     # User local config file for customizing bentoml
     BENTOML_CONFIG_FILE = expand_env_var(os.environ.get("BENTML_CONFIG"))
+    logger.info("Using BentoML config file $BENTML_CONFIG: %s", BENTOML_CONFIG_FILE)
+    with open(BENTOML_CONFIG_FILE, "rb") as f:
+        config.read_string(parameterized_config(f.read().decode("utf-8")))
 else:
     BENTOML_CONFIG_FILE = os.path.join(BENTOML_HOME, "bentoml.cfg")
-    if not os.path.isfile(BENTOML_CONFIG_FILE):
-        logger.info("Creating new Bentoml config file: %s", BENTOML_CONFIG_FILE)
-        with open(BENTOML_CONFIG_FILE, "w") as f:
-            f.write(DEFAULT_CONFIG)
-
-config = BentoMLConfigParser(default_config=DEFAULT_CONFIG)
-config.read(BENTOML_CONFIG_FILE)
+    if os.path.isfile(BENTOML_CONFIG_FILE):
+        logger.info("Using local default BentoML config file: %s", BENTOML_CONFIG_FILE)
+        with open(BENTOML_CONFIG_FILE, "rb") as f:
+            config.read_string(parameterized_config(f.read().decode("utf-8")))
+    else:
+        logger.info("No local BentoML config file found, using default configurations")

@@ -18,7 +18,7 @@ from __future__ import print_function
 
 import uuid
 import json
-from time import time
+import logging
 from functools import partial
 from collections import OrderedDict
 
@@ -26,15 +26,31 @@ from flask import Flask, jsonify, Response, request
 from prometheus_client import generate_latest, Summary
 
 from bentoml import config
-from bentoml.server.prediction_logger import get_prediction_logger, log_prediction
-from bentoml.server.feedback_logger import get_feedback_logger, log_feedback
 
 conf = config["apiserver"]
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
-prediction_logger = get_prediction_logger()
-feedback_logger = get_feedback_logger()
+prediction_logger = logging.getLogger("bentoml.prediction")
+feedback_logger = logging.getLogger("bentoml.feedback")
+
+LOG = logging.getLogger(__name__)
+
+
+def _request_to_json(req):
+    """
+    Return request data for log prediction
+    """
+    # TODO: Handle images
+
+    if req.content_type == "application/json":
+        return req.get_json()
+    elif "image" in req.content_type:
+        return {"data": "dont handle"}
+    elif "video" in req.content_type:
+        return {"data": "dont handle"}
+
+    return {"data": req.get_data().decode("utf-8")}
 
 INDEX_HTML = '''
 <!DOCTYPE html>
@@ -134,7 +150,7 @@ def metrics_view_func():
     return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
 
-def feedback_view_func():
+def feedback_view_func(bento_service):
     """
     User send feedback along with the request Id. It will be stored and
     ready for further process.
@@ -149,11 +165,14 @@ def feedback_view_func():
     if len(data.keys()) <= 1:
         return Response(response="Missing feedback data", status=400)
 
-    log_feedback(feedback_logger, data)
+    data["service_name"] = bento_service.name
+    data["service_version"] = bento_service.version
+
+    feedback_logger.info(data)
     return Response(response="success", status=200)
 
 
-def bento_service_api_wrapper(api, service_name, service_version, logger):
+def bento_service_api_wrapper(api, service_name, service_version):
     """
     Create api function for flask route
     """
@@ -162,23 +181,21 @@ def bento_service_api_wrapper(api, service_name, service_version, logger):
 
     def wrapper():
         with request_metric_time.time():
-            request_time = time()
             request_id = str(uuid.uuid4())
             response = api.handle_request(request)
-            response.headers["request_id"] = request_id
             if response.status_code == 200:
-                metadata = {
-                    "service_name": service_name,
-                    "service_version": service_version,
-                    "api_name": api.name,
-                    "request_id": request_id,
-                    "asctime": request_time,
-                }
-                log_prediction(logger, metadata, request, response)
-            else:
-                # TODO: log errors as well.
-                pass
+                prediction_logger.info(
+                    {
+                        "uuid": request_id,
+                        "service_name": service_name,
+                        "service_version": service_version,
+                        "api": api.name,
+                        "request": _request_to_json(request),
+                        "response": response.response,
+                    }
+                )
 
+            response.headers["request_id"] = request_id
             return response
 
     return wrapper
@@ -189,7 +206,7 @@ def setup_bento_service_api_route(app, bento_service, api):
     Setup a route for one BentoServiceAPI object defined in bento_service
     """
     route_function = bento_service_api_wrapper(
-        api, bento_service.name, bento_service.version, prediction_logger
+        api, bento_service.name, bento_service.version
     )
 
     app.add_url_rule(
@@ -223,7 +240,10 @@ def setup_routes(app, bento_service):
 
     if conf.getboolean("enable_feedback"):
         app.add_url_rule(
-            "/feedback", "feedback", feedback_view_func, methods=["POST", "GET"]
+            "/feedback",
+            "feedback",
+            partial(feedback_view_func, bento_service),
+            methods=["POST", "GET"],
         )
 
     for api in bento_service.get_service_apis():

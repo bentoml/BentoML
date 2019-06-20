@@ -3,7 +3,7 @@ import tempfile
 import json
 from click.testing import CliRunner
 
-from bentoml.cli import create_bentoml_cli  # noqa: E402
+from bentoml.cli import create_bento_service_cli  # noqa: E402
 
 
 def generate_test_input_file():
@@ -22,7 +22,7 @@ def test_run_command_with_input_file(bento_archive_path):
     input_path = generate_test_input_file()
     runner = CliRunner()
 
-    cli = create_bentoml_cli()
+    cli = create_bento_service_cli()
     run_cmd = cli.commands["<API_NAME>"]
     result = runner.invoke(
         run_cmd, ["predict", bento_archive_path, "--input", input_path, "-o", "json"]

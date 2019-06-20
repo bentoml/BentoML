@@ -88,7 +88,7 @@ def create_bentoml_cli(installed_archive_path=None):
     # Example Usage: bentoml info /SAVED_ARCHIVE_PATH
     @bentoml_cli.command(
         help="List all APIs defined in the BentoService loaded from archive.",
-        short_help="List APIs"
+        short_help="List APIs",
     )
     @conditional_argument(
         installed_archive_path is None, "archive-path", type=click.STRING
@@ -112,16 +112,16 @@ def create_bentoml_cli(installed_archive_path=None):
     # Example Usage: bentoml serve ./SAVED_ARCHIVE_PATH --port=PORT
     @bentoml_cli.command(
         help="Start REST API server hosting BentoService loaded from archive",
-        short_help="Start local rest server"
+        short_help="Start local rest server",
     )
     @conditional_argument(
-        installed_archive_path is None, "archive-path", type=click.STRING,
+        installed_archive_path is None, "archive-path", type=click.STRING
     )
     @click.option(
         "--port",
         type=click.INT,
         default=BentoAPIServer._DEFAULT_PORT,
-        help="The port to listen on for the REST api server, default is 5000."
+        help="The port to listen on for the REST api server, default is 5000.",
     )
     def serve(port, archive_path=installed_archive_path):
         model_service = load(archive_path)
@@ -132,7 +132,7 @@ def create_bentoml_cli(installed_archive_path=None):
     # bentoml serve-gunicorn ./SAVED_ARCHIVE_PATH --port=PORT --workers=WORKERS
     @bentoml_cli.command(
         help="Start REST API gunicorn server hosting BentoService loaded from archive",
-        short_help="Start local gunicorn server"
+        short_help="Start local gunicorn server",
     )
     @conditional_argument(
         installed_archive_path is None, "archive-path", type=click.STRING
@@ -167,7 +167,7 @@ def bentoml_cli():
     # Example usage: bentoml deploy /ARCHIVE_PATH --platform=aws-lambda
     @_cli.command(
         help="Deploy BentoML archive as REST endpoint to cloud services",
-        short_help="Deploy Bento archive"
+        short_help="Deploy Bento archive",
     )
     @click.argument("archive-path", type=click.STRING)
     @click.option(
@@ -183,28 +183,26 @@ def bentoml_cli():
             ]
         ),
         required=True,
-        help="Target platform that Bento archive is going to deployed to"
+        help="Target platform that Bento archive is going to deployed to",
     )
     @click.option(
         "--region",
         type=click.STRING,
-        help="Target region inside the cloud provider that will be deployed to"
+        help="Target region inside the cloud provider that will be deployed to",
     )
     @click.option("--stage", type=click.STRING)
     @click.option(
-        "--api-name",
-        type=click.STRING,
-        help="The name of API will be deployed"
+        "--api-name", type=click.STRING, help="The name of API will be deployed"
     )
     @click.option(
         "--instance-type",
         type=click.STRING,
-        help="SageMaker deployment ONLY. The instance type will be used for deployment"
+        help="SageMaker deployment ONLY. The instance type will be used for deployment",
     )
     @click.option(
         "--instance-count",
         type=click.INT,
-        help="Sagemaker deployment ONLY. Number of instances will be used for deployment"
+        help="Sagemaker deployment ONLY. Number of instances will be used for deployment",
     )
     def deploy(
         archive_path, platform, region, stage, api_name, instance_type, instance_count
@@ -233,7 +231,7 @@ def bentoml_cli():
     # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
     @_cli.command(
         help="Delete active BentoML deployment from cloud services",
-        short_help="Delete active BentoML deployment"
+        short_help="Delete active BentoML deployment",
     )
     @click.argument("archive-path", type=click.STRING)
     @click.option(
@@ -249,23 +247,20 @@ def bentoml_cli():
             ]
         ),
         required=True,
-        help="The platform bento archive is deployed to"
+        help="The platform bento archive is deployed to",
     )
     @click.option(
         "--region",
         type=click.STRING,
         required=True,
-        help="The region deployment belongs to"
+        help="The region deployment belongs to",
     )
     @click.option(
         "--api-name",
         type=click.STRING,
-        help="Name of the API function that is deployed"
+        help="Name of the API function that is deployed",
     )
-    @click.option(
-        "--stage",
-        type=click.STRING
-    )
+    @click.option("--stage", type=click.STRING)
     def delete_deployment(archive_path, platform, region, stage, api_name):
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(archive_path, platform, region, stage)
@@ -289,7 +284,7 @@ def bentoml_cli():
     # Example usage: bentoml check-deployment-status ARCHIVE_PATH --platform=aws-lambda
     @_cli.command(
         help="Check deployment status of BentoML archive",
-        short_help="check deployment status"
+        short_help="check deployment status",
     )
     @click.argument("archive-path", type=click.STRING)
     @click.option(
@@ -301,23 +296,23 @@ def bentoml_cli():
                 "gcp-function",
                 "aws-sagemaker",
                 "azure-ml",
-                "algorithmia"
+                "algorithmia",
             ]
         ),
         required=True,
-        help="Target platform that Bento archive will be deployed to as a REST api service"
+        help="Target platform that Bento archive will be deployed to as a REST api service",
     )
     @click.option(
         "--region",
         type=click.STRING,
         required=True,
-        help="Deployment's region name inside cloud provider."
+        help="Deployment's region name inside cloud provider.",
     )
     @click.option("--stage", type=click.STRING)
     @click.option(
         "--api-name",
         type=click.STRING,
-        help="The name of API that is deployed as a service."
+        help="The name of API that is deployed as a service.",
     )
     def check_deployment_status(archive_path, platform, region, stage, api_name):
         if platform in SERVERLESS_PLATFORMS:

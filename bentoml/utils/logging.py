@@ -98,7 +98,6 @@ LOGGING_CONFIG = {
             "propagate": False,
         },
     },
-    "root": {"handlers": ["console"], "level": LOG_LEVEL},
 }
 
 

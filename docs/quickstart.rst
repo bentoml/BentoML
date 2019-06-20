@@ -37,7 +37,7 @@ We will go through each cell inside the notebook with explanation follows
 below.
 
 Quick start walk through
------------------------
+------------------------
 
 Add BentoML to the notebook and training classification model
 *************************************************************
@@ -241,7 +241,8 @@ The easiest to use Bento service archive in your python application is using
 
 
 `pip install` a BentoML service archive
-+++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++
+
 BentoML support distributing Bento service as PyPi package, with the generated
 `setup.py` file. Bento service archive can be installed with pip:
 

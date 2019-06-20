@@ -20,6 +20,7 @@ import uuid
 import json
 from time import time
 from functools import partial
+from collections import OrderedDict
 
 from flask import Flask, jsonify, Response, request
 from prometheus_client import generate_latest, Summary
@@ -35,6 +36,21 @@ CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 prediction_logger = get_prediction_logger()
 feedback_logger = get_feedback_logger()
 
+INDEX_HTML = '''
+<!DOCTYPE html>
+<head><link rel="stylesheet" type="text/css"
+            href="//unpkg.com/swagger-ui-dist@3/swagger-ui.css"></head>
+<body>
+<div id="swagger-ui-container"></div>
+<script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+<script>
+    SwaggerUIBundle({{
+      url: '{url}',
+      dom_id: '#swagger-ui-container'
+    }})
+</script>
+</body>
+'''
 
 def has_empty_params(rule):
     """
@@ -47,30 +63,63 @@ def has_empty_params(rule):
 
 def index_view_func(bento_service):
     """
-    The index route for bento model server, it display all avaliable routes
+    The index route for bento model server
     """
-    endpoints = {
-        "/healthz": {
-            "description": "Health check endpoint. Expecting an empty response with"
-            "status code 200 when the service is in health state"
-        }
-    }
+    return Response(response=INDEX_HTML.format(url='/docs.json'),
+                    status=200, mimetype="text/html")
 
+
+def docs_view_func(bento_service):
+    """
+    The docs for all endpoints in Open API format.
+    """
+    docs = OrderedDict(
+        openapi="3.0.0",
+        info=OrderedDict(version="1.0.0", title="Bento generated docs."),
+    )
+
+    paths = OrderedDict()
+    default_response = {"200": {"description": "success"}}
+
+    paths["/healthz"] = OrderedDict(
+        get=OrderedDict(
+            description="Health check endpoint. Expecting an empty response with status"
+                        " code 200 when the service is in health state",
+            responses=default_response,
+        )
+    )
     if conf.getboolean("enable_metrics"):
-        endpoints["/metrics"] = {"description": "Prometheus metrics endpoint"}
-
+        paths["/metrics"] = OrderedDict(
+            get=OrderedDict(
+                description="Prometheus metrics endpoint", responses=default_response
+            )
+        )
     if conf.getboolean("enable_feedback"):
-        endpoints["/feedback"] = {
-            "description": "Predictions feedback endpoint. Expecting feedback request "
-            "in JSON format and must contain a `request_id` field, which can be "
-            "obtained from any BentoService API response header"
-        }
+        paths["/feedback"] = OrderedDict(
+            get=OrderedDict(
+                description="Predictions feedback endpoint. Expecting feedback request "
+                "in JSON format and must contain a `request_id` field, which can be "
+                "obtained from any BentoService API response header",
+                responses=default_response,
+            )
+        )
 
     for api in bento_service.get_service_apis():
         path = "/{}".format(api.name)
-        endpoints[path] = {"description": api.doc}
+        paths[path] = OrderedDict(
+            post=OrderedDict(
+                description=api.doc,
+                requestBody=OrderedDict(
+                    required=True,
+                    content={"application/json": {"schema": {"type": "object"}}},
+                ),
+                responses=default_response,
+            )
+        )
 
-    return jsonify(endpoints)
+    docs["paths"] = paths
+
+    return jsonify(docs)
 
 
 def healthz_view_func():
@@ -166,6 +215,7 @@ def setup_routes(app, bento_service):
     """
 
     app.add_url_rule("/", "index", partial(index_view_func, bento_service))
+    app.add_url_rule("/docs.json", "docs", partial(docs_view_func, bento_service))
     app.add_url_rule("/healthz", "healthz", healthz_view_func)
 
     if conf.getboolean("enable_metrics"):

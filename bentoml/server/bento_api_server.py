@@ -36,20 +36,20 @@ feedback_logger = logging.getLogger("bentoml.feedback")
 LOG = logging.getLogger(__name__)
 
 
-def _request_to_json(request):
+def _request_to_json(req):
     """
     Return request data for log prediction
     """
     # TODO: Handle images
 
-    if request.content_type == "application/json":
-        return request.get_json()
-    elif "image" in request.content_type:
+    if req.content_type == "application/json":
+        return req.get_json()
+    elif "image" in req.content_type:
         return {"data": "dont handle"}
-    elif "video" in request.content_type:
+    elif "video" in req.content_type:
         return {"data": "dont handle"}
 
-    return {"data": request.get_data().decode("utf-8")}
+    return {"data": req.get_data().decode("utf-8")}
 
 
 def has_empty_params(rule):

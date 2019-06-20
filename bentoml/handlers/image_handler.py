@@ -21,7 +21,6 @@ import argparse
 import base64
 from io import BytesIO
 
-import numpy as np
 from werkzeug.utils import secure_filename
 from flask import Response
 
@@ -149,7 +148,10 @@ class ImageHandler(BentoHandler):
             try:
                 image = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
             except AttributeError:
-                image = imread(base64.decodestring(event["body"]), pilmode=self.pilmode)
+                image = imread(
+                    base64.decodestring(event["body"]),  # pylint: disable=W1505
+                    pilmode=self.pilmode,
+                )
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

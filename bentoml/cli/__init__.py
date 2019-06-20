@@ -41,7 +41,7 @@ def _echo(message, color=CLICK_COLOR_SUCCESS):
     click.secho(message, fg=color)
 
 
-def create_bentoml_cli(installed_archive_path=None):
+def create_archive_cli(installed_archive_path=None):
     # pylint: disable=unused-variable
 
     @click.group(cls=DefaultCommandGroup)
@@ -156,8 +156,8 @@ def create_bentoml_cli(installed_archive_path=None):
     return bentoml_cli
 
 
-def bentoml_cli():
-    _cli = create_bentoml_cli()
+def create_bentoml_cli():
+    _cli = create_archive_cli()
 
     # Commands created here aren't mean to be used from generated service archive. They
     # are used as part of BentoML cli commands only.
@@ -334,6 +334,7 @@ def bentoml_cli():
     return _cli
 
 
-cli = bentoml_cli()
+cli = create_bentoml_cli()
+
 if __name__ == "__main__":
     cli()

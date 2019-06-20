@@ -3,6 +3,6 @@ CLI
 
 Coming soon
 
-.. click:: bentoml.cli:bentoml
+.. click:: bentoml.cli:cli
   :prog: bentoml
   :show-nested:

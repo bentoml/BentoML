@@ -73,7 +73,9 @@ dev_requires = [
     "setuptools",
     "gitpython>=2.0.2",
     "sphinx",
-    "sphinx-click"
+    "sphinx-click",
+    "sphinx_rtd_theme",
+    "sphinxcontrib-fulltoc",
 ] + tests_require
 
 dev_all = install_requires + dev_requires + optional_requires

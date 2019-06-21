@@ -8,6 +8,14 @@ BentoService
 ++++++++++++
 .. autoclass:: bentoml.service.BentoService
 
+  .. automethod:: bentoml.service.BentoService.name
+
+  .. automethod:: bentoml.service.BentoService.version
+
+  .. automethod:: bentoml.service.BentoService.get_service_apis
+
+
+.. autoclass:: bentoml.service.BentoServiceAPI
 
 api
 +++
@@ -28,6 +36,8 @@ ver
 save
 ++++
 .. autofunction:: bentoml.archive.archiver.save
+
+.. _api-load-ref:
 
 load
 ++++

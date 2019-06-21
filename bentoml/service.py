@@ -45,9 +45,16 @@ def _set_func_attr(func, attribute_name, value):
 
 # TODO(chaoyu): add property info, default to api func's doc string
 class BentoServiceAPI(object):
-    """
-    BentoServiceAPI defines abstraction for an API call that can be executed
+    """BentoServiceAPI defines abstraction for an API call that can be executed
     with BentoAPIServer and BentoCLI
+
+    Args:
+        service (BentoService): ref to service containing this API
+        name (string): API name
+        handler (bentoml.handlers): A BentoHandler that transforms HTTP Request and/or
+            CLI options into parameters for API func
+        func (function): API func contains the actual API callback, this is
+            typically the 'predict' method on a model
     """
 
     def __init__(self, service, name, doc, handler, func):
@@ -106,14 +113,14 @@ class BentoServiceBase(object):
     @abstractmethod
     def name(self):
         """
-        :return bento service name
+        return bento service name
         """
 
     @property
     @abstractmethod
     def version(self):
         """
-        :return bento service version str
+        return bento service version str
         """
 
     def _config_service_apis(self):
@@ -135,6 +142,11 @@ class BentoServiceBase(object):
                 )
 
     def get_service_apis(self):
+        """Return a list of user defined API functions
+
+        Returns:
+            [BentoServiceAPI]: List of user defined API functions
+        """
         return self._service_apis
 
 

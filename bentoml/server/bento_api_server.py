@@ -36,6 +36,21 @@ feedback_logger = logging.getLogger("bentoml.feedback")
 
 LOG = logging.getLogger(__name__)
 
+INDEX_HTML = '''
+<!DOCTYPE html>
+<head><link rel="stylesheet" type="text/css"
+            href="//unpkg.com/swagger-ui-dist@3/swagger-ui.css"></head>
+<body>
+<div id="swagger-ui-container"></div>
+<script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+<script>
+    SwaggerUIBundle({{
+      url: '{url}',
+      dom_id: '#swagger-ui-container'
+    }})
+</script>
+</body>
+'''
 
 def _request_to_json(req):
     """
@@ -52,21 +67,6 @@ def _request_to_json(req):
 
     return {"data": req.get_data().decode("utf-8")}
 
-INDEX_HTML = '''
-<!DOCTYPE html>
-<head><link rel="stylesheet" type="text/css"
-            href="//unpkg.com/swagger-ui-dist@3/swagger-ui.css"></head>
-<body>
-<div id="swagger-ui-container"></div>
-<script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
-<script>
-    SwaggerUIBundle({{
-      url: '{url}',
-      dom_id: '#swagger-ui-container'
-    }})
-</script>
-</body>
-'''
 
 def has_empty_params(rule):
     """
@@ -119,6 +119,7 @@ def docs_view_func(bento_service):
                 responses=default_response,
             )
         )
+        paths["/feedback"]["post"] = paths["/feedback"]["get"]
 
     for api in bento_service.get_service_apis():
         path = "/{}".format(api.name)

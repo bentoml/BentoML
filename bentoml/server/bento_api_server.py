@@ -52,6 +52,7 @@ INDEX_HTML = '''
 </body>
 '''
 
+
 def _request_to_json(req):
     """
     Return request data for log prediction
@@ -81,8 +82,9 @@ def index_view_func(bento_service):
     """
     The index route for bento model server
     """
-    return Response(response=INDEX_HTML.format(url='/docs.json'),
-                    status=200, mimetype="text/html")
+    return Response(
+        response=INDEX_HTML.format(url='/docs.json'), status=200, mimetype="text/html"
+    )
 
 
 def docs_view_func(bento_service):
@@ -103,7 +105,7 @@ def docs_view_func(bento_service):
         get=OrderedDict(
             tags=["infra"],
             description="Health check endpoint. Expecting an empty response with status"
-                        " code 200 when the service is in health state",
+            " code 200 when the service is in health state",
             responses=default_response,
         )
     )

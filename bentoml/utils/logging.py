@@ -27,6 +27,8 @@ conf = config["logging"]  # proxy to logging section in bentoml config file
 
 LOG_LEVEL = conf.get("LOGGING_LEVEL").upper()
 LOG_FORMAT = conf.get("LOG_FORMAT")
+DEV_LOG_FORMAT = conf.get("DEV_LOG_FORMAT")
+
 BASE_LOG_FOLDER = os.path.expanduser(conf.get("BASE_LOG_FOLDER"))
 
 PREDICTION_LOG_FILENAME = conf.get("prediction_log_filename")
@@ -40,7 +42,8 @@ LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "bentoml": {"format": LOG_FORMAT},
+        "console": {"format": LOG_FORMAT},
+        "dev": {"format": DEV_LOG_FORMAT},
         "prediction": {
             "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
             "fmt": PREDICTION_LOG_JSON_FORMAT,
@@ -53,13 +56,13 @@ LOGGING_CONFIG = {
     "handlers": {
         "console": {
             "level": LOG_LEVEL,
-            "formatter": "bentoml",
+            "formatter": "console",
             'class': 'logging.StreamHandler',
             "stream": sys.stdout,
         },
         "local": {
             "level": LOG_LEVEL,
-            "formatter": "bentoml",
+            "formatter": "dev",
             "class": "logging.handlers.RotatingFileHandler",
             "filename": os.path.join(BASE_LOG_FOLDER, "active.log"),
             "maxBytes": 100 * 1000 * 1000,

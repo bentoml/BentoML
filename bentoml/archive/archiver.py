@@ -19,6 +19,7 @@ from __future__ import print_function
 import re
 import os
 import uuid
+import logging
 from datetime import datetime
 
 from bentoml.utils import Path
@@ -37,6 +38,8 @@ from bentoml.archive.config import BentoArchiveConfig
 DEFAULT_BENTO_ARCHIVE_DESCRIPTION = """\
 # BentoML(bentoml.ai) generated model archive
 """
+
+LOG = logging.getLogger(__name__)
 
 
 def _validate_version_str(version_str):
@@ -66,7 +69,8 @@ def _generate_new_version_str():
 
 
 def save(bento_service, dst, version=None):
-    """Save given BentoService along with all artifacts to target path
+    """Save given BentoService along with all its artifacts, source code and
+    dependencies to target path
 
     Args:
         bento_service (bentoml.service.BentoService): a Bento Service instance
@@ -112,6 +116,9 @@ def save(bento_service, dst, version=None):
     else:
         _save(bento_service, dst, version)
 
+    LOG.info(
+        "BentoService %s:%s saved to %s", bento_service.name, version, full_saved_path
+    )
     return full_saved_path
 
 

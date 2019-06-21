@@ -91,7 +91,9 @@ def docs_view_func(bento_service):
     """
     docs = OrderedDict(
         openapi="3.0.0",
-        info=OrderedDict(version="1.0.0", title="Bento generated docs."),
+        info=OrderedDict(version=bento_service.version, title=bento_service.name,
+                         description="Bento generated docs."),
+        tags=[{"name": "infra"}, {"name": "app"}]
     )
 
     paths = OrderedDict()
@@ -99,6 +101,7 @@ def docs_view_func(bento_service):
 
     paths["/healthz"] = OrderedDict(
         get=OrderedDict(
+            tags=["infra"],
             description="Health check endpoint. Expecting an empty response with status"
                         " code 200 when the service is in health state",
             responses=default_response,
@@ -107,12 +110,14 @@ def docs_view_func(bento_service):
     if conf.getboolean("enable_metrics"):
         paths["/metrics"] = OrderedDict(
             get=OrderedDict(
+                tags=["infra"],
                 description="Prometheus metrics endpoint", responses=default_response
             )
         )
     if conf.getboolean("enable_feedback"):
         paths["/feedback"] = OrderedDict(
             get=OrderedDict(
+                tags=["infra"],
                 description="Predictions feedback endpoint. Expecting feedback request "
                 "in JSON format and must contain a `request_id` field, which can be "
                 "obtained from any BentoService API response header",
@@ -125,6 +130,7 @@ def docs_view_func(bento_service):
         path = "/{}".format(api.name)
         paths[path] = OrderedDict(
             post=OrderedDict(
+                tags=["app"],
                 description=api.doc,
                 requestBody=OrderedDict(
                     required=True,

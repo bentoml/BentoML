@@ -42,12 +42,8 @@ LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "console": {
-            "format": LOG_FORMAT
-        },
-        "dev": {
-            "format": DEV_LOG_FORMAT
-        },
+        "console": {"format": LOG_FORMAT},
+        "dev": {"format": DEV_LOG_FORMAT},
         "prediction": {
             "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
             "fmt": PREDICTION_LOG_JSON_FORMAT,

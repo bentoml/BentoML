@@ -52,6 +52,7 @@ INDEX_HTML = '''
 </body>
 '''
 
+
 def _request_to_json(req):
     """
     Return request data for log prediction

@@ -93,9 +93,15 @@ def docs_view_func(bento_service):
     """
     docs = OrderedDict(
         openapi="3.0.0",
-        info=OrderedDict(version=bento_service.version, title=bento_service.name,
-                         description="Bento generated docs."),
-        tags=[{"name": "infra"}, {"name": "app"}]
+        info=OrderedDict(
+            version=bento_service.version,
+            title=bento_service.name,
+            description="To get a client SDK, copy all content from <a "
+            "href=\"/docs.json\">docs</a> and paste into "
+            "<a href=\"https://editor.swagger.io\">editor.swagger.io</a> then click "
+            "the tab <strong>Generate Client</strong> and choose the language.",
+        ),
+        tags=[{"name": "infra"}, {"name": "app"}],
     )
 
     paths = OrderedDict()
@@ -113,7 +119,8 @@ def docs_view_func(bento_service):
         paths["/metrics"] = OrderedDict(
             get=OrderedDict(
                 tags=["infra"],
-                description="Prometheus metrics endpoint", responses=default_response
+                description="Prometheus metrics endpoint",
+                responses=default_response,
             )
         )
     if conf.getboolean("enable_feedback"):

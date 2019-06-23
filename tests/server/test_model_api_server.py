@@ -14,6 +14,9 @@ def test_api_function_route(bento_service):
     response = test_client.get("/")
     assert 200 == response.status_code
 
+    response = test_client.get("/healthz")
+    assert 200 == response.status_code
+
     response = test_client.get("/docs.json")
     assert 200 == response.status_code
 

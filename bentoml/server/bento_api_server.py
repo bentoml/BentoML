@@ -142,8 +142,7 @@ def docs_view_func(bento_service):
                 tags=["app"],
                 description=api.doc,
                 requestBody=OrderedDict(
-                    required=True,
-                    content={"application/json": {"schema": {"type": "object"}}},
+                    required=True, content=api.handler.request_schema
                 ),
                 responses=default_response,
             )

@@ -8,6 +8,20 @@ from bentoml.handlers.dataframe_handler import (
 )
 
 
+def test_dataframe_request_schema():
+    handler = DataframeHandler(
+        input_dtypes={"col1": "int", "col2": "float", "col3": "string"}
+    )
+
+    schema = handler.request_schema["application/json"]["schema"]
+    assert "object" == schema["type"]
+    assert 3 == len(schema["properties"])
+    assert "array" == schema["properties"]["col1"]["type"]
+    assert "integer" == schema["properties"]["col1"]["items"]["type"]
+    assert "number" == schema["properties"]["col2"]["items"]["type"]
+    assert "string" == schema["properties"]["col3"]["items"]["type"]
+
+
 def test_dataframe_handle_cli(capsys, tmpdir):
     def test_func(df):
         return df["name"][0]
@@ -54,15 +68,17 @@ def test_check_dataframe_column_contains():
     )
 
     # this should pass
-    check_dataframe_column_contains(["a", "b", "c"], df)
-    check_dataframe_column_contains(["a"], df)
-    check_dataframe_column_contains(["a", "c"], df)
+    check_dataframe_column_contains({"a": "int", "b": "int", "c": "int"}, df)
+    check_dataframe_column_contains({"a": "int"}, df)
+    check_dataframe_column_contains({"a": "int", "c": "int"}, df)
 
     # this should raise exception
     with pytest.raises(ValueError) as e:
-        check_dataframe_column_contains(["required_column_x"], df)
+        check_dataframe_column_contains({"required_column_x": "int"}, df)
     assert str(e.value).startswith("Missing columns: required_column_x")
 
     with pytest.raises(ValueError) as e:
-        check_dataframe_column_contains(["a", "b", "d", "e"], df)
+        check_dataframe_column_contains(
+            {"a": "int", "b": "int", "d": "int", "e": "int"}, df
+        )
     assert str(e.value).startswith("Missing columns:")

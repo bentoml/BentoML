@@ -51,20 +51,52 @@ class DataframeHandler(BentoHandler):
             records.
         typ (string): Type of object to recover for read json with pandas. Default is
             frame
-        input_columns ([string]): A list of column names that input data need to have.
+        input_dtypes ({string:string}): A dict of column name and data type.
 
     Raises:
-        ValueError: Incoming data is missing required columns in input_columns
+        ValueError: Incoming data is missing required columns in input_dtypes
         ValueError: Incoming data format is not handled. Only json and csv
     """
 
     def __init__(
-        self, orient="records", output_orient="records", typ="frame", input_columns=None
+        self, orient="records", output_orient="records", typ="frame", input_dtypes=None
     ):
         self.orient = orient
         self.output_orient = output_orient or orient
         self.typ = typ
-        self.input_columns = input_columns
+        self.input_dtypes = input_dtypes
+
+    def _get_type(self, item):
+        if item.startswith('int'):
+            return 'integer'
+        if item.startswith('float') or item.startswith('double'):
+            return 'number'
+        if item.startswith('str') or item.startswith('date'):
+            return 'string'
+        if item.startswith('bool'):
+            return 'boolean'
+        return 'object'
+
+    @property
+    def request_schema(self):
+        default = {"application/json": {"schema": {"type": "object"}}}
+        if self.input_dtypes is None:
+            return default
+
+        if isinstance(self.input_dtypes, dict):
+            return {
+                "application/json": {  # For now, only declare JSON on docs.
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            k: {"type": "array", "items": {"type": self._get_type(v)}}
+                            for k, v in self.input_dtypes.items()
+                        },
+                    }
+                }
+            }
+
+        return default
 
     def handle_request(self, request, func):
         orient = request.headers.get("orient", self.orient)
@@ -85,8 +117,8 @@ class DataframeHandler(BentoHandler):
                 400,
             )
 
-        if self.typ == "frame" and self.input_columns is not None:
-            check_dataframe_column_contains(self.input_columns, df)
+        if self.typ == "frame" and self.input_dtypes is not None:
+            check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
         result = get_output_str(
@@ -128,8 +160,8 @@ class DataframeHandler(BentoHandler):
                     "string as input: {}".format(e)
                 )
 
-        if self.typ == "frame" and self.input_columns is not None:
-            check_dataframe_column_contains(self.input_columns, df)
+        if self.typ == "frame" and self.input_dtypes is not None:
+            check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
         result = get_output_str(result, parsed_args.output, output_orient)
@@ -150,8 +182,8 @@ class DataframeHandler(BentoHandler):
                 "text/csv are supported",
             }
 
-        if self.typ == "frame" and self.input_columns is not None:
-            check_dataframe_column_contains(self.input_columns, df)
+        if self.typ == "frame" and self.input_dtypes is not None:
+            check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
         result = get_output_str(

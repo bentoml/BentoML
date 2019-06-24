@@ -1,12 +1,15 @@
-# BentoML
-> From a model in jupyter notebook to production API service in 5 minutes.
-
-[![project status](https://www.repostatus.org/badges/latest/active.svg)](http://bentoml.ai/)
-[![build status](https://travis-ci.org/bentoml/BentoML.svg?branch=master)](https://travis-ci.org/bentoml/BentoML)
-[![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://bentoml.readthedocs.io/en/latest/?badge=latest)
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)](https://travis-ci.org/bentoml/BentoML)
 [![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
+[![build status](https://travis-ci.org/bentoml/BentoML.svg?branch=master)](https://travis-ci.org/bentoml/BentoML)
+[![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://bentoml.readthedocs.io/en/latest/?badge=latest)
+[![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
+
+> From a model in jupyter notebook to production API service in 5 minutes
+
+# BentoML
+
+[Installation](https://github.com/bentoml/BentoML#installation) | [Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Examples](https://github.com/bentoml/BentoML#examples) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [License](https://github.com/bentoml/BentoML#license)
 
 
 BentoML is a python framework for building, shipping and running machine learning
@@ -14,18 +17,41 @@ services. It provides high-level APIs for defining an ML service and packaging
 its artifacts, source code, dependencies, and configurations into a
 production-system-friendly format that is ready for deployment.
 
+Use BentoML if you need to:
 
-[![Google Colab Badge](https://badgen.net/badge/Launch%20Quick%20Start%20Guide/on%20Google%20Colab/blue?icon=terminal)](http://bit.ly/2ID50XP)
+* Turn your ML model into REST API server, Serverless endpoint, PyPI package, or CLI tool
 
+* Manage the workflow of creating and deploying a ML service
 
 ---
 
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-- [Documentation](#documentation)
-- [Examples](#examples)
-- [Releases and Contributing](#releases-and-contributing)
-- [License](#license)
+
+## Installation
+
+![pypi status](https://img.shields.io/pypi/v/bentoml.svg)
+
+```python
+pip install bentoml
+```
+
+
+## Getting Started
+
+Defining a machine learning service with BentoML is as simple as a few lines of code:
+
+```python
+@artifacts([PickleArtifact('model')])
+@env(conda_pip_dependencies=["scikit-learn"])
+class IrisClassifier(BentoService):
+
+    @api(DataframeHandler)
+    def predict(self, df):
+        return self.artifacts.model.predict(df)
+```
+
+
+[![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2ID50XP) - Try out
+this 5-mins getting started guide, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
 
 
 ## Feature Highlights
@@ -57,43 +83,9 @@ production-system-friendly format that is ready for deployment.
   [tensorflow-serving](https://github.com/tensorflow/serving).
 
 
-## Installation
-
-![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)
-![pypi status](https://img.shields.io/pypi/v/bentoml.svg)
-
-```python
-pip install bentoml
-```
-
-Verify installation:
-
-```bash
-bentoml --version
-```
-
-
-## Getting Started
-
-Defining a machine learning service with BentoML is as simple as a few lines of code:
-
-```python
-@artifacts([PickleArtifact('model')])
-@env(conda_pip_dependencies=["scikit-learn"])
-class IrisClassifier(BentoService):
-
-    @api(DataframeHandler)
-    def predict(self, df):
-        return self.artifacts.model.predict(df)
-```
-
-Read our 5-mins [Quick Start Guide](http://bit.ly/2ID50XP),
-showcasing how to productionize a scikit-learn model and deploy it to AWS Lambda.
-
-
 ## Documentation
 
-Official BentoML documentation can be found at [bentoml.readthedocs.io](http://bentoml.readthedocs.io)
+Full documentation and API references can be found at [bentoml.readthedocs.io](http://bentoml.readthedocs.io)
 
 
 ## Examples
@@ -122,28 +114,32 @@ We collect example notebook page views to help us improve this project.
 To opt-out of tracking, delete the `[Impression]` line in the first markdown cell of any example notebook: ~~!\[Impression\]\(http...~~
 
 
-## Releases and Contributing
+## Contributing
 
-BentoML is under active development and is evolving rapidly. **Currently it is a
-Beta release, we may change APIs in future releases**.
+Have questions or feedback? Post a [new github issue](https://github.com/bentoml/BentoML/issues/new/choose)
+or join our Slack chat room: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
+
+Want to help build BentoML? Check out our
+[contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md) and the
+[development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
 
 To make sure you have a pleasant experience, please read the [code of conduct](https://github.com/bentoml/BentoML/blob/master/CODE_OF_CONDUCT.md).
 It outlines core values and beliefs and will make working together a happier experience.
 
-Have questions or feedback? Post a [new github issue](https://github.com/bentoml/BentoML/issues/new/choose)
-or join our gitter chat room: [![join the chat at https://gitter.im/bentoml/BentoML](https://badges.gitter.im/bentoml/BentoML.svg)](https://gitter.im/bentoml/BentoML?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-Want to help build BentoML? Check out our
-[contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md) and the
-[development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md)
-for setting up local development and testing environments for BentoML.
-
 Happy hacking!
+
+## Releases
+
+BentoML is under active development and is evolving rapidly. **Currently it is a
+Beta release, we may change APIs in future releases**.
+
+Read more about the latest features and changes in BentoML from the [releases page](https://github.com/bentoml/BentoML/releases).
+and follow the [BentoML Community Calendar](http://bit.ly/2XvUiM2).
 
 
 ## License
 
-BentoML is under Apache License 2.0, as found in the LICENSE file.
+[Apache License 2.0](https://github.com/bentoml/BentoML/blob/master/LICENSE)
 
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)

@@ -18,18 +18,11 @@ production-system-friendly format that is ready for deployment.
 
 Use BentoML if you need to:
 
-* Easily turn my ML model into API server that's ready for production use
+* Turn my ML model into REST API endpoint, a serverless deployment, a Spark job, or a CLI tool
 
-* Easily manage the workflow of creating and deploying a ML service
+* Integrate, test and develop with the ML service created
 
-* Easily integrate, test and develop with the ML service created
-
-
-BentoML is developed with a focus on enabling data scientists to fully own the
-"last mile" of their machine learning project - exposing the model they created,
-via a machine learning services. That can be either an API endpoint, a serverless
-deployment, a Spark job, or a CLI tool.
-
+* Manage the workflow of creating and deploying a ML service
 
 ---
 

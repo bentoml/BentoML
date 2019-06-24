@@ -1,8 +1,9 @@
+[![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)](https://travis-ci.org/bentoml/BentoML)
+[![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
 [![build status](https://travis-ci.org/bentoml/BentoML.svg?branch=master)](https://travis-ci.org/bentoml/BentoML)
 [![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://bentoml.readthedocs.io/en/latest/?badge=latest)
-[![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
 
 
 # BentoML
@@ -20,19 +21,12 @@ production-system-friendly format that is ready for deployment.
 
 ## Installation
 
-![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)
 ![pypi status](https://img.shields.io/pypi/v/bentoml.svg)
+![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)
 
 ```python
 pip install bentoml
 ```
-
-Verify installation:
-
-```bash
-bentoml --version
-```
-
 
 ## Getting Started
 
@@ -50,8 +44,9 @@ class IrisClassifier(BentoService):
         return self.artifacts.model.predict(df)
 ```
 
-Read our 5-mins [![Google Colab Badge](https://badgen.net/badge/Quick%20Start%20Guide/on%20Google%20Colab/blue?icon=terminal)](http://bit.ly/2ID50XP),
-showcasing how to productionize a scikit-learn model and deploy it to AWS Lambda.
+Read our 5-mins getting started guide on how to productionize a scikit-learn model
+and deploy it to AWS Lambda with BentoML:
+[![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2ID50XP)
 
 
 ## Feature Highlights
@@ -85,7 +80,7 @@ showcasing how to productionize a scikit-learn model and deploy it to AWS Lambda
 
 ## Documentation
 
-Official BentoML documentation can be found at [bentoml.readthedocs.io](http://bentoml.readthedocs.io)
+Full documentation and API references can be found at [bentoml.readthedocs.io](http://bentoml.readthedocs.io)
 
 
 ## Examples

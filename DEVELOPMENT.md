@@ -87,13 +87,12 @@ Run linter/format script:
 
 Install all dev dependencies:
 ```bash
-$ pip install -e .[dev]
+$ pip install -e .[all]
 ```
 
 To build documentation for locally:
 ```bash
-$ cd docs
-$ sphinx-build -b html source build
+$ sphinx-build -b html docs built-doc
 ```
 
-Modify *.rst files inside the `docs/source` folder to update content.
+Modify *.rst files inside the `docs` folder to update content.

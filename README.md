@@ -68,7 +68,8 @@ this 5-mins getting started guide, using BentoML to productionize a scikit-learn
   out-of-the-box including [Tensorflow](https://github.com/tensorflow/tensorflow/),
   [PyTorch](https://github.com/pytorch/pytorch),
   [Scikit-Learn](https://github.com/scikit-learn/scikit-learn),
-  [xgboost](https://github.com/dmlc/xgboost) and can be easily extended to work
+  [xgboost](https://github.com/dmlc/xgboost)
+  [H2O](https://github.com/h2oai/h2o-3) and can be easily extended to work
   with new or custom frameworks.
 
 * __Deploy Anywhere__ - BentoML bundled ML service can be easily deployed with

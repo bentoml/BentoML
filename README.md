@@ -1,9 +1,9 @@
-[![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)](https://travis-ci.org/bentoml/BentoML)
 [![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
 [![build status](https://travis-ci.org/bentoml/BentoML.svg?branch=master)](https://travis-ci.org/bentoml/BentoML)
 [![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://bentoml.readthedocs.io/en/latest/?badge=latest)
+[![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
 
 
 # BentoML
@@ -16,13 +16,27 @@ services. It provides high-level APIs for defining an ML service and packaging
 its artifacts, source code, dependencies, and configurations into a
 production-system-friendly format that is ready for deployment.
 
+Use BentoML if you need to:
+
+* Easily turn my ML model into API server that's ready for production use
+
+* Easily manage the workflow of creating and deploying a ML service
+
+* Easily integrate, test and develop with the ML service created
+
+
+BentoML is developed with a focus on enabling data scientists to fully own the
+"last mile" of their machine learning project - exposing the model they created,
+via a machine learning services. That can be either an API endpoint, a serverless
+deployment, a Spark job, or a CLI tool.
+
+
 ---
 
 
 ## Installation
 
 ![pypi status](https://img.shields.io/pypi/v/bentoml.svg)
-![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)
 
 ```python
 pip install bentoml

@@ -4,6 +4,7 @@ set -e
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd $GIT_ROOT
 
+
 # Currently only BentoML maintainer has permission to create new pypi
 # releases
 if [ ! -f $HOME/.pypirc ]; then
@@ -11,6 +12,12 @@ if [ ! -f $HOME/.pypirc ]; then
   # https://docs.python.org/3/distutils/packageindex.html#the-pypirc-file
   echo "Error: File \$HOME/.pypirc not found."
   exit
+fi
+
+
+if [ -d $GIT_ROOT/dist ]; then
+  echo "Removing existing 'dist' directory"
+  rm -rf $GIT_ROOT/dist
 fi
 
 echo "Installing dev dependencies..."

@@ -50,8 +50,8 @@ class IrisClassifier(BentoService):
 ```
 
 
-See it in action! [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2ID50XP) -
-a 5-mins getting started guide, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
+[![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2ID50XP) - Try out
+this 5-mins getting started guide, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
 
 
 ## Feature Highlights

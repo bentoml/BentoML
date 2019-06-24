@@ -5,6 +5,7 @@
 [![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://bentoml.readthedocs.io/en/latest/?badge=latest)
 [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
 
+> From a model in jupyter notebook to production API service in 5 minutes
 
 # BentoML
 
@@ -18,9 +19,7 @@ production-system-friendly format that is ready for deployment.
 
 Use BentoML if you need to:
 
-* Turn my ML model into REST API endpoint, a serverless deployment, a Spark job, or a CLI tool
-
-* Integrate, test and develop with the ML service created
+* Turn your ML model into REST API server, Serverless endpoint, PyPI package, or CLI tool
 
 * Manage the workflow of creating and deploying a ML service
 
@@ -35,9 +34,8 @@ Use BentoML if you need to:
 pip install bentoml
 ```
 
-## Getting Started
 
-> From a model in jupyter notebook to production API service in 5 minutes.
+## Getting Started
 
 Defining a machine learning service with BentoML is as simple as a few lines of code:
 
@@ -51,9 +49,9 @@ class IrisClassifier(BentoService):
         return self.artifacts.model.predict(df)
 ```
 
-Read our 5-mins getting started guide on how to productionize a scikit-learn model
-and deploy it to AWS Lambda with BentoML:
-[![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2ID50XP)
+
+See it in action! [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2ID50XP) -
+a 5-mins getting started guide, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
 
 
 ## Feature Highlights

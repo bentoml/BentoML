@@ -50,7 +50,7 @@ production-system-friendly format that is ready for deployment.
   [Kubernetes](https://kubernetes.io/),
   [Serverless](https://github.com/serverless/serverless),
   [Airflow](https://airflow.apache.org) and [Clipper](http://clipper.ai),
-  on cloud platforms including AWS, Gogole Cloud, and Azure.
+  on cloud platforms including AWS, Google Cloud, and Azure.
 
 * __Custom Runtime Backend__ - Easily integrate your python pre-processing code with
   high-performance deep learning runtime backend, such as

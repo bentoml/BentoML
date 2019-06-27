@@ -28,12 +28,12 @@ from bentoml.utils.s3 import is_s3_url
 
 
 def check_dataframe_column_contains(required_column_names, df):
-    df_columns = set(df.columns)
+    df_columns = set(map(str, df.columns))
     for col in required_column_names:
         if col not in df_columns:
             raise ValueError(
-                "Missing columns: {}".format(
-                    ",".join(set(required_column_names) - df_columns)
+                "Missing columns: {}, required_column:{}".format(
+                    ",".join(set(required_column_names) - df_columns), df_columns
                 )
             )
 
@@ -65,6 +65,11 @@ class DataframeHandler(BentoHandler):
         self.output_orient = output_orient or orient
         self.typ = typ
         self.input_dtypes = input_dtypes
+
+        if isinstance(self.input_dtypes, list):
+            self.input_dtypes = dict(
+                (str(index), dtype) for index, dtype in enumerate(self.input_dtypes)
+            )
 
     def _get_type(self, item):
         if item.startswith('int'):

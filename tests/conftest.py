@@ -16,7 +16,7 @@ class TestBentoService(bentoml.BentoService):
     """My RestServiceTestModel packaging with BentoML
     """
 
-    @bentoml.api(bentoml.handlers.DataframeHandler, input_dtypes=["age"])
+    @bentoml.api(bentoml.handlers.DataframeHandler, input_dtypes={"age": "int"})
     def predict(self, df):
         """predict expects dataframe as input
         """

@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import warnings
 from datetime import datetime
 
 from ruamel.yaml import YAML
@@ -56,10 +57,19 @@ class BentoArchiveConfig(object):
         conf.config = conf._yaml.load(yml_content)
 
         if conf["version"] != BENTOML_VERSION:
-            raise ValueError(
-                "BentoArchive version mismatch: loading archive bundled in version {},"
-                "but loading from version {}".format(conf["version"], BENTOML_VERSION)
+            msg = (
+                "BentoArchive version mismatch: loading archive bundled in version "
+                "{},  but loading from version {}".format(
+                    conf["version"], BENTOML_VERSION
+                )
             )
+
+            # If major version is different, then there could be incompatible API
+            # changes. Raise error in this case.
+            if int(conf["version"].split(".")[0]) != int(BENTOML_VERSION.split(".")[0]):
+                raise ValueError(msg)
+            else:  # Otherwise just show a warning.
+                warnings.warn(msg)
 
         return conf
 

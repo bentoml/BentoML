@@ -20,7 +20,7 @@ import json
 import click
 
 from bentoml.archive import load
-from bentoml.server import BentoAPIServer
+from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.gunicorn_server import (
     GunicornApplication,
     get_gunicorn_worker_count,
@@ -104,6 +104,15 @@ def create_bento_service_cli(archive_path=None):
             indent=2,
         )
         print(output)
+
+    # Example usage: bentoml docs /SAVED_ARCHIVE_PATH
+    @bentoml_cli.command(
+        help="Display API documents in Open API format", short_help="Display docs"
+    )
+    @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
+    def docs(archive_path=archive_path):
+        model_service = load(archive_path)
+        print(json.dumps(get_docs(model_service), indent=2))
 
     # Example Usage: bentoml serve ./SAVED_ARCHIVE_PATH --port=PORT
     @bentoml_cli.command(

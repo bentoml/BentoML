@@ -16,7 +16,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.server.bento_api_server import BentoAPIServer
+from bentoml.server.bento_api_server import BentoAPIServer, get_docs
 from bentoml.server import metrics
 
-__all__ = ["BentoAPIServer", "metrics"]
+__all__ = ["BentoAPIServer", "metrics", "get_docs"]

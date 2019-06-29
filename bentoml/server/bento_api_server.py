@@ -87,7 +87,7 @@ def index_view_func(bento_service):
     )
 
 
-def docs_view_func(bento_service):
+def get_docs(bento_service):
     """
     The docs for all endpoints in Open API format.
     """
@@ -149,7 +149,11 @@ def docs_view_func(bento_service):
         )
 
     docs["paths"] = paths
+    return docs
 
+
+def docs_view_func(bento_service):
+    docs = get_docs(bento_service)
     return jsonify(docs)
 
 

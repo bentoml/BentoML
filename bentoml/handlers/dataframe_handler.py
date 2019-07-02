@@ -45,13 +45,13 @@ class DataframeHandler(BentoHandler):
      or print result for CLI call
 
     Args:
-        orient (string): Incoming json orient format for reading json data. Default is
+        orient (str): Incoming json orient format for reading json data. Default is
             records.
-        output_orient (string): Prefer json orient format for output result. Default is
+        output_orient (str): Prefer json orient format for output result. Default is
             records.
-        typ (string): Type of object to recover for read json with pandas. Default is
+        typ (str): Type of object to recover for read json with pandas. Default is
             frame
-        input_dtypes ({string:string}): A dict of column name and data type.
+        input_dtypes ({str:str}): A dict of column name and data type.
 
     Raises:
         ValueError: Incoming data is missing required columns in input_dtypes

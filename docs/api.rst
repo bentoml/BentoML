@@ -19,29 +19,34 @@ BentoService
 
 api
 +++
-.. autofunction:: bentoml.service.api_decorator
+.. autofunction:: bentoml.api
 
 env
 +++
-.. autofunction:: bentoml.service.env_decorator
+.. autofunction:: bentoml.env
 
 artifacts
 +++++++++
-.. autofunction:: bentoml.service.artifacts_decorator
+.. autofunction:: bentoml.artifacts
 
 ver
 +++
-.. autofunction:: bentoml.service.ver_decorator
+.. autofunction:: bentoml.ver
 
 save
 ++++
-.. autofunction:: bentoml.archive.archiver.save
+.. autofunction:: bentoml.save
 
 .. _api-load-ref:
 
 load
 ++++
-.. autofunction:: bentoml.archive.loader.load
+.. autofunction:: bentoml.load
+
+config
+++++++
+.. autofunction:: bentoml.config
+
 
 Handlers
 ********

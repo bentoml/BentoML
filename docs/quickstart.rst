@@ -195,7 +195,9 @@ bentoml serve command:
 With `bentoml serve` command, a web server will start locally at the port 5000.
 We created additional endpoints that make this server ready for production.
 
-- `/`: The index page with swagger definition.
+- `/`: The index page with OpenAPI definition.
+
+- `/docs.json`: The Open API definition for all endpoints in JSON format.
 
 - `/metrics`: Expose system and latency metrics with Prometheus.
 
@@ -203,6 +205,7 @@ We created additional endpoints that make this server ready for production.
 
 - `/feedback`: Add business feedback for the predicted results.
 
+Open http://127.0.0.1:5000 to view the documentation for all API endpoints.
 
 Run REST API server with Docker
 +++++++++++++++++++++++++++++++
@@ -224,6 +227,14 @@ the generated Dockerfile to create Docker image for that.
     follow direction from this link: https://docs.docker.com/install
 
 
+(Optional) Get a Client SDK for the above REST API server
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+To get a client SDK, copy the content of http://127.0.0.1:5000/docs.json and paste to
+https://editor.swagger.io then click the tab Generate Client and choose the language.
+
+Currently, https://editor.swagger.io supports to generate a client SDK in Java, Kotlin,
+Swift, Python, PHP, Scala... ect.
 
 Loading Bento service archive in Python
 +++++++++++++++++++++++++++++++++++++++
@@ -287,6 +298,12 @@ service.
 
     !IrisClassifier info
 
+You can use `docs` command to get all APIs in OpenAPI format.
+
+.. code-block:: python
+
+    !IrisClassifier docs
+
 Call prediction with user defined API function.
 
 .. code-block:: python
@@ -303,6 +320,10 @@ without installing.
 .. code-block:: python
 
     !bentoml info ./model
+
+.. code-block:: python
+
+    !bentoml docs ./model
 
 .. code-block:: python
 

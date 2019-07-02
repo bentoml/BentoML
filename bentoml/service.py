@@ -50,9 +50,9 @@ class BentoServiceAPI(object):
 
     Args:
         service (BentoService): ref to service containing this API
-        name (string): API name
-        handler (bentoml.handlers): A BentoHandler that transforms HTTP Request and/or
-            CLI options into parameters for API func
+        name (str): API name, by default this is the python function name
+        handler (bentoml.handlers.BentoHandler): A BentoHandler class that transforms
+            HTTP Request and/or CLI options into expected format for the API func
         func (function): API func contains the actual API callback, this is
             typically the 'predict' method on a model
     """
@@ -151,7 +151,7 @@ class BentoServiceBase(object):
         """Return a list of user defined API functions
 
         Returns:
-            [BentoServiceAPI]: List of user defined API functions
+            list(BentoServiceAPI): List of user defined API functions
         """
         return self._service_apis
 
@@ -160,11 +160,12 @@ def api_decorator(handler_cls, *args, **kwargs):
     """Decorator for adding api to a BentoService
 
     Args:
-        handler_cls (bentoml.handlers): The handler class for the API
+        handler_cls (bentoml.handlers.BentoHandler): The handler class for the API
             function.
-        api_name (string): API name to replace function name.
-        api_doc (string): Docstring for API function.
-        kwargs... : Additional keyword arguments for handler class. Please reference
+
+        api_name (:obj:`str`, optional): API name to replace function name
+        api_doc (:obj:`str`, optional): Docstring for API function
+        **kwargs: Additional keyword arguments for handler class. Please reference
             to what arguments are available for the particular handler
 
     Raises:
@@ -214,7 +215,9 @@ def artifacts_decorator(artifact_specs):
     """Define artifact spec for BentoService
 
     Args:
-        artifact_specs ([bentoml.artifact]): A list of initialized Bentoml artifacts
+        artifact_specs (list(bentoml.artifact.ArtifactSpec)): A list of desired
+            artifacts for initializing this BentoService
+        for initializing this BentoService being decorated
     """
 
     def decorator(bento_service_cls):
@@ -225,18 +228,18 @@ def artifacts_decorator(artifact_specs):
 
 
 def env_decorator(**kwargs):
-    """Define environment spec for Bento Service.
+    """Define environment spec for BentoService
 
     Args:
         setup_sh (string): User defined shell script to run before running BentoService.
             It could be local file path or the shell script content.
         requirements_text (string): User defined requirement text to install before
             running BentoService.  It could be local file path or requirements' content
-        conda_channels (string): User defined conda channels
-        conda_dependencies ([string]): Defined dependencies to be installed with conda
-            environment.
-        conda_pip_dependencies (string): Additional python modules to be install with
-            pip inside conda environment.
+        conda_channels (list(string)): User defined conda channels
+        conda_dependencies (list(string)): Defined dependencies to be installed with
+            conda environment.
+        conda_pip_dependencies (list(string)): Additional pip modules to be install
+            with conda
 
     """
 

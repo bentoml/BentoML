@@ -74,9 +74,9 @@ def save(bento_service, dst, version=None):
 
     Args:
         bento_service (bentoml.service.BentoService): a Bento Service instance
-        dst (string): Destination of where the bento service will be saved. It could
-            be a local file path or a s3 path.
-        version (string): user defined version.
+        dst (str): Destination of where the bento service will be saved. It could
+            be a local file path or a s3 path
+        version (:obj:`str`, optional): version text to use for saved archive
 
     Returns:
         string: The complete path of saved Bento service.

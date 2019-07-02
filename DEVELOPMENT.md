@@ -87,12 +87,19 @@ Run linter/format script:
 
 Install all dev dependencies:
 ```bash
-$ pip install -e .[all]
+$ pip install -e .[dev]
 ```
 
 To build documentation for locally:
 ```bash
-$ sphinx-build -b html docs built-doc
+$ ./script/build-docs.sh
 ```
 
-Modify *.rst files inside the `docs` folder to update content.
+Modify *.rst files inside the `docs` folder to update content, and to
+view your changes, run the following command:
+
+```
+$ python -m http.server --directory built-docs
+```
+
+And go to your browser at `http://localhost:8000`

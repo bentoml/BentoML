@@ -25,11 +25,11 @@ class TextFileArtifact(ArtifactSpec):
     """Abstraction for saving/loading string to/from text files
 
     Args:
-        name (string): Name of the artifact
-        file_extension (string): The file format artifact will be saved as.
-            Default is .txt
-        encoding (string): The encoding will be used for saving/loading text.
-            Default is utf8
+        name (str): Name of the artifact
+        file_extension (:obj:`str`: optional): The file extention used for the saved
+            text file. Defaults to ".txt"
+        encoding (str): The encoding will be used for saving/loading text. Defaults
+            to "utf8"
 
     """
 

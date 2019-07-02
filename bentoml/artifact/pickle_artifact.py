@@ -28,10 +28,10 @@ class PickleArtifact(ArtifactSpec):
     """Abstraction for saving/loading python objects with pickle serialization
 
     Args:
-        name (string): Name for the artifact
-        pickle_module (python module): The python module will be used for pickle
+        name (str): Name for the artifact
+        pickle_module (module|str): The python module will be used for pickle
             and unpickle artifact
-        pickle_extension (string): The extension format for pickled file.
+        pickle_extension (str): The extension format for pickled file.
     """
 
     def __init__(self, name, pickle_module=dill, pickle_extension=".pkl"):

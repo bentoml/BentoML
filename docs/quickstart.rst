@@ -104,7 +104,7 @@ for defining our ML service.
     ``@env(with_current_conda_env=True)``
 
 * **api**: decorator allow us to add an entry point to accessing this service.
-  Each *api* will be translate into a REST endpoint when deploying as API
+  Each *api* will be translated into a REST endpoint when deploying as API
   server, or a CLI command when running the service as CLI tool.
 
 
@@ -113,7 +113,7 @@ for defining our ML service.
   `PytorchModelArtifact`, `H2oModelArtifact`, `XgboostModelArtifact` and etc.
 
 **Line 4**: Each API endpoint requires a Handler for defining the expect input
-  format. For this project, we are using **DataframeHnalder** to transform
+  format. For this project, we are using **DataframeHandler** to transform
   either a HTTP request or CLI command argument into a pandas dataframe and
   pass it down to the user defined API function. BentoML also provides
   `JsonHandler`, `ImageHandler` and `TensorHandler`

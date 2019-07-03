@@ -1,8 +1,8 @@
 import os
 import pytest
 
-import bentoml  # noqa: E402
-from bentoml.artifact import PickleArtifact  # noqa: E402
+import bentoml
+from bentoml.artifact import PickleArtifact
 
 
 class MyTestModel(object):

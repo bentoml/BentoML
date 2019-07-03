@@ -141,9 +141,7 @@ def get_docs(bento_service):
             post=OrderedDict(
                 tags=["app"],
                 description=api.doc,
-                requestBody=OrderedDict(
-                    required=True, content=api.handler.request_schema
-                ),
+                requestBody=OrderedDict(required=True, content=api.request_schema),
                 responses=default_response,
             )
         )

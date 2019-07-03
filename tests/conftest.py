@@ -9,6 +9,9 @@ class TestModel(object):
         df["age"] = df["age"].add(5)
         return df
 
+    def evaluate(self, input_data):
+        return [10, 24]
+
 
 @bentoml.artifacts([PickleArtifact("model")])
 @bentoml.env()
@@ -21,6 +24,10 @@ class TestBentoService(bentoml.BentoService):
         """predict expects dataframe as input
         """
         return self.artifacts.model.predict(df)
+
+    @bentoml.api(bentoml.handlers.ImageHandler)
+    def evaluate(self, input_data):
+        return self.artifacts.model.evaluate(input_data)
 
 
 @pytest.fixture()

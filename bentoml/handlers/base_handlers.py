@@ -57,6 +57,10 @@ class BentoHandler:
         """
         raise NotImplementedError
 
+    @property
+    def request_schema(self):
+        return {"application/json": {"schema": {"type": "object"}}}
+
 
 def get_output_str(result, output_format, output_orient="records"):
     if output_format == "str":

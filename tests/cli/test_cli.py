@@ -3,7 +3,7 @@ import tempfile
 import json
 from click.testing import CliRunner
 
-from bentoml.cli import create_bento_service_cli  # noqa: E402
+from bentoml.cli import create_bento_service_cli
 
 
 def generate_test_input_file():

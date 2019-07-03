@@ -132,12 +132,26 @@ def copy_used_py_modules(target_module, destination):
         pass
 
     # extra site-packages or dist-packages directory
-    site_or_dist_package_path = [f for f in sys.path if f.endswith("-packages")]
+    site_or_dist_package_path = []
+
+    for path in sys.path:
+        folder_name = os.path.split(path)[1]
+        # exclude pypi/conda/system installed packages
+        if (
+            "site-packages" in path
+            or "anaconda" in path
+            or path.endswith("packages")
+            or folder_name == "bin"
+            or folder_name.startswith("lib")
+            or folder_name.startswith("python")
+            or folder_name.startswith("plat")
+        ):
+            site_or_dist_package_path.append(path)
     # prefix used to find installed Python library
-    site_or_dist_package_path += [sys.prefix]
+    site_or_dist_package_path.append(sys.prefix)
     # prefix used to find machine-specific Python library
     try:
-        site_or_dist_package_path += [sys.base_prefix]
+        site_or_dist_package_path.append(sys.base_prefix)
     except AttributeError:
         # ignore when in PY2 there is no sys.base_prefix
         pass

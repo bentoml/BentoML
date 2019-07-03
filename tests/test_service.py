@@ -1,6 +1,6 @@
 import pytest
 
-import bentoml  # noqa: E402
+import bentoml
 
 
 def test_custom_api_name():

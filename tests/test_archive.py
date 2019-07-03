@@ -1,6 +1,6 @@
 import pytest
 
-from bentoml.archive.archiver import _validate_version_str  # noqa: E402
+from bentoml.archive.archiver import _validate_version_str
 
 
 def test_validate_version_str_fails():

@@ -94,9 +94,7 @@ class BentoServiceAPI(object):
 
     @property
     def request_schema(self):
-        if hasattr(self.handler, 'request_schema'):
-            return self.handler.request_schema
-        return {"type": "object"}
+        return self.handler.request_schema
 
     def handle_request(self, request):
         return self.handler.handle_request(request, self.func)

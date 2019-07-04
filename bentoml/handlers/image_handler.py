@@ -80,6 +80,11 @@ class ImageHandler(BentoHandler):
         ]
         self.accept_multiple_files = accept_multiple_files
 
+    @property
+    def request_schema(self):
+        # For now, only support single file input.
+        return {"image/*": {"schema": {"type": "string", "format": "binary"}}}
+
     def handle_request(self, request, func):
         """Handle http request that has image file/s. It will convert image into a
         ndarray for the function to consume.

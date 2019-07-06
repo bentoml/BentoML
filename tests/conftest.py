@@ -9,8 +9,17 @@ class TestModel(object):
         df["age"] = df["age"].add(5)
         return df
 
-    def evaluate(self, input_data):
+    def predictImage(self, input_data):
         return [10, 24]
+
+    def predictJson(self, input_data):
+        return {"ok": True}
+
+    def predictTF(self, input_data):
+        return {"ok": True}
+
+    def predictTorch(self, input_data):
+        return {"ok": True}
 
 
 @bentoml.artifacts([PickleArtifact("model")])
@@ -26,8 +35,20 @@ class TestBentoService(bentoml.BentoService):
         return self.artifacts.model.predict(df)
 
     @bentoml.api(bentoml.handlers.ImageHandler)
-    def evaluate(self, input_data):
-        return self.artifacts.model.evaluate(input_data)
+    def predictImage(self, input_data):
+        return self.artifacts.model.predictImage(input_data)
+
+    @bentoml.api(bentoml.handlers.JsonHandler)
+    def predictJson(self, input_data):
+        return self.artifacts.model.predictJson(input_data)
+
+    @bentoml.api(bentoml.handlers.TensorflowTensorHandler)
+    def predictTF(self, input_data):
+        return self.artifacts.model.predictTF(input_data)
+
+    @bentoml.api(bentoml.handlers.PytorchTensorHandler)
+    def predictTorch(self, input_data):
+        return self.artifacts.model.predictTorch(input_data)
 
 
 @pytest.fixture()

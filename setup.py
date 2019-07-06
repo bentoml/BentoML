@@ -45,10 +45,13 @@ install_requires = [
 imageio = ["imageio>=2.5.0"]
 cv2 = ["opencv-python"]
 pytorch = ["torch", "torchvision"]
+fastai = ["fastai", "matplotlib"]
 tensorflow = ["tensorflow"]
+xgboost = ["xgboost"]
+h2o = ["h2o"]
 api_server = ["gunicorn", "prometheus_client", "Werkzeug"]
 
-optional_requires = api_server + imageio + pytorch + tensorflow
+optional_requires = api_server + imageio + pytorch + tensorflow + fastai + xgboost + h2o
 
 tests_require = (
     [
@@ -88,6 +91,9 @@ extras_require = {
     "tensorflow": tensorflow,
     "imageio": imageio,
     "test": tests_require,
+    "fastai": fastai,
+    "xgboost": xgboost,
+    "h2o": h2o,
 }
 
 setuptools.setup(

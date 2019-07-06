@@ -70,6 +70,7 @@ class ImageHandler(BentoHandler):
         accept_file_extensions=None,
         accept_multiple_files=False,
         pilmode=None,
+        fastai_model=False,
     ):
         self.input_names = input_names or "image"
         self.pilmode = pilmode or "RGB"
@@ -79,6 +80,7 @@ class ImageHandler(BentoHandler):
             ".jpeg",
         ]
         self.accept_multiple_files = accept_multiple_files
+        self.fastai_model = fastai_model
 
     def handle_request(self, request, func):
         """Handle http request that has image file/s. It will convert image into a
@@ -104,9 +106,17 @@ class ImageHandler(BentoHandler):
             file_name = secure_filename(input_file.filename)
             check_file_format(file_name, self.accept_file_extensions)
 
-            input_stream = BytesIO()
-            input_file.save(input_stream)
-            input_data = imread(input_file, pilmode=self.pilmode)
+            input_stream = BytesIO(input_file.read())
+            input_data = imread(input_stream, pilmode=self.pilmode)
+
+            if self.fastai_model is True:
+                try:
+                    from fastai.vision import pil2tensor, Image
+                    import numpy as np
+                except ImportError:
+                    raise ImportError("fastai package is required.")
+                torch_tensor = pil2tensor(input_data, np.float32).div_(255)
+                input_data = Image(torch_tensor)
         else:
             return Response(response="Only support single file input", status=400)
 
@@ -127,12 +137,21 @@ class ImageHandler(BentoHandler):
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(file_path)
 
-        try:
-            from imageio import imread
-        except ImportError:
-            raise ImportError("imageio package is required to use ImageHandler")
+        if self.fastai_model is True:
+            try:
+                from fastai.vision import open_image
+            except ImportError:
+                raise ImportError('fastai package is required to use')
 
-        image_array = imread(file_path, pilmode=self.pilmode)
+            image_array = open_image(file_path, convert_mode=self.pilmode)
+        else:
+            try:
+                from imageio import imread
+            except ImportError:
+                raise ImportError("imageio package is required to use ImageHandler")
+
+            image_array = imread(file_path, pilmode=self.pilmode)
+
         result = func(image_array)
         result = get_output_str(result, output_format=parsed_args.output)
         print(result)
@@ -157,6 +176,14 @@ class ImageHandler(BentoHandler):
                 "BentoML currently doesn't support Content-Type: {content_type} for "
                 "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
             )
+        if self.fastai_model is True:
+            try:
+                from fastai.vision import pil2tensor, Image
+                import numpy as np
+            except ImportError:
+                raise ImportError('fastai package is required')
+            torch_tensor = pil2tensor(image, np.float32).div_(255)
+            image = Image(torch_tensor)
 
         result = func(image)
         result = get_output_str(result, event["headers"].get("output", "json"))

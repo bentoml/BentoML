@@ -61,9 +61,7 @@ class _FastaiModelArtifactInstance(ArtifactInstance):
         try:
             import fastai
         except ImportError:
-            raise ImportError(
-                "fastai package is required to use FastaiModelArtifact"
-            )
+            raise ImportError("fastai package is required to use FastaiModelArtifact")
 
         if not isinstance(model, fastai.basic_train.Learner):
             raise ValueError(
@@ -77,7 +75,7 @@ class _FastaiModelArtifactInstance(ArtifactInstance):
 
         shutil.copyfile(
             os.path.join(self._model.path, self.spec._file_name),
-            self.spec._model_file_path(dst)
+            self.spec._model_file_path(dst),
         )
         return
 

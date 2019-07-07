@@ -65,6 +65,7 @@ tests_require = (
     ]
     + imageio
     + cv2
+    + fastai
 )
 
 dev_requires = [

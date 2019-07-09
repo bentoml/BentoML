@@ -59,6 +59,10 @@ ImageHandler
 ++++++++++++
 .. autoclass:: bentoml.handlers.ImageHandler
 
+FastaiImageHandler
+++++++++++++++++++
+.. autoclass:: bentoml.handlers.FastaiImageHandler
+
 JsonHandler
 +++++++++++
 .. autoclass:: bentoml.handlers.JsonHandler
@@ -82,6 +86,10 @@ PytorchModelArtifact
 XgboostModelArtifact
 ++++++++++++++++++++
 .. autoclass:: bentoml.artifact.XgboostModelArtifact
+
+FastaiModelArtifact
++++++++++++++++++++
+.. autoclass:: bentoml.artifact.FastaiModelArtifact
 
 H2oModelArtifact
 ++++++++++++++++

@@ -109,9 +109,8 @@ class ImageHandler(BentoHandler):
             file_name = secure_filename(input_file.filename)
             check_file_format(file_name, self.accept_file_extensions)
 
-            input_stream = BytesIO()
-            input_file.save(input_stream)
-            input_data = imread(input_file, pilmode=self.pilmode)
+            input_stream = BytesIO(input_file.read())
+            input_data = imread(input_stream, pilmode=self.pilmode)
         else:
             return Response(response="Only support single file input", status=400)
 
@@ -138,6 +137,7 @@ class ImageHandler(BentoHandler):
             raise ImportError("imageio package is required to use ImageHandler")
 
         image_array = imread(file_path, pilmode=self.pilmode)
+
         result = func(image_array)
         result = get_output_str(result, output_format=parsed_args.output)
         print(result)

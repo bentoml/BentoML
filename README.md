@@ -68,8 +68,9 @@ this 5-mins getting started guide, using BentoML to productionize a scikit-learn
   out-of-the-box including [Tensorflow](https://github.com/tensorflow/tensorflow/),
   [PyTorch](https://github.com/pytorch/pytorch),
   [Scikit-Learn](https://github.com/scikit-learn/scikit-learn),
-  [xgboost](https://github.com/dmlc/xgboost)
-  [H2O](https://github.com/h2oai/h2o-3) and can be easily extended to work
+  [xgboost](https://github.com/dmlc/xgboost),
+  [H2O](https://github.com/h2oai/h2o-3),
+  [FastAI](https://github.com/fastai/fastai) and can be easily extended to work
   with new or custom frameworks.
 
 * __Deploy Anywhere__ - BentoML bundled ML service can be easily deployed with
@@ -100,6 +101,7 @@ directory. More tutorials and examples coming soon!
 - [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2KdwNRN) - [H2O Classification](https://github.com/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-classification.ipynb)
 - [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2IbtfNO) - [Keras Text Classification](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-text-classification/tf-keras-text-classification.ipynb)
 - [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2wPh3M3) - [XGBoost Titanic Survival Prediction](https://github.com/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb)
+- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/pet-classification/notebook.ipynb) - [FastAI Pet Classification](https://github.com/bentoml/gallery/blob/master/fast-ai/pet-classification/notebook.ipynb)
 - [(WIP) PyTorch Fashion MNIST classification](https://github.com/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb)
 - [(WIP) Tensorflow Keras Fashion MNIST classification](https://github.com/bentoml/BentoML/blob/master/examples/tf-keras-fashion-mnist/tf-keras-fashion-mnist-classification.ipynb)
 

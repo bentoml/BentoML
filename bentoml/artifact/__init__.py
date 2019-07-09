@@ -23,6 +23,7 @@ from bentoml.artifact.text_file_artifact import TextFileArtifact
 from bentoml.artifact.tf_keras_model_artifact import TfKerasModelArtifact
 from bentoml.artifact.xgboost_artifact import XgboostModelArtifact
 from bentoml.artifact.h2o_artifact import H2oModelArtifact
+from bentoml.artifact.fastai_model_artifact import FastaiModelArtifact
 
 __all__ = [
     "ArtifactSpec",
@@ -34,4 +35,5 @@ __all__ = [
     "TfKerasModelArtifact",
     "XgboostModelArtifact",
     "H2oModelArtifact",
+    "FastaiModelArtifact",
 ]

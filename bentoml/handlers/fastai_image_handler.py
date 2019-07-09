@@ -37,18 +37,21 @@ class FastaiImageHandler(BentoHandler):
 
 
     Args:
-        input_name (string[]]): A list of acceptable input name for HTTP request.
+        input_name ([str]]): A list of acceptable input name for HTTP request.
             Default value is image
-        accept_file_extensions (string[]):  A list of acceptable image extensions.
+        accept_file_extensions ([str]):  A list of acceptable image extensions.
             Default value is [.jpg, .jpeg, .png]
         accept_multiple_files (boolean):  Accept multiple files in single request or
             not. Default value is False
-        convert_mode (string): The pilmode to be used for reading image file into
+        convert_mode (str): The pilmode to be used for reading image file into
             numpy array. Default value is RGB.  Find more information at
             https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
         div (bool): If True, pixel values are divided by 255 to become floats
             between 0. and 1.
-        after_open: param from fastai.vision open_image
+        cls (Class): Parameter from fastai.vision ``open_image``, default is
+            ``fastai.vision.Image``
+        after_open (func): Parameter from fastai.vision ``open_image``, default
+            is None
 
     Raises:
         ImportError: imageio package is required to use FastaiImageHandler
@@ -150,7 +153,9 @@ class FastaiImageHandler(BentoHandler):
         if event["headers"].get("Content-Type", None) in ACCEPTED_CONTENT_TYPES:
             # decodebytes introduced at python3.1
             try:
-                image_data = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
+                image_data = imread(
+                    base64.decodebytes(event["body"]), pilmode=self.pilmode
+                )
             except AttributeError:
                 image_data = imread(
                     base64.decodestring(event["body"]),  # pylint: disable=W1505

@@ -26,6 +26,9 @@ from bentoml.artifact import ArtifactSpec, ArtifactInstance
 class FastaiModelArtifact(ArtifactSpec):
     """Saving and Loading FastAI Model
 
+    Args:
+        name (str): Name for the fastai model
+
     Raises:
         ImportError: Require fastai package to use Fast ai model artifact
         ValueError: Model is not instance of fast ai model

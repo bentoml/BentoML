@@ -23,6 +23,7 @@ from bentoml.handlers.pytorch_tensor_handler import PytorchTensorHandler
 from bentoml.handlers.tensorflow_tensor_handler import TensorflowTensorHandler
 from bentoml.handlers.json_handler import JsonHandler
 from bentoml.handlers.image_handler import ImageHandler
+from bentoml.handlers.fastai_image_handler import FastaiImageHandler
 
 __all__ = [
     "BentoHandler",
@@ -31,4 +32,5 @@ __all__ = [
     "TensorflowTensorHandler",
     "JsonHandler",
     "ImageHandler",
+    "FastaiImageHandler",
 ]

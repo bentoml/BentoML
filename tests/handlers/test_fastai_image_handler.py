@@ -1,4 +1,3 @@
-import base64
 import sys
 
 from bentoml import BentoService, api, artifacts
@@ -36,4 +35,3 @@ def test_fastai_image_handler(capsys, tmpdir):
         api.handle_cli(test_args)
         out, err = capsys.readouterr()
         assert out.strip() == "Image"
-

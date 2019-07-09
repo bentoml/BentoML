@@ -43,10 +43,10 @@ class FastaiImageHandler(BentoHandler):
             Default value is [.jpg, .jpeg, .png]
         accept_multiple_files (boolean):  Accept multiple files in single request or
             not. Default value is False
-        convert_mode (string): The pilmode to be used for reading image file into 
+        convert_mode (string): The pilmode to be used for reading image file into
             numpy array. Default value is RGB.  Find more information at
             https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
-        div (bool): If True, pixel values are divided by 255 to become floats 
+        div (bool): If True, pixel values are divided by 255 to become floats
             between 0. and 1.
         after_open: param from fastai.vision open_image
 

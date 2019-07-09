@@ -150,7 +150,7 @@ class FastaiImageHandler(BentoHandler):
         if event["headers"].get("Content-Type", None) in ACCEPTED_CONTENT_TYPES:
             # decodebytes introduced at python3.1
             try:
-                image = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
+                image_data = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
             except AttributeError:
                 image_data = imread(
                     base64.decodestring(event["body"]),  # pylint: disable=W1505

@@ -210,7 +210,9 @@ class DataframeHandler(BentoHandler):
                 )
             return func(df)
 
-        return map(transform_and_predict, inputs)
+        result = (map(transform_and_predict, inputs))
+        result_list = list(result)
+        return result_list
 
     def handle_clipper_bytes(self, inputs, func):
         raise RuntimeError(

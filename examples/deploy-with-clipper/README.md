@@ -22,5 +22,5 @@ pip install -r requirements.txt
 
 2. Run the example
 ```python
-python deploy-clipper.py
+python deploy-iris-classifier-to-clipper.py
 ```

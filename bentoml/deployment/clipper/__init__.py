@@ -32,7 +32,7 @@ from bentoml.deployment.clipper.templates import (
     DEFAULT_CLIPPER_ENTRY,
     DOCKERFILE_CLIPPER,
 )
-from bentoml.utils.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException
 
 
 def generate_clipper_compatiable_string(item):

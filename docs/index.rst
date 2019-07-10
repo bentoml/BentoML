@@ -45,7 +45,7 @@ Content
    :maxdepth: 4
 
    quickstart
-   api
+   api/index
    cli
    deployments
    bento_archive

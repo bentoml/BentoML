@@ -76,18 +76,26 @@ dev_requires = [
     "black",
     "setuptools",
     "gitpython>=2.0.2",
+] + tests_require
+
+sphinx_requires = [
     "sphinx",
     "sphinx-click",
     "sphinx_rtd_theme",
     "sphinxcontrib-fulltoc",
-] + tests_require
+]
 
-dev_all = install_requires + dev_requires + optional_requires
+doc_builder_requires = (sphinx_requires + install_requires)
+
+dev_all = (
+    install_requires + dev_requires + optional_requires + sphinx_requires
+)
 
 extras_require = {
     "all": dev_all,
     "api_server": api_server,
     "dev": dev_requires,
+    "doc_builder": doc_builder_requires,
     "pytorch": pytorch,
     "tensorflow": tensorflow,
     "imageio": imageio,

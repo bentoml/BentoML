@@ -85,7 +85,6 @@ class FastaiImageHandler(BentoHandler):
             from imageio import imread
         except ImportError:
             raise ImportError("imageio package is required to use FastaiImageHandler")
-        return
 
         if request.method != "POST":
             return Response(response="Only accept POST request", status=400)

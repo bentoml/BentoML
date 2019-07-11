@@ -210,7 +210,7 @@ class DataframeHandler(BentoHandler):
                 )
             return func(df)
 
-        result = (map(transform_and_predict, inputs))
+        result = map(transform_and_predict, inputs)
         result_list = list(result)
         return result_list
 

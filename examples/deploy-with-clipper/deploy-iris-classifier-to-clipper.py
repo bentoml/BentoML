@@ -1,6 +1,3 @@
-import os
-import sys
-
 from datetime import datetime
 import requests
 import json
@@ -8,9 +5,6 @@ from sklearn import svm
 from sklearn import datasets
 
 from clipper_admin import ClipperConnection, DockerContainerManager
-
-# Use local bentoml code
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from bentoml import BentoService, load, api, env, artifacts, ver
 from bentoml.artifact import PickleArtifact

@@ -12,10 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+
 DEFAULT_CLIPPER_ENTRY = """\
 from __future__ import print_function
 
-import rpc # this is copied from clipper
+import rpc # this is clipper's rpc.py module
 import os
 import sys
 
@@ -72,7 +77,6 @@ if __name__ == "__main__":
 DOCKERFILE_CLIPPER = """\
 FROM clipper/python36-closure-container:0.3
 
-
 # Install miniconda3 for python. Copied from
 # https://github.com/ContinuumIO/docker-images/blob/master/miniconda3/debian/Dockerfile
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
@@ -95,9 +99,8 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.6.14-Linux-x86
 
 # update conda and setup environment and pre-install common ML libraries to speed up docker build
 RUN conda update conda -y \
-      && conda install pip numpy scipy\
-      && pip install six \
-      && pip install -e git+https://github.com/yubozhao/BentoML.git@clipper-support#egg=pip
+      && conda install pip numpy scipy \
+      && pip install six bentoml
 
 # copy over model files
 COPY . /container

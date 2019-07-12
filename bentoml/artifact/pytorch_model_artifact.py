@@ -19,7 +19,6 @@ from __future__ import print_function
 import os
 
 from bentoml.artifact import ArtifactSpec, ArtifactInstance
-from bentoml.utils import cloudpickle
 
 
 class PytorchModelArtifact(ArtifactSpec):
@@ -43,6 +42,7 @@ class PytorchModelArtifact(ArtifactSpec):
         except ImportError:
             raise ImportError("torch package is required to use PytorchModelArtifact")
 
+        from bentoml.utils import cloudpickle
         model = cloudpickle.load(open(self._file_path(path), 'rb'))
 
         if not isinstance(model, torch.nn.Module):
@@ -75,4 +75,5 @@ class _PytorchModelArtifactInstance(ArtifactInstance):
         except ImportError:
             raise ImportError("torch package is required to use PytorchModelArtifact")
 
+        from bentoml.utils import cloudpickle
         return cloudpickle.dump(self._model, open(self.spec._file_path(dst), "wb"))

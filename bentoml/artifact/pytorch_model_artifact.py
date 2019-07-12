@@ -43,7 +43,12 @@ class PytorchModelArtifact(ArtifactSpec):
         except ImportError:
             raise ImportError("torch package is required to use PytorchModelArtifact")
 
-        model = cloudpickle.loads(open(self._file_path(path), 'rb'))
+        model = cloudpickle.load(open(self._file_path(path), 'rb'))
+
+        if not isinstance(model, torch.nn.Module):
+            raise TypeError("Expecting PytorchModelArtifact loaded object type to be "
+                            "'torch.nn.Module'")
+
         return self.pack(model)
 
 
@@ -70,6 +75,4 @@ class _PytorchModelArtifactInstance(ArtifactInstance):
         except ImportError:
             raise ImportError("torch package is required to use PytorchModelArtifact")
 
-        return torch.save(
-            self._model, self.spec._file_path(dst), pickle_module=cloudpickle
-        )
+        return cloudpickle.dump(self._model, open(self.spec._file_path(dst), "wb"))

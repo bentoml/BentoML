@@ -17,7 +17,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from six import string_types
 
 from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
@@ -27,13 +26,9 @@ class PytorchModelArtifact(ArtifactSpec):
     Abstraction for saving/loading objects with torch.save and torch.load
     """
 
-    def __init__(self, name, pickle_module="dill", file_extension=".pt"):
+    def __init__(self, name, file_extension=".pt"):
         super(PytorchModelArtifact, self).__init__(name)
         self._file_extension = file_extension
-        if isinstance(pickle_module, string_types):
-            self._pickle = __import__(pickle_module)
-        else:
-            self._pickle = pickle_module
 
     def _file_path(self, base_path):
         return os.path.join(base_path, self.name + self._file_extension)
@@ -47,7 +42,13 @@ class PytorchModelArtifact(ArtifactSpec):
         except ImportError:
             raise ImportError("torch package is required to use PytorchModelArtifact")
 
-        model = torch.load(self._file_path(path), pickle_module=self._pickle)
+        from bentoml.utils import cloudpickle
+        model = cloudpickle.load(open(self._file_path(path), 'rb'))
+
+        if not isinstance(model, torch.nn.Module):
+            raise TypeError("Expecting PytorchModelArtifact loaded object type to be "
+                            "'torch.nn.Module'")
+
         return self.pack(model)
 
 
@@ -74,6 +75,5 @@ class _PytorchModelArtifactInstance(ArtifactInstance):
         except ImportError:
             raise ImportError("torch package is required to use PytorchModelArtifact")
 
-        return torch.save(
-            self._model, self.spec._file_path(dst), pickle_module=self.spec._pickle
-        )
+        from bentoml.utils import cloudpickle
+        return cloudpickle.dump(self._model, open(self.spec._file_path(dst), "wb"))

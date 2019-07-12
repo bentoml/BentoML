@@ -85,11 +85,9 @@ sphinx_requires = [
     "sphinxcontrib-fulltoc",
 ]
 
-doc_builder_requires = (sphinx_requires + install_requires)
+doc_builder_requires = sphinx_requires + install_requires
 
-dev_all = (
-    install_requires + dev_requires + optional_requires + sphinx_requires
-)
+dev_all = install_requires + dev_requires + optional_requires + sphinx_requires
 
 extras_require = {
     "all": dev_all,

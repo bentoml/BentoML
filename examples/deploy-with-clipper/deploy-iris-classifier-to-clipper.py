@@ -1,44 +1,24 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
+from sklearn import datasets
 from datetime import datetime
 import requests
 import json
-from sklearn import svm
-from sklearn import datasets
 
 from clipper_admin import ClipperConnection, DockerContainerManager
 
-from bentoml import BentoService, load, api, env, artifacts, ver
-from bentoml.artifact import PickleArtifact
-from bentoml.handlers import DataframeHandler
+from bentoml import load
 from bentoml.deployment.clipper import deploy_bentoml
 
 
-@artifacts([PickleArtifact("clf")])
-@env(conda_dependencies=["scikit-learn"])
-@ver(major=1, minor=0)
-class IrisClassifier(BentoService):
-    """
-    Iris SVM Classifier
-    """
-
-    @api(DataframeHandler)
-    def predict(self, parsed_json):
-        return self.artifacts.clf.predict(parsed_json)
-
-
 if __name__ == "__main__":
-    # Train our Iris classification model with SK learn
-
-    clf = svm.SVC(gamma="scale")
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
-    clf.fit(X, y)
 
-    # Use BentoML to pack the model and archive it to local directory
-    iris_clf_service = IrisClassifier.pack(clf=clf)
-    print("iris_clf_service.predict = {}".format(iris_clf_service.predict(X[0:1])))
-
-    print("Saving model as bento archive...")
-    saved_path = iris_clf_service.save("/tmp/bento")
+    saved_path = "./model"
 
     bento_service = load(saved_path)
     print(X[0:1])
@@ -50,17 +30,26 @@ if __name__ == "__main__":
     print("deploy to clipper cluster")
     api_name = "predict"
     clipper_conn = ClipperConnection(DockerContainerManager())
-    model_name, model_version = deploy_bentoml(clipper_conn, saved_path, api_name)
+
+    print("Stop all existing clipper deployments")
+    clipper_conn.stop_all()
+    print("Deploying model to clipper")
+    model_name, model_version = deploy_bentoml(
+        clipper_conn,
+        saved_path,
+        api_name,
+        'floats'
+    )
     print(
         "Deployed model to clipper. Model: ", model_name, " , version: " + model_version
     )
     print(
         "Register application bento_test_app and link deployed model to the application"
     )
-    application_name = "bentoml_test_app for clipper"
+    application_name = "bentoml_test_app"
     clipper_conn.register_application(
         name=application_name,
-        input_type="strings",
+        input_type="floats",
         default_output="default result",
         slo_micros=10000,
     )
@@ -71,10 +60,10 @@ if __name__ == "__main__":
     )
 
     print("Sending test request to clipper cluster")
-    headers = {"Content-type": "application/json"}
-    req_json = json.dumps({"input": "test"})
-    start = datetime.now()
-    request_result = requests.post(url, headers=headers, data=req_json)
-    end = datetime.now()
-    latency = (end - start).total_seconds() * 1000.0
+    #   headers = {"Content-type": "application/json"}
+    #   req_json = json.dumps({"input": X[0:1].tolist()})
+    #   start = datetime.now()
+    #   request_result = requests.post(url, headers=headers, data=req_json)
+    #   end = datetime.now()
+    #   latency = (end - start).total_seconds() * 1000.0
     print("RESULT from clipper: '%s', LATENCY: %f ms" % (request_result.text, latency))

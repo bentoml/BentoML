@@ -201,7 +201,6 @@ class FastaiImageHandler(BentoHandler):
         except ImportError:
             raise ImportError("fastai package is required to use")
 
-
         def transform_and_predict(input_bytes):
             image_data = cv2.imdecode(input_bytes, cv2.IMREAD_COLOR)
             if self.after_open:

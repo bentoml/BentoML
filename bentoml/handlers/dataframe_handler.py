@@ -20,6 +20,7 @@ import os
 import argparse
 
 import pandas as pd
+import numpy as np
 from flask import Response, make_response, jsonify
 
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
@@ -72,15 +73,15 @@ class DataframeHandler(BentoHandler):
             )
 
     def _get_type(self, item):
-        if item.startswith('int'):
-            return 'integer'
-        if item.startswith('float') or item.startswith('double'):
-            return 'number'
-        if item.startswith('str') or item.startswith('date'):
-            return 'string'
-        if item.startswith('bool'):
-            return 'boolean'
-        return 'object'
+        if item.startswith("int"):
+            return "integer"
+        if item.startswith("float") or item.startswith("double"):
+            return "number"
+        if item.startswith("str") or item.startswith("date"):
+            return "string"
+        if item.startswith("bool"):
+            return "boolean"
+        return "object"
 
     @property
     def request_schema(self):
@@ -233,7 +234,15 @@ class DataframeHandler(BentoHandler):
         )
 
     def handle_clipper_floats(self, inputs, func):
-        raise RuntimeError(
-            "DataframeHandler doesn't support floats input types \
-                for clipper deployment at the moment"
-        )
+        if self.typ == "frame":
+            def transform_and_predict(input_info):
+                nparray = np.asarray(input_info)
+                df = pd.DataFrame(input_info)
+                return func(df)
+
+            return list(map(transform_and_predict, inputs))
+        else:
+            raise RuntimeError(
+                "DataframeHandler doesn't support floats input types \
+                    for clipper deployment at the moment"
+            )

@@ -49,7 +49,7 @@ def generate_clipper_compatiable_string(item):
     return result.lower()
 
 
-def deploy_bentoml(clipper_conn, archive_path, api_name, labels=["bentoml"]):
+def deploy_bentoml(clipper_conn, archive_path, api_name, input_type, labels=["bentoml"]):
     """Deploy bentoml bundle to clipper cluster
 
     :param clipper_conn: Clipper connection.
@@ -74,7 +74,7 @@ def deploy_bentoml(clipper_conn, archive_path, api_name, labels=["bentoml"]):
         bento_service.name + "-" + api.name
     )
     version = generate_clipper_compatiable_string(bento_service.version)
-    input_type = "strings"
+    input_type = input_type or "strings"
 
     if isinstance(api.handler, ImageHandler):
         input_type = "bytes"

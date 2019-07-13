@@ -6,12 +6,34 @@
 BentoML Documentation
 ===================================
 
-BentoML is an open framework for building, shipping and running machine
-learning services.
+BentoML is a python framework for building, shipping and running machine learning services. It provides high-level APIs for defining an ML service and packaging its artifacts, source code, dependencies, and configurations into a production-system-friendly format that is ready for deployment.
 
-BentoML provides high level APIs for defining machine learning service
-and packaging its artifacts, source code, dependencies and configurations
-into a production-system-friendly format that is ready for deployment.
+Use BentoML if you need to:
+
+* Turn your ML model into REST API server, Serverless endpoint, PyPI package, or CLI tool
+
+* Manage the workflow of creating and deploying a ML service
+
+Getting Started
+---------------
+Defining a machine learning service with BentoML is as simple as a few lines of code:
+
+.. code-block:: python
+
+  @artifacts([PickleArtifact('model')])
+  @env(conda_pip_dependencies=["scikit-learn"])
+  class IrisClassifier(BentoService):
+
+      @api(DataframeHandler)
+      def predict(self, df):
+          return self.artifacts.model.predict(df)
+
+.. image:: https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal
+    :target: http://bit.ly/2ID50XP
+    :alt: Launch on Colab
+
+ - Try out this 5-mins getting started guide, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
+
 
 Feature Highlights
 ------------------
@@ -28,7 +50,7 @@ Feature Highlights
 
 * **Multiple Frameworks Support** - BentoML supports a wild range of machine
   learning frameworks out-of-box including Tensorflow, PyTorch, Scikit-Learn,
-  H2o, XgBoost and can be easily extended to work with new or custom
+  xgboost, H2O, FastAI and can be easily extended to work with new or custom
   frameworks.
 
 * **Deploy Anywhere** - BentoML bundled machine learning service can be easily

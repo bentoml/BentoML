@@ -66,6 +66,27 @@ $ tox -e py27
 $ tox -e py36
 ```
 
+## Using forks/branches of BentoML
+
+When trying new BentoML feature that has not been released, testing a fork of
+BentoML on Google Colab or trying out changes in a pull request, an easy  way of
+doing so is to use `pip install git+...` command, for example to install BentoML
+from its master branch with all latest changes:
+
+```
+pip install git+https://github.com/bentoml/BentoML.git
+```
+
+Or to install from your own fork of BentoML:
+```
+pip install git+https://github.com/{your_github_username}/BentoML.git
+```
+
+You can also specify what branch to install from:
+```
+pip install git+https://github.com/{your_github_username}/BentoML.git@{branch_name}
+```
+
 ## Style check and auto-formatting your code
 
 Make sure to install all dev dependencies:

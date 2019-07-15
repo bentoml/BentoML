@@ -1,5 +1,0 @@
-sklearn
-clipper_admin
-bentoml
-requests
-json

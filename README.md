@@ -109,8 +109,8 @@ directory. More tutorials and examples coming soon!
 Deployment guides:
 - [Serverless deployment with AWS Lambda](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-serverless)
 - [API server deployment with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-sagemaker)
+- [API server deployment with Clipper](https://github.com/bentoml/BentoML/blob/master/example/deploy-with-clipper/deploy-iris-classifier-to-clipper.ipynb)
 - [(WIP) API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/examples/deploy-with-kubernetes)
-- [(WIP) API server deployment with Clipper](https://github.com/bentoml/BentoML/pull/151)
 
 
 We collect example notebook page views to help us improve this project.

@@ -59,7 +59,7 @@ def deploy_bentoml(
         archive_path(str): Path to the bentoml service archive.
         api_name(str): name of the api that will be running in the clipper cluster
         input_type(str): Input type that clipper accept
-        labels(:obj:`list(str))))))))`, optional): labels for clipper model
+        labels(:obj:`list(str)`, optional): labels for clipper model
 
     Returns:
         tuple: Model name and model version that deployed to clipper
@@ -89,7 +89,6 @@ def deploy_bentoml(
     except docker.errors.APIError:
         clipper_conn.connect()
     except Exception as e:
-        print(e)
         raise BentoMLException("Can't start or connect with clipper cluster")
 
     snapshot_path = generate_bentoml_deployment_snapshot_path(

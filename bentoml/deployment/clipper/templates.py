@@ -100,8 +100,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.6.14-Linux-x86
 # update conda and setup environment and pre-install common ML libraries to speed up docker build
 RUN conda update conda -y \
       && conda install pip numpy scipy \
-      && pip install six \
-      && pip install -e git+https://github.com/yubozhao/BentoML.git@clipper-support#egg=pip
+      && pip install six bentoml
 
 
 # copy over model files

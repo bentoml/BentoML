@@ -79,11 +79,9 @@ class JsonHandler(BentoHandler):
     def handle_clipper_strings(self, inputs, func):
         def transform_and_predict(input_string):
             data = json.loads(input_string)
-            print('inside handler', data)
-            print('func in handle', func)
             return func(data)
 
-        return map(transform_and_predict, inputs)
+        return list(map(transform_and_predict, inputs))
 
     def handle_clipper_bytes(self, inputs, func):
         raise RuntimeError(

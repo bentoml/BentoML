@@ -52,12 +52,16 @@ def generate_clipper_compatiable_string(item):
 def deploy_bentoml(clipper_conn, archive_path, api_name, input_type='strings', labels=["bentoml"]):
     """Deploy bentoml bundle to clipper cluster
 
-    :param clipper_conn: Clipper connection.
-    :param archive_path: String, Path to bentoml bundle, it could be local
-                         filepath or s3 path
-    :param api_name: String, Name of the api that will be running in the clipper cluster
-    :param labels: [String], labels for clipper model, they are used purely
-                   for user annotations on clipper.
+    Args:
+        clipper_conn(clipper_admin.ClipperConnection): Clipper conntection instance
+        archive_path(str): Path to the bentoml service archive.
+        api_name(str): name of the api that will be running in the clipper cluster
+        input_type(str): Input type that clipper accept
+        labels(:obj:`list(str))))))))`, optional): labels for clipper model
+
+    Returns:
+        tuple: Model name and model version that deployed to clipper
+
     """
     bento_service = load(archive_path)
     apis = bento_service.get_service_apis()

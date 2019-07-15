@@ -177,7 +177,7 @@ class ImageHandler(BentoHandler):
             data = cv2.imdecode(input_bytes, cv2.IMREAD_COLOR)
             return func(data)
 
-        return map(transform_and_predict, inputs)
+        return list(map(transform_and_predict, inputs))
 
     def handle_clipper_strings(self, inputs, func):
         raise RuntimeError(

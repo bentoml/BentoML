@@ -217,7 +217,7 @@ class FastaiImageHandler(BentoHandler):
 
             return func(image_data)
 
-        return map(transform_and_predict, inputs)
+        return list(map(transform_and_predict, inputs))
 
     def handle_clipper_strings(self, inputs, func):
         raise RuntimeError(

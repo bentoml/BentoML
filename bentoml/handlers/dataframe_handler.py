@@ -222,22 +222,38 @@ class DataframeHandler(BentoHandler):
         )
 
     def handle_clipper_ints(self, inputs, func):
-        raise RuntimeError(
-            "DataframeHandler doesn't support ints input types \
-                for clipper deployment at the moment"
-        )
+        if self.typ == "frame":
+            def transform_and_predict(input_info):
+                nparray = np.asarray(input_info)
+                df = pd.DataFrame(nparray)
+                return func(df)
+
+            return list(map(transform_and_predict, inputs))
+        else:
+            raise RuntimeError(
+                "DataframeHandler doesn't support ints input types \
+                    for clipper deployment at the moment"
+            )
 
     def handle_clipper_doubles(self, inputs, func):
-        raise RuntimeError(
-            "DataframeHandler doesn't support doubles input types \
-                for clipper deployment at the moment"
-        )
+        if self.typ == "frame":
+            def transform_and_predict(input_info):
+                nparray = np.asarray(input_info)
+                df = pd.DataFrame(nparray)
+                return func(df)
+
+            return list(map(transform_and_predict, inputs))
+        else:
+            raise RuntimeError(
+                "DataframeHandler doesn't support doubles input types \
+                    for clipper deployment at the moment"
+            )
 
     def handle_clipper_floats(self, inputs, func):
         if self.typ == "frame":
             def transform_and_predict(input_info):
                 nparray = np.asarray(input_info)
-                df = pd.DataFrame(input_info)
+                df = pd.DataFrame(nparray)
                 return func(df)
 
             return list(map(transform_and_predict, inputs))

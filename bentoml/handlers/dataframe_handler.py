@@ -223,6 +223,7 @@ class DataframeHandler(BentoHandler):
 
     def handle_clipper_ints(self, inputs, func):
         if self.typ == "frame":
+
             def transform_and_predict(input_info):
                 nparray = np.asarray(input_info)
                 df = pd.DataFrame(nparray)
@@ -237,6 +238,7 @@ class DataframeHandler(BentoHandler):
 
     def handle_clipper_doubles(self, inputs, func):
         if self.typ == "frame":
+
             def transform_and_predict(input_info):
                 nparray = np.asarray(input_info)
                 df = pd.DataFrame(nparray)
@@ -251,6 +253,7 @@ class DataframeHandler(BentoHandler):
 
     def handle_clipper_floats(self, inputs, func):
         if self.typ == "frame":
+
             def transform_and_predict(input_info):
                 nparray = np.asarray(input_info)
                 df = pd.DataFrame(nparray)

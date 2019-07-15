@@ -49,7 +49,9 @@ def generate_clipper_compatiable_string(item):
     return result.lower()
 
 
-def deploy_bentoml(clipper_conn, archive_path, api_name, input_type='strings', labels=["bentoml"]):
+def deploy_bentoml(
+    clipper_conn, archive_path, api_name, input_type='strings', labels=["bentoml"]
+):
     """Deploy bentoml bundle to clipper cluster
 
     Args:

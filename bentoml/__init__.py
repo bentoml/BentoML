@@ -31,7 +31,7 @@ from bentoml.server import metrics
 from bentoml.archive import save, load
 
 from bentoml.utils.logging import configure_logging
-import bentoml.deployment
+from bentoml import deployment
 
 configure_logging()
 

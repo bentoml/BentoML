@@ -88,7 +88,7 @@ def deploy_bentoml(
         clipper_conn.start_clipper()
     except docker.errors.APIError:
         clipper_conn.connect()
-    except Exception as e:
+    except Exception:
         raise BentoMLException("Can't start or connect with clipper cluster")
 
     snapshot_path = generate_bentoml_deployment_snapshot_path(

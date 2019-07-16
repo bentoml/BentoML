@@ -7,6 +7,10 @@ from bentoml.handlers.dataframe_handler import (
     check_dataframe_column_contains,
 )
 
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
 
 def test_dataframe_request_schema():
     handler = DataframeHandler(
@@ -82,3 +86,17 @@ def test_check_dataframe_column_contains():
             {"a": "int", "b": "int", "d": "int", "e": "int"}, df
         )
     assert str(e.value).startswith("Missing columns:")
+
+def test_dataframe_handle_request_csv():
+    def test_function(df):
+        return df["name"][0]
+
+    handler = DataframeHandler()
+    csv_data = 'name,game,city\njohn,mario,sf'.encode('utf-8')
+    request = Mock()
+    request.headers = {'output_orient': 'records', 'orient': 'records'}
+    request.content_type = 'text/csv'
+    request.data = csv_data
+
+    result = handler.handle_request(request, test_function)
+    assert result.get_data().decode('utf-8') == '"john"'

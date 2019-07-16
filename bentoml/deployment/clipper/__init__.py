@@ -50,15 +50,24 @@ def generate_clipper_compatiable_string(item):
 
 
 def deploy_bentoml(
-    clipper_conn, archive_path, api_name, input_type='strings', labels=["bentoml"]
+    clipper_conn,
+    archive_path,
+    api_name,
+    input_type="strings",
+    model_name=None,
+    labels=["bentoml"],
 ):
     """Deploy bentoml bundle to clipper cluster
 
     Args:
-        clipper_conn(clipper_admin.ClipperConnection): Clipper conntection instance
+        clipper_conn(clipper_admin.ClipperConnection): Clipper connection instance
         archive_path(str): Path to the bentoml service archive.
-        api_name(str): name of the api that will be running in the clipper cluster
-        input_type(str): Input type that clipper accept
+        api_name(str): name of the api that will be used as prediction function for
+            clipper cluster
+        input_type(str): Input type that clipper accept. The default input_type for
+            image handler is `bytes`, for other handlers is `strings`. Availabel input_type
+            are `integers`, `floats`, `doubles`, `bytes`, or `strings`
+        model_name(str): Model's name for clipper cluster
         labels(:obj:`list(str)`, optional): labels for clipper model
 
     Returns:
@@ -76,7 +85,7 @@ def deploy_bentoml(
         raise BentoMLException(
             "Please specify api-name, when more than one API is present in the archive"
         )
-    application_name = generate_clipper_compatiable_string(
+    model_name = model_name or generate_clipper_compatiable_string(
         bento_service.name + "-" + api.name
     )
     version = generate_clipper_compatiable_string(bento_service.version)
@@ -105,7 +114,7 @@ def deploy_bentoml(
         f.write(entry_py_content)
 
     docker_content = DOCKERFILE_CLIPPER.format(
-        model_name=application_name, model_version=version
+        model_name=model_name, model_version=version
     )
     with open(os.path.join(snapshot_path, "Dockerfile-clipper"), "w") as f:
         f.write(docker_content)
@@ -118,11 +127,11 @@ def deploy_bentoml(
         process_docker_api_line(line)
 
     clipper_conn.deploy_model(
-        name=application_name,
+        name=model_name,
         version=version,
         input_type=input_type,
         image=image_tag,
         labels=labels,
     )
 
-    return application_name, version
+    return model_name, version

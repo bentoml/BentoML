@@ -73,15 +73,15 @@ class DataframeHandler(BentoHandler):
             )
 
     def _get_type(self, item):
-        if item.startswith("int"):
-            return "integer"
-        if item.startswith("float") or item.startswith("double"):
-            return "number"
-        if item.startswith("str") or item.startswith("date"):
-            return "string"
-        if item.startswith("bool"):
-            return "boolean"
-        return "object"
+        if item.startswith('int'):
+            return 'integer'
+        if item.startswith('float') or item.startswith('double'):
+            return 'number'
+        if item.startswith('str') or item.startswith('date'):
+            return 'string'
+        if item.startswith('bool'):
+            return 'boolean'
+        return 'object'
 
     @property
     def request_schema(self):

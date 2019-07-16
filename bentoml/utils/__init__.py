@@ -27,6 +27,11 @@ try:
 except (ImportError, AttributeError):
     from pathlib2 import Path
 
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 

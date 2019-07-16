@@ -18,23 +18,80 @@ from __future__ import print_function
 
 import os
 
+from bentoml.utils import cloudpickle
 from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
 
 class TfKerasModelArtifact(ArtifactSpec):
     """
-    Abstraction for saving/loading tensorflow keras model
+    Abstraction for saving/loading Keras model
     """
 
-    def __init__(self, name, model_extension=".h5"):
+    def __init__(self, name, custom_objects=None, model_extension=".h5"):
         super(TfKerasModelArtifact, self).__init__(name)
         self._model_extension = model_extension
+
+        self.custom_objects = custom_objects
+        self.graph = None
+        self.sess = None
+
+    def _custom_objects_path(self, base_path):
+        return os.path.join(base_path, self.name + '_custom_objects.pkl')
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._model_extension)
 
-    def pack(self, model):  # pylint:disable=arguments-differ
-        return _TfKerasModelArtifactInstance(self, model)
+    def bind_keras_backend_session(self):
+        try:
+            import tensorflow as tf
+        except ImportError:
+            raise ImportError(
+                "tensorflow package is required to use TfKerasModelArtifact"
+            )
+
+        self.sess = tf.keras.backend.get_session()
+        self.graph = self.sess.graph
+
+    def creat_session(self):
+        try:
+            import tensorflow as tf
+        except ImportError:
+            raise ImportError(
+                "tensorflow package is required to use TfKerasModelArtifact"
+            )
+
+        self.graph = tf.get_default_graph()
+        self.sess = tf.Session(graph=self.graph)
+        tf.keras.backend.set_session(self.sess)
+
+    def pack(self, data):  # pylint:disable=arguments-differ
+        try:
+            from tensorflow.python.keras.engine import training
+        except ImportError:
+            raise ImportError(
+                "tensorflow package is required to use TfKerasModelArtifact"
+            )
+
+        if isinstance(data, training.Model):
+            model = data
+            custom_objects = self.custom_objects
+        elif (
+            isinstance(data, dict)
+            and 'model' in data
+            and isinstance(data['model'], training.Model)
+        ):
+            model = data['model']
+            custom_objects = (
+                data['custom_objects']
+                if 'custom_objects' in data
+                else self.custom_objects
+            )
+        else:
+            raise ValueError("TfKerasModelArtifact#pack expects type trainig.Model")
+
+        self.bind_keras_backend_session()
+        model._make_predict_function()
+        return _TfKerasModelArtifactInstance(self, model, custom_objects)
 
     def load(self, path):
         try:
@@ -44,13 +101,25 @@ class TfKerasModelArtifact(ArtifactSpec):
                 "tensorflow package is required to use TfKerasModelArtifact"
             )
 
-        model = load_model(self._model_file_path(path))
-        model._make_predict_function()
+        self.creat_session()
+
+        if self.custom_objects is None and os.path.isfile(
+            self._custom_objects_path(path)
+        ):
+            self.custom_objects = cloudpickle.load(
+                open(self._custom_objects_path(path), 'rb')
+            )
+
+        with self.graph.as_default():
+            with self.sess.as_default():
+                model = load_model(
+                    self._model_file_path(path), custom_objects=self.custom_objects
+                )
         return self.pack(model)
 
 
 class _TfKerasModelArtifactInstance(ArtifactInstance):
-    def __init__(self, spec, model):
+    def __init__(self, spec, model, custom_objects):
         super(_TfKerasModelArtifactInstance, self).__init__(spec)
 
         try:
@@ -63,10 +132,37 @@ class _TfKerasModelArtifactInstance(ArtifactInstance):
         if not isinstance(model, training.Model):
             raise ValueError("Expected `model` argument to be a `Model` instance")
 
+        self.graph = spec.graph
+        self.sess = spec.sess
         self._model = model
+        self._custom_objects = custom_objects
+        self._model_wrapper = _TfKerasModelWrapper(self._model, self.graph, self.sess)
 
     def save(self, dst):
-        return self._model.save(self.spec._model_file_path(dst))
+        # save custom_objects for model
+        cloudpickle.dump(
+            self._custom_objects, open(self.spec._custom_objects_path(dst), "wb")
+        )
+
+        # save keras model
+        self._model.save(self.spec._model_file_path(dst))
 
     def get(self):
-        return self._model
+        return self._model_wrapper
+
+
+class _TfKerasModelWrapper:
+    def __init__(self, tf_keras_model, graph, sess):
+        self.tf_keras_model = tf_keras_model
+        self.graph = graph
+        self.sess = sess
+
+    def predict(self, *args, **kwargs):
+        with self.graph.as_default():
+            with self.sess.as_default():
+                return self.tf_keras_model.predict(*args, **kwargs)
+
+    def predict_classes(self, *args, **kwargs):
+        with self.graph.as_default():
+            with self.sess.as_default():
+                return self.tf_keras_model.predict_classes(*args, **kwargs)

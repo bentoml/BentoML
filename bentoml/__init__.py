@@ -31,6 +31,7 @@ from bentoml.server import metrics
 from bentoml.archive import save, load
 
 from bentoml.utils.log import configure_logging
+from bentoml import deployment
 
 configure_logging()
 
@@ -46,4 +47,5 @@ __all__ = [
     "handlers",
     "metrics",
     "BentoService",
+    "deployment",
 ]

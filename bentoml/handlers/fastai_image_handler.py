@@ -185,3 +185,59 @@ class FastaiImageHandler(BentoHandler):
         result = func(image_data)
         result = get_output_str(result, event["headers"].get("output", "json"))
         return {"statusCode": 200, "body": result}
+
+    def handle_clipper_bytes(self, inputs, func):
+        try:
+            import cv2
+        except ImportError:
+            raise ImportError(
+                "opencv-python package is required to use FastaiImageHandler"
+            )
+
+        try:
+            from fastai.vision import pil2tensor, Image
+            import numpy as np
+        except ImportError:
+            raise ImportError("fastai package is required to use")
+
+        def transform_and_predict(input_bytes):
+            image_data = cv2.imdecode(input_bytes, cv2.IMREAD_COLOR)
+            if self.after_open:
+                image_data = self.after_open(image_data)
+            image_data = pil2tensor(image_data, np.float32)
+
+            if self.div:
+                image_data = image_data.div_(255)
+
+            if self.cls:
+                image_data = self.cls(image_data)
+            else:
+                image_data = Image(image_data)
+
+            return func(image_data)
+
+        return list(map(transform_and_predict, inputs))
+
+    def handle_clipper_strings(self, inputs, func):
+        raise RuntimeError(
+            "Fastai Image handler does not support 'strings' input_type \
+                for Clipper deployment at the moment"
+        )
+
+    def handle_clipper_ints(self, inputs, func):
+        raise RuntimeError(
+            "Fastai ImageHandler doesn't support ints input types \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_doubles(self, inputs, func):
+        raise RuntimeError(
+            "Fastai ImageHandler doesn't support doubles input types \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_floats(self, inputs, func):
+        raise RuntimeError(
+            "Fastai ImageHandler doesn't support floats input types \
+                for clipper deployment at the moment"
+        )

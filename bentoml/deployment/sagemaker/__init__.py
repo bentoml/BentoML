@@ -29,7 +29,10 @@ import boto3
 import docker
 
 from bentoml.deployment.base_deployment import Deployment
-from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
+from bentoml.deployment.utils import (
+    generate_bentoml_deployment_snapshot_path,
+    process_docker_api_line,
+)
 from bentoml.utils.whichcraft import which
 from bentoml.exceptions import BentoMLException
 from bentoml.deployment.sagemaker.templates import (
@@ -54,26 +57,6 @@ def strip_scheme(url):
     parsed = urlparse(url)
     scheme = "%s://" % parsed.scheme
     return parsed.geturl().replace(scheme, "", 1)
-
-
-def process_docker_api_line(payload):
-    """ Process the output from API stream, throw an Exception if there is an error """
-    # Sometimes Docker sends to "{}\n" blocks together...
-    for segment in payload.decode("utf-8").split("\n"):
-        line = segment.strip()
-        if line:
-            try:
-                line_payload = json.loads(line)
-            except ValueError as e:
-                print("Could not decipher payload from API: " + e)
-            if line_payload:
-                if "errorDetail" in line_payload:
-                    error = line_payload["errorDetail"]
-                    sys.stderr.write(error["message"])
-                    raise RuntimeError("Error on build - code %s" % error["code"])
-                elif "stream" in line_payload:
-                    # TODO: move this to logger.info
-                    sys.stdout.write(line_payload["stream"])
 
 
 def generate_aws_compatible_string(item):

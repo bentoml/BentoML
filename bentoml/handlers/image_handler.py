@@ -166,3 +166,39 @@ class ImageHandler(BentoHandler):
         result = func(image)
         result = get_output_str(result, event["headers"].get("output", "json"))
         return {"statusCode": 200, "body": result}
+
+    def handle_clipper_bytes(self, inputs, func):
+        try:
+            import cv2
+        except ImportError:
+            raise ImportError("opencv-python package is required to use ImageHandler")
+
+        def transform_and_predict(input_bytes):
+            data = cv2.imdecode(input_bytes, cv2.IMREAD_COLOR)
+            return func(data)
+
+        return list(map(transform_and_predict, inputs))
+
+    def handle_clipper_strings(self, inputs, func):
+        raise RuntimeError(
+            "ImageHandler does not support 'strings' input_type \
+                for Clipper deployment at the moment"
+        )
+
+    def handle_clipper_ints(self, inputs, func):
+        raise RuntimeError(
+            "ImageHandler doesn't support ints input types \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_doubles(self, inputs, func):
+        raise RuntimeError(
+            "ImageHandler doesn't support doubles input types \
+                for clipper deployment at the moment"
+        )
+
+    def handle_clipper_floats(self, inputs, func):
+        raise RuntimeError(
+            "ImageHandler doesn't support floats input types \
+                for clipper deployment at the moment"
+        )

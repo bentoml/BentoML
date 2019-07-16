@@ -1,6 +1,16 @@
 # flake8: noqa
 # pylint: skip-file
 """
+This is a copy of Apache Spark's fork of original cloudpickle library:
+
+https://github.com/cloudpipe/cloudpickle
+https://github.com/apache/spark/blob/master/python/pyspark/cloudpickle.py
+
+This file is copied on July 2019 from this revision:
+https://github.com/apache/spark/blob/a67e8426e37af3a19ff44fb1203c94a85c5f23c4/python/pyspark/cloudpickle.py
+"""
+
+"""
 This class is defined to override standard pickle functionality
 
 The goals of it follow:

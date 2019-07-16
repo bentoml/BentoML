@@ -181,7 +181,7 @@ class ImageHandler(BentoHandler):
 
     def handle_clipper_strings(self, inputs, func):
         raise RuntimeError(
-            "Image handler does not support 'strings' input_type \
+            "ImageHandler does not support 'strings' input_type \
                 for Clipper deployment at the moment"
         )
 

@@ -109,7 +109,7 @@ class BentoServiceAPI(object):
         return self.handler.handle_clipper_strings(inputs, self.func)
 
     def handle_clipper_bytes(self, inputs):
-        return self.handler.handle_clipper_strings(inputs, self.func)
+        return self.handler.handle_clipper_bytes(inputs, self.func)
 
     def handle_clipper_ints(self, inputs):
         return self.handler.handle_clipper_ints(inputs, self.func)

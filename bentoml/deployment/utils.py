@@ -17,13 +17,14 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
 import json
+import logging
 
 from datetime import datetime
 
 from bentoml.config import BENTOML_HOME
 
+logger = logging.getLogger(__name__)
 
 def generate_bentoml_deployment_snapshot_path(service_name, service_version, platform):
     return os.path.join(
@@ -49,8 +50,7 @@ def process_docker_api_line(payload):
             if line_payload:
                 if "errorDetail" in line_payload:
                     error = line_payload["errorDetail"]
-                    sys.stderr.write(error["message"])
+                    logger.error(error['message'])
                     raise RuntimeError("Error on build - code %s" % error["code"])
                 elif "stream" in line_payload:
-                    # TODO: move this to logger.info
-                    sys.stdout.write(line_payload["stream"])
+                    logger.info(line_payload['stream'])

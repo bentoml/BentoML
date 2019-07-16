@@ -66,7 +66,6 @@ class TfKerasModelArtifact(ArtifactSpec):
 
     def pack(self, data):  # pylint:disable=arguments-differ
         try:
-            import tensorflow as tf
             from tensorflow.python.keras.engine import training
         except ImportError:
             raise ImportError(
@@ -96,7 +95,6 @@ class TfKerasModelArtifact(ArtifactSpec):
 
     def load(self, path):
         try:
-            import tensorflow as tf
             from tensorflow.python.keras.models import load_model
         except ImportError:
             raise ImportError(
@@ -125,7 +123,6 @@ class _TfKerasModelArtifactInstance(ArtifactInstance):
         super(_TfKerasModelArtifactInstance, self).__init__(spec)
 
         try:
-            import tensorflow as tf
             from tensorflow.python.keras.engine import training
         except ImportError:
             raise ImportError(

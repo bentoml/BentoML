@@ -72,9 +72,4 @@ class _PytorchModelArtifactInstance(ArtifactInstance):
         return self._model
 
     def save(self, dst):
-        try:
-            import torch
-        except ImportError:
-            raise ImportError("torch package is required to use PytorchModelArtifact")
-
         return cloudpickle.dump(self._model, open(self.spec._file_path(dst), "wb"))

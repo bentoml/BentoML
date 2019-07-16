@@ -43,7 +43,6 @@ def _set_func_attr(func, attribute_name, value):
     return setattr(func, attribute_name, value)
 
 
-# TODO(chaoyu): add property info, default to api func's doc string
 class BentoServiceAPI(object):
     """BentoServiceAPI defines abstraction for an API call that can be executed
     with BentoAPIServer and BentoCLI
@@ -229,14 +228,14 @@ def env_decorator(**kwargs):
     """Define environment spec for BentoService
 
     Args:
-        setup_sh (string): User defined shell script to run before running BentoService.
+        setup_sh (str): User defined shell script to run before running BentoService.
             It could be local file path or the shell script content.
-        requirements_text (string): User defined requirement text to install before
+        requirements_text (str): User defined requirement text to install before
             running BentoService.  It could be local file path or requirements' content
-        conda_channels (list(string)): User defined conda channels
-        conda_dependencies (list(string)): Defined dependencies to be installed with
+        conda_channels (list(str)): User defined conda channels
+        conda_dependencies (list(str)): Defined dependencies to be installed with
             conda environment.
-        conda_pip_dependencies (list(string)): Additional pip modules to be install
+        conda_pip_dependencies (list(str)): Additional pip modules to be install
             with conda
 
     """
@@ -332,6 +331,12 @@ class BentoService(BentoServiceBase):
     _version_minor = None
 
     def __init__(self, artifacts=None, env=None):
+        self._init_artifacts(artifacts)
+        self._init_env(env)
+        self._config_service_apis()
+        self.name = self.__class__.name()
+
+    def _init_artifacts(self, artifacts):
         if artifacts is None:
             if self._bento_archive_path:
                 artifacts = ArtifactCollection.load(
@@ -343,17 +348,12 @@ class BentoService(BentoServiceBase):
                     "before instantiating a BentoService class"
                 )
 
-        # TODO: validate artifacts arg matches self.__class__._artifacts_spec definition
         if isinstance(artifacts, ArtifactCollection):
             self._artifacts = artifacts
         else:
             self._artifacts = ArtifactCollection()
             for artifact in artifacts:
                 self._artifacts[artifact.name] = artifact
-
-        self._init_env(env)
-        self._config_service_apis()
-        self.name = self.__class__.name()
 
     def _init_env(self, env=None):
         if env is None:

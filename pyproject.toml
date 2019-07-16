@@ -12,6 +12,7 @@ exclude = '''
     | dist
     | examples
   )/
+  | bentoml/utils/cloudpickle.py
 )
 '''
 

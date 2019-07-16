@@ -6,6 +6,8 @@ from bentoml import api, env, BentoService, artifacts
 from bentoml.artifact import TfKerasModelArtifact, PickleArtifact
 from bentoml.handlers import JsonHandler
 
+max_features = 1000
+
 @artifacts([
     TfKerasModelArtifact('model'),
     PickleArtifact('word_index')
@@ -14,13 +16,13 @@ from bentoml.handlers import JsonHandler
 class TextClassificationService(BentoService):
    
     def word_to_index(self, word):
-        if word in self.artifacts.word_index:
+        if word in self.artifacts.word_index and self.artifacts.word_index[word] <= max_features:
             return self.artifacts.word_index[word]
         else:
             return self.artifacts.word_index["<UNK>"]
     
-    def preprocessing(self, text):
-        sequence = text.text_to_word_sequence(text)
+    def preprocessing(self, text_str):
+        sequence = text.text_to_word_sequence(text_str)
         return list(map(self.word_to_index, sequence))
     
     @api(JsonHandler)

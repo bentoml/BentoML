@@ -23,7 +23,7 @@ import pandas as pd
 from flask import Response, make_response, jsonify
 
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
-from bentoml.utils import is_url
+from bentoml.utils import is_url, StringIO
 from bentoml.utils.s3 import is_s3_url
 
 
@@ -112,7 +112,8 @@ class DataframeHandler(BentoHandler):
                 request.data.decode("utf-8"), orient=orient, typ=self.typ, dtype=False
             )
         elif request.content_type == "text/csv":
-            df = pd.read_csv(request.data.decode("utf-8"))
+            csv_string = StringIO(request.data.decode('utf-8'))
+            df = pd.read_csv(csv_string)
         else:
             return make_response(
                 jsonify(

@@ -29,7 +29,7 @@ Defining a machine learning service with BentoML is as simple as a few lines of 
           return self.artifacts.model.predict(df)
 
 .. image:: https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal
-    :target: http://bit.ly/2ID50XP
+    :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb
     :alt: Launch on Colab
 
  - Try out this 5-mins getting started guide, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.

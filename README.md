@@ -50,8 +50,8 @@ class IrisClassifier(BentoService):
 ```
 
 
-[![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2ID50XP) - Try out
-this 5-mins getting started guide, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
+[![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb)
+- Try out our 5-mins getting started guide, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
 
 
 ## Feature Highlights
@@ -96,16 +96,15 @@ All examples can be found under the
 [BentoML/examples](https://github.com/bentoml/BentoML/tree/master/examples)
 directory. More tutorials and examples coming soon!
 
-- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2ID50XP) - [Quick Start Guide](https://github.com/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb)
-- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2KegK6n) - [Scikit-learn Sentiment Analysis](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
-- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2IbtfNO) - [Keras Text Classification](https://github.com/bentoml/BentoML/blob/master/examples/keras-text-classification/keras-text-classification.ipynb)
+- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) - [Quick Start Guide](https://github.com/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb)
+- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb) - [Scikit-learn Sentiment Analysis](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
+- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/keras-text-classification/keras-text-classification.ipynb) - [Keras Text Classification](https://github.com/bentoml/BentoML/blob/master/examples/keras-text-classification/keras-text-classification.ipynb)
 - [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/pet-classification/notebook.ipynb) - [FastAI Pet Classification](https://github.com/bentoml/gallery/blob/master/fast-ai/pet-classification/notebook.ipynb)
 - [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/tabular-csv/notebook.ipynb) - [FastAI Tabular CSV](https://github.com/bentoml/gallery/blob/master/fast-ai/tabular-csv/notebook.ipynb)
 - [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb) - [PyTorch Fashion MNIST classification](https://github.com/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb)
-
 - [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/keras-fashion-mnist/keras-fashion-mnist-classification.ipynb) - [Keras Fashion MNIST classification](https://github.com/bentoml/BentoML/blob/master/examples/keras-fashion-mnist/keras-fashion-mnist-classification.ipynb)
-- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2wPh3M3) - [XGBoost Titanic Survival Prediction](https://github.com/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb)
-- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](http://bit.ly/2KdwNRN) - [H2O Classification](https://github.com/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-classification.ipynb)
+- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb) - [XGBoost Titanic Survival Prediction](https://github.com/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb)
+- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-classification.ipynb) - [H2O Classification](https://github.com/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-classification.ipynb)
 
 
 Deployment guides:

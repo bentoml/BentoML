@@ -105,11 +105,15 @@ class ImageHandler(BentoHandler):
             return Response(response="Only accept POST request", status=400)
 
         if not self.accept_multiple_files:
-            input_file = request.files.get(self.input_names)
-            file_name = secure_filename(input_file.filename)
-            check_file_format(file_name, self.accept_file_extensions)
+            input_file = request.files.get("image")
 
-            input_stream = BytesIO(input_file.read())
+            if input_file:
+                file_name = secure_filename(input_file.filename)
+                check_file_format(file_name, self.accept_file_extensions)
+                input_stream = BytesIO(input_file.read())
+            else:
+                input_stream = BytesIO(request.data)
+
             input_data = imread(input_stream, pilmode=self.pilmode)
         else:
             return Response(response="Only support single file input", status=400)

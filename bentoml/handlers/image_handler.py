@@ -82,8 +82,13 @@ class ImageHandler(BentoHandler):
 
     @property
     def request_schema(self):
-        # For now, only support single file input.
-        return {"image/*": {"schema": {"type": "string", "format": "binary"}}}
+        return {
+            "image/*": {"schema": {"type": "string", "format": "binary"}},
+            "multipart/form-data": {
+                "schema": {"type": "object"},
+                "properties": {self.input_name: {"type": "string", "format": "binary"}}
+            }
+        }
 
     def handle_request(self, request, func):
         """Handle http request that has image file/s. It will convert image into a
@@ -111,8 +116,11 @@ class ImageHandler(BentoHandler):
                 file_name = secure_filename(input_file.filename)
                 check_file_format(file_name, self.accept_file_extensions)
                 input_stream = BytesIO(input_file.read())
+            elif request.data:
+                input_stream = request.data
             else:
-                input_stream = BytesIO(request.data)
+                raise ValueError("BentoML#ImageHandler unexpected HTTP request: %s" %
+                                 request)
 
             input_data = imread(input_stream, pilmode=self.pilmode)
         else:

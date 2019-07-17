@@ -23,6 +23,7 @@ from io import BytesIO
 
 from werkzeug.utils import secure_filename
 from flask import Response
+import numpy as np
 
 from bentoml.exceptions import BentoMLException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
@@ -74,10 +75,19 @@ class FastaiImageHandler(BentoHandler):
         self.accept_file_extensions = accept_file_extensions or [".jpg", ".png", "jpeg"]
         self.after_open = after_open
 
+    @property
+    def request_schema(self):
+        return {
+            "image/*": {"schema": {"type": "string", "format": "binary"}},
+            "multipart/form-data": {
+                "schema": {"type": "object"},
+                "properties": {self.input_name: {"type": "string", "format": "binary"}}
+            }
+        }
+
     def handle_request(self, request, func):
         try:
             from fastai.vision import Image, pil2tensor
-            import numpy as np
         except ImportError:
             raise ImportError("fastai package is required to use FastaiImageHandler")
 
@@ -90,10 +100,17 @@ class FastaiImageHandler(BentoHandler):
             return Response(response="Only accept POST request", status=400)
 
         input_file = request.files.get(self.input_name)
-        file_name = secure_filename(input_file.filename)
-        check_file_format(file_name, self.accept_file_extensions)
 
-        input_stream = BytesIO(input_file.read())
+        if input_file:
+            file_name = secure_filename(input_file.filename)
+            check_file_format(file_name, self.accept_file_extensions)
+            input_stream = BytesIO(input_file.read())
+        elif request.data:
+            input_stream = request.data
+        else:
+            raise ValueError("BentoML#FastaiImageHandler unexpected HTTP request: %s" %
+                             request)
+
         input_data = imread(input_stream, pilmode=self.convert_mode)
 
         if self.after_open:
@@ -167,7 +184,6 @@ class FastaiImageHandler(BentoHandler):
             )
         try:
             from fastai.vision import pil2tensor, Image
-            import numpy as np
         except ImportError:
             raise ImportError("fastai package is required")
 

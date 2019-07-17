@@ -93,15 +93,10 @@ for defining our ML service.
 
 * **env** decorator designed for specifying the desired system environment
   and dependencies in order for this service to load. For this project we
-  are using conda environment.  Other ways you can use this decorator:
+  are using conda environment. If you already have requirement.txt file
+  listing all of the python libraries you need:
 
-  * If you already have requirement.txt file listing all of the python
-    libraries you need:
     ``@env(requirement_txt="../my_project/requirement.txt")``
-
-  * If you are running this code inside a conda environment that matches
-    the desired production environment:
-    ``@env(with_current_conda_env=True)``
 
 * **api**: decorator allow us to add an entry point to accessing this service.
   Each *api* will be translated into a REST endpoint when deploying as API
@@ -146,7 +141,6 @@ Save defined ML service as BentoML service archive
 
     svc = IrisClassifier.pack(model=clf)
     saved_path = svc.save('/tmp/bentoml_archive')
-    print(saved_path)
 
 **Line 1**: We import the service definition we wrote in the previous cell.
 
@@ -174,15 +168,6 @@ files that generated within the archive directory:
 Using BentoML archive
 *********************
 
-*For demoing purpose, copy the generated service archive into ./model folder*
-
-.. code-block:: python
-
-    import shutil
-    shutil.rmtree('./model', ignore_errors=True)
-    shutil.copytree(saved_path, './model)
-
-
 Real-time serving with REST API
 +++++++++++++++++++++++++++++++
 To exposing your ML service as HTTP API endpoint, you can simply use the
@@ -190,7 +175,7 @@ bentoml serve command:
 
 .. code-block:: python
 
-    !bentoml serve ./model
+    !bentoml serve {saved_path}
 
 With `bentoml serve` command, a web server will start locally at the port 5000.
 We created additional endpoints that make this server ready for production.
@@ -214,7 +199,7 @@ the generated Dockerfile to create Docker image for that.
 
 .. code-block:: python
 
-    !cd ./model && docker build -t iris-classifier .
+    !cd {saved_path} && docker build -t iris-classifier .
 
 .. code-block:: python
 
@@ -247,7 +232,7 @@ The easiest to use Bento service archive in your python application is using
     import bentoml
     import pandas as pd
 
-    bento_svc = bentoml.load('./model')
+    bento_svc = bentoml.load(saved_path)
     bento_svc.predict([X[0]]
 
 
@@ -259,7 +244,7 @@ BentoML support distributing Bento service as PyPi package, with the generated
 
 .. code-block:: python
 
-    !pip install ./model
+    !pip install {saved_path}
 
 Bento service archive can be uploaded to pypi.org as public python package or
 to your organization's private PyPi index for all developers in your org to
@@ -267,7 +252,7 @@ use.
 
 .. code-block:: bash
 
-    cd ./model & python setup.py sdist upload
+    !cd {saved_path} & python setup.py sdist upload
 
 .. note::
 
@@ -319,15 +304,15 @@ without installing.
 
 .. code-block:: python
 
-    !bentoml info ./model
+    !bentoml info {saved_path}
 
 .. code-block:: python
 
-    !bentoml docs ./model
+    !bentoml docs {saved_path}
 
 .. code-block:: python
 
-    !bentoml predict ./model --input='[[5.1, 3.5, 1.4, 0.2]]'
+    !bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
 
 
 Congratulation! You've train, build, and running your first Bento

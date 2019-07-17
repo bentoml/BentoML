@@ -12,6 +12,7 @@ try:
 except ImportError:
     from mock import Mock
 
+
 def test_dataframe_request_schema():
     handler = DataframeHandler(
         input_dtypes={"col1": "int", "col2": "float", "col3": "string"}
@@ -86,6 +87,7 @@ def test_check_dataframe_column_contains():
             {"a": "int", "b": "int", "d": "int", "e": "int"}, df
         )
     assert str(e.value).startswith("Missing columns:")
+
 
 def test_dataframe_handle_request_csv():
     def test_function(df):

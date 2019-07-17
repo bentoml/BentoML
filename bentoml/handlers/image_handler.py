@@ -86,8 +86,8 @@ class ImageHandler(BentoHandler):
             "image/*": {"schema": {"type": "string", "format": "binary"}},
             "multipart/form-data": {
                 "schema": {"type": "object"},
-                "properties": {self.input_name: {"type": "string", "format": "binary"}}
-            }
+                "properties": {self.input_name: {"type": "string", "format": "binary"}},
+            },
         }
 
     def handle_request(self, request, func):
@@ -119,8 +119,9 @@ class ImageHandler(BentoHandler):
             elif request.data:
                 input_stream = request.data
             else:
-                raise ValueError("BentoML#ImageHandler unexpected HTTP request: %s" %
-                                 request)
+                raise ValueError(
+                    "BentoML#ImageHandler unexpected HTTP request: %s" % request
+                )
 
             input_data = imread(input_stream, pilmode=self.pilmode)
         else:

@@ -66,13 +66,13 @@ class ImageHandler(BentoHandler):
 
     def __init__(
         self,
-        input_names=None,
+        input_name="image",
         accept_file_extensions=None,
         accept_multiple_files=False,
-        pilmode=None,
+        pilmode="RGB",
     ):
-        self.input_names = input_names or "image"
-        self.pilmode = pilmode or "RGB"
+        self.input_name = input_name
+        self.pilmode = pilmode
         self.accept_file_extensions = accept_file_extensions or [
             ".jpg",
             ".png",
@@ -82,8 +82,13 @@ class ImageHandler(BentoHandler):
 
     @property
     def request_schema(self):
-        # For now, only support single file input.
-        return {"image/*": {"schema": {"type": "string", "format": "binary"}}}
+        return {
+            "image/*": {"schema": {"type": "string", "format": "binary"}},
+            "multipart/form-data": {
+                "schema": {"type": "object"},
+                "properties": {self.input_name: {"type": "string", "format": "binary"}}
+            }
+        }
 
     def handle_request(self, request, func):
         """Handle http request that has image file/s. It will convert image into a
@@ -105,11 +110,18 @@ class ImageHandler(BentoHandler):
             return Response(response="Only accept POST request", status=400)
 
         if not self.accept_multiple_files:
-            input_file = request.files.get(self.input_names)
-            file_name = secure_filename(input_file.filename)
-            check_file_format(file_name, self.accept_file_extensions)
+            input_file = request.files.get("image")
 
-            input_stream = BytesIO(input_file.read())
+            if input_file:
+                file_name = secure_filename(input_file.filename)
+                check_file_format(file_name, self.accept_file_extensions)
+                input_stream = BytesIO(input_file.read())
+            elif request.data:
+                input_stream = request.data
+            else:
+                raise ValueError("BentoML#ImageHandler unexpected HTTP request: %s" %
+                                 request)
+
             input_data = imread(input_stream, pilmode=self.pilmode)
         else:
             return Response(response="Only support single file input", status=400)

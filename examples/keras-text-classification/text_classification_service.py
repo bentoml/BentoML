@@ -3,13 +3,13 @@ import numpy as np
 from tensorflow import keras
 from tensorflow.keras.preprocessing import sequence, text
 from bentoml import api, env, BentoService, artifacts
-from bentoml.artifact import TfKerasModelArtifact, PickleArtifact
+from bentoml.artifact import KerasModelArtifact, PickleArtifact
 from bentoml.handlers import JsonHandler
 
 max_features = 1000
 
 @artifacts([
-    TfKerasModelArtifact('model'),
+    KerasModelArtifact('model'),
     PickleArtifact('word_index')
 ])
 @env(conda_dependencies=['tensorflow', 'numpy', 'pandas'])

@@ -20,7 +20,7 @@ from bentoml.artifact.artifact import ArtifactSpec, ArtifactInstance, ArtifactCo
 from bentoml.artifact.pickle_artifact import PickleArtifact
 from bentoml.artifact.pytorch_model_artifact import PytorchModelArtifact
 from bentoml.artifact.text_file_artifact import TextFileArtifact
-from bentoml.artifact.tf_keras_model_artifact import TfKerasModelArtifact
+from bentoml.artifact.keras_model_artifact import KerasModelArtifact
 from bentoml.artifact.xgboost_artifact import XgboostModelArtifact
 from bentoml.artifact.h2o_artifact import H2oModelArtifact
 from bentoml.artifact.fastai_model_artifact import FastaiModelArtifact
@@ -32,7 +32,7 @@ __all__ = [
     "PickleArtifact",
     "PytorchModelArtifact",
     "TextFileArtifact",
-    "TfKerasModelArtifact",
+    "KerasModelArtifact",
     "XgboostModelArtifact",
     "H2oModelArtifact",
     "FastaiModelArtifact",

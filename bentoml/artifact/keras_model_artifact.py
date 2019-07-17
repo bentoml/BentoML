@@ -22,13 +22,13 @@ from bentoml.utils import cloudpickle
 from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
 
-class TfKerasModelArtifact(ArtifactSpec):
+class KerasModelArtifact(ArtifactSpec):
     """
     Abstraction for saving/loading Keras model
     """
 
     def __init__(self, name, custom_objects=None, model_extension=".h5"):
-        super(TfKerasModelArtifact, self).__init__(name)
+        super(KerasModelArtifact, self).__init__(name)
         self._model_extension = model_extension
 
         self.custom_objects = custom_objects
@@ -46,7 +46,7 @@ class TfKerasModelArtifact(ArtifactSpec):
             import tensorflow as tf
         except ImportError:
             raise ImportError(
-                "tensorflow package is required to use TfKerasModelArtifact"
+                "tensorflow package is required to use KerasModelArtifact"
             )
 
         self.sess = tf.keras.backend.get_session()
@@ -57,7 +57,7 @@ class TfKerasModelArtifact(ArtifactSpec):
             import tensorflow as tf
         except ImportError:
             raise ImportError(
-                "tensorflow package is required to use TfKerasModelArtifact"
+                "tensorflow package is required to use KerasModelArtifact"
             )
 
         self.graph = tf.get_default_graph()
@@ -69,7 +69,7 @@ class TfKerasModelArtifact(ArtifactSpec):
             from tensorflow.python.keras.engine import training
         except ImportError:
             raise ImportError(
-                "tensorflow package is required to use TfKerasModelArtifact"
+                "tensorflow package is required to use KerasModelArtifact"
             )
 
         if isinstance(data, training.Model):
@@ -87,7 +87,7 @@ class TfKerasModelArtifact(ArtifactSpec):
                 else self.custom_objects
             )
         else:
-            raise ValueError("TfKerasModelArtifact#pack expects type trainig.Model")
+            raise ValueError("KerasModelArtifact#pack expects type trainig.Model")
 
         self.bind_keras_backend_session()
         model._make_predict_function()
@@ -98,7 +98,7 @@ class TfKerasModelArtifact(ArtifactSpec):
             from tensorflow.python.keras.models import load_model
         except ImportError:
             raise ImportError(
-                "tensorflow package is required to use TfKerasModelArtifact"
+                "tensorflow package is required to use KerasModelArtifact"
             )
 
         self.creat_session()
@@ -126,7 +126,7 @@ class _TfKerasModelArtifactInstance(ArtifactInstance):
             from tensorflow.python.keras.engine import training
         except ImportError:
             raise ImportError(
-                "tensorflow package is required to use TfKerasModelArtifact"
+                "tensorflow package is required to use KerasModelArtifact"
             )
 
         if not isinstance(model, training.Model):

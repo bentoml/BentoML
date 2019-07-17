@@ -109,7 +109,7 @@ for defining our ML service.
 
 
 **Line 3**: Using **PickleArtifact** for packaging our classifier model. Beside
-  PickleArtifact, BentoML offers `TfKerasModelArtifact`,
+  PickleArtifact, BentoML offers `KerasModelArtifact`,
   `PytorchModelArtifact`, `H2oModelArtifact`, `XgboostModelArtifact` and etc.
 
 **Line 4**: Each API endpoint requires a Handler for defining the expect input

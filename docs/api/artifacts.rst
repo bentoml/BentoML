@@ -25,7 +25,7 @@ H2oModelArtifact
 ++++++++++++++++
 .. autoclass:: bentoml.artifact.H2oModelArtifact
 
-TfKerasModelArtifact
+KerasModelArtifact
 ++++++++++++++++++++
-.. autoclass:: bentoml.artifact.TfKerasModelArtifact
+.. autoclass:: bentoml.artifact.KerasModelArtifact
 

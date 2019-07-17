@@ -26,6 +26,7 @@ from bentoml.config import BENTOML_HOME
 
 logger = logging.getLogger(__name__)
 
+
 def generate_bentoml_deployment_snapshot_path(service_name, service_version, platform):
     return os.path.join(
         BENTOML_HOME,

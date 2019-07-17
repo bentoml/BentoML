@@ -66,13 +66,13 @@ class ImageHandler(BentoHandler):
 
     def __init__(
         self,
-        input_names=None,
+        input_name="image",
         accept_file_extensions=None,
         accept_multiple_files=False,
-        pilmode=None,
+        pilmode="RGB",
     ):
-        self.input_names = input_names or "image"
-        self.pilmode = pilmode or "RGB"
+        self.input_name = input_name
+        self.pilmode = pilmode
         self.accept_file_extensions = accept_file_extensions or [
             ".jpg",
             ".png",

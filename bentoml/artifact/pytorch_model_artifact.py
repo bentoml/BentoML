@@ -48,7 +48,7 @@ class PytorchModelArtifact(ArtifactSpec):
         if not isinstance(model, torch.nn.Module):
             raise TypeError(
                 "Expecting PytorchModelArtifact loaded object type to be "
-                "'torch.nn.Module'"
+                "'torch.nn.Module' but actually it is {}".format(type(model))
             )
 
         return self.pack(model)

@@ -152,17 +152,17 @@ class _TfKerasModelArtifactInstance(ArtifactInstance):
 
 
 class _TfKerasModelWrapper:
-    def __init__(self, tf_keras_model, graph, sess):
-        self.tf_keras_model = tf_keras_model
+    def __init__(self, keras_model, graph, sess):
+        self.keras_model = keras_model
         self.graph = graph
         self.sess = sess
 
     def predict(self, *args, **kwargs):
         with self.graph.as_default():
             with self.sess.as_default():
-                return self.tf_keras_model.predict(*args, **kwargs)
+                return self.keras_model.predict(*args, **kwargs)
 
     def predict_classes(self, *args, **kwargs):
         with self.graph.as_default():
             with self.sess.as_default():
-                return self.tf_keras_model.predict_classes(*args, **kwargs)
+                return self.keras_model.predict_classes(*args, **kwargs)

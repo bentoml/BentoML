@@ -17,7 +17,7 @@ The easiest way to try out the quick start project is using Google's Colab to ru
 quick start project.
 
 .. image:: https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal
-    :target: http://bit.ly/2ID50XP
+    :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb
     :alt: Launch on Colab
 
 You can also run the quick start project locally. Download the quick start

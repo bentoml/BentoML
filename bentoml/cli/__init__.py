@@ -216,19 +216,17 @@ def create_bentoml_cli():
                 archive_path, api_name, region, instance_count, instance_type
             )
         else:
-            raise BentoMLException(
-                'Deploying with "--platform=%s" is not supported ' % platform
-                + "in the current version of BentoML"
+            _echo(
+                'Deploying with "--platform=%s" is not supported in current version of '
+                "BentoML".format(platform),
+                CLICK_COLOR_ERROR,
             )
+            return
+
         output_path = deployment.deploy()
 
-        _echo("Deploy to {platform} complete!".format(platform=platform))
-        _echo(
-            "Deployment archive is saved at {output_path}".format(
-                output_path=output_path
-            )
-        )
-        return
+        _echo("Successfully deployed to {platform}!".format(platform=platform))
+        _echo("Deployment archive is saved at: %s" % output_path)
 
     # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
     @_cli.command(
@@ -269,19 +267,20 @@ def create_bentoml_cli():
         elif platform == "aws-sagemaker":
             deployment = SagemakerDeployment(archive_path, api_name, region)
         else:
-            raise BentoMLException(
-                "Remove deployment with --platform=%s" % platform
-                + "is not supported in the current version of BentoML"
+            _echo(
+                "Remove deployment with --platform=%s is not supported in current "
+                "version of BentoML".format(platform),
+                CLICK_COLOR_ERROR,
             )
-        result = deployment.delete()
-        if result:
-            _echo("Delete {platform} deployment successful".format(platform=platform))
+            return
+
+        if deployment.delete():
+            _echo("Successfully delete {platform} deployment".format(platform=platform))
         else:
             _echo(
                 "Delete {platform} deployment unsuccessful".format(platform=platform),
                 CLICK_COLOR_ERROR,
             )
-        return
 
     # Example usage: bentoml check-deployment-status ARCHIVE_PATH --platform=aws-lambda
     @_cli.command(
@@ -323,13 +322,14 @@ def create_bentoml_cli():
         elif platform == "aws-sagemaker":
             deployment = SagemakerDeployment(archive_path, api_name, region)
         else:
-            raise BentoMLException(
+            _echo(
                 "check deployment status with --platform=%s is not supported in the "
-                "current version of BentoML" % platform
+                "current version of BentoML" % platform,
+                CLICK_COLOR_ERROR,
             )
+            return
 
         deployment.check_status()
-        return
 
     # pylint: enable=unused-variable
     return _cli

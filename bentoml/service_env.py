@@ -137,6 +137,11 @@ class BentoServiceEnv(object):
             pip_dependencies = [pip_dependencies]
         self._conda_env.add_pip_dependencies(pip_dependencies)
 
+    def add_handler_dependencies(self, handler_dependencies):
+        if not isinstance(handler_dependencies, list):
+            handler_dependencies = [handler_dependencies]
+        self._conda_env.add_pip_dependencies(handler_dependencies)
+
     def set_setup_sh(self, setup_sh_path_or_content):
         setup_sh_file = Path(setup_sh_path_or_content)
 

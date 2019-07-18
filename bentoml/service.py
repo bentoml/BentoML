@@ -159,6 +159,12 @@ class BentoServiceBase(object):
                     BentoServiceAPI(self, api_name, api_doc, handler, func)
                 )
 
+                # pylint:disable=no-member
+
+                # Add handler's dependencies to the env requirements
+                self._env.add_handler_dependencies(handler.handler_dependencies)
+                # pylint:enable
+
     def get_service_apis(self):
         """Return a list of user defined API functions
 

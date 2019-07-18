@@ -85,6 +85,10 @@ class FastaiImageHandler(BentoHandler):
             },
         }
 
+    @property
+    def handler_dependencies(self):
+        return ['imageio', 'opencv-python', 'fastai']
+
     def handle_request(self, request, func):
         try:
             from fastai.vision import Image, pil2tensor

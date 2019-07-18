@@ -61,6 +61,10 @@ class BentoHandler:
     def request_schema(self):
         return {"application/json": {"schema": {"type": "object"}}}
 
+    @property
+    def handler_dependencies(self):
+        return []
+
     def handle_clipper_strings(self, inputs, func):
         """Handle incoming input data for clipper cluster.
 

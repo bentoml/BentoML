@@ -19,6 +19,13 @@ from __future__ import print_function
 import click
 
 
+CLICK_COLOR_SUCCESS = "green"
+CLICK_COLOR_ERROR = "red"
+
+def _echo(message, color=CLICK_COLOR_SUCCESS):
+    click.echo("BentoML: ", nl=False)
+    click.secho(message, fg=color)
+
 class DefaultCommandGroup(click.Group):
     """
     Allow a default command for a group, based on:

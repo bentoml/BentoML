@@ -27,7 +27,7 @@ SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 # pylint: disable=unused-variable
 
 
-def config_deployment_commands(cli):
+def add_deployment_commands(cli):
 
     # Example usage: bentoml deploy /ARCHIVE_PATH --platform=aws-lambda
     @cli.command(

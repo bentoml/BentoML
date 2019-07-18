@@ -26,7 +26,7 @@ from bentoml.server.gunicorn_server import (
     get_gunicorn_worker_count,
 )
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
-from bentoml.cli.deployment import config_deployment_commands
+from bentoml.cli.deployment import add_deployment_commands
 
 
 def create_bento_service_cli(archive_path=None):
@@ -151,7 +151,7 @@ def create_bentoml_cli():
     # Commands created here aren't mean to be used from generated service archive. They
     # are used as part of BentoML cli commands only.
 
-    config_deployment_commands(_cli)
+    add_deployment_commands(_cli)
 
     # pylint: enable=unused-variable
     return _cli

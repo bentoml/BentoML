@@ -26,6 +26,7 @@ SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 
 # pylint: disable=unused-variable
 
+
 def config_deployment_commands(cli):
 
     # Example usage: bentoml deploy /ARCHIVE_PATH --platform=aws-lambda
@@ -70,8 +71,7 @@ def config_deployment_commands(cli):
                 deployment",
     )
     def deploy(
-            archive_path, platform, region, stage, api_name, instance_type,
-            instance_count
+        archive_path, platform, region, stage, api_name, instance_type, instance_count
     ):
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(archive_path, platform, region, stage)

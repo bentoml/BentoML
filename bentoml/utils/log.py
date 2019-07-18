@@ -57,7 +57,7 @@ LOGGING_CONFIG = {
         "console": {
             "level": LOG_LEVEL,
             "formatter": "console",
-            'class': 'logging.StreamHandler',
+            "class": "logging.StreamHandler",
             "stream": sys.stdout,
         },
         "local": {

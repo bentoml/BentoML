@@ -86,8 +86,8 @@ class FastaiImageHandler(BentoHandler):
         }
 
     @property
-    def handler_dependencies(self):
-        return ['imageio', 'opencv-python', 'fastai']
+    def pip_dependencies(self):
+        return ['imageio', 'fastai']
 
     def handle_request(self, request, func):
         try:

@@ -62,7 +62,7 @@ class BentoHandler:
         return {"application/json": {"schema": {"type": "object"}}}
 
     @property
-    def handler_dependencies(self):
+    def pip_dependencies(self):
         return []
 
     def handle_clipper_strings(self, inputs, func):

@@ -37,13 +37,13 @@ def create_bento_service_cli(archive_path=None):
 
     @click.group(cls=DefaultCommandGroup)
     @click.option(
-        '--debug', is_flag=True, help="print debugging info for BentoML developer"
-    )
-    @click.option(
         '-q',
         '--quiet',
         is_flag=True,
         help="Hide process logs and only print command results",
+    )
+    @click.option(
+        '--debug', is_flag=True, help="Print debugging info for BentoML developer"
     )
     @click.version_option()
     @click.pass_context
@@ -114,7 +114,8 @@ def create_bento_service_cli(archive_path=None):
 
     # Example usage: bentoml docs /SAVED_ARCHIVE_PATH
     @bentoml_cli.command(
-        help="Display API documents in Open API format", short_help="Display docs"
+        help="Display API documents in Open API format",
+        short_help="Display OpenAPI docs",
     )
     @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
     def docs(archive_path=archive_path):

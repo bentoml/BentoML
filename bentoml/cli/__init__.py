@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import json
 import click
+import logging
 
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer, get_docs
@@ -27,17 +28,35 @@ from bentoml.server.gunicorn_server import (
 )
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 from bentoml.cli.deployment import add_deployment_commands
+from bentoml.cli.config import add_configuration_commands
+from bentoml.utils.log import configure_logging
 
 
 def create_bento_service_cli(archive_path=None):
     # pylint: disable=unused-variable
 
     @click.group(cls=DefaultCommandGroup)
+    @click.option(
+        '--debug', is_flag=True, help="print debugging info for BentoML developer"
+    )
+    @click.option(
+        '-q',
+        '--quiet',
+        is_flag=True,
+        help="Hide process logs and only print command results",
+    )
     @click.version_option()
-    def bentoml_cli():
+    @click.pass_context
+    def bentoml_cli(ctx, debug, quiet):
         """
         BentoML CLI tool
         """
+        if debug:
+            configure_logging(logging.DEBUG)
+        elif quiet:
+            configure_logging(logging.WARNING)
+        else:
+            configure_logging()  # use default setting in local bentoml.cfg
 
     # Example Usage: bentoml API_NAME /SAVED_ARCHIVE_PATH --input=INPUT
     @bentoml_cli.command(
@@ -152,6 +171,7 @@ def create_bentoml_cli():
     # are used as part of BentoML cli commands only.
 
     add_deployment_commands(_cli)
+    add_configuration_commands(_cli)
 
     # pylint: enable=unused-variable
     return _cli

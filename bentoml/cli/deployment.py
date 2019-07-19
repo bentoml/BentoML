@@ -20,7 +20,7 @@ import click
 
 from bentoml.deployment.serverless import ServerlessDeployment
 from bentoml.deployment.sagemaker import SagemakerDeployment
-from bentoml.cli.click_utils import _echo, CLICK_COLOR_ERROR, CLICK_COLOR_SUCCESS
+from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR, CLI_COLOR_SUCCESS
 
 SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 
@@ -83,13 +83,16 @@ def add_deployment_commands(cli):
             _echo(
                 'Deploying with "--platform=%s" is not supported in current version of '
                 "BentoML".format(platform),
-                CLICK_COLOR_ERROR,
+                CLI_COLOR_ERROR,
             )
             return
 
         output_path = deployment.deploy()
 
-        _echo("Successfully deployed to {platform}!".format(platform=platform))
+        _echo(
+            "Successfully deployed to {platform}!".format(platform=platform),
+            CLI_COLOR_SUCCESS,
+        )
         _echo("Deployment archive is saved at: %s" % output_path)
 
     # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
@@ -134,16 +137,19 @@ def add_deployment_commands(cli):
             _echo(
                 "Remove deployment with --platform=%s is not supported in current "
                 "version of BentoML".format(platform),
-                CLICK_COLOR_ERROR,
+                CLI_COLOR_ERROR,
             )
             return
 
         if deployment.delete():
-            _echo("Successfully delete {platform} deployment".format(platform=platform))
+            _echo(
+                "Successfully delete {platform} deployment".format(platform=platform),
+                CLI_COLOR_SUCCESS,
+            )
         else:
             _echo(
                 "Delete {platform} deployment unsuccessful".format(platform=platform),
-                CLICK_COLOR_ERROR,
+                CLI_COLOR_ERROR,
             )
 
     # Example usage: bentoml check-deployment-status ARCHIVE_PATH --platform=aws-lambda
@@ -189,8 +195,10 @@ def add_deployment_commands(cli):
             _echo(
                 "check deployment status with --platform=%s is not supported in the "
                 "current version of BentoML" % platform,
-                CLICK_COLOR_ERROR,
+                CLI_COLOR_ERROR,
             )
             return
 
         deployment.check_status()
+
+    return cli

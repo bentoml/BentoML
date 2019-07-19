@@ -116,7 +116,7 @@ To build documentation for locally:
 $ ./script/build-docs.sh
 ```
 
-Modify *.rst files inside the `docs` folder to update content, and to
+Modify \*.rst files inside the `docs` folder to update content, and to
 view your changes, run the following command:
 
 ```
@@ -124,3 +124,18 @@ $ python -m http.server --directory built-docs
 ```
 
 And go to your browser at `http://localhost:8000`
+
+
+## Testing CLI changes
+
+To play with local changes in command line related code, a convenient way of
+doing this is to insert the following code to your '~/.zshrc' or '~/.bashrc' file:
+
+```
+BENTOML_REPO=/Users/chaoyu/workspace/BentoML
+BENTOML_PYTHON=/Users/chaoyu/anaconda3/envs/bentoml-dev/bin/python
+alias dev_bentoml='PYTHONPATH=$BENTOML_REPO $BENTOML_PYTHON $BENTOML_REPO/bentoml/cli/__init__.py'
+```
+
+And now you can invoke `dev_bentoml` from CLI to test out BentoML cli with your
+local changes

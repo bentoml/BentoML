@@ -65,8 +65,8 @@ def deploy_bentoml(
         api_name(str): name of the api that will be used as prediction function for
             clipper cluster
         input_type(str): Input type that clipper accept. The default input_type for
-            image handler is `bytes`, for other handlers is `strings`. Availabel input_type
-            are `integers`, `floats`, `doubles`, `bytes`, or `strings`
+            image handler is `bytes`, for other handlers is `strings`. Availabel
+            input_type are `integers`, `floats`, `doubles`, `bytes`, or `strings`
         model_name(str): Model's name for clipper cluster
         labels(:obj:`list(str)`, optional): labels for clipper model
 

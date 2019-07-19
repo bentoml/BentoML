@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import json
 import click
+import logging
 
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer, get_docs
@@ -26,30 +27,39 @@ from bentoml.server.gunicorn_server import (
     get_gunicorn_worker_count,
 )
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
-from bentoml.deployment.serverless import ServerlessDeployment
-from bentoml.deployment.sagemaker import SagemakerDeployment
-from bentoml.exceptions import BentoMLException
-
-SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
-
-CLICK_COLOR_SUCCESS = "green"
-CLICK_COLOR_ERROR = "red"
-
-
-def _echo(message, color=CLICK_COLOR_SUCCESS):
-    click.echo("BentoML: ", nl=False)
-    click.secho(message, fg=color)
+from bentoml.cli.deployment import add_deployment_commands
+from bentoml.cli.config import add_configuration_commands
+from bentoml.utils.log import configure_logging
 
 
 def create_bento_service_cli(archive_path=None):
     # pylint: disable=unused-variable
 
     @click.group(cls=DefaultCommandGroup)
+    @click.option(
+        '-q',
+        '--quiet',
+        is_flag=True,
+        help="Hide process logs and only print command results",
+    )
+    @click.option(
+        '--debug', is_flag=True, help="Print debugging info for BentoML developer"
+    )
     @click.version_option()
-    def bentoml_cli():
+    @click.pass_context
+    def bentoml_cli(ctx, debug, quiet):
         """
         BentoML CLI tool
         """
+        ctx.debug = debug
+        ctx.quiet = quiet
+
+        if debug:
+            configure_logging(logging.DEBUG)
+        elif quiet:
+            configure_logging(logging.WARNING)
+        else:
+            configure_logging()  # use default setting in local bentoml.cfg
 
     # Example Usage: bentoml API_NAME /SAVED_ARCHIVE_PATH --input=INPUT
     @bentoml_cli.command(
@@ -107,7 +117,8 @@ def create_bento_service_cli(archive_path=None):
 
     # Example usage: bentoml docs /SAVED_ARCHIVE_PATH
     @bentoml_cli.command(
-        help="Display API documents in Open API format", short_help="Display docs"
+        help="Display API documents in Open API format",
+        short_help="Display OpenAPI docs",
     )
     @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
     def docs(archive_path=archive_path):
@@ -163,173 +174,8 @@ def create_bentoml_cli():
     # Commands created here aren't mean to be used from generated service archive. They
     # are used as part of BentoML cli commands only.
 
-    # pylint: disable=unused-variable
-
-    # Example usage: bentoml deploy /ARCHIVE_PATH --platform=aws-lambda
-    @_cli.command(
-        help="Deploy BentoML archive as REST endpoint to cloud services",
-        short_help="Deploy Bento archive",
-    )
-    @click.argument("archive-path", type=click.STRING)
-    @click.option(
-        "--platform",
-        type=click.Choice(
-            [
-                "aws-lambda",
-                "aws-lambda-py2",
-                "gcp-function",
-                "aws-sagemaker",
-                "azure-ml",
-                "algorithmia",
-            ]
-        ),
-        required=True,
-        help="Target platform that Bento archive is going to deployed to",
-    )
-    @click.option(
-        "--region",
-        type=click.STRING,
-        help="Target region inside the cloud provider that will be deployed to",
-    )
-    @click.option("--stage", type=click.STRING)
-    @click.option(
-        "--api-name", type=click.STRING, help="The name of API will be deployed"
-    )
-    @click.option(
-        "--instance-type",
-        type=click.STRING,
-        help="SageMaker deployment ONLY. The instance type will be used for deployment",
-    )
-    @click.option(
-        "--instance-count",
-        type=click.INT,
-        help="Sagemaker deployment ONLY. Number of instances will be used for \
-            deployment",
-    )
-    def deploy(
-        archive_path, platform, region, stage, api_name, instance_type, instance_count
-    ):
-        if platform in SERVERLESS_PLATFORMS:
-            deployment = ServerlessDeployment(archive_path, platform, region, stage)
-        elif platform == "aws-sagemaker":
-            deployment = SagemakerDeployment(
-                archive_path, api_name, region, instance_count, instance_type
-            )
-        else:
-            raise BentoMLException(
-                'Deploying with "--platform=%s" is not supported ' % platform
-                + "in the current version of BentoML"
-            )
-        output_path = deployment.deploy()
-
-        _echo("Deploy to {platform} complete!".format(platform=platform))
-        _echo(
-            "Deployment archive is saved at {output_path}".format(
-                output_path=output_path
-            )
-        )
-        return
-
-    # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
-    @_cli.command(
-        help="Delete active BentoML deployment from cloud services",
-        short_help="Delete active BentoML deployment",
-    )
-    @click.argument("archive-path", type=click.STRING)
-    @click.option(
-        "--platform",
-        type=click.Choice(
-            [
-                "aws-lambda",
-                "aws-lambda-py2",
-                "gcp-function",
-                "aws-sagemaker",
-                "azure-ml",
-                "algorithmia",
-            ]
-        ),
-        required=True,
-        help="The platform bento archive is deployed to",
-    )
-    @click.option(
-        "--region",
-        type=click.STRING,
-        required=True,
-        help="The region deployment belongs to",
-    )
-    @click.option(
-        "--api-name",
-        type=click.STRING,
-        help="Name of the API function that is deployed",
-    )
-    @click.option("--stage", type=click.STRING)
-    def delete_deployment(archive_path, platform, region, stage, api_name):
-        if platform in SERVERLESS_PLATFORMS:
-            deployment = ServerlessDeployment(archive_path, platform, region, stage)
-        elif platform == "aws-sagemaker":
-            deployment = SagemakerDeployment(archive_path, api_name, region)
-        else:
-            raise BentoMLException(
-                "Remove deployment with --platform=%s" % platform
-                + "is not supported in the current version of BentoML"
-            )
-        result = deployment.delete()
-        if result:
-            _echo("Delete {platform} deployment successful".format(platform=platform))
-        else:
-            _echo(
-                "Delete {platform} deployment unsuccessful".format(platform=platform),
-                CLICK_COLOR_ERROR,
-            )
-        return
-
-    # Example usage: bentoml check-deployment-status ARCHIVE_PATH --platform=aws-lambda
-    @_cli.command(
-        help="Check deployment status of BentoML archive",
-        short_help="check deployment status",
-    )
-    @click.argument("archive-path", type=click.STRING)
-    @click.option(
-        "--platform",
-        type=click.Choice(
-            [
-                "aws-lambda",
-                "aws-lambda-py2",
-                "gcp-function",
-                "aws-sagemaker",
-                "azure-ml",
-                "algorithmia",
-            ]
-        ),
-        required=True,
-        help="Target platform that Bento archive will be deployed to as a REST api \
-            service",
-    )
-    @click.option(
-        "--region",
-        type=click.STRING,
-        required=True,
-        help="Deployment's region name inside cloud provider.",
-    )
-    @click.option("--stage", type=click.STRING)
-    @click.option(
-        "--api-name",
-        type=click.STRING,
-        help="The name of API that is deployed as a service.",
-    )
-    def check_deployment_status(archive_path, platform, region, stage, api_name):
-        if platform in SERVERLESS_PLATFORMS:
-            deployment = ServerlessDeployment(archive_path, platform, region, stage)
-        elif platform == "aws-sagemaker":
-            deployment = SagemakerDeployment(archive_path, api_name, region)
-        else:
-            raise BentoMLException(
-                "check deployment status with --platform=%s is not supported in the "
-                "current version of BentoML" % platform
-            )
-
-        deployment.check_status()
-        return
+    add_deployment_commands(_cli)
+    add_configuration_commands(_cli)
 
     # pylint: enable=unused-variable
     return _cli
@@ -338,4 +184,4 @@ def create_bentoml_cli():
 cli = create_bentoml_cli()
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable=no-value-for-parameter

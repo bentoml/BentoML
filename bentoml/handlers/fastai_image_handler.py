@@ -85,6 +85,10 @@ class FastaiImageHandler(BentoHandler):
             },
         }
 
+    @property
+    def pip_dependencies(self):
+        return ['imageio', 'fastai']
+
     def handle_request(self, request, func):
         try:
             from fastai.vision import Image, pil2tensor

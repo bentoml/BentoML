@@ -90,6 +90,10 @@ class ImageHandler(BentoHandler):
             },
         }
 
+    @property
+    def pip_dependencies(self):
+        return ['imageio']
+
     def handle_request(self, request, func):
         """Handle http request that has image file/s. It will convert image into a
         ndarray for the function to consume.

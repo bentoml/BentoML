@@ -29,3 +29,21 @@ def test_custom_api_name():
             lambda x: x
         )
     assert str(e.value).startswith("Invalid API name")
+
+
+def test_handler_pip_dependencies():
+
+    @bentoml.artifacts([bentoml.artifact.PickleArtifact('artifact')])
+    class TestModel(bentoml.BentoService):
+        @bentoml.api(bentoml.handlers.FastaiImageHandler)
+        def test(self, image):
+            return image
+
+    empy_artifact = []
+    service = TestModel.pack(artifact=empy_artifact)
+
+    # ordereddict
+    env = service._env._conda_env._conda_env
+    pip_requirements = env.get('dependencies')[2]['pip']
+    assert pip_requirements[1] == 'imageio'
+    assert pip_requirements[2] == 'fastai'

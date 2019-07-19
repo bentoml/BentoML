@@ -347,8 +347,8 @@ class BentoService(BentoServiceBase):
 
     def __init__(self, artifacts=None, env=None):
         self._init_artifacts(artifacts)
-        self._init_env(env)
         self._config_service_apis()
+        self._init_env(env)
         self.name = self.__class__.name()
 
     def _init_artifacts(self, artifacts):
@@ -379,6 +379,9 @@ class BentoService(BentoServiceBase):
             self._env = BentoServiceEnv.from_dict(env)
         else:
             self._env = env
+
+        for api in self._service_apis:
+            self._env.add_handler_dependencies(api.handler.pip_dependencies)
 
     @property
     def artifacts(self):

@@ -62,13 +62,12 @@ def add_deployment_commands(cli):
     @click.option(
         "--instance-type",
         type=click.STRING,
-        help="SageMaker deployment ONLY. The instance type will be used for deployment",
+        help="SageMaker deployment ONLY. The instance type to use for deployment",
     )
     @click.option(
         "--instance-count",
         type=click.INT,
-        help="Sagemaker deployment ONLY. Number of instances will be used for \
-                deployment",
+        help="Sagemaker deployment ONLY. Number of instances to use for deployment",
     )
     def deploy(
         archive_path, platform, region, stage, api_name, instance_type, instance_count
@@ -81,8 +80,8 @@ def add_deployment_commands(cli):
             )
         else:
             _echo(
-                'Deploying with "--platform=%s" is not supported in current version of '
-                "BentoML".format(platform),
+                "Deploying with --platform=%s is not supported in current version of "
+                "BentoML" % platform,
                 CLI_COLOR_ERROR,
             )
             return
@@ -136,7 +135,7 @@ def add_deployment_commands(cli):
         else:
             _echo(
                 "Remove deployment with --platform=%s is not supported in current "
-                "version of BentoML".format(platform),
+                "version of BentoML" % platform,
                 CLI_COLOR_ERROR,
             )
             return

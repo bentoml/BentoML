@@ -47,7 +47,7 @@ def create_bento_service_cli(archive_path=None):
     )
     @click.version_option()
     @click.pass_context
-    def bentoml_cli(ctx, debug, quiet):
+    def bentoml_cli(debug, quiet):
         """
         BentoML CLI tool
         """
@@ -181,4 +181,4 @@ def create_bentoml_cli():
 cli = create_bentoml_cli()
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable=no-value-for-parameter

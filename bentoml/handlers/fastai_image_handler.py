@@ -213,7 +213,6 @@ class FastaiImageHandler(BentoHandler):
 
         try:
             from fastai.vision import pil2tensor, Image
-            import numpy as np
         except ImportError:
             raise ImportError("fastai package is required to use")
 

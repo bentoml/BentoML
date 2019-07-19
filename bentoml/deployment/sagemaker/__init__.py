@@ -21,8 +21,6 @@ import shutil
 import base64
 import logging
 import re
-import json
-import sys
 from six.moves.urllib.parse import urlparse
 
 import boto3

@@ -67,12 +67,16 @@ def add_configuration_commands(cli):
             return
 
         if action == "reset":
-            os.remove(LOCAL_CONFIG_FILE)
+            if os.path.isfile(LOCAL_CONFIG_FILE):
+                LOG.info("Removing existing BentoML config file: %s", LOCAL_CONFIG_FILE)
+                os.remove(LOCAL_CONFIG_FILE)
             create_local_config_file_if_not_found()
+            return
 
         local_config = ConfigParser()
         with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
             local_config.read_string(config_file.read().decode('utf-8'))
+
         if action == "view":
             local_config.write(sys.stdout)
         elif action == "set":
@@ -99,7 +103,6 @@ def add_configuration_commands(cli):
         elif action == "unset":
             try:
                 for update in updates:
-
                     if '.' in update:
                         sec, opt = update.split('.')
                     else:
@@ -117,8 +120,8 @@ def add_configuration_commands(cli):
                 _echo(EXAMPLE_CONFIG_USAGE)
                 return
         else:
+            LOG.error("Unknown command: bentoml config %s", action)
             return
-
         return
 
     return cli

@@ -47,10 +47,13 @@ def create_bento_service_cli(archive_path=None):
     )
     @click.version_option()
     @click.pass_context
-    def bentoml_cli(debug, quiet):
+    def bentoml_cli(ctx, debug, quiet):
         """
         BentoML CLI tool
         """
+        ctx.debug = debug
+        ctx.quiet = quiet
+
         if debug:
             configure_logging(logging.DEBUG)
         elif quiet:

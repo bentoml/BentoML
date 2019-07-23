@@ -412,7 +412,9 @@ class BentoService(BentoServiceBase):
 
     def save(self, *args, **kwargs):
         from bentoml import archive
+        from bentoml.utils.usage_stats import track_archive
 
+        track_archive(self)
         return archive.save(self, *args, **kwargs)
 
     @classmethod

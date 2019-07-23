@@ -25,17 +25,17 @@ additional code.
 BentoML will build docker image compatible with Sagemaker locally and push the
 image to AWS ECR (Elastic container registry).
 
-.. image:: sagemaker-ecr-dash.png
+.. image:: _static/img/sagemaker-ecr-dash.png
 
 After pushing the image to ECR.  BentoML will create configuration and model
 for Sagemaker and create endpoint afterward.
 
-.. image:: sagemaker-dash.png
+.. image:: _static/img/sagemaker-dash.png
 
 
 Once the endpoint is `InService`, we can make request against it.
 
-.. image:: sagemaker-curl-result.png
+.. image:: _static/img/sagemaker-curl-result.png
 
 |
 
@@ -56,12 +56,12 @@ project or ``aws-lambda-py2`` for python 2 project.
 After successful deployment, the deployed REST api service will show up in the
 AWS lambda's dashboard as a function.
 
-.. image:: lambda-dash.png
+.. image:: _static/img/lambda-dash.png
 
 
 We can make HTTP POST request to the function and get result back from it.
 
-.. image:: lambda-curl-result.png
+.. image:: _static/img/lambda-curl-result.png
 
 |
 

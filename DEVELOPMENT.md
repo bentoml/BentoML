@@ -1,17 +1,12 @@
-## How to build BentoML locally
+## Install BentoML from source code
 
-1. Pull the source code to local directory:
+Download the source code to local file system:
 ```bash
-$ git pull https://github.com/bentoml/BentoML.git
+$ git clone https://github.com/bentoml/BentoML.git
 $ cd BentoML
 ```
 
-2. [Fork BentoML project](https://github.com/bentoml/BentoML/fork) on github and add upstream to local repository
-```bash
-$ git remote add upstream git@github.com:YOUR_USER_NAME/BentoML.git
-```
-
-3. Ensure you have python and pip installed, BentoML supports python _2.7_, _3.4_, _3.6_, and _3.7_
+Ensure you have python and pip installed, BentoML supports python _2.7_, _3.4_, _3.6_, and _3.7_
 ```bash
 $ python --version
 ```
@@ -19,17 +14,15 @@ $ python --version
 $ pip --version
 ```
 
-4. Install all development and test dependencies:
-```bash
-pip install .[all]
+And install BentoML with pip in `editable` mode:
+```
+pip install --editable .
 ```
 
-5. Build and install BentoML with local branch:
-```bash
-$ pip install .
-```
+This will make `bentoml` available on your system which links to the sources of
+your local clone and pick up changes you made locally.
 
-Now you should have BentoML installed:
+Now you can test your BentoML installation by running the following in terminal:
 ```bash
 $ bentoml --version
 ```
@@ -126,16 +119,23 @@ $ python -m http.server --directory built-docs
 And go to your browser at `http://localhost:8000`
 
 
-## Testing CLI changes
+## Creating Pull Request on Github
 
-To play with local changes in command line related code, a convenient way of
-doing this is to insert the following code to your '~/.zshrc' or '~/.bashrc' file:
 
+1. [Fork BentoML project](https://github.com/bentoml/BentoML/fork) on github and
+add upstream to local BentoML clone:
+
+```bash
+$ git remote add upstream git@github.com:YOUR_USER_NAME/BentoML.git
 ```
-BENTOML_REPO=/Users/chaoyu/workspace/BentoML
-BENTOML_PYTHON=/Users/chaoyu/anaconda3/envs/bentoml-dev/bin/python
-alias dev_bentoml='PYTHONPATH=$BENTOML_REPO $BENTOML_PYTHON $BENTOML_REPO/bentoml/cli/__init__.py'
-```
 
-And now you can invoke `dev_bentoml` from CLI to test out BentoML cli with your
-local changes
+2. Make the changes either to fix a known issue or adding new feature
+
+3. Push changes to your fork and follow [this
+   article](https://help.github.com/en/articles/creating-a-pull-request)
+   on how to create a pull request on github
+
+4. Once your pull request created, an automated test run will be triggered on
+   your branch and the BentoML authors will be notified to review your code
+   changes. Once tests are passed and reviewer has signed off, we will merge
+   your pull request.

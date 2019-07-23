@@ -28,11 +28,14 @@ Use BentoML if you need to:
 
 ## Installation
 
-![pypi status](https://img.shields.io/pypi/v/bentoml.svg)
+[![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 
 ```python
 pip install bentoml
 ```
+
+Read about installation from source code
+[here](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
 
 
 ## Getting Started

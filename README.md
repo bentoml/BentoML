@@ -144,6 +144,7 @@ Read more about the latest features and changes in BentoML from the [releases pa
 and follow the [BentoML Community Calendar](http://bit.ly/2XvUiM2).
 
 Watch BentoML Github repo for future releases:
+
 ![gh-watch](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/gh-watch-screenshot.png)
 
 ## License

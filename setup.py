@@ -108,8 +108,7 @@ setuptools.setup(
     version=__version__,
     author="atalaya.io",
     author_email="contact@atalaya.io",
-    description="An open framework for building, shipping and running machine learning "
-    "services",
+    description="A python framework for serving and operating machine learning models",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=install_requires,
@@ -118,12 +117,10 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["tests*"]),
     classifiers=[
         "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
-        "Programming Language :: Python :: Implementation :: PyPy",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],

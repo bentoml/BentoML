@@ -17,10 +17,10 @@ BentoML is a python framework for serving and operating machine learning
 models, making it easy to promote trained models into high performance prediction
 services.
 
-It provides high-level APIs for defining an ML service and packaging
+The framework provides high-level APIs for defining an ML service and packaging
 its trained model artifacts, preprocessing source code, dependencies, and
-configurations into a production-system-friendly format, such as docker image,
-pypi package, cli tool, which is ready to deploy in production environments.
+configurations into a standard file format called BentoArchive - which can be
+deployed as REST API model server, PyPI package, CLI tool, or batch scoring job.
 
 
 ---

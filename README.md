@@ -70,6 +70,7 @@ class IrisClassifier(BentoService):
 * __Multiple Framework Support__ - BentoML supports a wide range of ML frameworks
   out-of-the-box including [Tensorflow](https://github.com/tensorflow/tensorflow/),
   [PyTorch](https://github.com/pytorch/pytorch),
+  [Keras](https://keras.io/),
   [Scikit-Learn](https://github.com/scikit-learn/scikit-learn),
   [xgboost](https://github.com/dmlc/xgboost),
   [H2O](https://github.com/h2oai/h2o-3),

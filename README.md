@@ -143,6 +143,8 @@ Beta release, we may change APIs in future releases**.
 Read more about the latest features and changes in BentoML from the [releases page](https://github.com/bentoml/BentoML/releases).
 and follow the [BentoML Community Calendar](http://bit.ly/2XvUiM2).
 
+Watch BentoML Github repo for future releases:
+![gh-watch](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/gh-watch-screenshot.png)
 
 ## License
 

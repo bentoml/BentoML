@@ -13,16 +13,15 @@
 [Installation](https://github.com/bentoml/BentoML#installation) | [Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Examples](https://github.com/bentoml/BentoML#examples) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [License](https://github.com/bentoml/BentoML#license)
 
 
-BentoML is a python framework for building, shipping and running machine learning
-services. It provides high-level APIs for defining an ML service and packaging
-its artifacts, source code, dependencies, and configurations into a
-production-system-friendly format that is ready for deployment.
+BentoML is a python framework for serving and operating machine learning
+models, making it easy to promote trained models into high performance prediction
+services.
 
-Use BentoML if you need to:
+It provides high-level APIs for defining an ML service and packaging
+its trained model artifacts, preprocessing source code, dependencies, and
+configurations into a production-system-friendly format, such as docker image,
+pypi package, cli tool, which is ready to deploy in production environments.
 
-* Turn your ML model into REST API server, Serverless endpoint, PyPI package, or CLI tool
-
-* Manage the workflow of creating and deploying a ML service
 
 ---
 

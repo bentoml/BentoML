@@ -29,6 +29,7 @@ from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
 from bentoml.utils import isidentifier
 from bentoml.utils.s3 import is_s3_url, download_from_s3
+from bentoml.utils.usage_stats import track_archive
 
 
 def _get_func_attr(func, attribute_name):
@@ -412,7 +413,6 @@ class BentoService(BentoServiceBase):
 
     def save(self, *args, **kwargs):
         from bentoml import archive
-        from bentoml.utils.usage_stats import track_archive
 
         track_archive(self)
         return archive.save(self, *args, **kwargs)

@@ -20,18 +20,34 @@ from __future__ import print_function
 import sys
 import platform
 import json
+import time
+import logging
 
 import uuid
 import requests
 
-from bentoml import config, load
+from bentoml.archive.loader import load
 import bentoml
+
+
+logger = logging.getLogger(__name__)
 
 AMPLITUDE_URL = "https://api.amplitude.com/httpapi"
 API_KEY = '7f65f2446427226eb86f6adfacbbf47a'
 
+bentoml_version = bentoml.__version__
+platform_info = platform.platform()
+py_version = "{major}.{minor}.{micro}".format(
+    major=sys.version_info.major,
+    minor=sys.version_info.minor,
+    micro=sys.version_info.micro,
+)
 
-def get_artifact_handler_info(bento_service):
+
+def get_bento_service_info(bento_service):
+    if not isinstance(bento_service, bentoml.BentoService):
+        bento_service = load(bento_service)
+
     artifact_types = []
     handler_types = []
 
@@ -42,32 +58,30 @@ def get_artifact_handler_info(bento_service):
     for api in bento_service.get_service_apis():
         handler_types.append(api.handler.__class__.__name__)
 
-    return {"handler_types": handler_types, "artifact_types": artifact_types}
+    return {
+        "handler_types": handler_types,
+        "artifact_types": artifact_types,
+        "env": bento_service.env.to_dict()
+    }
 
 
 def track(event_type, info):
-    info["py_version"] = "{major}.{minor}.{micro}".format(
-        major=sys.version_info.major,
-        minor=sys.version_info.minor,
-        micro=sys.version_info.micro,
-    )
-
-    # for operation, the bentoml version is from bentoml.yml
-    info["bento_version"] = bentoml.__version__
-    info["platform_info"] = platform.platform()
+    info['py_version'] = py_version
+    info["bento_version"] = bentoml_version
+    info["platform_info"] = platform_info
 
     return send_amplitude_event(event_type, info)
 
 
 def track_archive(bento_service):
-    if config['core'].getboolean("usage_tracking"):
-        info = get_artifact_handler_info(bento_service)
+    if bentoml.config['core'].getboolean("usage_tracking"):
+        info = get_bento_service_info(bento_service)
         return track("archive", info)
 
 
 def track_cli(command, bento_service, args=None):
-    if config['core'].getboolean("usage_tracking"):
-        info = get_artifact_handler_info(bento_service)
+    if bentoml.config['core'].getboolean("usage_tracking"):
+        info = get_bento_service_info(bento_service)
 
         if args and len(args) > 0:
             info['args'] = []
@@ -77,17 +91,8 @@ def track_cli(command, bento_service, args=None):
                     info['args'].append(arg)
 
         return track('cli-' + command, info)
-
-
-def track_deployment(platform_name, archive_path):
-    if config['core'].getboolean("usage_tracking"):
-        try:
-            service = load(archive_path)
-            info = get_artifact_handler_info(service)
-            info['deployment_platform'] = platform_name
-            return track("deploy", info)
-        except Exception:  # pylint:disable=broad-except
-            return
+    else:
+        print('dont send')
 
 
 def send_amplitude_event(event, info):
@@ -107,7 +112,9 @@ def send_amplitude_event(event, info):
 
     try:
         requests.post(AMPLITUDE_URL, data=event_data)
+        time.sleep(2)
         return
-    except Exception:  # pylint:disable=broad-except
+    except Exception as error:  # pylint:disable=broad-except
         # silently fail
+        logger.info(str(error))
         return

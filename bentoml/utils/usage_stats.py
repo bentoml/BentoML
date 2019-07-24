@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import sys
 import platform
+import json
 
 import uuid
 import requests
@@ -26,8 +27,8 @@ import requests
 from bentoml import config, load
 import bentoml
 
-GA_URL = "https://www.google-analytics.com/collect"
 AMPLITUDE_URL = "https://api.amplitude.com/httpapi"
+API_KEY = '7f65f2446427226eb86f6adfacbbf47a'
 
 
 def get_artifact_handler_info(bento_service):
@@ -44,7 +45,7 @@ def get_artifact_handler_info(bento_service):
     return {"handler_types": handler_types, "artifact_types": artifact_types}
 
 
-def track(action, info):
+def track(event_type, info):
     info["py_version"] = "{major}.{minor}.{micro}".format(
         major=sys.version_info.major,
         minor=sys.version_info.minor,
@@ -55,28 +56,31 @@ def track(action, info):
     info["bento_version"] = bentoml.__version__
     info["platform_info"] = platform.platform()
 
-    return send_amplitude_event(action, info)
+    return send_amplitude_event(event_type, info)
 
 
 def track_archive(bento_service):
-    # artifacts type, handler type
-    if config.getboolean("enable_tracking"):
+    if config['core'].getboolean("usage_tracking"):
         info = get_artifact_handler_info(bento_service)
         return track("archive", info)
 
 
-def track_cli(command, info):
-    # command used
-    if config.getboolean("enable_tracking"):
-        if not isinstance(info, dict):
-            info = get_artifact_handler_info(info)
+def track_cli(command, bento_service, args=None):
+    if config['core'].getboolean("usage_tracking"):
+        info = get_artifact_handler_info(bento_service)
+
+        if args and len(args) > 0:
+            info['args'] = []
+            for arg in args:
+                # Dont track user's input
+                if 'input' not in arg:
+                    info['args'].append(arg)
 
         return track('cli-' + command, info)
 
 
 def track_deployment(platform_name, archive_path):
-    # artifact type, handler type, deployment platform
-    if config.getboolean("enable_tracking"):
+    if config['core'].getboolean("usage_tracking"):
         try:
             service = load(archive_path)
             info = get_artifact_handler_info(service)
@@ -91,19 +95,18 @@ def send_amplitude_event(event, info):
     https://developers.amplitude.com/?java#keys-for-the-event-argument
     """
 
+    event_info = [{
+        "event_type": event,
+        "user_id": str(uuid.uuid4()),
+        "event_properties": info
+    }]
     event_data = {
-        "api_key": config['usage_tracking'].get('api_key'),
-        "event": [{
-            "event_type": event,
-            "user_id": str(uuid.uuid4()),
-            "event_properties": info
-        }],
+        "api_key": API_KEY,
+        "event": json.dumps(event_info)
     }
 
     try:
-        r = requests.post(GA_URL, data=event_data)
-        # r = requests.post(GA_URL, params=event_data)
-        print(r)
+        requests.post(AMPLITUDE_URL, data=event_data)
         return
     except Exception:  # pylint:disable=broad-except
         # silently fail

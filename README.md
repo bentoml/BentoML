@@ -23,6 +23,8 @@ configurations into a standard file format called BentoArchive - which can be
 deployed as REST API model server, PyPI package, CLI tool, or batch scoring job.
 
 
+[![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) - Check out our 5-mins quick started notebook, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
+
 ---
 
 
@@ -40,20 +42,64 @@ Read about installation from source code
 
 ## Getting Started
 
+
 Defining a machine learning service with BentoML is as simple as a few lines of code:
 
-```python
-@artifacts([PickleArtifact('model')])
-@env(conda_pip_dependencies=["scikit-learn"])
-class IrisClassifier(BentoService):
 
-    @api(DataframeHandler)
-    def predict(self, df):
-        return self.artifacts.model.predict(df)
+```python
+from bentoml import api, artifacts, env, BentoService
+from bentoml.artifact import KerasModelArtifact
+from bentoml.handlers import ImageHandler
+from tensorflow.image import resize
+
+class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
+@env(conda_dependencies=['tensorflow', 'numpy'])
+@artifacts([KerasModelArtifact('classifier')])
+class KerasFashionMnistService(BentoService):
+        
+    @api(ImageHandler, pilmode='L')
+    def predict(self, image_array):
+        image_array = resize(image_array, (28, 28)).reshape(1, 28, 28, 1)
+        
+        class_idx = self.artifacts.classifier.predict_classes(image_array)[0]
+        return class_names[class_idx]
+```
+
+Import the defined BentoService and pack with trained model, BentoML provide
+Artifact classes for serializing/deserializing models:
+
+```
+from keras_fashion_mnist import KerasFashionMnistService
+
+model = keras.Sequential()
+model.add(...)
+...
+model.compile(...)
+model.fit(...)
+model.evaluate(...)
+
+# Packaging trained model for serving in production:
+saved_path = KerasFashionMnistService.pack(classifier=model).save('/my_bento_archives')
+```
+
+Now you can start a REST API server for serving your trained model:
+```
+bentoml serve {saved_path}
 ```
 
 
-[![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) - Try out our 5-mins getting started guide, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
+```
+curl -X POST "http://127.0.0.1:5000/predict" -H "Content-Type: image/png"
+--data-binary @Sample_Image.png
+```
+
+The saved archive can also be used directly from CLI:
+```
+bentoml predict {saved_path} --input=sample_image.png
+```
+
 
 
 ## Feature Highlights

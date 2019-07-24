@@ -7,7 +7,8 @@
 
 > From a model in jupyter notebook to production API service in 5 minutes
 
-# BentoML
+
+![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/bentoml.png)
 
 [Installation](https://github.com/bentoml/BentoML#installation) | [Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Examples](https://github.com/bentoml/BentoML#examples) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [License](https://github.com/bentoml/BentoML#license)
 

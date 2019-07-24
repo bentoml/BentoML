@@ -32,7 +32,6 @@ def test_custom_api_name():
 
 
 def test_handler_pip_dependencies():
-
     @bentoml.artifacts([bentoml.artifact.PickleArtifact('artifact')])
     class TestModel(bentoml.BentoService):
         @bentoml.api(bentoml.handlers.FastaiImageHandler)

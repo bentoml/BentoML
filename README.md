@@ -23,7 +23,7 @@ configurations into a standard file format called BentoArchive - which can be
 deployed as REST API model server, PyPI package, CLI tool, or batch scoring job.
 
 
-[![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) - Check out our 5-mins quick started notebook, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
+Check out our 5-mins quick started notebook [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb), using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
 
 ---
 
@@ -31,14 +31,11 @@ deployed as REST API model server, PyPI package, CLI tool, or batch scoring job.
 ## Installation
 
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
+[![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)](https://travis-ci.org/bentoml/BentoML)
 
 ```python
 pip install bentoml
 ```
-
-Read about installation from source code
-[here](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
-
 
 ## Getting Started
 

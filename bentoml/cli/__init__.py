@@ -75,6 +75,7 @@ def create_bento_service_cli(archive_path=None):
     @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
     @click.pass_context
     def run(ctx, api_name, archive_path=archive_path):
+        track_cli('run')
         model_service = load(archive_path)
 
         try:
@@ -92,8 +93,6 @@ def create_bento_service_cli(archive_path=None):
                 )
             )
 
-        track_cli(api_name, model_service, ctx.args)
-
         api.handle_cli(ctx.args)
 
     # Example Usage: bentoml info /SAVED_ARCHIVE_PATH
@@ -106,9 +105,8 @@ def create_bento_service_cli(archive_path=None):
         """
         List all APIs defined in the BentoService loaded from archive
         """
+        track_cli('info')
         model_service = load(archive_path)
-
-        track_cli('info', model_service)
 
         service_apis = model_service.get_service_apis()
         output = json.dumps(
@@ -128,9 +126,8 @@ def create_bento_service_cli(archive_path=None):
     )
     @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
     def docs(archive_path=archive_path):
+        track_cli('docs')
         model_service = load(archive_path)
-
-        track_cli('docs', model_service)
 
         print(json.dumps(get_docs(model_service), indent=2))
 
@@ -146,11 +143,9 @@ def create_bento_service_cli(archive_path=None):
         default=BentoAPIServer._DEFAULT_PORT,
         help="The port to listen on for the REST api server, default is 5000.",
     )
-    @click.pass_context
-    def serve(ctx, port, archive_path=archive_path):
+    def serve(port, archive_path=archive_path):
+        track_cli('serve')
         model_service = load(archive_path)
-
-        track_cli('serve', model_service, ctx.args)
 
         server = BentoAPIServer(model_service, port=port)
         server.start()
@@ -171,11 +166,9 @@ def create_bento_service_cli(archive_path=None):
         help="Number of workers will start for the gunicorn server",
     )
     @click.option("--timeout", type=click.INT, default=60)
-    @click.pass_context
-    def serve_gunicorn(ctx, port, workers, timeout, archive_path=archive_path):
+    def serve_gunicorn(port, workers, timeout, archive_path=archive_path):
+        track_cli('serve_gunicorn')
         model_service = load(archive_path)
-
-        track_cli('serve_gunicorn', model_service, ctx.args)
 
         server = BentoAPIServer(model_service, port=port)
         gunicorn_app = GunicornApplication(server.app, port, workers, timeout)

@@ -21,6 +21,7 @@ import click
 from bentoml.deployment.serverless import ServerlessDeployment
 from bentoml.deployment.sagemaker import SagemakerDeployment
 from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR, CLI_COLOR_SUCCESS
+from bentoml.utils.usage_stats import track_cli
 
 SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 
@@ -72,6 +73,7 @@ def add_deployment_commands(cli):
     def deploy(
         archive_path, platform, region, stage, api_name, instance_type, instance_count
     ):
+        track_cli('deploy', platform)
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(archive_path, platform, region, stage)
         elif platform == "aws-sagemaker":
@@ -128,6 +130,7 @@ def add_deployment_commands(cli):
     )
     @click.option("--stage", type=click.STRING)
     def delete_deployment(archive_path, platform, region, stage, api_name):
+        track_cli('delete-deploy', platform)
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(archive_path, platform, region, stage)
         elif platform == "aws-sagemaker":
@@ -186,6 +189,7 @@ def add_deployment_commands(cli):
         help="The name of API that is deployed as a service.",
     )
     def check_deployment_status(archive_path, platform, region, stage, api_name):
+        track_cli('check-deployment-status', platform)
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(archive_path, platform, region, stage)
         elif platform == "aws-sagemaker":

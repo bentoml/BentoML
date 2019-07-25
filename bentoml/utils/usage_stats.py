@@ -26,7 +26,6 @@ import logging
 import uuid
 import requests
 
-from bentoml.archive.loader import load
 import bentoml
 
 
@@ -46,7 +45,7 @@ py_version = "{major}.{minor}.{micro}".format(
 
 def get_bento_service_info(bento_service):
     if not isinstance(bento_service, bentoml.BentoService):
-        bento_service = load(bento_service)
+        return {}
 
     artifact_types = []
     handler_types = []
@@ -61,7 +60,7 @@ def get_bento_service_info(bento_service):
     return {
         "handler_types": handler_types,
         "artifact_types": artifact_types,
-        "env": bento_service.env.to_dict()
+        "env": bento_service.env.to_dict(),
     }
 
 
@@ -73,26 +72,24 @@ def track(event_type, info):
     return send_amplitude_event(event_type, info)
 
 
-def track_archive(bento_service):
+def track_save(bento_service):
     if bentoml.config['core'].getboolean("usage_tracking"):
         info = get_bento_service_info(bento_service)
-        return track("archive", info)
+        return track("save", info)
 
 
-def track_cli(command, bento_service, args=None):
+def track_loading(bento_service):
     if bentoml.config['core'].getboolean("usage_tracking"):
         info = get_bento_service_info(bento_service)
+        return track("load", info)
 
-        if args and len(args) > 0:
-            info['args'] = []
-            for arg in args:
-                # Dont track user's input
-                if 'input' not in arg:
-                    info['args'].append(arg)
 
+def track_cli(command, deploy_platform=None):
+    if bentoml.config['core'].getboolean("usage_tracking"):
+        info = {}
+        if deploy_platform is not None:
+            info['platform'] = deploy_platform
         return track('cli-' + command, info)
-    else:
-        print('dont send')
 
 
 def send_amplitude_event(event, info):
@@ -100,19 +97,14 @@ def send_amplitude_event(event, info):
     https://developers.amplitude.com/?java#keys-for-the-event-argument
     """
 
-    event_info = [{
-        "event_type": event,
-        "user_id": str(uuid.uuid4()),
-        "event_properties": info
-    }]
-    event_data = {
-        "api_key": API_KEY,
-        "event": json.dumps(event_info)
-    }
+    event_info = [
+        {"event_type": event, "user_id": str(uuid.uuid4()), "event_properties": info}
+    ]
+    event_data = {"api_key": API_KEY, "event": json.dumps(event_info)}
 
     try:
         requests.post(AMPLITUDE_URL, data=event_data)
-        time.sleep(2)
+        time.sleep(1)
         return
     except Exception as error:  # pylint:disable=broad-except
         # silently fail

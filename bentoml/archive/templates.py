@@ -46,7 +46,7 @@ setuptools.setup(
     description="BentoML generated model module",
     long_description=\"\"\"{long_description}\"\"\",
     long_description_content_type="text/markdown",
-    url="https://github.com/atalaya-io/BentoML",
+    url="https://github.com/bentoml/BentoML",
     packages=setuptools.find_packages(),
     install_requires=install_reqs,
     include_package_data=True,

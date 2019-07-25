@@ -8,21 +8,22 @@
 > From a model in jupyter notebook to production API service in 5 minutes
 
 
-![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/bentoml.png)
+[![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/bentoml.png)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb)
 
 [Installation](https://github.com/bentoml/BentoML#installation) | [Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Examples](https://github.com/bentoml/BentoML#examples) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [License](https://github.com/bentoml/BentoML#license)
 
 
-BentoML is a python framework for building, shipping and running machine learning
-services. It provides high-level APIs for defining an ML service and packaging
-its artifacts, source code, dependencies, and configurations into a
-production-system-friendly format that is ready for deployment.
+BentoML is a python framework for serving and operating machine learning
+models, making it easy to promote trained models into high performance prediction
+services.
 
-Use BentoML if you need to:
+The framework provides high-level APIs for defining an ML service and packaging
+its trained model artifacts, preprocessing source code, dependencies, and
+configurations into a standard file format called BentoArchive - which can be
+deployed as REST API model server, PyPI package, CLI tool, or batch scoring job.
 
-* Turn your ML model into REST API server, Serverless endpoint, PyPI package, or CLI tool
 
-* Manage the workflow of creating and deploying a ML service
+Check out our 5-mins quick started notebook [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb), using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
 
 ---
 
@@ -30,31 +31,77 @@ Use BentoML if you need to:
 ## Installation
 
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
+[![python versions](https://img.shields.io/pypi/pyversions/bentoml.svg)](https://travis-ci.org/bentoml/BentoML)
 
 ```python
 pip install bentoml
 ```
 
-Read about installation from source code
-[here](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
-
-
 ## Getting Started
+
 
 Defining a machine learning service with BentoML is as simple as a few lines of code:
 
-```python
-@artifacts([PickleArtifact('model')])
-@env(conda_pip_dependencies=["scikit-learn"])
-class IrisClassifier(BentoService):
 
-    @api(DataframeHandler)
-    def predict(self, df):
-        return self.artifacts.model.predict(df)
+```python
+from PIL import Image
+from bentoml import api, artifacts, env, BentoService
+from bentoml.artifact import KerasModelArtifact
+from bentoml.handlers import ImageHandler
+
+class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
+@env(conda_dependencies=['tensorflow', 'numpy'])
+@artifacts([KerasModelArtifact('classifier')])
+class KerasFashionMnistService(BentoService):
+        
+    @api(ImageHandler, pilmode='L')
+    def predict(self, image_array):
+        img = Image.fromarray(img).resize((28, 28))
+        img = np.array(img.getdata()).reshape((1,28,28,1))
+        class_idx = self.artifacts.classifier.predict_classes(img)[0]
+        return class_names[class_idx]
+
 ```
 
+Import the defined BentoService and pack with trained model, BentoML provide
+Artifact classes for serializing/deserializing models:
 
-[![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) - Try out our 5-mins getting started guide, using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
+```
+from keras_fashion_mnist import KerasFashionMnistService
+
+model = keras.Sequential()
+model.add(...)
+...
+model.compile(...)
+model.fit(...)
+model.evaluate(...)
+
+# Packaging trained model for serving in production:
+saved_path = KerasFashionMnistService.pack(classifier=model).save('/my_bento_archives')
+```
+
+Now you can start a REST API server for serving your trained model:
+```
+bentoml serve {saved_path}
+```
+
+Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser to play
+around with the Web UI for REST API model server, or try posting prediction
+request to it with `curl`:
+
+```
+curl -X POST "http://127.0.0.1:5000/predict" -H "Content-Type: image/png"
+--data-binary @Sample_Image.png
+```
+
+The saved archive can also be used directly from CLI:
+```
+bentoml predict {saved_path} --input=sample_image.png
+```
+
+Read more about BentoML [here](https://bentoml.readthedocs.io/en/latest/)
 
 
 ## Feature Highlights
@@ -70,6 +117,7 @@ class IrisClassifier(BentoService):
 * __Multiple Framework Support__ - BentoML supports a wide range of ML frameworks
   out-of-the-box including [Tensorflow](https://github.com/tensorflow/tensorflow/),
   [PyTorch](https://github.com/pytorch/pytorch),
+  [Keras](https://keras.io/),
   [Scikit-Learn](https://github.com/scikit-learn/scikit-learn),
   [xgboost](https://github.com/dmlc/xgboost),
   [H2O](https://github.com/h2oai/h2o-3),
@@ -107,6 +155,7 @@ directory. More tutorials and examples coming soon!
 - **FastAI** Pet Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/pet-classification/notebook.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/fast-ai/pet-classification/notebook.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/fast-ai/pet-classification/notebook.ipynb)
 - **FastAI** Tabular CSV - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/tabular-csv/notebook.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/fast-ai/tabular-csv/notebook.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/fast-ai/tabular-csv/notebook.ipynb)
 - **PyTorch** Fashion MNIST classification - [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb) | [source](https://github.com/bentoml/BentoML/blob/master/examples/pytorch-fashion-mnist/pytorch-fashion-mnist.ipynb)
+- **PyTorch** CIFAR-10 Image classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/cifar10_image_classification/notebook.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/gallery/blob/master/pytorch/cifar10_image_classification/notebook.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/pytorch/cifar10_image_classification/notebook.ipynb)
 - **XGBoost** Titanic Survival Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb) | [source](https://github.com/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb)
 - **H2O** Classification- [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-classification.ipynb) | [source](https://github.com/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-classification.ipynb) 
 

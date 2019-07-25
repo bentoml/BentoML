@@ -83,14 +83,8 @@ import os
 import signal
 import sys
 
-from bentoml.archive import load
-from bentoml.server.bento_sagemaker_server import BentoSagemakerServer
-from bentoml.server.gunicorn_server import GunicornBentoServer, get_gunicorn_worker_count
-
-
 model_server_timeout = os.environ.get('MODEL_SERVER_TIMEOUT', 60)
 model_server_workers = int(os.environ.get('MODEL_SERVER_WORKERS', get_gunicorn_worker_count()))
-
 
 def sigterm_handler(nginx_pid, gunicorn_pid):
     try:

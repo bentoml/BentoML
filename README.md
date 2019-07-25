@@ -44,6 +44,9 @@ Defining a machine learning service with BentoML is as simple as a few lines of 
 
 
 ```python
+%%writefile keras_fashion_mnist.py
+
+import numpy as np
 from PIL import Image
 from bentoml import api, artifacts, env, BentoService
 from bentoml.artifact import KerasModelArtifact
@@ -52,23 +55,22 @@ from bentoml.handlers import ImageHandler
 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
-@env(conda_dependencies=['tensorflow', 'numpy'])
+@env(conda_dependencies=['tensorflow', 'Pillow'])
 @artifacts([KerasModelArtifact('classifier')])
 class KerasFashionMnistService(BentoService):
         
     @api(ImageHandler, pilmode='L')
-    def predict(self, image_array):
+    def predict(self, img):
         img = Image.fromarray(img).resize((28, 28))
         img = np.array(img.getdata()).reshape((1,28,28,1))
         class_idx = self.artifacts.classifier.predict_classes(img)[0]
         return class_names[class_idx]
-
 ```
 
 Import the defined BentoService and pack with trained model, BentoML provide
 Artifact classes for serializing/deserializing models:
 
-```
+```python
 from keras_fashion_mnist import KerasFashionMnistService
 
 model = keras.Sequential()
@@ -83,7 +85,7 @@ saved_path = KerasFashionMnistService.pack(classifier=model).save('/my_bento_arc
 ```
 
 Now you can start a REST API server for serving your trained model:
-```
+```bash
 bentoml serve {saved_path}
 ```
 
@@ -91,17 +93,17 @@ Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser to play
 around with the Web UI for REST API model server, or try posting prediction
 request to it with `curl`:
 
-```
+```bash
 curl -X POST "http://127.0.0.1:5000/predict" -H "Content-Type: image/png"
 --data-binary @Sample_Image.png
 ```
 
 The saved archive can also be used directly from CLI:
-```
+```bash
 bentoml predict {saved_path} --input=sample_image.png
 ```
 
-Read more about BentoML [here](https://bentoml.readthedocs.io/en/latest/)
+Learn more about BentoML [here](https://bentoml.readthedocs.io/en/latest/)
 
 
 ## Feature Highlights
@@ -143,11 +145,6 @@ Full documentation and API references can be found at [bentoml.readthedocs.io](h
 
 ## Examples
 
-All examples can be found under the
-[BentoML/examples](https://github.com/bentoml/BentoML/tree/master/examples)
-directory. More tutorials and examples coming soon!
-
-
 - Quick Start Guide - [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) | [source](https://github.com/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb)
 - **Scikit-learn** Sentiment Analysis - [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb) | [source](https://github.com/bentoml/BentoML/blob/master/examples/sklearn-sentiment-clf/sklearn-sentiment-clf.ipynb)
 - **Keras** Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/keras-text-classification/keras-text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/BentoML/blob/master/examples/keras-text-classification/keras-text-classification.ipynb) | [source](https://github.com/bentoml/BentoML/blob/master/examples/keras-text-classification/keras-text-classification.ipynb)
@@ -159,16 +156,37 @@ directory. More tutorials and examples coming soon!
 - **XGBoost** Titanic Survival Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb) | [source](https://github.com/bentoml/BentoML/blob/master/examples/xgboost-predict-titanic-survival/XGBoost-titanic-survival-prediction.ipynb)
 - **H2O** Classification- [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-classification.ipynb) | [source](https://github.com/bentoml/BentoML/blob/master/examples/h2o-classification/h2o-classification.ipynb) 
 
+More examples can be found under the
+[BentoML/examples](https://github.com/bentoml/BentoML/tree/master/examples)
+directory or the [bentoml/gallery](https://github.com/bentoml/gallery) repo.
+
 
 Deployment guides:
 - [Serverless deployment with AWS Lambda](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-serverless)
 - [API server deployment with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-sagemaker)
 - [API server deployment with Clipper](https://github.com/bentoml/BentoML/blob/master/example/deploy-with-clipper/deploy-iris-classifier-to-clipper.ipynb)
-- [(WIP) API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/examples/deploy-with-kubernetes)
+- [API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/examples/deploy-with-kubernetes)
 
+## Usage Tracking
 
-We collect example notebook page views to help us improve this project.
-To opt-out of tracking, delete the `[Impression]` line in the first markdown cell of any example notebook: ~~!\[Impression\]\(http...~~
+BentoML library by default reports basic usages using
+[Amplitude](https://amplitude.com). It helps BentoML authors to understand how
+people are using this tool and improve it over time. You can easily opt-out by
+running the following command from terminal:
+
+```bash
+bentoml config set usage_tracking=false
+```
+
+Or from your python code:
+```python
+import bentoml
+bentoml.config.set('core', 'usage_tracking', 'false')
+```
+
+We also collect example notebook page views to help us understand the community
+interests. To opt-out of tracking, delete the ~~!\[Impression\]\(http...~~ line in the first
+markdown cell of our example notebooks. 
 
 
 ## Contributing

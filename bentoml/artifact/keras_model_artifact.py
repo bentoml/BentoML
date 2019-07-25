@@ -21,6 +21,13 @@ import os
 from bentoml.utils import cloudpickle
 from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
+try:
+    import tensorflow as tf
+    from tensorflow.python import keras
+except ImportError:
+    tf = None
+    keras = None
+
 
 class KerasModelArtifact(ArtifactSpec):
     """
@@ -42,43 +49,37 @@ class KerasModelArtifact(ArtifactSpec):
         return os.path.join(base_path, self.name + self._model_extension)
 
     def bind_keras_backend_session(self):
-        try:
-            import tensorflow as tf
-        except ImportError:
+        if tf is None:
             raise ImportError(
-                "tensorflow package is required to use KerasModelArtifact"
+                "Tensorflow package is required to use KerasModelArtifact."
             )
 
-        self.sess = tf.keras.backend.get_session()
+        self.sess = tf.compat.v1.keras.backend.get_session()
         self.graph = self.sess.graph
 
     def creat_session(self):
-        try:
-            import tensorflow as tf
-        except ImportError:
+        if tf is None:
             raise ImportError(
-                "tensorflow package is required to use KerasModelArtifact"
+                "Tensorflow package is required to use KerasModelArtifact."
             )
 
-        self.graph = tf.get_default_graph()
+        self.graph = tf.compat.v1.get_default_graph()
         self.sess = tf.Session(graph=self.graph)
         tf.keras.backend.set_session(self.sess)
 
     def pack(self, data):  # pylint:disable=arguments-differ
-        try:
-            from tensorflow.python.keras.engine import training
-        except ImportError:
+        if tf is None:
             raise ImportError(
-                "tensorflow package is required to use KerasModelArtifact"
+                "Tensorflow package is required to use KerasModelArtifact."
             )
 
-        if isinstance(data, training.Model):
+        if isinstance(data, keras.engine.training.Model):
             model = data
             custom_objects = self.custom_objects
         elif (
             isinstance(data, dict)
             and 'model' in data
-            and isinstance(data['model'], training.Model)
+            and isinstance(data['model'], keras.engine.training.Model)
         ):
             model = data['model']
             custom_objects = (
@@ -87,18 +88,18 @@ class KerasModelArtifact(ArtifactSpec):
                 else self.custom_objects
             )
         else:
-            raise ValueError("KerasModelArtifact#pack expects type trainig.Model")
+            raise ValueError(
+                "KerasModelArtifact#pack expects type: keras.engine.training.Model"
+            )
 
         self.bind_keras_backend_session()
         model._make_predict_function()
         return _TfKerasModelArtifactInstance(self, model, custom_objects)
 
     def load(self, path):
-        try:
-            from tensorflow.python.keras.models import load_model
-        except ImportError:
+        if tf is None:
             raise ImportError(
-                "tensorflow package is required to use KerasModelArtifact"
+                "Tensorflow package is required to use KerasModelArtifact."
             )
 
         self.creat_session()
@@ -112,7 +113,7 @@ class KerasModelArtifact(ArtifactSpec):
 
         with self.graph.as_default():
             with self.sess.as_default():
-                model = load_model(
+                model = keras.models.load_model(
                     self._model_file_path(path), custom_objects=self.custom_objects
                 )
         return self.pack(model)
@@ -122,15 +123,14 @@ class _TfKerasModelArtifactInstance(ArtifactInstance):
     def __init__(self, spec, model, custom_objects):
         super(_TfKerasModelArtifactInstance, self).__init__(spec)
 
-        try:
-            from tensorflow.python.keras.engine import training
-        except ImportError:
+        if tf is None:
             raise ImportError(
-                "tensorflow package is required to use KerasModelArtifact"
+                "Tensorflow package is required to use KerasModelArtifact."
             )
 
-        if not isinstance(model, training.Model):
-            raise ValueError("Expected `model` argument to be a `Model` instance")
+        if not isinstance(model, keras.engine.training.Model):
+            raise ValueError("Expected `model` argument to be a "
+                             "`keras.engine.training.Model` instance")
 
         self.graph = spec.graph
         self.sess = spec.sess

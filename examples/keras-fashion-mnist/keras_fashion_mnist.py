@@ -8,7 +8,7 @@ from bentoml.handlers import ImageHandler
 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
-@env(conda_dependencies=['tensorflow', 'Pillow'])
+@env(conda_pip_dependencies=['tensorflow==1.13.1', 'Pillow', 'numpy'])
 @artifacts([KerasModelArtifact('classifier')])
 class KerasFashionMnistService(BentoService):
         

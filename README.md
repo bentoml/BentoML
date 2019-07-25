@@ -23,7 +23,7 @@ configurations into a standard file format called BentoArchive - which can be
 deployed as REST API model server, PyPI package, CLI tool, or batch scoring job.
 
 
-Check out our 5-mins quick started notebook [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb), using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
+Check out our 5-mins quick start notebook [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
 
 ---
 
@@ -67,9 +67,8 @@ class KerasFashionMnistService(BentoService):
         return class_names[class_idx]
 ```
 
-Import the defined BentoService and pack with trained model, BentoML provide
-Artifact classes for serializing/deserializing models:
-
+Import the defined BentoService, pack with trained model, and save a versioned
+archive to file system:
 ```python
 from keras_fashion_mnist import KerasFashionMnistService
 
@@ -84,18 +83,18 @@ model.evaluate(...)
 saved_path = KerasFashionMnistService.pack(classifier=model).save('/my_bento_archives')
 ```
 
-Now you can start a REST API server for serving your trained model:
+Now you can start a REST API server based off the saved BentoArchive:
 ```bash
 bentoml serve {saved_path}
 ```
 
 Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser to play
-around with the Web UI for REST API model server, or try posting prediction
-request to it with `curl`:
+around with the Web UI of the REST API model server, or try sending prediction
+request with `curl`:
 
 ```bash
 curl -X POST "http://127.0.0.1:5000/predict" -H "Content-Type: image/png"
---data-binary @Sample_Image.png
+--data-binary @sample_image.png
 ```
 
 The saved archive can also be used directly from CLI:
@@ -103,7 +102,13 @@ The saved archive can also be used directly from CLI:
 bentoml predict {saved_path} --input=sample_image.png
 ```
 
-Learn more about BentoML [here](https://bentoml.readthedocs.io/en/latest/)
+Or installed as a python package:
+```bash
+pip install {saved_path}
+```
+
+Try out the full example notebook
+[here](https://github.com/bentoml/BentoML/blob/master/examples/keras-fashion-mnist/keras-fashion-mnist-classification.ipynb).
 
 
 ## Feature Highlights

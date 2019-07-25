@@ -23,8 +23,10 @@ from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
 try:
     import tensorflow as tf
+    from tensorflow.python import keras
 except ImportError:
     tf = None
+    keras = None
 
 
 class KerasModelArtifact(ArtifactSpec):
@@ -71,13 +73,13 @@ class KerasModelArtifact(ArtifactSpec):
                 "Tensorflow package is required to use KerasModelArtifact."
             )
 
-        if isinstance(data, tf.python.keras.engine.training.Model):
+        if isinstance(data, keras.engine.training.Model):
             model = data
             custom_objects = self.custom_objects
         elif (
             isinstance(data, dict)
             and 'model' in data
-            and isinstance(data['model'], tf.python.keras.engine.training.Model)
+            and isinstance(data['model'], keras.engine.training.Model)
         ):
             model = data['model']
             custom_objects = (
@@ -87,8 +89,7 @@ class KerasModelArtifact(ArtifactSpec):
             )
         else:
             raise ValueError(
-                "KerasModelArtifact#pack expects type: "
-                "tf.python.keras.engine.training.Model"
+                "KerasModelArtifact#pack expects type: keras.engine.training.Model"
             )
 
         self.bind_keras_backend_session()
@@ -112,7 +113,7 @@ class KerasModelArtifact(ArtifactSpec):
 
         with self.graph.as_default():
             with self.sess.as_default():
-                model = tf.python.keras.models.load_model(
+                model = keras.models.load_model(
                     self._model_file_path(path), custom_objects=self.custom_objects
                 )
         return self.pack(model)
@@ -127,9 +128,9 @@ class _TfKerasModelArtifactInstance(ArtifactInstance):
                 "Tensorflow package is required to use KerasModelArtifact."
             )
 
-        if not isinstance(model, tf.python.keras.engine.training.Model):
+        if not isinstance(model, keras.engine.training.Model):
             raise ValueError("Expected `model` argument to be a "
-                             "`tf.python.keras.engine.training.Model` instance")
+                             "`keras.engine.training.Model` instance")
 
         self.graph = spec.graph
         self.sess = spec.sess

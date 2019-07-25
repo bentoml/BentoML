@@ -129,8 +129,10 @@ class _TfKerasModelArtifactInstance(ArtifactInstance):
             )
 
         if not isinstance(model, keras.engine.training.Model):
-            raise ValueError("Expected `model` argument to be a "
-                             "`keras.engine.training.Model` instance")
+            raise ValueError(
+                "Expected `model` argument to be a "
+                "`keras.engine.training.Model` instance"
+            )
 
         self.graph = spec.graph
         self.sess = spec.sess

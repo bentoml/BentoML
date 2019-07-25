@@ -394,9 +394,9 @@ class BentoService(BentoServiceBase):
 
     @classmethod
     def name(cls):  # pylint:disable=method-hidden
-        if cls._bento_service_name is not None:
-            # TODO: verify self.__class__._bento_service_name format, can't have space
-            # in it and can be valid folder name
+        if cls._bento_service_name is not None and isidentifier(
+            cls._bento_service_name
+        ):
             return cls._bento_service_name
         else:
             # Use python class name as service name
@@ -435,7 +435,6 @@ class BentoService(BentoServiceBase):
     def from_archive(cls, path):
         from bentoml.archive import load_bentoml_config
 
-        # TODO: add model.env.verify() to check dependencies and python version etc
         if cls._bento_archive_path is not None and cls._bento_archive_path != path:
             raise BentoMLException(
                 "Loaded BentoArchive(from {}) can't be loaded again from a different"

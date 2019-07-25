@@ -19,11 +19,14 @@ from __future__ import print_function
 import os
 import sys
 import tempfile
+import logging
 
 from bentoml.utils.usage_stats import track_loading
 from bentoml.utils.s3 import is_s3_url, download_from_s3
 from bentoml.exceptions import BentoMLException
 from bentoml.archive.config import BentoArchiveConfig
+
+LOG = logging.getLogger(__name__)
 
 
 def load_bentoml_config(path):
@@ -72,7 +75,9 @@ def load_bento_service_class(archive_path):
 
     module_name = metadata["module_name"]
     if module_name in sys.modules:
-        # module already loaded, TODO: add warning
+        LOG.warning(
+            "Module `%s` already loaded, using existing imported module.", module_name
+        )
         module = sys.modules[module_name]
     elif sys.version_info >= (3, 5):
         import importlib.util

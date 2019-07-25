@@ -65,7 +65,7 @@ class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
         self.bento_archive_path = bento_archive_path
         self.port = port or self._DEFAULT_PORT
         self.num_of_workers = num_of_workers or get_gunicorn_worker_count()
-        self.timeout = timeout or timeout
+        self.timeout = timeout or self._DEFAULT_TIMEOUT
 
         self.options = {
             "workers": self.num_of_workers,

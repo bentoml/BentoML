@@ -93,8 +93,7 @@ around with the Web UI of the REST API model server, or try sending prediction
 request with `curl`:
 
 ```bash
-curl -X POST "http://127.0.0.1:5000/predict" -H "Content-Type: image/png"
---data-binary @sample_image.png
+curl -X POST "http://127.0.0.1:5000/predict" -H "Content-Type: image/png" --data-binary @sample_image.png
 ```
 
 The saved archive can also be used directly from CLI:

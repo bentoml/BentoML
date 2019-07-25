@@ -65,3 +65,9 @@ def bento_archive_path(bento_service, tmpdir):  # pylint:disable=redefined-outer
     """
     saved_path = bento_service.save(str(tmpdir))
     return saved_path
+
+
+@pytest.fixture(scope='session', autouse=True)
+def turn_off_tracking():
+    bentoml.config.set('core', 'usage_tracking', 'false')
+    return False

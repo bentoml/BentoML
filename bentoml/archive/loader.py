@@ -20,6 +20,7 @@ import os
 import sys
 import tempfile
 
+from bentoml.utils.usage_stats import track_loading
 from bentoml.utils.s3 import is_s3_url, download_from_s3
 from bentoml.exceptions import BentoMLException
 from bentoml.archive.config import BentoArchiveConfig
@@ -115,4 +116,6 @@ def load(archive_path):
         bentoml.service.BentoService: The loaded bento service.
     """
     svc_cls = load_bento_service_class(archive_path)
-    return svc_cls.from_archive(archive_path)
+    svc = svc_cls.from_archive(archive_path)
+    track_loading(svc)
+    return svc

@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import click
 
+
 # Available CLI colors for _echo:
 #
 # _ansi_colors = {
@@ -82,7 +83,6 @@ class DefaultCommandGroup(click.Group):
 
     def resolve_command(self, ctx, args):
         try:
-            # test if the command parses
             return super(DefaultCommandGroup, self).resolve_command(ctx, args)
         except click.UsageError:
             # command did not parse, assume it is the default command

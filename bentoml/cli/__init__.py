@@ -22,10 +22,7 @@ import logging
 
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer, get_docs
-from bentoml.server.gunicorn_server import (
-    GunicornApplication,
-    get_gunicorn_worker_count,
-)
+from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
 from bentoml.cli.deployment import add_deployment_commands
 from bentoml.cli.config import add_configuration_commands
@@ -76,20 +73,20 @@ def create_bento_service_cli(archive_path=None):
     @click.pass_context
     def run(ctx, api_name, archive_path=archive_path):
         track_cli('run')
-        model_service = load(archive_path)
+        bento_service = load(archive_path)
 
         try:
             api = next(
                 (
                     api
-                    for api in model_service.get_service_apis()
+                    for api in bento_service.get_service_apis()
                     if api.name == api_name
                 )
             )
         except StopIteration:
             raise ValueError(
                 "Can't find API '{}' in Service '{}'".format(
-                    api_name, model_service.name
+                    api_name, bento_service.name
                 )
             )
 
@@ -106,13 +103,13 @@ def create_bento_service_cli(archive_path=None):
         List all APIs defined in the BentoService loaded from archive
         """
         track_cli('info')
-        model_service = load(archive_path)
+        bento_service = load(archive_path)
 
-        service_apis = model_service.get_service_apis()
+        service_apis = bento_service.get_service_apis()
         output = json.dumps(
             dict(
-                name=model_service.name,
-                version=model_service.version,
+                name=bento_service.name,
+                version=bento_service.version,
                 apis=[api.name for api in service_apis],
             ),
             indent=2,
@@ -127,9 +124,9 @@ def create_bento_service_cli(archive_path=None):
     @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
     def docs(archive_path=archive_path):
         track_cli('docs')
-        model_service = load(archive_path)
+        bento_service = load(archive_path)
 
-        print(json.dumps(get_docs(model_service), indent=2))
+        print(json.dumps(get_docs(bento_service), indent=2))
 
     # Example Usage: bentoml serve ./SAVED_ARCHIVE_PATH --port=PORT
     @bentoml_cli.command(
@@ -145,9 +142,9 @@ def create_bento_service_cli(archive_path=None):
     )
     def serve(port, archive_path=archive_path):
         track_cli('serve')
-        model_service = load(archive_path)
+        bento_service = load(archive_path)
 
-        server = BentoAPIServer(model_service, port=port)
+        server = BentoAPIServer(bento_service, port=port)
         server.start()
 
     # Example Usage:
@@ -157,21 +154,19 @@ def create_bento_service_cli(archive_path=None):
         short_help="Start local gunicorn server",
     )
     @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
-    @click.option("-p", "--port", type=click.INT, default=BentoAPIServer._DEFAULT_PORT)
+    @click.option("-p", "--port", type=click.INT, default=None)
     @click.option(
         "-w",
         "--workers",
         type=click.INT,
-        default=get_gunicorn_worker_count(),
+        default=None,
         help="Number of workers will start for the gunicorn server",
     )
-    @click.option("--timeout", type=click.INT, default=60)
+    @click.option("--timeout", type=click.INT, default=None)
     def serve_gunicorn(port, workers, timeout, archive_path=archive_path):
         track_cli('serve_gunicorn')
-        model_service = load(archive_path)
 
-        server = BentoAPIServer(model_service, port=port)
-        gunicorn_app = GunicornApplication(server.app, port, workers, timeout)
+        gunicorn_app = GunicornBentoServer(archive_path, port, workers, timeout)
         gunicorn_app.run()
 
     # pylint: enable=unused-variable

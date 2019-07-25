@@ -85,7 +85,7 @@ import sys
 
 from bentoml.archive import load
 from bentoml.server.bento_sagemaker_server import BentoSagemakerServer
-from bentoml.server.gunicorn_server import GunicornApplication, get_gunicorn_worker_count
+from bentoml.server.gunicorn_server import GunicornBentoServer, get_gunicorn_worker_count
 
 
 model_server_timeout = os.environ.get('MODEL_SERVER_TIMEOUT', 60)

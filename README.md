@@ -44,10 +44,10 @@ Defining a machine learning service with BentoML is as simple as a few lines of 
 
 
 ```python
+from PIL import Image
 from bentoml import api, artifacts, env, BentoService
 from bentoml.artifact import KerasModelArtifact
 from bentoml.handlers import ImageHandler
-from tensorflow.image import resize
 
 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
@@ -58,10 +58,11 @@ class KerasFashionMnistService(BentoService):
         
     @api(ImageHandler, pilmode='L')
     def predict(self, image_array):
-        image_array = resize(image_array, (28, 28)).reshape(1, 28, 28, 1)
-        
-        class_idx = self.artifacts.classifier.predict_classes(image_array)[0]
+        img = Image.fromarray(img).resize((28, 28))
+        img = np.array(img.getdata()).reshape((1,28,28,1))
+        class_idx = self.artifacts.classifier.predict_classes(img)[0]
         return class_names[class_idx]
+
 ```
 
 Import the defined BentoService and pack with trained model, BentoML provide

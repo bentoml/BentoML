@@ -86,6 +86,9 @@ Now you can start a REST API server for serving your trained model:
 bentoml serve {saved_path}
 ```
 
+Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser to play
+around with the Web UI for REST API model server, or try posting prediction
+request to it with `curl`:
 
 ```
 curl -X POST "http://127.0.0.1:5000/predict" -H "Content-Type: image/png"
@@ -97,6 +100,7 @@ The saved archive can also be used directly from CLI:
 bentoml predict {saved_path} --input=sample_image.png
 ```
 
+Read more about BentoML [here](https://bentoml.readthedocs.io/en/latest/)
 
 
 ## Feature Highlights

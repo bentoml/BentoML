@@ -49,7 +49,7 @@ class KerasModelArtifact(ArtifactSpec):
                 "tensorflow package is required to use KerasModelArtifact"
             )
 
-        self.sess = tf.keras.backend.get_session()
+        self.sess = tf.compat.v1.keras.backend.get_session()
         self.graph = self.sess.graph
 
     def creat_session(self):
@@ -60,7 +60,7 @@ class KerasModelArtifact(ArtifactSpec):
                 "tensorflow package is required to use KerasModelArtifact"
             )
 
-        self.graph = tf.get_default_graph()
+        self.graph = tf.compat.v1.get_default_graph()
         self.sess = tf.Session(graph=self.graph)
         tf.keras.backend.set_session(self.sess)
 

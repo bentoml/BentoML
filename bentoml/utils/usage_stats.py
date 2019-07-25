@@ -20,7 +20,6 @@ from __future__ import print_function
 import sys
 import platform
 import json
-import time
 import logging
 
 import uuid
@@ -103,8 +102,7 @@ def send_amplitude_event(event, info):
     event_data = {"api_key": API_KEY, "event": json.dumps(event_info)}
 
     try:
-        requests.post(AMPLITUDE_URL, data=event_data)
-        time.sleep(1)
+        requests.post(AMPLITUDE_URL, data=event_data, timeout=1)
         return
     except Exception as error:  # pylint:disable=broad-except
         # silently fail

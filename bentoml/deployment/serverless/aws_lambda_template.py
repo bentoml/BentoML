@@ -37,16 +37,14 @@ except ImportError:
 from {class_name} import {class_name}
 
 bento_service = {class_name}.load()
-apis = bento_service.get_service_apis()
 
 """
 
 AWS_FUNCTION_TEMPLATE = """\
 def {api_name}(event, context):
-    api = next(item for item in apis if item.name == '{api_name}')
+    api = bento_service.get_service_api('{api_name}')
 
-    result = api.handle_aws_lambda_event(event)
-    return result
+    return api.handle_aws_lambda_event(event)
 
 """
 

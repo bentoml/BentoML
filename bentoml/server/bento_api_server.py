@@ -57,8 +57,6 @@ def _request_to_json(req):
     """
     Return request data for log prediction
     """
-    # TODO: Handle images
-
     if req.content_type == "application/json":
         return req.get_json()
     elif "image" in req.content_type:

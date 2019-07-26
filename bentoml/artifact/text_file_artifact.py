@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import re
 
 from bentoml.artifact import ArtifactSpec, ArtifactInstance
 
@@ -34,13 +35,15 @@ class TextFileArtifact(ArtifactSpec):
     """
 
     def __init__(self, name, file_extension=".txt", encoding="utf8"):
-        # TODO: validate file name and extension?
         super(TextFileArtifact, self).__init__(name)
         self._file_extension = file_extension
         self._encoding = encoding
 
     def _text_file_path(self, base_path):
-        return os.path.join(base_path, self.name + self._file_extension)
+        return os.path.join(
+            base_path,
+            re.sub('[^-a-zA-Z0-9_.() ]+', '', self.name) + self._file_extension,
+        )
 
     def load(self, path):
         with open(self._text_file_path(path), "rb") as f:

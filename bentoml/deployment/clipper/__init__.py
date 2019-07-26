@@ -75,16 +75,7 @@ def deploy_bentoml(
 
     """
     bento_service = load(archive_path)
-    apis = bento_service.get_service_apis()
-
-    if api_name:
-        api = next(item for item in apis if item.name == api_name)
-    elif len(apis) == 1:
-        api = apis[0]
-    else:
-        raise BentoMLException(
-            "Please specify api-name, when more than one API is present in the archive"
-        )
+    api = bento_service.get_service_api(api_name)
     model_name = model_name or generate_clipper_compatiable_string(
         bento_service.name + "-" + api.name
     )

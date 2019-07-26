@@ -44,22 +44,18 @@ Defining a machine learning service with BentoML is as simple as a few lines of 
 
 
 ```python
-%%writefile keras_fashion_mnist.py
-
-import numpy as np
-from PIL import Image
 from bentoml import api, artifacts, env, BentoService
 from bentoml.artifact import KerasModelArtifact
 from bentoml.handlers import ImageHandler
 
-class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-
-@env(conda_dependencies=['tensorflow', 'Pillow'])
+# Define a prediction service class by subclassing bentoml.BentoService
+@env(conda_pip_dependencies=['tensorflow', 'Pillow'])
 @artifacts([KerasModelArtifact('classifier')])
 class KerasFashionMnistService(BentoService):
-        
-    @api(ImageHandler, pilmode='L')
+
+    # Define service API function where you can have access to trained
+    # model artifacts and write your own preprocessing logic
+    @api(ImageHandler)
     def predict(self, img):
         img = Image.fromarray(img).resize((28, 28))
         img = np.array(img.getdata()).reshape((1,28,28,1))
@@ -67,11 +63,10 @@ class KerasFashionMnistService(BentoService):
         return class_names[class_idx]
 ```
 
-Import the defined BentoService, pack with trained model, and save a versioned
-archive to file system:
+Without changing any of your model training code, you can pack the prediction
+service defined above with trained model, and save a versioned BentoArchive to
+file system:
 ```python
-from keras_fashion_mnist import KerasFashionMnistService
-
 model = keras.Sequential()
 model.add(...)
 ...

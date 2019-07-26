@@ -24,16 +24,11 @@ import rpc # this is clipper's rpc.py module
 import os
 import sys
 
-from bentoml import load
+from bentoml import load_service_api
 
 IMPORT_ERROR_RETURN_CODE = 3
 
-bento_service = load('/container/bento')
-apis = bento_service.get_service_apis()
-
-api = next(item for item in apis if item.name == '{api_name}')
-if not api:
-    raise BentoMLException("Can't find api with name %s" % {api_name})
+api = load_service_api('/container/bento', '{api_name}')
 
 class BentoClipperContainer(rpc.ModelContainerBase):
     def __init__(self):

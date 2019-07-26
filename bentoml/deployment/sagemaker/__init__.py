@@ -167,16 +167,7 @@ class SagemakerDeployment(Deployment):
         self.instant_type = (
             DEFAULT_INSTANCE_TYPE if instance_type is None else instance_type
         )
-        apis = self.bento_service.get_service_apis()
-        if api_name:
-            self.api = next(item for item in apis if item.name == api_name)
-        elif len(apis) == 1:
-            self.api = apis[0]
-        else:
-            raise BentoMLException(
-                "Please specify api-name, when more than one API is present in the "
-                "archive"
-            )
+        self.api = self.bento_service.get_service_api(api_name)
         self.sagemaker_client = boto3.client("sagemaker", region_name=self.region)
         self.model_name = generate_aws_compatible_string(
             "bentoml-" + self.bento_service.name + "-" + self.bento_service.version

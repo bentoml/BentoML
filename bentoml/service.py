@@ -168,6 +168,21 @@ class BentoServiceBase(object):
         """
         return self._service_apis
 
+    def get_service_api(self, api_name=None):
+        if api_name:
+            try:
+                return next((api for api in self._service_apis if api.name == api_name))
+            except StopIteration:
+                raise ValueError(
+                    "Can't find API '{}' in service '{}'".format(api_name, self.name)
+                )
+        elif len(self._service_apis):
+            return self._service_apis[0]
+        else:
+            raise ValueError(
+                "Can't find default API for service '{}'".format(self.name)
+            )
+
 
 def api_decorator(handler_cls, *args, **kwargs):
     """Decorator for adding api to a BentoService
@@ -394,9 +409,9 @@ class BentoService(BentoServiceBase):
 
     @classmethod
     def name(cls):  # pylint:disable=method-hidden
-        if cls._bento_service_name is not None:
-            # TODO: verify self.__class__._bento_service_name format, can't have space
-            # in it and can be valid folder name
+        if cls._bento_service_name is not None and isidentifier(
+            cls._bento_service_name
+        ):
             return cls._bento_service_name
         else:
             # Use python class name as service name
@@ -435,7 +450,6 @@ class BentoService(BentoServiceBase):
     def from_archive(cls, path):
         from bentoml.archive import load_bentoml_config
 
-        # TODO: add model.env.verify() to check dependencies and python version etc
         if cls._bento_archive_path is not None and cls._bento_archive_path != path:
             raise BentoMLException(
                 "Loaded BentoArchive(from {}) can't be loaded again from a different"

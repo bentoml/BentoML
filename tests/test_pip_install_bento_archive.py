@@ -32,12 +32,12 @@ def test_pip_install_bento_archive(bento_archive_path, tmpdir):
     env = os.environ.copy()
     env["PYTHONPATH"] = ":".join(sys.path + [install_path, bentoml_path])
 
-    output = subprocess.check_output([cli_bin_path, "info"], env=env).decode()
+    output = subprocess.check_output([cli_bin_path, "--quiet", "info"], env=env).decode()
     output = json.loads(output)
     assert output["name"] == "TestBentoService"
     assert output["version"] == svc.version
     assert "predict" in output["apis"]
 
-    output = subprocess.check_output([cli_bin_path, "docs"], env=env).decode()
+    output = subprocess.check_output([cli_bin_path, "--quiet", "docs"], env=env).decode()
     output = json.loads(output)
     assert output["info"]["version"] == svc.version

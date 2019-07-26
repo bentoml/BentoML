@@ -23,7 +23,7 @@ import logging
 from bentoml.archive import load, load_service_api
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.gunicorn_server import GunicornBentoServer
-from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
+from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import add_deployment_commands
 from bentoml.cli.config import add_configuration_commands
 from bentoml.utils.log import configure_logging
@@ -33,29 +33,33 @@ from bentoml.utils.usage_stats import track_cli
 def create_bento_service_cli(archive_path=None):
     # pylint: disable=unused-variable
 
-    @click.group(cls=DefaultCommandGroup)
+    @click.group(cls=BentoMLCommandGroup)
     @click.option(
         '-q',
         '--quiet',
         is_flag=True,
+        default=False,
         help="Hide process logs and only print command results",
     )
     @click.option(
-        '--debug', is_flag=True, help="Print debugging info for BentoML developer"
+        '--verbose',
+        is_flag=True,
+        default=False,
+        help="Print verbose debugging information for BentoML developer",
     )
     @click.version_option()
     @click.pass_context
-    def bentoml_cli(ctx, debug, quiet):
+    def bentoml_cli(ctx, verbose, quiet):
         """
         BentoML CLI tool
         """
-        ctx.debug = debug
+        ctx.verbose = verbose
         ctx.quiet = quiet
 
-        if debug:
+        if verbose:
             configure_logging(logging.DEBUG)
         elif quiet:
-            configure_logging(logging.WARNING)
+            configure_logging(logging.ERROR)
         else:
             configure_logging()  # use default setting in local bentoml.cfg
 
@@ -99,7 +103,7 @@ def create_bento_service_cli(archive_path=None):
             ),
             indent=2,
         )
-        print(output)
+        _echo(output)
 
     # Example usage: bentoml docs /SAVED_ARCHIVE_PATH
     @bentoml_cli.command(
@@ -111,7 +115,7 @@ def create_bento_service_cli(archive_path=None):
         track_cli('docs')
         bento_service = load(archive_path)
 
-        print(json.dumps(get_docs(bento_service), indent=2))
+        _echo(json.dumps(get_docs(bento_service), indent=2))
 
     # Example Usage: bentoml serve ./SAVED_ARCHIVE_PATH --port=PORT
     @bentoml_cli.command(

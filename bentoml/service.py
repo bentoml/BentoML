@@ -168,6 +168,21 @@ class BentoServiceBase(object):
         """
         return self._service_apis
 
+    def get_service_api(self, api_name=None):
+        if api_name:
+            try:
+                return next((api for api in self._service_apis if api.name == api_name))
+            except StopIteration:
+                raise ValueError(
+                    "Can't find API '{}' in service '{}'".format(api_name, self.name)
+                )
+        elif len(self._service_apis):
+            return self._service_apis[0]
+        else:
+            raise ValueError(
+                "Can't find default API for service '{}'".format(self.name)
+            )
+
 
 def api_decorator(handler_cls, *args, **kwargs):
     """Decorator for adding api to a BentoService

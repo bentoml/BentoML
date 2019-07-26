@@ -124,3 +124,8 @@ def load(archive_path):
     svc = svc_cls.from_archive(archive_path)
     track_loading(svc)
     return svc
+
+
+def load_service_api(archive_path, api_name=None):
+    bento_service = load(archive_path)
+    return bento_service.get_service_api(api_name)

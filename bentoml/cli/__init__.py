@@ -20,7 +20,7 @@ import json
 import click
 import logging
 
-from bentoml.archive import load
+from bentoml.archive import load, load_service_api
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import DefaultCommandGroup, conditional_argument
@@ -73,23 +73,8 @@ def create_bento_service_cli(archive_path=None):
     @click.pass_context
     def run(ctx, api_name, archive_path=archive_path):
         track_cli('run')
-        bento_service = load(archive_path)
 
-        try:
-            api = next(
-                (
-                    api
-                    for api in bento_service.get_service_apis()
-                    if api.name == api_name
-                )
-            )
-        except StopIteration:
-            raise ValueError(
-                "Can't find API '{}' in Service '{}'".format(
-                    api_name, bento_service.name
-                )
-            )
-
+        api = load_service_api(archive_path, api_name)
         api.handle_cli(ctx.args)
 
     # Example Usage: bentoml info /SAVED_ARCHIVE_PATH

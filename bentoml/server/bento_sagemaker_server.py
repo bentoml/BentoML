@@ -42,17 +42,8 @@ def setup_routes(app, bento_service, api_name):
     /invocations
     """
     app.add_url_rule("/ping", "ping", ping_view_func)
-
-    apis = bento_service.get_service_apis()
-    if api_name:
-        api = next(item for item in apis if item.name == api_name)
-        setup_bento_service_api_route(app, api)
-    elif len(apis) == 1:
-        setup_bento_service_api_route(app, apis[0])
-    else:
-        raise ValueError(
-            "Must define api name or provide bento service with one API function"
-        )
+    api = bento_service.get_service_api(api_name)
+    setup_bento_service_api_route(app, api)
 
 
 class BentoSagemakerServer:

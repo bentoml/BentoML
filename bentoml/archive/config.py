@@ -17,7 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import warnings
+import logging
 from datetime import datetime
 
 from ruamel.yaml import YAML
@@ -32,6 +32,7 @@ metadata:
     created_at: {created_at}
 """
 
+LOG = logging.getLogger(__name__)
 
 class BentoArchiveConfig(object):
     def __init__(self, kind="BentoService"):
@@ -69,7 +70,7 @@ class BentoArchiveConfig(object):
             if int(conf["version"].split(".")[0]) != int(BENTOML_VERSION.split(".")[0]):
                 raise ValueError(msg)
             else:  # Otherwise just show a warning.
-                warnings.warn(msg)
+                LOG.warning(msg)
 
         return conf
 

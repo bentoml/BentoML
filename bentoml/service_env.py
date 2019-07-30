@@ -114,7 +114,7 @@ class BentoServiceEnv(object):
     def __init__(self):
         self._setup_sh = None
         self._conda_env = CondaEnv()
-        self._requirements_txt = None
+        self._pip_dependencies = []
 
     def get_conda_env_name(self):
         return self._conda_env.get_name()
@@ -140,7 +140,7 @@ class BentoServiceEnv(object):
     def add_handler_dependencies(self, handler_dependencies):
         if not isinstance(handler_dependencies, list):
             handler_dependencies = [handler_dependencies]
-        self._conda_env.add_pip_dependencies(handler_dependencies)
+        self._pip_dependencies += handler_dependencies
 
     def set_setup_sh(self, setup_sh_path_or_content):
         setup_sh_file = Path(setup_sh_path_or_content)
@@ -151,22 +151,28 @@ class BentoServiceEnv(object):
         else:
             self._setup_sh = setup_sh_path_or_content.encode("utf-8")
 
-    def set_requirements_txt(self, requirements_txt_path_or_content):
-        requirements_txt_file = Path(requirements_txt_path_or_content)
+    def add_pip_dependencies(self, pip_dependencies):
+        if not isinstance(pip_dependencies, list):
+            pip_dependencies = [pip_dependencies]
+        self._pip_dependencies += pip_dependencies
 
-        if requirements_txt_file.is_file():
-            with requirements_txt_file.open("rb") as f:
-                self._requirements_txt = f.read()
-        else:
-            self._requirements_txt = requirements_txt_path_or_content.encode("utf-8")
+    def set_requirements_txt(self, requirements_txt_path):
+        requirements_txt_file = Path(requirements_txt_path)
+
+        with requirements_txt_file.open("rb") as f:
+            content = f.read()
+            module_list = content.decode("utf-8").split("\n")
+            self._pip_dependencies += module_list
 
     def save(self, path):
         conda_yml_file = os.path.join(path, "environment.yml")
         self._conda_env.write_to_yaml_file(conda_yml_file)
 
         requirements_txt_file = os.path.join(path, "requirements.txt")
+
         with open(requirements_txt_file, "wb") as f:
-            f.write(self._requirements_txt or b"")
+            pip_content = "\n".join(self._pip_dependencies).encode("utf-8")
+            f.write(pip_content)
 
         if self._setup_sh:
             setup_sh_file = os.path.join(path, "setup.sh")
@@ -182,6 +188,9 @@ class BentoServiceEnv(object):
 
         if "requirements_txt" in env_dict:
             env.set_requirements_txt(env_dict["requirements_txt"])
+
+        if "pip_dependencies" in env_dict:
+            env.add_pip_dependencies(env_dict["pip_dependencies"])
 
         if "conda_channels" in env_dict:
             env.add_conda_channels(env_dict["conda_channels"])
@@ -200,8 +209,8 @@ class BentoServiceEnv(object):
         if self._setup_sh:
             env_dict["setup_sh"] = self._setup_sh
 
-        if self._requirements_txt:
-            env_dict["requirements_txt"] = self._requirements_txt
+        if self._pip_dependencies:
+            env_dict["pip_dependencies"] = self._pip_dependencies
 
         env_dict["conda_env"] = self._conda_env._conda_env
 

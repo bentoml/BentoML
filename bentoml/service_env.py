@@ -21,7 +21,6 @@ from sys import version_info
 from ruamel.yaml import YAML
 
 from bentoml.utils import Path
-from bentoml.exceptions import BentoMLException
 from bentoml.version import __version__ as BENTOML_VERSION
 
 PYTHON_VERSION = "{major}.{minor}.{micro}".format(

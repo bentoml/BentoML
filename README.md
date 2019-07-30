@@ -51,15 +51,20 @@ class KerasFashionMnistService(BentoService):
     # model artifacts and write your own preprocessing logic
     @api(ImageHandler)
     def predict(self, img):
+        # Preprocessing prediction request - ImageHandler parses REST API
+        # request or CLI args into python object that can be easily processed
         img = Image.fromarray(img).resize((28, 28))
         img = np.array(img.getdata()).reshape((1,28,28,1))
+
+        # Assess to serialized trained model artifact via self.artifacts
         class_idx = self.artifacts.classifier.predict_classes(img)[0]
+
+        # Returning prediction result
         return class_names[class_idx]
 ```
 
-Without changing any of your model training code, you can pack the prediction
-service defined above with trained model, and save a versioned BentoArchive to
-file system:
+After training your ML model, you can pack it with the prediction service
+defined above and save a versioned BentoArchive to file system:
 ```python
 model = keras.Sequential()
 model.add(...)
@@ -72,14 +77,14 @@ model.evaluate(...)
 saved_path = KerasFashionMnistService.pack(classifier=model).save('/my_bento_archives')
 ```
 
-Now you can start a REST API server based off the saved BentoArchive:
+Now you can start a REST API server based off the saved BentoArchive files:
 ```bash
 bentoml serve {saved_path}
 ```
 
 Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser to play
-around with the Web UI of the REST API model server, or try sending prediction
-request with `curl`:
+around with the Web UI of the REST API model server, sending testing requests
+from the UI, or try sending prediction request with `curl` from CLI:
 
 ```bash
 curl -X POST "http://127.0.0.1:5000/predict" -H "Content-Type: image/png" --data-binary @sample_image.png

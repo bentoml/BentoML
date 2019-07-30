@@ -152,19 +152,27 @@ class BentoServiceEnv(object):
             self._setup_sh = setup_sh_path_or_content.encode("utf-8")
 
     def set_requirements_txt(self, requirements_txt_path_or_content):
-        requirements_txt_file = Path(requirements_txt_path_or_content)
 
-        if requirements_txt_file.is_file():
-            with requirements_txt_file.open("rb") as f:
-                self._requirements_txt = f.read()
+        if isinstance(requirements_txt_path_or_content, list):
+            self._requirements_txt = "\n".join(requirements_txt_path_or_content).encode(
+                "utf-8"
+            )
         else:
-            self._requirements_txt = requirements_txt_path_or_content.encode("utf-8")
+            requirements_txt_file = Path(requirements_txt_path_or_content)
+            if requirements_txt_file.is_file():
+                with requirements_txt_file.open("rb") as f:
+                    self._requirements_txt = f.read()
+            else:
+                self._requirements_txt = requirements_txt_path_or_content.encode(
+                    "utf-8"
+                )
 
     def save(self, path):
         conda_yml_file = os.path.join(path, "environment.yml")
         self._conda_env.write_to_yaml_file(conda_yml_file)
 
         requirements_txt_file = os.path.join(path, "requirements.txt")
+
         with open(requirements_txt_file, "wb") as f:
             f.write(self._requirements_txt or b"")
 

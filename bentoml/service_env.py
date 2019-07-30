@@ -160,15 +160,10 @@ class BentoServiceEnv(object):
     def set_requirements_txt(self, requirements_txt_path):
         requirements_txt_file = Path(requirements_txt_path)
 
-        if requirements_txt_file.is_file():
-            with requirements_txt_file.open("rb") as f:
-                content = f.read()
-                module_list = content.decode('utf-8').split('\n')
-                self._pip_dependencies += module_list
-        else:
-            raise BentoMLException(
-                "requirements_txt file at {} not found".format(requirements_txt_path)
-            )
+        with requirements_txt_file.open("rb") as f:
+            content = f.read()
+            module_list = content.decode("utf-8").split("\n")
+            self._pip_dependencies += module_list
 
     def save(self, path):
         conda_yml_file = os.path.join(path, "environment.yml")

@@ -262,7 +262,8 @@ def env_decorator(**kwargs):
         setup_sh (str): User defined shell script to run before running BentoService.
             It could be local file path or the shell script content.
         requirements_text (str): User defined requirement text to install before
-            running BentoService.  It could be local file path or requirements' content
+            running BentoService.
+        pip_dependencies (str or list(str)): User defined python modules to install.
         conda_channels (list(str)): User defined conda channels
         conda_dependencies (list(str)): Defined dependencies to be installed with
             conda environment.

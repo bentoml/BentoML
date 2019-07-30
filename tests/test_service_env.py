@@ -6,7 +6,6 @@ import bentoml
 def test_requirement_txt_env(tmpdir):
     req_txt_file = tmpdir.join("requirements.txt")
     model = ''
-    final_string = "numpy\npandas\ntorch"
     with open(str(req_txt_file), 'wb') as f:
         f.write(b"numpy\npandas\ntorch")
 
@@ -18,7 +17,7 @@ def test_requirement_txt_env(tmpdir):
             return df
 
     service_with_file = ServiceWithFile.pack(model=model)
-    assert service_with_file.env._requirements_txt.decode('utf-8') == final_string
+    assert len(service_with_file.env._pip_dependencies) == 3
 
 
 def test_pip_dependencies_env(tmpdir):
@@ -61,7 +60,5 @@ def test_pip_dependencies_with_archive(tmpdir):
     requirements_txt_path = os.path.join(saved_path, 'requirements.txt')
     with open(requirements_txt_path, 'rb') as f:
         saved_requirements = f.read()
-        print(saved_requirements)
         module_list = saved_requirements.decode('utf-8').split('\n')
-        print(module_list)
         assert len(module_list) == 3

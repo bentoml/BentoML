@@ -13,16 +13,15 @@
 [Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Examples](https://github.com/bentoml/BentoML#examples) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) | [License](https://github.com/bentoml/BentoML/blob/master/LICENSE) | [Blog](https://medium.com/bentoml)
 
 
-BentoML is a python framework for serving and operating machine learning
-models, making it easy to promote trained models into high performance prediction
-services.
+BentoML is a python framework for __serving and operating machine learning
+models__, making it easy to promote trained models into high performance
+prediction services.
 
 The framework provides high-level APIs for defining an ML service and packaging
 its trained model artifacts, preprocessing source code, dependencies, and
 configurations into a standard file format called BentoArchive - which can be
-deployed as containerize REST API server, PyPI package, CLI tool, or batch
-inference job on large dataset.
-
+deployed as containerize REST API server, PyPI package, CLI tool, and
+batch/streaming inference job.
 
 Check out our 5-mins quick start notebook [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
 
@@ -45,7 +44,7 @@ from bentoml.handlers import ImageHandler
 # Define a prediction service class by subclassing bentoml.BentoService
 @env(pip_dependencies=['tensorflow'])
 @artifacts([KerasModelArtifact('classifier')])
-class KerasFashionMnistService(BentoService):
+class ImageClassificationExampleService(BentoService):
 
     # Define service API function where you can have access to trained
     # model artifacts and write your own preprocessing logic
@@ -53,14 +52,11 @@ class KerasFashionMnistService(BentoService):
     def predict(self, img):
         # Preprocessing prediction request - ImageHandler parses REST API
         # request or CLI args into python object that can be easily processed
-        img = Image.fromarray(img).resize((28, 28))
-        img = np.array(img.getdata()).reshape((1,28,28,1))
+        # into feature vectors that are ready for your trained model
+        img = Image.fromarray(img).resize((...))
 
         # Assess to serialized trained model artifact via self.artifacts
-        class_idx = self.artifacts.classifier.predict_classes(img)[0]
-
-        # Returning prediction result
-        return class_names[class_idx]
+        return self.artifacts.classifier.predict(img)
 ```
 
 After training your ML model, you can pack it with the prediction service
@@ -74,7 +70,7 @@ model.fit(...)
 model.evaluate(...)
 
 # Packaging trained model for serving in production:
-saved_path = KerasFashionMnistService.pack(classifier=model).save('/my_bento_archives')
+saved_path = ImageClassificationExampleService.pack(classifier=model).save('/my_bento_archives')
 ```
 
 Now you can start a REST API server based off the saved BentoArchive files:
@@ -101,10 +97,10 @@ pip install {saved_path}
 ```
 ```python
 # Your bentoML model class name will become packaged name
-import KerasFashionMnistService
+import ImageClassificationExampleService
 
-ms = KerasFashionMnistService.load()
-ms.predict(test_images[0].squeeze(-1))
+ms = ImageClassificationExampleService.load()
+ms.predict(test_image)
 ```
 
 You can also build a docker image for this API server with all dependencies and

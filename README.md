@@ -10,7 +10,7 @@
 
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/bentoml.png)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb)
 
-[Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Quick Start on Google Golab]() | [Documentation](http://bentoml.readthedocs.io) | [Examples](https://github.com/bentoml/BentoML#examples) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) |[License](https://github.com/bentoml/BentoML/blob/master/LICENSE)
+[Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Examples](https://github.com/bentoml/BentoML#examples) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) | [License](https://github.com/bentoml/BentoML/blob/master/LICENSE) | [Blog](https://medium.com/bentoml)
 
 
 BentoML is a python framework for serving and operating machine learning

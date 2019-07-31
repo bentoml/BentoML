@@ -16,6 +16,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from enum import Enum
+
 from bentoml.archive import load
 
 
@@ -31,7 +33,6 @@ class LegacyDeployment(object):
     def deploy(self):
         """Deploy bentoml service.
 
-        :return: Boolean, True if success
         """
         raise NotImplementedError
 
@@ -46,3 +47,69 @@ class LegacyDeployment(object):
 
         """
         raise NotImplementedError
+
+
+class DeploymentService(object):
+    @staticmethod
+    def create(
+        deployment_name, bento_service_name, bento_service_version, platform, config
+    ):
+        pass
+
+    @staticmethod
+    def apply(deployment_name, bento_service_name, bento_service_version, config=None):
+        pass
+
+    @staticmethod
+    def delete(deployment_name):
+        pass
+
+    @staticmethod
+    def get(deployment_name):
+        pass
+
+    @staticmethod
+    def describe(deployment_name):
+        pass
+
+
+class StatusCode(Enum):
+    OK = 0
+    CANCELLED = 1
+    UNKNOWN = 2
+    INVALID_ARGUMENT = 3
+    NOT_FOUND = 4
+    ALREADY_EXISTS = 5
+    PERMISSION_DENNIED = 6
+    UNAUTHENTICATED = 7
+    RESOURCE_EXHAUSTED = 8
+    FAILED_PRECONDITION = 9
+    ABORTED = 10
+    INTERNAL = 11
+    UNAVAILABLE = 12
+
+
+class ResponseStatus:
+    def __init__(self, status_code=StatusCode.OK, error_message=None):
+        self.status_code = status_code
+        self.error_message = error_message
+
+
+class CreateDeploymentResponse:
+    pass
+
+
+class ApplyDeploymentResponse:
+    pass
+
+
+class DeleteDeploymentResponse:
+    pass
+
+
+class GetDeploymentResponse:
+    pass
+
+
+class DescribeDeploymentResponse:
+    pass

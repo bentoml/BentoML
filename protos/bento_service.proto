@@ -1,0 +1,37 @@
+syntax = "proto3"
+package bentoml
+
+import "status.proto"
+import "deployment.proto"
+import "repository.proto"
+
+// BentoML deployment and management service
+service Yatai {
+
+  rpc HealthCheck (Empty)
+    returns (HealthCheckResponse)
+
+  rpc ApplyDeployment(ApplyDeploymentRequest)
+    returns (ApplyDeploymentResponse)
+
+  rpc DeleteDeployment(DeleteDeploymentRequest)
+    returns (DeleteDeploymentResponse)
+
+  rpc GetDeployment(GetDeploymentRequest)
+    returns (GetDeploymentResponse)
+
+  rpc DescribeDeployment(DescribeDeploymentRequest)
+    returns (DescribeDeploymentResponse)
+
+
+  rpc AddBentoService()
+
+  rpc RemoveBentoService()
+
+  rpc GetBentoService()
+
+}
+
+message HealthCheckResponse {
+  StatusProto status = 1;
+}

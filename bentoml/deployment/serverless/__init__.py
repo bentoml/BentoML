@@ -75,10 +75,10 @@ def check_serverless_compatiable_version():
 
 def install_serverless_plugin(plugin_name, install_dir_path):
     command = ["serverless", "plugin", "install", "-n", plugin_name]
-    make_serverless_command(command, install_dir_path)
+    call_serverless_command(command, install_dir_path)
 
 
-def make_serverless_command(command, cwd_path, cb=None):
+def call_serverless_command(command, cwd_path, cb=None):
     with subprocess.Popen(command, cwd=cwd_path, stdout=PIPE, stderr=PIPE) as proc:
         response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
         logger.debug("Serverless response: %s", "\n".join(response))
@@ -168,7 +168,7 @@ class ServerlessDeployment(Deployment):
         Path(output_path).mkdir(parents=True, exist_ok=False)
 
         # Calling serverless command to generate templated project
-        make_serverless_command(
+        call_serverless_command(
             [
                 "serverless",
                 "create",
@@ -220,7 +220,7 @@ class ServerlessDeployment(Deployment):
             logger.info("BentoML: %s", "\n".join(service_info))
             print("\n".join(service_info))
 
-        make_serverless_command(
+        call_serverless_command(
             ["serverless", "deploy"], output_path, display_deployed_info
         )
         return output_path
@@ -240,7 +240,7 @@ class ServerlessDeployment(Deployment):
                 print("\n".join(response))
                 return True, "\n".join(response)
 
-        return make_serverless_command(
+        return call_serverless_command(
             ["serverless", "info"], tempdir, parse_status_response
         )
 
@@ -262,6 +262,6 @@ class ServerlessDeployment(Deployment):
                 else:
                     return False
 
-        return make_serverless_command(
+        return call_serverless_command(
             ['serverless', 'remove'], tempdir, parse_deletion_response
         )

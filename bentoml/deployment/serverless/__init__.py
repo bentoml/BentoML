@@ -29,7 +29,7 @@ from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
 from bentoml.exceptions import BentoMLException
-from bentoml.deployment.base_deployment import Deployment
+from bentoml.deployment.base_deployment import LegacyDeployment
 from bentoml.deployment.serverless.aws_lambda_template import (
     create_aws_lambda_bundle,
     DEFAULT_AWS_DEPLOY_STAGE,
@@ -82,7 +82,7 @@ def parse_serverless_response(serverless_response):
     return str_list
 
 
-class ServerlessDeployment(Deployment):
+class ServerlessDeployment(LegacyDeployment):
     """Managing deployment operations for serverless
     """
 

@@ -26,7 +26,7 @@ from six.moves.urllib.parse import urlparse
 import boto3
 import docker
 
-from bentoml.deployment.base_deployment import Deployment
+from bentoml.deployment.base_deployment import LegacyDeployment
 from bentoml.deployment.utils import (
     generate_bentoml_deployment_snapshot_path,
     process_docker_api_line,
@@ -146,7 +146,7 @@ def create_push_image_to_ecr(bento_service, snapshot_path):
     return ecr_tag
 
 
-class SagemakerDeployment(Deployment):
+class SagemakerDeployment(LegacyDeployment):
     def __init__(
         self,
         archive_path,

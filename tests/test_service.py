@@ -41,8 +41,5 @@ def test_handler_pip_dependencies():
     empy_artifact = []
     service = TestModel.pack(artifact=empy_artifact)
 
-    # ordereddict
-    env = service._env._conda_env._conda_env
-    pip_requirements = env.get('dependencies')[2]['pip']
-    assert pip_requirements[1] == 'imageio'
-    assert pip_requirements[2] == 'fastai'
+    assert 'imageio' in service._env._pip_dependencies
+    assert 'fastai' in service._env._pip_dependencies

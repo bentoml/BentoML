@@ -55,7 +55,7 @@ def test_pip_dependencies_with_archive(tmpdir):
             return df
 
     service_with_list = ServiceWithList.pack(model=model)
-    saved_path = service_with_list.save(tmpdir)
+    saved_path = service_with_list.save(str(tmpdir))
 
     requirements_txt_path = os.path.join(saved_path, 'requirements.txt')
     with open(requirements_txt_path, 'rb') as f:

@@ -72,7 +72,7 @@ def generate_serverless_configuration_for_aws(
         }
         serverless_config["functions"][api.name] = function_config
 
-    custom_config = {
+    serverless_config["custom"] = {
         "apigwBinary": ["image/jpg", "image/jpeg", "image/png"],
         "pythonRequirements": {
             "useDownloadCache": True,
@@ -83,8 +83,6 @@ def generate_serverless_configuration_for_aws(
             "zip": True,
         },
     }
-
-    serverless_config["custom"] = custom_config
 
     yaml.dump(serverless_config, Path(config_path))
     return

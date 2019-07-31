@@ -51,12 +51,6 @@ class LegacyDeployment(object):
 
 class DeploymentService(object):
     @staticmethod
-    def create(
-        deployment_name, bento_service_name, bento_service_version, platform, config
-    ):
-        pass
-
-    @staticmethod
     def apply(deployment_name, bento_service_name, bento_service_version, config=None):
         pass
 

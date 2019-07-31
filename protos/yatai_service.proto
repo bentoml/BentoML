@@ -1,6 +1,7 @@
 syntax = "proto3"
 package bentoml
 
+import "common.proto"
 import "status.proto"
 import "deployment.proto"
 import "repository.proto"
@@ -24,11 +25,14 @@ service Yatai {
     returns (DescribeDeploymentResponse)
 
 
-  rpc AddBentoService()
+  rpc AddBentoService(AddBentoServiceRequest)
+    returns (AddBentoServiceResponse)
 
-  rpc RemoveBentoService()
+  rpc RemoveBentoService(RemoveBentoServiceRequest)
+    returns (RemoveBentoServiceResponse)
 
-  rpc GetBentoService()
+  rpc GetBentoService(GetBentoServiceRequest)
+    returns (GetBentoServiceResponse)
 
 }
 

@@ -25,20 +25,15 @@ from subprocess import PIPE
 from ruamel.yaml import YAML
 from packaging import version
 
+from bentoml import config as bentoml_config
 from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
 from bentoml.exceptions import BentoMLException
 from bentoml.deployment.base_deployment import Deployment
-from bentoml.deployment.serverless.aws_lambda_template import (
-    create_aws_lambda_bundle,
-    DEFAULT_AWS_DEPLOY_STAGE,
-    DEFAULT_AWS_REGION,
-)
+from bentoml.deployment.serverless.aws_lambda_template import create_aws_lambda_bundle
 from bentoml.deployment.serverless.gcp_function_template import (
     create_gcp_function_bundle,
-    DEFAULT_GCP_REGION,
-    DEFAULT_GCP_DEPLOY_STAGE,
 )
 from bentoml.deployment.utils import generate_bentoml_deployment_snapshot_path
 
@@ -50,6 +45,10 @@ SERVERLESS_PROVIDER = {
     "gcp-function": "google-python",
 }
 
+default_gcp_config = bentoml_config["google-cloud"]
+default_aws_config = bentoml_config["aws"]
+default_serverless_config = bentoml_config["serverless"]
+
 
 def check_serverless_compatiable_version():
     if which("serverless") is None:
@@ -58,10 +57,12 @@ def check_serverless_compatiable_version():
             + "www.serverless.com for install instructions."
         )
 
-    version_result = subprocess.check_output(["serverless", "-v"]).decode('utf-8').strip()
-    if '(Enterprise Plugin:' in version_result:
-        slice_end_index = version_result.find(' (Enterprise')
-        version_result = version_result[0: slice_end_index]
+    version_result = (
+        subprocess.check_output(["serverless", "-v"]).decode("utf-8").strip()
+    )
+    if "(Enterprise Plugin:" in version_result:
+        slice_end_index = version_result.find(" (Enterprise")
+        version_result = version_result[0:slice_end_index]
     parsed_version = version.parse(version_result)
 
     if parsed_version >= version.parse("1.40.0"):
@@ -73,14 +74,16 @@ def check_serverless_compatiable_version():
 
 
 def install_serverless_plugin(plugin_name, install_dir_path):
-    with subprocess.Popen(
-        ["serverless", "plugin", "install", "-n", plugin_name],
-        cwd=install_dir_path,
-        stdout=PIPE,
-        stderr=PIPE,
-    ) as proc:
+    command = ["serverless", "plugin", "install", "-n", plugin_name]
+    make_serverless_command(command, install_dir_path)
+
+
+def make_serverless_command(command, cwd_path, cb=None):
+    with subprocess.Popen(command, cwd=cwd_path, stdout=PIPE, stderr=PIPE) as proc:
         response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
         logger.debug("Serverless response: %s", "\n".join(response))
+        if cb:
+            return cb(response)
 
 
 def parse_serverless_response(serverless_response):
@@ -107,35 +110,42 @@ class ServerlessDeployment(Deployment):
         self.platform = platform
         self.provider = SERVERLESS_PROVIDER[platform]
         if platform == "google-python":
-            self.region = DEFAULT_GCP_REGION if region is None else region
-            self.stage = DEFAULT_GCP_DEPLOY_STAGE if stage is None else stage
+            self.region = (
+                default_gcp_config.get("default_region") if region is None else region
+            )
         elif platform == "aws-lambda" or platform == "aws-lambda-py":
-            self.region = DEFAULT_AWS_REGION if region is None else region
-            self.stage = DEFAULT_AWS_DEPLOY_STAGE if stage is None else stage
+            self.region = (
+                default_aws_config.get("default_region") if region is None else region
+            )
         else:
             raise ValueError(
                 "This version of BentoML doesn't support platform %s" % platform
             )
+        self.stage = (
+            default_serverless_config.get("default_deploy_stage")
+            if stage is None
+            else stage
+        )
 
     def _create_temporary_yaml_config(self):
         apis = self.bento_service.get_service_apis()
-        config = {
+        serverless_config = {
             "service": self.bento_service.name,
             "provider": {"region": self.region, "stage": self.stage},
             "functions": {},
         }
 
         if self.platform == "google-python":
-            config["provider"]["name"] = "google"
+            serverless_config["provider"]["name"] = "google"
             for api in apis:
-                config["functions"][api.name] = {
+                serverless_config["functions"][api.name] = {
                     "handler": api.name,
                     "events": [{"http": "path"}],
                 }
         elif self.platform == "aws-lambda" or self.platform == "aws-lambda-py2":
-            config["provider"]["name"] = "aws"
+            serverless_config["provider"]["name"] = "aws"
             for api in apis:
-                config["functions"][api.name] = {
+                serverless_config["functions"][api.name] = {
                     "handler": "handler." + api.name,
                     "events": [{"http": {"path": "/" + api.name, "method": "post"}}],
                 }
@@ -148,7 +158,7 @@ class ServerlessDeployment(Deployment):
         yaml = YAML()
         with TempDirectory() as tempdir:
             saved_path = os.path.join(tempdir, "serverless.yml")
-            yaml.dump(config, Path(saved_path))
+            yaml.dump(serverless_config, Path(saved_path))
         return tempdir
 
     def _generate_bundle(self):
@@ -158,7 +168,7 @@ class ServerlessDeployment(Deployment):
         Path(output_path).mkdir(parents=True, exist_ok=False)
 
         # Calling serverless command to generate templated project
-        with subprocess.Popen(
+        make_serverless_command(
             [
                 "serverless",
                 "create",
@@ -167,12 +177,8 @@ class ServerlessDeployment(Deployment):
                 "--name",
                 self.bento_service.name,
             ],
-            cwd=output_path,
-            stdout=PIPE,
-            stderr=PIPE,
-        ) as proc:
-            response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
-            logger.debug("Serverless response: %s", "\n".join(response))
+            output_path,
+        )
 
         if self.platform == "google-python":
             create_gcp_function_bundle(
@@ -207,16 +213,17 @@ class ServerlessDeployment(Deployment):
 
     def deploy(self):
         output_path = self._generate_bundle()
-        with subprocess.Popen(
-            ["serverless", "deploy"], cwd=output_path, stdout=PIPE, stderr=PIPE
-        ) as proc:
-            response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
-            logger.debug("Serverless response: %s", "\n".join(response))
+
+        def display_deployed_info(response):
             service_info_index = response.index("Service Information")
             service_info = response[service_info_index:]
             logger.info("BentoML: %s", "\n".join(service_info))
             print("\n".join(service_info))
-            return output_path
+
+        make_serverless_command(
+            ["serverless", "deploy"], output_path, display_deployed_info
+        )
+        return output_path
 
     def check_status(self):
         """Check deployment status for the bentoml service.
@@ -224,14 +231,7 @@ class ServerlessDeployment(Deployment):
         """
         tempdir = self._create_temporary_yaml_config()
 
-        with subprocess.Popen(
-            ["serverless", "info"], cwd=tempdir, stdout=PIPE, stderr=PIPE
-        ) as proc:
-            # We don't use the parse_response function here.
-            # Instead of raising error, we will just return false
-            content = proc.stdout.read().decode("utf-8")
-            response = content.strip().split("\n")
-            logger.debug("Serverless response: %s", "\n".join(response))
+        def parse_status_response(response):
             error = [s for s in response if "Serverless Error" in s]
             if error:
                 print("has error", "\n".join(response))
@@ -239,6 +239,10 @@ class ServerlessDeployment(Deployment):
             else:
                 print("\n".join(response))
                 return True, "\n".join(response)
+
+        return make_serverless_command(
+            ["serverless", "info"], tempdir, parse_status_response
+        )
 
     def delete(self):
         is_active, _ = self.check_status()
@@ -248,11 +252,7 @@ class ServerlessDeployment(Deployment):
             )
         tempdir = self._create_temporary_yaml_config()
 
-        with subprocess.Popen(
-            ["serverless", "remove"], cwd=tempdir, stdout=PIPE, stderr=PIPE
-        ) as proc:
-            response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
-            logger.debug("Serverless response: %s", "\n".join(response))
+        def parse_deletion_response(response):
             if self.platform == "google-python":
                 # TODO: Add check for Google's response
                 return True
@@ -261,3 +261,7 @@ class ServerlessDeployment(Deployment):
                     return True
                 else:
                     return False
+
+        return make_serverless_command(
+            ['serverless', 'remove'], tempdir, parse_deletion_response
+        )

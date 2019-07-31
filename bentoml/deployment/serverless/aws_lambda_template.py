@@ -23,7 +23,6 @@ from ruamel.yaml import YAML
 
 from bentoml.utils import Path
 
-DEFAULT_AWS_REGION = "us-west-2"
 DEFAULT_AWS_DEPLOY_STAGE = "dev"
 
 logger = logging.getLogger(__name__)

@@ -16,9 +16,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import json
 import click
 import logging
+import subprocess
 
 from bentoml.archive import load, load_service_api
 from bentoml.server import BentoAPIServer, get_docs
@@ -129,10 +131,32 @@ def create_bento_service_cli(archive_path=None):
         default=BentoAPIServer._DEFAULT_PORT,
         help="The port to listen on for the REST api server, default is 5000.",
     )
-    def serve(port, archive_path=archive_path):
-        track_cli('serve')
+    @click.option(
+        '--with-conda',
+        is_flag=True,
+        default=False,
+        help="Run API server on a Conda environment.",
+    )
+    def serve(port, archive_path=archive_path, with_conda=False):
         bento_service = load(archive_path)
 
+        if with_conda:
+            env_name = bento_service.name + '_' + bento_service.version
+            subprocess.call(
+                'conda env update -n {env_name} -f {env_file} && '
+                'conda init bash && '
+                'eval "$(conda shell.bash hook)" && '
+                'conda activate {env_name} && '
+                'bentoml serve {archive_path} --port {port}'.format(
+                    env_name=env_name,
+                    env_file=os.path.join(archive_path, 'environment.yml'),
+                    archive_path=archive_path,
+                    port=port,
+                ),
+                shell=True)
+            return
+
+        track_cli('serve')
         server = BentoAPIServer(bento_service, port=port)
         server.start()
 

@@ -23,8 +23,6 @@ from ruamel.yaml import YAML
 
 from bentoml.utils import Path
 
-DEFAULT_AWS_DEPLOY_STAGE = "dev"
-
 logger = logging.getLogger(__name__)
 
 AWS_HANDLER_PY_TEMPLATE_HEADER = """\

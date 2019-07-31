@@ -5,7 +5,7 @@ from bentoml.artifact import XgboostModelArtifact
 from bentoml.handlers import DataframeHandler
 
 @bentoml.artifacts([XgboostModelArtifact('model')])
-@bentoml.env(conda_dependencies=['xgboost'])
+@bentoml.env(pip_dependencies=['xgboost'])
 class TitanicModel(bentoml.BentoService):
     
     @bentoml.api(DataframeHandler)

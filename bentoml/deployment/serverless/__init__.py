@@ -58,8 +58,11 @@ def check_serverless_compatiable_version():
             + "www.serverless.com for install instructions."
         )
 
-    version_result = subprocess.check_output(["serverless", "-v"])
-    parsed_version = version.parse(version_result.decode("utf-8").strip())
+    version_result = subprocess.check_output(["serverless", "-v"]).decode('utf-8').strip()
+    if '(Enterprise Plugin:' in version_result:
+        slice_end_index = version_result.find(' (Enterprise')
+        version_result = version_result[0: slice_end_index]
+    parsed_version = version.parse(version_result)
 
     if parsed_version >= version.parse("1.40.0"):
         return
@@ -191,6 +194,11 @@ class ServerlessDeployment(Deployment):
             )
 
         shutil.copy(os.path.join(self.archive_path, "requirements.txt"), output_path)
+
+        # Make sure we include bentoml as part of the requirements
+        output_requirement_path = os.path.join(output_path, "requirements.txt")
+        with open(output_requirement_path, "ab") as f:
+            f.write(b"bentoml")
 
         model_serivce_archive_path = os.path.join(output_path, self.bento_service.name)
         shutil.copytree(self.archive_path, model_serivce_archive_path)

@@ -36,16 +36,16 @@ enum DeployPlatform {
 }
 
 message DeploymentSpec {
-  string bento_name = 2;
-  string bento_version = 3;
+  string bento_name = 1;
+  string bento_version = 2;
 
-  DeployPlatform platform = 4;
+  DeployPlatform platform = 3;
 
   oneof platform_config {
-    SagemakerConfig sagemaker_config = 7;
-    AwsLambdaConfig aws_lambda_config = 8;
-    GcpFunctionConfig gcp_function_config = 9;
-    KubernetesConfig kubernetes_config = 10;
+    SagemakerConfig sagemaker_config = 4;
+    AwsLambdaConfig aws_lambda_config = 5;
+    GcpFunctionConfig gcp_function_config = 6;
+    KubernetesConfig kubernetes_config = 7;
   }
 }
 
@@ -63,6 +63,8 @@ message DeploymentState {
   }
 
   State state = 1;
+  string error_message = 2;
+  string info_json = 3;
 }
 
 message Deployment {

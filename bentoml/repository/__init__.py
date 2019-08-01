@@ -16,16 +16,49 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from bentoml import config
 
-class BentoRepository(object):
-    @staticmethod
-    def add_bento_service(path):
+
+DEFAULT_LOCAL_REPO_PATH = config.get('repository', 'base_path')
+
+
+# Bento, is a file format representing a saved BentoService
+class BaseRepository(object):
+
+    def add(self, bento_service_instance, version=None):
         pass
 
-    @staticmethod
-    def remove_bento_service(bento_service_name, bento_service_version):
+    def delete(self, bento_name, bento_version=None):
         pass
 
-    @staticmethod
-    def get_bento_service(bento_service_name, bento_service_version):
+    def get(self, bento_name, bento_version):
         pass
+
+    def list(self, bento_name):
+        pass
+
+
+class LocalRepository(BaseRepository):
+
+    def __init__(self, base_path=DEFAULT_LOCAL_REPO_PATH):
+        self.base_path = base_path
+
+    def add(self, bento_service_instance, version=None):
+        pass
+
+    def delete(self, bento_name, bento_version=None):
+        pass
+
+    def get(self, bento_name, bento_version):
+        pass
+
+    def list(self, bento_name):
+        pass
+
+
+def get_local(base_path=DEFAULT_LOCAL_REPO_PATH):
+    return LocalRepository(base_path)
+
+
+
+

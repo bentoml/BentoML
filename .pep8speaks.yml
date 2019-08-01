@@ -8,7 +8,8 @@ flake8:
       - E203
       - E266
       - W503
-    exclude: [ 'proto' ]
+    exclude:
+      - proto
 
 only_mention_files_with_errors: True
 

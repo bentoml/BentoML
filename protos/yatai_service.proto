@@ -7,6 +7,11 @@ import "deployment.proto"
 import "repository.proto"
 
 // BentoML deployment and management service
+// Config DeployTarget
+// yatai start --deploy-taget-config
+// [aws][sagemaker]
+// [google]
+// [kubecfg]
 service Yatai {
 
   rpc HealthCheck (Empty)
@@ -37,5 +42,5 @@ service Yatai {
 }
 
 message HealthCheckResponse {
-  StatusProto status = 1;
+  Status status = 1;
 }

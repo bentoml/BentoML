@@ -1,7 +1,7 @@
 syntax = "proto3";
 package bentoml;
 
-message StatusProto {
+message Status {
   // Borrowed from TensorFlow project:
   //    "tensorflow/core/lib/core/error_codes.proto"
   //    "third_party/tensorflow/core/lib/core/status.h"

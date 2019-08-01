@@ -6,63 +6,106 @@ import "yatai_service.proto"
 import "repository.proto"
 
 
-// message DeploymentResponseInfo{}
+message SagemakerConfig {
+  string region = 1;
+  string instance_type = 2;
+  int32 instance_count = 3;
+  string api_name = 4;
+}
+
+message AwsLambdaConfig {
+  string region = 1;
+  string stage = 2;
+}
+
+message GcpFunctionConfig {
+  string region = 1;
+  string stage = 2;
+}
+
+message KubernetesConfig {
+  string namespace = 1;
+  int32 replicas = 2;
+}
+
+enum DeployPlatform {
+  AWS_SAGEMAKER = 0;
+  AWS_LAMBDA = 1;
+  GCP_FUNCTION = 2;
+  KUBERNETES = 3;
+  KNATIVE = 4; // not implemented
+}
+
+message DeployConfig {
+  DeployPlatform platform = 1;
+
+  map<string, string> annotations = 2;
+  map<string, string> labels = 3;
+
+  oneof platform_config {
+    SagemakerConfig sagemaker_config = 4;
+    AwsLambdaConfig aws_lambda_config = 5;
+    GcpFunctionConfig gcp_function_config = 6;
+    KubernetesConfig kubernetes_config = 7;
+  }
+}
+
+message DeploymentSpec {
+  string deployment_name = 1;
+  string bento_service_name = 2;
+  string bento_service_version = 3;
+
+  DeployConfig config = 5;
+}
+
+enum DeploymentState {
+  PENDING = 0;
+  RUNNING = 1;
+  SUCCEEDED = 2;
+  FAILED = 3;
+  UNKNOWN = 4;
+  COMPLETED = 5;
+  CRASH_LOOP_BACK_OFF = 6;
+  ERROR = 7;
+  INACTIVATED = 8;
+}
+
+message DeploymentStatus {
+  DeploymentState state = 1;
+}
 
 // Requests
 message ApplyDeploymentRequest {
-
-  message SagemakerConfigProto {
-    string region = 1
-    string instance_type = 2
-    int32 instance_count = 3
-    string api_name = 4
-  }
-
-  message ServerlessConfigProto {
-    string region = 1
-    string stage = 2
-  }
-
-  message KubernetesConfigProto {
-  }
-
-  string deployment_name = 1
-  string bento_service_name = 2
-  string bento_service_version = 3
-  string platform = 4
-
-  oneof config {
-    SagemakerConfigProto sagemaker_config = 5
-    ServerlessConfigProto serverless_config = 6
-    KubernetesConfigProto kube_config = 7
-  }
+  DeploymentSpec spec = 1;
 }
 
 message DeleteDeploymentRequest {
-  string deployment_name = 1
+  string deployment_name = 1;
 }
 
 message GetDeploymentRequest {
-  string deployment_name = 1
+  string deployment_name = 1;
 }
 
 message DescribeDeploymentRequest {
-  string deployment_name = 1
+  string deployment_name = 1;
 }
 
-// Responses
 message ApplyDeploymentResponse {
-  StatusProto status = 1
+  Status status = 1;
+  DeploymentState state = 2;
 }
 
 message DeleteDeploymentResponse {
-  StatusProto status = 1
+  Status status = 1;
 }
 
 message GetDeploymentResponse {
-  StatusProto status = 1
+  Status status = 1;
+  DeploymentState state = 2;
 }
 
 message DescribeDeploymentResponse {
-  StatusProto status = 1
+  Status status = 1;
+  DeploymentSpec spec = 2;
 }

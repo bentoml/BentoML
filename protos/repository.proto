@@ -6,8 +6,8 @@ import "yatai_service.proto"
 import "deployment.proto"
 
 
-message BentoServiceProto {
-  message MetadataProto {
+message BentoService {
+  message Metadata {
     string created_at = 1 
     string service_name = 2
     string service_version = 3
@@ -15,28 +15,28 @@ message BentoServiceProto {
     string module_file = 5
   }
 
-  messgae ServiceEnvProto {
+  messgae ServiceEnv {
     string setup_sh = 1
     repeated string pip_dependencies = 2
     // string?? conda_env = 3
   }
 
-  message ArtifactProto {
+  message Artifact {
     string name = 1
     string artifact_type = 2
   }
 
-  message ApiProto {
+  message Api {
     string name = 1
     string handler_name = 2
   }
 
   string version = 1
   string kind = 2
-  MetadataProto metadata = 3
-  ServiceEnvProto env = 4
-  repeated ArtifactProto artifacts = 5
-  repeated ApiProto apis = 6
+  Metadata metadata = 3
+  ServiceEnv env = 4
+  repeated Artifact artifacts = 5
+  repeated Api apis = 6
 }
 
 // Requests
@@ -57,16 +57,16 @@ message GetBentoServiceRequest {
 
 // Responses
 message AddBentoServiceResponse {
-  StatusProto status = 1
-  BentoServiceProto bento_service = 2
+  Status status = 1
+  BentoService bento_service = 2
 }
 
 message RemoveBentoServiceResponse {
-  StatusProto status = 1
-  BentoServiceProto bento_service = 2
+  Status status = 1
+  BentoService bento_service = 2
 }
 
 message GetBentoServiceResponse {
-  StatusProto status = 1
-  BentoServiceProto bento_service = 2
+  Status status = 1
+  BentoService bento_service = 2
 }

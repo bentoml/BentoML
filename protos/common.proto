@@ -13,3 +13,8 @@ package bentoml;
 //
 // The JSON representation for `Empty` is empty JSON object `{}`.
 message Empty {}
+
+
+message Chunk {
+  bytes content = 1;
+}

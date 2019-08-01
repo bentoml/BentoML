@@ -21,8 +21,10 @@ message GcpFunctionConfig {
 }
 
 message KubernetesConfig {
-  string namespace = 1;
+  string kube_namespace = 1;
   int32 replicas = 2;
+  string service_name = 3;
+  string service_type = 4;
 }
 
 enum DeployPlatform {
@@ -30,50 +32,58 @@ enum DeployPlatform {
   AWS_LAMBDA = 1;
   GCP_FUNCTION = 2;
   KUBERNETES = 3;
-  KNATIVE = 4; // not implemented
-}
-
-message DeployConfig {
-  DeployPlatform platform = 1;
-
-  map<string, string> annotations = 2;
-  map<string, string> labels = 3;
-
-  oneof platform_config {
-    SagemakerConfig sagemaker_config = 4;
-    AwsLambdaConfig aws_lambda_config = 5;
-    GcpFunctionConfig gcp_function_config = 6;
-    KubernetesConfig kubernetes_config = 7;
-  }
+  KNATIVE = 4;
 }
 
 message DeploymentSpec {
-  string deployment_name = 1;
-  string bento_service_name = 2;
-  string bento_service_version = 3;
+  string bento_name = 2;
+  string bento_version = 3;
 
-  DeployConfig config = 5;
+  DeployPlatform platform = 4;
+
+  oneof platform_config {
+    SagemakerConfig sagemaker_config = 7;
+    AwsLambdaConfig aws_lambda_config = 8;
+    GcpFunctionConfig gcp_function_config = 9;
+    KubernetesConfig kubernetes_config = 10;
+  }
 }
 
-enum DeploymentState {
-  PENDING = 0;
-  RUNNING = 1;
-  SUCCEEDED = 2;
-  FAILED = 3;
-  UNKNOWN = 4;
-  COMPLETED = 5;
-  CRASH_LOOP_BACK_OFF = 6;
-  ERROR = 7;
-  INACTIVATED = 8;
+message DeploymentState {
+  enum State {
+    PENDING = 0;
+    RUNNING = 1;
+    SUCCEEDED = 2;
+    FAILED = 3;
+    UNKNOWN = 4;
+    COMPLETED = 5;
+    CRASH_LOOP_BACK_OFF = 6;
+    ERROR = 7;
+    INACTIVATED = 8;
+  }
+
+  State state = 1;
+}
+
+message Deployment {
+  string namespace = 1;
+  string name = 2;
+
+  DeploymentSpec spec = 3;
+  DeploymentState state = 4;
+
+  map<string, string> annotations = 5;
+  map<string, string> labels = 6;
 }
 
 message DeploymentStatus {
   DeploymentState state = 1;
 }
 
+
 // Requests
 message ApplyDeploymentRequest {
-  DeploymentSpec spec = 1;
+  Deployment deployment = 1;
 }
 
 message DeleteDeploymentRequest {
@@ -88,9 +98,17 @@ message DescribeDeploymentRequest {
   string deployment_name = 1;
 }
 
+message ListDeploymentsRequest {
+  int32 offset = 1;
+  int32 limit = 2;
+  string filter = 3;
+  map<string, string> labels = 4;
+}
+
+// Responses
 message ApplyDeploymentResponse {
   Status status = 1;
-  DeploymentState state = 2;
+  Deployment deployment = 2;
 }
 
 message DeleteDeploymentResponse {
@@ -99,10 +117,15 @@ message DeleteDeploymentResponse {
 
 message GetDeploymentResponse {
   Status status = 1;
-  DeploymentState state = 2;
+  Deployment deployment = 2;
 }
 
 message DescribeDeploymentResponse {
   Status status = 1;
   DeploymentSpec spec = 2;
+}
+
+message ListDeploymentsResponse {
+  Status status = 1;
+  repeated Deployment deployments = 2;
 }

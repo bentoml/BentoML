@@ -6,18 +6,14 @@ import "status.proto";
 import "deployment.proto";
 import "repository.proto";
 
-// BentoML deployment and management service
-// Config DeployTarget
-// yatai start --deploy-taget-config
-// [aws][sagemaker]
-// [google]
-// [kubecfg]
+// Yatai: stateful service that manages and deploys BentoService
 service Yatai {
-
   // Common RPC
   rpc HealthCheck (Empty)
     returns (HealthCheckResponse);
 
+  rpc GetYataiServiceVersion (Empty)
+    returns (GetYataiServiceVersionResponse)
 
   // Deployment Management RPC
   rpc ApplyDeployment(ApplyDeploymentRequest)
@@ -32,19 +28,30 @@ service Yatai {
   rpc DescribeDeployment(DescribeDeploymentRequest)
     returns (DescribeDeploymentResponse);
 
+  rpc ListDeployments(ListDeploymentsRequest)
+    returns (ListDeploymentsResponse);
 
-  // BentoService Repository RPC
-  rpc AddBentoService(AddBentoServiceRequest)
-    returns (AddBentoServiceResponse);
+  // Bento Repository RPC
+  rpc AddBento(AddBentoRequest)
+    returns (AddBentoResponse);
 
-  rpc RemoveBentoService(RemoveBentoServiceRequest)
-    returns (RemoveBentoServiceResponse);
+  rpc UploadBento(stream Chunk)
+    returns (UploadBentoResponse)
 
-  rpc GetBentoService(GetBentoServiceRequest)
-    returns (GetBentoServiceResponse);
+  rpc RemoveBento(RemoveBentoRequest)
+    returns (RemoveBentoResponse);
 
+  rpc GetBento(GetBentoRequest)
+    returns (GetBentoResponse);
+
+  rpc ListBento(ListBentoRequest)
+    returns (ListBentoResponse);
 }
 
 message HealthCheckResponse {
   Status status = 1;
+}
+
+message GetYataiServiceVersionResponse {
+  string version = 1;
 }

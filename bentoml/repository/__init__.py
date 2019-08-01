@@ -24,7 +24,6 @@ DEFAULT_LOCAL_REPO_PATH = config.get('repository', 'base_path')
 
 # Bento, is a file format representing a saved BentoService
 class BaseRepository(object):
-
     def add(self, bento_service_instance, version=None):
         pass
 
@@ -39,7 +38,6 @@ class BaseRepository(object):
 
 
 class LocalRepository(BaseRepository):
-
     def __init__(self, base_path=DEFAULT_LOCAL_REPO_PATH):
         self.base_path = base_path
 
@@ -58,7 +56,5 @@ class LocalRepository(BaseRepository):
 
 def get_local(base_path=DEFAULT_LOCAL_REPO_PATH):
     return LocalRepository(base_path)
-
-
 
 

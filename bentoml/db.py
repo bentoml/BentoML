@@ -16,19 +16,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from bentoml import config
 
-class BentoMLException(Exception):
-    """
-    Base class for all BentoML's errors.
-    Each custom exception should be derived from this class
-    """
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-    status_code = 500
-
-
-class BentoMLConfigException(BentoMLException):
-    pass
-
-
-class BentoMLDeploymentException(BentoMLException):
-    pass
+# sql alchemy config
+engine = create_engine(
+    config.get('db', 'engine'), echo=False, connect_args={'check_same_thread': False}
+)
+Base = declarative_base()
+Session = sessionmaker(bind=engine)

@@ -16,19 +16,35 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from sqlalchemy import Column, String, JSON
 
-class BentoMLException(Exception):
-    """
-    Base class for all BentoML's errors.
-    Each custom exception should be derived from this class
-    """
-
-    status_code = 500
+from bentoml.db import Base
 
 
-class BentoMLConfigException(BentoMLException):
-    pass
+class Deployment(Base):
+    __tablename__ = 'deployments'
+
+    id = Column(String, primary_key=True)
+    name = Column(String, unique=True)
+    namespace = Column(String)
+
+    spec = Column(JSON)
+    labels = Column(JSON)
+    annotation = Column(JSON)
 
 
-class BentoMLDeploymentException(BentoMLException):
-    pass
+class DeploymentStore(object):
+    def __init__(self):
+        pass
+
+    def add(self, deployment):
+        pass
+
+    def get(self, name):
+        pass
+
+    def delete(self, name):
+        pass
+
+    def list(self, filter, labels, offset, limit):
+        pass

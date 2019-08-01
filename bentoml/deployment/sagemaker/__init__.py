@@ -26,7 +26,7 @@ from six.moves.urllib.parse import urlparse
 import boto3
 import docker
 
-from bentoml.deployment.base_deployment import LegacyDeployment
+from bentoml.deployment.legacy_deployment import LegacyDeployment
 from bentoml.deployment.utils import (
     generate_bentoml_deployment_snapshot_path,
     process_docker_api_line,

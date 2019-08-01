@@ -40,6 +40,7 @@ install_requires = [
     "packaging",
     "docker",
     "configparser",
+    "sqlalchemy",
 ]
 
 imageio = ["imageio>=2.5.0"]

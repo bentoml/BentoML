@@ -13,7 +13,7 @@ service Yatai {
     returns (HealthCheckResponse);
 
   rpc GetYataiServiceVersion (Empty)
-    returns (GetYataiServiceVersionResponse)
+    returns (GetYataiServiceVersionResponse);
 
   // Deployment Management RPC
   rpc ApplyDeployment(ApplyDeploymentRequest)
@@ -36,7 +36,7 @@ service Yatai {
     returns (AddBentoResponse);
 
   rpc UploadBento(stream Chunk)
-    returns (UploadBentoResponse)
+    returns (UploadBentoResponse);
 
   rpc RemoveBento(RemoveBentoRequest)
     returns (RemoveBentoResponse);

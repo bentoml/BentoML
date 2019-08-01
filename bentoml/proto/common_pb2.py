@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='bentoml',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x0c\x63ommon.proto\x12\x07\x62\x65ntoml\"\x07\n\x05\x45mptyb\x06proto3')
+  serialized_pb=_b('\n\x0c\x63ommon.proto\x12\x07\x62\x65ntoml\"\x07\n\x05\x45mpty\"\x18\n\x05\x43hunk\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x62\x06proto3')
 )
 
 
@@ -49,7 +49,39 @@ _EMPTY = _descriptor.Descriptor(
   serialized_end=32,
 )
 
+
+_CHUNK = _descriptor.Descriptor(
+  name='Chunk',
+  full_name='bentoml.Chunk',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='content', full_name='bentoml.Chunk.content', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=34,
+  serialized_end=58,
+)
+
 DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
+DESCRIPTOR.message_types_by_name['Chunk'] = _CHUNK
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), {
@@ -58,6 +90,13 @@ Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), {
   # @@protoc_insertion_point(class_scope:bentoml.Empty)
   })
 _sym_db.RegisterMessage(Empty)
+
+Chunk = _reflection.GeneratedProtocolMessageType('Chunk', (_message.Message,), {
+  'DESCRIPTOR' : _CHUNK,
+  '__module__' : 'common_pb2'
+  # @@protoc_insertion_point(class_scope:bentoml.Chunk)
+  })
+_sym_db.RegisterMessage(Chunk)
 
 
 # @@protoc_insertion_point(module_scope)

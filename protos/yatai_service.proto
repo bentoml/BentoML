@@ -1,10 +1,10 @@
-syntax = "proto3"
-package bentoml
+syntax = "proto3";
+package bentoml;
 
-import "common.proto"
-import "status.proto"
-import "deployment.proto"
-import "repository.proto"
+import "common.proto";
+import "status.proto";
+import "deployment.proto";
+import "repository.proto";
 
 // BentoML deployment and management service
 // Config DeployTarget
@@ -14,30 +14,34 @@ import "repository.proto"
 // [kubecfg]
 service Yatai {
 
+  // Common RPC
   rpc HealthCheck (Empty)
-    returns (HealthCheckResponse)
+    returns (HealthCheckResponse);
 
+
+  // Deployment Management RPC
   rpc ApplyDeployment(ApplyDeploymentRequest)
-    returns (ApplyDeploymentResponse)
+    returns (ApplyDeploymentResponse);
 
   rpc DeleteDeployment(DeleteDeploymentRequest)
-    returns (DeleteDeploymentResponse)
+    returns (DeleteDeploymentResponse);
 
   rpc GetDeployment(GetDeploymentRequest)
-    returns (GetDeploymentResponse)
+    returns (GetDeploymentResponse);
 
   rpc DescribeDeployment(DescribeDeploymentRequest)
-    returns (DescribeDeploymentResponse)
+    returns (DescribeDeploymentResponse);
 
 
+  // BentoService Repository RPC
   rpc AddBentoService(AddBentoServiceRequest)
-    returns (AddBentoServiceResponse)
+    returns (AddBentoServiceResponse);
 
   rpc RemoveBentoService(RemoveBentoServiceRequest)
-    returns (RemoveBentoServiceResponse)
+    returns (RemoveBentoServiceResponse);
 
   rpc GetBentoService(GetBentoServiceRequest)
-    returns (GetBentoServiceResponse)
+    returns (GetBentoServiceResponse);
 
 }
 

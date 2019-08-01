@@ -1,5 +1,5 @@
-syntax = "proto3"
-package bentoml
+syntax = "proto3";
+package bentoml;
 
 // Copied from google.protobuf.Empty to avoid the import issue
 //

@@ -1,72 +1,68 @@
-syntax = "proto3"
-package bentoml
+syntax = "proto3";
+package bentoml;
 
-import "status.proto"
-import "yatai_service.proto"
-import "deployment.proto"
-
+import "status.proto";
 
 message BentoService {
   message Metadata {
-    string created_at = 1 
-    string service_name = 2
-    string service_version = 3
-    string module_name = 4
-    string module_file = 5
+    string created_at = 1;
+    string service_name = 2;
+    string service_version = 3;
+    string module_name = 4;
+    string module_file = 5;
   }
 
-  messgae ServiceEnv {
-    string setup_sh = 1
-    repeated string pip_dependencies = 2
+  message ServiceEnv {
+    string setup_sh = 1;
+    repeated string pip_dependencies = 2;
     // string?? conda_env = 3
   }
 
   message Artifact {
-    string name = 1
-    string artifact_type = 2
+    string name = 1;
+    string artifact_type = 2;
   }
 
   message Api {
-    string name = 1
-    string handler_name = 2
+    string name = 1;
+    string handler_name = 2;
   }
 
-  string version = 1
-  string kind = 2
-  Metadata metadata = 3
-  ServiceEnv env = 4
-  repeated Artifact artifacts = 5
-  repeated Api apis = 6
+  string version = 1;
+  string kind = 2;
+  Metadata metadata = 3;
+  ServiceEnv env = 4;
+  repeated Artifact artifacts = 5;
+  repeated Api apis = 6;
 }
 
 // Requests
 message AddBentoServiceRequest {
-  string path = 1
+  string path = 1;
 }
 
 message RemoveBentoServiceRequest {
-  string bento_service_name = 1
-  string bento_service_version = 2
+  string bento_service_name = 1;
+  string bento_service_version = 2;
 }
 
 message GetBentoServiceRequest {
-  string bento_service_name = 1
-  string bento_service_version = 2
+  string bento_service_name = 1;
+  string bento_service_version = 2;
 }
-
 
 // Responses
 message AddBentoServiceResponse {
-  Status status = 1
-  BentoService bento_service = 2
+  Status status = 1;
+  BentoService bento_service = 2;
 }
 
 message RemoveBentoServiceResponse {
-  Status status = 1
-  BentoService bento_service = 2
+  Status status = 1;
+  BentoService bento_service = 2;
 }
 
 message GetBentoServiceResponse {
-  Status status = 1
-  BentoService bento_service = 2
+  Status status = 1;
+  BentoService bento_service = 2;
 }

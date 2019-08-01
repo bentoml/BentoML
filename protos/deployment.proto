@@ -1,10 +1,7 @@
-syntax = "proto3"
-package bentoml
+syntax = "proto3";
+package bentoml;
 
-import "status.proto"
-import "yatai_service.proto"
-import "repository.proto"
-
+import "status.proto";
 
 message SagemakerConfig {
   string region = 1;

@@ -16,15 +16,33 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml import config
+from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
+from bentoml import config
+from bentoml.exceptions import BentoMLException
 
 # sql alchemy config
 engine = create_engine(
     config.get('db', 'engine'), echo=False, connect_args={'check_same_thread': False}
 )
 Base = declarative_base()
-Session = sessionmaker(bind=engine)
+SessionMaker = sessionmaker(bind=engine)
+
+
+@contextmanager
+def create_session():
+    session = SessionMaker()
+    try:
+        yield session
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise BentoMLException(message=e)
+    finally:
+        session.close()
+
+Base.metadata.create_all(engine)

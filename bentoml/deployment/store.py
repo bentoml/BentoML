@@ -17,8 +17,9 @@ from __future__ import division
 from __future__ import print_function
 
 from sqlalchemy import Column, String, JSON
+from google.protobuf.json_format import MessageToDict
 
-from bentoml.db import Base
+from bentoml.db import Base, create_session
 
 
 class Deployment(Base):
@@ -37,11 +38,20 @@ class DeploymentStore(object):
     def __init__(self):
         pass
 
-    def add(self, deployment):
-        pass
+    def add(self, deployment_pb):
+        with create_session() as session:
+            deployment_obj = Deployment(
+                name = deployment_pb.name,
+                namespace = deployment_pb.namespace,
+                spec = MessageToDict(deployment_pb.spec),
+                labels = MessageToDict(deployment_pb.labels),
+                annotation = MessageToDict(deployment_pb.labels)
+            )
+            session.add(deployment_obj)
 
     def get(self, name):
-        pass
+        with create_session() as session:
+            session.query(Deployment)
 
     def delete(self, name):
         pass

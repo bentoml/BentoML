@@ -32,8 +32,8 @@ python -m grpc_tools.protoc \
 
 echo "Fix imports in generated GRPC service code.."
 find $PYOUT_PATH/ -name '*_pb2.py' | while read pyfile; do
-sed -i '.old' 's/^import \([^ ]*\)_pb2 as \([^ ]*\)$/import bentoml.proto.\1_pb2 as \2/' $pyfile
-sed -i '.old' 's/^from \([^ ]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from bentoml.proto.\1 import \2_pb2 as \3/' $pyfile
+sed -i '.old' 's/^import \([^ (google.*)]*\)_pb2 as \([^ ]*\)$/import bentoml.proto.\1_pb2 as \2/' $pyfile
+sed -i '.old' 's/^from \([^ (google.*)]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from bentoml.proto.\1 import \2_pb2 as \3/' $pyfile
 rm $pyfile.old
 done
 

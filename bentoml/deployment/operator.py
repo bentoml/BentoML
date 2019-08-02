@@ -38,8 +38,9 @@ def get_deployment_operator(deployment_pb):
         raise BentoMLDeploymentException("DeployOperator must be set")
 
 
-class DeploymentOperator(object):
-    def __init__(self, operator_config):
+class DeploymentOperatorBase(object):
+
+    def __init__(self, operator_config=None):
         self.config = operator_config
 
     def apply(self, deployment_pb):

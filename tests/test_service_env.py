@@ -20,7 +20,7 @@ def test_requirement_txt_env(tmpdir):
     assert len(service_with_file.env._pip_dependencies) == 3
 
 
-def test_pip_dependencies_env(tmpdir):
+def test_pip_dependencies_env():
     model = ''
 
     @bentoml.artifacts([bentoml.artifact.PickleArtifact('model')])

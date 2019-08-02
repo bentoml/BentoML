@@ -38,7 +38,7 @@ from bentoml.deployment.sagemaker.templates import (
     DEFAULT_WSGI_PY,
     DEFAULT_SERVE_SCRIPT,
 )
-from bentoml.deployment.operator import DeploymentOperator
+from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.proto.status_pb2 import Status
 from bentoml.proto.deployment_pb2 import ApplyDeploymentResponse
 
@@ -339,7 +339,7 @@ class SagemakerDeployment(LegacyDeployment):
 
 
 # Deployment Service MVP Working-In-Progress
-class SageMakerDeploymentOperator(DeploymentOperator):
+class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb):
         # deploy code.....
 

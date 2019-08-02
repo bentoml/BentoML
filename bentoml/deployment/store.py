@@ -56,5 +56,5 @@ class DeploymentStore(object):
     def delete(self, name):
         pass
 
-    def list(self, filter, labels, offset, limit):
+    def list(self, filter_str, labels, offset, limit):
         pass

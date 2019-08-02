@@ -13,10 +13,10 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-import bentoml.proto.common_pb2 as common__pb2
+import common_pb2 as common__pb2
 import bentoml.proto.status_pb2 as status__pb2
-import bentoml.proto.deployment_pb2 as deployment__pb2
-import bentoml.proto.repository_pb2 as repository__pb2
+import deployment_pb2 as deployment__pb2
+import repository_pb2 as repository__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(

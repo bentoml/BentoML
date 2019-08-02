@@ -41,6 +41,7 @@ install_requires = [
     "docker",
     "configparser",
     "sqlalchemy",
+    "protobuf>=3.6.0",
 ]
 
 imageio = ["imageio>=2.5.0"]

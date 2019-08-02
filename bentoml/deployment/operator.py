@@ -17,7 +17,6 @@ from __future__ import division
 from __future__ import print_function
 
 from bentoml.proto.deployment_pb2 import DeploymentOperator
-from bentoml.deployment.sagemaker import SageMakerDeploymentOperator
 from bentoml.exceptions import BentoMLDeploymentException
 
 
@@ -25,6 +24,7 @@ def get_deployment_operator(deployment_pb):
     operator = deployment_pb.spec.operator
 
     if operator == DeploymentOperator.AWS_SAGEMAKER:
+        from bentoml.deployment.sagemaker import SageMakerDeploymentOperator
         return SageMakerDeploymentOperator()
     elif operator == DeploymentOperator.AWS_LAMBDA:
         pass

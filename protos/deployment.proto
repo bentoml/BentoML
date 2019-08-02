@@ -1,51 +1,61 @@
 syntax = "proto3";
 package bentoml;
 
+import "google/protobuf/any.proto";
+
 import "status.proto";
 
-message SagemakerConfig {
+
+message CustomDeploymentOperatorConfig {
+  string name = 1;
+  map<string, google.protobuf.Any> config = 2;
+}
+
+message SageMakerDeploymentOperatorConfig {
   string region = 1;
   string instance_type = 2;
   int32 instance_count = 3;
   string api_name = 4;
 }
 
-message AwsLambdaConfig {
+message AwsLambdaDeploymentOperatorConfig {
   string region = 1;
   string stage = 2;
 }
 
-message GcpFunctionConfig {
+message GcpFunctionDeploymentOperatorConfig {
   string region = 1;
   string stage = 2;
 }
 
-message KubernetesConfig {
+message KubernetesDeploymentOperatorConfig {
   string kube_namespace = 1;
   int32 replicas = 2;
   string service_name = 3;
   string service_type = 4;
 }
 
-enum DeployPlatform {
-  AWS_SAGEMAKER = 0;
-  AWS_LAMBDA = 1;
-  GCP_FUNCTION = 2;
-  KUBERNETES = 3;
-  KNATIVE = 4;
+enum DeploymentOperator {
+  UNSET = 0;
+  CUSTOM = 1;
+  AWS_SAGEMAKER = 2;
+  AWS_LAMBDA = 3;
+  GCP_FUNCTION = 4;
+  KUBERNETES = 5;
 }
 
 message DeploymentSpec {
   string bento_name = 1;
   string bento_version = 2;
 
-  DeployPlatform platform = 3;
+  DeploymentOperator operator = 3;
 
-  oneof platform_config {
-    SagemakerConfig sagemaker_config = 4;
-    AwsLambdaConfig aws_lambda_config = 5;
-    GcpFunctionConfig gcp_function_config = 6;
-    KubernetesConfig kubernetes_config = 7;
+  oneof deployment_operator_config {
+    SageMakerDeploymentOperatorConfig sagemaker_deployment_operator_config = 5;
+    AwsLambdaDeploymentOperatorConfig aws_lambda_deployment_operator_config = 6;
+    GcpFunctionDeploymentOperatorConfig gcp_function_deployment_operator_config = 7;
+    KubernetesDeploymentOperatorConfig kubernetes_deployment_operator_config = 8;
+    CustomDeploymentOperatorConfig custom_deployment_operator_config = 9;
   }
 }
 

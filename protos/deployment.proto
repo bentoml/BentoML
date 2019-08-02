@@ -5,36 +5,6 @@ import "google/protobuf/any.proto";
 
 import "status.proto";
 
-
-message CustomDeploymentOperatorConfig {
-  string name = 1;
-  map<string, google.protobuf.Any> config = 2;
-}
-
-message SageMakerDeploymentOperatorConfig {
-  string region = 1;
-  string instance_type = 2;
-  int32 instance_count = 3;
-  string api_name = 4;
-}
-
-message AwsLambdaDeploymentOperatorConfig {
-  string region = 1;
-  string stage = 2;
-}
-
-message GcpFunctionDeploymentOperatorConfig {
-  string region = 1;
-  string stage = 2;
-}
-
-message KubernetesDeploymentOperatorConfig {
-  string kube_namespace = 1;
-  int32 replicas = 2;
-  string service_name = 3;
-  string service_type = 4;
-}
-
 enum DeploymentOperator {
   UNSET = 0;
   CUSTOM = 1;
@@ -45,17 +15,45 @@ enum DeploymentOperator {
 }
 
 message DeploymentSpec {
+  message CustomOperatorConfig {
+    string name = 1;
+    map<string, google.protobuf.Any> config = 2;
+  }
+
+  message SageMakerOperatorConfig {
+    string region = 1;
+    string instance_type = 2;
+    int32 instance_count = 3;
+    string api_name = 4;
+  }
+
+  message AwsLambdaOperatorConfig {
+    string region = 1;
+    string stage = 2;
+  }
+
+  message GcpFunctionOperatorConfig {
+    string region = 1;
+    string stage = 2;
+  }
+
+  message KubernetesOperatorConfig {
+    string kube_namespace = 1;
+    int32 replicas = 2;
+    string service_name = 3;
+    string service_type = 4;
+  }
+
   string bento_name = 1;
   string bento_version = 2;
-
   DeploymentOperator operator = 3;
 
   oneof deployment_operator_config {
-    SageMakerDeploymentOperatorConfig sagemaker_deployment_operator_config = 5;
-    AwsLambdaDeploymentOperatorConfig aws_lambda_deployment_operator_config = 6;
-    GcpFunctionDeploymentOperatorConfig gcp_function_deployment_operator_config = 7;
-    KubernetesDeploymentOperatorConfig kubernetes_deployment_operator_config = 8;
-    CustomDeploymentOperatorConfig custom_deployment_operator_config = 9;
+    CustomOperatorConfig custom_operator_config = 4;
+    SageMakerOperatorConfig sagemaker_operator_config = 5;
+    AwsLambdaOperatorConfig aws_lambda_operator_config = 6;
+    GcpFunctionOperatorConfig gcp_function_operator_config = 7;
+    KubernetesOperatorConfig kubernetes_operator_config = 8;
   }
 }
 

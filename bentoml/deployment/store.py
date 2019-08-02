@@ -41,11 +41,11 @@ class DeploymentStore(object):
     def add(self, deployment_pb):
         with create_session() as session:
             deployment_obj = Deployment(
-                name = deployment_pb.name,
-                namespace = deployment_pb.namespace,
-                spec = MessageToDict(deployment_pb.spec),
-                labels = MessageToDict(deployment_pb.labels),
-                annotation = MessageToDict(deployment_pb.labels)
+                name=deployment_pb.name,
+                namespace=deployment_pb.namespace,
+                spec=MessageToDict(deployment_pb.spec),
+                labels=MessageToDict(deployment_pb.labels),
+                annotation=MessageToDict(deployment_pb.labels),
             )
             session.add(deployment_obj)
 

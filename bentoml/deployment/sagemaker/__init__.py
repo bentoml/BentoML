@@ -38,6 +38,9 @@ from bentoml.deployment.sagemaker.templates import (
     DEFAULT_WSGI_PY,
     DEFAULT_SERVE_SCRIPT,
 )
+from bentoml.deployment.operator import DeploymentOperator
+from bentoml.proto.status_pb2 import Status
+from bentoml.proto.deployment_pb2 import ApplyDeploymentResponse
 
 logger = logging.getLogger(__name__)
 
@@ -333,3 +336,20 @@ class SagemakerDeployment(LegacyDeployment):
             return True
         else:
             return False
+
+
+# Deployment Service MVP Working-In-Progress
+class SageMakerDeploymentOperator(DeploymentOperator):
+    def apply(self, deployment_pb):
+        # deploy code.....
+
+        deployment = self.get(deployment_pb).deployment
+        return ApplyDeploymentResponse(status=Status.OK, deployment=deployment)
+
+    def delete(self, deployment_pb):
+        # deployment = self.get(deployment_pb).deployment
+
+        raise NotImplementedError
+
+    def get(self, deployment_pb):
+        raise NotImplementedError

@@ -45,5 +45,6 @@ def create_session():
     finally:
         session.close()
 
+
 def initialize_db():
     Base.metadata.create_all(engine)

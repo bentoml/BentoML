@@ -16,37 +16,74 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.proto.deployment_pb2 import DeployPlatform
+
+import logging
+
+from bentoml.proto.deployment_pb2 import (
+    GetDeploymentResponse,
+    DescribeDeploymentResponse,
+    ListDeploymentsResponse,
+    ApplyDeploymentResponse,
+    DeleteDeploymentResponse,
+)
 from bentoml.exceptions import BentoMLDeploymentException
+from bentoml.deployment.operator import get_deployment_operator
+
+from bentoml.deployment.store import DeploymentStore
+from bentoml.exceptions import BentoMLException
+
+
+LOG = logging.getLogger(__name__)
 
 
 class DeploymentService(object):
-    def apply(self, deployment):
-        platform = deployment.spec.platform
+    def __init__(self):
+        self.store = DeploymentStore()
 
-        if platform == DeployPlatform.AWS_LAMBDA:
-            pass
-        elif platform == DeployPlatform.AWS_SAGEMAKER:
-            pass
-        elif platform == DeployPlatform.GCP_FUNCTION:
-            pass
-        elif platform == DeployPlatform.KUBERNETES:
-            pass
-        else:
-            raise BentoMLDeploymentException(
-                "Platform '{}' not supported".format(platform)
-            )
+    def apply(self, apply_deployment_request):
+        try:
+            deployment_pb = apply_deployment_request.deployment
+            operator = get_deployment_operator(deployment_pb)
+            return operator.apply(apply_deployment_request)
 
-        # save_deployment_config(deployment)
+        except BentoMLException:
+            response = ApplyDeploymentResponse()
+            # response.status = ...
+            # LOG.error(....)
+            return response
 
-    def delete(self, deployment_name):
-        pass
+    def delete(self, delete_deployment_request):
+        try:
+            deployment_name = delete_deployment_request.deployment_name
+            deployment_pb = self.store.get(deployment_name)
+            operator = get_deployment_operator(deployment_pb)
+            return operator.delete(delete_deployment_request)
 
-    def get(self, deployment_name):
-        pass
+        except BentoMLException:
+            response = DeleteDeploymentResponse()
+            # response.status = ...
+            # LOG.error(....)
+            return response
 
-    def describe(self, deployment_name):
-        pass
+    def get(self, get_deployment_request):
+        deployment_name = get_deployment_request.deployment_name
+        deployment_pb = self.store.get(deployment_name)
+        # get deployment status etc
 
-    def list(self, filter=None, labels=None, offset=0, limit=100):
-        pass
+        response = GetDeploymentResponse()
+        # construct deployment status into GetDeploymentResponse
+
+    def describe(self, describe_deployment_request):
+        deployment_name = describe_deployment_request.deployment_name
+        response = DescribeDeploymentResponse()
+        # ...
+
+    def list(self, list_deployments_request):
+        deployment_pb_list = self.store.list(
+            list_deployments_request.filter,
+            list_deployments_request.labels,
+            list_deployments_request.offset,
+            list_deployments_request.limit,
+        )
+        response = ListDeploymentsResponse()
+        # ...

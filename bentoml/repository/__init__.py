@@ -56,5 +56,3 @@ class LocalRepository(BaseRepository):
 
 def get_local(base_path=DEFAULT_LOCAL_REPO_PATH):
     return LocalRepository(base_path)
-
-

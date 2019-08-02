@@ -23,7 +23,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='bentoml',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x10\x64\x65ployment.proto\x12\x07\x62\x65ntoml\x1a\x19google/protobuf/any.proto\x1a\x0cstatus.proto\"\xb8\x01\n\x1e\x43ustomDeploymentOperatorConfig\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x43\n\x06\x63onfig\x18\x02 \x03(\x0b\x32\x33.bentoml.CustomDeploymentOperatorConfig.ConfigEntry\x1a\x43\n\x0b\x43onfigEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any:\x02\x38\x01\"t\n!SageMakerDeploymentOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x12\x15\n\rinstance_type\x18\x02 \x01(\t\x12\x16\n\x0einstance_count\x18\x03 \x01(\x05\x12\x10\n\x08\x61pi_name\x18\x04 \x01(\t\"B\n!AwsLambdaDeploymentOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x12\r\n\x05stage\x18\x02 \x01(\t\"D\n#GcpFunctionDeploymentOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x12\r\n\x05stage\x18\x02 \x01(\t\"z\n\"KubernetesDeploymentOperatorConfig\x12\x16\n\x0ekube_namespace\x18\x01 \x01(\t\x12\x10\n\x08replicas\x18\x02 \x01(\x05\x12\x14\n\x0cservice_name\x18\x03 \x01(\t\x12\x14\n\x0cservice_type\x18\x04 \x01(\t\"\xd6\x04\n\x0e\x44\x65ploymentSpec\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12-\n\x08operator\x18\x03 \x01(\x0e\x32\x1b.bentoml.DeploymentOperator\x12Z\n$sagemaker_deployment_operator_config\x18\x05 \x01(\x0b\x32*.bentoml.SageMakerDeploymentOperatorConfigH\x00\x12[\n%aws_lambda_deployment_operator_config\x18\x06 \x01(\x0b\x32*.bentoml.AwsLambdaDeploymentOperatorConfigH\x00\x12_\n\'gcp_function_deployment_operator_config\x18\x07 \x01(\x0b\x32,.bentoml.GcpFunctionDeploymentOperatorConfigH\x00\x12\\\n%kubernetes_deployment_operator_config\x18\x08 \x01(\x0b\x32+.bentoml.KubernetesDeploymentOperatorConfigH\x00\x12T\n!custom_deployment_operator_config\x18\t \x01(\x0b\x32\'.bentoml.CustomDeploymentOperatorConfigH\x00\x42\x1c\n\x1a\x64\x65ployment_operator_config\"\xfa\x01\n\x0f\x44\x65ploymentState\x12-\n\x05state\x18\x01 \x01(\x0e\x32\x1e.bentoml.DeploymentState.State\x12\x15\n\rerror_message\x18\x02 \x01(\t\x12\x11\n\tinfo_json\x18\x03 \x01(\t\"\x8d\x01\n\x05State\x12\x0b\n\x07PENDING\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\r\n\tSUCCEEDED\x10\x02\x12\n\n\x06\x46\x41ILED\x10\x03\x12\x0b\n\x07UNKNOWN\x10\x04\x12\r\n\tCOMPLETED\x10\x05\x12\x17\n\x13\x43RASH_LOOP_BACK_OFF\x10\x06\x12\t\n\x05\x45RROR\x10\x07\x12\x0f\n\x0bINACTIVATED\x10\x08\"\xcc\x02\n\nDeployment\x12\x11\n\tnamespace\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12%\n\x04spec\x18\x03 \x01(\x0b\x32\x17.bentoml.DeploymentSpec\x12\'\n\x05state\x18\x04 \x01(\x0b\x32\x18.bentoml.DeploymentState\x12\x39\n\x0b\x61nnotations\x18\x05 \x03(\x0b\x32$.bentoml.Deployment.AnnotationsEntry\x12/\n\x06labels\x18\x06 \x03(\x0b\x32\x1f.bentoml.Deployment.LabelsEntry\x1a\x32\n\x10\x41nnotationsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\";\n\x10\x44\x65ploymentStatus\x12\'\n\x05state\x18\x01 \x01(\x0b\x32\x18.bentoml.DeploymentState\"A\n\x16\x41pplyDeploymentRequest\x12\'\n\ndeployment\x18\x01 \x01(\x0b\x32\x13.bentoml.Deployment\"2\n\x17\x44\x65leteDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\"/\n\x14GetDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\"4\n\x19\x44\x65scribeDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\"\xb3\x01\n\x16ListDeploymentsRequest\x12\x0e\n\x06offset\x18\x01 \x01(\x05\x12\r\n\x05limit\x18\x02 \x01(\x05\x12\x0e\n\x06\x66ilter\x18\x03 \x01(\t\x12;\n\x06labels\x18\x04 \x03(\x0b\x32+.bentoml.ListDeploymentsRequest.LabelsEntry\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"c\n\x17\x41pplyDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\'\n\ndeployment\x18\x02 \x01(\x0b\x32\x13.bentoml.Deployment\";\n\x18\x44\x65leteDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"a\n\x15GetDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\'\n\ndeployment\x18\x02 \x01(\x0b\x32\x13.bentoml.Deployment\"d\n\x1a\x44\x65scribeDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12%\n\x04spec\x18\x02 \x01(\x0b\x32\x17.bentoml.DeploymentSpec\"d\n\x17ListDeploymentsResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12(\n\x0b\x64\x65ployments\x18\x02 \x03(\x0b\x32\x13.bentoml.Deployment*p\n\x12\x44\x65ploymentOperator\x12\t\n\x05UNSET\x10\x00\x12\n\n\x06\x43USTOM\x10\x01\x12\x11\n\rAWS_SAGEMAKER\x10\x02\x12\x0e\n\nAWS_LAMBDA\x10\x03\x12\x10\n\x0cGCP_FUNCTION\x10\x04\x12\x0e\n\nKUBERNETES\x10\x05\x62\x06proto3')
+  serialized_pb=_b('\n\x10\x64\x65ployment.proto\x12\x07\x62\x65ntoml\x1a\x19google/protobuf/any.proto\x1a\x0cstatus.proto\"\xc2\x08\n\x0e\x44\x65ploymentSpec\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12-\n\x08operator\x18\x03 \x01(\x0e\x32\x1b.bentoml.DeploymentOperator\x12N\n\x16\x63ustom_operator_config\x18\x04 \x01(\x0b\x32,.bentoml.DeploymentSpec.CustomOperatorConfigH\x00\x12T\n\x19sagemaker_operator_config\x18\x05 \x01(\x0b\x32/.bentoml.DeploymentSpec.SageMakerOperatorConfigH\x00\x12U\n\x1a\x61ws_lambda_operator_config\x18\x06 \x01(\x0b\x32/.bentoml.DeploymentSpec.AwsLambdaOperatorConfigH\x00\x12Y\n\x1cgcp_function_operator_config\x18\x07 \x01(\x0b\x32\x31.bentoml.DeploymentSpec.GcpFunctionOperatorConfigH\x00\x12V\n\x1akubernetes_operator_config\x18\x08 \x01(\x0b\x32\x30.bentoml.DeploymentSpec.KubernetesOperatorConfigH\x00\x1a\xb3\x01\n\x14\x43ustomOperatorConfig\x12\x0c\n\x04name\x18\x01 \x01(\t\x12H\n\x06\x63onfig\x18\x02 \x03(\x0b\x32\x38.bentoml.DeploymentSpec.CustomOperatorConfig.ConfigEntry\x1a\x43\n\x0b\x43onfigEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any:\x02\x38\x01\x1aj\n\x17SageMakerOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x12\x15\n\rinstance_type\x18\x02 \x01(\t\x12\x16\n\x0einstance_count\x18\x03 \x01(\x05\x12\x10\n\x08\x61pi_name\x18\x04 \x01(\t\x1a\x38\n\x17\x41wsLambdaOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x12\r\n\x05stage\x18\x02 \x01(\t\x1a:\n\x19GcpFunctionOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x12\r\n\x05stage\x18\x02 \x01(\t\x1ap\n\x18KubernetesOperatorConfig\x12\x16\n\x0ekube_namespace\x18\x01 \x01(\t\x12\x10\n\x08replicas\x18\x02 \x01(\x05\x12\x14\n\x0cservice_name\x18\x03 \x01(\t\x12\x14\n\x0cservice_type\x18\x04 \x01(\tB\x1c\n\x1a\x64\x65ployment_operator_config\"\xfa\x01\n\x0f\x44\x65ploymentState\x12-\n\x05state\x18\x01 \x01(\x0e\x32\x1e.bentoml.DeploymentState.State\x12\x15\n\rerror_message\x18\x02 \x01(\t\x12\x11\n\tinfo_json\x18\x03 \x01(\t\"\x8d\x01\n\x05State\x12\x0b\n\x07PENDING\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\r\n\tSUCCEEDED\x10\x02\x12\n\n\x06\x46\x41ILED\x10\x03\x12\x0b\n\x07UNKNOWN\x10\x04\x12\r\n\tCOMPLETED\x10\x05\x12\x17\n\x13\x43RASH_LOOP_BACK_OFF\x10\x06\x12\t\n\x05\x45RROR\x10\x07\x12\x0f\n\x0bINACTIVATED\x10\x08\"\xcc\x02\n\nDeployment\x12\x11\n\tnamespace\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12%\n\x04spec\x18\x03 \x01(\x0b\x32\x17.bentoml.DeploymentSpec\x12\'\n\x05state\x18\x04 \x01(\x0b\x32\x18.bentoml.DeploymentState\x12\x39\n\x0b\x61nnotations\x18\x05 \x03(\x0b\x32$.bentoml.Deployment.AnnotationsEntry\x12/\n\x06labels\x18\x06 \x03(\x0b\x32\x1f.bentoml.Deployment.LabelsEntry\x1a\x32\n\x10\x41nnotationsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\";\n\x10\x44\x65ploymentStatus\x12\'\n\x05state\x18\x01 \x01(\x0b\x32\x18.bentoml.DeploymentState\"A\n\x16\x41pplyDeploymentRequest\x12\'\n\ndeployment\x18\x01 \x01(\x0b\x32\x13.bentoml.Deployment\"2\n\x17\x44\x65leteDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\"/\n\x14GetDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\"4\n\x19\x44\x65scribeDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\"\xb3\x01\n\x16ListDeploymentsRequest\x12\x0e\n\x06offset\x18\x01 \x01(\x05\x12\r\n\x05limit\x18\x02 \x01(\x05\x12\x0e\n\x06\x66ilter\x18\x03 \x01(\t\x12;\n\x06labels\x18\x04 \x03(\x0b\x32+.bentoml.ListDeploymentsRequest.LabelsEntry\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"c\n\x17\x41pplyDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\'\n\ndeployment\x18\x02 \x01(\x0b\x32\x13.bentoml.Deployment\";\n\x18\x44\x65leteDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"a\n\x15GetDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\'\n\ndeployment\x18\x02 \x01(\x0b\x32\x13.bentoml.Deployment\"d\n\x1a\x44\x65scribeDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12%\n\x04spec\x18\x02 \x01(\x0b\x32\x17.bentoml.DeploymentSpec\"d\n\x17ListDeploymentsResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12(\n\x0b\x64\x65ployments\x18\x02 \x03(\x0b\x32\x13.bentoml.Deployment*p\n\x12\x44\x65ploymentOperator\x12\t\n\x05UNSET\x10\x00\x12\n\n\x06\x43USTOM\x10\x01\x12\x11\n\rAWS_SAGEMAKER\x10\x02\x12\x0e\n\nAWS_LAMBDA\x10\x03\x12\x10\n\x0cGCP_FUNCTION\x10\x04\x12\x0e\n\nKUBERNETES\x10\x05\x62\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_any__pb2.DESCRIPTOR,status__pb2.DESCRIPTOR,])
 
@@ -60,8 +60,8 @@ _DEPLOYMENTOPERATOR = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2756,
-  serialized_end=2868,
+  serialized_start=2681,
+  serialized_end=2793,
 )
 _sym_db.RegisterEnumDescriptor(_DEPLOYMENTOPERATOR)
 
@@ -119,28 +119,28 @@ _DEPLOYMENTSTATE_STATE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1348,
-  serialized_end=1489,
+  serialized_start=1273,
+  serialized_end=1414,
 )
 _sym_db.RegisterEnumDescriptor(_DEPLOYMENTSTATE_STATE)
 
 
-_CUSTOMDEPLOYMENTOPERATORCONFIG_CONFIGENTRY = _descriptor.Descriptor(
+_DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG_CONFIGENTRY = _descriptor.Descriptor(
   name='ConfigEntry',
-  full_name='bentoml.CustomDeploymentOperatorConfig.ConfigEntry',
+  full_name='bentoml.DeploymentSpec.CustomOperatorConfig.ConfigEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='bentoml.CustomDeploymentOperatorConfig.ConfigEntry.key', index=0,
+      name='key', full_name='bentoml.DeploymentSpec.CustomOperatorConfig.ConfigEntry.key', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='value', full_name='bentoml.CustomDeploymentOperatorConfig.ConfigEntry.value', index=1,
+      name='value', full_name='bentoml.DeploymentSpec.CustomOperatorConfig.ConfigEntry.value', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -158,26 +158,26 @@ _CUSTOMDEPLOYMENTOPERATORCONFIG_CONFIGENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=188,
-  serialized_end=255,
+  serialized_start=724,
+  serialized_end=791,
 )
 
-_CUSTOMDEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
-  name='CustomDeploymentOperatorConfig',
-  full_name='bentoml.CustomDeploymentOperatorConfig',
+_DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG = _descriptor.Descriptor(
+  name='CustomOperatorConfig',
+  full_name='bentoml.DeploymentSpec.CustomOperatorConfig',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='bentoml.CustomDeploymentOperatorConfig.name', index=0,
+      name='name', full_name='bentoml.DeploymentSpec.CustomOperatorConfig.name', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='config', full_name='bentoml.CustomDeploymentOperatorConfig.config', index=1,
+      name='config', full_name='bentoml.DeploymentSpec.CustomOperatorConfig.config', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -186,7 +186,7 @@ _CUSTOMDEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
   ],
   extensions=[
   ],
-  nested_types=[_CUSTOMDEPLOYMENTOPERATORCONFIG_CONFIGENTRY, ],
+  nested_types=[_DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG_CONFIGENTRY, ],
   enum_types=[
   ],
   serialized_options=None,
@@ -195,41 +195,40 @@ _CUSTOMDEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=71,
-  serialized_end=255,
+  serialized_start=612,
+  serialized_end=791,
 )
 
-
-_SAGEMAKERDEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
-  name='SageMakerDeploymentOperatorConfig',
-  full_name='bentoml.SageMakerDeploymentOperatorConfig',
+_DEPLOYMENTSPEC_SAGEMAKEROPERATORCONFIG = _descriptor.Descriptor(
+  name='SageMakerOperatorConfig',
+  full_name='bentoml.DeploymentSpec.SageMakerOperatorConfig',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='region', full_name='bentoml.SageMakerDeploymentOperatorConfig.region', index=0,
+      name='region', full_name='bentoml.DeploymentSpec.SageMakerOperatorConfig.region', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='instance_type', full_name='bentoml.SageMakerDeploymentOperatorConfig.instance_type', index=1,
+      name='instance_type', full_name='bentoml.DeploymentSpec.SageMakerOperatorConfig.instance_type', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='instance_count', full_name='bentoml.SageMakerDeploymentOperatorConfig.instance_count', index=2,
+      name='instance_count', full_name='bentoml.DeploymentSpec.SageMakerOperatorConfig.instance_count', index=2,
       number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='api_name', full_name='bentoml.SageMakerDeploymentOperatorConfig.api_name', index=3,
+      name='api_name', full_name='bentoml.DeploymentSpec.SageMakerOperatorConfig.api_name', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -247,27 +246,26 @@ _SAGEMAKERDEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=257,
-  serialized_end=373,
+  serialized_start=793,
+  serialized_end=899,
 )
 
-
-_AWSLAMBDADEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
-  name='AwsLambdaDeploymentOperatorConfig',
-  full_name='bentoml.AwsLambdaDeploymentOperatorConfig',
+_DEPLOYMENTSPEC_AWSLAMBDAOPERATORCONFIG = _descriptor.Descriptor(
+  name='AwsLambdaOperatorConfig',
+  full_name='bentoml.DeploymentSpec.AwsLambdaOperatorConfig',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='region', full_name='bentoml.AwsLambdaDeploymentOperatorConfig.region', index=0,
+      name='region', full_name='bentoml.DeploymentSpec.AwsLambdaOperatorConfig.region', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='stage', full_name='bentoml.AwsLambdaDeploymentOperatorConfig.stage', index=1,
+      name='stage', full_name='bentoml.DeploymentSpec.AwsLambdaOperatorConfig.stage', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -285,27 +283,26 @@ _AWSLAMBDADEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=375,
-  serialized_end=441,
+  serialized_start=901,
+  serialized_end=957,
 )
 
-
-_GCPFUNCTIONDEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
-  name='GcpFunctionDeploymentOperatorConfig',
-  full_name='bentoml.GcpFunctionDeploymentOperatorConfig',
+_DEPLOYMENTSPEC_GCPFUNCTIONOPERATORCONFIG = _descriptor.Descriptor(
+  name='GcpFunctionOperatorConfig',
+  full_name='bentoml.DeploymentSpec.GcpFunctionOperatorConfig',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='region', full_name='bentoml.GcpFunctionDeploymentOperatorConfig.region', index=0,
+      name='region', full_name='bentoml.DeploymentSpec.GcpFunctionOperatorConfig.region', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='stage', full_name='bentoml.GcpFunctionDeploymentOperatorConfig.stage', index=1,
+      name='stage', full_name='bentoml.DeploymentSpec.GcpFunctionOperatorConfig.stage', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -323,41 +320,40 @@ _GCPFUNCTIONDEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=443,
-  serialized_end=511,
+  serialized_start=959,
+  serialized_end=1017,
 )
 
-
-_KUBERNETESDEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
-  name='KubernetesDeploymentOperatorConfig',
-  full_name='bentoml.KubernetesDeploymentOperatorConfig',
+_DEPLOYMENTSPEC_KUBERNETESOPERATORCONFIG = _descriptor.Descriptor(
+  name='KubernetesOperatorConfig',
+  full_name='bentoml.DeploymentSpec.KubernetesOperatorConfig',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='kube_namespace', full_name='bentoml.KubernetesDeploymentOperatorConfig.kube_namespace', index=0,
+      name='kube_namespace', full_name='bentoml.DeploymentSpec.KubernetesOperatorConfig.kube_namespace', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='replicas', full_name='bentoml.KubernetesDeploymentOperatorConfig.replicas', index=1,
+      name='replicas', full_name='bentoml.DeploymentSpec.KubernetesOperatorConfig.replicas', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='service_name', full_name='bentoml.KubernetesDeploymentOperatorConfig.service_name', index=2,
+      name='service_name', full_name='bentoml.DeploymentSpec.KubernetesOperatorConfig.service_name', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='service_type', full_name='bentoml.KubernetesDeploymentOperatorConfig.service_type', index=3,
+      name='service_type', full_name='bentoml.DeploymentSpec.KubernetesOperatorConfig.service_type', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -375,10 +371,9 @@ _KUBERNETESDEPLOYMENTOPERATORCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=513,
-  serialized_end=635,
+  serialized_start=1019,
+  serialized_end=1131,
 )
-
 
 _DEPLOYMENTSPEC = _descriptor.Descriptor(
   name='DeploymentSpec',
@@ -409,36 +404,36 @@ _DEPLOYMENTSPEC = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='sagemaker_deployment_operator_config', full_name='bentoml.DeploymentSpec.sagemaker_deployment_operator_config', index=3,
+      name='custom_operator_config', full_name='bentoml.DeploymentSpec.custom_operator_config', index=3,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='sagemaker_operator_config', full_name='bentoml.DeploymentSpec.sagemaker_operator_config', index=4,
       number=5, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='aws_lambda_deployment_operator_config', full_name='bentoml.DeploymentSpec.aws_lambda_deployment_operator_config', index=4,
+      name='aws_lambda_operator_config', full_name='bentoml.DeploymentSpec.aws_lambda_operator_config', index=5,
       number=6, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='gcp_function_deployment_operator_config', full_name='bentoml.DeploymentSpec.gcp_function_deployment_operator_config', index=5,
+      name='gcp_function_operator_config', full_name='bentoml.DeploymentSpec.gcp_function_operator_config', index=6,
       number=7, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='kubernetes_deployment_operator_config', full_name='bentoml.DeploymentSpec.kubernetes_deployment_operator_config', index=6,
+      name='kubernetes_operator_config', full_name='bentoml.DeploymentSpec.kubernetes_operator_config', index=7,
       number=8, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='custom_deployment_operator_config', full_name='bentoml.DeploymentSpec.custom_deployment_operator_config', index=7,
-      number=9, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -446,7 +441,7 @@ _DEPLOYMENTSPEC = _descriptor.Descriptor(
   ],
   extensions=[
   ],
-  nested_types=[],
+  nested_types=[_DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG, _DEPLOYMENTSPEC_SAGEMAKEROPERATORCONFIG, _DEPLOYMENTSPEC_AWSLAMBDAOPERATORCONFIG, _DEPLOYMENTSPEC_GCPFUNCTIONOPERATORCONFIG, _DEPLOYMENTSPEC_KUBERNETESOPERATORCONFIG, ],
   enum_types=[
   ],
   serialized_options=None,
@@ -458,8 +453,8 @@ _DEPLOYMENTSPEC = _descriptor.Descriptor(
       name='deployment_operator_config', full_name='bentoml.DeploymentSpec.deployment_operator_config',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=638,
-  serialized_end=1236,
+  serialized_start=71,
+  serialized_end=1161,
 )
 
 
@@ -504,8 +499,8 @@ _DEPLOYMENTSTATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1239,
-  serialized_end=1489,
+  serialized_start=1164,
+  serialized_end=1414,
 )
 
 
@@ -542,8 +537,8 @@ _DEPLOYMENT_ANNOTATIONSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1727,
-  serialized_end=1777,
+  serialized_start=1652,
+  serialized_end=1702,
 )
 
 _DEPLOYMENT_LABELSENTRY = _descriptor.Descriptor(
@@ -579,8 +574,8 @@ _DEPLOYMENT_LABELSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1779,
-  serialized_end=1824,
+  serialized_start=1704,
+  serialized_end=1749,
 )
 
 _DEPLOYMENT = _descriptor.Descriptor(
@@ -644,8 +639,8 @@ _DEPLOYMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1492,
-  serialized_end=1824,
+  serialized_start=1417,
+  serialized_end=1749,
 )
 
 
@@ -675,8 +670,8 @@ _DEPLOYMENTSTATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1826,
-  serialized_end=1885,
+  serialized_start=1751,
+  serialized_end=1810,
 )
 
 
@@ -706,8 +701,8 @@ _APPLYDEPLOYMENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1887,
-  serialized_end=1952,
+  serialized_start=1812,
+  serialized_end=1877,
 )
 
 
@@ -737,8 +732,8 @@ _DELETEDEPLOYMENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1954,
-  serialized_end=2004,
+  serialized_start=1879,
+  serialized_end=1929,
 )
 
 
@@ -768,8 +763,8 @@ _GETDEPLOYMENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2006,
-  serialized_end=2053,
+  serialized_start=1931,
+  serialized_end=1978,
 )
 
 
@@ -799,8 +794,8 @@ _DESCRIBEDEPLOYMENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2055,
-  serialized_end=2107,
+  serialized_start=1980,
+  serialized_end=2032,
 )
 
 
@@ -837,8 +832,8 @@ _LISTDEPLOYMENTSREQUEST_LABELSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1779,
-  serialized_end=1824,
+  serialized_start=1704,
+  serialized_end=1749,
 )
 
 _LISTDEPLOYMENTSREQUEST = _descriptor.Descriptor(
@@ -888,8 +883,8 @@ _LISTDEPLOYMENTSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2110,
-  serialized_end=2289,
+  serialized_start=2035,
+  serialized_end=2214,
 )
 
 
@@ -926,8 +921,8 @@ _APPLYDEPLOYMENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2291,
-  serialized_end=2390,
+  serialized_start=2216,
+  serialized_end=2315,
 )
 
 
@@ -957,8 +952,8 @@ _DELETEDEPLOYMENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2392,
-  serialized_end=2451,
+  serialized_start=2317,
+  serialized_end=2376,
 )
 
 
@@ -995,8 +990,8 @@ _GETDEPLOYMENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2453,
-  serialized_end=2550,
+  serialized_start=2378,
+  serialized_end=2475,
 )
 
 
@@ -1033,8 +1028,8 @@ _DESCRIBEDEPLOYMENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2552,
-  serialized_end=2652,
+  serialized_start=2477,
+  serialized_end=2577,
 )
 
 
@@ -1071,34 +1066,39 @@ _LISTDEPLOYMENTSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2654,
-  serialized_end=2754,
+  serialized_start=2579,
+  serialized_end=2679,
 )
 
-_CUSTOMDEPLOYMENTOPERATORCONFIG_CONFIGENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_any__pb2._ANY
-_CUSTOMDEPLOYMENTOPERATORCONFIG_CONFIGENTRY.containing_type = _CUSTOMDEPLOYMENTOPERATORCONFIG
-_CUSTOMDEPLOYMENTOPERATORCONFIG.fields_by_name['config'].message_type = _CUSTOMDEPLOYMENTOPERATORCONFIG_CONFIGENTRY
+_DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG_CONFIGENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_any__pb2._ANY
+_DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG_CONFIGENTRY.containing_type = _DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG
+_DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG.fields_by_name['config'].message_type = _DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG_CONFIGENTRY
+_DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG.containing_type = _DEPLOYMENTSPEC
+_DEPLOYMENTSPEC_SAGEMAKEROPERATORCONFIG.containing_type = _DEPLOYMENTSPEC
+_DEPLOYMENTSPEC_AWSLAMBDAOPERATORCONFIG.containing_type = _DEPLOYMENTSPEC
+_DEPLOYMENTSPEC_GCPFUNCTIONOPERATORCONFIG.containing_type = _DEPLOYMENTSPEC
+_DEPLOYMENTSPEC_KUBERNETESOPERATORCONFIG.containing_type = _DEPLOYMENTSPEC
 _DEPLOYMENTSPEC.fields_by_name['operator'].enum_type = _DEPLOYMENTOPERATOR
-_DEPLOYMENTSPEC.fields_by_name['sagemaker_deployment_operator_config'].message_type = _SAGEMAKERDEPLOYMENTOPERATORCONFIG
-_DEPLOYMENTSPEC.fields_by_name['aws_lambda_deployment_operator_config'].message_type = _AWSLAMBDADEPLOYMENTOPERATORCONFIG
-_DEPLOYMENTSPEC.fields_by_name['gcp_function_deployment_operator_config'].message_type = _GCPFUNCTIONDEPLOYMENTOPERATORCONFIG
-_DEPLOYMENTSPEC.fields_by_name['kubernetes_deployment_operator_config'].message_type = _KUBERNETESDEPLOYMENTOPERATORCONFIG
-_DEPLOYMENTSPEC.fields_by_name['custom_deployment_operator_config'].message_type = _CUSTOMDEPLOYMENTOPERATORCONFIG
+_DEPLOYMENTSPEC.fields_by_name['custom_operator_config'].message_type = _DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG
+_DEPLOYMENTSPEC.fields_by_name['sagemaker_operator_config'].message_type = _DEPLOYMENTSPEC_SAGEMAKEROPERATORCONFIG
+_DEPLOYMENTSPEC.fields_by_name['aws_lambda_operator_config'].message_type = _DEPLOYMENTSPEC_AWSLAMBDAOPERATORCONFIG
+_DEPLOYMENTSPEC.fields_by_name['gcp_function_operator_config'].message_type = _DEPLOYMENTSPEC_GCPFUNCTIONOPERATORCONFIG
+_DEPLOYMENTSPEC.fields_by_name['kubernetes_operator_config'].message_type = _DEPLOYMENTSPEC_KUBERNETESOPERATORCONFIG
 _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config'].fields.append(
-  _DEPLOYMENTSPEC.fields_by_name['sagemaker_deployment_operator_config'])
-_DEPLOYMENTSPEC.fields_by_name['sagemaker_deployment_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
+  _DEPLOYMENTSPEC.fields_by_name['custom_operator_config'])
+_DEPLOYMENTSPEC.fields_by_name['custom_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
 _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config'].fields.append(
-  _DEPLOYMENTSPEC.fields_by_name['aws_lambda_deployment_operator_config'])
-_DEPLOYMENTSPEC.fields_by_name['aws_lambda_deployment_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
+  _DEPLOYMENTSPEC.fields_by_name['sagemaker_operator_config'])
+_DEPLOYMENTSPEC.fields_by_name['sagemaker_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
 _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config'].fields.append(
-  _DEPLOYMENTSPEC.fields_by_name['gcp_function_deployment_operator_config'])
-_DEPLOYMENTSPEC.fields_by_name['gcp_function_deployment_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
+  _DEPLOYMENTSPEC.fields_by_name['aws_lambda_operator_config'])
+_DEPLOYMENTSPEC.fields_by_name['aws_lambda_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
 _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config'].fields.append(
-  _DEPLOYMENTSPEC.fields_by_name['kubernetes_deployment_operator_config'])
-_DEPLOYMENTSPEC.fields_by_name['kubernetes_deployment_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
+  _DEPLOYMENTSPEC.fields_by_name['gcp_function_operator_config'])
+_DEPLOYMENTSPEC.fields_by_name['gcp_function_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
 _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config'].fields.append(
-  _DEPLOYMENTSPEC.fields_by_name['custom_deployment_operator_config'])
-_DEPLOYMENTSPEC.fields_by_name['custom_deployment_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
+  _DEPLOYMENTSPEC.fields_by_name['kubernetes_operator_config'])
+_DEPLOYMENTSPEC.fields_by_name['kubernetes_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
 _DEPLOYMENTSTATE.fields_by_name['state'].enum_type = _DEPLOYMENTSTATE_STATE
 _DEPLOYMENTSTATE_STATE.containing_type = _DEPLOYMENTSTATE
 _DEPLOYMENT_ANNOTATIONSENTRY.containing_type = _DEPLOYMENT
@@ -1120,11 +1120,6 @@ _DESCRIBEDEPLOYMENTRESPONSE.fields_by_name['status'].message_type = status__pb2.
 _DESCRIBEDEPLOYMENTRESPONSE.fields_by_name['spec'].message_type = _DEPLOYMENTSPEC
 _LISTDEPLOYMENTSRESPONSE.fields_by_name['status'].message_type = status__pb2._STATUS
 _LISTDEPLOYMENTSRESPONSE.fields_by_name['deployments'].message_type = _DEPLOYMENT
-DESCRIPTOR.message_types_by_name['CustomDeploymentOperatorConfig'] = _CUSTOMDEPLOYMENTOPERATORCONFIG
-DESCRIPTOR.message_types_by_name['SageMakerDeploymentOperatorConfig'] = _SAGEMAKERDEPLOYMENTOPERATORCONFIG
-DESCRIPTOR.message_types_by_name['AwsLambdaDeploymentOperatorConfig'] = _AWSLAMBDADEPLOYMENTOPERATORCONFIG
-DESCRIPTOR.message_types_by_name['GcpFunctionDeploymentOperatorConfig'] = _GCPFUNCTIONDEPLOYMENTOPERATORCONFIG
-DESCRIPTOR.message_types_by_name['KubernetesDeploymentOperatorConfig'] = _KUBERNETESDEPLOYMENTOPERATORCONFIG
 DESCRIPTOR.message_types_by_name['DeploymentSpec'] = _DEPLOYMENTSPEC
 DESCRIPTOR.message_types_by_name['DeploymentState'] = _DEPLOYMENTSTATE
 DESCRIPTOR.message_types_by_name['Deployment'] = _DEPLOYMENT
@@ -1142,55 +1137,60 @@ DESCRIPTOR.message_types_by_name['ListDeploymentsResponse'] = _LISTDEPLOYMENTSRE
 DESCRIPTOR.enum_types_by_name['DeploymentOperator'] = _DEPLOYMENTOPERATOR
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-CustomDeploymentOperatorConfig = _reflection.GeneratedProtocolMessageType('CustomDeploymentOperatorConfig', (_message.Message,), {
+DeploymentSpec = _reflection.GeneratedProtocolMessageType('DeploymentSpec', (_message.Message,), {
 
-  'ConfigEntry' : _reflection.GeneratedProtocolMessageType('ConfigEntry', (_message.Message,), {
-    'DESCRIPTOR' : _CUSTOMDEPLOYMENTOPERATORCONFIG_CONFIGENTRY,
+  'CustomOperatorConfig' : _reflection.GeneratedProtocolMessageType('CustomOperatorConfig', (_message.Message,), {
+
+    'ConfigEntry' : _reflection.GeneratedProtocolMessageType('ConfigEntry', (_message.Message,), {
+      'DESCRIPTOR' : _DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG_CONFIGENTRY,
+      '__module__' : 'deployment_pb2'
+      # @@protoc_insertion_point(class_scope:bentoml.DeploymentSpec.CustomOperatorConfig.ConfigEntry)
+      })
+    ,
+    'DESCRIPTOR' : _DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG,
     '__module__' : 'deployment_pb2'
-    # @@protoc_insertion_point(class_scope:bentoml.CustomDeploymentOperatorConfig.ConfigEntry)
+    # @@protoc_insertion_point(class_scope:bentoml.DeploymentSpec.CustomOperatorConfig)
     })
   ,
-  'DESCRIPTOR' : _CUSTOMDEPLOYMENTOPERATORCONFIG,
-  '__module__' : 'deployment_pb2'
-  # @@protoc_insertion_point(class_scope:bentoml.CustomDeploymentOperatorConfig)
-  })
-_sym_db.RegisterMessage(CustomDeploymentOperatorConfig)
-_sym_db.RegisterMessage(CustomDeploymentOperatorConfig.ConfigEntry)
 
-SageMakerDeploymentOperatorConfig = _reflection.GeneratedProtocolMessageType('SageMakerDeploymentOperatorConfig', (_message.Message,), {
-  'DESCRIPTOR' : _SAGEMAKERDEPLOYMENTOPERATORCONFIG,
-  '__module__' : 'deployment_pb2'
-  # @@protoc_insertion_point(class_scope:bentoml.SageMakerDeploymentOperatorConfig)
-  })
-_sym_db.RegisterMessage(SageMakerDeploymentOperatorConfig)
+  'SageMakerOperatorConfig' : _reflection.GeneratedProtocolMessageType('SageMakerOperatorConfig', (_message.Message,), {
+    'DESCRIPTOR' : _DEPLOYMENTSPEC_SAGEMAKEROPERATORCONFIG,
+    '__module__' : 'deployment_pb2'
+    # @@protoc_insertion_point(class_scope:bentoml.DeploymentSpec.SageMakerOperatorConfig)
+    })
+  ,
 
-AwsLambdaDeploymentOperatorConfig = _reflection.GeneratedProtocolMessageType('AwsLambdaDeploymentOperatorConfig', (_message.Message,), {
-  'DESCRIPTOR' : _AWSLAMBDADEPLOYMENTOPERATORCONFIG,
-  '__module__' : 'deployment_pb2'
-  # @@protoc_insertion_point(class_scope:bentoml.AwsLambdaDeploymentOperatorConfig)
-  })
-_sym_db.RegisterMessage(AwsLambdaDeploymentOperatorConfig)
+  'AwsLambdaOperatorConfig' : _reflection.GeneratedProtocolMessageType('AwsLambdaOperatorConfig', (_message.Message,), {
+    'DESCRIPTOR' : _DEPLOYMENTSPEC_AWSLAMBDAOPERATORCONFIG,
+    '__module__' : 'deployment_pb2'
+    # @@protoc_insertion_point(class_scope:bentoml.DeploymentSpec.AwsLambdaOperatorConfig)
+    })
+  ,
 
-GcpFunctionDeploymentOperatorConfig = _reflection.GeneratedProtocolMessageType('GcpFunctionDeploymentOperatorConfig', (_message.Message,), {
-  'DESCRIPTOR' : _GCPFUNCTIONDEPLOYMENTOPERATORCONFIG,
-  '__module__' : 'deployment_pb2'
-  # @@protoc_insertion_point(class_scope:bentoml.GcpFunctionDeploymentOperatorConfig)
-  })
-_sym_db.RegisterMessage(GcpFunctionDeploymentOperatorConfig)
+  'GcpFunctionOperatorConfig' : _reflection.GeneratedProtocolMessageType('GcpFunctionOperatorConfig', (_message.Message,), {
+    'DESCRIPTOR' : _DEPLOYMENTSPEC_GCPFUNCTIONOPERATORCONFIG,
+    '__module__' : 'deployment_pb2'
+    # @@protoc_insertion_point(class_scope:bentoml.DeploymentSpec.GcpFunctionOperatorConfig)
+    })
+  ,
 
-KubernetesDeploymentOperatorConfig = _reflection.GeneratedProtocolMessageType('KubernetesDeploymentOperatorConfig', (_message.Message,), {
-  'DESCRIPTOR' : _KUBERNETESDEPLOYMENTOPERATORCONFIG,
-  '__module__' : 'deployment_pb2'
-  # @@protoc_insertion_point(class_scope:bentoml.KubernetesDeploymentOperatorConfig)
-  })
-_sym_db.RegisterMessage(KubernetesDeploymentOperatorConfig)
-
-DeploymentSpec = _reflection.GeneratedProtocolMessageType('DeploymentSpec', (_message.Message,), {
+  'KubernetesOperatorConfig' : _reflection.GeneratedProtocolMessageType('KubernetesOperatorConfig', (_message.Message,), {
+    'DESCRIPTOR' : _DEPLOYMENTSPEC_KUBERNETESOPERATORCONFIG,
+    '__module__' : 'deployment_pb2'
+    # @@protoc_insertion_point(class_scope:bentoml.DeploymentSpec.KubernetesOperatorConfig)
+    })
+  ,
   'DESCRIPTOR' : _DEPLOYMENTSPEC,
   '__module__' : 'deployment_pb2'
   # @@protoc_insertion_point(class_scope:bentoml.DeploymentSpec)
   })
 _sym_db.RegisterMessage(DeploymentSpec)
+_sym_db.RegisterMessage(DeploymentSpec.CustomOperatorConfig)
+_sym_db.RegisterMessage(DeploymentSpec.CustomOperatorConfig.ConfigEntry)
+_sym_db.RegisterMessage(DeploymentSpec.SageMakerOperatorConfig)
+_sym_db.RegisterMessage(DeploymentSpec.AwsLambdaOperatorConfig)
+_sym_db.RegisterMessage(DeploymentSpec.GcpFunctionOperatorConfig)
+_sym_db.RegisterMessage(DeploymentSpec.KubernetesOperatorConfig)
 
 DeploymentState = _reflection.GeneratedProtocolMessageType('DeploymentState', (_message.Message,), {
   'DESCRIPTOR' : _DEPLOYMENTSTATE,
@@ -1308,7 +1308,7 @@ ListDeploymentsResponse = _reflection.GeneratedProtocolMessageType('ListDeployme
 _sym_db.RegisterMessage(ListDeploymentsResponse)
 
 
-_CUSTOMDEPLOYMENTOPERATORCONFIG_CONFIGENTRY._options = None
+_DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG_CONFIGENTRY._options = None
 _DEPLOYMENT_ANNOTATIONSENTRY._options = None
 _DEPLOYMENT_LABELSENTRY._options = None
 _LISTDEPLOYMENTSREQUEST_LABELSENTRY._options = None

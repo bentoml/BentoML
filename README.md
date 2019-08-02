@@ -37,43 +37,50 @@ pip install bentoml
 Defining a machine learning service with BentoML:
 
 ```python
-from bentoml import api, artifacts, env, BentoService
-from bentoml.artifact import KerasModelArtifact
-from bentoml.handlers import ImageHandler
+import bentoml
+from bentoml.artifact import PickleArtifact
+from bentoml.handlers import DataframeHandler
 
-# Define a prediction service class by subclassing bentoml.BentoService
-@env(pip_dependencies=['tensorflow'])
-@artifacts([KerasModelArtifact('classifier')])
-class ImageClassificationExampleService(BentoService):
+# You can also import your own Python module here and BentoML will automatically
+# figure out the dependency chain and package all those Python modules
+import my_preproceesing_lib
 
-    # Define service API function where you can have access to trained
-    # model artifacts and write your own preprocessing logic
-    @api(ImageHandler)
-    def predict(self, img):
-        # Preprocessing prediction request - ImageHandler parses REST API
-        # request or CLI args into python object that can be easily processed
-        # into feature vectors that are ready for your trained model
-        img = Image.fromarray(img).resize((...))
+@bentoml.artifacts([PickleArtifact('model')])
+@bentoml.env(pip_dependencies=["scikit-learn"])
+class IrisClassifier(bentoml.BentoService):
+
+    @api(DataframeHandler)
+    def predict(self, df):
+        # Preprocessing prediction request - DataframeHandler parses REST API
+        # request or CLI args into pandas Dataframe that can be easily processed
+        # into feature vectors that are ready for the trained model
+        df = my_preproceesing_lib.process(df)
 
         # Assess to serialized trained model artifact via self.artifacts
-        return self.artifacts.classifier.predict(img)
+        return self.artifacts.model.predict(df)
 ```
 
 After training your ML model, you can pack it with the prediction service
-defined above and save a versioned BentoArchive to file system:
+`IrisClassifier` defined above, and save them as a Bento to file system:
 ```python
-model = keras.Sequential()
-model.add(...)
-...
-model.compile(...)
-model.fit(...)
-model.evaluate(...)
+from sklearn import svm
+from sklearn import datasets
+
+clf = svm.SVC(gamma='scale')
+iris = datasets.load_iris()
+X, y = iris.data, iris.target
+clf.fit(X, y)
 
 # Packaging trained model for serving in production:
-saved_path = ImageClassificationExampleService.pack(classifier=model).save('/my_bento_archives')
+saved_path = IrisClassifier.pack(model=clf).save('/tmp/bento')
 ```
 
-Now you can start a REST API server based off the saved BentoArchive files:
+A Bento is a versioned archive, containing the BentoService you defined, along
+with trained model artifacts, dependencies and configurations etc. BentoML
+library can then load in a Bento file and turn it into a high performance
+prediction service.
+
+For example, you can now start a REST API server based off the saved Bento files:
 ```bash
 bentoml serve {saved_path}
 ```
@@ -83,24 +90,31 @@ around with the Web UI of the REST API model server, sending testing requests
 from the UI, or try sending prediction request with `curl` from CLI:
 
 ```bash
-curl -X POST "http://127.0.0.1:5000/predict" -H "Content-Type: image/png" --data-binary @sample_image.png
+curl -i \
+  --header "Content-Type: application/json" \
+  --request POST \
+  --data '[[5.1, 3.5, 1.4, 0.2]]' \
+  http://localhost:5000/predict
 ```
 
 The saved archive can also be used directly from CLI:
 ```bash
-bentoml predict {saved_path} --input=sample_image.png
+bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
+
+# alternatively:
+bentoml predict {saved_path} --input='./iris_test_data.csv'
 ```
 
-Or installed and used as a python package:
+Saved Bento can also be installed and used as a Python PyPI package:
 ```bash
 pip install {saved_path}
 ```
 ```python
 # Your bentoML model class name will become packaged name
-import ImageClassificationExampleService
+import IrisClassifier
 
-ms = ImageClassificationExampleService.load()
-ms.predict(test_image)
+installed_svc = IrisClassifier.load()
+installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
 ```
 
 You can also build a docker image for this API server with all dependencies and
@@ -111,7 +125,7 @@ docker build -t my_api_server {saved_path}
 ```
 
 Try out the full example notebook
-[here](https://github.com/bentoml/gallery/blob/master/pytorch/cifar10_image_classification/notebook.ipynb).
+[here on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb#scrollTo=dfYUWV4zcs3z).
 
 
 ## Examples

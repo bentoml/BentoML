@@ -51,7 +51,7 @@ class DeploymentStore(object):
 
     def get(self, name):
         with create_session() as session:
-            session.query(Deployment)
+            return session.query(Deployment).filter_by(name=name).first()
 
     def delete(self, name):
         pass

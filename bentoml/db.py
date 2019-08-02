@@ -30,12 +30,12 @@ engine = create_engine(
     config.get('db', 'engine'), echo=False, connect_args={'check_same_thread': False}
 )
 Base = declarative_base()
-SessionMaker = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine)
 
 
 @contextmanager
 def create_session():
-    session = SessionMaker()
+    session = Session()
     try:
         yield session
         session.commit()
@@ -45,4 +45,5 @@ def create_session():
     finally:
         session.close()
 
-Base.metadata.create_all(engine)
+def initialize_db():
+    Base.metadata.create_all(engine)

@@ -73,7 +73,7 @@ def add_deployment_commands(cli):
     def deploy(
         archive_path, platform, region, stage, api_name, instance_type, instance_count
     ):
-        track_cli('deploy', platform)
+        track_cli("deploy", platform)
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(archive_path, platform, region, stage)
         elif platform == "aws-sagemaker":
@@ -88,13 +88,21 @@ def add_deployment_commands(cli):
             )
             return
 
-        output_path = deployment.deploy()
+        try:
+            output_path = deployment.deploy()
 
-        _echo(
-            "Successfully deployed to {platform}!".format(platform=platform),
-            CLI_COLOR_SUCCESS,
-        )
-        _echo("Deployment archive is saved at: %s" % output_path)
+            _echo(
+                "Successfully deployed to {platform}!".format(platform=platform),
+                CLI_COLOR_SUCCESS,
+            )
+            _echo("Deployment archive is saved at: %s" % output_path)
+        except Exception as e:  # pylint:disable=broad-except
+            _echo(
+                "Encounter error when deploying to {platform}\nError: {error_message}".format(
+                    platform=platform, error_message=str(e)
+                ),
+                CLI_COLOR_ERROR,
+            )
 
     # Example usage: bentoml delete-deployment ARCHIVE_PATH --platform=aws-lambda
     @cli.command(
@@ -130,7 +138,7 @@ def add_deployment_commands(cli):
     )
     @click.option("--stage", type=click.STRING)
     def delete_deployment(archive_path, platform, region, stage, api_name):
-        track_cli('delete-deploy', platform)
+        track_cli("delete-deploy", platform)
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(archive_path, platform, region, stage)
         elif platform == "aws-sagemaker":
@@ -189,7 +197,7 @@ def add_deployment_commands(cli):
         help="The name of API that is deployed as a service.",
     )
     def check_deployment_status(archive_path, platform, region, stage, api_name):
-        track_cli('check-deployment-status', platform)
+        track_cli("check-deployment-status", platform)
         if platform in SERVERLESS_PLATFORMS:
             deployment = ServerlessDeployment(archive_path, platform, region, stage)
         elif platform == "aws-sagemaker":

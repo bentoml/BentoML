@@ -7,7 +7,7 @@ extension-pkg-whitelist=cv2
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
-ignore=
+ignore=proto
 
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
@@ -144,6 +144,9 @@ disable=print-statement,
         # Additional rules disabled for BentoML project
         fixme, # Remove this after beta release
         protected-access,
+
+        # prevent errors with proto generated Class
+        no-member
 
 
 # Enable the message, report, category or checker with the given id(s). You can

@@ -16,11 +16,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 from bentoml.archive import load
 
 
-class Deployment(object):
-    """Deployment is spec for describing what actions deployment should have
+class LegacyDeployment(object):
+    """LegacyDeployment is spec for describing what actions deployment should have
     to interact with BentoML cli and BentoML service archive.
     """
 
@@ -30,21 +31,15 @@ class Deployment(object):
 
     def deploy(self):
         """Deploy bentoml service.
-
-        :return: Boolean, True if success
         """
         raise NotImplementedError
 
     def check_status(self):
         """Check deployment status
-
-        :params
-        :return: Boolean, True if success Status Message String
         """
         raise NotImplementedError
 
     def delete(self):
         """Delete deployment, if deployment is active
-        :return: Boolean, True if success
         """
         raise NotImplementedError

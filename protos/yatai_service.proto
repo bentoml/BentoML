@@ -1,0 +1,57 @@
+syntax = "proto3";
+package bentoml;
+
+import "common.proto";
+import "status.proto";
+import "deployment.proto";
+import "repository.proto";
+
+// Yatai: stateful service that manages and deploys BentoService
+service Yatai {
+  // Common RPC
+  rpc HealthCheck (Empty)
+    returns (HealthCheckResponse);
+
+  rpc GetYataiServiceVersion (Empty)
+    returns (GetYataiServiceVersionResponse);
+
+  // Deployment Management RPC
+  rpc ApplyDeployment(ApplyDeploymentRequest)
+    returns (ApplyDeploymentResponse);
+
+  rpc DeleteDeployment(DeleteDeploymentRequest)
+    returns (DeleteDeploymentResponse);
+
+  rpc GetDeployment(GetDeploymentRequest)
+    returns (GetDeploymentResponse);
+
+  rpc DescribeDeployment(DescribeDeploymentRequest)
+    returns (DescribeDeploymentResponse);
+
+  rpc ListDeployments(ListDeploymentsRequest)
+    returns (ListDeploymentsResponse);
+
+  // Bento Repository RPC
+  rpc AddBento(AddBentoRequest)
+    returns (AddBentoResponse);
+
+  rpc UploadBento(stream Chunk)
+    returns (UploadBentoResponse);
+
+  rpc RemoveBento(RemoveBentoRequest)
+    returns (RemoveBentoResponse);
+
+  rpc GetBento(GetBentoRequest)
+    returns (GetBentoResponse);
+
+  rpc ListBento(ListBentoRequest)
+    returns (ListBentoResponse);
+}
+
+message HealthCheckResponse {
+  Status status = 1;
+}
+
+message GetYataiServiceVersionResponse {
+  string version = 1;
+}

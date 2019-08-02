@@ -26,7 +26,7 @@ from six.moves.urllib.parse import urlparse
 import boto3
 import docker
 
-from bentoml.deployment.base_deployment import Deployment
+from bentoml.deployment.legacy_deployment import LegacyDeployment
 from bentoml.deployment.utils import (
     generate_bentoml_deployment_snapshot_path,
     process_docker_api_line,
@@ -38,6 +38,9 @@ from bentoml.deployment.sagemaker.templates import (
     DEFAULT_WSGI_PY,
     DEFAULT_SERVE_SCRIPT,
 )
+from bentoml.deployment.operator import DeploymentOperatorBase
+from bentoml.proto.status_pb2 import Status
+from bentoml.proto.deployment_pb2 import ApplyDeploymentResponse
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +171,7 @@ def generate_sagemaker_snapshot(name, version, archive_path):
     return snapshot_path
 
 
-class SagemakerDeployment(Deployment):
+class SagemakerDeployment(LegacyDeployment):
     def __init__(
         self,
         archive_path,
@@ -333,3 +336,20 @@ class SagemakerDeployment(Deployment):
             return True
         else:
             return False
+
+
+# Deployment Service MVP Working-In-Progress
+class SageMakerDeploymentOperator(DeploymentOperatorBase):
+    def apply(self, deployment_pb):
+        # deploy code.....
+
+        deployment = self.get(deployment_pb).deployment
+        return ApplyDeploymentResponse(status=Status.OK, deployment=deployment)
+
+    def delete(self, deployment_pb):
+        # deployment = self.get(deployment_pb).deployment
+
+        raise NotImplementedError
+
+    def get(self, deployment_pb):
+        raise NotImplementedError

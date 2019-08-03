@@ -85,8 +85,12 @@ class ImageHandler(BentoHandler):
         return {
             "image/*": {"schema": {"type": "string", "format": "binary"}},
             "multipart/form-data": {
-                "schema": {"type": "object"},
-                "properties": {self.input_name: {"type": "string", "format": "binary"}},
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        self.input_name: {"type": "string", "format": "binary"}
+                    },
+                }
             },
         }
 

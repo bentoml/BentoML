@@ -19,7 +19,7 @@ prediction services.
 
 The framework provides high-level APIs for defining an ML service and packaging
 its trained model artifacts, preprocessing source code, dependencies, and
-configurations into a standard file format called BentoArchive - which can be
+configurations into a standard file format called Bento - which can be
 deployed as containerize REST API server, PyPI package, CLI tool, and
 batch/streaming inference job.
 

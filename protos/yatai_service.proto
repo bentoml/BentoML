@@ -1,7 +1,8 @@
 syntax = "proto3";
 package bentoml;
 
-import "common.proto";
+import "google/protobuf/empty.proto";
+
 import "status.proto";
 import "deployment.proto";
 import "repository.proto";
@@ -9,10 +10,10 @@ import "repository.proto";
 // Yatai: stateful service that manages and deploys BentoService
 service Yatai {
   // Common RPC
-  rpc HealthCheck (Empty)
+  rpc HealthCheck (google.protobuf.Empty)
     returns (HealthCheckResponse);
 
-  rpc GetYataiServiceVersion (Empty)
+  rpc GetYataiServiceVersion (google.protobuf.Empty)
     returns (GetYataiServiceVersionResponse);
 
   // Deployment Management RPC

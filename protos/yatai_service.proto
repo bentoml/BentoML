@@ -1,18 +1,19 @@
 syntax = "proto3";
 package bentoml;
 
-import "common.proto";
+import "google/protobuf/empty.proto";
+
 import "status.proto";
 import "deployment.proto";
 import "repository.proto";
 
-// Yatai: stateful service that manages and deploys BentoService
+// Yatai: stateful service that manages and deploys saved Bento
 service Yatai {
   // Common RPC
-  rpc HealthCheck (Empty)
+  rpc HealthCheck (google.protobuf.Empty)
     returns (HealthCheckResponse);
 
-  rpc GetYataiServiceVersion (Empty)
+  rpc GetYataiServiceVersion (google.protobuf.Empty)
     returns (GetYataiServiceVersionResponse);
 
   // Deployment Management RPC
@@ -32,11 +33,8 @@ service Yatai {
     returns (ListDeploymentsResponse);
 
   // Bento Repository RPC
-  rpc AddBento(AddBentoRequest)
+  rpc AddBento(stream Chunk)
     returns (AddBentoResponse);
-
-  rpc UploadBento(stream Chunk)
-    returns (UploadBentoResponse);
 
   rpc RemoveBento(RemoveBentoRequest)
     returns (RemoveBentoResponse);
@@ -54,4 +52,8 @@ message HealthCheckResponse {
 
 message GetYataiServiceVersionResponse {
   string version = 1;
+}
+
+message Chunk {
+  bytes content = 1;
 }

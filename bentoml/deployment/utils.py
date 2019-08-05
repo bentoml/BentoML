@@ -23,6 +23,7 @@ import logging
 from datetime import datetime
 
 from bentoml.config import BENTOML_HOME
+from bentoml.proto.status_pb2 import Status
 
 logger = logging.getLogger(__name__)
 
@@ -55,3 +56,7 @@ def process_docker_api_line(payload):
                     raise RuntimeError("Error on build - code %s" % error["code"])
                 elif "stream" in line_payload:
                     logger.info(line_payload['stream'])
+
+def create_status_message(status_code, error_message):
+    return Status(status_code = status_code, error_message = error_message)
+

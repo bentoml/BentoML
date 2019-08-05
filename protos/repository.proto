@@ -4,7 +4,21 @@ package bentoml;
 import "status.proto";
 
 
-message Bento {
+message BentoUri {
+  enum StorageType {
+    UNSET = 0;
+    LOCAL = 1;
+    S3 = 2;
+    GCS = 3;
+    AZURE_BLOB_STORAGE = 4;
+    HDFS = 5;
+  }
+
+  StorageType type = 1;
+  string uri = 2;
+}
+
+message BentoMetadata {
   message BentoServiceEnv {
     string setup_sh = 1;
     string conda_env = 2;
@@ -28,16 +42,10 @@ message Bento {
   BentoServiceEnv env = 4;
   repeated BentoArtifact artifacts = 5;
   repeated BentoServiceApi apis = 6;
+  BentoUri uri = 7;
 }
 
 // Requests
-message AddBentoRequest {
-  string name = 1;
-  string version = 2;
-
-  string file_path = 3;
-}
-
 message RemoveBentoRequest {
   string bento_name = 1;
   string bento_version = 2;
@@ -57,24 +65,20 @@ message ListBentoRequest {
 // Responses
 message AddBentoResponse {
   Status status = 1;
-}
-
-message UploadBentoResponse {
-  Status status = 1;
-  string file_path = 2;
+  BentoMetadata bento = 2;
 }
 
 message RemoveBentoResponse {
   Status status = 1;
-  Bento bento = 2;
+  BentoMetadata bento = 2;
 }
 
 message GetBentoResponse {
   Status status = 1;
-  Bento bento = 2;
+  BentoMetadata bento = 2;
 }
 
 message ListBentoResponse {
   Status status = 1;
-  repeated Bento bentos = 2;
+  repeated BentoMetadata bentos = 2;
 }

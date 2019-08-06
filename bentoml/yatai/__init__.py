@@ -46,11 +46,11 @@ class YataiService(YataiServicer):
     def GetYataiServiceVersion(self, request, context):
         raise NotImplementedError('Method not implemented!')
 
-    def ApplyDeployment(self, apply_deployment_request, context):
+    def ApplyDeployment(self, request, context):
         try:
-            deployment_pb = apply_deployment_request.deployment
+            deployment_pb = request.deployment
             operator = get_deployment_operator(deployment_pb)
-            return operator.apply(apply_deployment_request)
+            return operator.apply(request)
 
         except BentoMLException:
             response = ApplyDeploymentResponse()
@@ -58,12 +58,12 @@ class YataiService(YataiServicer):
             # LOG.error(....)
             return response
 
-    def DeleteDeployment(self, delete_deployment_request, context):
+    def DeleteDeployment(self, request, context):
         try:
-            deployment_name = delete_deployment_request.deployment_name
+            deployment_name = request.deployment_name
             deployment_pb = self.store.get(deployment_name)
             operator = get_deployment_operator(deployment_pb)
-            return operator.delete(delete_deployment_request)
+            return operator.delete(request)
 
         except BentoMLException:
             response = DeleteDeploymentResponse()
@@ -71,8 +71,8 @@ class YataiService(YataiServicer):
             # LOG.error(....)
             return response
 
-    def GetDeployment(self, get_deployment_request, context):
-        # deployment_name = get_deployment_request.deployment_name
+    def GetDeployment(self, request, context):
+        # deployment_name = request.deployment_name
         # deployment_pb = self.store.get(deployment_name)
         # # get deployment status etc
         #
@@ -80,18 +80,18 @@ class YataiService(YataiServicer):
         # # construct deployment status into GetDeploymentResponse
         pass
 
-    def DescribeDeployment(self, describe_deployment_request, context):
-        # deployment_name = describe_deployment_request.deployment_name
+    def DescribeDeployment(self, request, context):
+        # deployment_name = request.deployment_name
         # response = DescribeDeploymentResponse()
         # # ...
         pass
 
-    def ListDeployments(self, list_deployments_request, context):
+    def ListDeployments(self, request, context):
         # deployment_pb_list = self.store.list(
-        #     list_deployments_request.filter,
-        #     list_deployments_request.labels,
-        #     list_deployments_request.offset,
-        #     list_deployments_request.limit,
+        #     request.filter,
+        #     request.labels,
+        #     request.offset,
+        #     request.limit,
         # )
         # response = ListDeploymentsResponse()
         pass

@@ -517,8 +517,9 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         logger.info("AWS describe endpoint response: %s", endpoint_status_response)
         endpoint_status = endpoint_status_response["EndpointStatus"]
 
-        # Sagemaker response status: 'OutOfService'|'Creating'|'Updating'|'SystemUpdating'|
-        #                            'RollingBack'|'InService'|'Deleting'|'Failed'
+        # Sagemaker response status: 'OutOfService'|'Creating'|'Updating'|
+        #                            'SystemUpdating'|'RollingBack'|'InService'|
+        #                            'Deleting'|'Failed'
         if endpoint_status == 'InService':
             service_state = DeploymentState.RUNNING
         elif endpoint_status in [

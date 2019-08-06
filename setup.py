@@ -12,13 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import imp
 import setuptools
-
-__version__ = imp.load_source(
-    "bentoml.version", os.path.join("bentoml", "version.py")
-).__version__
+import versioneer
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -114,7 +109,8 @@ extras_require = {
 
 setuptools.setup(
     name="BentoML",
-    version=__version__,
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     author="atalaya.io",
     author_email="contact@atalaya.io",
     description="A python framework for serving and operating machine learning models",

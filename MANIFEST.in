@@ -30,3 +30,5 @@ global-exclude *.pyo
 global-exclude .git
 global-exclude .ipynb_checkpoints
 global-exclude __pycache__
+include versioneer.py
+include bentoml/_version.py

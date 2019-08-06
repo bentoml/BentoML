@@ -35,7 +35,7 @@ from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
 
 LOG = logging.getLogger(__name__)
 
-
+# pylint: disable=unused-argument
 class YataiService(YataiServicer):
     def __init__(self):
         self.store = DeploymentStore()
@@ -107,3 +107,6 @@ class YataiService(YataiServicer):
 
     def ListBento(self, request, context):
         raise NotImplementedError('Method not implemented!')
+
+
+# pylint: enable=unused-argument

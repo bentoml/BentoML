@@ -49,7 +49,7 @@ def create_local_config_file_if_not_found():
         shutil.copyfile(DEFAULT_CONFIG_FILE, LOCAL_CONFIG_FILE)
 
 
-def get_configuration_sub_commands():
+def get_configuration_sub_command():
     @click.group(
         help="Configure BentoML configurations and settings",
         short_help="Config BentoML library",

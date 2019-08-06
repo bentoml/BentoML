@@ -16,6 +16,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from ._version import get_versions
+
+__version__ = get_versions()['version']
+del get_versions
+
 from bentoml import handlers
 from bentoml.config import config
 
@@ -31,11 +36,6 @@ from bentoml.archive import save, load
 
 from bentoml.utils.log import configure_logging
 from bentoml import deployment
-
-from ._version import get_versions
-
-__version__ = get_versions()['version']
-del get_versions
 
 configure_logging()
 

@@ -48,7 +48,7 @@ tensorflow = ["tensorflow"]
 xgboost = ["xgboost"]
 h2o = ["h2o"]
 api_server = ["gunicorn", "prometheus_client", "Werkzeug"]
-grpc_tools = ["grpcio", "grpcio-tools", "mypy-protobuf", "grpc"]
+grpc_tools = ["grpcio", "grpcio-tools", "mypy-protobuf"]
 
 optional_requires = api_server + imageio + pytorch + tensorflow + fastai + xgboost + h2o
 

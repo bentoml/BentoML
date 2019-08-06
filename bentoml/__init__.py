@@ -18,7 +18,6 @@ from __future__ import print_function
 
 from bentoml import handlers
 from bentoml.config import config
-from bentoml.version import __version__
 
 from bentoml.service import (
     BentoService,
@@ -32,6 +31,11 @@ from bentoml.archive import save, load
 
 from bentoml.utils.log import configure_logging
 from bentoml import deployment
+
+from ._version import get_versions
+
+__version__ = get_versions()['version']
+del get_versions
 
 configure_logging()
 

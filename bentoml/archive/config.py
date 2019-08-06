@@ -22,7 +22,7 @@ from datetime import datetime
 
 from ruamel.yaml import YAML
 
-from bentoml.version import __version__ as BENTOML_VERSION
+from bentoml import __version__ as BENTOML_VERSION
 from bentoml.utils import Path
 
 BENTOML_CONFIG_YAML_TEPMLATE = """\

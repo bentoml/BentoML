@@ -37,10 +37,14 @@ LOG = logging.getLogger(__name__)
 
 
 class YataiService(YataiServicer):
-
     def __init__(self):
         self.store = DeploymentStore()
 
+    def HealthCheck(self, request, context):
+        raise NotImplementedError('Method not implemented!')
+
+    def GetYataiServiceVersion(self, request, context):
+        raise NotImplementedError('Method not implemented!')
 
     def ApplyDeployment(self, apply_deployment_request, context):
         try:
@@ -91,3 +95,15 @@ class YataiService(YataiServicer):
         # )
         # response = ListDeploymentsResponse()
         pass
+
+    def AddBento(self, request_iterator, context):
+        raise NotImplementedError('Method not implemented!')
+
+    def RemoveBento(self, request, context):
+        raise NotImplementedError('Method not implemented!')
+
+    def GetBento(self, request, context):
+        raise NotImplementedError('Method not implemented!')
+
+    def ListBento(self, request, context):
+        raise NotImplementedError('Method not implemented!')

@@ -25,6 +25,7 @@ def get_deployment_operator(deployment_pb):
 
     if operator == DeploymentOperator.AWS_SAGEMAKER:
         from bentoml.deployment.sagemaker import SageMakerDeploymentOperator
+
         return SageMakerDeploymentOperator()
     elif operator == DeploymentOperator.AWS_LAMBDA:
         pass
@@ -39,7 +40,6 @@ def get_deployment_operator(deployment_pb):
 
 
 class DeploymentOperatorBase(object):
-
     def __init__(self, operator_config=None):
         self.config = operator_config
 

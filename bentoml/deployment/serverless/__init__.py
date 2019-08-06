@@ -201,12 +201,6 @@ class ServerlessDeployment(LegacyDeployment):
             )
 
         shutil.copy(os.path.join(self.archive_path, "requirements.txt"), output_path)
-
-        # Make sure we include bentoml as part of the requirements
-        output_requirement_path = os.path.join(output_path, "requirements.txt")
-        with open(output_requirement_path, "ab") as f:
-            f.write(b"bentoml")
-
         model_serivce_archive_path = os.path.join(output_path, self.bento_service.name)
         shutil.copytree(self.archive_path, model_serivce_archive_path)
 

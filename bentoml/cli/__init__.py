@@ -25,7 +25,10 @@ from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import add_deployment_commands
-from bentoml.cli.config import add_configuration_commands
+from bentoml.cli.config import (
+    add_configuration_commands,
+    add_configuration_sub_commands
+)
 from bentoml.utils.log import configure_logging
 from bentoml.utils.usage_stats import track_cli
 
@@ -171,7 +174,7 @@ def create_bentoml_cli():
     add_deployment_commands(_cli)
     add_configuration_commands(_cli)
 
-    # pylint: enable=unused-variable
+    add_configuration_sub_commands(_cli)
     return _cli
 
 

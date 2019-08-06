@@ -59,7 +59,7 @@ def add_configuration_commands(cli):
         "action", type=click.Choice(["view", "view-effective", "set", "unset", "reset"])
     )
     @click.argument("updates", nargs=-1)
-    def config(action, updates):
+    def configuration(action, updates):
         create_local_config_file_if_not_found()
 
         if action == "view-effective":
@@ -124,4 +124,84 @@ def add_configuration_commands(cli):
             return
         return
 
+    return cli
+
+
+def add_configuration_sub_commands(cli):
+    @click.group()
+    def config():
+        create_local_config_file_if_not_found()
+
+    @config.command()
+    def view():
+        local_config = ConfigParser()
+        with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
+            local_config.read_string(config_file.read().decode('utf-8'))
+
+        local_config.write(sys.stdout)
+        return
+
+    @config.command()
+    def view_effective():
+        bentoml_config.write(sys.stdout)
+        return
+
+    @config.command()
+    def set():
+        local_config = ConfigParser()
+        with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
+            local_config.read_string(config_file.read().decode('utf-8'))
+        try:
+            for update in updates:
+                item, value = update.split('=')
+                if '.' in item:
+                    sec, opt = item.split('.')
+                else:
+                    sec = 'core'  # default section
+                    opt = item
+
+                if not local_config.has_section(sec):
+                    local_config.add_section(sec)
+                local_config.set(sec.strip(), opt.strip(), value.strip())
+
+            local_config.write(open(LOCAL_CONFIG_FILE, 'w'))
+            return
+        except ValueError:
+            _echo('Wrong config format: %s' % str(updates), CLI_COLOR_ERROR)
+            _echo(EXAMPLE_CONFIG_USAGE)
+            return
+
+    @config.command()
+    def unset():
+        local_config = ConfigParser()
+        with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
+            local_config.read_string(config_file.read().decode('utf-8'))
+        try:
+            for update in updates:
+                if '.' in update:
+                    sec, opt = update.split('.')
+                else:
+                    sec = 'core'  # default section
+                    opt = update
+
+                if not local_config.has_section(sec):
+                    local_config.add_section(sec)
+                local_config.remove_option(sec.strip(), opt.strip())
+
+            local_config.write(open(LOCAL_CONFIG_FILE, 'w'))
+            return
+        except ValueError:
+            _echo('Wrong config format: %s' % str(updates), CLI_COLOR_ERROR)
+            _echo(EXAMPLE_CONFIG_USAGE)
+            return
+
+    @config.command()
+    def reset():
+        if os.path.isfile(LOCAL_CONFIG_FILE):
+            LOG.info("Removing existing BentoML config file: %s", LOCAL_CONFIG_FILE)
+            os.remove(LOCAL_CONFIG_FILE)
+        create_local_config_file_if_not_found()
+        return
+
+    cli.add_command(config)
     return cli

@@ -30,16 +30,19 @@ from bentoml.deployment.operator import get_deployment_operator
 
 from bentoml.deployment.store import DeploymentStore
 from bentoml.exceptions import BentoMLException
+from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
 
 
 LOG = logging.getLogger(__name__)
 
 
-class DeploymentService(object):
+class YataiService(YataiServicer):
+
     def __init__(self):
         self.store = DeploymentStore()
 
-    def apply(self, apply_deployment_request):
+
+    def ApplyDeployment(self, apply_deployment_request, context):
         try:
             deployment_pb = apply_deployment_request.deployment
             operator = get_deployment_operator(deployment_pb)
@@ -51,7 +54,7 @@ class DeploymentService(object):
             # LOG.error(....)
             return response
 
-    def delete(self, delete_deployment_request):
+    def DeleteDeployment(self, delete_deployment_request, context):
         try:
             deployment_name = delete_deployment_request.deployment_name
             deployment_pb = self.store.get(deployment_name)
@@ -64,7 +67,7 @@ class DeploymentService(object):
             # LOG.error(....)
             return response
 
-    def get(self, get_deployment_request):
+    def GetDeployment(self, get_deployment_request, context):
         # deployment_name = get_deployment_request.deployment_name
         # deployment_pb = self.store.get(deployment_name)
         # # get deployment status etc
@@ -73,13 +76,13 @@ class DeploymentService(object):
         # # construct deployment status into GetDeploymentResponse
         pass
 
-    def describe(self, describe_deployment_request):
+    def DescribeDeployment(self, describe_deployment_request, context):
         # deployment_name = describe_deployment_request.deployment_name
         # response = DescribeDeploymentResponse()
         # # ...
         pass
 
-    def list(self, list_deployments_request):
+    def ListDeployments(self, list_deployments_request, context):
         # deployment_pb_list = self.store.list(
         #     list_deployments_request.filter,
         #     list_deployments_request.labels,

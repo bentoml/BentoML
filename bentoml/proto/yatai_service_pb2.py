@@ -15,8 +15,8 @@ _sym_db = _symbol_database.Default()
 
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 import bentoml.proto.status_pb2 as status__pb2
-import deployment_pb2 as deployment__pb2
-import repository_pb2 as repository__pb2
+import bentoml.proto.deployment_pb2 as deployment__pb2
+import bentoml.proto.repository_pb2 as repository__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(

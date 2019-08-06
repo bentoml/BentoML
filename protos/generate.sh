@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
+set -e
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
+cd $GIT_ROOT
 
 # Install python grpcio-tools if it's not already installed
 # pip install grpcio-tools
@@ -9,7 +11,8 @@ PROTO_PATH=$GIT_ROOT/protos
 PYOUT_PATH=$GIT_ROOT/bentoml/proto
 
 echo "Cleaning up existing proto generated py code.."
-rm -rf $PYOUT_PATH
+rm -f $PYOUT_PATH/*.py
+rm -f $PYOUT_PATH/*.pyi
 mkdir -p $PYOUT_PATH
 touch $PYOUT_PATH/__init__.py
 
@@ -18,7 +21,6 @@ find $PROTO_PATH/ -name '*.proto' | while read protofile; do
 python -m grpc_tools.protoc \
   -I$PROTO_PATH \
   --python_out=$PYOUT_PATH \
-  --mypy_out=$PYOUT_PATH \
   $protofile
 done
 
@@ -31,9 +33,12 @@ python -m grpc_tools.protoc \
 
 
 echo "Fix imports in generated GRPC service code.."
-find $PYOUT_PATH/ -name '*_pb2.py' | while read pyfile; do
-sed -i '.old' 's/^import \([^ (google.*)]*\)_pb2 as \([^ ]*\)$/import bentoml.proto.\1_pb2 as \2/' $pyfile
-sed -i '.old' 's/^from \([^ (google.*)]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from bentoml.proto.\1 import \2_pb2 as \3/' $pyfile
+find $PYOUT_PATH/ -name '*_pb2*.py' | while read pyfile; do
+sed -i '.old' 's/^import \([^ ]*\)_pb2 \(.*\)$/import bentoml.proto.\1_pb2 \2/' $pyfile
+sed -i '.old' 's/^from \([^ ]*\) import \([^ ]*\)_pb2\(.*\)$/from bentoml.proto.\1 import \2_pb2\3/' $pyfile
+# Fix google.protobuf package imports
+sed -i '.old' 's/^import bentoml.proto.google.\([^ ]*\)_pb2 as \([^ ]*\)$/import google.\1_pb2 as \2/' $pyfile
+sed -i '.old' 's/^from bentoml.proto.google.\([^ ]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from google.\1 import \2_pb2 as \3/' $pyfile
 rm $pyfile.old
 done
 

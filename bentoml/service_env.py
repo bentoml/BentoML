@@ -114,7 +114,7 @@ class BentoServiceEnv(object):
     def __init__(self, bentoml_version=LOCAL_BENTOML_VERSION):
         self._setup_sh = None
         self._conda_env = CondaEnv()
-        self._pip_dependencies = ["bentoml=={bentoml_version}".format(bentoml_version)]
+        self._pip_dependencies = ["bentoml=={}".format(bentoml_version)]
 
     def get_conda_env_name(self):
         return self._conda_env.get_name()

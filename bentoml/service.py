@@ -389,7 +389,6 @@ class BentoService(BentoServiceBase):
                 for artifact in artifacts:
                     self._artifacts[artifact.name] = artifact
 
-
     def _init_env(self, env=None):
         if env is None:
             # By default use BentoServiceEnv defined on class via @env decorator

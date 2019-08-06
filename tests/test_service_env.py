@@ -50,7 +50,6 @@ def test_pip_dependencies_env():
 
 
 def test_pip_dependencies_with_archive(tmpdir):
-
     @bentoml.env(pip_dependencies=['numpy', 'pandas', 'torch'])
     class ServiceWithList(bentoml.BentoService):
         @bentoml.api(bentoml.handlers.DataframeHandler)

@@ -10,6 +10,7 @@ flake8:
       - W503
     exclude:
       - proto
+      - bentoml/_version.py
 
 only_mention_files_with_errors: True
 

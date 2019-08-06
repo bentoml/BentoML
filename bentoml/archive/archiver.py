@@ -146,7 +146,8 @@ def _save(bento_service, dst, version=None):
         f.write(model_description)
 
     # save all model artifacts to 'base_path/name/artifacts/' directory
-    bento_service.artifacts.save(module_base_path)
+    if bento_service.artifacts:
+        bento_service.artifacts.save(module_base_path)
 
     # write conda environment, requirement.txt
     bento_service.env.save(path)

@@ -350,6 +350,7 @@ class BentoService(BentoServiceBase):
 
     # list of artifact spec describing required artifacts for this BentoService
     _artifacts_spec = []
+    _artifacts = None
 
     # Describe the desired environment for this BentoService using
     # `bentoml.service_env.BentoServiceEnv`
@@ -369,23 +370,25 @@ class BentoService(BentoServiceBase):
         self.name = self.__class__.name()
 
     def _init_artifacts(self, artifacts):
-        if artifacts is None:
-            if self._bento_archive_path:
-                artifacts = ArtifactCollection.load(
-                    self._bento_archive_path, self.__class__._artifacts_spec
-                )
-            else:
-                raise BentoMLException(
-                    "Must provide artifacts or set cls._bento_archive_path"
-                    "before instantiating a BentoService class"
-                )
+        if len(self._artifacts_spec) > 0:
+            if artifacts is None:
+                if self._bento_archive_path:
+                    artifacts = ArtifactCollection.load(
+                        self._bento_archive_path, self.__class__._artifacts_spec
+                    )
+                else:
+                    raise BentoMLException(
+                        "Must provide required artifacts before instantiating a "
+                        "custom BentoService class"
+                    )
 
-        if isinstance(artifacts, ArtifactCollection):
-            self._artifacts = artifacts
-        else:
-            self._artifacts = ArtifactCollection()
-            for artifact in artifacts:
-                self._artifacts[artifact.name] = artifact
+            if isinstance(artifacts, ArtifactCollection):
+                self._artifacts = artifacts
+            else:
+                self._artifacts = ArtifactCollection()
+                for artifact in artifacts:
+                    self._artifacts[artifact.name] = artifact
+
 
     def _init_env(self, env=None):
         if env is None:

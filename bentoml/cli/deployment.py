@@ -23,6 +23,7 @@ from bentoml.config import config
 from bentoml.deployment.serverless import ServerlessDeployment
 from bentoml.deployment.sagemaker import SagemakerDeployment
 from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR, CLI_COLOR_SUCCESS
+from bentoml.yatai import get_yatai_service
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentRequest,
     DeleteDeploymentRequest,
@@ -31,9 +32,9 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsRequest,
     Deployment,
     DeploymentSpec,
+    DeploymentOperator,
 )
 from bentoml.proto.status_pb2 import Status
-from bentoml.proto.yatai_service_pb2_grpc import YataiStub
 from bentoml.utils.usage_stats import track_cli
 
 SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
@@ -227,12 +228,32 @@ def add_legacy_deployment_commands(cli):
 
     return cli
 
-def create_yatai_stub():
-    channel = grpc.insecure_channel(config.get('yatai', 'url'))
-    return YataiStub(channel)
+
+def parse_key_value_string(key_value_string):
+    if key_value_string:
+        result = {}
+        for item in key_value_string.split(','):
+            if item is not None:
+                splits = item.split('=')
+                result[splits[0]] = splits[1]
+        return result
+    else:
+        return None
 
 
-def add_deployment_sub_commands(cli):
+def get_deployment_operator_type(platform):
+    return DeploymentOperator.Value(platform.upper())
+
+
+def display_response_status_error(status):
+    _echo('Error code: {}'.format(status.status_code), CLI_COLOR_ERROR)
+    _echo('Error message: {}'.format(status.error_message), CLI_COLOR_ERROR)
+
+
+def display_deployment_info(deployment):
+    _echo('deployment info')
+
+def get_deployment_sub_command(cli):
     @click.group()
     def deployment():
         pass
@@ -249,7 +270,7 @@ def add_deployment_sub_commands(cli):
     @click.option(
         "--platform",
         type=click.Choice(
-            ["aws-lambda", "gcp-function", "aws-sagemaker", "kubernetes", "custom"]
+            ["aws_lambda", "gcp_function", "aws_sagemaker", "kubernetes", "custom"]
         ),
         required=True,
         help="Target platform that Bento archive is going to deployed to",
@@ -269,47 +290,65 @@ def add_deployment_sub_commands(cli):
         namespace=None,
         labels=None,
         annotations=None,
-        api_name=None,
     ):
-        stub = create_yatai_stub()
-        deployment = ''
-        result = stub.DeleteDeployment(deployment)
+        bento = 'store.get(archive_path)'
+        operator_config = {}
+        spec = {
+            "bento_name": bento.name,
+            "bento_version": bento.version,
+            "operator": get_deployment_operator_type(platform),
+            "deployment_operator_config": operator_config,
+        }
+        result = get_yatai_service().ApplyDeployment(
+            request={
+                'deployment': {
+                    "namespace": namespace,
+                    "name": name,
+                    "annotations": parse_key_value_string(annotations),
+                    "labels": parse_key_value_string(labels),
+                    "spec": spec,
+                }
+            }
+        )
         if result.status.status_code != Status.OK:
-            _echo('wrong', CLI_COLOR_ERROR)
+            _echo('Apply deployment {} failed'.format(name), CLI_COLOR_ERROR)
+            display_response_status_error(result.status)
         else:
-            _echo('good')
+            _echo('Successful apply deployment {}'.format(name), CLI_COLOR_SUCCESS)
+            display_deployment_info(result.deployment)
+
 
     @deployment.command()
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
     def delete(name):
-        stub = create_yatai_stub()
-        result = stub.DeleteDeployment(deployment_name=name)
+        result = get_yatai_service().DeleteDeployment(request={'deployment_name': name})
         if result.status.status_code != Status.OK:
-            _echo('wrong', CLI_COLOR_ERROR)
+            _echo('Delete deployment {} failed'.format(name), CLI_COLOR_ERROR)
+            display_response_status_error(result.status)
         else:
-            _echo('good')
+            _echo('Successful delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
     @deployment.command()
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
     def get(name):
-        stub = create_yatai_stub()
-        result = stub.GetDeployment(deployment_name=name)
+        result = get_yatai_service().GetDeployment(request={'deployment_name': name})
         if result.status.status_code != Status.OK:
-            _echo('wrong', CLI_COLOR_ERROR)
+            _echo('Get deployment {} failed'.format(name), CLI_COLOR_ERROR)
+            display_response_status_error(result.status)
         else:
-            _echo('good')
+            display_deployment_info(result.deployment)
 
     @deployment.command()
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
-    @click.option("--namespace", type=click.STRING, help="Deployment's namespace")
     def describe(name):
-        stub = create_yatai_stub()
-        result = stub.DescribeDeployment(deployment_name=name)
+        result = get_yatai_service().DescribeDeployment(
+            request={'deployment_name': name}
+        )
         if result.status.status_code != Status.OK:
-            _echo("wrong", CLI_COLOR_ERROR)
+            _echo('Describe deployment {} failed'.format(name), CLI_COLOR_ERROR)
+            display_response_status_error(result.status)
         else:
-            _echo('something good')
-
+            display_deployment_info(result.deployment)
 
     @deployment.command()
     @click.option("--limit", type=click.INT, help="")
@@ -317,13 +356,19 @@ def add_deployment_sub_commands(cli):
     @click.option("--filter", type=click.STRING, help="")
     @click.option("--labels", type=click.STRING, help="")
     def list(limit=None, offset=None, filter=None, labels=None):
-        stub = create_yatai_stub()
-        result = stub.ListDeployments(limit=limit, offset=offset, filter=filter, labels=labels)
+        result = get_yatai_service().ListDeployments(
+            request={
+                'limit': limit,
+                'offset': offset,
+                'filter': filter,
+                'labels': parse_key_value_string(labels),
+            }
+        )
         if result.status.status_code != Status.OK:
-            _echo('something wrong', CLI_COLOR_ERROR)
+            _echo('List deployments failed', CLI_COLOR_ERROR)
+            display_response_status_error(result.status)
         else:
             for deployment in result.deployments:
-                _echo('deployment name: ' + deployment.name)
+                display_deployment_info(deployment)
 
-    cli.add_command(deployment)
-    return cli
+    return deployment

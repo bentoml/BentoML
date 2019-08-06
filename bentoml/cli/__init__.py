@@ -32,7 +32,7 @@ from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import (
     add_legacy_deployment_commands,
-    add_deployment_sub_commands,
+    get_deployment_sub_command,
 )
 from bentoml.cli.config import get_configuration_sub_command
 from bentoml.utils import Path
@@ -294,9 +294,10 @@ def create_bentoml_cli():
     # are used as part of BentoML cli commands only.
 
     add_legacy_deployment_commands(_cli)
-    add_deployment_sub_commands(_cli)
+    deployment_sub_command = get_deployment_sub_command(_cli)
     config_sub_command = get_configuration_sub_command()
     _cli.add_command(config_sub_command)
+    _cli.add_command(deployment_sub_command)
     return _cli
 
 

@@ -48,6 +48,11 @@ from bentoml import __version__ as BENTOML_VERSION
 logger = logging.getLogger(__name__)
 
 
+
+def get_yatai_service():
+    return YataiService()
+
+
 # pylint: disable=unused-argument
 class YataiService(YataiServicer):
     def __init__(self, db_config=None, bento_repository=None, default_namespace=None):

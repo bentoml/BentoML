@@ -51,15 +51,13 @@ def create_local_config_file_if_not_found():
 
 def add_configuration_sub_commands(cli):
     @click.group(
-        help = "Configure BentoML configurations and settings",
-        short_help = "Config BentoML library",
+        help="Configure BentoML configurations and settings",
+        short_help="Config BentoML library",
     )
     def config():
         create_local_config_file_if_not_found()
 
-    @config.command(
-        help="View BentoML configurations"
-    )
+    @config.command(help="View BentoML configurations")
     def view():
         local_config = ConfigParser()
         with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
@@ -75,7 +73,7 @@ def add_configuration_sub_commands(cli):
 
     @config.command(
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
-        help="Set value to BentoML configuration"
+        help="Set value to BentoML configuration",
     )
     @click.argument("updates", nargs=-1)
     def set(updates):
@@ -104,7 +102,7 @@ def add_configuration_sub_commands(cli):
 
     @config.command(
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
-        help="Unset value from BentoML configuration"
+        help="Unset value from BentoML configuration",
     )
     @click.argument("updates", nargs=-1)
     def unset(updates):
@@ -130,9 +128,7 @@ def add_configuration_sub_commands(cli):
             _echo(EXAMPLE_CONFIG_USAGE)
             return
 
-    @config.command(
-        help="Reset BentoML configuration to default"
-    )
+    @config.command(help="Reset BentoML configuration to default")
     def reset():
         if os.path.isfile(LOCAL_CONFIG_FILE):
             LOG.info("Removing existing BentoML config file: %s", LOCAL_CONFIG_FILE)

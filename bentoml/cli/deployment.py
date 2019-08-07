@@ -19,7 +19,6 @@ from __future__ import print_function
 import click
 import argparse
 
-from bentoml.config import config
 from bentoml.deployment.serverless import ServerlessDeployment
 from bentoml.deployment.sagemaker import SagemakerDeployment
 from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR, CLI_COLOR_SUCCESS
@@ -36,6 +35,7 @@ from bentoml.proto.deployment_pb2 import (
 )
 from bentoml.proto.status_pb2 import Status
 from bentoml.utils.usage_stats import track_cli
+from bentoml.exceptions import BentoMLDeploymentException
 
 SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 
@@ -317,10 +317,10 @@ def parse_bento_tag(tag):
 
 def get_deployment_sub_command(cli):
     @click.group()
-    def deployment():
+    def deploy():
         pass
 
-    @deployment.command(
+    @deploy.command(
         help="Apply deployment configuration to target deployment platform",
         short_help="Apply deployment configuration",
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
@@ -344,6 +344,7 @@ def get_deployment_sub_command(cli):
     @click.option('--stage')
     @click.option('--instance-type')
     @click.option('--instance-count')
+    @click.option('--api-name')
     @click.option('--kube-namespace')
     @click.option('--replicas')
     @click.option('--service-name')
@@ -351,9 +352,7 @@ def get_deployment_sub_command(cli):
     @click.option('--custom-deployment-name')
     @click.option('--custom-deployment-config')
     @click.option('--output')
-    @click.pass_context
     def apply(
-        ctx,
         bento_tag,
         deployment_name,
         platform,
@@ -364,6 +363,7 @@ def get_deployment_sub_command(cli):
         stage=None,
         instance_type=None,
         instance_count=None,
+        api_name=None,
         kube_namespace=None,
         replicas=None,
         service_name=None,
@@ -374,13 +374,38 @@ def get_deployment_sub_command(cli):
     ):
         bento_name, bento_verison = parse_bento_tag(bento_tag)
         print(bento_name, bento_verison)
-        operator_config = get_operator_config(platform, ctx.args)
-        spec = {
-            "bento_name": 'name',
-            "bento_version": 'version',
-            "operator": get_deployment_operator_type(platform),
-            "deployment_operator_config": operator_config,
-        }
+        spec = DeploymentSpec(
+            bento_name=bento_name,
+            bento_verison=bento_verison,
+            operator=get_deployment_operator_type(platform),
+        )
+        if platform == 'aws_sagemaker':
+            spec.sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
+                region=region,
+                instance_count=instance_count,
+                instance_type=instance_type,
+                api_name=api_name,
+            )
+        elif platform == 'aws_lambda':
+            spec.aws_lambda_operator_config = DeploymentSpec.AwsLambdaOperatorConfig(
+                region=region, stage=stage
+            )
+        elif platform == 'gcp_function':
+            spec.gcp_function_operator_config = DeploymentSpec.GcpFunctionOperatorConfig(
+                region=region, stage=stage
+            )
+        elif platform == 'kubernetes':
+            spec.kubernetes_operator_config = DeploymentSpec.KubernetesOperatorConfig(
+                kube_namespace=kube_namespace,
+                replicas=replicas,
+                service_name=service_name,
+                service_type=service_type,
+            )
+        else:
+            raise BentoMLDeploymentException(
+                'Custom deployment configuration is not supported in the current version'
+            )
+
         result = get_yatai_service().ApplyDeployment(
             ApplyDeploymentRequest(
                 deployment=Deployment(
@@ -388,11 +413,7 @@ def get_deployment_sub_command(cli):
                     name=deployment_name,
                     annotations=parse_key_value_string(annotations),
                     labels=parse_key_value_string(labels),
-                    spec=DeploymentSpec(
-                        bento_name=bento_name,
-                        bento_verison=bento_verison,
-                        operator=get_deployment_operator_type(platform),
-                    ),
+                    spec=spec,
                 )
             )
         )
@@ -405,7 +426,7 @@ def get_deployment_sub_command(cli):
             )
             display_deployment_info(result.deployment)
 
-    @deployment.command()
+    @deploy.command()
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
     def delete(name):
         result = get_yatai_service().DeleteDeployment(
@@ -417,7 +438,7 @@ def get_deployment_sub_command(cli):
         else:
             _echo('Successful delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
-    @deployment.command()
+    @deploy.command()
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
     @click.option("--ouput-format", type=click.STRING)
     @click.option("--ouput-path", type=click.STRING)
@@ -429,7 +450,7 @@ def get_deployment_sub_command(cli):
         else:
             display_deployment_info(result.deployment)
 
-    @deployment.command()
+    @deploy.command()
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
     def describe(name):
         result = get_yatai_service().DescribeDeployment(
@@ -441,7 +462,7 @@ def get_deployment_sub_command(cli):
         else:
             display_deployment_info(result.deployment)
 
-    @deployment.command()
+    @deploy.command()
     @click.option("--limit", type=click.INT, help="")
     @click.option("--offset", type=click.INT, help="")
     @click.option("--filter", type=click.STRING, help="")
@@ -462,4 +483,4 @@ def get_deployment_sub_command(cli):
             for deployment_pb in result.deployments:
                 display_deployment_info(deployment_pb)
 
-    return deployment
+    return deploy

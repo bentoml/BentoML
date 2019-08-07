@@ -5,7 +5,7 @@ if [ "$#" -eq 1 ]; then
   VERSION_STR=$1
 else
   echo "Must provide release version string, e.g. ./script/release.sh 1.0.5"
-  exit 0
+  exit 1
 fi
 
 SEMVER_REGEX="^[vV]?(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(\\-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
@@ -14,7 +14,7 @@ if [[ "$VERSION_STR" =~ $SEMVER_REGEX ]]; then
   echo "Releasing bentoml version v$VERSION_STR:"
 else
   echo "Version $VERSION_STR must follow semantic versioning schema"
-  exit 0
+  exit 1
 fi
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
@@ -26,7 +26,7 @@ if [ ! -f $HOME/.pypirc ]; then
   # about .pypirc file:
   # https://docs.python.org/3/distutils/packageindex.html#the-pypirc-file
   echo "Error: File \$HOME/.pypirc not found."
-  exit
+  exit 1
 fi
 
 

@@ -134,7 +134,7 @@ setuptools.setup(
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",
         "Source Code": "https://github.com/bentoml/BentoML",
-        "Gitter Chat Room": "https://gitter.im/bentoml/BentoML",
+        "Slack User Group": "https://bit.ly/2N5IpbB",
     },
     include_package_data=True,  # Required for '.cfg' files under bentoml/config
 )

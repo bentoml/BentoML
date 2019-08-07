@@ -17,7 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import click
-import grpc
+import argparse
 
 from bentoml.config import config
 from bentoml.deployment.serverless import ServerlessDeployment
@@ -251,7 +251,67 @@ def display_response_status_error(status):
 
 
 def display_deployment_info(deployment):
-    _echo('deployment info')
+    _echo('Deployment {} info\n\n'.format(deployment.name))
+    if deployment.namespace:
+        _echo('  namespace: {}'.format(deployment.namespace))
+    if deployment.labels:
+        _echo('  labels:')
+        for key, value in deployment.labels:
+            _echo('    - {key}: {value}'.format(key=key, value=value))
+    if deployment.annotations:
+        _echo('  annotations:')
+        for key, value in deployment.annotations:
+            _echo('    - {key}: {value}'.format(key=key, value=value))
+    if deployment.spec:
+        _echo('  Spec:')
+        _echo(
+            '    Bento: {name}:{version}'.format(
+                name=deployment.spec.bento_name, version=deployment.spec.bento_version
+            )
+        )
+    if deployment.state:
+        _echo('  State:')
+        _echo('    Current State: {}'.format(deployment.state.state))
+        if deployment.state.error_message:
+            _echo(
+                '    Error: {}'.format(deployment.state.error_message), CLI_COLOR_ERROR
+            )
+        _echo('    Info: {}'.format(deployment.state.info_json))
+
+
+def get_operator_config(platform, args):
+    parser = argparse.ArgumentParser()
+
+    if platform == 'aws-sagemaker':
+        parser.add_argument('--region')
+        parser.add_argument('--instance-count', type=int)
+        parser.add_argument('--instance-type')
+    elif platform is in ['aws-lambda', 'gcp']:
+        parser.add_argument('--region')
+        parser.add_argument('--stage')
+    elif platform == 'kubernetes':
+        parser.add_argument('--kube-namespace')
+        parser.add_argument('--replicas', type=int)
+        parser.add_argument('--service-name')
+        parser.add_argument('--service-type')
+    else:
+        parser.add_argument('--name')
+        parser.add_argument('--config')
+
+    parser.add_argument("--input")
+    parser.add_argument(
+        "-o", "--output", default="str", choices=["str", "json", "yaml"]
+    )
+
+    parsed_args, unknown_args = parser.parse_known_args(args)
+    return vars(parsed_args)
+
+def parse_bento_tag(tag):
+    if ':' in tag:
+        items = tag.split(':')
+        return items[0], items[1]
+    else:
+        return tag, 'latest'
 
 def get_deployment_sub_command(cli):
     @click.group()
@@ -261,10 +321,11 @@ def get_deployment_sub_command(cli):
     @deployment.command(
         help="Apply deployment configuration to target deployment platform",
         short_help="Apply deployment configuration",
+        context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
-    @click.argument("archive-path", type=click.STRING)
+    @click.argument('bento-tag', type=click.STRING, required=True)
     @click.option("--namespace", type=click.STRING, help="Deployment's namespace")
-    @click.option("--name", type=click.STRING, help="Deployment's name")
+    @click.option("--deployment-name", type=click.STRING, help="Deployment's name")
     @click.option("--labels", type=click.STRING)
     @click.option("--annotations", type=click.STRING)
     @click.option(
@@ -275,27 +336,24 @@ def get_deployment_sub_command(cli):
         required=True,
         help="Target platform that Bento archive is going to deployed to",
     )
-    @click.option(
-        "--region",
-        type=click.STRING,
-        help="Target region inside the cloud provider that will be deployed to",
-    )
+    @click.option('--file', type=click.STRING)
     @click.pass_context
     def apply(
         ctx,
-        archive_path,
+        bento_tag,
         platform,
-        region=None,
-        name=None,
+        deployment_name=None,
         namespace=None,
         labels=None,
         annotations=None,
+        file=None,
     ):
-        bento = 'store.get(archive_path)'
-        operator_config = {}
+        bento_name, bento_verison = parse_bento_tag(bento_tag)
+        print(bento_name, bento_verison)
+        operator_config = get_operator_config(ctx.args)
         spec = {
-            "bento_name": bento.name,
-            "bento_version": bento.version,
+            "bento_name": 'name',
+            "bento_version": 'version',
             "operator": get_deployment_operator_type(platform),
             "deployment_operator_config": operator_config,
         }
@@ -303,7 +361,7 @@ def get_deployment_sub_command(cli):
             request={
                 'deployment': {
                     "namespace": namespace,
-                    "name": name,
+                    "name": deployment_name,
                     "annotations": parse_key_value_string(annotations),
                     "labels": parse_key_value_string(labels),
                     "spec": spec,
@@ -311,12 +369,11 @@ def get_deployment_sub_command(cli):
             }
         )
         if result.status.status_code != Status.OK:
-            _echo('Apply deployment {} failed'.format(name), CLI_COLOR_ERROR)
+            _echo('Apply deployment {} failed'.format(bento_name), CLI_COLOR_ERROR)
             display_response_status_error(result.status)
         else:
-            _echo('Successful apply deployment {}'.format(name), CLI_COLOR_SUCCESS)
+            _echo('Successful apply deployment {}'.format(bento_name), CLI_COLOR_SUCCESS)
             display_deployment_info(result.deployment)
-
 
     @deployment.command()
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
@@ -330,6 +387,8 @@ def get_deployment_sub_command(cli):
 
     @deployment.command()
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
+    @click.option("--ouput-format", type=click.STRING)
+    @click.option("--ouput-path", type=click.STRING)
     def get(name):
         result = get_yatai_service().GetDeployment(request={'deployment_name': name})
         if result.status.status_code != Status.OK:
@@ -368,7 +427,7 @@ def get_deployment_sub_command(cli):
             _echo('List deployments failed', CLI_COLOR_ERROR)
             display_response_status_error(result.status)
         else:
-            for deployment in result.deployments:
-                display_deployment_info(deployment)
+            for deployment_pb in result.deployments:
+                display_deployment_info(deployment_pb)
 
     return deployment

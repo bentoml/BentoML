@@ -37,7 +37,7 @@ PY_VERSION = "{major}.{minor}.{micro}".format(
     minor=sys.version_info.minor,
     micro=sys.version_info.micro,
 )
-SESSION_ID = str(uuid.uuid4()) # uuid that marks current python session
+SESSION_ID = str(uuid.uuid4())  # uuid that marks current python session
 
 
 def is_pypi_release():

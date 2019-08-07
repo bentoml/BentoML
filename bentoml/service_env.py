@@ -21,7 +21,7 @@ from sys import version_info
 from ruamel.yaml import YAML
 
 from bentoml.utils import Path
-from bentoml.version import __version__ as LOCAL_BENTOML_VERSION
+from bentoml import __version__ as LOCAL_BENTOML_VERSION
 
 PYTHON_VERSION = "{major}.{minor}.{micro}".format(
     major=version_info.major, minor=version_info.minor, micro=version_info.micro

@@ -325,11 +325,10 @@ def get_deployment_sub_command(cli):
         short_help="Apply deployment configuration",
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
-    @click.argument('bento-tag', type=click.STRING, required=True)
-    @click.option("--namespace", type=click.STRING, help="Deployment's namespace")
-    @click.option("--deployment-name", type=click.STRING, help="Deployment's name")
-    @click.option("--labels", type=click.STRING)
-    @click.option("--annotations", type=click.STRING)
+    @click.argument('--bento-tag', type=click.STRING, required=True)
+    @click.argument(
+        "--deployment-name", type=click.STRING, required=True, help="Deployment's name"
+    )
     @click.option(
         "--platform",
         type=click.Choice(
@@ -338,17 +337,40 @@ def get_deployment_sub_command(cli):
         required=True,
         help="Target platform that Bento archive is going to deployed to",
     )
-    @click.option('--file', type=click.STRING)
+    @click.option("--namespace", type=click.STRING, help="Deployment's namespace")
+    @click.option("--labels", type=click.STRING)
+    @click.option("--annotations", type=click.STRING)
+    @click.option('--region')
+    @click.option('--stage')
+    @click.option('--instance-type')
+    @click.option('--instance-count')
+    @click.option('--kube-namespace')
+    @click.option('--replicas')
+    @click.option('--service-name')
+    @click.option('--service-type')
+    @click.option('--custom-deployment-name')
+    @click.option('--custom-deployment-config')
+    @click.option('--output')
     @click.pass_context
     def apply(
         ctx,
         bento_tag,
+        deployment_name,
         platform,
-        deployment_name=None,
         namespace=None,
         labels=None,
         annotations=None,
-        file=None,
+        region=None,
+        stage=None,
+        instance_type=None,
+        instance_count=None,
+        kube_namespace=None,
+        replicas=None,
+        service_name=None,
+        service_type=None,
+        custom_deployment_name=None,
+        custom_deployment_config=None,
+        output=None,
     ):
         bento_name, bento_verison = parse_bento_tag(bento_tag)
         print(bento_name, bento_verison)
@@ -360,15 +382,19 @@ def get_deployment_sub_command(cli):
             "deployment_operator_config": operator_config,
         }
         result = get_yatai_service().ApplyDeployment(
-            request={
-                'deployment': {
-                    "namespace": namespace,
-                    "name": deployment_name,
-                    "annotations": parse_key_value_string(annotations),
-                    "labels": parse_key_value_string(labels),
-                    "spec": spec,
-                }
-            }
+            ApplyDeploymentRequest(
+                deployment=Deployment(
+                    namespace=namespace,
+                    name=deployment_name,
+                    annotations=parse_key_value_string(annotations),
+                    labels=parse_key_value_string(labels),
+                    spec=DeploymentSpec(
+                        bento_name=bento_name,
+                        bento_verison=bento_verison,
+                        operator=get_deployment_operator_type(platform),
+                    ),
+                )
+            )
         )
         if result.status.status_code != Status.OK:
             _echo('Apply deployment {} failed'.format(bento_name), CLI_COLOR_ERROR)
@@ -382,7 +408,9 @@ def get_deployment_sub_command(cli):
     @deployment.command()
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
     def delete(name):
-        result = get_yatai_service().DeleteDeployment(request={'deployment_name': name})
+        result = get_yatai_service().DeleteDeployment(
+            DeleteDeploymentRequest(deployment_name=name)
+        )
         if result.status.status_code != Status.OK:
             _echo('Delete deployment {} failed'.format(name), CLI_COLOR_ERROR)
             display_response_status_error(result.status)
@@ -405,7 +433,7 @@ def get_deployment_sub_command(cli):
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
     def describe(name):
         result = get_yatai_service().DescribeDeployment(
-            request={'deployment_name': name}
+            DescribeDeploymentRequest(deployment_name=name)
         )
         if result.status.status_code != Status.OK:
             _echo('Describe deployment {} failed'.format(name), CLI_COLOR_ERROR)
@@ -420,12 +448,12 @@ def get_deployment_sub_command(cli):
     @click.option("--labels", type=click.STRING, help="")
     def list(limit=None, offset=None, filter=None, labels=None):
         result = get_yatai_service().ListDeployments(
-            request={
-                'limit': limit,
-                'offset': offset,
-                'filter': filter,
-                'labels': parse_key_value_string(labels),
-            }
+            ListDeploymentsRequest(
+                limit=limit,
+                offset=offset,
+                filter=filter,
+                labels=parse_key_value_string(labels),
+            )
         )
         if result.status.status_code != Status.OK:
             _echo('List deployments failed', CLI_COLOR_ERROR)

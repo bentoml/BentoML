@@ -37,6 +37,7 @@ PY_VERSION = "{major}.{minor}.{micro}".format(
     minor=sys.version_info.minor,
     micro=sys.version_info.micro,
 )
+SESSION_ID = str(uuid.uuid4()) # uuid that marks current python session
 
 
 def is_pypi_release():
@@ -104,7 +105,11 @@ def send_amplitude_event(event, event_properties):
     https://developers.amplitude.com/?java#keys-for-the-event-argument
     """
     event_info = [
-        {"event_type": event, "user_id": str(uuid.uuid4()), "event_properties": info}
+        {
+            "event_type": event,
+            "user_id": SESSION_ID,
+            "event_properties": event_properties,
+        }
     ]
     event_data = {"api_key": API_KEY, "event": json.dumps(event_info)}
 

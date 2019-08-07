@@ -25,27 +25,35 @@ import logging
 import uuid
 import requests
 
-import bentoml
+from bentoml import config, __version__ as BENTOML_VERSION, _version as version_mod
 
 
 logger = logging.getLogger(__name__)
 
 AMPLITUDE_URL = "https://api.amplitude.com/httpapi"
-API_KEY = '7f65f2446427226eb86f6adfacbbf47a'
-
-bentoml_version = bentoml.__version__
-platform_info = platform.platform()
-py_version = "{major}.{minor}.{micro}".format(
+PLATFORM = platform.platform()
+PY_VERSION = "{major}.{minor}.{micro}".format(
     major=sys.version_info.major,
     minor=sys.version_info.minor,
     micro=sys.version_info.micro,
 )
 
 
-def get_bento_service_info(bento_service):
-    if not isinstance(bento_service, bentoml.BentoService):
-        return {}
+def is_pypi_release():
+    is_installed_package = hasattr(version_mod, 'version_json')
+    is_tagged = BENTOML_VERSION.startswith('0+untagged')
+    is_clean = not version_mod.get_versions()['dirty']
+    return is_installed_package and is_tagged and is_clean
 
+
+# Use dev amplitude key
+API_KEY = '7f65f2446427226eb86f6adfacbbf47a'
+if is_pypi_release():
+    # Use prod amplitude key
+    API_KEY = '1ad6ee0e81b9666761aebd55955bbd3a'
+
+
+def get_bento_service_info(bento_service):
     artifact_types = []
     handler_types = []
 
@@ -64,47 +72,44 @@ def get_bento_service_info(bento_service):
 
 
 def track(event_type, info):
-    info['py_version'] = py_version
-    info["bento_version"] = bentoml_version
-    info["platform_info"] = platform_info
+    info['py_version'] = PY_VERSION
+    info["bento_version"] = BENTOML_VERSION
+    info["platform_info"] = PLATFORM
 
     return send_amplitude_event(event_type, info)
 
 
 def track_save(bento_service):
-    if bentoml.config['core'].getboolean("usage_tracking"):
+    if config['core'].getboolean("usage_tracking"):
         info = get_bento_service_info(bento_service)
         return track("save", info)
 
 
 def track_loading(bento_service):
-    if bentoml.config['core'].getboolean("usage_tracking"):
+    if config['core'].getboolean("usage_tracking"):
         info = get_bento_service_info(bento_service)
         return track("load", info)
 
 
 def track_cli(command, deploy_platform=None):
-    if bentoml.config['core'].getboolean("usage_tracking"):
+    if config['core'].getboolean("usage_tracking"):
         info = {}
         if deploy_platform is not None:
             info['platform'] = deploy_platform
         return track('cli-' + command, info)
 
 
-def send_amplitude_event(event, info):
+def send_amplitude_event(event, event_properties):
     """Send event to amplitude
     https://developers.amplitude.com/?java#keys-for-the-event-argument
     """
-
     event_info = [
         {"event_type": event, "user_id": str(uuid.uuid4()), "event_properties": info}
     ]
     event_data = {"api_key": API_KEY, "event": json.dumps(event_info)}
 
     try:
-        requests.post(AMPLITUDE_URL, data=event_data, timeout=1)
-        return
-    except Exception as error:  # pylint:disable=broad-except
-        # silently fail
-        logger.info(str(error))
-        return
+        return requests.post(AMPLITUDE_URL, data=event_data, timeout=1)
+    except Exception as err:  # pylint:disable=broad-except
+        # silently fail since this error is not important for BentoML user
+        logger.info(str(err))

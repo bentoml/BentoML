@@ -1,9 +1,15 @@
 #!/bin/bash
 set -e
 
+if [ "$#" -eq 1 ]; then
+  VERSION_STR=$1
+else
+  echo "Must provide release version string, e.g. ./script/release.sh 1.0.5"
+  exit 0
+fi
+
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd $GIT_ROOT
-
 
 # Currently only BentoML maintainer has permission to create new pypi
 # releases
@@ -20,6 +26,9 @@ if [ -d $GIT_ROOT/dist ]; then
   rm -rf $GIT_ROOT/dist
 fi
 
+tag_name="bentoml-release-v$VERSION_STR"
+git tag -a $tag_name -m "Tag generated with BentoML/script/release.sh, version: $VERSION_STR"
+
 echo "Installing dev dependencies..."
 pip install .[dev]
 
@@ -32,3 +41,5 @@ REPO=${REPO:=testpypi}
 
 echo "Uploading package to $REPO..."
 twine upload --repository $REPO dist/* --verbose
+
+git push origin $tag_name

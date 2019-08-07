@@ -30,6 +30,7 @@ from bentoml.config import (
     DEFAULT_CONFIG_FILE,
 )
 from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR
+from bentoml.utils.usage_stats import track_cli
 
 # pylint: disable=unused-variable
 
@@ -59,6 +60,7 @@ def get_configuration_sub_command():
 
     @config.command(help="View BentoML configurations")
     def view():
+        track_cli('config-view')
         local_config = ConfigParser()
         with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
             local_config.read_string(config_file.read().decode('utf-8'))
@@ -68,6 +70,7 @@ def get_configuration_sub_command():
 
     @config.command()
     def view_effective():
+        track_cli('config-view-effective')
         bentoml_config.write(sys.stdout)
         return
 
@@ -77,6 +80,7 @@ def get_configuration_sub_command():
     )
     @click.argument("updates", nargs=-1)
     def set(updates):
+        track_cli('config-set')
         local_config = ConfigParser()
         with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
             local_config.read_string(config_file.read().decode('utf-8'))
@@ -106,6 +110,7 @@ def get_configuration_sub_command():
     )
     @click.argument("updates", nargs=-1)
     def unset(updates):
+        track_cli('config-unset')
         local_config = ConfigParser()
         with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
             local_config.read_string(config_file.read().decode('utf-8'))
@@ -130,6 +135,7 @@ def get_configuration_sub_command():
 
     @config.command(help="Reset BentoML configuration to default")
     def reset():
+        track_cli('config-reset')
         if os.path.isfile(LOCAL_CONFIG_FILE):
             LOG.info("Removing existing BentoML config file: %s", LOCAL_CONFIG_FILE)
             os.remove(LOCAL_CONFIG_FILE)

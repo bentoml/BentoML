@@ -279,17 +279,17 @@ def display_deployment_info(deployment):
         _echo('    Info: {}'.format(deployment.state.info_json))
 
 
-def get_operator_config(platform, args):
+def get_operator_config(operator, args):
     parser = argparse.ArgumentParser()
 
-    if platform == 'aws-sagemaker':
+    if operator == 'aws_sagemaker':
         parser.add_argument('--region')
         parser.add_argument('--instance-count', type=int)
         parser.add_argument('--instance-type')
-    elif platform is in ['aws-lambda', 'gcp']:
+    elif operator in ['aws_lambda', 'gcp_function']:
         parser.add_argument('--region')
         parser.add_argument('--stage')
-    elif platform == 'kubernetes':
+    elif operator == 'kubernetes':
         parser.add_argument('--kube-namespace')
         parser.add_argument('--replicas', type=int)
         parser.add_argument('--service-name')
@@ -306,12 +306,14 @@ def get_operator_config(platform, args):
     parsed_args, unknown_args = parser.parse_known_args(args)
     return vars(parsed_args)
 
+
 def parse_bento_tag(tag):
     if ':' in tag:
         items = tag.split(':')
         return items[0], items[1]
     else:
         return tag, 'latest'
+
 
 def get_deployment_sub_command(cli):
     @click.group()
@@ -350,7 +352,7 @@ def get_deployment_sub_command(cli):
     ):
         bento_name, bento_verison = parse_bento_tag(bento_tag)
         print(bento_name, bento_verison)
-        operator_config = get_operator_config(ctx.args)
+        operator_config = get_operator_config(platform, ctx.args)
         spec = {
             "bento_name": 'name',
             "bento_version": 'version',
@@ -372,7 +374,9 @@ def get_deployment_sub_command(cli):
             _echo('Apply deployment {} failed'.format(bento_name), CLI_COLOR_ERROR)
             display_response_status_error(result.status)
         else:
-            _echo('Successful apply deployment {}'.format(bento_name), CLI_COLOR_SUCCESS)
+            _echo(
+                'Successful apply deployment {}'.format(bento_name), CLI_COLOR_SUCCESS
+            )
             display_deployment_info(result.deployment)
 
     @deployment.command()

@@ -42,7 +42,7 @@ SESSION_ID = str(uuid.uuid4())  # uuid that marks current python session
 
 def is_pypi_release():
     is_installed_package = hasattr(version_mod, 'version_json')
-    is_tagged = BENTOML_VERSION.startswith('0+untagged')
+    is_tagged = not BENTOML_VERSION.startswith('0+untagged')
     is_clean = not version_mod.get_versions()['dirty']
     return is_installed_package and is_tagged and is_clean
 

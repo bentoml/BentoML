@@ -321,13 +321,12 @@ def get_deployment_sub_command(cli):
         pass
 
     @deploy.command(
-        help="Apply deployment configuration to target deployment platform",
         short_help="Apply deployment configuration",
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
     @click.argument('--bento-tag', type=click.STRING, required=True)
     @click.argument(
-        "--deployment-name", type=click.STRING, required=True, help="Deployment's name"
+        "--deployment-name", type=click.STRING, required=True
     )
     @click.option(
         "--platform",
@@ -349,9 +348,6 @@ def get_deployment_sub_command(cli):
     @click.option('--replicas')
     @click.option('--service-name')
     @click.option('--service-type')
-    @click.option('--custom-deployment-name')
-    @click.option('--custom-deployment-config')
-    @click.option('--output')
     def apply(
         bento_tag,
         deployment_name,
@@ -368,9 +364,6 @@ def get_deployment_sub_command(cli):
         replicas=None,
         service_name=None,
         service_type=None,
-        custom_deployment_name=None,
-        custom_deployment_config=None,
-        output=None,
     ):
         bento_name, bento_verison = parse_bento_tag(bento_tag)
         print(bento_name, bento_verison)

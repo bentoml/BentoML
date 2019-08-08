@@ -161,6 +161,7 @@ def create_bento_service_cli(archive_path=None):
             return
 
         track_cli('serve')
+
         bento_service = load(archive_path)
         server = BentoAPIServer(bento_service, port=port)
         server.start()
@@ -181,7 +182,40 @@ def create_bento_service_cli(archive_path=None):
         help="Number of workers will start for the gunicorn server",
     )
     @click.option("--timeout", type=click.INT, default=None)
-    def serve_gunicorn(port, workers, timeout, archive_path=archive_path):
+    @click.option(
+        '--with-conda',
+        is_flag=True,
+        default=False,
+        help="Run API server on a Conda environment.",
+    )
+    def serve_gunicorn(
+        port, workers, timeout, archive_path=archive_path, with_conda=False
+    ):
+        if with_conda:
+            config = load_bentoml_config(archive_path)
+            metadata = config['metadata']
+            env_name = metadata['service_name'] + '_' + metadata['service_version']
+            subprocess.call(
+                'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
+                'parameter requires conda but it\'s not installed."; exit 1; }} && '
+                'conda env update -n {env_name} -f {env_file} && '
+                'conda init bash && '
+                'eval "$(conda shell.bash hook)" && '
+                'conda activate {env_name} && '
+                'pip install -r {archive_path}/requirements.txt &&'
+                'bentoml serve_gunicorn {archive_path} -p {port} -w {workers} '
+                '--timeout {timeout}'.format(
+                    env_name=env_name,
+                    env_file=os.path.join(archive_path, 'environment.yml'),
+                    archive_path=archive_path,
+                    port=port,
+                    workers=workers,
+                    timeout=timeout,
+                ),
+                shell=True,
+            )
+            return
+
         track_cli('serve_gunicorn')
 
         gunicorn_app = GunicornBentoServer(archive_path, port, workers, timeout)

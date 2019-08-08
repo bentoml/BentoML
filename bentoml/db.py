@@ -27,7 +27,9 @@ from bentoml.exceptions import BentoMLException
 
 # sql alchemy config
 engine = create_engine(
-    config.get('db', 'engine'), echo=False, connect_args={'check_same_thread': False}
+    config.get('db', 'engine').strip("\'"),
+    echo=False,
+    connect_args={'check_same_thread': False},
 )
 Base = declarative_base()
 Session = sessionmaker(bind=engine)

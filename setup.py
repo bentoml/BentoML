@@ -66,19 +66,16 @@ tests_require = (
     + fastai
 )
 
-dev_requires = (
-    [
-        "pylint==2.3.1",
-        "flake8",
-        "tox-conda==0.2.0",
-        "twine",
-        "black",
-        "setuptools",
-        "gitpython>=2.0.2",
-        "grpcio-tools"
-    ]
-    + tests_require
-)
+dev_requires = [
+    "pylint==2.3.1",
+    "flake8",
+    "tox-conda==0.2.0",
+    "twine",
+    "black",
+    "setuptools",
+    "gitpython>=2.0.2",
+    "grpcio-tools",
+] + tests_require
 
 sphinx_requires = [
     "sphinx",
@@ -89,9 +86,7 @@ sphinx_requires = [
 
 doc_builder_requires = sphinx_requires + install_requires
 
-dev_all = (
-    install_requires + dev_requires + optional_requires + sphinx_requires
-)
+dev_all = install_requires + dev_requires + optional_requires + sphinx_requires
 
 extras_require = {
     "all": dev_all,

@@ -325,9 +325,7 @@ def get_deployment_sub_command(cli):
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
     @click.argument('--bento-tag', type=click.STRING, required=True)
-    @click.argument(
-        "--deployment-name", type=click.STRING, required=True
-    )
+    @click.argument("--deployment-name", type=click.STRING, required=True)
     @click.option(
         "--platform",
         type=click.Choice(
@@ -396,7 +394,7 @@ def get_deployment_sub_command(cli):
             )
         else:
             raise BentoMLDeploymentException(
-                'Custom deployment configuration is not supported in the current version'
+                "Custom deployment configuration isn't supported in the current version"
             )
 
         result = get_yatai_service().ApplyDeployment(
@@ -436,7 +434,9 @@ def get_deployment_sub_command(cli):
     @click.option("--ouput-format", type=click.STRING)
     @click.option("--ouput-path", type=click.STRING)
     def get(name):
-        result = get_yatai_service().GetDeployment(request={'deployment_name': name})
+        result = get_yatai_service().GetDeployment(
+            GetDeploymentRequest(deployment_name=name)
+        )
         if result.status.status_code != Status.OK:
             _echo('Get deployment {} failed'.format(name), CLI_COLOR_ERROR)
             display_response_status_error(result.status)

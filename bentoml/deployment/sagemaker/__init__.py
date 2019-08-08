@@ -32,8 +32,8 @@ from bentoml.deployment.legacy_deployment import LegacyDeployment
 from bentoml.deployment.utils import (
     generate_bentoml_deployment_snapshot_path,
     process_docker_api_line,
-    Status,
 )
+from bentoml.yatai.status import Status
 from bentoml.utils.whichcraft import which
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
@@ -47,8 +47,6 @@ from bentoml.proto.deployment_pb2 import (
     Deployment,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
-    GetDeploymentResponse,
-    DescribeDeploymentResponse,
     DeploymentState,
 )
 
@@ -457,7 +455,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         res_deployment_pb.state = self.describe(res_deployment_pb)
         
         return ApplyDeploymentResponse(
-            status=create_status_message(Status.OK),
+            status=Status.OK(),
             deployment=res_deployment_pb
         )
 

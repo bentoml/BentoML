@@ -143,6 +143,8 @@ def create_bento_service_cli(archive_path=None):
         if with_conda:
             env_name = bento_service.name + '_' + bento_service.version
             subprocess.call(
+                'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
+                'parameter requires conda but it\'s not installed."; exit 1; }} && '
                 'conda env update -n {env_name} -f {env_file} && '
                 'conda init bash && '
                 'eval "$(conda shell.bash hook)" && '

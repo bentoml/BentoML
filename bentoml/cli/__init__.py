@@ -147,13 +147,15 @@ def create_bento_service_cli(archive_path=None):
                 'conda init bash && '
                 'eval "$(conda shell.bash hook)" && '
                 'conda activate {env_name} && '
+                'pip install -r {archive_path}/requirements.txt &&'
                 'bentoml serve {archive_path} --port {port}'.format(
                     env_name=env_name,
                     env_file=os.path.join(archive_path, 'environment.yml'),
                     archive_path=archive_path,
                     port=port,
                 ),
-                shell=True)
+                shell=True,
+            )
             return
 
         track_cli('serve')

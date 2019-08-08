@@ -22,7 +22,7 @@ import click
 import logging
 import subprocess
 
-from bentoml.archive import load, load_service_api
+from bentoml.archive import load, load_service_api, load_bentoml_config
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
@@ -138,10 +138,10 @@ def create_bento_service_cli(archive_path=None):
         help="Run API server on a Conda environment.",
     )
     def serve(port, archive_path=archive_path, with_conda=False):
-        bento_service = load(archive_path)
-
         if with_conda:
-            env_name = bento_service.name + '_' + bento_service.version
+            config = load_bentoml_config(archive_path)
+            metadata = config['metadata']
+            env_name = metadata['service_name'] + '_' + metadata['service_version']
             subprocess.call(
                 'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
                 'parameter requires conda but it\'s not installed."; exit 1; }} && '
@@ -161,6 +161,7 @@ def create_bento_service_cli(archive_path=None):
             return
 
         track_cli('serve')
+        bento_service = load(archive_path)
         server = BentoAPIServer(bento_service, port=port)
         server.start()
 

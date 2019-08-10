@@ -23,10 +23,14 @@ from bentoml.yatai.status import Status
 from bentoml.repository import get_local
 from bentoml.exceptions import BentoMLDeploymentException
 from bentoml.proto.deployment_pb2 import (
+    DeploymentSpec,
     ApplyDeploymentResponse,
     GetDeploymentResponse,
     DeleteDeploymentResponse,
+    DeploymentState,
+    Deployment,
 )
+from bentoml.proto.status_pb2 import Status as StatusProto
 from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
     generate_bundle,
@@ -118,6 +122,19 @@ def update_additional_lambda_config(dir_path, bento_archive, region, stage):
     return
 
 
+def create_temp_serverless_config_for_aws_lambda(bento_archive, region, stage):
+    functions = {}
+    for api in bento_archive.apis:
+        functions[api.name] = {
+            "handler": "handler." + api.name,
+            "events": [{"http": {"path": "/" + api.name, "method": "post"}}],
+        }
+
+    return create_temporary_yaml_config(
+        'aws', region, stage, bento_archive.name, functions
+    )
+
+
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb):
         deployment_spec = deployment_pb.spec
@@ -142,16 +159,25 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             logger.info("BentoML: %s", "\n".join(service_info))
             print("\n".join(service_info))
 
-        call_serverless_command(
+        response = call_serverless_command(
             ["serverless", "deploy"], output_path, display_deployed_info
         )
 
         deployment = self.get(deployment_pb).deployment
-        return ApplyDeploymentResponse(status=Status.OK, deployment=deployment)
+        return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment)
 
     def get(self, deployment_pb):
+        deployment_spec = deployment_pb.spec
 
-        tempdir = create_temporary_yaml_config()
+        repository = get_local()
+        bento_archive = repository.get(
+            deployment_spec.bento_name, deployment_spec.bento_version
+        )
+        tempdir = create_temp_serverless_config_for_aws_lambda(
+            bento_archive,
+            deployment_spec.aws_lambda_operator_config.region,
+            deployment_spec.aws_lambda_operator_config.stage,
+        )
 
         def parse_status_response(response):
             error = [s for s in response if "Serverless Error" in s]
@@ -162,34 +188,37 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 print("\n".join(response))
                 return True, "\n".join(response)
 
-        return call_serverless_command(
-            ["serverless", "info"], tempdir, parse_status_response
+        response = call_serverless_command(["serverless", "info"], tempdir)
+        deployment_pb.state = DeploymentState(
+            state=DeploymentState.RUNNING, info_json="response", error_message=""
         )
 
-        return GetDeploymentResponse()
+        return GetDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
     def delete(self, deployment_pb):
-        # deployment = self.get(deployment_pb).deployment
-
-        is_active, _ = self.check_status()
-        if not is_active:
+        deployment = self.get(deployment_pb).deployment
+        if deployment.state.state != DeploymentState.RUNNING:
             raise BentoMLDeploymentException(
                 "No active deployment for service %s" % self.bento_service.name
             )
-        tempdir = self._create_temporary_yaml_config()
 
-        def parse_deletion_response(response):
-            if self.platform == "google-python":
-                # TODO: Add check for Google's response
-                return True
-            elif self.platform == "aws-lambda" or self.platform == "aws-lambda-py2":
-                if "Serverless: Stack removal finished..." in response:
-                    return True
-                else:
-                    return False
+        deployment_spec = deployment_pb.spec
 
-        call_serverless_command(
-            ['serverless', 'remove'], tempdir, parse_deletion_response
+        repository = get_local()
+        bento_archive = repository.get(
+            deployment_spec.bento_name, deployment_spec.bento_version
+        )
+        tempdir = create_temp_serverless_config_for_aws_lambda(
+            bento_archive,
+            deployment_spec.aws_lambda_operator_config.region,
+            deployment_spec.aws_lambda_operator_config.stage,
         )
 
-        return DeleteDeploymentResponse()
+        response = call_serverless_command(['serverless', 'remove'], tempdir)
+
+        if "Serverless: Stack removal finished..." in response:
+            status = Status.OK()
+        else:
+            status = Status.ABORTED()
+
+        return DeleteDeploymentResponse(status=status)

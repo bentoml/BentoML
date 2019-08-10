@@ -61,12 +61,11 @@ def install_serverless_plugin(plugin_name, install_dir_path):
     call_serverless_command(command, install_dir_path)
 
 
-def call_serverless_command(command, cwd_path, cb=None):
+def call_serverless_command(command, cwd_path):
     with subprocess.Popen(command, cwd=cwd_path, stdout=PIPE, stderr=PIPE) as proc:
         response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
         logger.debug("Serverless response: %s", "\n".join(response))
-        if cb:
-            return cb(response)
+    return response
 
 
 def parse_serverless_response(serverless_response):
@@ -116,33 +115,20 @@ def generate_bundle(archive_path, template_type, bento_name):
     return os.path.realpath(tempdir)
 
 
-def create_temporary_yaml_config(self):
-    apis = self.bento_service.get_service_apis()
+def create_temporary_yaml_config(provider_name, region, stage, bento_name, functions):
     serverless_config = {
-        "service": self.bento_service.name,
-        "provider": {"region": self.region, "stage": self.stage},
-        "functions": {},
+        "service": bento_name,
+        "provider": {"region": region, "stage": stage, "name": provider_name},
+        "functions": functions,
     }
 
-    if self.platform == "google-python":
-        serverless_config["provider"]["name"] = "google"
-        for api in apis:
-            serverless_config["functions"][api.name] = {
-                "handler": api.name,
-                "events": [{"http": "path"}],
-            }
-    elif self.platform == "aws-lambda" or self.platform == "aws-lambda-py2":
-        serverless_config["provider"]["name"] = "aws"
-        for api in apis:
-            serverless_config["functions"][api.name] = {
-                "handler": "handler." + api.name,
-                "events": [{"http": {"path": "/" + api.name, "method": "post"}}],
-            }
-    else:
-        raise BentoMLException(
-            "check serverless does not support platform %s at the moment"
-            % self.platform
-        )
+    # if self.platform == "google-python":
+    #     serverless_config["provider"]["name"] = "google"
+    #     for api in apis:
+    #         serverless_config["functions"][api.name] = {
+    #             "handler": api.name,
+    #             "events": [{"http": "path"}],
+    #         }
 
     yaml = YAML()
     with TempDirectory() as tempdir:

@@ -1,0 +1,84 @@
+syntax = "proto3";
+package bentoml;
+
+import "status.proto";
+
+
+message BentoUri {
+  enum StorageType {
+    UNSET = 0;
+    LOCAL = 1;
+    S3 = 2;
+    GCS = 3;
+    AZURE_BLOB_STORAGE = 4;
+    HDFS = 5;
+  }
+
+  StorageType type = 1;
+  string uri = 2;
+}
+
+message BentoMetadata {
+  message BentoServiceEnv {
+    string setup_sh = 1;
+    string conda_env = 2;
+    string pip_dependencies = 3;
+  }
+
+  message BentoArtifact {
+    string name = 1;
+    string artifact_type = 2;
+  }
+
+  message BentoServiceApi {
+    string name = 1;
+    string handler_type = 2;
+    string docs = 3;
+  }
+
+  string created_at = 1;
+  string name = 2;
+  string version = 3;
+  BentoServiceEnv env = 4;
+  repeated BentoArtifact artifacts = 5;
+  repeated BentoServiceApi apis = 6;
+  BentoUri uri = 7;
+}
+
+// Requests
+message RemoveBentoRequest {
+  string bento_name = 1;
+  string bento_version = 2;
+}
+
+message GetBentoRequest {
+  string bento_name = 1;
+  string bento_version = 2;
+}
+
+message ListBentoRequest {
+  string bento_name = 1;
+  int32 offset = 2;
+  int32 limit = 3;
+}
+
+// Responses
+message AddBentoResponse {
+  Status status = 1;
+  BentoMetadata bento = 2;
+}
+
+message RemoveBentoResponse {
+  Status status = 1;
+  BentoMetadata bento = 2;
+}
+
+message GetBentoResponse {
+  Status status = 1;
+  BentoMetadata bento = 2;
+}
+
+message ListBentoResponse {
+  Status status = 1;
+  repeated BentoMetadata bentos = 2;
+}

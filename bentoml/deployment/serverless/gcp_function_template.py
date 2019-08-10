@@ -23,9 +23,6 @@ from ruamel.yaml import YAML
 
 from bentoml.utils import Path
 
-DEFAULT_GCP_REGION = "us-west2"
-DEFAULT_GCP_DEPLOY_STAGE = "dev"
-
 logger = logging.getLogger(__name__)
 
 GOOGLE_MAIN_PY_TEMPLATE_HEADER = """\

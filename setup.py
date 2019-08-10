@@ -12,13 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import imp
 import setuptools
-
-__version__ = imp.load_source(
-    "bentoml.version", os.path.join("bentoml", "version.py")
-).__version__
+import versioneer
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -40,6 +35,8 @@ install_requires = [
     "packaging",
     "docker",
     "configparser",
+    "sqlalchemy",
+    "protobuf>=3.6.0",
 ]
 
 imageio = ["imageio>=2.5.0"]
@@ -50,6 +47,7 @@ tensorflow = ["tensorflow"]
 xgboost = ["xgboost"]
 h2o = ["h2o"]
 api_server = ["gunicorn", "prometheus_client", "Werkzeug"]
+grpc_tools = ["grpcio", "grpcio-tools", "mypy-protobuf"]
 
 optional_requires = api_server + imageio + pytorch + tensorflow + fastai + xgboost + h2o
 
@@ -68,15 +66,19 @@ tests_require = (
     + fastai
 )
 
-dev_requires = [
-    "pylint==2.3.1",
-    "flake8",
-    "tox-conda==0.2.0",
-    "twine",
-    "black",
-    "setuptools",
-    "gitpython>=2.0.2",
-] + tests_require
+dev_requires = (
+    [
+        "pylint==2.3.1",
+        "flake8",
+        "tox-conda==0.2.0",
+        "twine",
+        "black",
+        "setuptools",
+        "gitpython>=2.0.2",
+    ]
+    + tests_require
+    + grpc_tools
+)
 
 sphinx_requires = [
     "sphinx",
@@ -87,7 +89,9 @@ sphinx_requires = [
 
 doc_builder_requires = sphinx_requires + install_requires
 
-dev_all = install_requires + dev_requires + optional_requires + sphinx_requires
+dev_all = (
+    install_requires + dev_requires + optional_requires + sphinx_requires + grpc_tools
+)
 
 extras_require = {
     "all": dev_all,
@@ -105,7 +109,8 @@ extras_require = {
 
 setuptools.setup(
     name="BentoML",
-    version=__version__,
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     author="atalaya.io",
     author_email="contact@atalaya.io",
     description="A python framework for serving and operating machine learning models",
@@ -129,7 +134,7 @@ setuptools.setup(
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",
         "Source Code": "https://github.com/bentoml/BentoML",
-        "Gitter Chat Room": "https://gitter.im/bentoml/BentoML",
+        "Slack User Group": "https://bit.ly/2N5IpbB",
     },
     include_package_data=True,  # Required for '.cfg' files under bentoml/config
 )

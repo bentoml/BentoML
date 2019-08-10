@@ -13,6 +13,9 @@ exclude = '''
     | examples
   )/
   | bentoml/utils/cloudpickle.py
+  | bentoml/proto
+  | bentoml/_version.py
+  | versioneer.py
 )
 '''
 

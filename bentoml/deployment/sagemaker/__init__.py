@@ -26,7 +26,7 @@ from six.moves.urllib.parse import urlparse
 import boto3
 import docker
 
-from bentoml.deployment.base_deployment import Deployment
+from bentoml.deployment.legacy_deployment import LegacyDeployment
 from bentoml.deployment.utils import (
     generate_bentoml_deployment_snapshot_path,
     process_docker_api_line,
@@ -38,6 +38,9 @@ from bentoml.deployment.sagemaker.templates import (
     DEFAULT_WSGI_PY,
     DEFAULT_SERVE_SCRIPT,
 )
+from bentoml.deployment.operator import DeploymentOperatorBase
+from bentoml.proto.status_pb2 import Status
+from bentoml.proto.deployment_pb2 import ApplyDeploymentResponse
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +103,12 @@ def create_push_image_to_ecr(bento_service, snapshot_path):
     2. create ecr repository, if not exist
     3. build tag and push docker image
 
-    :param bento_service: Bento Service
-    :param snapshot_path: Path
-    :return: ecr_tag: String
+    Args:
+        bento_service(BentoService)
+        snapshot_path(Path)
+
+    Returns:
+        str: AWS ECR Tag
     """
     ecr_client = boto3.client("ecr")
     token = ecr_client.get_authorization_token()
@@ -146,7 +152,26 @@ def create_push_image_to_ecr(bento_service, snapshot_path):
     return ecr_tag
 
 
-class SagemakerDeployment(Deployment):
+def generate_sagemaker_snapshot(name, version, archive_path):
+    snapshot_path = generate_bentoml_deployment_snapshot_path(
+        name, version, "aws-sagemaker"
+    )
+    shutil.copytree(archive_path, snapshot_path)
+    with open(os.path.join(snapshot_path, "nginx.conf"), "w") as f:
+        f.write(DEFAULT_NGINX_CONFIG)
+    with open(os.path.join(snapshot_path, "wsgi.py"), "w") as f:
+        f.write(DEFAULT_WSGI_PY)
+    with open(os.path.join(snapshot_path, "serve"), "w") as f:
+        f.write(DEFAULT_SERVE_SCRIPT)
+
+    # permission 755 is required for entry script 'serve'
+    permission = "755"
+    octal_permission = int(permission, 8)
+    os.chmod(os.path.join(snapshot_path, "serve"), octal_permission)
+    return snapshot_path
+
+
+class SagemakerDeployment(LegacyDeployment):
     def __init__(
         self,
         archive_path,
@@ -183,30 +208,22 @@ class SagemakerDeployment(Deployment):
         """Deploy BentoML service to AWS Sagemaker.
         Your AWS credential must have the correct permissions for sagemaker and ECR
 
-        1. Create docker image and push to ECR
-        2. Create sagemaker model base on the ECR image
-        3. Create sagemaker endpoint configuration base on sagemaker model
-        4. Create sagemaker endpoint base on sagemaker endpoint configuration
+        1. generate snapshot for aws sagemaker
+        2. Create docker image and push to ECR
+        3. Create sagemaker model base on the ECR image
+        4. Create sagemaker endpoint configuration base on sagemaker model
+        5. Create sagemaker endpoint base on sagemaker endpoint configuration
 
-        :param archive_path: Path
-        :param additional_info: Dict
-        :return: String, location to the output snapshot's path
+        Args:
+            archive_path(Path, str)
+            additional_info(dict)
+
+        Returns:
+            str: Location to the output snapshot's path
         """
-        snapshot_path = generate_bentoml_deployment_snapshot_path(
-            self.bento_service.name, self.bento_service.version, "aws-sagemaker"
+        snapshot_path = generate_sagemaker_snapshot(
+            self.bento_service.name, self.bento_service.version, self.archive_path
         )
-        shutil.copytree(self.archive_path, snapshot_path)
-        with open(os.path.join(snapshot_path, "nginx.conf"), "w") as f:
-            f.write(DEFAULT_NGINX_CONFIG)
-        with open(os.path.join(snapshot_path, "wsgi.py"), "w") as f:
-            f.write(DEFAULT_WSGI_PY)
-        with open(os.path.join(snapshot_path, "serve"), "w") as f:
-            f.write(DEFAULT_SERVE_SCRIPT)
-
-        # permission 755 is required for entry script 'serve'
-        permission = "755"
-        octal_permission = int(permission, 8)
-        os.chmod(os.path.join(snapshot_path, "serve"), octal_permission)
 
         execution_role_arn = get_arn_role_from_current_user()
         ecr_image_path = create_push_image_to_ecr(self.bento_service, snapshot_path)
@@ -276,7 +293,7 @@ class SagemakerDeployment(Deployment):
         """Delete Sagemaker endpoint for the bentoml service.
         It will also delete the model or the endpoint configuration.
 
-        return: Boolean, True if the deletion is successful
+        return: Boolean, True if successful
         """
         if not self.check_status()[0]:
             raise BentoMLException(
@@ -319,3 +336,20 @@ class SagemakerDeployment(Deployment):
             return True
         else:
             return False
+
+
+# Deployment Service MVP Working-In-Progress
+class SageMakerDeploymentOperator(DeploymentOperatorBase):
+    def apply(self, deployment_pb):
+        # deploy code.....
+
+        deployment = self.get(deployment_pb).deployment
+        return ApplyDeploymentResponse(status=Status.OK, deployment=deployment)
+
+    def delete(self, deployment_pb):
+        # deployment = self.get(deployment_pb).deployment
+
+        raise NotImplementedError
+
+    def get(self, deployment_pb):
+        raise NotImplementedError

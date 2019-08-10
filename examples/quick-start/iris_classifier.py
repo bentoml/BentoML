@@ -6,7 +6,7 @@ from bentoml.handlers import DataframeHandler
 # figure out the dependency chain and package all those python modules
 
 @artifacts([PickleArtifact('model')])
-@env(conda_pip_dependencies=["scikit-learn"])
+@env(pip_dependencies=["scikit-learn"])
 class IrisClassifier(BentoService):
 
     @api(DataframeHandler)

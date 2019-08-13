@@ -279,34 +279,6 @@ def display_deployment_info(deployment):
         _echo('    Info: {}'.format(deployment.state.info_json))
 
 
-def get_operator_config(operator, args):
-    parser = argparse.ArgumentParser()
-
-    if operator == 'aws_sagemaker':
-        parser.add_argument('--region')
-        parser.add_argument('--instance-count', type=int)
-        parser.add_argument('--instance-type')
-    elif operator in ['aws_lambda', 'gcp_function']:
-        parser.add_argument('--region')
-        parser.add_argument('--stage')
-    elif operator == 'kubernetes':
-        parser.add_argument('--kube-namespace')
-        parser.add_argument('--replicas', type=int)
-        parser.add_argument('--service-name')
-        parser.add_argument('--service-type')
-    else:
-        parser.add_argument('--name')
-        parser.add_argument('--config')
-
-    parser.add_argument("--input")
-    parser.add_argument(
-        "-o", "--output", default="str", choices=["str", "json", "yaml"]
-    )
-
-    parsed_args, unknown_args = parser.parse_known_args(args)
-    return vars(parsed_args)
-
-
 def parse_bento_tag(tag):
     if ':' in tag:
         items = tag.split(':')

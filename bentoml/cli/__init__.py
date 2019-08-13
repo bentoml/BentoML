@@ -90,7 +90,7 @@ def create_bento_service_cli(archive_path=None):
         '--with-conda',
         is_flag=True,
         default=False,
-        help="Run API server on a Conda environment.",
+        help="Run API server in a BentoML managed Conda environment",
     )
     @click.pass_context
     def run(ctx, api_name, archive_path=archive_path, with_conda=False):
@@ -184,7 +184,7 @@ def create_bento_service_cli(archive_path=None):
         '--with-conda',
         is_flag=True,
         default=False,
-        help="Run API server on a Conda environment.",
+        help="Run API server in a BentoML managed Conda environment",
     )
     def serve(port, archive_path=archive_path, with_conda=False):
         if with_conda:
@@ -239,7 +239,7 @@ def create_bento_service_cli(archive_path=None):
         '--with-conda',
         is_flag=True,
         default=False,
-        help="Run API server on a Conda environment.",
+        help="Run API server in a BentoML managed Conda environment",
     )
     def serve_gunicorn(
         port, workers, timeout, archive_path=archive_path, with_conda=False

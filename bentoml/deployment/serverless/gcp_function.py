@@ -55,6 +55,7 @@ def {api_name}(request):
 
 """
 
+
 def generate_serverless_configuration_for_gcp_function(
     bento_service, apis, output_path, region, stage
 ):
@@ -99,14 +100,12 @@ def generate_main_py(bento_service, apis, output_path):
 def generate_temp_serverless_config_for_gcp_function(bento_archive, region, stage):
     functions = {}
     for api in bento_archive.apis:
-        functions[api.name] = {
-            "handler": api.name,
-            "events": [{"http": "path"}],
-        }
+        functions[api.name] = {"handler": api.name, "events": [{"http": "path"}]}
 
     return create_temporary_yaml_config(
         'google', region, stage, bento_archive.name, functions
     )
+
 
 def generate_handler_py(bento_name, apis, output_path):
     handler_py_content = GOOGLE_MAIN_PY_TEMPLATE_HEADER.format(class_name=bento_name)
@@ -119,12 +118,14 @@ def generate_handler_py(bento_name, apis, output_path):
         f.write(handler_py_content)
     return
 
+
 def update_additional_lambda_config(dir_path, bento_archive, region, stage):
     generate_handler_py(bento_archive.name, bento_archive.apis, dir_path)
     generate_serverless_configuration_for_gcp_function(
         bento_archive.name, bento_archive.apis, dir_path, region, stage
     )
     return
+
 
 class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb):
@@ -144,13 +145,10 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             deployment_spec.aws_lambda_operator_config.stage,
         )
 
-        call_serverless_command(
-            ["serverless", "deploy"], output_path
-        )
+        call_serverless_command(["serverless", "deploy"], output_path)
 
         deployment = self.get(deployment_pb).deployment
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment)
-
 
     def get(self, deployment_pb):
         deployment_spec = deployment_pb.spec
@@ -203,4 +201,3 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         else:
             status = Status.ABORTED()
         return DeleteDeploymentResponse(status=status)
-

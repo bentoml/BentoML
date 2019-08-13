@@ -16,21 +16,22 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import logging
 
+from ruamel.yaml import YAML
+
+from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.status import Status
 from bentoml.repository import get_local
-from bentoml.exceptions import BentoMLDeploymentException
+from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 from bentoml.proto.deployment_pb2 import (
-    DeploymentSpec,
     ApplyDeploymentResponse,
     GetDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentState,
-    Deployment,
 )
-from bentoml.proto.status_pb2 import Status as StatusProto
 from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
     generate_bundle,
@@ -122,7 +123,7 @@ def update_additional_lambda_config(dir_path, bento_archive, region, stage):
     return
 
 
-def create_temp_serverless_config_for_aws_lambda(bento_archive, region, stage):
+def generate_temp_serverless_config_for_aws_lambda(bento_archive, region, stage):
     functions = {}
     for api in bento_archive.apis:
         functions[api.name] = {
@@ -153,15 +154,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             deployment_spec.aws_lambda_operator_config.stage,
         )
 
-        def display_deployed_info(response):
-            service_info_index = response.index("Service Information")
-            service_info = response[service_info_index:]
-            logger.info("BentoML: %s", "\n".join(service_info))
-            print("\n".join(service_info))
-
-        response = call_serverless_command(
-            ["serverless", "deploy"], output_path, display_deployed_info
-        )
+        call_serverless_command(["serverless", "deploy"], output_path)
 
         deployment = self.get(deployment_pb).deployment
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment)
@@ -173,25 +166,21 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         bento_archive = repository.get(
             deployment_spec.bento_name, deployment_spec.bento_version
         )
-        tempdir = create_temp_serverless_config_for_aws_lambda(
+        tempdir = generate_temp_serverless_config_for_aws_lambda(
             bento_archive,
             deployment_spec.aws_lambda_operator_config.region,
             deployment_spec.aws_lambda_operator_config.stage,
         )
 
-        def parse_status_response(response):
-            error = [s for s in response if "Serverless Error" in s]
-            if error:
-                print("has error", "\n".join(response))
-                return False, "\n".join(response)
-            else:
-                print("\n".join(response))
-                return True, "\n".join(response)
-
-        response = call_serverless_command(["serverless", "info"], tempdir)
-        deployment_pb.state = DeploymentState(
-            state=DeploymentState.RUNNING, info_json="response", error_message=""
-        )
+        try:
+            response = call_serverless_command(["serverless", "info"], tempdir)
+            deployment_pb.state = DeploymentState(
+                state=DeploymentState.RUNNING, info_json="\n".join(response)
+            )
+        except BentoMLException as e:
+            deployment_pb.state = DeploymentState(
+                state=DeploymentState.ERROR, error_message=str(e)
+            )
 
         return GetDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
@@ -199,7 +188,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         deployment = self.get(deployment_pb).deployment
         if deployment.state.state != DeploymentState.RUNNING:
             raise BentoMLDeploymentException(
-                "No active deployment for service %s" % self.bento_service.name
+                "No active deployment: %s" % deployment.name
             )
 
         deployment_spec = deployment_pb.spec
@@ -208,14 +197,13 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         bento_archive = repository.get(
             deployment_spec.bento_name, deployment_spec.bento_version
         )
-        tempdir = create_temp_serverless_config_for_aws_lambda(
+        tempdir = generate_temp_serverless_config_for_aws_lambda(
             bento_archive,
             deployment_spec.aws_lambda_operator_config.region,
             deployment_spec.aws_lambda_operator_config.stage,
         )
 
         response = call_serverless_command(['serverless', 'remove'], tempdir)
-
         if "Serverless: Stack removal finished..." in response:
             status = Status.OK()
         else:

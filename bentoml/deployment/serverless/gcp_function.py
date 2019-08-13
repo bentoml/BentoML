@@ -25,16 +25,13 @@ from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.status import Status
 from bentoml.repository import get_local
-from bentoml.exceptions import BentoMLDeploymentException
+from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 from bentoml.proto.deployment_pb2 import (
-    DeploymentSpec,
     ApplyDeploymentResponse,
     GetDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentState,
-    Deployment,
 )
-from bentoml.proto.status_pb2 import Status as StatusProto
 from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
     generate_bundle,
@@ -108,7 +105,7 @@ def generate_temp_serverless_config_for_gcp_function(bento_archive, region, stag
         }
 
     return create_temporary_yaml_config(
-        'aws', region, stage, bento_archive.name, functions
+        'google', region, stage, bento_archive.name, functions
     )
 
 def generate_handler_py(bento_name, apis, output_path):
@@ -147,14 +144,8 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             deployment_spec.aws_lambda_operator_config.stage,
         )
 
-        def display_deployed_info(response):
-            service_info_index = response.index("Service Information")
-            service_info = response[service_info_index:]
-            logger.info("BentoML: %s", "\n".join(service_info))
-            print("\n".join(service_info))
-
-        response = call_serverless_command(
-            ["serverless", "deploy"], output_path, display_deployed_info
+        call_serverless_command(
+            ["serverless", "deploy"], output_path
         )
 
         deployment = self.get(deployment_pb).deployment
@@ -174,19 +165,15 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             deployment_spec.aws_lambda_operator_config.stage,
         )
 
-        def parse_status_response(response):
-            error = [s for s in response if "Serverless Error" in s]
-            if error:
-                print("has error", "\n".join(response))
-                return False, "\n".join(response)
-            else:
-                print("\n".join(response))
-                return True, "\n".join(response)
-
-        response = call_serverless_command(["serverless", "info"], tempdir)
-        deployment_pb.state = DeploymentState(
-            state=DeploymentState.RUNNING, info_json="response", error_message=""
-        )
+        try:
+            response = call_serverless_command(["serverless", "info"], tempdir)
+            deployment_pb.state = DeploymentState(
+                state=DeploymentState.RUNNING, info_json="\n".join(response)
+            )
+        except BentoMLException as e:
+            deployment_pb.state = DeploymentState(
+                state=DeploymentState.ERROR, error_message=str(e)
+            )
 
         return GetDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
@@ -215,5 +202,5 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             status = Status.OK()
         else:
             status = Status.ABORTED()
-        return DeleteDeploymentResponse(status=Status.OK())
+        return DeleteDeploymentResponse(status=status)
 

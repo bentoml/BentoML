@@ -11,8 +11,7 @@ PROTO_PATH=$GIT_ROOT/protos
 PYOUT_PATH=$GIT_ROOT/bentoml/proto
 
 echo "Cleaning up existing proto generated py code.."
-rm -f $PYOUT_PATH/*.py
-rm -f $PYOUT_PATH/*.pyi
+rm -rf $PYOUT_PATH
 mkdir -p $PYOUT_PATH
 touch $PYOUT_PATH/__init__.py
 

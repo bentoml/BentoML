@@ -62,3 +62,16 @@ def test_save_and_load_model_from_s3():
 
     download_model_service = bentoml.load(s3_saved_path)
     assert download_model_service.get_service_apis()[0].func(1) == 2
+
+
+class TestBentoWithOutArtifact(bentoml.BentoService):
+    @bentoml.api(bentoml.handlers.DataframeHandler)
+    def test(self, df):
+        return df
+
+
+def test_bento_without_artifact(tmpdir):
+    saved_path = TestBentoWithOutArtifact().save(str(tmpdir))
+    assert os.path.exists(saved_path)
+    model_service = bentoml.load(saved_path)
+    assert len(model_service.get_service_apis()) == 1

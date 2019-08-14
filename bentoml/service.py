@@ -128,6 +128,8 @@ class BentoServiceBase(object):
     for BentoAPIServer and BentoCLI to execute
     """
 
+    _service_apis = []
+
     @property
     @abstractmethod
     def name(self):
@@ -143,7 +145,7 @@ class BentoServiceBase(object):
         """
 
     def _config_service_apis(self):
-        self._service_apis = []  # pylint:disable=attribute-defined-outside-init
+        self._service_apis = []
         for _, function in inspect.getmembers(
             self.__class__,
             predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x),
@@ -388,6 +390,8 @@ class BentoService(BentoServiceBase):
                 self._artifacts = ArtifactCollection()
                 for artifact in artifacts:
                     self._artifacts[artifact.name] = artifact
+        else:
+            self._artifacts = ArtifactCollection()
 
     def _init_env(self, env=None):
         if env is None:

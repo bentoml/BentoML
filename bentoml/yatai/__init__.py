@@ -81,7 +81,7 @@ class YataiService(YataiServicer):
             return response
 
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR:", e)
+            logger.error("INTERNAL ERROR: %s", e)
             return ApplyDeploymentResponse(Status.INTERNAL(e))
 
     def DeleteDeployment(self, request, context=None):
@@ -112,7 +112,7 @@ class YataiService(YataiServicer):
                 )
 
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR:", e)
+            logger.error("INTERNAL ERROR: %s", e)
             return DeleteDeploymentResponse(status=Status.INTERNAL(e))
 
     def GetDeployment(self, request, context=None):
@@ -133,7 +133,7 @@ class YataiService(YataiServicer):
                     )
                 )
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR:", e)
+            logger.error("INTERNAL ERROR: %s", e)
             return GetDeploymentResponse(status=Status.INTERNAL(e))
 
     def DescribeDeployment(self, request, context=None):
@@ -162,7 +162,7 @@ class YataiService(YataiServicer):
                     )
                 )
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR:", e)
+            logger.error("INTERNAL ERROR: %s", e)
             return DescribeDeploymentResponse(Status.INTERNAL(e))
 
     def ListDeployments(self, request, context=None):
@@ -180,7 +180,7 @@ class YataiService(YataiServicer):
                 status=Status.OK(), deployments=deployment_pb_list
             )
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR:", e)
+            logger.error("INTERNAL ERROR: %s", e)
             return ListDeploymentsResponse(status=Status.INTERNAL(e))
 
     def AddBento(self, request_iterator, context=None):

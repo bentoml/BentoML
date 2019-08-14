@@ -36,14 +36,12 @@ class BaseRepository(object):
         serialized artifacts and related source code and configuration. Repository
         implementation will take care of storing and retriving the Bento files.
         """
-        pass
 
     @abstractmethod
     def delete(self, bento_name, bento_version):
         """
         Deleting the Bento files that was added earlier
         """
-        pass
 
     @abstractmethod
     def get(self, bento_name, bento_version=None):
@@ -51,7 +49,6 @@ class BaseRepository(object):
         Get a file path to the saved Bento files, path must be accessible form local
         machine either through NFS or pre-downloaded to local machine
         """
-        pass
 
     @abstractmethod
     def list(self, bento_name=None):
@@ -81,7 +78,7 @@ class LocalRepository(BaseRepository):
         saved_path = os.path.join(self.base_path, bento_name, bento_version)
         return saved_path
 
-    def list(self, bento_name):
+    def list(self, bento_name=None):
         raise NotImplementedError
 
 
@@ -95,10 +92,10 @@ class S3Repository(BaseRepository):
     def delete(self, bento_name, bento_version=None):
         raise NotImplementedError
 
-    def get(self, bento_name, bento_version):
+    def get(self, bento_name, bento_version=None):
         raise NotImplementedError
 
-    def list(self, bento_name):
+    def list(self, bento_name=None):
         raise NotImplementedError
 
 

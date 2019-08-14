@@ -17,7 +17,6 @@ from __future__ import division
 from __future__ import print_function
 
 import click
-import argparse
 
 from bentoml.deployment.serverless import ServerlessDeployment
 from bentoml.deployment.sagemaker import SagemakerDeployment

@@ -357,31 +357,52 @@ class SagemakerDeployment(LegacyDeployment):
 
 
 # Deployment Service MVP Working-In-Progress
-def generate_temporary_sagemaker_content(archive_path):
+class TemporarySageMakerContent(object):
+    def __init__(self, archive_path, bento_name, bento_version, _cleanup=True):
+        self.archive_path = archive_path
+        self.bento_name = bento_name
+        self.bento_version = bento_version
+        self.temp_directory = TempDirectory()
+        self._cleanup = _cleanup
+        self.path = None
 
-    with TempDirectory() as tempdir:
-        shutil.copytree(archive_path, tempdir)
+    def __enter__(self):
+        self.generate()
+        return self.path
 
-        with open(os.path.join(tempdir, "nginx.conf"), "w") as f:
+    def generate(self):
+        self.temp_directory.create()
+        tempdir = self.temp_directory.path
+        saved_path = os.path.join(tempdir, self.bento_name, self.bento_version)
+        shutil.copytree(self.archive_path, saved_path)
+
+        with open(os.path.join(saved_path, "nginx.conf"), "w") as f:
             f.write(DEFAULT_NGINX_CONFIG)
-        with open(os.path.join(tempdir, "wsgi.py"), "w") as f:
+        with open(os.path.join(saved_path, "wsgi.py"), "w") as f:
             f.write(DEFAULT_WSGI_PY)
-        with open(os.path.join(tempdir, "serve"), "w") as f:
+        with open(os.path.join(saved_path, "serve"), "w") as f:
             f.write(DEFAULT_SERVE_SCRIPT)
 
         # permission 755 is required for entry script 'serve'
         permission = "755"
         octal_permission = int(permission, 8)
-        os.chmod(os.path.join(tempdir, "serve"), octal_permission)
-    return tempdir
+        os.chmod(os.path.join(saved_path, "serve"), octal_permission)
+        self.path = saved_path
+        print(os.listdir(self.path))
+
+    def cleanup(self, ignore_errors=False):
+        self.temp_directory.cleanup()
+        self.path = None
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._cleanup:
+            self.cleanup()
 
 
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, repo):
         deployment_spec = deployment_pb.spec
-        sagemaker_config = (
-            deployment_spec.sagemaker_operator_config
-        )
+        sagemaker_config = deployment_spec.sagemaker_operator_config
         if sagemaker_config is None:
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
 
@@ -397,11 +418,14 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         sagemaker_client = boto3.client('sagemaker', region)
 
         temp_path = generate_temporary_sagemaker_content(archive_path)
+        with TemporarySageMakerContent(
+            archive_path, deployment_spec.bento_name, deployment_spec.bento_version
+        ) as temp_path:
+            ecr_image_path = create_push_image_to_ecr(
+                deployment_spec.bento_name, deployment_spec.bento_version, temp_path
+            )
 
         execution_role_arn = get_arn_role_from_current_user()
-        ecr_image_path = create_push_image_to_ecr(
-            deployment_spec.bento_name, deployment_spec.bento_version, temp_path
-        )
         model_name = create_sagemaker_model_name(
             deployment_spec.bento_name, deployment_spec.bento_version
         )

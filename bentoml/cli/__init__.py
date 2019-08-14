@@ -21,6 +21,7 @@ import os
 import json
 import click
 import logging
+import tempfile
 import subprocess
 
 from ruamel.yaml import YAML
@@ -101,7 +102,8 @@ def create_bento_service_cli(archive_path=None):
 
             yaml = YAML()
             yaml.default_flow_style = False
-            env_path = os.path.join('/tmp', env_name + '.yaml')
+            tmpf = tempfile.NamedTemporaryFile(delete=False)
+            env_path = tmpf.name
             yaml.dump(config['env']['conda_env'], Path(env_path))
 
             pip_req = os.path.join(archive_path, 'requirements.txt')

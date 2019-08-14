@@ -529,7 +529,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
         endpoint_status_response = sagemaker_client.describe_endpoint(
-            EndpointName=deployment_spec.bento_name
+            EndpointName=generate_aws_compatible_string(deployment_spec.bento_name)
         )
         logger.info("AWS describe endpoint response: %s", endpoint_status_response)
         endpoint_status = endpoint_status_response["EndpointStatus"]
@@ -556,11 +556,15 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         info_json = {
             "endpoint_status": endpoint_status,
             "arn": endpoint_status_response["EndpointArn"],
-            "ProductionVariants": endpoint_status_response["ProductionVariants"],
         }
+        if endpoint_status_response['ProductionVariants']:
+            info_json['ProductionVariants'] = endpoint_status_response['ProductionVariants']
+
         deployment_state = DeploymentState(
             state=service_state,
             info_json=json.dumps(info_json),
-            error_message=endpoint_status_response["FailureReason"],
         )
+        if endpoint_status_response['FailureReason']:
+            deployment_state.error_message = endpoint_status_response['FailureReason']
+
         return deployment_state

@@ -388,6 +388,8 @@ class BentoService(BentoServiceBase):
                 self._artifacts = ArtifactCollection()
                 for artifact in artifacts:
                     self._artifacts[artifact.name] = artifact
+        else:
+            self._artifacts = ArtifactCollection()
 
     def _init_env(self, env=None):
         if env is None:

@@ -44,7 +44,7 @@ from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentState,
-    Deployment
+    Deployment,
 )
 
 logger = logging.getLogger(__name__)

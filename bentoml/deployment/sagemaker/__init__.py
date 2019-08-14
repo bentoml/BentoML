@@ -345,7 +345,6 @@ class SagemakerDeployment(LegacyDeployment):
 
 # Deployment Service MVP Working-In-Progress
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
-
     def apply(self, deployment_pb, repo):
         # deploy code.....
         spec = deployment_pb.spec

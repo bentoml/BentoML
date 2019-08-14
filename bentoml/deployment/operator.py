@@ -44,7 +44,6 @@ def get_deployment_operator(deployment_pb):
 
 @add_metaclass(ABCMeta)
 class DeploymentOperatorBase(object):
-
     @abstractmethod
     def apply(self, deployment_pb, repo):
         """

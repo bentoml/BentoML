@@ -98,14 +98,17 @@ message ApplyDeploymentRequest {
 
 message DeleteDeploymentRequest {
   string deployment_name = 1;
+  string namespace = 2;
 }
 
 message GetDeploymentRequest {
   string deployment_name = 1;
+  string namespace = 2;
 }
 
 message DescribeDeploymentRequest {
   string deployment_name = 1;
+  string namespace = 2;
 }
 
 message ListDeploymentsRequest {

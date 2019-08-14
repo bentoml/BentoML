@@ -73,7 +73,7 @@ class YataiService(YataiServicer):
             operator = get_deployment_operator(request.deployment)
 
             # deploying to target platform
-            response = operator.apply(request.deployment)
+            response = operator.apply(request.deployment, self.repo)
 
             # update deployment state
             self.deployment_store.insert_or_update(response.deployment)
@@ -95,7 +95,7 @@ class YataiService(YataiServicer):
                 operator = get_deployment_operator(deployment_pb)
 
                 # executing deployment deletion
-                response = operator.delete(deployment_pb)
+                response = operator.delete(deployment_pb, self.repo)
 
                 # if delete successful, remove it from active deployment records table
                 if response.status.status_code == status_pb2.Status.OK:
@@ -144,7 +144,7 @@ class YataiService(YataiServicer):
 
             if deployment_pb:
                 operator = get_deployment_operator(deployment_pb)
-                response = operator.describe(deployment_pb)
+                response = operator.describe(deployment_pb, self.repo)
 
                 if response.status.status_code == status_pb2.Status.OK:
                     with self.deployment_store.update_deployment(

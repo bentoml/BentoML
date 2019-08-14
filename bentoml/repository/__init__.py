@@ -23,6 +23,7 @@ from abc import abstractmethod, ABCMeta
 
 from bentoml import config
 from bentoml import archive
+from bentoml.exceptions import BentoMLRepositoryException
 
 
 # Bento, is a file format representing a saved BentoService
@@ -76,6 +77,12 @@ class LocalRepository(BaseRepository):
             bento_version = self.get_latest_version(bento_name)
 
         saved_path = os.path.join(self.base_path, bento_name, bento_version)
+        if not os.path.exists(saved_path):
+            raise BentoMLRepositoryException(
+                "Bento {}:{} not found in target repository".format(
+                    bento_name, bento_version
+                )
+            )
         return saved_path
 
     def list(self, bento_name=None):

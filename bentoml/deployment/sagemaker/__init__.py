@@ -345,20 +345,25 @@ class SagemakerDeployment(LegacyDeployment):
 
 # Deployment Service MVP Working-In-Progress
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb):
+
+    def apply(self, deployment_pb, repo):
         # deploy code.....
+        spec = deployment_pb.spec
+        bento_path = repo.get(spec.bento_name, spec.bento_version)
+
+        # config = load_bentoml_config(bento_path)...
 
         res_deployment_pb = Deployment()
         res_deployment_pb.CopyFrom(deployment_pb)
         # res_deployment_pb.state = ...
         return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 
-    def delete(self, deployment_pb):
+    def delete(self, deployment_pb, repo):
         # delete deployment
 
         return DeleteDeploymentResponse(status=Status.OK())
 
-    def describe(self, deployment_pb):
+    def describe(self, deployment_pb, repo):
         # fetch deployment state
         deployment_state = DeploymentState()
         # deployment_state.state = ...

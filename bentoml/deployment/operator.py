@@ -44,17 +44,24 @@ def get_deployment_operator(deployment_pb):
 
 @add_metaclass(ABCMeta)
 class DeploymentOperatorBase(object):
-    def __init__(self, operator_config=None):
-        self.config = operator_config
 
     @abstractmethod
-    def apply(self, deployment_pb):
-        pass
+    def apply(self, deployment_pb, repo):
+        """
+        Create deployment based on deployment_pb spec - the bento name and version
+        must be found in the given BentoRepository
+        """
 
     @abstractmethod
-    def delete(self, deployment_pb):
-        pass
+    def delete(self, deployment_pb, repo):
+        """
+        Delete deployment based on deployment_pb spec - the bento name and version
+        must be found in the given BentoRepository
+        """
 
     @abstractmethod
-    def describe(self, deployment_pb):
-        pass
+    def describe(self, deployment_pb, repo):
+        """
+        Fetch status on an existing deployment created with deployment_pb spec - the
+        bento name and version must be found in the given BentoRepository
+        """

@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 ALL_NAMESPACE_TAG = '__BENTOML_ALL_NAMESPACE'
 
+
 class Deployment(Base):
     __tablename__ = 'deployments'
     __table_args__ = UniqueConstraint('name', 'namespace', name='_name_namespace_uc')
@@ -105,7 +106,7 @@ class DeploymentStore(object):
         namespace = namespace or self.default_namespace
         with create_session(self.sess_maker) as sess:
             query = sess.query(Deployment)
-            if namespace != ALL_NAMESPACE_TAG: # else query all namespaces
+            if namespace != ALL_NAMESPACE_TAG:  # else query all namespaces
                 query.filter_by(namespace=namespace)
             if limit:
                 query.limit(limit)

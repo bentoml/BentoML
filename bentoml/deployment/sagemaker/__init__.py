@@ -205,7 +205,7 @@ class SagemakerDeployment(LegacyDeployment):
         self.instance_count = (
             DEFAULT_INSTANCE_COUNT if instance_count is None else instance_count
         )
-        self.instant_type = (
+        self.instance_type = (
             DEFAULT_INSTANCE_TYPE if instance_type is None else instance_type
         )
         self.api = self.bento_service.get_service_api(api_name)
@@ -265,7 +265,7 @@ class SagemakerDeployment(LegacyDeployment):
                 "VariantName": self.bento_service.name,
                 "ModelName": self.model_name,
                 "InitialInstanceCount": self.instance_count,
-                "InstanceType": self.instant_type,
+                "InstanceType": self.instance_type,
             }
         ]
         logger.info(
@@ -445,10 +445,10 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         production_variants = [
             {
-                "VariantName": deployment_spec.bento_name,
+                "VariantName": generate_aws_compatible_string(deployment_spec.bento_name),
                 "ModelName": model_name,
                 "InitialInstanceCount": sagemaker_config.instance_count,
-                "InstanceType": sagemaker_config.instant_type,
+                "InstanceType": sagemaker_config.instance_type,
             }
         ]
         endpoint_config_name = create_sagemaker_endpoint_config_name(
@@ -467,7 +467,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         logger.info("Creating sagemaker endpoint %s", deployment_spec.bento_name)
         create_endpoint_response = sagemaker_client.create_endpoint(
-            EndpointName=deployment_spec.bento_name,
+            EndpointName=generate_aws_compatible_string(deployment_spec.bento_name),
             EndpointConfigName=endpoint_config_name,
         )
         logger.info("AWS create endpoint response: %s", create_endpoint_response)
@@ -486,9 +486,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def delete(self, deployment_pb, repo):
         deployment = self.get(deployment_pb).deployment
         deployment_spec = deployment.spec
-        sagemaker_config = (
-            deployment_spec.deployment_operator_config.sagemaker_operator_config
-        )
+        sagemaker_config = deployment_spec.sagemaker_operator_config
         if sagemaker_config is None:
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
@@ -527,9 +525,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
     def describe(self, deployment_pb, repo):
         deployment_spec = deployment_pb.spec
-        sagemaker_config = (
-            deployment_spec.deployment_operator_config.sagemaker_operator_config
-        )
+        sagemaker_config = deployment_spec.sagemaker_operator_config
         if sagemaker_config is None:
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)

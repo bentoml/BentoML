@@ -39,8 +39,13 @@ from bentoml.deployment.sagemaker.templates import (
     DEFAULT_SERVE_SCRIPT,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
-from bentoml.proto.status_pb2 import Status
-from bentoml.proto.deployment_pb2 import ApplyDeploymentResponse
+from bentoml.yatai import Status
+from bentoml.proto.deployment_pb2 import (
+    ApplyDeploymentResponse,
+    DeleteDeploymentResponse,
+    DeploymentState,
+    Deployment
+)
 
 logger = logging.getLogger(__name__)
 
@@ -343,13 +348,18 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb):
         # deploy code.....
 
-        deployment = self.get(deployment_pb).deployment
-        return ApplyDeploymentResponse(status=Status.OK, deployment=deployment)
+        res_deployment_pb = Deployment()
+        res_deployment_pb.CopyFrom(deployment_pb)
+        # res_deployment_pb.state = ...
+        return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 
     def delete(self, deployment_pb):
-        # deployment = self.get(deployment_pb).deployment
+        # delete deployment
 
-        raise NotImplementedError
+        return DeleteDeploymentResponse(status=Status.OK())
 
-    def get(self, deployment_pb):
-        raise NotImplementedError
+    def describe(self, deployment_pb):
+        # fetch deployment state
+        deployment_state = DeploymentState()
+        # deployment_state.state = ...
+        return deployment_state

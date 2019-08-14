@@ -132,7 +132,7 @@ message GetDeploymentResponse {
 
 message DescribeDeploymentResponse {
   Status status = 1;
-  DeploymentSpec spec = 2;
+  DeploymentState state = 2;
 }
 
 message ListDeploymentsResponse {

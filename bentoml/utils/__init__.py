@@ -17,8 +17,12 @@ from __future__ import division
 from __future__ import print_function
 
 import re
+import json
 
 from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
+
+from google.protobuf.json_format import MessageToJson
+from ruamel.yaml import YAML
 
 try:
     from pathlib import Path
@@ -54,3 +58,22 @@ def isidentifier(s):
     except AttributeError:
         # str#isidentifier is only available in python 3
         return re.match(r"[A-Za-z_][A-Za-z_0-9]*\Z", s) is not None
+
+
+def pb_to_json(message, output_format='obj'):
+    result = MessageToJson(message)
+    if output_format == 'string':
+        return result
+    return json.loads(result)
+
+
+def pb_to_yaml(message, output_format='obj'):
+    result = MessageToJson(message)
+    yaml = YAML()
+    if output_format == 'string':
+        from ruamel.yaml.compat import StringIO
+
+        io = StringIO()
+        yaml.dump(result, io)
+        return io.getvalue()
+    return yaml.load(result)

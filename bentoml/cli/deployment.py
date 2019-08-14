@@ -34,8 +34,9 @@ from bentoml.proto.deployment_pb2 import (
     DeploymentOperator,
 )
 from bentoml.proto.status_pb2 import Status
+from bentoml.utils import pb_to_json, pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
-from bentoml.exceptions import BentoMLDeploymentException
+from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 
 SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 
@@ -246,45 +247,29 @@ def get_deployment_operator_type(platform):
 
 
 def display_response_status_error(status):
-    _echo('Error code: {}'.format(status.status_code), CLI_COLOR_ERROR)
     _echo('Error message: {}'.format(status.error_message), CLI_COLOR_ERROR)
 
 
-def display_deployment_info(deployment):
+def display_deployment_info(deployment, output):
     _echo('Deployment {} info\n\n'.format(deployment.name))
-    if deployment.namespace:
-        _echo('  namespace: {}'.format(deployment.namespace))
-    if deployment.labels:
-        _echo('  labels:')
-        for key, value in deployment.labels:
-            _echo('    - {key}: {value}'.format(key=key, value=value))
-    if deployment.annotations:
-        _echo('  annotations:')
-        for key, value in deployment.annotations:
-            _echo('    - {key}: {value}'.format(key=key, value=value))
-    if deployment.spec:
-        _echo('  Spec:')
-        _echo(
-            '    Bento: {name}:{version}'.format(
-                name=deployment.spec.bento_name, version=deployment.spec.bento_version
-            )
-        )
-    if deployment.state:
-        _echo('  State:')
-        _echo('    Current State: {}'.format(deployment.state.state))
-        if deployment.state.error_message:
-            _echo(
-                '    Error: {}'.format(deployment.state.error_message), CLI_COLOR_ERROR
-            )
-        _echo('    Info: {}'.format(deployment.state.info_json))
+
+    if output == 'json':
+        result = pb_to_json(deployment, 'string')
+    else:
+        result = pb_to_yaml(deployment, 'string')
+    _echo(result)
 
 
 def parse_bento_tag(tag):
-    if ':' in tag:
+    tag_sorted_list = sorted(tag)
+
+    if tag_sorted_list[1] == ':':
+        raise BentoMLException("More than one ':' appeared in tag '%s'" % tag)
+    elif tag_sorted_list[0] == ':':
         items = tag.split(':')
         return items[0], items[1]
     else:
-        return tag, 'latest'
+        return tag
 
 
 def get_deployment_sub_command(cli):
@@ -307,17 +292,35 @@ def get_deployment_sub_command(cli):
         help="Target platform that Bento archive is going to deployed to",
     )
     @click.option("--namespace", type=click.STRING, help="Deployment's namespace")
-    @click.option("--labels", type=click.STRING)
+    @click.option("--labels", type=click.STRING, help="")
     @click.option("--annotations", type=click.STRING)
-    @click.option('--region')
-    @click.option('--stage')
-    @click.option('--instance-type')
-    @click.option('--instance-count')
-    @click.option('--api-name')
-    @click.option('--kube-namespace')
-    @click.option('--replicas')
-    @click.option('--service-name')
-    @click.option('--service-type')
+    @click.option(
+        '--region',
+        help="Name of the deployed region. For platforms: AWS_Lambda, AWS_SageMaker, GCP_Function",
+    )
+    @click.option(
+        '--stage', help="Stage is to identify. For platform:  AWS_Lambda, GCP_Function"
+    )
+    @click.option(
+        '--instance-type',
+        help="Type of instance will be used for inference. For platform: AWS_SageMaker",
+    )
+    @click.option(
+        '--instance-count',
+        help="Number of instance will be used. For platform: AWS_SageMaker",
+    )
+    @click.option(
+        '--api-name',
+        help="User defined API function will be used for inference. For platform: AWS_SageMaker",
+    )
+    @click.option(
+        '--kube-namespace',
+        help="Namespace for kubernetes deployment. For platform: Kubernetes",
+    )
+    @click.option('--replicas', help="Number of replicas. For platform: Kubernetes")
+    @click.option('--service-name', help="Name for service. For platform: Kubernetes")
+    @click.option('--service-type', help="Service Type. For platform: Kubernetes")
+    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def apply(
         bento_tag,
         deployment_name,
@@ -334,6 +337,7 @@ def get_deployment_sub_command(cli):
         replicas=None,
         service_name=None,
         service_type=None,
+        output=None,
     ):
         bento_name, bento_verison = parse_bento_tag(bento_tag)
         print(bento_name, bento_verison)
@@ -381,13 +385,14 @@ def get_deployment_sub_command(cli):
             )
         )
         if result.status.status_code != Status.OK:
-            _echo('Apply deployment {} failed'.format(bento_name), CLI_COLOR_ERROR)
+            _echo('Apply deployment {} failed'.format(deployment_name), CLI_COLOR_ERROR)
             display_response_status_error(result.status)
         else:
             _echo(
-                'Successful apply deployment {}'.format(bento_name), CLI_COLOR_SUCCESS
+                'Successful apply deployment {}'.format(deployment_name),
+                CLI_COLOR_SUCCESS,
             )
-            display_deployment_info(result.deployment)
+            display_deployment_info(result.deployment, output)
 
     @deploy.command()
     @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
@@ -402,10 +407,9 @@ def get_deployment_sub_command(cli):
             _echo('Successful delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
     @deploy.command()
-    @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
-    @click.option("--ouput-format", type=click.STRING)
-    @click.option("--ouput-path", type=click.STRING)
-    def get(name):
+    @click.option("--name", type=click.STRING, help="Deployment name", required=True)
+    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    def get(name, output=None):
         result = get_yatai_service().GetDeployment(
             GetDeploymentRequest(deployment_name=name)
         )
@@ -413,11 +417,12 @@ def get_deployment_sub_command(cli):
             _echo('Get deployment {} failed'.format(name), CLI_COLOR_ERROR)
             display_response_status_error(result.status)
         else:
-            display_deployment_info(result.deployment)
+            display_deployment_info(result.deployment, output)
 
     @deploy.command()
-    @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
-    def describe(name):
+    @click.option("--name", type=click.STRING, help="Deployment name", required=True)
+    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    def describe(name, output=None):
         result = get_yatai_service().DescribeDeployment(
             DescribeDeploymentRequest(deployment_name=name)
         )
@@ -425,14 +430,25 @@ def get_deployment_sub_command(cli):
             _echo('Describe deployment {} failed'.format(name), CLI_COLOR_ERROR)
             display_response_status_error(result.status)
         else:
-            display_deployment_info(result.deployment)
+            display_deployment_info(result.deployment, output)
 
     @deploy.command()
-    @click.option("--limit", type=click.INT, help="")
-    @click.option("--offset", type=click.INT, help="")
-    @click.option("--filter", type=click.STRING, help="")
-    @click.option("--labels", type=click.STRING, help="")
-    def list(limit=None, offset=None, filter=None, labels=None):
+    @click.option(
+        "--limit", type=click.INT, help="Limit how many deployments will be retrieved"
+    )
+    @click.option(
+        "--offset",
+        type=click.INT,
+        help="Position in the deployment list. Usually work with limit",
+    )
+    @click.option(
+        "--filter", type=click.STRING, help="Filter retrieved deployments with keywords"
+    )
+    @click.option(
+        "--labels", type=click.STRING, help="List deployments with the giving labels"
+    )
+    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    def list(limit=None, offset=None, filter=None, labels=None, output=None):
         result = get_yatai_service().ListDeployments(
             ListDeploymentsRequest(
                 limit=limit,
@@ -446,6 +462,6 @@ def get_deployment_sub_command(cli):
             display_response_status_error(result.status)
         else:
             for deployment_pb in result.deployments:
-                display_deployment_info(deployment_pb)
+                display_deployment_info(deployment_pb, output)
 
     return deploy

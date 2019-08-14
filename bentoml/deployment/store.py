@@ -42,8 +42,8 @@ class Deployment(Base):
     name = Column(String, nullable=False)
     namespace = Column(String, nullable=False)
 
-    spec = Column(JSON, nullable=False)
-    state = Column(JSON, nullable=False)
+    spec = Column(JSON, nullable=False, default={})
+    state = Column(JSON, nullable=False, default={})
     labels = Column(JSON, nullable=False, default={})
     annotations = Column(JSON, nullable=False, default={})
 

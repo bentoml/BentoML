@@ -16,10 +16,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from sqlalchemy import Column, String, JSON
-from google.protobuf.json_format import MessageToDict
+import logging
 
+from sqlalchemy import Column, String, JSON
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from google.protobuf.json_format import MessageToDict, ParseDict
+
+from bentoml.config import config
 from bentoml.db import Base, create_session
+from bentoml.proto import deployment_pb2
+
+
+logger = logging.getLogger(__name__)
 
 
 class Deployment(Base):
@@ -27,34 +35,73 @@ class Deployment(Base):
 
     id = Column(String, primary_key=True)
     name = Column(String, unique=True)
-    namespace = Column(String)
+    namespace = Column(String, nullable=False)
 
     spec = Column(JSON)
-    labels = Column(JSON)
-    annotation = Column(JSON)
+    labels = Column(JSON, nullable=False, default={})
+    annotation = Column(JSON, nullable=False, default={})
+
+
+def deployment_pb_to_orm_obj(deployment_pb):
+    return Deployment(
+        name=deployment_pb.name,
+        namespace=deployment_pb.namespace,
+        spec=MessageToDict(deployment_pb.spec),
+        labels=MessageToDict(deployment_pb.labels),
+        annotation=MessageToDict(deployment_pb.labels),
+    )
+
+
+def deployment_orm_obj_to_pb(deployment_obj):
+    return deployment_pb2.Deployment(
+        name=deployment_obj.name,
+        namespace=deployment_obj.namespace,
+        spec=ParseDict(deployment_obj.spec, deployment_pb2.DeploymentSpec),
+        labels=deployment_obj.labels,
+        annotation=deployment_obj.annotation,
+    )
 
 
 class DeploymentStore(object):
-    def __init__(self):
-        pass
+    def __init__(self, sess_maker, default_namespace=None):
+        self.sess_maker = sess_maker
+        self.default_namespace = default_namespace or config.get(
+            'deployment', 'default_namespace'
+        )
 
     def add(self, deployment_pb):
-        with create_session() as session:
-            deployment_obj = Deployment(
-                name=deployment_pb.name,
-                namespace=deployment_pb.namespace,
-                spec=MessageToDict(deployment_pb.spec),
-                labels=MessageToDict(deployment_pb.labels),
-                annotation=MessageToDict(deployment_pb.labels),
-            )
-            session.add(deployment_obj)
+        with create_session(self.sess_maker) as sess:
+            deployment_obj = deployment_pb_to_orm_obj(deployment_pb)
+            return sess.add(deployment_obj)
 
-    def get(self, name):
-        with create_session() as session:
-            return session.query(Deployment).filter_by(name=name).first()
+    def get(self, name, namespace=None):
+        with create_session(self.sess_maker) as sess:
+            try:
+                namespace = namespace or self.default_namespace
+                deployment_obj = (
+                    sess.query(Deployment)
+                    .filter_by(name=name, namespace=namespace)
+                    .one()
+                )
+            except NoResultFound:
+                return None
+
+            return deployment_orm_obj_to_pb(deployment_obj)
 
     def delete(self, name):
-        pass
+        with create_session(self.sess_maker) as sess:
+            deployment = sess.query(Deployment).filter_by(name=name).one()
+            return sess.remove(deployment)
 
-    def list(self, filter_str, labels, offset, limit):
-        pass
+    def list(self, filter_str=None, labels=None, offset=None, limit=None):
+        with create_session(self.sess_maker) as sess:
+            query = sess.query(Deployment)
+            if limit:
+                query.limit(limit)
+            if offset:
+                query.offset(offset)
+            if filter_str:
+                query.filter(Deployment.name.contains(filter_str))
+            if labels:
+                raise NotImplementedError("Listing by labels is not yet implemented")
+            return query.all()

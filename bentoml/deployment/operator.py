@@ -16,6 +16,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from six import add_metaclass
+from abc import abstractmethod, ABCMeta
+
 from bentoml.proto.deployment_pb2 import DeploymentOperator
 from bentoml.exceptions import BentoMLDeploymentException
 
@@ -39,15 +42,19 @@ def get_deployment_operator(deployment_pb):
         raise BentoMLDeploymentException("DeployOperator must be set")
 
 
+@add_metaclass(ABCMeta)
 class DeploymentOperatorBase(object):
     def __init__(self, operator_config=None):
         self.config = operator_config
 
+    @abstractmethod
     def apply(self, deployment_pb):
         raise NotImplementedError
 
+    @abstractmethod
     def delete(self, deployment_pb):
         raise NotImplementedError
 
-    def get(self, deployment_pb):
+    @abstractmethod
+    def describe(self, deployment_pb):
         raise NotImplementedError

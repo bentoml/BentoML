@@ -20,6 +20,7 @@ import os
 import sys
 import inspect
 import tempfile
+import logging
 
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
@@ -30,6 +31,10 @@ from bentoml.artifact import ArtifactCollection
 from bentoml.utils import isidentifier
 from bentoml.utils.s3 import is_s3_url, download_from_s3
 from bentoml.utils.usage_stats import track_save
+from bentoml.repository import get_default_repository, LocalRepository
+
+
+logger = logging.getLogger(__name__)
 
 
 def _get_func_attr(func, attribute_name):
@@ -433,11 +438,13 @@ class BentoService(BentoServiceBase):
                 "Only BentoService loaded from archive has version attribute"
             )
 
-    def save(self, *args, **kwargs):
-        from bentoml import archive
-
+    def save(self, base_path=None, version=None):
         track_save(self)
-        return archive.save(self, *args, **kwargs)
+        if base_path:
+            repo = LocalRepository(base_path)
+        else:
+            repo = get_default_repository()
+        return repo.add(self, version=version)
 
     @classmethod
     def pack(cls, *args, **kwargs):

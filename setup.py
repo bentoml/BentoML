@@ -37,6 +37,7 @@ install_requires = [
     "configparser",
     "sqlalchemy",
     "protobuf>=3.6.0",
+    "grpcio",
 ]
 
 imageio = ["imageio>=2.5.0"]

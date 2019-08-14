@@ -16,38 +16,51 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.proto.deployment_pb2 import DeploymentOperator
+from six import add_metaclass
+from abc import abstractmethod, ABCMeta
+
+from bentoml.proto import deployment_pb2
 from bentoml.exceptions import BentoMLDeploymentException
 
 
 def get_deployment_operator(deployment_pb):
     operator = deployment_pb.spec.operator
 
-    if operator == DeploymentOperator.AWS_SAGEMAKER:
+    if operator == deployment_pb2.AWS_SAGEMAKER:
         from bentoml.deployment.sagemaker import SageMakerDeploymentOperator
 
         return SageMakerDeploymentOperator()
-    elif operator == DeploymentOperator.AWS_LAMBDA:
+    elif operator == deployment_pb2.AWS_LAMBDA:
         pass
-    elif operator == DeploymentOperator.GCP_FUNCTION:
-        pass
-    elif operator == DeploymentOperator.KUBERNETES:
-        pass
-    elif operator == DeploymentOperator.CUSTOM:
-        pass
+    elif operator == deployment_pb2.GCP_FUNCTION:
+        raise NotImplementedError("GCP function deployment operator is not implemented")
+    elif operator == deployment_pb2.KUBERNETES:
+        raise NotImplementedError("Kubernetes deployment operator is not implemented")
+    elif operator == deployment_pb2.CUSTOM:
+        raise NotImplementedError("Custom deployment operator is not implemented")
     else:
         raise BentoMLDeploymentException("DeployOperator must be set")
 
 
+@add_metaclass(ABCMeta)
 class DeploymentOperatorBase(object):
-    def __init__(self, operator_config=None):
-        self.config = operator_config
+    @abstractmethod
+    def apply(self, deployment_pb, repo):
+        """
+        Create deployment based on deployment_pb spec - the bento name and version
+        must be found in the given BentoRepository
+        """
 
-    def apply(self, deployment_pb):
-        raise NotImplementedError
+    @abstractmethod
+    def delete(self, deployment_pb, repo):
+        """
+        Delete deployment based on deployment_pb spec - the bento name and version
+        must be found in the given BentoRepository
+        """
 
-    def delete(self, deployment_pb):
-        raise NotImplementedError
-
-    def get(self, deployment_pb):
-        raise NotImplementedError
+    @abstractmethod
+    def describe(self, deployment_pb, repo):
+        """
+        Fetch status on an existing deployment created with deployment_pb spec - the
+        bento name and version must be found in the given BentoRepository
+        """

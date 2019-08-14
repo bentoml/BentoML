@@ -39,8 +39,13 @@ from bentoml.deployment.sagemaker.templates import (
     DEFAULT_SERVE_SCRIPT,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
-from bentoml.proto.status_pb2 import Status
-from bentoml.proto.deployment_pb2 import ApplyDeploymentResponse
+from bentoml.yatai import Status
+from bentoml.proto.deployment_pb2 import (
+    ApplyDeploymentResponse,
+    DeleteDeploymentResponse,
+    DeploymentState,
+    Deployment,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -340,16 +345,25 @@ class SagemakerDeployment(LegacyDeployment):
 
 # Deployment Service MVP Working-In-Progress
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb):
+    def apply(self, deployment_pb, repo):
         # deploy code.....
+        spec = deployment_pb.spec
+        bento_path = repo.get(spec.bento_name, spec.bento_version)
 
-        deployment = self.get(deployment_pb).deployment
-        return ApplyDeploymentResponse(status=Status.OK, deployment=deployment)
+        # config = load_bentoml_config(bento_path)...
 
-    def delete(self, deployment_pb):
-        # deployment = self.get(deployment_pb).deployment
+        res_deployment_pb = Deployment()
+        res_deployment_pb.CopyFrom(deployment_pb)
+        # res_deployment_pb.state = ...
+        return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 
-        raise NotImplementedError
+    def delete(self, deployment_pb, repo):
+        # delete deployment
 
-    def get(self, deployment_pb):
-        raise NotImplementedError
+        return DeleteDeploymentResponse(status=Status.OK())
+
+    def describe(self, deployment_pb, repo):
+        # fetch deployment state
+        deployment_state = DeploymentState()
+        # deployment_state.state = ...
+        return deployment_state

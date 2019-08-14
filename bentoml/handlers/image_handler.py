@@ -133,7 +133,17 @@ class ImageHandler(BentoHandler):
 
             input_data = imread(input_stream, pilmode=self.pilmode)
         else:
-            return Response(response="Only support single file input", status=400)
+            input_files = request.files.getlist(self.input_name)
+            if input_files:
+                file_names = [secure_filename(file.filename) for file in input_files]
+                for file_name in file_names:
+                    check_file_format(file_name, self.accept_file_extensions)
+                input_streams = [BytesIO(input_file.read()) for input_file in input_files]
+            else:
+                raise ValueError(
+                    "BentoML#ImageHandler unexpected HTTP request: %s" % request
+                )
+            input_data = tuple(imread(input_stream, pilmode=self.pilmode) for input_stream in input_streams)
 
         result = func(input_data)
         result = get_output_str(result, request.headers.get("output", "json"))

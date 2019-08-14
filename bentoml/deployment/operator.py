@@ -19,25 +19,25 @@ from __future__ import print_function
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
-from bentoml.proto.deployment_pb2 import DeploymentOperator
+from bentoml.proto import deployment_pb2
 from bentoml.exceptions import BentoMLDeploymentException
 
 
 def get_deployment_operator(deployment_pb):
     operator = deployment_pb.spec.operator
 
-    if operator == DeploymentOperator.AWS_SAGEMAKER:
+    if operator == deployment_pb2.AWS_SAGEMAKER:
         from bentoml.deployment.sagemaker import SageMakerDeploymentOperator
 
         return SageMakerDeploymentOperator()
-    elif operator == DeploymentOperator.AWS_LAMBDA:
+    elif operator == deployment_pb2.AWS_LAMBDA:
         pass
-    elif operator == DeploymentOperator.GCP_FUNCTION:
-        pass
-    elif operator == DeploymentOperator.KUBERNETES:
-        pass
-    elif operator == DeploymentOperator.CUSTOM:
-        pass
+    elif operator == deployment_pb2.GCP_FUNCTION:
+        raise NotImplementedError("GCP function deployment operator is not implemented")
+    elif operator == deployment_pb2.KUBERNETES:
+        raise NotImplementedError("Kubernetes deployment operator is not implemented")
+    elif operator == deployment_pb2.CUSTOM:
+        raise NotImplementedError("Custom deployment operator is not implemented")
     else:
         raise BentoMLDeploymentException("DeployOperator must be set")
 
@@ -49,12 +49,12 @@ class DeploymentOperatorBase(object):
 
     @abstractmethod
     def apply(self, deployment_pb):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def delete(self, deployment_pb):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def describe(self, deployment_pb):
-        raise NotImplementedError
+        pass

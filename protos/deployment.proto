@@ -112,10 +112,11 @@ message DescribeDeploymentRequest {
 }
 
 message ListDeploymentsRequest {
-  int32 offset = 1;
-  int32 limit = 2;
-  string filter = 3;
-  map<string, string> labels = 4;
+  string namespace = 1;
+  int32 offset = 2;
+  int32 limit = 3;
+  string filter = 4;
+  map<string, string> labels = 5;
 }
 
 // Responses

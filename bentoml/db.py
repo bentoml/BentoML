@@ -48,6 +48,6 @@ def create_session(session_maker):
         session.commit()
     except Exception as e:
         session.rollback()
-        raise BentoMLException(message=e)
+        raise BentoMLException(e)
     finally:
         session.close()

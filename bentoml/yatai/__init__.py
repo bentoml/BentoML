@@ -29,13 +29,15 @@ from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
 )
+from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
+from bentoml.proto.yatai_service_pb2 import HealthCheckResponse, GetYataiServiceVersionResponse
 from bentoml.deployment.operator import get_deployment_operator
 from bentoml.deployment.store import DeploymentStore
 from bentoml.exceptions import BentoMLException
-from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
 from bentoml.repository import get_default_repository
 from bentoml.db import init_db
 from bentoml.yatai.status import Status
+from bentoml import __version__ as BENTOML_VERSION
 
 
 logger = logging.getLogger(__name__)
@@ -48,10 +50,10 @@ class YataiService(YataiServicer):
         self.repo = bento_repository or get_default_repository()
 
     def HealthCheck(self, request, context):
-        raise NotImplementedError('Method not implemented!')
+        return HealthCheckResponse(status=Status.OK())
 
     def GetYataiServiceVersion(self, request, context):
-        raise NotImplementedError('Method not implemented!')
+        return GetYataiServiceVersionResponse(status=Status.OK, version=BENTOML_VERSION)
 
     def ApplyDeployment(self, request, context):
         try:

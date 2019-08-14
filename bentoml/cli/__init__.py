@@ -16,18 +16,31 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import re
+import os
 import json
 import click
 import logging
+import tempfile
+import subprocess
 
-from bentoml.archive import load, load_service_api
+from ruamel.yaml import YAML
+
+from bentoml.archive import load, load_service_api, load_bentoml_config
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import add_deployment_commands
 from bentoml.cli.config import get_configuration_sub_command
+from bentoml.utils import Path
 from bentoml.utils.log import configure_logging
 from bentoml.utils.usage_stats import track_cli
+
+
+def escape_shell_params(param):
+    k, v = param.split('=')
+    v = re.sub(r'([^a-zA-Z0-9])', r'\\\1', v)
+    return '{}={}'.format(k, v)
 
 
 def create_bento_service_cli(archive_path=None):
@@ -74,8 +87,48 @@ def create_bento_service_cli(archive_path=None):
     )
     @click.argument("api-name", type=click.STRING)
     @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
+    @click.option(
+        '--with-conda',
+        is_flag=True,
+        default=False,
+        help="Run API server in a BentoML managed Conda environment",
+    )
     @click.pass_context
-    def run(ctx, api_name, archive_path=archive_path):
+    def run(ctx, api_name, archive_path=archive_path, with_conda=False):
+        if with_conda:
+            config = load_bentoml_config(archive_path)
+            metadata = config['metadata']
+            env_name = metadata['service_name'] + '_' + metadata['service_version']
+
+            yaml = YAML()
+            yaml.default_flow_style = False
+            tmpf = tempfile.NamedTemporaryFile(delete=False)
+            env_path = tmpf.name
+            yaml.dump(config['env']['conda_env'], Path(env_path))
+
+            pip_req = os.path.join(archive_path, 'requirements.txt')
+
+            subprocess.call(
+                'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
+                'parameter requires conda but it\'s not installed."; exit 1; }} && '
+                'conda env update -n {env_name} -f {env_file} && '
+                'conda init bash && '
+                'eval "$(conda shell.bash hook)" && '
+                'conda activate {env_name} && '
+                '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
+                'dependencies."; }} &&'
+                'bentoml {api_name} {archive_path} {args}'.format(
+                    env_name=env_name,
+                    env_file=env_path,
+                    archive_path=archive_path,
+                    api_name=api_name,
+                    args=' '.join(map(escape_shell_params, ctx.args)),
+                    pip_req=pip_req,
+                ),
+                shell=True,
+            )
+            return
+
         track_cli('run')
 
         api = load_service_api(archive_path, api_name)
@@ -129,10 +182,42 @@ def create_bento_service_cli(archive_path=None):
         default=BentoAPIServer._DEFAULT_PORT,
         help="The port to listen on for the REST api server, default is 5000.",
     )
-    def serve(port, archive_path=archive_path):
-        track_cli('serve')
-        bento_service = load(archive_path)
+    @click.option(
+        '--with-conda',
+        is_flag=True,
+        default=False,
+        help="Run API server in a BentoML managed Conda environment",
+    )
+    def serve(port, archive_path=archive_path, with_conda=False):
+        if with_conda:
+            config = load_bentoml_config(archive_path)
+            metadata = config['metadata']
+            env_name = metadata['service_name'] + '_' + metadata['service_version']
+            pip_req = os.path.join(archive_path, 'requirements.txt')
 
+            subprocess.call(
+                'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
+                'parameter requires conda but it\'s not installed."; exit 1; }} && '
+                'conda env update -n {env_name} -f {env_file} && '
+                'conda init bash && '
+                'eval "$(conda shell.bash hook)" && '
+                'conda activate {env_name} && '
+                '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
+                'dependencies."; }} &&'
+                'bentoml serve {archive_path} --port {port}'.format(
+                    env_name=env_name,
+                    env_file=os.path.join(archive_path, 'environment.yml'),
+                    archive_path=archive_path,
+                    port=port,
+                    pip_req=pip_req,
+                ),
+                shell=True,
+            )
+            return
+
+        track_cli('serve')
+
+        bento_service = load(archive_path)
         server = BentoAPIServer(bento_service, port=port)
         server.start()
 
@@ -152,7 +237,44 @@ def create_bento_service_cli(archive_path=None):
         help="Number of workers will start for the gunicorn server",
     )
     @click.option("--timeout", type=click.INT, default=None)
-    def serve_gunicorn(port, workers, timeout, archive_path=archive_path):
+    @click.option(
+        '--with-conda',
+        is_flag=True,
+        default=False,
+        help="Run API server in a BentoML managed Conda environment",
+    )
+    def serve_gunicorn(
+        port, workers, timeout, archive_path=archive_path, with_conda=False
+    ):
+        if with_conda:
+            config = load_bentoml_config(archive_path)
+            metadata = config['metadata']
+            env_name = metadata['service_name'] + '_' + metadata['service_version']
+            pip_req = os.path.join(archive_path, 'requirements.txt')
+
+            subprocess.call(
+                'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
+                'parameter requires conda but it\'s not installed."; exit 1; }} && '
+                'conda env update -n {env_name} -f {env_file} && '
+                'conda init bash && '
+                'eval "$(conda shell.bash hook)" && '
+                'conda activate {env_name} && '
+                '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
+                'dependencies."; }} &&'
+                'bentoml serve_gunicorn {archive_path} -p {port} -w {workers} '
+                '--timeout {timeout}'.format(
+                    env_name=env_name,
+                    env_file=os.path.join(archive_path, 'environment.yml'),
+                    archive_path=archive_path,
+                    port=port,
+                    workers=workers,
+                    timeout=timeout,
+                    pip_req=pip_req,
+                ),
+                shell=True,
+            )
+            return
+
         track_cli('serve_gunicorn')
 
         gunicorn_app = GunicornBentoServer(archive_path, port, workers, timeout)

@@ -17,7 +17,9 @@ from __future__ import division
 from __future__ import print_function
 
 import click
+import logging
 
+from google.protobuf.json_format import MessageToJson
 from bentoml.deployment.serverless import ServerlessDeployment
 from bentoml.deployment.sagemaker import SagemakerDeployment
 from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR, CLI_COLOR_SUCCESS
@@ -33,13 +35,15 @@ from bentoml.proto.deployment_pb2 import (
     DeploymentOperator,
 )
 from bentoml.proto.status_pb2 import Status
-from bentoml.utils import pb_to_json, pb_to_yaml
+from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 
 SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 
 # pylint: disable=unused-variable
+
+logger = logging.getLogger(__name__)
 
 
 def add_legacy_deployment_commands(cli):
@@ -229,16 +233,17 @@ def add_legacy_deployment_commands(cli):
     return cli
 
 
-def parse_key_value_string(key_value_string):
-    if key_value_string:
-        result = {}
-        for item in key_value_string.split(','):
-            if item is not None:
-                splits = item.split('=')
-                result[splits[0]] = splits[1]
-        return result
-    else:
-        return None
+def parse_key_value_pairs(key_value_pairs_str):
+    result = {}
+    if key_value_pairs_str:
+        for key_value_pair in key_value_pairs_str.split(','):
+            key, value = key_value_pair.split('=')
+            key = key.strip()
+            value = value.strip()
+            if key in result:
+                logger.warning('duplicated key "%s" found string map parameter' % key)
+            result[key] = value
+    return result
 
 
 def get_deployment_operator_type(platform):
@@ -246,14 +251,18 @@ def get_deployment_operator_type(platform):
 
 
 def display_response_status_error(status):
-    _echo('Error message: {}'.format(status.error_message), CLI_COLOR_ERROR)
+    code = ''
+    _echo(
+        'Error {code}: {message}'.format(message=status.error_message, code=code),
+        CLI_COLOR_ERROR,
+    )
 
 
 def display_deployment_info(deployment, output):
     if output == 'yaml':
-        result = pb_to_yaml(deployment, 'string')
+        result = pb_to_yaml(deployment)
     else:
-        result = pb_to_json(deployment, 'string')
+        result = MessageToJson(deployment)
     _echo(result)
 
 
@@ -325,6 +334,7 @@ def get_deployment_sub_command(cli):
         bento_tag,
         deployment_name,
         platform,
+        output,
         namespace=None,
         labels=None,
         annotations=None,
@@ -337,7 +347,6 @@ def get_deployment_sub_command(cli):
         replicas=None,
         service_name=None,
         service_type=None,
-        output=None,
     ):
         bento_name, bento_verison = parse_bento_tag(bento_tag)
         print(bento_name, bento_verison)
@@ -378,43 +387,45 @@ def get_deployment_sub_command(cli):
                 deployment=Deployment(
                     namespace=namespace,
                     name=deployment_name,
-                    annotations=parse_key_value_string(annotations),
-                    labels=parse_key_value_string(labels),
+                    annotations=parse_key_value_pairs(annotations),
+                    labels=parse_key_value_pairs(labels),
                     spec=spec,
                 )
             )
         )
         if result.status.status_code != Status.OK:
-            _echo('Apply deployment {} failed'.format(deployment_name), CLI_COLOR_ERROR)
+            _echo(
+                'Failed to apply deployment {}'.format(deployment_name), CLI_COLOR_ERROR
+            )
             display_response_status_error(result.status)
         else:
             _echo(
-                'Successful apply deployment {}'.format(deployment_name),
+                'Successfully apply deployment {}'.format(deployment_name),
                 CLI_COLOR_SUCCESS,
             )
             display_deployment_info(result.deployment, output)
 
     @deploy.command()
-    @click.option("--name", type=click.STRING, help="Deployment's name", required=True)
+    @click.option("--name", type=click.STRING, help="Deployment name", required=True)
     def delete(name):
         result = get_yatai_service().DeleteDeployment(
             DeleteDeploymentRequest(deployment_name=name)
         )
         if result.status.status_code != Status.OK:
-            _echo('Delete deployment {} failed'.format(name), CLI_COLOR_ERROR)
+            _echo('Failed to delete deployment {}'.format(name), CLI_COLOR_ERROR)
             display_response_status_error(result.status)
         else:
-            _echo('Successful delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
+            _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
     @deploy.command()
     @click.option("--name", type=click.STRING, help="Deployment name", required=True)
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def get(name, output=None):
+    def get(name, output):
         result = get_yatai_service().GetDeployment(
             GetDeploymentRequest(deployment_name=name)
         )
         if result.status.status_code != Status.OK:
-            _echo('Get deployment {} failed'.format(name), CLI_COLOR_ERROR)
+            _echo('Failed to get deployment {}'.format(name), CLI_COLOR_ERROR)
             display_response_status_error(result.status)
         else:
             display_deployment_info(result.deployment, output)
@@ -427,7 +438,7 @@ def get_deployment_sub_command(cli):
             DescribeDeploymentRequest(deployment_name=name)
         )
         if result.status.status_code != Status.OK:
-            _echo('Describe deployment {} failed'.format(name), CLI_COLOR_ERROR)
+            _echo('Failed to describe deployment {}'.format(name), CLI_COLOR_ERROR)
             display_response_status_error(result.status)
         else:
             display_deployment_info(result.deployment, output)
@@ -448,20 +459,27 @@ def get_deployment_sub_command(cli):
         "--labels", type=click.STRING, help="List deployments with the giving labels"
     )
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def list(limit=None, offset=None, filter=None, labels=None, output=None):
+    def list(output, limit=None, offset=None, filter=None, labels=None):
         result = get_yatai_service().ListDeployments(
             ListDeploymentsRequest(
                 limit=limit,
                 offset=offset,
                 filter=filter,
-                labels=parse_key_value_string(labels),
+                labels=parse_key_value_pairs(labels),
             )
         )
         if result.status.status_code != Status.OK:
-            _echo('List deployments failed', CLI_COLOR_ERROR)
+            _echo('Failed to list deployments', CLI_COLOR_ERROR)
             display_response_status_error(result.status)
         else:
             for deployment_pb in result.deployments:
                 display_deployment_info(deployment_pb, output)
+
+    @deploy.command()
+    @deploy.command()
+    @click.option("--name", type=click.STRING, help="Deployment name", required=True)
+    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    def describe(name, output):
+        pass
 
     return deploy

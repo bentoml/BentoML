@@ -48,7 +48,6 @@ from bentoml import __version__ as BENTOML_VERSION
 logger = logging.getLogger(__name__)
 
 
-
 def get_yatai_service():
     return YataiService()
 

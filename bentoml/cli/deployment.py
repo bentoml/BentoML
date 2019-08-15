@@ -22,7 +22,12 @@ import logging
 from google.protobuf.json_format import MessageToJson
 from bentoml.deployment.serverless import ServerlessDeployment
 from bentoml.deployment.sagemaker import SagemakerDeployment
-from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR, CLI_COLOR_SUCCESS
+from bentoml.cli.click_utils import (
+    _echo,
+    CLI_COLOR_ERROR,
+    CLI_COLOR_SUCCESS,
+    parse_bento_tag_callback,
+)
 from bentoml.yatai import get_yatai_service
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentRequest,
@@ -279,11 +284,17 @@ def get_deployment_sub_command(cli):
         pass
 
     @deploy.command(
-        short_help="Apply deployment configuration",
+        short_help="Create or update a model serving deployment",
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
-    @click.argument('--bento-tag', type=click.STRING, required=True)
     @click.argument("--deployment-name", type=click.STRING, required=True)
+    @click.option(
+        '--bento',
+        type=click.STRING,
+        required=True,
+        callback=parse_bento_tag_callback,
+        help="Deployed bento archive, in format of name:version.  For example, iris_classifier:v1.2.0",
+    )
     @click.option(
         "--platform",
         type=click.Choice(
@@ -293,7 +304,11 @@ def get_deployment_sub_command(cli):
         help="Target platform that Bento archive is going to deployed to",
     )
     @click.option("--namespace", type=click.STRING, help="Deployment's namespace")
-    @click.option("--labels", type=click.STRING, help="")
+    @click.option(
+        "--labels",
+        type=click.STRING,
+        help="Key:value pairs that attached to deployment.",
+    )
     @click.option("--annotations", type=click.STRING)
     @click.option(
         '--region',
@@ -323,7 +338,7 @@ def get_deployment_sub_command(cli):
     @click.option('--service-type', help="Service Type. For platform: Kubernetes")
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def apply(
-        bento_tag,
+        bento,
         deployment_name,
         platform,
         output,
@@ -340,8 +355,7 @@ def get_deployment_sub_command(cli):
         service_name=None,
         service_type=None,
     ):
-        bento_name, bento_verison = parse_bento_tag(bento_tag)
-        print(bento_name, bento_verison)
+        bento_name, bento_verison = bento.split(':')
         spec = DeploymentSpec(
             bento_name=bento_name,
             bento_verison=bento_verison,
@@ -462,24 +476,16 @@ def get_deployment_sub_command(cli):
         "--limit", type=click.INT, help="Limit how many deployments will be retrieved"
     )
     @click.option(
-        "--offset",
-        type=click.INT,
-        help="Position in the deployment list. Usually work with limit",
-    )
-    @click.option(
         "--filter", type=click.STRING, help="Filter retrieved deployments with keywords"
     )
     @click.option(
         "--labels", type=click.STRING, help="List deployments with the giving labels"
     )
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def list(output, limit=None, offset=None, filter=None, labels=None):
+    def list(output, limit=None, filter=None, labels=None):
         result = get_yatai_service().ListDeployments(
             ListDeploymentsRequest(
-                limit=limit,
-                offset=offset,
-                filter=filter,
-                labels=parse_key_value_pairs(labels),
+                limit=limit, filter=filter, labels=parse_key_value_pairs(labels)
             )
         )
         if result.status.status_code != Status.OK:

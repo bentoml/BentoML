@@ -355,6 +355,7 @@ def get_deployment_sub_command(cli):
         service_name=None,
         service_type=None,
     ):
+        track_cli('deploy-apply', platform)
         bento_name, bento_verison = bento.split(':')
         spec = DeploymentSpec(
             bento_name=bento_name,
@@ -418,6 +419,7 @@ def get_deployment_sub_command(cli):
     @deploy.command()
     @click.option("--name", type=click.STRING, help="Deployment name", required=True)
     def delete(name):
+        track_cli('deploy-delete')
         result = get_yatai_service().DeleteDeployment(
             DeleteDeploymentRequest(deployment_name=name)
         )
@@ -437,6 +439,7 @@ def get_deployment_sub_command(cli):
     @click.option("--name", type=click.STRING, help="Deployment name", required=True)
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def get(name, output):
+        track_cli('deploy-get')
         result = get_yatai_service().GetDeployment(
             GetDeploymentRequest(deployment_name=name)
         )
@@ -456,6 +459,7 @@ def get_deployment_sub_command(cli):
     @click.option("--name", type=click.STRING, help="Deployment name", required=True)
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def describe(name, output=None):
+        track_cli('deploy-describe')
         result = get_yatai_service().DescribeDeployment(
             DescribeDeploymentRequest(deployment_name=name)
         )
@@ -483,6 +487,7 @@ def get_deployment_sub_command(cli):
     )
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def list(output, limit=None, filter=None, labels=None):
+        track_cli('deploy-list')
         result = get_yatai_service().ListDeployments(
             ListDeploymentsRequest(
                 limit=limit, filter=filter, labels=parse_key_value_pairs(labels)

@@ -241,21 +241,13 @@ def parse_key_value_pairs(key_value_pairs_str):
             key = key.strip()
             value = value.strip()
             if key in result:
-                logger.warning('duplicated key "%s" found string map parameter' % key)
+                logger.warning('duplicated key "%s" found string map parameter', key)
             result[key] = value
     return result
 
 
 def get_deployment_operator_type(platform):
     return DeploymentOperator.Value(platform.upper())
-
-
-def display_response_status_error(status):
-    code = ''
-    _echo(
-        'Error {code}: {message}'.format(message=status.error_message, code=code),
-        CLI_COLOR_ERROR,
-    )
 
 
 def display_deployment_info(deployment, output):
@@ -395,9 +387,13 @@ def get_deployment_sub_command(cli):
         )
         if result.status.status_code != Status.OK:
             _echo(
-                'Failed to apply deployment {}'.format(deployment_name), CLI_COLOR_ERROR
+                'Failed to apply deployment {name}. code: {error_code}, message: {error_message}'.format(
+                    name=deployment_name,
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
             )
-            display_response_status_error(result.status)
         else:
             _echo(
                 'Successfully apply deployment {}'.format(deployment_name),
@@ -412,8 +408,14 @@ def get_deployment_sub_command(cli):
             DeleteDeploymentRequest(deployment_name=name)
         )
         if result.status.status_code != Status.OK:
-            _echo('Failed to delete deployment {}'.format(name), CLI_COLOR_ERROR)
-            display_response_status_error(result.status)
+            _echo(
+                'Failed to delete deployment {name}. code: {error_code}, message: {error_message}'.format(
+                    name=name,
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
+            )
         else:
             _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
@@ -425,8 +427,14 @@ def get_deployment_sub_command(cli):
             GetDeploymentRequest(deployment_name=name)
         )
         if result.status.status_code != Status.OK:
-            _echo('Failed to get deployment {}'.format(name), CLI_COLOR_ERROR)
-            display_response_status_error(result.status)
+            _echo(
+                'Failed to get deployment {name}. code: {error_code}, message: {error_message}'.format(
+                    name=name,
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
+            )
         else:
             display_deployment_info(result.deployment, output)
 
@@ -438,8 +446,14 @@ def get_deployment_sub_command(cli):
             DescribeDeploymentRequest(deployment_name=name)
         )
         if result.status.status_code != Status.OK:
-            _echo('Failed to describe deployment {}'.format(name), CLI_COLOR_ERROR)
-            display_response_status_error(result.status)
+            _echo(
+                'Failed to describe deployment {name}. code: {error_code}, message: {error_message}'.format(
+                    name=name,
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
+            )
         else:
             display_deployment_info(result.deployment, output)
 
@@ -469,8 +483,13 @@ def get_deployment_sub_command(cli):
             )
         )
         if result.status.status_code != Status.OK:
-            _echo('Failed to list deployments', CLI_COLOR_ERROR)
-            display_response_status_error(result.status)
+            _echo(
+                'Failed to list deployments. code: {error_code}, message: {error_message}'.format(
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
+            )
         else:
             for deployment_pb in result.deployments:
                 display_deployment_info(deployment_pb, output)

@@ -250,25 +250,26 @@ def display_response_status_error(status):
 
 
 def display_deployment_info(deployment, output):
-    _echo('Deployment {} info\n\n'.format(deployment.name))
-
-    if output == 'json':
-        result = pb_to_json(deployment, 'string')
-    else:
+    if output == 'yaml':
         result = pb_to_yaml(deployment, 'string')
+    else:
+        result = pb_to_json(deployment, 'string')
     _echo(result)
 
 
 def parse_bento_tag(tag):
-    tag_sorted_list = sorted(tag)
+    items = tag.split(':')
 
-    if tag_sorted_list[1] == ':':
+    if len(items) > 2:
         raise BentoMLException("More than one ':' appeared in tag '%s'" % tag)
-    elif tag_sorted_list[0] == ':':
-        items = tag.split(':')
-        return items[0], items[1]
+    elif len(items) == 1:
+        return tag, 'latest'
     else:
-        return tag
+        if not items[0]:
+            raise BentoMLException("':' can't be the leading character")
+        if not items[1]:
+            raise BentoMLException("Please include value for the key %s" % items[0])
+        return items[0], items[1]
 
 
 def get_deployment_sub_command(cli):

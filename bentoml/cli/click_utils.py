@@ -101,3 +101,20 @@ def conditional_argument(condition, *param_decls, **attrs):
         return f
 
     return decorator
+
+
+def parse_bento_tag_callback(ctx, param, value):
+    items = value.split(':')
+
+    if len(items) != 2:
+        raise click.BadParameter(
+            "Bad formatting. Please present in Name:Version, for example iris_classifier:v1.2.0"
+        )
+    if not items[0]:
+        raise click.BadParameter(
+            "':' can't be the leading character for option 'bento'"
+        )
+    if not items[1]:
+        raise click.BadParameter("Please include value for the key %s" % items[0])
+
+    return value

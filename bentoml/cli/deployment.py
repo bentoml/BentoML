@@ -17,18 +17,41 @@ from __future__ import division
 from __future__ import print_function
 
 import click
+import logging
 
+from google.protobuf.json_format import MessageToJson
 from bentoml.deployment.serverless import ServerlessDeployment
 from bentoml.deployment.sagemaker import SagemakerDeployment
-from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR, CLI_COLOR_SUCCESS
+from bentoml.cli.click_utils import (
+    _echo,
+    CLI_COLOR_ERROR,
+    CLI_COLOR_SUCCESS,
+    parse_bento_tag_callback,
+)
+from bentoml.yatai import get_yatai_service
+from bentoml.proto.deployment_pb2 import (
+    ApplyDeploymentRequest,
+    DeleteDeploymentRequest,
+    GetDeploymentRequest,
+    DescribeDeploymentRequest,
+    ListDeploymentsRequest,
+    Deployment,
+    DeploymentSpec,
+    DeploymentOperator,
+)
+from bentoml.proto.status_pb2 import Status
+from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
+from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 
 SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 
 # pylint: disable=unused-variable
 
+logger = logging.getLogger(__name__)
 
-def add_deployment_commands(cli):
+
+def add_legacy_deployment_commands(cli):
 
     # Example usage: bentoml deploy /ARCHIVE_PATH --platform=aws-lambda
     @cli.command(
@@ -213,3 +236,268 @@ def add_deployment_commands(cli):
         deployment.check_status()
 
     return cli
+
+
+def parse_key_value_pairs(key_value_pairs_str):
+    result = {}
+    if key_value_pairs_str:
+        for key_value_pair in key_value_pairs_str.split(','):
+            key, value = key_value_pair.split('=')
+            key = key.strip()
+            value = value.strip()
+            if key in result:
+                logger.warning('duplicated key "%s" found string map parameter', key)
+            result[key] = value
+    return result
+
+
+def get_deployment_operator_type(platform):
+    return DeploymentOperator.Value(platform.upper())
+
+
+def display_deployment_info(deployment, output):
+    if output == 'yaml':
+        result = pb_to_yaml(deployment)
+    else:
+        result = MessageToJson(deployment)
+    _echo(result)
+
+
+def parse_bento_tag(tag):
+    items = tag.split(':')
+
+    if len(items) > 2:
+        raise BentoMLException("More than one ':' appeared in tag '%s'" % tag)
+    elif len(items) == 1:
+        return tag, 'latest'
+    else:
+        if not items[0]:
+            raise BentoMLException("':' can't be the leading character")
+        if not items[1]:
+            raise BentoMLException("Please include value for the key %s" % items[0])
+        return items[0], items[1]
+
+
+def get_deployment_sub_command(cli):
+    @click.group()
+    def deploy():
+        pass
+
+    @deploy.command(
+        short_help="Create or update a model serving deployment",
+        context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
+    )
+    @click.argument("--deployment-name", type=click.STRING, required=True)
+    @click.option(
+        '--bento',
+        type=click.STRING,
+        required=True,
+        callback=parse_bento_tag_callback,
+        help="Deployed bento archive, in format of name:version.  For example, iris_classifier:v1.2.0",
+    )
+    @click.option(
+        "--platform",
+        type=click.Choice(
+            ["aws_lambda", "gcp_function", "aws_sagemaker", "kubernetes", "custom"]
+        ),
+        required=True,
+        help="Target platform that Bento archive is going to deployed to",
+    )
+    @click.option("--namespace", type=click.STRING, help="Deployment's namespace")
+    @click.option(
+        "--labels",
+        type=click.STRING,
+        help="Key:value pairs that attached to deployment.",
+    )
+    @click.option("--annotations", type=click.STRING)
+    @click.option(
+        '--region',
+        help="Name of the deployed region. For platforms: AWS_Lambda, AWS_SageMaker, GCP_Function",
+    )
+    @click.option(
+        '--stage', help="Stage is to identify. For platform:  AWS_Lambda, GCP_Function"
+    )
+    @click.option(
+        '--instance-type',
+        help="Type of instance will be used for inference. For platform: AWS_SageMaker",
+    )
+    @click.option(
+        '--instance-count',
+        help="Number of instance will be used. For platform: AWS_SageMaker",
+    )
+    @click.option(
+        '--api-name',
+        help="User defined API function will be used for inference. For platform: AWS_SageMaker",
+    )
+    @click.option(
+        '--kube-namespace',
+        help="Namespace for kubernetes deployment. For platform: Kubernetes",
+    )
+    @click.option('--replicas', help="Number of replicas. For platform: Kubernetes")
+    @click.option('--service-name', help="Name for service. For platform: Kubernetes")
+    @click.option('--service-type', help="Service Type. For platform: Kubernetes")
+    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    def apply(
+        bento,
+        deployment_name,
+        platform,
+        output,
+        namespace=None,
+        labels=None,
+        annotations=None,
+        region=None,
+        stage=None,
+        instance_type=None,
+        instance_count=None,
+        api_name=None,
+        kube_namespace=None,
+        replicas=None,
+        service_name=None,
+        service_type=None,
+    ):
+        bento_name, bento_verison = bento.split(':')
+        spec = DeploymentSpec(
+            bento_name=bento_name,
+            bento_verison=bento_verison,
+            operator=get_deployment_operator_type(platform),
+        )
+        if platform == 'aws_sagemaker':
+            spec.sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
+                region=region,
+                instance_count=instance_count,
+                instance_type=instance_type,
+                api_name=api_name,
+            )
+        elif platform == 'aws_lambda':
+            spec.aws_lambda_operator_config = DeploymentSpec.AwsLambdaOperatorConfig(
+                region=region, stage=stage
+            )
+        elif platform == 'gcp_function':
+            spec.gcp_function_operator_config = DeploymentSpec.GcpFunctionOperatorConfig(
+                region=region, stage=stage
+            )
+        elif platform == 'kubernetes':
+            spec.kubernetes_operator_config = DeploymentSpec.KubernetesOperatorConfig(
+                kube_namespace=kube_namespace,
+                replicas=replicas,
+                service_name=service_name,
+                service_type=service_type,
+            )
+        else:
+            raise BentoMLDeploymentException(
+                "Custom deployment configuration isn't supported in the current version"
+            )
+
+        result = get_yatai_service().ApplyDeployment(
+            ApplyDeploymentRequest(
+                deployment=Deployment(
+                    namespace=namespace,
+                    name=deployment_name,
+                    annotations=parse_key_value_pairs(annotations),
+                    labels=parse_key_value_pairs(labels),
+                    spec=spec,
+                )
+            )
+        )
+        if result.status.status_code != Status.OK:
+            _echo(
+                'Failed to apply deployment {name}. code: {error_code}, message: {error_message}'.format(
+                    name=deployment_name,
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
+            )
+        else:
+            _echo(
+                'Successfully apply deployment {}'.format(deployment_name),
+                CLI_COLOR_SUCCESS,
+            )
+            display_deployment_info(result.deployment, output)
+
+    @deploy.command()
+    @click.option("--name", type=click.STRING, help="Deployment name", required=True)
+    def delete(name):
+        result = get_yatai_service().DeleteDeployment(
+            DeleteDeploymentRequest(deployment_name=name)
+        )
+        if result.status.status_code != Status.OK:
+            _echo(
+                'Failed to delete deployment {name}. code: {error_code}, message: {error_message}'.format(
+                    name=name,
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
+            )
+        else:
+            _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
+
+    @deploy.command()
+    @click.option("--name", type=click.STRING, help="Deployment name", required=True)
+    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    def get(name, output):
+        result = get_yatai_service().GetDeployment(
+            GetDeploymentRequest(deployment_name=name)
+        )
+        if result.status.status_code != Status.OK:
+            _echo(
+                'Failed to get deployment {name}. code: {error_code}, message: {error_message}'.format(
+                    name=name,
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
+            )
+        else:
+            display_deployment_info(result.deployment, output)
+
+    @deploy.command()
+    @click.option("--name", type=click.STRING, help="Deployment name", required=True)
+    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    def describe(name, output=None):
+        result = get_yatai_service().DescribeDeployment(
+            DescribeDeploymentRequest(deployment_name=name)
+        )
+        if result.status.status_code != Status.OK:
+            _echo(
+                'Failed to describe deployment {name}. code: {error_code}, message: {error_message}'.format(
+                    name=name,
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
+            )
+        else:
+            display_deployment_info(result.deployment, output)
+
+    @deploy.command()
+    @click.option(
+        "--limit", type=click.INT, help="Limit how many deployments will be retrieved"
+    )
+    @click.option(
+        "--filter", type=click.STRING, help="Filter retrieved deployments with keywords"
+    )
+    @click.option(
+        "--labels", type=click.STRING, help="List deployments with the giving labels"
+    )
+    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    def list(output, limit=None, filter=None, labels=None):
+        result = get_yatai_service().ListDeployments(
+            ListDeploymentsRequest(
+                limit=limit, filter=filter, labels=parse_key_value_pairs(labels)
+            )
+        )
+        if result.status.status_code != Status.OK:
+            _echo(
+                'Failed to list deployments. code: {error_code}, message: {error_message}'.format(
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
+            )
+        else:
+            for deployment_pb in result.deployments:
+                display_deployment_info(deployment_pb, output)
+
+    return deploy

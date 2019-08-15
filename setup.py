@@ -48,7 +48,6 @@ tensorflow = ["tensorflow"]
 xgboost = ["xgboost"]
 h2o = ["h2o"]
 api_server = ["gunicorn", "prometheus_client", "Werkzeug"]
-grpc_tools = ["grpcio", "grpcio-tools", "mypy-protobuf"]
 
 optional_requires = api_server + imageio + pytorch + tensorflow + fastai + xgboost + h2o
 
@@ -67,19 +66,16 @@ tests_require = (
     + fastai
 )
 
-dev_requires = (
-    [
-        "pylint==2.3.1",
-        "flake8",
-        "tox-conda==0.2.0",
-        "twine",
-        "black",
-        "setuptools",
-        "gitpython>=2.0.2",
-    ]
-    + tests_require
-    + grpc_tools
-)
+dev_requires = [
+    "pylint==2.3.1",
+    "flake8",
+    "tox-conda==0.2.0",
+    "twine",
+    "black",
+    "setuptools",
+    "gitpython>=2.0.2",
+    "grpcio-tools",
+] + tests_require
 
 sphinx_requires = [
     "sphinx",
@@ -90,9 +86,7 @@ sphinx_requires = [
 
 doc_builder_requires = sphinx_requires + install_requires
 
-dev_all = (
-    install_requires + dev_requires + optional_requires + sphinx_requires + grpc_tools
-)
+dev_all = install_requires + dev_requires + optional_requires + sphinx_requires
 
 extras_require = {
     "all": dev_all,

@@ -440,7 +440,9 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         production_variants = [
             {
-                "VariantName": generate_aws_compatible_string(deployment_spec.bento_name),
+                "VariantName": generate_aws_compatible_string(
+                    deployment_spec.bento_name
+                ),
                 "ModelName": model_name,
                 "InitialInstanceCount": sagemaker_config.instance_count,
                 "InstanceType": sagemaker_config.instance_type,
@@ -472,11 +474,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         res_deployment_pb = Deployment()
         res_deployment_pb.CopyFrom(deployment_pb)
         res_deployment_pb.state = self.describe(res_deployment_pb).state
-        
-        return ApplyDeploymentResponse(
-            status=Status.OK(),
-            deployment=res_deployment_pb
-        )
+
+        return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 
     def delete(self, deployment_pb, repo):
         deployment = self.get(deployment_pb).deployment
@@ -554,11 +553,12 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             "arn": endpoint_status_response["EndpointArn"],
         }
         if endpoint_status_response['ProductionVariants']:
-            info_json['ProductionVariants'] = endpoint_status_response['ProductionVariants']
+            info_json['ProductionVariants'] = endpoint_status_response[
+                'ProductionVariants'
+            ]
 
         deployment_state = DeploymentState(
-            state=service_state,
-            info_json=json.dumps(info_json),
+            state=service_state, info_json=json.dumps(info_json)
         )
         if endpoint_status_response['FailureReason']:
             deployment_state.error_message = endpoint_status_response['FailureReason']

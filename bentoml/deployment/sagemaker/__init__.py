@@ -47,6 +47,7 @@ from bentoml.proto.deployment_pb2 import (
     Deployment,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
+    DescribeDeploymentResponse,
     DeploymentState,
 )
 
@@ -405,18 +406,13 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         if sagemaker_config is None:
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
 
-        if sagemaker_config.region is not None:
-            region = sagemaker_config.region
-        else:
-            region = config.get('aws', 'default_region')
-
+        region = sagemaker_config.region or config.get('aws', 'default_region')
         archive_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
 
         # config = load_bentoml_config(bento_path)...
 
         sagemaker_client = boto3.client('sagemaker', region)
 
-        temp_path = generate_temporary_sagemaker_content(archive_path)
         with TemporarySageMakerContent(
             archive_path, deployment_spec.bento_name, deployment_spec.bento_version
         ) as temp_path:
@@ -475,7 +471,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         res_deployment_pb = Deployment()
         res_deployment_pb.CopyFrom(deployment_pb)
-        res_deployment_pb.state = self.describe(res_deployment_pb)
+        res_deployment_pb.state = self.describe(res_deployment_pb).state
         
         return ApplyDeploymentResponse(
             status=Status.OK(),
@@ -567,4 +563,4 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         if endpoint_status_response['FailureReason']:
             deployment_state.error_message = endpoint_status_response['FailureReason']
 
-        return deployment_state
+        return DescribeDeploymentResponse(state=deployment_state, status=Status.OK())

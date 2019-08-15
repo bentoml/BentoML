@@ -500,11 +500,4 @@ def get_deployment_sub_command(cli):
             for deployment_pb in result.deployments:
                 display_deployment_info(deployment_pb, output)
 
-    @deploy.command()
-    @deploy.command()
-    @click.option("--name", type=click.STRING, help="Deployment name", required=True)
-    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def describe(name, output):
-        pass
-
     return deploy

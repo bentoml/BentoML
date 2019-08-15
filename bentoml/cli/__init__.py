@@ -292,12 +292,13 @@ def create_bentoml_cli():
 
     # Commands created here aren't mean to be used from generated service archive. They
     # are used as part of BentoML cli commands only.
-
     add_legacy_deployment_commands(_cli)
+
     deployment_sub_command = get_deployment_sub_command(_cli)
     config_sub_command = get_configuration_sub_command()
     _cli.add_command(config_sub_command)
     _cli.add_command(deployment_sub_command)
+    
     return _cli
 
 

@@ -43,6 +43,7 @@ from bentoml.proto.status_pb2 import Status
 from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
+from bentoml.deployment.store import ALL_NAMESPACE_TAG
 
 SERVERLESS_PLATFORMS = ["aws-lambda", "aws-lambda-py2", "gcp-function"]
 
@@ -278,7 +279,7 @@ def parse_bento_tag(tag):
         return items[0], items[1]
 
 
-def get_deployment_sub_command(cli):
+def get_deployment_sub_command():
     @click.group()
     def deploy():
         pass
@@ -337,12 +338,15 @@ def get_deployment_sub_command(cli):
     @click.option('--service-name', help="Name for service. For platform: Kubernetes")
     @click.option('--service-type', help="Service Type. For platform: Kubernetes")
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option('--namespace', type=click.STRING)
+    @click.option('--all-namespace', type=click.BOOL)
     def apply(
         bento,
         deployment_name,
         platform,
         output,
         namespace=None,
+        all_namespace=None,
         labels=None,
         annotations=None,
         region=None,
@@ -389,6 +393,9 @@ def get_deployment_sub_command(cli):
                 "Custom deployment configuration isn't supported in the current version"
             )
 
+        if all_namespace:
+            namespace = ALL_NAMESPACE_TAG
+
         result = get_yatai_service().ApplyDeployment(
             ApplyDeploymentRequest(
                 deployment=Deployment(
@@ -418,10 +425,14 @@ def get_deployment_sub_command(cli):
 
     @deploy.command()
     @click.option("--name", type=click.STRING, help="Deployment name", required=True)
-    def delete(name):
+    @click.option('--namespace', type=click.STRING)
+    @click.option('--all-namespace', type=click.BOOL)
+    def delete(name, namespace=None, all_namespace=None):
         track_cli('deploy-delete')
+        if all_namespace:
+            namespace = ALL_NAMESPACE_TAG
         result = get_yatai_service().DeleteDeployment(
-            DeleteDeploymentRequest(deployment_name=name)
+            DeleteDeploymentRequest(deployment_name=name, namespace=namespace)
         )
         if result.status.status_code != Status.OK:
             _echo(
@@ -438,10 +449,14 @@ def get_deployment_sub_command(cli):
     @deploy.command()
     @click.option("--name", type=click.STRING, help="Deployment name", required=True)
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def get(name, output):
+    @click.option('--namespace', type=click.STRING)
+    @click.option('--all-namespace', type=click.BOOL)
+    def get(name, output, namespace=None, all_namespace=None):
         track_cli('deploy-get')
+        if all_namespace:
+            namespace = ALL_NAMESPACE_TAG
         result = get_yatai_service().GetDeployment(
-            GetDeploymentRequest(deployment_name=name)
+            GetDeploymentRequest(deployment_name=name, namespace=namespace)
         )
         if result.status.status_code != Status.OK:
             _echo(
@@ -458,10 +473,14 @@ def get_deployment_sub_command(cli):
     @deploy.command()
     @click.option("--name", type=click.STRING, help="Deployment name", required=True)
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def describe(name, output=None):
+    @click.option('--namespace', type=click.STRING)
+    @click.option('--all-namespace', type=click.BOOL)
+    def describe(name, output=None, namespace=None, all_namespace=None):
         track_cli('deploy-describe')
+        if all_namespace:
+            namespace = ALL_NAMESPACE_TAG
         result = get_yatai_service().DescribeDeployment(
-            DescribeDeploymentRequest(deployment_name=name)
+            DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
         )
         if result.status.status_code != Status.OK:
             _echo(
@@ -486,11 +505,20 @@ def get_deployment_sub_command(cli):
         "--labels", type=click.STRING, help="List deployments with the giving labels"
     )
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def list(output, limit=None, filter=None, labels=None):
+    @click.option('--namespace', type=click.STRING)
+    @click.option('--all-namespace', type=click.BOOL)
+    def list(
+        output, limit=None, filter=None, labels=None, namespace=None, all_namespace=None
+    ):
         track_cli('deploy-list')
+        if all_namespace:
+            namespace = ALL_NAMESPACE_TAG
         result = get_yatai_service().ListDeployments(
             ListDeploymentsRequest(
-                limit=limit, filter=filter, labels=parse_key_value_pairs(labels)
+                limit=limit,
+                filter=filter,
+                labels=parse_key_value_pairs(labels),
+                namespace=namespace,
             )
         )
         if result.status.status_code != Status.OK:

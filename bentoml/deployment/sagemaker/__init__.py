@@ -477,7 +477,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 
-    def delete(self, deployment_pb, repo):
+    def delete(self, deployment_pb, repo=None):
         deployment = self.get(deployment_pb).deployment
         deployment_spec = deployment.spec
         sagemaker_config = deployment_spec.sagemaker_operator_config
@@ -486,7 +486,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
         delete_endpoint_response = sagemaker_client.delete_endpoint(
-            EndpointName=deployment_spec.bento_name
+            EndpointName=generate_aws_compatible_string(deployment_spec.bento_name)
         )
         logger.info("AWS delete endpoint response: %s", delete_endpoint_response)
         if delete_endpoint_response["ResponseMetadata"]["HTTPStatusCode"] == 200:
@@ -517,7 +517,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         else:
             raise BentoMLDeploymentException('Delete Sagemaker deployment failed')
 
-    def describe(self, deployment_pb, repo):
+    def describe(self, deployment_pb, repo=None):
         deployment_spec = deployment_pb.spec
         sagemaker_config = deployment_spec.sagemaker_operator_config
         if sagemaker_config is None:

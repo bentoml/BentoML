@@ -462,10 +462,12 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             "AWS create endpoint config response: %s", create_endpoint_config_response
         )
 
-        logger.info("Creating sagemaker endpoint %s", deployment_spec.bento_name)
+        endpoint_name = generate_aws_compatible_string(
+            deployment_pb.namespace + '-' + deployment_spec.bento_name
+        )
+        logger.info("Creating sagemaker endpoint %s", endpoint_name)
         create_endpoint_response = sagemaker_client.create_endpoint(
-            EndpointName=generate_aws_compatible_string(deployment_spec.bento_name),
-            EndpointConfigName=endpoint_config_name,
+            EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
         )
         logger.info("AWS create endpoint response: %s", create_endpoint_response)
 
@@ -485,8 +487,11 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
+        endpoint_name = generate_aws_compatible_string(
+            deployment_pb.namespace + '-' + deployment_spec.bento_name
+        )
         delete_endpoint_response = sagemaker_client.delete_endpoint(
-            EndpointName=generate_aws_compatible_string(deployment_spec.bento_name)
+            EndpointName=endpoint_name
         )
         logger.info("AWS delete endpoint response: %s", delete_endpoint_response)
         if delete_endpoint_response["ResponseMetadata"]["HTTPStatusCode"] == 200:
@@ -523,8 +528,9 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         if sagemaker_config is None:
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
+        endpoint_name = generate_aws_compatible_string(deployment_pb.namespace + '-' + deployment_spec.bento_name)
         endpoint_status_response = sagemaker_client.describe_endpoint(
-            EndpointName=generate_aws_compatible_string(deployment_spec.bento_name)
+            EndpointName=endpoint_name
         )
         logger.info("AWS describe endpoint response: %s", endpoint_status_response)
         endpoint_status = endpoint_status_response["EndpointStatus"]
@@ -550,7 +556,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         info_json = {
             "endpoint_status": endpoint_status,
-            "response": endpoint_status_response
+            "response": endpoint_status_response,
         }
 
         deployment_state = DeploymentState(

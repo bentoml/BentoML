@@ -550,12 +550,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         info_json = {
             "endpoint_status": endpoint_status,
-            "arn": endpoint_status_response["EndpointArn"],
+            "response": endpoint_status_response
         }
-        if endpoint_status_response['ProductionVariants']:
-            info_json['ProductionVariants'] = endpoint_status_response[
-                'ProductionVariants'
-            ]
 
         deployment_state = DeploymentState(
             state=service_state, info_json=json.dumps(info_json)

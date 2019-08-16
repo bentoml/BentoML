@@ -298,7 +298,7 @@ def create_bentoml_cli():
     config_sub_command = get_configuration_sub_command()
     _cli.add_command(config_sub_command)
     _cli.add_command(deployment_sub_command)
-    
+
     return _cli
 
 

@@ -105,7 +105,7 @@ def conditional_argument(condition, *param_decls, **attrs):
 
 
 def parse_bento_tag_callback(ctx, param, value):
-    if re.match(r"[A-Za-z_][A-Za-z_0-9]*:[A-Za-z_0-9.+]*", value) is None:
+    if re.match(r"^[A-Za-z_][A-Za-z_0-9]*:[A-Za-z0-9.+-_]*$", value) is None:
         raise click.BadParameter(
             "Bad formatting. Please present in BentoName:Version, for example "
             "iris_classifier:v1.2.0"

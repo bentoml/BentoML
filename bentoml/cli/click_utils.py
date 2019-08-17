@@ -16,6 +16,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import re
 import click
 
 
@@ -104,17 +105,10 @@ def conditional_argument(condition, *param_decls, **attrs):
 
 
 def parse_bento_tag_callback(ctx, param, value):
-    items = value.split(':')
-
-    if len(items) != 2:
+    if re.match(r"[A-Za-z_][A-Za-z_0-9]*:[A-Za-z_0-9.+]*", value) is None:
         raise click.BadParameter(
-            "Bad formatting. Please present in Name:Version, for example iris_classifier:v1.2.0"
+            "Bad formatting. Please present in BentoName:Version, for example "
+            "iris_classifier:v1.2.0"
         )
-    if not items[0]:
-        raise click.BadParameter(
-            "':' can't be the leading character for option 'bento'"
-        )
-    if not items[1]:
-        raise click.BadParameter("Please include value for the key %s" % items[0])
 
     return value

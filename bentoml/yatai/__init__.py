@@ -70,6 +70,13 @@ class YataiService(YataiServicer):
 
     def ApplyDeployment(self, request, context=None):
         try:
+            # apply default namespace if not set
+            request.deployment.namespace = (
+                request.deployment.namespace or self.default_namespace
+            )
+
+            # TODO: validate deployment config
+
             # create or update deployment spec record
             self.deployment_store.insert_or_update(request.deployment)
 
@@ -90,9 +97,10 @@ class YataiService(YataiServicer):
 
     def DeleteDeployment(self, request, context=None):
         try:
-            deployment_name = request.deployment_name
-            namespace = request.namespace or self.default_namespace
-            deployment_pb = self.deployment_store.get(deployment_name, namespace)
+            request.namespace = request.namespace or self.default_namespace
+            deployment_pb = self.deployment_store.get(
+                request.deployment_name, request.namespace
+            )
 
             if deployment_pb:
                 # find deployment operator based on deployment spec
@@ -103,14 +111,16 @@ class YataiService(YataiServicer):
 
                 # if delete successful, remove it from active deployment records table
                 if response.status.status_code == status_pb2.Status.OK:
-                    self.deployment_store.delete(deployment_name, namespace)
+                    self.deployment_store.delete(
+                        request.deployment_name, request.namespace
+                    )
 
                 return response
             else:
                 return DeleteDeploymentResponse(
                     status=Status.NOT_FOUND(
                         'Deployment "{}" in namespace "{}" not found'.format(
-                            deployment_name, namespace
+                            request.deployment_name, request.namespace
                         )
                     )
                 )
@@ -121,9 +131,10 @@ class YataiService(YataiServicer):
 
     def GetDeployment(self, request, context=None):
         try:
-            deployment_name = request.deployment_name
-            namespace = request.namespace or self.default_namespace
-            deployment_pb = self.deployment_store.get(deployment_name, namespace)
+            request.namespace = request.namespace or self.default_namespace
+            deployment_pb = self.deployment_store.get(
+                request.deployment_name, request.namespace
+            )
             if deployment_pb:
                 return GetDeploymentResponse(
                     status=Status.OK(), deployment=deployment_pb
@@ -132,7 +143,7 @@ class YataiService(YataiServicer):
                 return GetDeploymentResponse(
                     status=Status.NOT_FOUND(
                         'Deployment "{}" in namespace "{}" not found'.format(
-                            deployment_name, namespace
+                            request.deployment_name, request.namespace
                         )
                     )
                 )
@@ -142,9 +153,10 @@ class YataiService(YataiServicer):
 
     def DescribeDeployment(self, request, context=None):
         try:
-            deployment_name = request.deployment_name
-            namespace = request.namespace or self.default_namespace
-            deployment_pb = self.deployment_store.get(deployment_name, namespace)
+            request.namespace = request.namespace or self.default_namespace
+            deployment_pb = self.deployment_store.get(
+                request.deployment_name, request.namespace
+            )
 
             if deployment_pb:
                 operator = get_deployment_operator(deployment_pb)
@@ -152,7 +164,7 @@ class YataiService(YataiServicer):
 
                 if response.status.status_code == status_pb2.Status.OK:
                     with self.deployment_store.update_deployment(
-                        deployment_name, namespace
+                        request.deployment_name, request.namespace
                     ) as deployment:
                         deployment.state = MessageToDict(response.state)
 
@@ -161,7 +173,7 @@ class YataiService(YataiServicer):
                 return DescribeDeploymentResponse(
                     status=Status.NOT_FOUND(
                         'Deployment "{}" in namespace "{}" not found'.format(
-                            deployment_name, namespace
+                            request.deployment_name, request.namespace
                         )
                     )
                 )

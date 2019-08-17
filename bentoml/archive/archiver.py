@@ -122,7 +122,7 @@ def save(bento_service, dst, version=None):
     return full_saved_path
 
 
-def generate_artifacts_list(bento_service):
+def generate_apis_list(bento_service):
     result = []
     for api in bento_service.get_service_apis():
         result.append({
@@ -133,7 +133,7 @@ def generate_artifacts_list(bento_service):
     return result
 
 
-def generate_apis_list(bento_service):
+def generate_artifacts_list(bento_service):
     result = []
     for artifact_name in bento_service.artifacts:
         artifact_spec = bento_service.artifacts[artifact_name].spec

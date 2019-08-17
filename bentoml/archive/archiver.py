@@ -125,11 +125,13 @@ def save(bento_service, dst, version=None):
 def generate_apis_list(bento_service):
     result = []
     for api in bento_service.get_service_apis():
-        result.append({
-            "name": api.name,
-            "handler_type": api.handler.__class__.__name__,
-            "docs": api.doc,
-        })
+        result.append(
+            {
+                "name": api.name,
+                "handler_type": api.handler.__class__.__name__,
+                "docs": api.doc,
+            }
+        )
     return result
 
 
@@ -137,10 +139,9 @@ def generate_artifacts_list(bento_service):
     result = []
     for artifact_name in bento_service.artifacts:
         artifact_spec = bento_service.artifacts[artifact_name].spec
-        result.append({
-            'name': artifact_name,
-            'artifact_type': artifact_spec.__class__.__name__,
-        })
+        result.append(
+            {'name': artifact_name, 'artifact_type': artifact_spec.__class__.__name__}
+        )
     return result
 
 

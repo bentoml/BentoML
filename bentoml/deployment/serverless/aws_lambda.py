@@ -24,11 +24,11 @@ from ruamel.yaml import YAML
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.status import Status
-from bentoml.repository import get_local
 from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 from bentoml.proto.deployment_pb2 import (
+    Deployment,
     ApplyDeploymentResponse,
-    GetDeploymentResponse,
+    DescribeDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentState,
 )
@@ -37,6 +37,7 @@ from bentoml.deployment.serverless.serverless_utils import (
     generate_bundle,
     create_temporary_yaml_config,
 )
+from bentoml.archive.loader import load_bentoml_config
 
 logger = logging.getLogger(__name__)
 
@@ -80,12 +81,12 @@ def generate_serverless_configuration_for_aws_lambda(
     serverless_config["functions"] = {}
     for api in apis:
         function_config = {
-            "handler": "handler.{name}".format(name=api.name),
+            "handler": "handler.{name}".format(name=api['name']),
             "events": [
-                {"http": {"path": "/{name}".format(name=api.name), "method": "post"}}
+                {"http": {"path": "/{name}".format(name=api['name']), "method": "post"}}
             ],
         }
-        serverless_config["functions"][api.name] = function_config
+        serverless_config["functions"][api['name']] = function_config
 
     serverless_config["custom"] = {
         "apigwBinary": ["image/jpg", "image/jpeg", "image/png"],
@@ -107,7 +108,7 @@ def generate_handler_py(bento_name, apis, output_path):
     handler_py_content = AWS_HANDLER_PY_TEMPLATE_HEADER.format(class_name=bento_name)
 
     for api in apis:
-        api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api.name)
+        api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api['name'])
         handler_py_content = handler_py_content + api_content
 
     with open(os.path.join(output_path, "handler.py"), "w") as f:
@@ -115,10 +116,10 @@ def generate_handler_py(bento_name, apis, output_path):
     return
 
 
-def update_additional_lambda_config(dir_path, bento_archive, region, stage):
-    generate_handler_py(bento_archive.name, bento_archive.apis, dir_path)
+def update_additional_lambda_config(dir_path, bento_config, region, stage):
+    generate_handler_py(bento_archive.name, bento_config['apis'], dir_path)
     generate_serverless_configuration_for_aws_lambda(
-        bento_archive.name, bento_archive.apis, dir_path, region, stage
+        bento_archive.name, bento_config['apis'], dir_path, region, stage
     )
     return
 
@@ -127,8 +128,8 @@ def generate_temp_serverless_config_for_aws_lambda(bento_archive, region, stage)
     functions = {}
     for api in bento_archive.apis:
         functions[api.name] = {
-            "handler": "handler." + api.name,
-            "events": [{"http": {"path": "/" + api.name, "method": "post"}}],
+            "handler": "handler." + api['name'],
+            "events": [{"http": {"path": "/" + api['name'], "method": "post"}}],
         }
 
     return create_temporary_yaml_config(
@@ -137,54 +138,29 @@ def generate_temp_serverless_config_for_aws_lambda(bento_archive, region, stage)
 
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb):
+    def apply(self, deployment_pb, repo=None):
         deployment_spec = deployment_pb.spec
 
-        repository = get_local()
-        bento_archive = repository.get(
-            deployment_spec.bento_name, deployment_spec.bento_version
-        )
-        archive_path = bento_archive.uri.uri
-        output_path = generate_bundle(archive_path, bento_archive.name)
+        bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
+        output_path = generate_bundle(bento_path, deployment_spec.bento_name)
+        bento_config = load_bentoml_config(bento_path)
 
         update_additional_lambda_config(
             output_path,
-            bento_archive,
+            bento_config,
             deployment_spec.aws_lambda_operator_config.region,
             deployment_spec.aws_lambda_operator_config.stage,
         )
 
         call_serverless_command(["serverless", "deploy"], output_path)
 
-        deployment = self.get(deployment_pb).deployment
-        return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment)
+        res_deployment_pb = Deployment()
+        res_deployment_pb.CopyFrom(deployment_pb)
+        state = self.describe(res_deployment_pb).state
+        res_deployment_pb.state = state
+        return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 
-    def get(self, deployment_pb):
-        deployment_spec = deployment_pb.spec
-
-        repository = get_local()
-        bento_archive = repository.get(
-            deployment_spec.bento_name, deployment_spec.bento_version
-        )
-        tempdir = generate_temp_serverless_config_for_aws_lambda(
-            bento_archive,
-            deployment_spec.aws_lambda_operator_config.region,
-            deployment_spec.aws_lambda_operator_config.stage,
-        )
-
-        try:
-            response = call_serverless_command(["serverless", "info"], tempdir)
-            deployment_pb.state = DeploymentState(
-                state=DeploymentState.RUNNING, info_json="\n".join(response)
-            )
-        except BentoMLException as e:
-            deployment_pb.state = DeploymentState(
-                state=DeploymentState.ERROR, error_message=str(e)
-            )
-
-        return GetDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
-
-    def delete(self, deployment_pb):
+    def delete(self, deployment_pb, repo=None):
         deployment = self.get(deployment_pb).deployment
         if deployment.state.state != DeploymentState.RUNNING:
             raise BentoMLDeploymentException(
@@ -193,10 +169,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
         deployment_spec = deployment_pb.spec
 
-        repository = get_local()
-        bento_archive = repository.get(
-            deployment_spec.bento_name, deployment_spec.bento_version
-        )
+        bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         tempdir = generate_temp_serverless_config_for_aws_lambda(
             bento_archive,
             deployment_spec.aws_lambda_operator_config.region,
@@ -210,3 +183,23 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             status = Status.ABORTED()
 
         return DeleteDeploymentResponse(status=status)
+
+    def describe(self, deployment_pb, repo=None):
+        deployment_spec = deployment_pb.spec
+
+        bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
+        tempdir = generate_temp_serverless_config_for_aws_lambda(
+            bento_archive,
+            deployment_spec.aws_lambda_operator_config.region,
+            deployment_spec.aws_lambda_operator_config.stage,
+        )
+
+        try:
+            response = call_serverless_command(["serverless", "info"], tempdir)
+            state = DeploymentState(
+                state=DeploymentState.RUNNING, info_json="\n".join(response)
+            )
+        except BentoMLException as e:
+            state = DeploymentState(state=DeploymentState.ERROR, error_message=str(e))
+
+        return DescribeDeploymentResponse(status=Status.OK(), state=state)

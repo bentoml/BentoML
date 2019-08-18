@@ -71,7 +71,7 @@ class ImageHandler(BentoHandler):
         accept_multiple_files=False,
         pilmode="RGB",
     ):
-        self.input_name = input_name
+        self.input_name = input_name if type(input_name) is tuple else (input_name,)
         self.pilmode = pilmode
         self.accept_file_extensions = accept_file_extensions or [
             ".jpg",
@@ -88,7 +88,8 @@ class ImageHandler(BentoHandler):
                 "schema": {
                     "type": "object",
                     "properties": {
-                        self.input_name: {"type": "string", "format": "binary"}
+                        filename: {"type": "string", "format": "binary"}
+                        for filename in self.input_name
                     },
                 }
             },
@@ -132,8 +133,9 @@ class ImageHandler(BentoHandler):
                 )
 
             input_data = imread(input_stream, pilmode=self.pilmode)
+            result = func(input_data)
         else:
-            input_files = request.files.getlist(self.input_name)
+            input_files = [request.files.get(filename) for filename in self.input_name]
             if input_files:
                 file_names = [secure_filename(file.filename) for file in input_files]
                 for file_name in file_names:
@@ -150,8 +152,8 @@ class ImageHandler(BentoHandler):
                 imread(input_stream, pilmode=self.pilmode)
                 for input_stream in input_streams
             )
+            result = func(*input_data)
 
-        result = func(input_data)
         result = get_output_str(result, request.headers.get("output", "json"))
         return Response(response=result, status=200, mimetype="application/json")
 

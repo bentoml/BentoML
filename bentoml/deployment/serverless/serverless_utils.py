@@ -115,23 +115,108 @@ def generate_bundle(archive_path, template_type, bento_name):
     return os.path.realpath(tempdir)
 
 
-def create_temporary_yaml_config(provider_name, region, stage, bento_name, functions):
-    serverless_config = {
-        "service": bento_name,
-        "provider": {"region": region, "stage": stage, "name": provider_name},
-        "functions": functions,
-    }
+class TemporaryServerlessContent(object):
+    def __init__(
+        self, archive_path, bento_name, bento_version, template_type, _cleanup=True
+    ):
+        self.archive_path = archive_path
+        self.bento_name = bento_name
+        self.bento_version = bento_version
+        self.temp_directory = TempDirectory()
+        self.template_type = template_type
+        self._cleanup = _cleanup
+        self.path = None
 
-    # if self.platform == "google-python":
-    #     serverless_config["provider"]["name"] = "google"
-    #     for api in apis:
-    #         serverless_config["functions"][api.name] = {
-    #             "handler": api.name,
-    #             "events": [{"http": "path"}],
-    #         }
+    def __enter__(self):
+        self.generate()
+        return self.path
 
-    yaml = YAML()
-    with TempDirectory() as tempdir:
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._cleanup:
+            self.cleanup()
+        pass
+
+    def generate(self):
+        self.temp_directory.create()
+        tempdir = self.temp_directory.path
+        call_serverless_command(
+            [
+                "serverless",
+                "create",
+                "--template",
+                self.template_type,
+                "--name",
+                self.bento_name,
+            ],
+            tempdir,
+        )
+        shutil.copy(os.path.join(self.archive_path, "requirements.txt"), tempdir)
+        model_serivce_archive_path = os.path.join(tempdir, self.bento_name)
+        shutil.copytree(self.archive_path, model_serivce_archive_path)
+        self.path = tempdir
+
+    def cleanup(self):
+        self.temp_directory.cleanup()
+        self.path = None
+
+
+class TemporaryServerlessConfig(object):
+    def __init__(
+        self,
+        archive_path,
+        bento_name,
+        bento_version,
+        region,
+        stage,
+        functions,
+        provider_name,
+        _cleanup=True,
+    ):
+        self.archive_path = archive_path
+        self.temp_directory = TempDirectory()
+        self.bento_name = bento_name
+        self.bento_version = bento_version
+        self.region = region
+        self.stage = stage
+        self.functions = functions
+        self.provider_name = provider_name
+        self._cleanup = _cleanup
+        self.path = None
+
+    def __enter__(self):
+        self.generate()
+        return self.path
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._cleanup:
+            self.cleanup()
+
+    def generate(self):
+        serverless_config = {
+            "service": self.bento_name,
+            "provider": {
+                "region": self.region,
+                "stage": self.stage,
+                "name": self.provider_name,
+            },
+            "functions": self.functions,
+        }
+
+        # if self.platform == "google-python":
+        #     serverless_config["provider"]["name"] = "google"
+        #     for api in apis:
+        #         serverless_config["functions"][api.name] = {
+        #             "handler": api.name,
+        #             "events": [{"http": "path"}],
+        #         }
+
+        yaml = YAML()
+        self.temp_directory.create()
+        tempdir = self.temp_directory.path
         saved_path = os.path.join(tempdir, "serverless.yml")
         yaml.dump(serverless_config, Path(saved_path))
-    return tempdir
+        self.path = saved_path
+
+    def cleanup(self):
+        self.temp_directory.cleanup()
+        self.path = None

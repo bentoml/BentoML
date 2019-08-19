@@ -20,6 +20,7 @@ import os
 import shutil
 import logging
 import subprocess
+import json
 from subprocess import PIPE
 
 from ruamel.yaml import YAML
@@ -76,9 +77,18 @@ def parse_serverless_response(serverless_response):
     error = [s for s in str_list if "Serverless Error" in s]
     if error:
         error_pos = str_list.index(error[0])
-        error_message = str_list[error_pos + 1]
+        error_message = str_list[error_pos + 2]
         raise BentoMLException(error_message)
     return str_list
+
+
+def parse_serverless_info_response_to_json_string(responses):
+    result = {}
+    for line in responses:
+        if ': ' in line:
+            items = line.split(': ')
+            result[items[0]] = items[1]
+    return json.dumps(result)
 
 
 def generate_bundle(archive_path, template_type, bento_name):
@@ -117,11 +127,11 @@ def generate_bundle(archive_path, template_type, bento_name):
 
 class TemporaryServerlessContent(object):
     def __init__(
-        self, archive_path, bento_name, bento_version, template_type, _cleanup=True
+        self, archive_path, deployment_name, bento_name, template_type, _cleanup=True
     ):
         self.archive_path = archive_path
+        self.deployment_name = deployment_name
         self.bento_name = bento_name
-        self.bento_version = bento_version
         self.temp_directory = TempDirectory()
         self.template_type = template_type
         self._cleanup = _cleanup
@@ -146,7 +156,7 @@ class TemporaryServerlessContent(object):
                 "--template",
                 self.template_type,
                 "--name",
-                self.bento_name,
+                self.deployment_name,
             ],
             tempdir,
         )
@@ -164,8 +174,7 @@ class TemporaryServerlessConfig(object):
     def __init__(
         self,
         archive_path,
-        bento_name,
-        bento_version,
+        deployment_name,
         region,
         stage,
         functions,
@@ -174,8 +183,7 @@ class TemporaryServerlessConfig(object):
     ):
         self.archive_path = archive_path
         self.temp_directory = TempDirectory()
-        self.bento_name = bento_name
-        self.bento_version = bento_version
+        self.deployment_name = deployment_name
         self.region = region
         self.stage = stage
         self.functions = functions
@@ -193,7 +201,7 @@ class TemporaryServerlessConfig(object):
 
     def generate(self):
         serverless_config = {
-            "service": self.bento_name,
+            "service": self.deployment_name,
             "provider": {
                 "region": self.region,
                 "stage": self.stage,
@@ -215,7 +223,7 @@ class TemporaryServerlessConfig(object):
         tempdir = self.temp_directory.path
         saved_path = os.path.join(tempdir, "serverless.yml")
         yaml.dump(serverless_config, Path(saved_path))
-        self.path = saved_path
+        self.path = tempdir
 
     def cleanup(self):
         self.temp_directory.cleanup()

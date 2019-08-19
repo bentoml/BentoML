@@ -214,4 +214,5 @@ class BentoServiceEnv(object):
 
         env_dict["conda_env"] = self._conda_env._conda_env
 
+        env_dict["python_version"] = PYTHON_VERSION
         return env_dict

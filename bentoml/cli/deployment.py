@@ -479,7 +479,7 @@ def get_deployment_sub_command():
 
     @deploy.command()
     @click.option('--namespace', type=click.STRING)
-    @click.option('--all-namespace', type=click.BOOL, defult=False)
+    @click.option('--all-namespace', type=click.BOOL, default=False)
     @click.option(
         '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
     )

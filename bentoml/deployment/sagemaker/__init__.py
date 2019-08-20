@@ -407,7 +407,9 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
 
         region = sagemaker_config.region or config.get('aws', 'default_region')
-        archive_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
+        archive_path = repo.get(
+            deployment_spec.bento_name, deployment_spec.bento_version
+        )
 
         # config = load_bentoml_config(bento_path)...
 

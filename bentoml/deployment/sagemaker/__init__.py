@@ -488,8 +488,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 
     def delete(self, deployment_pb, repo=None):
-        deployment = self.get(deployment_pb, repo).deployment
-        deployment_spec = deployment.spec
+        deployment_spec = deployment_pb.spec
         sagemaker_config = deployment_spec.sagemaker_operator_config
         if sagemaker_config is None:
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
@@ -565,7 +564,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             service_state = DeploymentState.ERROR
 
         deployment_state = DeploymentState(
-            state=service_state, info_json=json.dumps(endpoint_status_response, default=str)
+            state=service_state,
+            info_json=json.dumps(endpoint_status_response, default=str),
         )
 
         return DescribeDeploymentResponse(state=deployment_state, status=Status.OK())

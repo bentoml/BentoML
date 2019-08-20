@@ -37,6 +37,7 @@ from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
+    parse_serverless_info_response_to_json_string,
 )
 
 logger = logging.getLogger(__name__)
@@ -68,7 +69,7 @@ def generate_gcp_handler_functions_config(apis):
 
 
 def generate_serverless_configuration_for_gcp_function(
-    bento_service, apis, output_path, region, stage
+    service_name, apis, output_path, region, stage
 ):
     config_path = os.path.join(output_path, "serverless.yml")
     yaml = YAML()
@@ -76,8 +77,8 @@ def generate_serverless_configuration_for_gcp_function(
         content = f.read()
     serverless_config = yaml.load(content)
 
-    serverless_config["service"] = bento_service.name
-    serverless_config["provider"]["project"] = bento_service.name
+    serverless_config["service"] = service_name
+    serverless_config["provider"]["project"] = service_name
 
     serverless_config["provider"]["region"] = region
     logger.info("Using user defined Google region: %s", region)
@@ -112,17 +113,17 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         bento_config = load_bentoml_config(bento_path)
         with TemporaryServerlessContent(
             archive_path=bento_path,
+            deployment_name=deployment_pb.name,
             bento_name=deployment_spec.bento_name,
-            bento_version=deployment_spec.bento_version,
             template_type='google-python',
         ) as output_path:
             generate_main_py(bento_config['name'], bento_config['apis'], output_path)
             generate_serverless_configuration_for_gcp_function(
-                bento_config['name'],
-                bento_config['apis'],
-                output_path,
-                gcp_config.region,
-                gcp_config.stage,
+                service_name=bento_config['name'],
+                apis=bento_config['apis'],
+                output_path=output_path,
+                region=gcp_config.region,
+                stage=deployment_pb.namespace + '-' + gcp_config.stage,
             )
             try:
                 call_serverless_command(["serverless", "deploy"], output_path)
@@ -132,10 +133,10 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                     deployment_pb.name,
                 )
 
-        res_deployment_pb = Deployment()
+        res_deployment_pb = Deployment(state=DeploymentState())
         res_deployment_pb.CopyFrom(deployment_pb)
-        state = self.describe(res_deployment_pb).state
-        res_deployment_pb.state = state
+        state = self.describe(res_deployment_pb, repo).state
+        res_deployment_pb.state.CopyFrom(state)
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 
@@ -147,17 +148,17 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         bento_config = load_bentoml_config(bento_path)
         with TemporaryServerlessConfig(
             archive_path=bento_path,
-            bento_name=deployment_spec.bento_name,
-            bento_version=deployment_spec.bento_version,
+            deployment_name=deployment_pb.name,
             region=gcp_config.region,
-            stage=gcp_config.stage,
+            stage=deployment_pb.namespace + '-' + gcp_config.stage,
             provider_name='google',
             functions=generate_gcp_handler_functions_config(bento_config['apis']),
         ) as tempdir:
             try:
                 response = call_serverless_command(["serverless", "info"], tempdir)
+                info_json = parse_serverless_info_response_to_json_string(response)
                 state = DeploymentState(
-                    state=DeploymentState.RUNNING, info_json="\n".join(response)
+                    state=DeploymentState.RUNNING, info_json=info_json
                 )
             except BentoMLException as e:
                 state = DeploymentState(
@@ -167,7 +168,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         return DescribeDeploymentResponse(status=Status.OK(), state=state)
 
     def delete(self, deployment_pb, repo=None):
-        state = self.describe(deployment_pb).state
+        state = self.describe(deployment_pb, repo).state
         if state.state != DeploymentState.RUNNING:
             raise BentoMLDeploymentException(
                 "No active deployment: %s" % deployment_pb.name
@@ -180,10 +181,9 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         bento_config = load_bentoml_config(bento_path)
         with TemporaryServerlessConfig(
             archive_path=bento_path,
-            bento_name=deployment_spec.bento_name,
-            bento_version=deployment_spec.bento_version,
+            deployment_name=deployment_pb.name,
             region=gcp_config.region,
-            stage=gcp_config.stage,
+            stage=deployment_pb.namespace + '-' + gcp_config.stage,
             provider_name='google',
             functions=generate_gcp_handler_functions_config(bento_config['apis']),
         ) as tempdir:

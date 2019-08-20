@@ -144,7 +144,6 @@ class TemporaryServerlessContent(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._cleanup:
             self.cleanup()
-        pass
 
     def generate(self):
         self.temp_directory.create()

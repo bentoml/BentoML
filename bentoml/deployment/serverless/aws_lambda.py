@@ -153,13 +153,14 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             )
             try:
                 logger.info(
-                    'Installing additional packages: serverless-python-requirements, serverless-apigw-binary'
+                    'Installing additional packages: serverless-python-requirements, \
+                    serverless-apigw-binary'
                 )
                 install_serverless_plugin("serverless-python-requirements", output_path)
                 install_serverless_plugin("serverless-apigw-binary", output_path)
                 logger.info('Deploying to AWS Lambda')
                 call_serverless_command(["serverless", "deploy"], output_path)
-            except BentoMLException as e:
+            except BentoMLException:
                 raise BentoMLDeploymentException(
                     'Failed to deploy with AWS Lambda for deployment %s.',
                     deployment_pb.name,
@@ -204,8 +205,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         deployment_spec = deployment_pb.spec
         aws_config = deployment_spec.aws_lambda_operator_config
 
-        # bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
-        bento_path = repo
+        bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
         with TemporaryServerlessConfig(
             archive_path=bento_path,

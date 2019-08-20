@@ -127,7 +127,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             )
             try:
                 call_serverless_command(["serverless", "deploy"], output_path)
-            except BentoMLException as e:
+            except BentoMLException:
                 raise BentoMLDeploymentException(
                     'Failed to deploy with GCP function for deployment %s.',
                     deployment_pb.name,

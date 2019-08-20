@@ -22,6 +22,7 @@ import base64
 import logging
 import re
 import json
+import time
 from six.moves.urllib.parse import urlparse
 
 import boto3
@@ -357,7 +358,6 @@ class SagemakerDeployment(LegacyDeployment):
             return False
 
 
-# Deployment Service MVP Working-In-Progress
 class TemporarySageMakerContent(object):
     def __init__(self, archive_path, bento_name, bento_version, _cleanup=True):
         self.archive_path = archive_path
@@ -471,11 +471,18 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         )
         logger.info("AWS create endpoint response: %s", create_endpoint_response)
 
-        # TODO wait for the sagemaker status from creating to running
-
         res_deployment_pb = Deployment(state=DeploymentState())
         res_deployment_pb.CopyFrom(deployment_pb)
-        state = self.describe(res_deployment_pb, repo).state
+
+        # We are going to wait 10 mins for AWS to create sagemaker
+        start_time = time.time()
+        while (time.time() - start_time) < 600:
+            state = self.describe(res_deployment_pb, repo).state
+            if state.state == DeploymentState.PENDING:
+                time.sleep(10)
+                continue
+            else:
+                break
         res_deployment_pb.state.CopyFrom(state)
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
@@ -529,7 +536,9 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         if sagemaker_config is None:
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
-        endpoint_name = generate_aws_compatible_string(deployment_pb.namespace + '-' + deployment_spec.bento_name)
+        endpoint_name = generate_aws_compatible_string(
+            deployment_pb.namespace + '-' + deployment_spec.bento_name
+        )
         endpoint_status_response = sagemaker_client.describe_endpoint(
             EndpointName=endpoint_name
         )
@@ -555,15 +564,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         else:
             service_state = DeploymentState.ERROR
 
-        info_json = {
-            "endpoint_status": endpoint_status,
-            "response": endpoint_status_response,
-        }
-
         deployment_state = DeploymentState(
-            state=service_state, info_json=json.dumps(info_json)
+            state=service_state, info_json=json.dumps(endpoint_status_response, default=str)
         )
-        if endpoint_status_response['FailureReason']:
-            deployment_state.error_message = endpoint_status_response['FailureReason']
 
         return DescribeDeploymentResponse(state=deployment_state, status=Status.OK())

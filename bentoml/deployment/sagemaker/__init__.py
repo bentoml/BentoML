@@ -473,14 +473,15 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         # TODO wait for the sagemaker status from creating to running
 
-        res_deployment_pb = Deployment()
+        res_deployment_pb = Deployment(state=DeploymentState())
         res_deployment_pb.CopyFrom(deployment_pb)
-        res_deployment_pb.state = self.describe(res_deployment_pb).state
+        state = self.describe(res_deployment_pb, repo).state
+        res_deployment_pb.state.CopyFrom(state)
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 
     def delete(self, deployment_pb, repo=None):
-        deployment = self.get(deployment_pb).deployment
+        deployment = self.get(deployment_pb, repo).deployment
         deployment_spec = deployment.spec
         sagemaker_config = deployment_spec.sagemaker_operator_config
         if sagemaker_config is None:

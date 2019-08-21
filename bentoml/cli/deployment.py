@@ -312,7 +312,8 @@ def get_deployment_sub_command():
     )
     @click.option(
         '--api-name',
-        help="User defined API function will be used for inference. For platform: AWS_SageMaker Required",
+        help='User defined API function will be used for inference. For platform: '
+        'AWS_SageMaker',
     )
     @click.option(
         '--kube-namespace',
@@ -345,11 +346,14 @@ def get_deployment_sub_command():
         operator = get_deployment_operator_type(platform)
         if platform == 'aws_sagemaker':
             if not api_name:
-                raise click.BadParameter('api-name is required for Sagemaker deployment')
-            
+                raise click.BadParameter(
+                    'api-name is required for Sagemaker deployment'
+                )
+
             spec.sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
                 region=region or config.get('aws', 'default_region'),
-                instance_count=instance_count or config.get('sagemaker', 'instance_count'),
+                instance_count=instance_count
+                or config.get('sagemaker', 'instance_count'),
                 instance_type=instance_type or config.get('sagemaker', 'instance_type'),
                 api_name=api_name,
             )

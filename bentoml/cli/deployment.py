@@ -124,9 +124,7 @@ def add_legacy_deployment_commands(cli):
         except Exception as e:  # pylint:disable=broad-except
             _echo(
                 'Encounter error when deploying to {platform}\nError: '
-                '{error_message}'.format(
-                    platform=platform, error_message=str(e)
-                ),
+                '{error_message}'.format(platform=platform, error_message=str(e)),
                 CLI_COLOR_ERROR,
             )
 
@@ -282,7 +280,7 @@ def get_deployment_sub_command():
         required=True,
         callback=parse_bento_tag_callback,
         help='Deployed bento archive, in format of name:version.  For example, '
-             'iris_classifier:v1.2.0',
+        'iris_classifier:v1.2.0',
     )
     @click.option(
         '--platform',
@@ -302,7 +300,7 @@ def get_deployment_sub_command():
     @click.option(
         '--region',
         help='Name of the deployed region. For platforms: AWS_Lambda, AWS_SageMaker, '
-             'GCP_Function',
+        'GCP_Function',
     )
     @click.option(
         '--stage', help='Stage is to identify. For platform:  AWS_Lambda, GCP_Function'
@@ -362,13 +360,15 @@ def get_deployment_sub_command():
                 region=region or config.get('aws', 'default_region'),
                 stage=stage or config.get('serverless', 'default_deploy_stage'),
             )
-            spec = DeploymentSpec(aws_lambda_operator_config = aws_lambda_operator_config)
+            spec = DeploymentSpec(aws_lambda_operator_config=aws_lambda_operator_config)
         elif platform == 'gcp_function':
             gcp_function_operator_config = DeploymentSpec.GcpFunctionOperatorConfig(
                 region=region or config.get('google-cloud', 'default_region'),
                 stage=stage or config.get('serverless', 'default_deploy_stage'),
             )
-            spec = DeploymentSpec(gcp_function_operator_config=gcp_function_operator_config)
+            spec = DeploymentSpec(
+                gcp_function_operator_config=gcp_function_operator_config
+            )
         elif platform == 'kubernetes':
             kubernetes_operator_config = DeploymentSpec.KubernetesOperatorConfig(
                 kube_namespace=kube_namespace,

@@ -344,10 +344,13 @@ def get_deployment_sub_command():
         bento_name, bento_verison = bento.split(':')
         operator = get_deployment_operator_type(platform)
         if platform == 'aws_sagemaker':
-            sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
-                region=region,
-                instance_count=instance_count,
-                instance_type=instance_type,
+            if not api_name:
+                raise click.BadParameter('api-name is required for Sagemaker deployment')
+            
+            spec.sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
+                region=region or config.get('aws', 'default_region'),
+                instance_count=instance_count or config.get('sagemaker', 'instance_count'),
+                instance_type=instance_type or config.get('sagemaker', 'instance_type'),
                 api_name=api_name,
             )
             spec = DeploymentSpec(sagemaker_operator_config=sagemaker_operator_config)

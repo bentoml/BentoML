@@ -81,7 +81,7 @@ def create_sagemaker_model_name(bento_name, bento_version):
 
 def create_sagemaker_endpoint_config_name(bento_name, bento_version):
     return generate_aws_compatible_string(
-        bento_name + "-" + bento_version + "-configuration"
+        '{name}-{version}-configuration'.format(name=bento_name, version=bento_version)
     )
 
 
@@ -399,6 +399,21 @@ class TemporarySageMakerContent(object):
             self.cleanup()
 
 
+# Sagemaker response status: 'OutOfService'|'Creating'|'Updating'|
+#                            'SystemUpdating'|'RollingBack'|'InService'|
+#                            'Deleting'|'Failed'
+ENDPOINT_STATUS_TO_STATE = {
+    "InService": DeploymentState.RUNNING,
+    "Deleting": DeploymentState.INACTIVATED,
+    "Creating": DeploymentState.PENDING,
+    "Updating": DeploymentState.PENDING,
+    "RollingBack": DeploymentState.PENDING,
+    "SystemUpdating": DeploymentState.PENDING,
+    "OutOfService": DeploymentState.INACTIVATED,
+    "Failed": DeploymentState.ERROR
+}
+
+
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, repo):
         deployment_spec = deployment_pb.spec
@@ -406,14 +421,13 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         if sagemaker_config is None:
             raise BentoMLDeploymentException('Sagemaker configuration is missing.')
 
-        region = sagemaker_config.region or config.get('aws', 'default_region')
         archive_path = repo.get(
             deployment_spec.bento_name, deployment_spec.bento_version
         )
 
         # config = load_bentoml_config(bento_path)...
 
-        sagemaker_client = boto3.client('sagemaker', region)
+        sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
         with TemporarySageMakerContent(
             archive_path, deployment_spec.bento_name, deployment_spec.bento_version
@@ -546,24 +560,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         logger.info("AWS describe endpoint response: %s", endpoint_status_response)
         endpoint_status = endpoint_status_response["EndpointStatus"]
 
-        # Sagemaker response status: 'OutOfService'|'Creating'|'Updating'|
-        #                            'SystemUpdating'|'RollingBack'|'InService'|
-        #                            'Deleting'|'Failed'
-        if endpoint_status == 'InService':
-            service_state = DeploymentState.RUNNING
-        elif endpoint_status in [
-            'Creating',
-            'Updating',
-            'RollingBack',
-            'SystemUpdating',
-        ]:
-            service_state = DeploymentState.PENDING
-        elif endpoint_status == 'Deleting':
-            service_state = DeploymentState.INACTIVATED
-        elif endpoint_status == 'Failed':
-            service_state = DeploymentState.ERROR
-        else:
-            service_state = DeploymentState.ERROR
+        service_state = ENDPOINT_STATUS_TO_STATE[endpoint_status]
 
         deployment_state = DeploymentState(
             state=service_state,

@@ -290,7 +290,11 @@ def get_deployment_sub_command():
         required=True,
         help='Target platform that Bento archive is going to deployed to',
     )
-    @click.option('--namespace', type=click.STRING, help='Deployment namespace')
+    @click.option(
+        '--namespace',
+        type=click.STRING,
+        help='Deployment namespace',
+        default=config.get('deployment', 'default_namespace'))
     @click.option(
         '--labels',
         type=click.STRING,

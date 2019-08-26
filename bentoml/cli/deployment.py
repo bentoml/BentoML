@@ -294,7 +294,7 @@ def get_deployment_sub_command():
         '--namespace',
         type=click.STRING,
         help='Deployment namespace',
-        default=config.get('deployment', 'default_namespace'))
+    )
     @click.option(
         '--labels',
         type=click.STRING,

@@ -448,7 +448,13 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             "PrimaryContainer": {
                 "ContainerHostname": model_name,
                 "Image": ecr_image_path,
-                "Environment": {"API_NAME": sagemaker_config.api_name},
+                "Environment": {
+                    "API_NAME": sagemaker_config.api_name,
+                    "BENTO_SERVER_TIMEOUT": config.get('apiserver', 'default_timeout'),
+                    "BENTO_SERVER_WORKERS": config.get(
+                        'apiserver', 'default_gunicorn_workers_count'
+                    ),
+                },
             },
             "ExecutionRoleArn": execution_role_arn,
         }

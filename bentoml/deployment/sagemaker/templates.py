@@ -74,18 +74,19 @@ DEFAULT_SERVE_SCRIPT = """\
 
 # This implement the sagemaker serving service shell.  It starts nginx and gunicorn.
 # Parameter                    Env Var                          Default Value
-# number of workers            MODEL_SERVER_TIMEOUT             60s
-# timeout                      MODEL_SERVER_WORKERS             number of cpu cores / 2 + 1
+# number of workers            BENTO_SERVER_TIMEOUT             60s
+# timeout                      BENTO_SERVER_WORKERS             number of cpu cores / 2 + 1
 # api name                     API_NAME                         None
 
 import subprocess
 import os
 import signal
 import sys
-import multiprocessing
 
-model_server_timeout = os.environ.get('MODEL_SERVER_TIMEOUT', 60)
-model_server_workers = int(os.environ.get('MODEL_SERVER_WORKERS', multiprocessing.cpu_count() // 2 + 1))
+from bentoml.server.utils import get_bento_recommend_gunicorn_workers_count
+
+bento_server_timeout = os.environ.get('BENTO_SERVER_TIMEOUT', 60)
+bento_server_workers = int(os.environ.get('BENTO_SERVER_WORKERS', get_bento_recommend_gunicorn_workers_count()))
 
 def sigterm_handler(nginx_pid, gunicorn_pid):
     try:
@@ -107,10 +108,10 @@ def _serve():
 
     nginx = subprocess.Popen(['nginx', '-c', '/opt/program/nginx.conf'])
     gunicorn_app = subprocess.Popen(['gunicorn',
-                                     '--timeout', str(model_server_timeout),
+                                     '--timeout', str(bento_server_timeout),
                                      '-k', 'gevent',
                                      '-b', 'unix:/tmp/gunicorn.sock',
-                                     '-w', str(model_server_workers),
+                                     '-w', str(bento_server_workers),
                                      'wsgi:app'])
     signal.signal(signal.SIGTERM, lambda a, b: sigterm_handler(nginx.pid, gunicorn_app.pid))
 

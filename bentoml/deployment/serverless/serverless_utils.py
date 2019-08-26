@@ -33,6 +33,8 @@ from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
+MINIMUM_SERVERLESS_VERSION = '1.40.0'
+
 
 def check_serverless_compatiable_version():
     if which("serverless") is None:
@@ -49,7 +51,7 @@ def check_serverless_compatiable_version():
         version_result = version_result[0:slice_end_index]
     parsed_version = version.parse(version_result)
 
-    if parsed_version >= version.parse("1.40.0"):
+    if parsed_version >= version.parse(MINIMUM_SERVERLESS_VERSION):
         return
     else:
         raise ValueError(

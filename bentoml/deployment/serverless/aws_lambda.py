@@ -130,9 +130,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         bento_config = load_bentoml_config(bento_path)
 
         template = 'aws-python3'
-        test_version = version.parse('3.0.0')
-        package_version = version.parse(bento_config['env']['python_version'])
-        if package_version > test_version:
+        minimum_python_version = version.parse('3.0.0')
+        bento_python_version = version.parse(bento_config['env']['python_version'])
+        if bento_python_version > minimum_python_version:
             template = 'aws-python'
 
         with TemporaryServerlessContent(
@@ -149,7 +149,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 apis=bento_config['apis'],
                 output_path=output_path,
                 region=aws_config.region,
-                stage=deployment_pb.namespace + '-' + aws_config.stage,
+                stage="{namespace}-{stage}".format(
+                    namespace=deployment_pb.namespace, stage=aws_config.stage
+                ),
             )
             try:
                 logger.info(
@@ -176,7 +178,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         state = self.describe(deployment_pb, repo).state
         if state.state != DeploymentState.RUNNING:
             raise BentoMLDeploymentException(
-                "No active deployment: %s" % deployment_pb.name
+                "No active deployment {name}, the current state is {state}".format(
+                    name=deployment_pb.name,
+                    state=DeploymentState.State.Name(state.state),
+                )
             )
 
         deployment_spec = deployment_pb.spec

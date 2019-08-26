@@ -123,7 +123,9 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 apis=bento_config['apis'],
                 output_path=output_path,
                 region=gcp_config.region,
-                stage=deployment_pb.namespace + '-' + gcp_config.stage,
+                stage="{namespace}-{stage}".format(
+                    namespace=deployment_pb.namespace, stage=gcp_config.stage
+                ),
             )
             try:
                 call_serverless_command(["serverless", "deploy"], output_path)
@@ -171,7 +173,10 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         state = self.describe(deployment_pb, repo).state
         if state.state != DeploymentState.RUNNING:
             raise BentoMLDeploymentException(
-                "No active deployment: %s" % deployment_pb.name
+                "No active deployment {name}, the current state is {state}".format(
+                    name=deployment_pb.name,
+                    state=DeploymentState.State.Name(state.state),
+                )
             )
 
         deployment_spec = deployment_pb.spec

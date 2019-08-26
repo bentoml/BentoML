@@ -93,14 +93,14 @@ def generate_serverless_configuration_for_gcp_function(
 
 
 def generate_main_py(bento_name, apis, output_path):
-    handler_py_content = GOOGLE_MAIN_PY_TEMPLATE_HEADER.format(class_name=bento_name)
+    file_content = [GOOGLE_MAIN_PY_TEMPLATE_HEADER.format(class_name=bento_name)]
 
     for api in apis:
         api_content = GOOGLE_FUNCTION_TEMPLATE.format(api_name=api['name'])
-        handler_py_content = handler_py_content + api_content
+        file_content.append(api_content)
 
     with open(os.path.join(output_path, "main.py"), "w") as f:
-        f.write(handler_py_content)
+        f.write(''.join(file_content))
     return
 
 

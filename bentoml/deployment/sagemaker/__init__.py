@@ -76,7 +76,9 @@ def generate_aws_compatible_string(item):
 
 
 def create_sagemaker_model_name(bento_name, bento_version):
-    return generate_aws_compatible_string("bentoml-" + bento_name + "-" + bento_version)
+    return generate_aws_compatible_string(
+        "bentoml-{name}-{version}".format(name=bento_name, version=bento_version)
+    )
 
 
 def create_sagemaker_endpoint_config_name(bento_name, bento_version):
@@ -410,7 +412,7 @@ ENDPOINT_STATUS_TO_STATE = {
     "RollingBack": DeploymentState.PENDING,
     "SystemUpdating": DeploymentState.PENDING,
     "OutOfService": DeploymentState.INACTIVATED,
-    "Failed": DeploymentState.ERROR
+    "Failed": DeploymentState.ERROR,
 }
 
 
@@ -492,7 +494,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         # We are going to wait 10 mins for AWS to create sagemaker
         start_time = time.time()
-        while (time.time() - start_time) < 600:
+        timeout_limit = 600
+        while (time.time() - start_time) < timeout_limit:
             state = self.describe(res_deployment_pb, repo).state
             if state.state == DeploymentState.PENDING:
                 time.sleep(10)

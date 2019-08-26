@@ -110,14 +110,11 @@ def generate_serverless_configuration_for_aws_lambda(
 
 
 def generate_handler_py(bento_name, apis, output_path):
-    file_content = [AWS_HANDLER_PY_TEMPLATE_HEADER.format(class_name=bento_name)]
-
-    for api in apis:
-        api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api['name'])
-        file_content.append(api_content)
-
     with open(os.path.join(output_path, "handler.py"), "w") as f:
-        f.write(''.join(file_content))
+        f.write(AWS_HANDLER_PY_TEMPLATE_HEADER.format(class_name=bento_name))
+        for api in apis:
+            api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api['name'])
+            f.write(api_content)
     return
 
 

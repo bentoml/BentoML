@@ -73,14 +73,14 @@ ENTRYPOINT [ "/bin/bash", "-c" ]
 
 EXPOSE 5000
 
-RUN set -x \
-     && apt-get update \
-     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential \
+RUN set -x \\
+     && apt-get update \\
+     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential \\
      && rm -rf /var/lib/apt/lists/*
 
 # update conda, pre-install BentoML base dependencies
-RUN conda update conda -y \
-      && conda install pip numpy scipy \
+RUN conda update conda -y \\
+      && conda install pip numpy scipy \\
       && pip install gunicorn six
 
 # copy over model files
@@ -103,15 +103,15 @@ FROM continuumio/miniconda3
 
 EXPOSE 8080
 
-RUN set -x \
-     && apt-get update \
-     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential\
-     && apt-get install -y nginx \
+RUN set -x \\
+     && apt-get update \\
+     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential\\
+     && apt-get install -y nginx \\
      && rm -rf /var/lib/apt/lists/*
 
 # update conda, pre-install BentoML base dependencies
-RUN conda update conda -y \
-      && conda install pip numpy scipy \
+RUN conda update conda -y \\
+      && conda install pip numpy scipy \\
       && pip install gunicorn six gevent
 
 # copy over model files

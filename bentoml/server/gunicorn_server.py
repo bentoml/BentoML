@@ -16,7 +16,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import multiprocessing
 
 from gunicorn.app.base import BaseApplication
 from gunicorn.six import iteritems
@@ -24,20 +23,9 @@ from gunicorn.six import iteritems
 from bentoml import config
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer
+from bentoml.server.utils import get_bento_recommend_gunicorn_worker_count
 
 conf = config["apiserver"]
-
-
-def get_gunicorn_worker_count():
-    """
-    Generate an recommend gunicorn worker process count
-
-    Gunicorn's documentation recommand 2 times of cpu cores + 1.
-    For ml model serving, it might consumer more computing resources, therefore
-    we recommend half of the number of cpu cores + 1
-    """
-
-    return (multiprocessing.cpu_count() // 2) + 1
 
 
 class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
@@ -58,13 +46,18 @@ class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
 
     _DEFAULT_PORT = conf.getint("default_port")
     _DEFAULT_TIMEOUT = conf.getint("default_timeout")
+    _DEFAULT_WORKER = conf.getint("default_gunicorn_workers_count")
 
     def __init__(
         self, bento_archive_path, port=None, num_of_workers=None, timeout=None
     ):
         self.bento_archive_path = bento_archive_path
         self.port = port or self._DEFAULT_PORT
-        self.num_of_workers = num_of_workers or get_gunicorn_worker_count()
+        self.num_of_workers = (
+            num_of_workers
+            or self._DEFAULT_WORKER
+            or get_bento_recommend_gunicorn_worker_count()
+        )
         self.timeout = timeout or self._DEFAULT_TIMEOUT
 
         self.options = {

@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import click
 import logging
+import time
 
 from google.protobuf.json_format import MessageToJson
 from bentoml.deployment.serverless import ServerlessDeployment
@@ -38,6 +39,7 @@ from bentoml.proto.deployment_pb2 import (
     Deployment,
     DeploymentSpec,
     DeploymentOperator,
+    DeploymentState,
 )
 from bentoml.proto.status_pb2 import Status
 from bentoml.utils import pb_to_yaml
@@ -264,6 +266,22 @@ def display_deployment_info(deployment, output):
     _echo(result)
 
 
+def get_state_after_await_action_complete(yaitai_service, name, namespace, message):
+    start_time = time.time()
+    timeout_limit = 600
+    while (time.time() - start_time) < timeout_limit:
+        result = yaitai_service.GetDeployment(
+            GetDeploymentRequest(deployment_name=name, namespace=namespace)
+        )
+        if result.state.state == DeploymentState.PENDING:
+            time.sleep(10)
+            _echo(message)
+            continue
+        else:
+            break
+    return result
+
+
 def get_deployment_sub_command():
     @click.group()
     def deploy():
@@ -312,7 +330,8 @@ def get_deployment_sub_command():
     )
     @click.option(
         '--api-name',
-        help="User defined API function will be used for inference. For platform: AWS_SageMaker Required",
+        help='User defined API function will be used for inference. For platform: '
+        'AWS_SageMaker',
     )
     @click.option(
         '--kube-namespace',
@@ -322,6 +341,12 @@ def get_deployment_sub_command():
     @click.option('--service-name', help='Name for service. For platform: Kubernetes')
     @click.option('--service-type', help='Service Type. For platform: Kubernetes')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '--wait/--no-wait',
+        default=True,
+        help='Wait for apply action to complete or encounter an error.'
+             'If set to no-wait, CLI will return immediately. The default value is wait'
+    )
     def apply(
         bento,
         deployment_name,
@@ -338,16 +363,23 @@ def get_deployment_sub_command():
         replicas,
         service_name,
         service_type,
+        wait,
     ):
         track_cli('deploy-apply', platform)
 
         bento_name, bento_verison = bento.split(':')
         operator = get_deployment_operator_type(platform)
         if platform == 'aws_sagemaker':
-            sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
-                region=region,
-                instance_count=instance_count,
-                instance_type=instance_type,
+            if not api_name:
+                raise click.BadParameter(
+                    'api-name is required for Sagemaker deployment'
+                )
+
+            spec.sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
+                region=region or config.get('aws', 'default_region'),
+                instance_count=instance_count
+                or config.get('sagemaker', 'instance_count'),
+                instance_type=instance_type or config.get('sagemaker', 'instance_type'),
                 api_name=api_name,
             )
             spec = DeploymentSpec(sagemaker_operator_config=sagemaker_operator_config)
@@ -380,7 +412,8 @@ def get_deployment_sub_command():
         spec.bento_version = bento_verison
         spec.operator = operator
 
-        result = get_yatai_service().ApplyDeployment(
+        yatai_service = get_yatai_service()
+        result = yatai_service.ApplyDeployment(
             ApplyDeploymentRequest(
                 deployment=Deployment(
                     namespace=namespace,
@@ -402,13 +435,22 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
         else:
+            if wait:
+                result_state = get_state_after_await_action_complete(
+                    yaitai_service=yatai_service,
+                    name=deployment_name,
+                    namespace=namespace,
+                    message='Applying deployment...'
+                )
+                result.deployment.state.CopyFrom(result_state.state)
+
             _echo(
-                'Successfully apply deployment {}'.format(deployment_name),
+                'Finished apply deployment {}'.format(deployment_name),
                 CLI_COLOR_SUCCESS,
             )
             display_deployment_info(result.deployment, output)
 
-    @deploy.command()
+    @deploy.command(help='Delete deployment')
     @click.option('--name', type=click.STRING, help='Deployment name', required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     def delete(name, namespace):
@@ -430,7 +472,7 @@ def get_deployment_sub_command():
         else:
             _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
-    @deploy.command()
+    @deploy.command(help='Get deployment spec')
     @click.option('--name', type=click.STRING, help='Deployment name', required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
@@ -453,7 +495,7 @@ def get_deployment_sub_command():
         else:
             display_deployment_info(result.deployment, output)
 
-    @deploy.command()
+    @deploy.command(help='Get deployment state')
     @click.option('--name', type=click.STRING, help='Deployment name', required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
@@ -476,20 +518,20 @@ def get_deployment_sub_command():
         else:
             display_deployment_info(result.deployment, output)
 
-    @deploy.command()
+    @deploy.command(help='List deployments')
     @click.option('--namespace', type=click.STRING)
     @click.option('--all-namespace', type=click.BOOL, default=False)
     @click.option(
         '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
     )
     @click.option(
-        '--filter', type=click.STRING, help='Filter retrieved deployments with keywords'
+        '--filters', type=click.STRING, help='Filter retrieved deployments with keywords'
     )
     @click.option(
         '--labels', type=click.STRING, help='List deployments with the giving labels'
     )
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def list(output, limit, filter, labels, namespace, all_namespace):
+    def list(output, limit, filters, labels, namespace, all_namespace):
         track_cli('deploy-list')
 
         if all_namespace:
@@ -503,7 +545,7 @@ def get_deployment_sub_command():
         result = get_yatai_service().ListDeployments(
             ListDeploymentsRequest(
                 limit=limit,
-                filter=filter,
+                filter=filters,
                 labels=parse_key_value_pairs(labels),
                 namespace=namespace,
             )

@@ -52,6 +52,10 @@ def process_docker_api_line(payload):
                 if "errorDetail" in line_payload:
                     error = line_payload["errorDetail"]
                     logger.error(error['message'])
-                    raise RuntimeError("Error on build - code %s" % error["code"])
+                    raise RuntimeError(
+                        "Error on build - code: {code}, message: {message}".format(
+                            code=error["code"], message=error['message']
+                        )
+                    )
                 elif "stream" in line_payload:
                     logger.info(line_payload['stream'])

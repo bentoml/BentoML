@@ -290,11 +290,7 @@ def get_deployment_sub_command():
         required=True,
         help='Target platform that Bento archive is going to deployed to',
     )
-    @click.option(
-        '--namespace',
-        type=click.STRING,
-        help='Deployment namespace',
-    )
+    @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option(
         '--labels',
         type=click.STRING,
@@ -357,12 +353,12 @@ def get_deployment_sub_command():
             spec = DeploymentSpec(sagemaker_operator_config=sagemaker_operator_config)
         elif platform == 'aws_lambda':
             aws_lambda_operator_config = DeploymentSpec.AwsLambdaOperatorConfig(
-                region=region or config.get('aws', 'default_region'),
+                region=region or config.get('aws', 'default_region')
             )
             spec = DeploymentSpec(aws_lambda_operator_config=aws_lambda_operator_config)
         elif platform == 'gcp_function':
             gcp_function_operator_config = DeploymentSpec.GcpFunctionOperatorConfig(
-                region=region or config.get('google-cloud', 'default_region'),
+                region=region or config.get('google-cloud', 'default_region')
             )
             spec = DeploymentSpec(
                 gcp_function_operator_config=gcp_function_operator_config

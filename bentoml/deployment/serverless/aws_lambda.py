@@ -25,7 +25,7 @@ from ruamel.yaml import YAML
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.status import Status
-from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
+from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import (
     Deployment,
     ApplyDeploymentResponse,
@@ -148,20 +148,14 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 region=aws_config.region,
                 stage=deployment_pb.namespace,
             )
-            try:
-                logger.info(
-                    'Installing additional packages: serverless-python-requirements, \
-                    serverless-apigw-binary'
-                )
-                install_serverless_plugin("serverless-python-requirements", output_path)
-                install_serverless_plugin("serverless-apigw-binary", output_path)
-                logger.info('Deploying to AWS Lambda')
-                call_serverless_command(["serverless", "deploy"], output_path)
-            except BentoMLException:
-                raise BentoMLDeploymentException(
-                    'Failed to deploy with AWS Lambda for deployment %s.',
-                    deployment_pb.name,
-                )
+            logger.info(
+                'Installing additional packages: serverless-python-requirements, \
+                serverless-apigw-binary'
+            )
+            install_serverless_plugin("serverless-python-requirements", output_path)
+            install_serverless_plugin("serverless-apigw-binary", output_path)
+            logger.info('Deploying to AWS Lambda')
+            call_serverless_command(["serverless", "deploy"], output_path)
 
         res_deployment_pb = Deployment(state=DeploymentState())
         res_deployment_pb.CopyFrom(deployment_pb)
@@ -172,12 +166,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def delete(self, deployment_pb, repo=None):
         state = self.describe(deployment_pb, repo).state
         if state.state != DeploymentState.RUNNING:
-            raise BentoMLDeploymentException(
-                "No active deployment {name}, the current state is {state}".format(
-                    name=deployment_pb.name,
-                    state=DeploymentState.State.Name(state.state),
-                )
+            message = 'Failed to delete, no active deployment {name}. The current state is {state}'.format(
+                name=deployment_pb.name, state=DeploymentState.State.Name(state.state)
             )
+            return DeleteDeploymentResponse(status=Status.ABORTED(message))
 
         deployment_spec = deployment_pb.spec
         aws_config = deployment_spec.aws_lambda_operator_config

@@ -343,8 +343,7 @@ def get_deployment_sub_command():
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait',
-        type=click.BOOL,
-        default=True,
+        is_flag=True,
         help='Wait for apply action to complete or encounter an error.'
              'If False, CLI will return immediately. The default value is True'
     )

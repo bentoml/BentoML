@@ -29,11 +29,13 @@ message DeploymentSpec {
 
   message AwsLambdaOperatorConfig {
     string region = 1;
+    // Remove
     string stage = 2;
   }
 
   message GcpFunctionOperatorConfig {
     string region = 1;
+    // Remove
     string stage = 2;
   }
 

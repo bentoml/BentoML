@@ -146,9 +146,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 apis=bento_config['apis'],
                 output_path=output_path,
                 region=aws_config.region,
-                stage="{namespace}-{stage}".format(
-                    namespace=deployment_pb.namespace, stage=aws_config.stage
-                ),
+                stage=deployment_pb.namespace,
             )
             try:
                 logger.info(
@@ -191,7 +189,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             archive_path=bento_path,
             deployment_name=deployment_pb.name,
             region=aws_config.region,
-            stage=deployment_pb.namespace + '-' + aws_config.stage,
+            stage=deployment_pb.namespace,
             provider_name='aws',
             functions=generate_aws_handler_functions_config(bento_config['apis']),
         ) as tempdir:
@@ -213,7 +211,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             archive_path=bento_path,
             deployment_name=deployment_pb.name,
             region=aws_config.region,
-            stage=deployment_pb.namespace + '-' + aws_config.stage,
+            stage=deployment_pb.namespace,
             provider_name='aws',
             functions=generate_aws_handler_functions_config(bento_config['apis']),
         ) as tempdir:

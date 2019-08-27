@@ -120,9 +120,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 apis=bento_config['apis'],
                 output_path=output_path,
                 region=gcp_config.region,
-                stage="{namespace}-{stage}".format(
-                    namespace=deployment_pb.namespace, stage=gcp_config.stage
-                ),
+                stage=deployment_pb.namespace,
             )
             try:
                 call_serverless_command(["serverless", "deploy"], output_path)
@@ -149,7 +147,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             archive_path=bento_path,
             deployment_name=deployment_pb.name,
             region=gcp_config.region,
-            stage=deployment_pb.namespace + '-' + gcp_config.stage,
+            stage=deployment_pb.namespace,
             provider_name='google',
             functions=generate_gcp_handler_functions_config(bento_config['apis']),
         ) as tempdir:
@@ -185,7 +183,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             archive_path=bento_path,
             deployment_name=deployment_pb.name,
             region=gcp_config.region,
-            stage=deployment_pb.namespace + '-' + gcp_config.stage,
+            stage=deployment_pb.namespace,
             provider_name='google',
             functions=generate_gcp_handler_functions_config(bento_config['apis']),
         ) as tempdir:

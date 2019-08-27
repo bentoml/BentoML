@@ -307,9 +307,6 @@ def get_deployment_sub_command():
         'GCP_Function',
     )
     @click.option(
-        '--stage', help='Stage is to identify. For platform:  AWS_Lambda, GCP_Function'
-    )
-    @click.option(
         '--instance-type',
         help='Type of instance will be used for inference. For platform: AWS_SageMaker',
     )
@@ -338,7 +335,6 @@ def get_deployment_sub_command():
         labels,
         annotations,
         region,
-        stage,
         instance_type,
         instance_count,
         api_name,
@@ -362,13 +358,11 @@ def get_deployment_sub_command():
         elif platform == 'aws_lambda':
             aws_lambda_operator_config = DeploymentSpec.AwsLambdaOperatorConfig(
                 region=region or config.get('aws', 'default_region'),
-                stage=stage or config.get('serverless', 'default_deploy_stage'),
             )
             spec = DeploymentSpec(aws_lambda_operator_config=aws_lambda_operator_config)
         elif platform == 'gcp_function':
             gcp_function_operator_config = DeploymentSpec.GcpFunctionOperatorConfig(
                 region=region or config.get('google-cloud', 'default_region'),
-                stage=stage or config.get('serverless', 'default_deploy_stage'),
             )
             spec = DeploymentSpec(
                 gcp_function_operator_config=gcp_function_operator_config

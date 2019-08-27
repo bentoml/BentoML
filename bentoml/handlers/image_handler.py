@@ -141,8 +141,7 @@ class ImageHandler(BentoHandler):
                 for file_name in file_names:
                     check_file_format(file_name, self.accept_file_extensions)
                 input_streams = [
-                    BytesIO(input_file.read()) for
-                    input_file in input_files
+                    BytesIO(input_file.read()) for input_file in input_files
                 ]
             else:
                 raise ValueError(

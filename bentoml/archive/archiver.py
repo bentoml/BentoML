@@ -122,6 +122,29 @@ def save(bento_service, dst, version=None):
     return full_saved_path
 
 
+def generate_apis_list(bento_service):
+    result = []
+    for api in bento_service.get_service_apis():
+        result.append(
+            {
+                "name": api.name,
+                "handler_type": api.handler.__class__.__name__,
+                "docs": api.doc,
+            }
+        )
+    return result
+
+
+def generate_artifacts_list(bento_service):
+    result = []
+    for artifact_name in bento_service.artifacts:
+        artifact_spec = bento_service.artifacts[artifact_name].spec
+        result.append(
+            {'name': artifact_name, 'artifact_type': artifact_spec.__class__.__name__}
+        )
+    return result
+
+
 def _save(bento_service, dst, version=None):
     Path(os.path.join(dst), bento_service.name).mkdir(parents=True, exist_ok=True)
     # Update path to subfolder in the form of 'base/service_name/version/'
@@ -198,6 +221,8 @@ def _save(bento_service, dst, version=None):
         }
     )
     config["env"] = bento_service.env.to_dict()
+    config['apis'] = generate_apis_list(bento_service)
+    config['artifacts'] = generate_artifacts_list(bento_service)
 
     config.write_to_path(path)
     # Also write bentoml.yml to module base path to make it accessible

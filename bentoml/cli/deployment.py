@@ -44,6 +44,7 @@ from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLDeploymentException
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
+from bentoml import config
 
 SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
 
@@ -123,9 +124,7 @@ def add_legacy_deployment_commands(cli):
         except Exception as e:  # pylint:disable=broad-except
             _echo(
                 'Encounter error when deploying to {platform}\nError: '
-                '{error_message}'.format(
-                    platform=platform, error_message=str(e)
-                ),
+                '{error_message}'.format(platform=platform, error_message=str(e)),
                 CLI_COLOR_ERROR,
             )
 
@@ -274,14 +273,14 @@ def get_deployment_sub_command():
         short_help='Create or update a model serving deployment',
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
-    @click.argument('--deployment-name', type=click.STRING, required=True)
+    @click.argument("deployment-name", type=click.STRING, required=True)
     @click.option(
         '--bento',
         type=click.STRING,
         required=True,
         callback=parse_bento_tag_callback,
         help='Deployed bento archive, in format of name:version.  For example, '
-             'iris_classifier:v1.2.0',
+        'iris_classifier:v1.2.0',
     )
     @click.option(
         '--platform',
@@ -301,10 +300,7 @@ def get_deployment_sub_command():
     @click.option(
         '--region',
         help='Name of the deployed region. For platforms: AWS_Lambda, AWS_SageMaker, '
-             'GCP_Function',
-    )
-    @click.option(
-        '--stage', help='Stage is to identify. For platform:  AWS_Lambda, GCP_Function'
+        'GCP_Function',
     )
     @click.option(
         '--instance-type',
@@ -316,8 +312,7 @@ def get_deployment_sub_command():
     )
     @click.option(
         '--api-name',
-        help='User defined API function will be used for inference. For platform: '
-             'AWS_SageMaker',
+        help="User defined API function will be used for inference. For platform: AWS_SageMaker Required",
     )
     @click.option(
         '--kube-namespace',
@@ -336,7 +331,6 @@ def get_deployment_sub_command():
         labels,
         annotations,
         region,
-        stage,
         instance_type,
         instance_count,
         api_name,
@@ -348,38 +342,43 @@ def get_deployment_sub_command():
         track_cli('deploy-apply', platform)
 
         bento_name, bento_verison = bento.split(':')
-        spec = DeploymentSpec(
-            bento_name=bento_name,
-            bento_verison=bento_verison,
-            operator=get_deployment_operator_type(platform),
-        )
+        operator = get_deployment_operator_type(platform)
         if platform == 'aws_sagemaker':
-            spec.sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
+            sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
                 region=region,
                 instance_count=instance_count,
                 instance_type=instance_type,
                 api_name=api_name,
             )
+            spec = DeploymentSpec(sagemaker_operator_config=sagemaker_operator_config)
         elif platform == 'aws_lambda':
-            spec.aws_lambda_operator_config = DeploymentSpec.AwsLambdaOperatorConfig(
-                region=region, stage=stage
+            aws_lambda_operator_config = DeploymentSpec.AwsLambdaOperatorConfig(
+                region=region or config.get('aws', 'default_region')
             )
+            spec = DeploymentSpec(aws_lambda_operator_config=aws_lambda_operator_config)
         elif platform == 'gcp_function':
-            spec.gcp_function_operator_config = \
-                DeploymentSpec.GcpFunctionOperatorConfig(
-                region=region, stage=stage
+            gcp_function_operator_config = DeploymentSpec.GcpFunctionOperatorConfig(
+                region=region or config.get('google-cloud', 'default_region')
+            )
+            spec = DeploymentSpec(
+                gcp_function_operator_config=gcp_function_operator_config
             )
         elif platform == 'kubernetes':
-            spec.kubernetes_operator_config = DeploymentSpec.KubernetesOperatorConfig(
+            kubernetes_operator_config = DeploymentSpec.KubernetesOperatorConfig(
                 kube_namespace=kube_namespace,
                 replicas=replicas,
                 service_name=service_name,
                 service_type=service_type,
             )
+            spec = DeploymentSpec(kubernetes_operator_config=kubernetes_operator_config)
         else:
             raise BentoMLDeploymentException(
                 'Custom deployment is not supported in current version of BentoML'
             )
+
+        spec.bento_name = bento_name
+        spec.bento_version = bento_verison
+        spec.operator = operator
 
         result = get_yatai_service().ApplyDeployment(
             ApplyDeploymentRequest(

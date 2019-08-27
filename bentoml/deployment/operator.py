@@ -31,9 +31,15 @@ def get_deployment_operator(deployment_pb):
 
         return SageMakerDeploymentOperator()
     elif operator == deployment_pb2.AWS_LAMBDA:
-        pass
+        from bentoml.deployment.serverless.aws_lambda import AwsLambdaDeploymentOperator
+
+        return AwsLambdaDeploymentOperator()
     elif operator == deployment_pb2.GCP_FUNCTION:
-        raise NotImplementedError("GCP function deployment operator is not implemented")
+        from bentoml.deployment.serverless.gcp_function import (
+            GcpFunctionDeploymentOperator,
+        )
+
+        return GcpFunctionDeploymentOperator()
     elif operator == deployment_pb2.KUBERNETES:
         raise NotImplementedError("Kubernetes deployment operator is not implemented")
     elif operator == deployment_pb2.CUSTOM:

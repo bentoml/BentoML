@@ -539,7 +539,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             )
             return DeleteDeploymentResponse(status=Status.OK())
         else:
-            raise BentoMLDeploymentException('Delete Sagemaker deployment failed')
+            return DeleteDeploymentResponse(status=Status.INTERNAL(str(delete_endpoint_response)))
 
     def describe(self, deployment_pb, repo=None):
         deployment_spec = deployment_pb.spec

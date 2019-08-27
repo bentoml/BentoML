@@ -450,7 +450,7 @@ def get_deployment_sub_command():
             )
             display_deployment_info(result.deployment, output)
 
-    @deploy.command()
+    @deploy.command(help='Delete deployment')
     @click.option('--name', type=click.STRING, help='Deployment name', required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     def delete(name, namespace):
@@ -472,7 +472,7 @@ def get_deployment_sub_command():
         else:
             _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
-    @deploy.command()
+    @deploy.command(help='Get deployment spec')
     @click.option('--name', type=click.STRING, help='Deployment name', required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
@@ -495,7 +495,7 @@ def get_deployment_sub_command():
         else:
             display_deployment_info(result.deployment, output)
 
-    @deploy.command()
+    @deploy.command(help='Get deployment state')
     @click.option('--name', type=click.STRING, help='Deployment name', required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
@@ -518,20 +518,20 @@ def get_deployment_sub_command():
         else:
             display_deployment_info(result.deployment, output)
 
-    @deploy.command()
+    @deploy.command(help='List deployments')
     @click.option('--namespace', type=click.STRING)
     @click.option('--all-namespace', type=click.BOOL, default=False)
     @click.option(
         '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
     )
     @click.option(
-        '--filter', type=click.STRING, help='Filter retrieved deployments with keywords'
+        '--filters', type=click.STRING, help='Filter retrieved deployments with keywords'
     )
     @click.option(
         '--labels', type=click.STRING, help='List deployments with the giving labels'
     )
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def list(output, limit, filter, labels, namespace, all_namespace):
+    def list(output, limit, filters, labels, namespace, all_namespace):
         track_cli('deploy-list')
 
         if all_namespace:
@@ -545,7 +545,7 @@ def get_deployment_sub_command():
         result = get_yatai_service().ListDeployments(
             ListDeploymentsRequest(
                 limit=limit,
-                filter=filter,
+                filter=filters,
                 labels=parse_key_value_pairs(labels),
                 namespace=namespace,
             )

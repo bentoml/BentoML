@@ -22,7 +22,6 @@ import base64
 import logging
 import re
 import json
-import time
 from six.moves.urllib.parse import urlparse
 
 import boto3
@@ -497,18 +496,6 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         res_deployment_pb = Deployment(state=DeploymentState())
         res_deployment_pb.CopyFrom(deployment_pb)
-
-        # We are going to wait 10 mins for AWS to create sagemaker
-        start_time = time.time()
-        timeout_limit = 600
-        while (time.time() - start_time) < timeout_limit:
-            state = self.describe(res_deployment_pb, repo).state
-            if state.state == DeploymentState.PENDING:
-                time.sleep(10)
-                continue
-            else:
-                break
-        res_deployment_pb.state.CopyFrom(state)
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 

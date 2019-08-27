@@ -342,10 +342,10 @@ def get_deployment_sub_command():
     @click.option('--service-type', help='Service Type. For platform: Kubernetes')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
-        '--wait',
-        is_flag=True,
+        '--wait/--no-wait',
+        default=True,
         help='Wait for apply action to complete or encounter an error.'
-             'If False, CLI will return immediately. The default value is True'
+             'If set to no-wait, CLI will return immediately. The default value is wait'
     )
     def apply(
         bento,

@@ -30,10 +30,7 @@ from bentoml.archive import load, load_service_api, load_bentoml_config
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
-from bentoml.cli.deployment import (
-    add_legacy_deployment_commands,
-    get_deployment_sub_command,
-)
+from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
 from bentoml.utils import Path
 from bentoml.utils.log import configure_logging
@@ -292,7 +289,6 @@ def create_bentoml_cli():
 
     # Commands created here aren't mean to be used from generated service archive. They
     # are used as part of BentoML cli commands only.
-    add_legacy_deployment_commands(_cli)
 
     deployment_sub_command = get_deployment_sub_command()
     config_sub_command = get_configuration_sub_command()

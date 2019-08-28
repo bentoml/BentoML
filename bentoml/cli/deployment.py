@@ -82,10 +82,10 @@ def get_state_after_await_action_complete(yaitai_service, name, namespace, messa
     start_time = time.time()
     timeout_limit = 600
     while (time.time() - start_time) < timeout_limit:
-        result = yaitai_service.GetDeployment(
-            GetDeploymentRequest(deployment_name=name, namespace=namespace)
+        result = yaitai_service.DescribeDeployment(
+            DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
         )
-        if result.state.state == DeploymentState.PENDING:
+        if result.state.state is DeploymentState.PENDING:
             time.sleep(10)
             _echo(message)
             continue
@@ -187,10 +187,10 @@ def get_deployment_sub_command():
                     'api-name is required for Sagemaker deployment'
                 )
 
-            spec.sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
+            sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
                 region=region or config.get('aws', 'default_region'),
                 instance_count=instance_count
-                or config.get('sagemaker', 'instance_count'),
+                or config.getint('sagemaker', 'instance_count'),
                 instance_type=instance_type or config.get('sagemaker', 'instance_type'),
                 api_name=api_name,
             )

@@ -26,6 +26,7 @@ from flask import Flask, jsonify, Response, request
 from prometheus_client import generate_latest, Summary
 
 from bentoml import config
+from bentoml.utils.usage_stats import track_server
 
 conf = config["apiserver"]
 
@@ -289,4 +290,6 @@ class BentoAPIServer:
         """
         Start an REST server at the specific port on the instance or parameter.
         """
+        track_server('flask')
+
         self.app.run(port=self.port)

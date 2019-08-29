@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 from flask import Flask, Response, request
+from bentoml.utils.usage_stats import track_server
 
 
 def setup_bento_service_api_route(app, api):
@@ -61,4 +62,5 @@ class BentoSagemakerServer:
         setup_routes(self.app, self.bento_service, api_name)
 
     def start(self):
+        track_server('sagemaker')
         self.app.run(port=BentoSagemakerServer._DEFAULT_PORT)

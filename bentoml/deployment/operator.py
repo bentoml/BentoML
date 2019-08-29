@@ -51,7 +51,7 @@ def get_deployment_operator(deployment_pb):
 @add_metaclass(ABCMeta)
 class DeploymentOperatorBase(object):
     @abstractmethod
-    def apply(self, deployment_pb, repo):
+    def apply(self, deployment_pb, repo, prev_deployment):
         """
         Create deployment based on deployment_pb spec - the bento name and version
         must be found in the given BentoRepository

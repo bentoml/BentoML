@@ -88,7 +88,7 @@ class YataiService(YataiServicer):
                 with self.deployment_store.update_deployment(
                         request.deployment.name, request.deployment.namespace
                 ) as deployment:
-                    deployment.spec = request.deployment.spec
+                    deployment.spec = MessageToDict(request.deployment.spec)
             else:
                 previous_deployment = None
                 # create or update deployment spec record

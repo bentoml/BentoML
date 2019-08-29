@@ -75,16 +75,30 @@ class YataiService(YataiServicer):
                 request.deployment.namespace or self.default_namespace
             )
 
-            # TODO: validate deployment config
+            deployment_orm = self.deployment_store.get(
+                request.deployment.name,
+                request.deployment.namespace
+            )
+            if deployment_orm:
+                # check deployment platform
+                if deployment_orm.spec.operator != request.deployment.spec.operator:
+                    return ApplyDeploymentResponse(status=Status.ABORTED('different platform'))
+                previous_deployment = deployment_orm
 
-            # create or update deployment spec record
-            self.deployment_store.insert_or_update(request.deployment)
+                with self.deployment_store.update_deployment(
+                        request.deployment.name, request.deployment.namespace
+                ) as deployment:
+                    deployment.spec = request.deployment.spec
+            else:
+                previous_deployment = None
+                # create or update deployment spec record
+                self.deployment_store.insert_or_update(request.deployment)
 
             # find deployment operator based on deployment spec
             operator = get_deployment_operator(request.deployment)
 
             # deploying to target platform
-            response = operator.apply(request.deployment, self.repo)
+            response = operator.apply(request.deployment, self.repo, previous_deployment)
 
             # update deployment state
             self.deployment_store.insert_or_update(response.deployment)
@@ -93,7 +107,7 @@ class YataiService(YataiServicer):
 
         except BentoMLException as e:
             logger.error("INTERNAL ERROR: %s", e)
-            return ApplyDeploymentResponse(Status.INTERNAL(e))
+            return ApplyDeploymentResponse(status=Status.INTERNAL(e))
 
     def DeleteDeployment(self, request, context=None):
         try:

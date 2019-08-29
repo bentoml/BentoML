@@ -119,7 +119,7 @@ def generate_handler_py(bento_name, apis, output_path):
 
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb, repo=None):
+    def apply(self, deployment_pb, repo, prev_deployment=None):
         deployment_spec = deployment_pb.spec
         aws_config = deployment_spec.aws_lambda_operator_config
 

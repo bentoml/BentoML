@@ -76,17 +76,20 @@ class YataiService(YataiServicer):
             )
 
             deployment_orm = self.deployment_store.get(
-                request.deployment.name,
-                request.deployment.namespace
+                request.deployment.name, request.deployment.namespace
             )
             if deployment_orm:
                 # check deployment platform
                 if deployment_orm.spec.operator != request.deployment.spec.operator:
-                    return ApplyDeploymentResponse(status=Status.ABORTED('different platform'))
+                    return ApplyDeploymentResponse(
+                        status=Status.ABORTED(
+                            'New deployment spec has different platform from existing one.'
+                        )
+                    )
                 previous_deployment = deployment_orm
 
                 with self.deployment_store.update_deployment(
-                        request.deployment.name, request.deployment.namespace
+                    request.deployment.name, request.deployment.namespace
                 ) as deployment:
                     deployment.spec = MessageToDict(request.deployment.spec)
             else:
@@ -98,7 +101,9 @@ class YataiService(YataiServicer):
             operator = get_deployment_operator(request.deployment)
 
             # deploying to target platform
-            response = operator.apply(request.deployment, self.repo, previous_deployment)
+            response = operator.apply(
+                request.deployment, self.repo, previous_deployment
+            )
 
             # update deployment state
             self.deployment_store.insert_or_update(response.deployment)

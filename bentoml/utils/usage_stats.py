@@ -22,6 +22,7 @@ import platform
 import json
 import logging
 import time
+import atexit
 
 import uuid
 import requests
@@ -74,40 +75,37 @@ def get_bento_service_info(bento_service):
 
 
 def track(event_type, info):
-    info['py_version'] = PY_VERSION
-    info["bento_version"] = BENTOML_VERSION
-    info["platform_info"] = PLATFORM
+    if config['core'].getboolean("usage_tracking"):
+        info['py_version'] = PY_VERSION
+        info["bento_version"] = BENTOML_VERSION
+        info["platform_info"] = PLATFORM
 
-    return send_amplitude_event(event_type, info)
+        return send_amplitude_event(event_type, info)
 
 
 def track_save(bento_service):
-    if config['core'].getboolean("usage_tracking"):
-        info = get_bento_service_info(bento_service)
-        return track("save", info)
+    info = get_bento_service_info(bento_service)
+    return track("save", info)
 
 
 def track_load_start():
     return track('load-start', {})
 
 
-def track_loading(bento_service):
-    if config['core'].getboolean("usage_tracking"):
-        info = get_bento_service_info(bento_service)
-        return track("load", info)
+def track_loading_finish(bento_service):
+    info = get_bento_service_info(bento_service)
+    return track("load", info)
 
 
 def track_cli(command, deploy_platform=None):
-    if config['core'].getboolean("usage_tracking"):
-        info = {}
-        if deploy_platform is not None:
-            info['platform'] = deploy_platform
-        return track('cli-' + command, info)
+    info = {}
+    if deploy_platform is not None:
+        info['platform'] = deploy_platform
+    return track('cli-' + command, info)
 
 
 def track_server(server_type):
     start_time = time.time()
-    import atexit
 
     @atexit.register
     def log_exit():

@@ -83,7 +83,8 @@ class YataiService(YataiServicer):
                 if deployment_orm.spec.operator != request.deployment.spec.operator:
                     return ApplyDeploymentResponse(
                         status=Status.ABORTED(
-                            'New deployment spec has different platform from existing one.'
+                            'New deployment spec has different platform from existing one. '
+                            'Please delete existing deployment and apply again'
                         )
                     )
                 previous_deployment = deployment_orm
@@ -92,10 +93,13 @@ class YataiService(YataiServicer):
                     request.deployment.name, request.deployment.namespace
                 ) as deployment:
                     deployment.spec = MessageToDict(request.deployment.spec)
+                    if request.deployment.labels:
+                        deployment.labels = dict(request.deployment.labels)
+                    if request.deployment.annotations:
+                        deployment.annotations = dict(request.deployment.annotations)
             else:
                 previous_deployment = None
-                # create or update deployment spec record
-                self.deployment_store.insert_or_update(request.deployment)
+                self.deployment_store.insert(request.deployment)
 
             # find deployment operator based on deployment spec
             operator = get_deployment_operator(request.deployment)

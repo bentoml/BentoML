@@ -5,15 +5,23 @@ import "google/protobuf/any.proto";
 
 import "status.proto";
 
+// DeploymentOperator is a platform (Deployment Target) specific implementation
+// of how a packaged Bento can be deployed and managed
 enum DeploymentOperator {
   UNSET = 0;
+
+  // Reserved for user-defined deployment operator
   CUSTOM = 1;
+
+  // Built-in deployment operator types
   AWS_SAGEMAKER = 2;
   AWS_LAMBDA = 3;
   GCP_FUNCTION = 4;
   KUBERNETES = 5;
 }
 
+// DeploymentSpec defines a model serving deployment that can be reproduced to target
+// deployment target
 message DeploymentSpec {
   message CustomOperatorConfig {
     string name = 1;
@@ -29,14 +37,10 @@ message DeploymentSpec {
 
   message AwsLambdaOperatorConfig {
     string region = 1;
-    // Remove
-    string stage = 2;
   }
 
   message GcpFunctionOperatorConfig {
     string region = 1;
-    // Remove
-    string stage = 2;
   }
 
   message KubernetesOperatorConfig {
@@ -46,8 +50,11 @@ message DeploymentSpec {
     string service_type = 4;
   }
 
+  // Bento name and version are used as an reference to the saved Bento
+  // in user's bentoml repository
   string bento_name = 1;
   string bento_version = 2;
+
   DeploymentOperator operator = 3;
 
   oneof deployment_operator_config {
@@ -74,17 +81,31 @@ message DeploymentState {
 
   State state = 1;
   string error_message = 2;
+
+  // Raw json string that contains all deployment state information that is
+  // platform specific
   string info_json = 3;
 }
 
 message Deployment {
+  // Deployment namespace, usually used as a way to separate deployment stages, for
+  // example a user can have 'dev', 'test', 'prod' namespaces for all model serving
+  // workloads
   string namespace = 1;
+  // Deployment name, unique within each namespace
   string name = 2;
 
+  // Describes the desired deployment state
   DeploymentSpec spec = 3;
+
+  // Optional, current deployment state
   DeploymentState state = 4;
 
+  // Optional, used for customizing deployment operator behaviors
   map<string, string> annotations = 5;
+
+  // Optional, used for managing deployments, this gets translate to similar 'labels'
+  // concept in target deployment platform
   map<string, string> labels = 6;
 }
 
@@ -93,9 +114,13 @@ message DeploymentStatus {
 }
 
 
-// Requests
 message ApplyDeploymentRequest {
   Deployment deployment = 1;
+}
+
+message ApplyDeploymentResponse {
+  Status status = 1;
+  Deployment deployment = 2;
 }
 
 message DeleteDeploymentRequest {
@@ -103,14 +128,28 @@ message DeleteDeploymentRequest {
   string namespace = 2;
 }
 
+message DeleteDeploymentResponse {
+  Status status = 1;
+}
+
 message GetDeploymentRequest {
   string deployment_name = 1;
   string namespace = 2;
 }
 
+message GetDeploymentResponse {
+  Status status = 1;
+  Deployment deployment = 2;
+}
+
 message DescribeDeploymentRequest {
   string deployment_name = 1;
   string namespace = 2;
+}
+
+message DescribeDeploymentResponse {
+  Status status = 1;
+  DeploymentState state = 2;
 }
 
 message ListDeploymentsRequest {
@@ -119,26 +158,6 @@ message ListDeploymentsRequest {
   int32 limit = 3;
   string filter = 4;
   map<string, string> labels = 5;
-}
-
-// Responses
-message ApplyDeploymentResponse {
-  Status status = 1;
-  Deployment deployment = 2;
-}
-
-message DeleteDeploymentResponse {
-  Status status = 1;
-}
-
-message GetDeploymentResponse {
-  Status status = 1;
-  Deployment deployment = 2;
-}
-
-message DescribeDeploymentResponse {
-  Status status = 1;
-  DeploymentState state = 2;
 }
 
 message ListDeploymentsResponse {

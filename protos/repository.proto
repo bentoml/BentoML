@@ -36,19 +36,37 @@ message BentoMetadata {
     string docs = 3;
   }
 
-  string created_at = 1;
-  string name = 2;
-  string version = 3;
-  BentoServiceEnv env = 4;
-  repeated BentoArtifact artifacts = 5;
-  repeated BentoServiceApi apis = 6;
-  BentoUri uri = 7;
+  BentoUri uri = 1;
+  string created_at = 2;
+  string name = 3;
+  string version = 4;
+  BentoServiceEnv env = 5;
+  repeated BentoArtifact artifacts = 6;
+  repeated BentoServiceApi apis = 7;
 }
 
-// Requests
-message RemoveBentoRequest {
+message AddBentoRequest {
+  BentoUri uri = 1;
+}
+
+message AddBentoResponse {
+  Status status = 1;
+  BentoMetadata bento = 2;
+}
+
+message UploadBentoResponse {
+  Status status = 1;
+  BentoMetadata bento = 2;
+}
+
+message DangerouslyDeleteBentoRequest {
   string bento_name = 1;
   string bento_version = 2;
+}
+
+message DangerouslyDeleteBentoResponse {
+  Status status = 1;
+  BentoMetadata bento = 2;
 }
 
 message GetBentoRequest {
@@ -56,26 +74,15 @@ message GetBentoRequest {
   string bento_version = 2;
 }
 
+message GetBentoResponse {
+  Status status = 1;
+  BentoMetadata bento = 2;
+}
+
 message ListBentoRequest {
   string bento_name = 1;
   int32 offset = 2;
   int32 limit = 3;
-}
-
-// Responses
-message AddBentoResponse {
-  Status status = 1;
-  BentoMetadata bento = 2;
-}
-
-message RemoveBentoResponse {
-  Status status = 1;
-  BentoMetadata bento = 2;
-}
-
-message GetBentoResponse {
-  Status status = 1;
-  BentoMetadata bento = 2;
 }
 
 message ListBentoResponse {

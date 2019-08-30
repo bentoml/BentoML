@@ -8,7 +8,17 @@ import bentoml.proto.yatai_service_pb2 as yatai__service__pb2
 
 
 class YataiStub(object):
-  """Yatai: stateful service that manages and deploys saved Bento
+  """Yatai RPC Server
+
+  A stateful service that provides a complete BentoML model management
+  and model serving/deployment workflow
+
+  It provides two sets of APIs:
+  Bento Repository: Manages saved Bento files, and making them available
+  for serving in production environments
+  Serving Deployment: Deploys saved Bento to a varity of different cloud
+  platforms, track deploym//ent status, set up logging
+  monitoring for your model serving workloads, and
   """
 
   def __init__(self, channel):
@@ -52,20 +62,25 @@ class YataiStub(object):
         request_serializer=deployment__pb2.ListDeploymentsRequest.SerializeToString,
         response_deserializer=deployment__pb2.ListDeploymentsResponse.FromString,
         )
-    self.AddBento = channel.stream_unary(
-        '/bentoml.Yatai/AddBento',
+    self.UploadBento = channel.stream_unary(
+        '/bentoml.Yatai/UploadBento',
         request_serializer=yatai__service__pb2.Chunk.SerializeToString,
-        response_deserializer=repository__pb2.AddBentoResponse.FromString,
+        response_deserializer=repository__pb2.UploadBentoResponse.FromString,
         )
-    self.RemoveBento = channel.unary_unary(
-        '/bentoml.Yatai/RemoveBento',
-        request_serializer=repository__pb2.RemoveBentoRequest.SerializeToString,
-        response_deserializer=repository__pb2.RemoveBentoResponse.FromString,
+    self.AddBento = channel.unary_unary(
+        '/bentoml.Yatai/AddBento',
+        request_serializer=repository__pb2.AddBentoRequest.SerializeToString,
+        response_deserializer=repository__pb2.AddBentoResponse.FromString,
         )
     self.GetBento = channel.unary_unary(
         '/bentoml.Yatai/GetBento',
         request_serializer=repository__pb2.GetBentoRequest.SerializeToString,
         response_deserializer=repository__pb2.GetBentoResponse.FromString,
+        )
+    self.DangerouslyDeleteBento = channel.unary_unary(
+        '/bentoml.Yatai/DangerouslyDeleteBento',
+        request_serializer=repository__pb2.DangerouslyDeleteBentoRequest.SerializeToString,
+        response_deserializer=repository__pb2.DangerouslyDeleteBentoResponse.FromString,
         )
     self.ListBento = channel.unary_unary(
         '/bentoml.Yatai/ListBento',
@@ -75,82 +90,103 @@ class YataiStub(object):
 
 
 class YataiServicer(object):
-  """Yatai: stateful service that manages and deploys saved Bento
+  """Yatai RPC Server
+
+  A stateful service that provides a complete BentoML model management
+  and model serving/deployment workflow
+
+  It provides two sets of APIs:
+  Bento Repository: Manages saved Bento files, and making them available
+  for serving in production environments
+  Serving Deployment: Deploys saved Bento to a varity of different cloud
+  platforms, track deploym//ent status, set up logging
+  monitoring for your model serving workloads, and
   """
 
   def HealthCheck(self, request, context):
-    """Common RPC
+    """Health check ping endpoint
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def GetYataiServiceVersion(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
+    """Return current service version information
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def ApplyDeployment(self, request, context):
-    """Deployment Management RPC
+    """Create new or update existing deployment
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def DeleteDeployment(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def GetDeployment(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def DescribeDeployment(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def ListDeployments(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def AddBento(self, request_iterator, context):
-    """Bento Repository RPC
+    """Delete existing deployment
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def RemoveBento(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
+  def GetDeployment(self, request, context):
+    """Get deployment specification (desired state)
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def DescribeDeployment(self, request, context):
+    """Get deployment status (current state)
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ListDeployments(self, request, context):
+    """List active deployments, by default this will return all active deployments
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def UploadBento(self, request_iterator, context):
+    """Upload new packed Bento files to repository
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def AddBento(self, request, context):
+    """Add new packed Bento to repository by providing a URI to saved path
+    This can be a file path in local file system, a s3 url, or another
+    Bento Repository (for example adding a Bento in local repo to remote)
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def GetBento(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
+    """Get a file path to the saved Bento files, path must be accessible form client
+    machine either through HTTP, FTP, etc
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def DangerouslyDeleteBento(self, request, context):
+    """Deleting the Bento files that was added to this Yatai server earlier, this may
+    break existing deployments or create issues when doing deployment rollback
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def ListBento(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
+    """Get a list of Bento that are stored in current repository
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
@@ -193,20 +229,25 @@ def add_YataiServicer_to_server(servicer, server):
           request_deserializer=deployment__pb2.ListDeploymentsRequest.FromString,
           response_serializer=deployment__pb2.ListDeploymentsResponse.SerializeToString,
       ),
-      'AddBento': grpc.stream_unary_rpc_method_handler(
-          servicer.AddBento,
+      'UploadBento': grpc.stream_unary_rpc_method_handler(
+          servicer.UploadBento,
           request_deserializer=yatai__service__pb2.Chunk.FromString,
-          response_serializer=repository__pb2.AddBentoResponse.SerializeToString,
+          response_serializer=repository__pb2.UploadBentoResponse.SerializeToString,
       ),
-      'RemoveBento': grpc.unary_unary_rpc_method_handler(
-          servicer.RemoveBento,
-          request_deserializer=repository__pb2.RemoveBentoRequest.FromString,
-          response_serializer=repository__pb2.RemoveBentoResponse.SerializeToString,
+      'AddBento': grpc.unary_unary_rpc_method_handler(
+          servicer.AddBento,
+          request_deserializer=repository__pb2.AddBentoRequest.FromString,
+          response_serializer=repository__pb2.AddBentoResponse.SerializeToString,
       ),
       'GetBento': grpc.unary_unary_rpc_method_handler(
           servicer.GetBento,
           request_deserializer=repository__pb2.GetBentoRequest.FromString,
           response_serializer=repository__pb2.GetBentoResponse.SerializeToString,
+      ),
+      'DangerouslyDeleteBento': grpc.unary_unary_rpc_method_handler(
+          servicer.DangerouslyDeleteBento,
+          request_deserializer=repository__pb2.DangerouslyDeleteBentoRequest.FromString,
+          response_serializer=repository__pb2.DangerouslyDeleteBentoResponse.SerializeToString,
       ),
       'ListBento': grpc.unary_unary_rpc_method_handler(
           servicer.ListBento,

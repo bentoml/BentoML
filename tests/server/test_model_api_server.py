@@ -1,6 +1,11 @@
+import os
 import json
+from io import BytesIO
+
 
 from bentoml.server import BentoAPIServer
+
+CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_api_function_route(bento_service):
@@ -29,3 +34,19 @@ def test_api_function_route(bento_service):
 
     response_data = json.loads(response.data)
     assert 15 == response_data[0]["age"]
+
+    # Test Image handlers.
+    with open(os.path.join(CUR_PATH, "white-plane-sky.jpg"), "rb") as f:
+        img = f.read()
+
+    response = test_client.post("/predictImage", data=img, content_type="image/png")
+    assert 200 == response.status_code
+
+    response = test_client.post(
+        "/predictImages",
+        data={
+            'original': (BytesIO(img), 'original.jpg'),
+            'compared': (BytesIO(img), 'compared.jpg'),
+        },
+    )
+    assert 200 == response.status_code

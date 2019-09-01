@@ -38,11 +38,7 @@ class TestBentoService(bentoml.BentoService):
     def predictImage(self, input_data):
         return self.artifacts.model.predictImage(input_data)
 
-    @bentoml.api(
-        bentoml.handlers.ImageHandler,
-        input_name=('original', 'compared'),
-        accept_multiple_files=True,
-    )
+    @bentoml.api(bentoml.handlers.ImageHandler, input_names=('original', 'compared'))
     def predictImages(self, original, compared):
         return original[0, 0] == compared[0, 0]
 

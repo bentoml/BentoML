@@ -50,12 +50,10 @@ class ImageHandler(BentoHandler):
     and pass down to user defined API functions
 
     Args:
-        input_name (string[]]): A list of acceptable input name for HTTP request.
-            Default value is image
+        input_names (string[]]): A tuple of acceptable input name for HTTP request.
+            Default value is (image,)
         accept_file_extensions (string[]):  A list of acceptable image extensions.
             Default value is [.jpg, .jpeg, .png]
-        accept_multiple_files (boolean):  Accept multiple files in single request or
-            not. Default value is False
         pilmode (string): The pilmode to be used for reading image file into numpy
             array. Default value is RGB.  Find more information at
             https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
@@ -65,20 +63,15 @@ class ImageHandler(BentoHandler):
     """
 
     def __init__(
-        self,
-        input_name="image",
-        accept_file_extensions=None,
-        accept_multiple_files=False,
-        pilmode="RGB",
+        self, input_names=("image",), accept_file_extensions=None, pilmode="RGB"
     ):
-        self.input_name = input_name if type(input_name) is tuple else (input_name,)
+        self.input_names = tuple(input_names)
         self.pilmode = pilmode
         self.accept_file_extensions = accept_file_extensions or [
             ".jpg",
             ".png",
             ".jpeg",
         ]
-        self.accept_multiple_files = accept_multiple_files
 
     @property
     def request_schema(self):
@@ -89,7 +82,7 @@ class ImageHandler(BentoHandler):
                     "type": "object",
                     "properties": {
                         filename: {"type": "string", "format": "binary"}
-                        for filename in self.input_name
+                        for filename in self.input_names
                     },
                 }
             },
@@ -118,40 +111,24 @@ class ImageHandler(BentoHandler):
         if request.method != "POST":
             return Response(response="Only accept POST request", status=400)
 
-        if not self.accept_multiple_files:
-            input_file = request.files.get(self.input_name)
-
-            if input_file:
-                file_name = secure_filename(input_file.filename)
-                check_file_format(file_name, self.accept_file_extensions)
-                input_stream = BytesIO(input_file.read())
-            elif request.data:
-                input_stream = request.data
+        input_files = [request.files.get(filename) for filename in self.input_names]
+        if len(input_files) == 1 and input_files[0] is None:
+            if request.data:
+                input_streams = (request.data,)
             else:
                 raise ValueError(
                     "BentoML#ImageHandler unexpected HTTP request: %s" % request
                 )
-
-            input_data = imread(input_stream, pilmode=self.pilmode)
-            result = func(input_data)
         else:
-            input_files = [request.files.get(filename) for filename in self.input_name]
-            if input_files:
-                file_names = [secure_filename(file.filename) for file in input_files]
-                for file_name in file_names:
-                    check_file_format(file_name, self.accept_file_extensions)
-                input_streams = [
-                    BytesIO(input_file.read()) for input_file in input_files
-                ]
-            else:
-                raise ValueError(
-                    "BentoML#ImageHandler unexpected HTTP request: %s" % request
-                )
-            input_data = tuple(
-                imread(input_stream, pilmode=self.pilmode)
-                for input_stream in input_streams
-            )
-            result = func(*input_data)
+            file_names = [secure_filename(file.filename) for file in input_files]
+            for file_name in file_names:
+                check_file_format(file_name, self.accept_file_extensions)
+            input_streams = [BytesIO(input_file.read()) for input_file in input_files]
+
+        input_data = tuple(
+            imread(input_stream, pilmode=self.pilmode) for input_stream in input_streams
+        )
+        result = func(*input_data)
 
         result = get_output_str(result, request.headers.get("output", "json"))
         return Response(response=result, status=200, mimetype="application/json")

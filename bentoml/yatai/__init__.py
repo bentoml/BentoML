@@ -28,6 +28,7 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
+    DeploymentState
 )
 from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
 from bentoml.proto.yatai_service_pb2 import (
@@ -75,32 +76,27 @@ class YataiService(YataiServicer):
                 request.deployment.namespace or self.default_namespace
             )
 
-            deployment_orm = self.deployment_store.get(
+            previous_deployment = self.deployment_store.get(
                 request.deployment.name, request.deployment.namespace
             )
-            if deployment_orm:
+            if previous_deployment:
                 # check deployment platform
-                if deployment_orm.spec.operator != request.deployment.spec.operator:
+                if previous_deployment.spec.operator != request.deployment.spec.operator:
                     return ApplyDeploymentResponse(
                         status=Status.ABORTED(
                             'New deployment spec has different platform from existing one. '
                             'Please delete existing deployment and apply again'
                         )
                     )
-                previous_deployment = deployment_orm
+                request.deployment.state = previous_deployment.state
 
-                with self.deployment_store.update_deployment(
-                    request.deployment.name, request.deployment.namespace
-                ) as deployment:
-                    deployment.spec = MessageToDict(request.deployment.spec)
-                    if request.deployment.labels:
-                        deployment.labels = dict(request.deployment.labels)
-                    if request.deployment.annotations:
-                        deployment.annotations = dict(request.deployment.annotations)
-            else:
-                previous_deployment = None
-                self.deployment_store.insert(request.deployment)
+                request.deployment.state.state = DeploymentState.PENDING
+                if not request.deployment.labels:
+                    request.deployment.labels = previous_deployment.labels
+                if not request.deployment.annotations:
+                    request.deployment.annotations = previous_deployment.annotations
 
+            self.deployment_store.insert_or_update(request.deployment)
             # find deployment operator based on deployment spec
             operator = get_deployment_operator(request.deployment)
 

@@ -88,9 +88,7 @@ class YataiService(YataiServicer):
                             'Please delete existing deployment and apply again'
                         )
                     )
-                request.deployment.state = previous_deployment.state
-
-                request.deployment.state.state = DeploymentState.PENDING
+                request.deployment.state = DeploymentState(state=DeploymentState.PENDING)
 
             self.deployment_store.insert_or_update(request.deployment)
             # find deployment operator based on deployment spec

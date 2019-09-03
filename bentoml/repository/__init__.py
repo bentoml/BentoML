@@ -24,58 +24,89 @@ from abc import abstractmethod, ABCMeta
 from bentoml import config
 from bentoml import archive
 from bentoml.exceptions import BentoMLRepositoryException
+from bentoml.utils.s3 import is_s3_url
+from bentoml.utils import Path
 
 
-# Bento, is a file format representing a saved BentoService
 @add_metaclass(ABCMeta)
-class BaseRepository(object):
+class BentoRepositoryBase(object):
+    """
+    BentoRepository is the interface for managing saved Bentos over file system or
+    cloud storage systems.
+
+    A Bento is a BentoService serialized into a standard file format that can be
+    easily load back to a Python session, installed as PyPI package, or run in Conda
+    or docker environment with all dependencies configured automatically
+    """
+
     @abstractmethod
-    def add(self, bento_service_instance, version=None):
+    def __init__(self, base_url):
+        """
+        Initialize repository access by provide base_url for Bento files storage
+        """
+
+    @abstractmethod
+    def add(self, bento_service):
         """
         Adding a BentoService instance to target repository - this will resolve in a
-        call to BentoService#save, which creates a new Bento that contains all
+        call to BentoService#save_to_dir, which creates a new Bento that contains all
         serialized artifacts and related source code and configuration. Repository
         implementation will take care of storing and retriving the Bento files.
+        Return value is an URL(file path or s3 path for example), pointing to the
+        saved Bento file directory
         """
 
     @abstractmethod
-    def delete(self, bento_name, bento_version):
-        """
-        Deleting the Bento files that was added earlier
-        """
-
-    @abstractmethod
-    def get(self, bento_name, bento_version=None):
+    def get(self, bento_name, bento_version):
         """
         Get a file path to the saved Bento files, path must be accessible form local
         machine either through NFS or pre-downloaded to local machine
         """
 
     @abstractmethod
-    def list(self, bento_name=None):
+    def dangerously_delete(self, bento_name, bento_version):
         """
-        List all saved versions of a given Bento name
+        Deleting the Bento files that was added to this repository earlier, this may
+        break existing deployments or create issues when doing deployment rollback
         """
 
 
-class LocalRepository(BaseRepository):
-    def __init__(self, base_path):
-        self.base_path = base_path
+class _LocalBentoRepository(BentoRepositoryBase):
+    def __init__(self, base_url):
+        if not os.path.exists(base_url):
+            raise BentoMLRepositoryException(
+                "Local path '{}' not found when " "initializing local Bento repository"
+            )
 
-    def add(self, bento_service_instance, version=None):
-        return archive.save(bento_service_instance, self.base_path, version=version)
+        self.base_path = base_url
 
-    def delete(self, bento_name, bento_version):
-        saved_path = os.path.join(self.base_path, bento_name, bento_version)
-        return shutil.rmtree(saved_path)
+    def add(self, bento_service):
+        Path(os.path.join(self.base_path), bento_service.name).mkdir(
+            parents=True, exist_ok=True
+        )
+        # Full path containing saved BentoArchive, it the base path with service name
+        # and service version as prefix. e.g.:
+        # with base_path = '/tmp/my_bento_archive/', the saved bento will resolve in
+        # the directory: '/tmp/my_bento_archive/service_name/version/'
+        target_dir = os.path.join(
+            self.base_path, bento_service.name, bento_service.version
+        )
 
-    def get_latest_version(self, bento_name):
-        raise NotImplementedError
+        if os.path.exists(target_dir):
+            raise BentoMLRepositoryException(
+                "Existing Bento {name}:{version} found in archive: {target_dir}".format(
+                    name=bento_service.name,
+                    version=bento_service.version,
+                    target_dir=target_dir,
+                )
+            )
+        os.mkdir(target_dir)
 
-    def get(self, bento_name, bento_version=None):
-        if bento_version is None or bento_version == 'latest':
-            bento_version = self.get_latest_version(bento_name)
+        archive.save_to_dir(bento_service, target_dir)
 
+        return target_dir
+
+    def get(self, bento_name, bento_version):
         saved_path = os.path.join(self.base_path, bento_name, bento_version)
         if not os.path.exists(saved_path):
             raise BentoMLRepositoryException(
@@ -85,40 +116,43 @@ class LocalRepository(BaseRepository):
             )
         return saved_path
 
-    def list(self, bento_name=None):
+    def dangerously_delete(self, bento_name, bento_version):
+        saved_path = os.path.join(self.base_path, bento_name, bento_version)
+        return shutil.rmtree(saved_path)
+
+
+class _S3BentoRepository(BentoRepositoryBase):
+    def __init__(self, base_url):
+        self.base_url = base_url
+
+    def add(self, bento_service):
+        raise NotImplementedError
+
+    def get(self, bento_name, bento_version):
+        raise NotImplementedError
+
+    def dangerously_delete(self, bento_name, bento_version):
         raise NotImplementedError
 
 
-class S3Repository(BaseRepository):
-    def __init__(self):
-        raise NotImplementedError
-
-    def add(self, bento_service_instance, version=None):
-        raise NotImplementedError
-
-    def delete(self, bento_name, bento_version=None):
-        raise NotImplementedError
-
-    def get(self, bento_name, bento_version=None):
-        raise NotImplementedError
-
-    def list(self, bento_name=None):
-        raise NotImplementedError
+DEFAULT_REPOSITORY_BASE_URL = config.get('default_repository_base_url')
 
 
-def get_default_repository():
-    default_repository_type = config.get('repository', 'default')
+class BentoRepository(BentoRepositoryBase):
+    def __init__(self, base_url=None):
+        if base_url is None:
+            base_url = DEFAULT_REPOSITORY_BASE_URL
 
-    if default_repository_type == 'local':
-        return get_local_repository()
-    elif default_repository_type == 's3':
-        raise NotImplementedError("S3 repository is not yet implemented")
-    else:
-        raise ValueError(
-            "Unknown default repository type: {}".format(default_repository_type)
-        )
+        if is_s3_url(base_url):
+            self._repo = _S3BentoRepository(base_url)
+        else:
+            self._repo = _LocalBentoRepository(base_url)
 
+    def add(self, bento_service):
+        return self._repo.add(bento_service)
 
-def get_local_repository(base_path=None):
-    base_path = base_path or config.get('repository', 'base_path')
-    return LocalRepository(base_path)
+    def get(self, bento_name, bento_version):
+        return self._repo.get(bento_name, bento_version)
+
+    def dangerously_delete(self, bento_name, bento_version):
+        return self._repo.dangerously_delete(bento_name, bento_version)

@@ -18,24 +18,22 @@ from __future__ import print_function
 
 import os
 import sys
-import tempfile
 import logging
 
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
-from bentoml.utils.s3 import is_s3_url, download_from_s3
 from bentoml.exceptions import BentoMLException
 from bentoml.archive.config import BentoArchiveConfig
 
 LOG = logging.getLogger(__name__)
 
 
-def load_bentoml_config(path):
+def load_bentoml_config(archive_path):
     try:
-        return BentoArchiveConfig.load(os.path.join(path, "bentoml.yml"))
+        return BentoArchiveConfig.load(os.path.join(archive_path, "bentoml.yml"))
     except FileNotFoundError:
         raise ValueError(
             "BentoML can't locate config file 'bentoml.yml'"
-            " in archive path: {}".format(path)
+            " in archive path: {}".format(archive_path)
         )
 
 
@@ -43,15 +41,10 @@ def load_bento_service_class(archive_path):
     """
     Load a BentoService class from saved archive in given path
 
-    :param archive_path: A BentoArchive path generated from BentoService.save call
-        or the path to pip installed BentoArchive directory
+    :param archive_path: A path to Bento files generated from BentoService#save,
+        #save_to_dir, or the path to pip installed BentoArchive directory
     :return: BentoService class
     """
-    if is_s3_url(archive_path):
-        tempdir = tempfile.mkdtemp()
-        download_from_s3(archive_path, tempdir)
-        archive_path = tempdir
-
     config = load_bentoml_config(archive_path)
     metadata = config["metadata"]
 
@@ -122,7 +115,8 @@ def load(archive_path):
     """
     track_load_start()
     svc_cls = load_bento_service_class(archive_path)
-    svc = svc_cls.from_archive(archive_path)
+
+    svc = svc_cls.load_from_dir(archive_path)
     track_load_finish(svc)
     return svc
 

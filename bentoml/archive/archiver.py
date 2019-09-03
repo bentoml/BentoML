@@ -16,15 +16,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import re
 import os
-import uuid
 import logging
-from datetime import datetime
 
-from bentoml.utils import Path
-from bentoml.utils.s3 import is_s3_url, upload_to_s3
-from bentoml.utils.tempdir import TempDirectory
+from bentoml.exceptions import BentoMLException
 from bentoml.archive.py_module_utils import copy_used_py_modules
 from bentoml.archive.templates import (
     BENTO_MODEL_SETUP_PY_TEMPLATE,
@@ -39,90 +34,10 @@ DEFAULT_BENTO_ARCHIVE_DESCRIPTION = """\
 # BentoML(bentoml.ai) generated model archive
 """
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
-def _validate_version_str(version_str):
-    """
-    Validate that version str format:
-    * Consist of only ALPHA / DIGIT / "-" / "." / "_"
-    * Length between 1-128
-    """
-    regex = r"[A-Za-z0-9_.-]{1,128}\Z"
-    if re.match(regex, version_str) is None:
-        raise ValueError(
-            'Invalid BentoArchive version: "{}", it can only consist'
-            ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'
-            "128 characthers".format(version_str)
-        )
-
-
-def _generate_new_version_str():
-    """
-    Generate a version string in the format of YYYY-MM-DD-Hash
-    """
-    time_obj = datetime.now()
-    date_string = time_obj.strftime("%Y_%m_%d")
-    random_hash = uuid.uuid4().hex[:8]
-
-    return date_string + "_" + random_hash
-
-
-def save(bento_service, dst, version=None):
-    """Save given BentoService along with all its artifacts, source code and
-    dependencies to target path
-
-    Args:
-        bento_service (bentoml.service.BentoService): a Bento Service instance
-        dst (str): Destination of where the bento service will be saved. It could
-            be a local file path or a s3 path
-        version (:obj:`str`, optional): version text to use for saved archive
-
-    Returns:
-        string: The complete path of saved Bento service.
-    """
-
-    if version is None:
-        version = _generate_new_version_str()
-    _validate_version_str(version)
-
-    if (
-        bento_service._version_major is not None
-        and bento_service._version_minor is not None
-    ):
-        # BentoML uses semantic versioning for BentoService distribution
-        # when user specified the MAJOR and MINOR version number along with
-        # the BentoService class definition with '@ver' decorator.
-        # The parameter version(or auto generated version) here will be used as
-        # PATCH field in the final version:
-        version = ".".join(
-            [
-                str(bento_service._version_major),
-                str(bento_service._version_minor),
-                version,
-            ]
-        )
-
-    # Full path containing saved BentoArchive, it the dst path with service name
-    # and service version as prefix. e.g.:
-    # - s3://my-bucket/base_path => s3://my-bucket/base_path/service_name/version/
-    # - /tmp/my_bento_archive/ => /tmp/my_bento_archive/service_name/version/
-    full_saved_path = os.path.join(dst, bento_service.name, version)
-
-    if is_s3_url(dst):
-        with TempDirectory() as tempdir:
-            _save(bento_service, tempdir, version)
-            upload_to_s3(full_saved_path, tempdir)
-    else:
-        _save(bento_service, dst, version)
-
-    LOG.info(
-        "BentoService %s:%s saved to %s", bento_service.name, version, full_saved_path
-    )
-    return full_saved_path
-
-
-def generate_apis_list(bento_service):
+def _get_apis_list(bento_service):
     result = []
     for api in bento_service.get_service_apis():
         result.append(
@@ -135,7 +50,7 @@ def generate_apis_list(bento_service):
     return result
 
 
-def generate_artifacts_list(bento_service):
+def _get_artifacts_list(bento_service):
     result = []
     for artifact_name in bento_service.artifacts:
         artifact_spec = bento_service.artifacts[artifact_name].spec
@@ -145,18 +60,21 @@ def generate_artifacts_list(bento_service):
     return result
 
 
-def _save(bento_service, dst, version=None):
-    Path(os.path.join(dst), bento_service.name).mkdir(parents=True, exist_ok=True)
-    # Update path to subfolder in the form of 'base/service_name/version/'
-    path = os.path.join(dst, bento_service.name, version)
+def save_to_dir(bento_service, path):
+    """Save given BentoService along with all its artifacts, source code and
+    dependencies to target file path, assuming path exist and empty. If target path
+    is not empty, this call may override existing files in the given path.
 
-    if os.path.exists(path):
-        raise ValueError(
-            "Version {version} in Path: {dst} already "
-            "exist.".format(version=version, dst=dst)
-        )
+    Args:
+        bento_service (bentoml.service.BentoService): a Bento Service instance
+        path (str): Destination of where the bento service will be saved
 
-    os.mkdir(path)
+    Returns:
+        string: The complete path of saved Bento service.
+    """
+    if not os.path.exists(path):
+        raise BentoMLException("Directory '{}' not found".format(path))
+
     module_base_path = os.path.join(path, bento_service.name)
     os.mkdir(module_base_path)
 
@@ -188,14 +106,14 @@ def _save(bento_service, dst, version=None):
             INIT_PY_TEMPLATE.format(
                 service_name=bento_service.name,
                 module_name=module_name,
-                pypi_package_version=version,
+                pypi_package_version=bento_service.version,
             )
         )
 
     # write setup.py, make exported model pip installable
     setup_py_content = BENTO_MODEL_SETUP_PY_TEMPLATE.format(
         name=bento_service.name,
-        pypi_package_version=version,
+        pypi_package_version=bento_service.version,
         long_description=model_description,
     )
     with open(os.path.join(path, "setup.py"), "w") as f:
@@ -215,14 +133,14 @@ def _save(bento_service, dst, version=None):
     config["metadata"].update(
         {
             "service_name": bento_service.name,
-            "service_version": version,
+            "service_version": bento_service.version,
             "module_name": module_name,
             "module_file": module_file,
         }
     )
     config["env"] = bento_service.env.to_dict()
-    config['apis'] = generate_apis_list(bento_service)
-    config['artifacts'] = generate_artifacts_list(bento_service)
+    config['apis'] = _get_apis_list(bento_service)
+    config['artifacts'] = _get_artifacts_list(bento_service)
 
     config.write_to_path(path)
     # Also write bentoml.yml to module base path to make it accessible

@@ -44,12 +44,15 @@ class BentoMLConfigParser(ConfigParser):
     def _env_var_name(section, key):
         return "BENTOML__{}__{}".format(section.upper(), key.upper())
 
-    def get(self, section, key, **kwargs):  # pylint:disable=arguments-differ
+    def get(self, section, key=None, **kwargs):  # pylint:disable=arguments-differ
         """ A simple hierachical config access, priority order:
             1. environment var
             2. user config file
             3. bentoml default config file
         """
+        if key is None:
+            key = section
+            section = 'core'
         section = str(section).lower()
         key = str(key).lower()
 

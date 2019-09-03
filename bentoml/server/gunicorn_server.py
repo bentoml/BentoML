@@ -85,5 +85,5 @@ class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
         return api_server.app
 
     def run(self):
-        track_server('gunicorn')
+        track_server('gunicorn', {"number_of_workers": self.num_of_workers})
         super(GunicornBentoServer, self).run()

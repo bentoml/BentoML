@@ -92,7 +92,7 @@ def track_load_start():
     return track('load-start', {})
 
 
-def track_loading_finish(bento_service):
+def track_load_finish(bento_service):
     info = get_bento_service_info(bento_service)
     return track("load", info)
 
@@ -104,16 +104,16 @@ def track_cli(command, deploy_platform=None):
     return track('cli-' + command, info)
 
 
-def track_server(server_type):
+def track_server(server_type, info=None):
+    if info is None:
+        info = {}
     start_time = time.time()
 
     @atexit.register
     def log_exit():
         duration = time.time() - start_time
-        return track(
-            'server-{server_type}'.format(server_type=server_type),
-            {'uptime': int(duration)},
-        )
+        info['uptime'] = int(duration)
+        return track('server-{server_type}'.format(server_type=server_type), info)
 
 
 def send_amplitude_event(event, event_properties):

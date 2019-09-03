@@ -40,12 +40,6 @@ class BentoRepositoryBase(object):
     """
 
     @abstractmethod
-    def __init__(self, base_url):
-        """
-        Initialize repository access by provide base_url for Bento files storage
-        """
-
-    @abstractmethod
     def add(self, bento_service):
         """
         Adding a BentoService instance to target repository - this will resolve in a

@@ -495,7 +495,7 @@ class BentoService(BentoServiceBase):
         # a yatei service call instead, which can be either a local service or RPC
         # client calling remote service
         repo = BentoRepository(base_path)
-        return repo.add(self, version=version)
+        return repo.add(self)
 
     def save_to_dir(self, path):
         track_save(self)
@@ -521,8 +521,10 @@ class BentoService(BentoServiceBase):
 
         if cls._bento_archive_path is not None and cls._bento_archive_path != path:
             logger.warning(
-                "Loaded BentoArchive(from {}) can't be loaded again from a different"
-                "archive path {}".format(cls._bento_archive_path, path)
+                "Loaded BentoArchive from '%' can't be loaded again from a different"
+                "path %",
+                cls._bento_archive_path,
+                path,
             )
 
         artifacts_path = path

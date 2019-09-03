@@ -91,10 +91,6 @@ class YataiService(YataiServicer):
                 request.deployment.state = previous_deployment.state
 
                 request.deployment.state.state = DeploymentState.PENDING
-                if not request.deployment.labels:
-                    request.deployment.labels = previous_deployment.labels
-                if not request.deployment.annotations:
-                    request.deployment.annotations = previous_deployment.annotations
 
             self.deployment_store.insert_or_update(request.deployment)
             # find deployment operator based on deployment spec

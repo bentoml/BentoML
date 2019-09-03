@@ -49,7 +49,7 @@ def setup_routes(app, bento_service, api_name):
 
 class BentoSagemakerServer:
     """
-    BentoSagemakerServer create an AWS sagemaker compatibility reset server.
+    BentoSagemakerServer create an AWS Sagemaker compatibility rest API server.
     """
 
     _DEFAULT_PORT = 8080

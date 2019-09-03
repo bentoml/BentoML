@@ -24,6 +24,7 @@ from bentoml import config
 from bentoml.archive import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.utils import get_bento_recommend_gunicorn_worker_count
+from bentoml.utils.usage_stats import track_server
 
 conf = config["apiserver"]
 
@@ -82,3 +83,7 @@ class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
         bento_service = load(self.bento_archive_path)
         api_server = BentoAPIServer(bento_service, port=self.port)
         return api_server.app
+
+    def run(self):
+        track_server('gunicorn', {"number_of_workers": self.num_of_workers})
+        super(GunicornBentoServer, self).run()

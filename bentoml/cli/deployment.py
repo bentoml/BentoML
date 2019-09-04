@@ -161,7 +161,7 @@ def get_deployment_sub_command():
     )
     def apply(
         bento,
-        deployment_name,
+        name,
         platform,
         output,
         namespace,
@@ -229,7 +229,7 @@ def get_deployment_sub_command():
             ApplyDeploymentRequest(
                 deployment=Deployment(
                     namespace=namespace,
-                    name=deployment_name,
+                    name=name,
                     annotations=parse_key_value_pairs(annotations),
                     labels=parse_key_value_pairs(labels),
                     spec=spec,
@@ -240,7 +240,7 @@ def get_deployment_sub_command():
             _echo(
                 'Failed to apply deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(
-                    name=deployment_name,
+                    name=name,
                     error_code=Status.Code.Name(result.status.status_code),
                     error_message=result.status.error_message,
                 ),
@@ -250,20 +250,20 @@ def get_deployment_sub_command():
             if wait:
                 result_state = get_state_after_await_action_complete(
                     yaitai_service=yatai_service,
-                    name=deployment_name,
+                    name=name,
                     namespace=namespace,
                     message='Applying deployment...',
                 )
                 result.deployment.state.CopyFrom(result_state.state)
 
             _echo(
-                'Finished apply deployment {}'.format(deployment_name),
+                'Finished apply deployment {}'.format(name),
                 CLI_COLOR_SUCCESS,
             )
             display_deployment_info(result.deployment, output)
 
     @deploy.command(help='Delete deployment')
-    @click.option('--name', type=click.STRING, help='Deployment name', required=True)
+    @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     def delete(name, namespace):
         track_cli('deploy-delete')
@@ -285,7 +285,7 @@ def get_deployment_sub_command():
             _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
     @deploy.command(help='Get deployment spec')
-    @click.option('--name', type=click.STRING, help='Deployment name', required=True)
+    @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def get(name, output, namespace):
@@ -308,7 +308,7 @@ def get_deployment_sub_command():
             display_deployment_info(result.deployment, output)
 
     @deploy.command(help='Get deployment state')
-    @click.option('--name', type=click.STRING, help='Deployment name', required=True)
+    @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def describe(name, output, namespace):

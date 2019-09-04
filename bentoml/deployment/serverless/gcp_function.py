@@ -102,7 +102,7 @@ def generate_main_py(bento_name, apis, output_path):
 
 
 class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb, repo):
+    def apply(self, deployment_pb, repo, prev_deployment=None):
         deployment_spec = deployment_pb.spec
         gcp_config = deployment_spec.gcp_function_operator_config
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)

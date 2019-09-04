@@ -28,6 +28,7 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
+    DeploymentState
 )
 from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
 from bentoml.proto.yatai_service_pb2 import (
@@ -75,16 +76,28 @@ class YataiService(YataiServicer):
                 request.deployment.namespace or self.default_namespace
             )
 
-            # TODO: validate deployment config
+            previous_deployment = self.deployment_store.get(
+                request.deployment.name, request.deployment.namespace
+            )
+            if previous_deployment:
+                # check deployment platform
+                if previous_deployment.spec.operator != request.deployment.spec.operator:
+                    return ApplyDeploymentResponse(
+                        status=Status.ABORTED(
+                            'New deployment spec has different platform from existing one. '
+                            'Please delete existing deployment and apply again'
+                        )
+                    )
+                request.deployment.state = DeploymentState(state=DeploymentState.PENDING)
 
-            # create or update deployment spec record
             self.deployment_store.insert_or_update(request.deployment)
-
             # find deployment operator based on deployment spec
             operator = get_deployment_operator(request.deployment)
 
             # deploying to target platform
-            response = operator.apply(request.deployment, self.repo)
+            response = operator.apply(
+                request.deployment, self.repo, previous_deployment
+            )
 
             # update deployment state
             self.deployment_store.insert_or_update(response.deployment)
@@ -93,7 +106,7 @@ class YataiService(YataiServicer):
 
         except BentoMLException as e:
             logger.error("INTERNAL ERROR: %s", e)
-            return ApplyDeploymentResponse(Status.INTERNAL(e))
+            return ApplyDeploymentResponse(status=Status.INTERNAL(e))
 
     def DeleteDeployment(self, request, context=None):
         try:

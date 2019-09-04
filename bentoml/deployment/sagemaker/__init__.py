@@ -245,7 +245,7 @@ ENDPOINT_STATUS_TO_STATE = {
 
 
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb, repo):
+    def apply(self, deployment_pb, repo, prev_deployment=None):
         deployment_spec = deployment_pb.spec
         sagemaker_config = deployment_spec.sagemaker_operator_config
         if sagemaker_config is None:
@@ -317,11 +317,18 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         endpoint_name = generate_aws_compatible_string(
             deployment_pb.namespace + '-' + deployment_spec.bento_name
         )
-        logger.info("Creating sagemaker endpoint %s", endpoint_name)
-        create_endpoint_response = sagemaker_client.create_endpoint(
-            EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
-        )
-        logger.info("AWS create endpoint response: %s", create_endpoint_response)
+        if prev_deployment:
+            logger.info("Updating sagemaker endpoint %s", endpoint_name)
+            update_endpoint_response = sagemaker_client.update_endpoint(
+                EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
+            )
+            logger.info("AWS update endpoint response: %s", update_endpoint_response)
+        else:
+            logger.info("Creating sagemaker endpoint %s", endpoint_name)
+            create_endpoint_response = sagemaker_client.create_endpoint(
+                EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
+            )
+            logger.info("AWS create endpoint response: %s", create_endpoint_response)
 
         res_deployment_pb = Deployment(state=DeploymentState())
         res_deployment_pb.CopyFrom(deployment_pb)

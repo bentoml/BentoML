@@ -26,7 +26,6 @@ from bentoml import archive
 from bentoml.exceptions import BentoMLRepositoryException
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils import Path
-from bentoml.utils.usage_stats import track_save
 
 
 @add_metaclass(ABCMeta)

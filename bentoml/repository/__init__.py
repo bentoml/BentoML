@@ -26,6 +26,7 @@ from bentoml import archive
 from bentoml.exceptions import BentoMLRepositoryException
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils import Path
+from bentoml.utils.usage_stats import track_save
 
 
 @add_metaclass(ABCMeta)
@@ -150,3 +151,14 @@ class BentoRepository(BentoRepositoryBase):
 
     def dangerously_delete(self, bento_name, bento_version):
         return self._repo.dangerously_delete(bento_name, bento_version)
+
+
+def save(bento_service, base_path=None, version=None):
+    if version is not None:
+        bento_service.set_version(version)
+
+    # TODO: Callding BentoRepository directly for now, this should be changed to
+    # a yatei service call instead, which can be either a local service or RPC
+    # client calling remote service
+    repo = BentoRepository(base_path)
+    return repo.add(bento_service)

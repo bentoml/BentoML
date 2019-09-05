@@ -16,24 +16,23 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import datetime
 import os
 import re
 import sys
 import inspect
 import logging
 import uuid
+from datetime import datetime
 
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
 from bentoml import archive
-from bentoml.repository import BentoRepository
+from bentoml import repository
 from bentoml.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
 from bentoml.utils import isidentifier
-from bentoml.utils.usage_stats import track_save
 
 logger = logging.getLogger(__name__)
 
@@ -487,18 +486,9 @@ class BentoService(BentoServiceBase):
         return self._bento_service_version
 
     def save(self, base_path=None, version=None):
-        track_save(self)
-        if version is not None:
-            self.set_version(version)
-
-        # TODO: Callding BentoRepository directly for now, this should be changed to
-        # a yatei service call instead, which can be either a local service or RPC
-        # client calling remote service
-        repo = BentoRepository(base_path)
-        return repo.add(self)
+        return repository.save(self, base_path, version)
 
     def save_to_dir(self, path):
-        track_save(self)
         return archive.save_to_dir(self, path)
 
     @classmethod

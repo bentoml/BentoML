@@ -1,6 +1,7 @@
 import pytest
 
 import bentoml
+from bentoml.service import _validate_version_str
 
 
 def test_custom_api_name():
@@ -43,3 +44,11 @@ def test_handler_pip_dependencies():
 
     assert 'imageio' in service._env._pip_dependencies
     assert 'fastai' in service._env._pip_dependencies
+
+
+def test_validate_version_str_fails():
+    with pytest.raises(ValueError):
+        _validate_version_str("44&")
+
+def test_validate_version_str_pass():
+    _validate_version_str("abc_123")

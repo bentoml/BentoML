@@ -22,6 +22,9 @@ __version__ = get_versions()['version']
 del get_versions
 
 from bentoml.config import config
+from bentoml import handlers
+from bentoml import archive
+from bentoml import repository
 from bentoml.service import (
     BentoService,
     api_decorator as api,
@@ -34,6 +37,9 @@ from bentoml.utils.log import configure_logging
 
 configure_logging()
 
+load = archive.load
+save = repository.save
+
 __all__ = [
     "__version__",
     "api",
@@ -43,4 +49,7 @@ __all__ = [
     "ver",
     "metrics",
     "BentoService",
+    "handlers",
+    "load",
+    "save",
 ]

@@ -28,6 +28,7 @@ from bentoml.archive.templates import (
     BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE,
     INIT_PY_TEMPLATE,
 )
+from bentoml.utils.usage_stats import track_save
 from bentoml.archive.config import BentoArchiveConfig
 
 DEFAULT_BENTO_ARCHIVE_DESCRIPTION = """\
@@ -72,6 +73,8 @@ def save_to_dir(bento_service, path):
     Returns:
         string: The complete path of saved Bento service.
     """
+    track_save(bento_service)
+
     if not os.path.exists(path):
         raise BentoMLException("Directory '{}' not found".format(path))
 

@@ -93,40 +93,6 @@ def parse_serverless_info_response_to_json_string(responses):
     return json.dumps(result)
 
 
-def generate_bundle(archive_path, template_type, bento_name):
-    with TempDirectory() as tempdir:
-        # Calling serverless command to generate templated project
-        call_serverless_command(
-            ["serverless", "create", "--template", template_type, "--name", bento_name],
-            tempdir,
-        )
-
-        # if self.platform == "google-python":
-        #     create_gcp_function_bundle(
-        #       self.bento_service, output_path, self.region, self.stage
-        #     )
-        # elif self.platform == "aws-lambda" or self.platform == "aws-lambda-py2":
-        #     # Installing two additional plugins to make it works for AWS lambda
-        #     # serverless-python-requirements will packaging required python modules,
-        #     # and automatically compress and create layer
-        #     install_serverless_plugin("serverless-python-requirements", output_path)
-        #     install_serverless_plugin("serverless-apigw-binary", output_path)
-        #
-        #     create_aws_lambda_bundle(
-        #       self.bento_service, output_path, self.region, self.stage
-        #     )
-        # else:
-        #     raise BentoMLException(
-        #       "%s is not supported in current version of BentoML" % self.provider
-        #     )
-
-        shutil.copy(os.path.join(archive_path, "requirements.txt"), tempdir)
-        model_serivce_archive_path = os.path.join(tempdir, bento_name)
-        shutil.copytree(archive_path, model_serivce_archive_path)
-
-    return os.path.realpath(tempdir)
-
-
 class TemporaryServerlessContent(object):
     def __init__(
         self, archive_path, deployment_name, bento_name, template_type, _cleanup=True

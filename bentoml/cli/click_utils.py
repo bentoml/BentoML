@@ -144,7 +144,7 @@ class TemporaryRemoteYamlFile(object):
         self.temp_directory.create()
         tempdir = self.temp_directory.path
 
-        if self.remote_storage_type is 's3':
+        if self.remote_storage_type == 's3':
             download_from_s3(self.remote_file_path, tempdir)
             file_path = os.path.join(tempdir, self.file_name)
             self.file = open(file_path, 'rb')

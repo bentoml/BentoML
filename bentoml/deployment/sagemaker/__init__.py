@@ -288,7 +288,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         }
         logger.info("Creating sagemaker model %s", model_name)
         create_model_response = sagemaker_client.create_model(**sagemaker_model_info)
-        logger.info("AWS create model response: %s", create_model_response)
+        logger.debug("AWS create model response: %s", create_model_response)
 
         production_variants = [
             {
@@ -310,7 +310,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             EndpointConfigName=endpoint_config_name,
             ProductionVariants=production_variants,
         )
-        logger.info(
+        logger.debug(
             "AWS create endpoint config response: %s", create_endpoint_config_response
         )
 
@@ -322,13 +322,13 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             update_endpoint_response = sagemaker_client.update_endpoint(
                 EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
             )
-            logger.info("AWS update endpoint response: %s", update_endpoint_response)
+            logger.debug("AWS update endpoint response: %s", update_endpoint_response)
         else:
             logger.info("Creating sagemaker endpoint %s", endpoint_name)
             create_endpoint_response = sagemaker_client.create_endpoint(
                 EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
             )
-            logger.info("AWS create endpoint response: %s", create_endpoint_response)
+            logger.debug("AWS create endpoint response: %s", create_endpoint_response)
 
         res_deployment_pb = Deployment(state=DeploymentState())
         res_deployment_pb.CopyFrom(deployment_pb)
@@ -348,7 +348,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         delete_endpoint_response = sagemaker_client.delete_endpoint(
             EndpointName=endpoint_name
         )
-        logger.info("AWS delete endpoint response: %s", delete_endpoint_response)
+        logger.debug("AWS delete endpoint response: %s", delete_endpoint_response)
         if delete_endpoint_response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             # We will also try to delete both model and endpoint configuration for user.
             # Since they are not critical, even they failed, we will still count delete
@@ -357,7 +357,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
             delete_model_response = sagemaker_client.delete_model(ModelName=model_name)
-            logger.info("AWS delete model response: %s", delete_model_response)
+            logger.debug("AWS delete model response: %s", delete_model_response)
             if delete_model_response["ResponseMetadata"]["HTTPStatusCode"] != 200:
                 logger.error(
                     "Encounter error when deleting model: %s", delete_model_response
@@ -369,7 +369,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             delete_endpoint_config_response = sagemaker_client.delete_endpoint_config(  # noqa: E501
                 EndpointConfigName=endpoint_config_name
             )
-            logger.info(
+            logger.debug(
                 "AWS delete endpoint config response: %s",
                 delete_endpoint_config_response,
             )
@@ -391,7 +391,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         endpoint_status_response = sagemaker_client.describe_endpoint(
             EndpointName=endpoint_name
         )
-        logger.info("AWS describe endpoint response: %s", endpoint_status_response)
+        logger.debug("AWS describe endpoint response: %s", endpoint_status_response)
         endpoint_status = endpoint_status_response["EndpointStatus"]
 
         service_state = ENDPOINT_STATUS_TO_STATE[endpoint_status]

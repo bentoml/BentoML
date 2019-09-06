@@ -28,11 +28,7 @@ from bentoml.cli.click_utils import (
     parse_bento_tag_callback,
     parse_yaml_file_or_string_callback,
 )
-from bentoml.cli.utils import (
-    deployment_yaml_to_pb,
-    get_deployment_operator_type,
-    parse_key_value_pairs,
-)
+from bentoml.cli.utils import deployment_yaml_to_pb
 from bentoml.yatai import get_yatai_service
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentRequest,
@@ -88,7 +84,7 @@ def get_state_after_await_action_complete(yaitai_service, name, namespace, messa
             DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
         )
         if result.state.state is DeploymentState.PENDING:
-            time.sleep(10)
+            time.sleep(20)
             _echo(message)
             continue
         else:
@@ -222,7 +218,7 @@ def get_deployment_sub_command():
         bento_name, bento_verison = bento.split(':')
         spec.bento_name = bento_name
         spec.bento_version = bento_verison
-        spec.operator = get_deployment_operator_type(platform)
+        spec.operator = DeploymentOperator.Value(platform.upper())
 
         yatai_service = get_yatai_service()
         result = yatai_service.ApplyDeployment(
@@ -269,8 +265,8 @@ def get_deployment_sub_command():
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def apply(file, output, wait):
-        track_cli('deploy-apply')
         yaml_content = file
+        track_cli('deploy-apply', yaml_content.get('spec').get('operator'))
         deployment_pb = deployment_yaml_to_pb(yaml_content)
         yatai_service = get_yatai_service()
         result = yatai_service.ApplyDeployment(

@@ -20,14 +20,10 @@ from __future__ import print_function
 import logging
 
 from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec, DeploymentOperator
-from bentoml.exceptions import BentoMLDeploymentException
+from bentoml.exceptions import BentoMLException
 from bentoml import config
 
 logger = logging.getLogger(__name__)
-
-
-def get_deployment_operator_type(platform):
-    return DeploymentOperator.Value(platform.upper())
 
 
 def deployment_yaml_to_pb(deployment_yaml):
@@ -38,7 +34,7 @@ def deployment_yaml_to_pb(deployment_yaml):
             sagemaker_config = spec_yaml['sagemaker_operator_config']
             spec = DeploymentSpec(
                 sagemaker_operator_config=DeploymentSpec.SageMakerOperatorConfig(
-                    api_name=sagemaker_config.get('api_name'),
+                    api_name=sagemaker_config['api_name'],
                     region=sagemaker_config.get(
                         'region', config.get('aws', 'default_region')
                     ),
@@ -79,18 +75,19 @@ def deployment_yaml_to_pb(deployment_yaml):
                 )
             )
         else:
-            raise BentoMLDeploymentException(
+            raise BentoMLException(
                 'Custom deployment is not supported in the current version of BentoML'
             )
 
-        spec.operator = get_deployment_operator_type(platform)
-        spec.name = spec_yaml['bento_name']
-        spec.version = spec_yaml['bento_version']
+        spec.operator = DeploymentOperator.Value(platform.upper())
+        spec.bento_name = spec_yaml['bento_name']
+        spec.bento_version = spec_yaml['bento_version']
         return Deployment(
             name=deployment_yaml['name'],
             namespace=deployment_yaml['namespace'],
-            annotations=deployment_yaml.get('annotations', {}),
-            labels=deployment_yaml.get('labels', {}),
+            annotations=deployment_yaml.get('annotations'),
+            labels=deployment_yaml.get('labels'),
+            spec=spec,
         )
     except KeyError as e:
-        return
+        raise BentoMLException('Field {name} is required'.format(name=e.args[0]))

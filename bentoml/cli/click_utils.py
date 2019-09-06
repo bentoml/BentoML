@@ -44,6 +44,7 @@ from ruamel.yaml import YAML
 #     'bright_white': 97,
 # }
 from bentoml.exceptions import BentoMLException
+from bentoml.utils import Path
 from bentoml.utils.s3 import is_s3_url, download_from_s3
 from bentoml.utils.tempdir import TempDirectory
 
@@ -164,7 +165,7 @@ class TemporaryRemoteYamlFile(object):
 def parse_yaml_file_or_string_callback(ctx, param, value):
     yaml = YAML()
 
-    if os.path.exists(value):
+    if os.path.isfile(Path(value)):
         with open(value, "rb") as yaml_file:
             yml_content = yaml_file.read()
     elif is_s3_url(value):

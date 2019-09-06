@@ -26,6 +26,12 @@ from bentoml.cli.click_utils import (
     CLI_COLOR_ERROR,
     CLI_COLOR_SUCCESS,
     parse_bento_tag_callback,
+    parse_yaml_file_or_string_callback,
+)
+from bentoml.cli.utils import (
+    deployment_yaml_to_pb,
+    get_deployment_operator_type,
+    parse_key_value_pairs,
 )
 from bentoml.yatai import get_yatai_service
 from bentoml.proto.deployment_pb2 import (
@@ -66,10 +72,6 @@ def parse_key_value_pairs(key_value_pairs_str):
     return result
 
 
-def get_deployment_operator_type(platform):
-    return DeploymentOperator.Value(platform.upper())
-
-
 def display_deployment_info(deployment, output):
     if output == 'yaml':
         result = pb_to_yaml(deployment)
@@ -100,7 +102,7 @@ def get_deployment_sub_command():
         pass
 
     @deploy.command(
-        short_help='Create or update a model serving deployment',
+        short_help='Create a model serving deployment',
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
     @click.argument("deployment-name", type=click.STRING, required=True)
@@ -159,7 +161,7 @@ def get_deployment_sub_command():
         help='Wait for apply action to complete or encounter an error.'
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
-    def apply(
+    def create(
         bento,
         name,
         platform,
@@ -177,10 +179,7 @@ def get_deployment_sub_command():
         service_type,
         wait,
     ):
-        track_cli('deploy-apply', platform)
-
-        bento_name, bento_verison = bento.split(':')
-        operator = get_deployment_operator_type(platform)
+        track_cli('deploy-create', platform)
         if platform == 'aws_sagemaker':
             if not api_name:
                 raise click.BadParameter(
@@ -217,12 +216,13 @@ def get_deployment_sub_command():
             spec = DeploymentSpec(kubernetes_operator_config=kubernetes_operator_config)
         else:
             raise BentoMLDeploymentException(
-                'Custom deployment is not supported in current version of BentoML'
+                'Custom deployment is not supported in the current version of BentoML'
             )
 
+        bento_name, bento_verison = bento.split(':')
         spec.bento_name = bento_name
         spec.bento_version = bento_verison
-        spec.operator = operator
+        spec.operator = get_deployment_operator_type(platform)
 
         yatai_service = get_yatai_service()
         result = yatai_service.ApplyDeployment(
@@ -256,8 +256,48 @@ def get_deployment_sub_command():
                 )
                 result.deployment.state.CopyFrom(result_state.state)
 
+            _echo('Finished apply deployment {}'.format(name), CLI_COLOR_SUCCESS)
+            display_deployment_info(result.deployment, output)
+
+    @deploy.command(help='Create or update model service deployment')
+    @click.option("--file", callback=parse_yaml_file_or_string_callback)
+    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '--wait/--no-wait',
+        default=True,
+        help='Wait for apply action to complete or encounter an error.'
+        'If set to no-wait, CLI will return immediately. The default value is wait',
+    )
+    def apply(file, output, wait):
+        track_cli('deploy-apply')
+        yaml_content = file
+        deployment_pb = deployment_yaml_to_pb(yaml_content)
+        yatai_service = get_yatai_service()
+        result = yatai_service.ApplyDeployment(
+            ApplyDeploymentRequest(deployment=deployment_pb)
+        )
+        if result.status.status_code != Status.OK:
             _echo(
-                'Finished apply deployment {}'.format(name),
+                'Failed to apply deployment {name}. code: {error_code}, message: '
+                '{error_message}'.format(
+                    name=deployment_pb.name,
+                    error_code=Status.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
+                ),
+                CLI_COLOR_ERROR,
+            )
+        else:
+            if wait:
+                result_state = get_state_after_await_action_complete(
+                    yaitai_service=yatai_service,
+                    name=deployment_pb.name,
+                    namespace=deployment_pb.namespace,
+                    message='Applying deployment...',
+                )
+                result.deployment.state.CopyFrom(result_state.state)
+
+            _echo(
+                'Finished apply deployment {}'.format(deployment_pb.name),
                 CLI_COLOR_SUCCESS,
             )
             display_deployment_info(result.deployment, output)

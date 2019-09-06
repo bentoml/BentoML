@@ -60,7 +60,7 @@ def download_from_s3(s3_url, file_path):
     bucket = parse_result.netloc
     base_path = parse_result.path
     if base_path.startswith('/'):
-      base_path = base_path[1:]
+        base_path = base_path[1:]
 
     s3_client = boto3.client("s3")
     list_object_result = s3_client.list_objects(Bucket=bucket, Prefix=base_path)

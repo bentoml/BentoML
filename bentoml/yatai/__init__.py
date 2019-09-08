@@ -28,7 +28,7 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
-    DeploymentState
+    DeploymentState,
 )
 from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
 from bentoml.proto.yatai_service_pb2 import (
@@ -81,14 +81,19 @@ class YataiService(YataiServicer):
             )
             if previous_deployment:
                 # check deployment platform
-                if previous_deployment.spec.operator != request.deployment.spec.operator:
+                if (
+                    previous_deployment.spec.operator
+                    != request.deployment.spec.operator
+                ):
                     return ApplyDeploymentResponse(
                         status=Status.ABORTED(
                             'New deployment spec has different platform from existing one. '
                             'Please delete existing deployment and apply again'
                         )
                     )
-                request.deployment.state = DeploymentState(state=DeploymentState.PENDING)
+                request.deployment.state = DeploymentState(
+                    state=DeploymentState.PENDING
+                )
 
             self.deployment_store.insert_or_update(request.deployment)
             # find deployment operator based on deployment spec

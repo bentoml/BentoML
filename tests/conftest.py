@@ -42,6 +42,10 @@ class TestBentoService(bentoml.BentoService):
     def predictImages(self, original, compared):
         return original[0, 0] == compared[0, 0]
 
+    @bentoml.api(bentoml.handlers.FastaiImageHandler)
+    def predictFastaiImage(self, input_data):
+        return self.artifacts.model.predictImage(input_data)
+
     @bentoml.api(bentoml.handlers.JsonHandler)
     def predictJson(self, input_data):
         return self.artifacts.model.predictJson(input_data)

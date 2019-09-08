@@ -38,12 +38,10 @@ class FastaiImageHandler(BentoHandler):
 
 
     Args:
-        input_name ([str]]): A list of acceptable input name for HTTP request.
-            Default value is image
+        input_names ([str]]): A tuple of acceptable input name for HTTP request.
+            Default value is (image,)
         accept_file_extensions ([str]):  A list of acceptable image extensions.
             Default value is [.jpg, .jpeg, .png]
-        accept_multiple_files (boolean):  Accept multiple files in single request or
-            not. Default value is False
         convert_mode (str): The pilmode to be used for reading image file into
             numpy array. Default value is RGB.  Find more information at
             https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
@@ -61,14 +59,14 @@ class FastaiImageHandler(BentoHandler):
 
     def __init__(
         self,
-        input_name=None,
+        input_names=None,
         accept_file_extensions=None,
         convert_mode=None,
         div=True,
         cls=None,
         after_open=None,
     ):
-        self.input_name = input_name or "image"
+        self.input_names = input_names or ("image",)
         self.convert_mode = convert_mode or "RGB"
         self.div = (div or True,)
         self.cls = cls
@@ -83,7 +81,8 @@ class FastaiImageHandler(BentoHandler):
                 "schema": {
                     "type": "object",
                     "properties": {
-                        self.input_name: {"type": "string", "format": "binary"}
+                        filename: {"type": "string", "format": "binary"}
+                        for filename in self.input_names
                     },
                 }
             },
@@ -107,35 +106,42 @@ class FastaiImageHandler(BentoHandler):
         if request.method != "POST":
             return Response(response="Only accept POST request", status=400)
 
-        input_file = request.files.get(self.input_name)
+        input_streams = []
+        for filename in self.input_names:
+            file = request.files.get(filename)
+            if file is not None:
+                file_name = secure_filename(file.filename)
+                check_file_format(file_name, self.accept_file_extensions)
+                input_streams.append(BytesIO(file.read()))
 
-        if input_file:
-            file_name = secure_filename(input_file.filename)
-            check_file_format(file_name, self.accept_file_extensions)
-            input_stream = BytesIO(input_file.read())
-        elif request.data:
-            input_stream = request.data
-        else:
-            raise ValueError(
-                "BentoML#FastaiImageHandler unexpected HTTP request: %s" % request
-            )
+        if len(input_streams) == 0:
+            if request.data:
+                input_streams = (request.data,)
+            else:
+                raise ValueError(
+                    "BentoML#ImageHandler unexpected HTTP request: %s" % request
+                )
 
-        input_data = imread(input_stream, pilmode=self.convert_mode)
+        input_data = []
+        for i, input in enumerate(input_streams):
+            data = imread(input, pilmode=self.convert_mode)
 
-        if self.after_open:
-            input_data = self.after_open(input_data)
+            if self.after_open:
+                data = self.after_open(data)
 
-        input_data = pil2tensor(input_data, np.float32)
+            data = pil2tensor(data, np.float32)
 
-        if self.div:
-            input_data = input_data.div_(255)
+            if self.div:
+                data = data.div_(255)
 
-        if self.cls:
-            input_data = self.cls(input_data)
-        else:
-            input_data = Image(input_data)
+            if self.cls:
+                data = self.cls(data)
+            else:
+                data = Image(data)
+            input_data.append(data)
 
-        result = func(input_data)
+        result = func(*input_data)
+
         result = get_output_str(result, request.headers.get("output", "json"))
         return Response(response=result, status=200, mimetype="application/json")
 

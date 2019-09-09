@@ -16,7 +16,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.archive.archiver import save
+from bentoml.archive.archiver import save_to_dir
 from bentoml.archive.loader import (
     load,
     load_bentoml_config,
@@ -25,7 +25,7 @@ from bentoml.archive.loader import (
 )
 
 __all__ = [
-    "save",
+    "save_to_dir",
     "load",
     "load_bentoml_config",
     "load_bento_service_class",

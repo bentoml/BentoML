@@ -22,18 +22,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from bentoml import config
 from bentoml.exceptions import BentoMLException
 
 Base = declarative_base()
 
 
-def init_db(db_config=None):
+def init_db(db_url):
     # Use default config if not provided
-    db_config = db_config or config.get('db', 'engine')
-
     engine = create_engine(
-        db_config, echo=False, connect_args={'check_same_thread': False}
+        db_url, echo=False, connect_args={'check_same_thread': False}
     )
     Base.metadata.create_all(engine)
 

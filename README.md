@@ -49,7 +49,7 @@ import my_preproceesing_lib
 @bentoml.env(pip_dependencies=["scikit-learn"])
 class IrisClassifier(bentoml.BentoService):
 
-    @api(DataframeHandler)
+    @bentoml.api(DataframeHandler)
     def predict(self, df):
         # Preprocessing prediction request - DataframeHandler parses REST API
         # request or CLI args into pandas Dataframe that can be easily processed

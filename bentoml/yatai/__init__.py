@@ -39,7 +39,7 @@ from bentoml.config import config
 from bentoml.deployment.operator import get_deployment_operator
 from bentoml.deployment.store import DeploymentStore
 from bentoml.exceptions import BentoMLException
-from bentoml.repository import get_default_repository
+from bentoml.repository import BentoRepository
 from bentoml.db import init_db
 from bentoml.yatai.status import Status
 from bentoml.proto import status_pb2
@@ -55,13 +55,15 @@ def get_yatai_service():
 
 # pylint: disable=unused-argument
 class YataiService(YataiServicer):
-    def __init__(self, db_config=None, bento_repository=None, default_namespace=None):
+    def __init__(self, db_url=None, repo_base_url=None, default_namespace=None):
         self.default_namespace = default_namespace or config.get(
             'deployment', 'default_namespace'
         )
-        self.sess_maker = init_db(db_config)
+        self.repo = BentoRepository(
+            repo_base_url or config.get('default_repository_base_url')
+        )
+        self.sess_maker = init_db(db_url or config.get('db', 'url'))
         self.deployment_store = DeploymentStore(self.sess_maker)
-        self.repo = bento_repository or get_default_repository()
 
     def HealthCheck(self, request, context=None):
         return HealthCheckResponse(status=Status.OK())
@@ -217,7 +219,10 @@ class YataiService(YataiServicer):
             logger.error("INTERNAL ERROR: %s", e)
             return ListDeploymentsResponse(status=Status.INTERNAL(e))
 
-    def AddBento(self, request_iterator, context=None):
+    def UploadBento(self, request_iterator, context):
+        raise NotImplementedError('UploadBento RPC is not implemented')
+
+    def AddBento(self, request, context):
         raise NotImplementedError('Method not implemented!')
 
     def RemoveBento(self, request, context=None):

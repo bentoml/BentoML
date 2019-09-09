@@ -7,41 +7,68 @@ import "status.proto";
 import "deployment.proto";
 import "repository.proto";
 
-// Yatai: stateful service that manages and deploys saved Bento
+
+// Yatai RPC Server
+//
+// A stateful service that provides a complete BentoML model management
+// and model serving/deployment workflow
+//
+// It provides two sets of APIs:
+//  Bento Repository: Manages saved Bento files, and making them available
+//                    for serving in production environments
+//  Serving Deployment: Deploys saved Bento to a varity of different cloud
+//                      platforms, track deploym//ent status, set up logging
+//                      monitoring for your model serving workloads, and
 service Yatai {
-  // Common RPC
+  // Health check ping endpoint
   rpc HealthCheck (google.protobuf.Empty)
     returns (HealthCheckResponse);
 
+  // Return current service version information
   rpc GetYataiServiceVersion (google.protobuf.Empty)
     returns (GetYataiServiceVersionResponse);
 
-  // Deployment Management RPC
+  // Create new or update existing deployment
   rpc ApplyDeployment(ApplyDeploymentRequest)
     returns (ApplyDeploymentResponse);
 
+  // Delete existing deployment
   rpc DeleteDeployment(DeleteDeploymentRequest)
     returns (DeleteDeploymentResponse);
 
+  // Get deployment specification (desired state)
   rpc GetDeployment(GetDeploymentRequest)
     returns (GetDeploymentResponse);
 
+  // Get deployment status (current state)
   rpc DescribeDeployment(DescribeDeploymentRequest)
     returns (DescribeDeploymentResponse);
 
+  // List active deployments, by default this will return all active deployments
   rpc ListDeployments(ListDeploymentsRequest)
     returns (ListDeploymentsResponse);
 
-  // Bento Repository RPC
-  rpc AddBento(stream Chunk)
+  // Upload new packed Bento files to repository
+  rpc UploadBento(stream Chunk)
+    returns (UploadBentoResponse);
+
+  // Add new packed Bento to repository by providing a URI to saved path
+  // This can be a file path in local file system, a s3 url, or another
+  // Bento Repository (for example adding a Bento in local repo to remote)
+  rpc AddBento(AddBentoRequest)
     returns (AddBentoResponse);
 
-  rpc RemoveBento(RemoveBentoRequest)
-    returns (RemoveBentoResponse);
-
+  // Get a file path to the saved Bento files, path must be accessible form client
+  // machine either through HTTP, FTP, etc
   rpc GetBento(GetBentoRequest)
     returns (GetBentoResponse);
 
+  // Deleting the Bento files that was added to this Yatai server earlier, this may
+  // break existing deployments or create issues when doing deployment rollback
+  rpc DangerouslyDeleteBento(DangerouslyDeleteBentoRequest)
+    returns (DangerouslyDeleteBentoResponse);
+
+  // Get a list of Bento that are stored in current repository
   rpc ListBento(ListBentoRequest)
     returns (ListBentoResponse);
 }

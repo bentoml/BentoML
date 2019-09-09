@@ -1,5 +1,6 @@
 import os
 import pytest
+import uuid
 
 import bentoml
 from bentoml.artifact import PickleArtifact
@@ -27,9 +28,6 @@ def test_save_and_load_model(tmpdir):
     ms = MyTestBentoService.pack(model=test_model)
 
     assert ms.predict(1000) == 2000
-
-    import uuid
-
     version = "test_" + uuid.uuid4().hex
     saved_path = ms.save(str(tmpdir), version=version)
 
@@ -52,18 +50,6 @@ def test_save_and_load_model(tmpdir):
     assert model_service.version == expected_version
 
 
-@pytest.mark.skip(reason="Setup s3 creds in travis or use a mock")
-def test_save_and_load_model_from_s3():
-    test_model = MyTestModel()
-    ms = MyTestBentoService.pack(model=test_model)
-
-    s3_location = "s3://bentoml/test"
-    s3_saved_path = ms.save(base_path=s3_location)
-
-    download_model_service = bentoml.load(s3_saved_path)
-    assert download_model_service.get_service_apis()[0].func(1) == 2
-
-
 class TestBentoWithOutArtifact(bentoml.BentoService):
     @bentoml.api(bentoml.handlers.DataframeHandler)
     def test(self, df):
@@ -71,7 +57,6 @@ class TestBentoWithOutArtifact(bentoml.BentoService):
 
 
 def test_bento_without_artifact(tmpdir):
-    saved_path = TestBentoWithOutArtifact().save(str(tmpdir))
-    assert os.path.exists(saved_path)
-    model_service = bentoml.load(saved_path)
+    TestBentoWithOutArtifact().save_to_dir(str(tmpdir))
+    model_service = bentoml.load(str(tmpdir))
     assert len(model_service.get_service_apis()) == 1

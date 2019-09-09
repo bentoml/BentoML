@@ -17,22 +17,22 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import re
 import sys
 import inspect
-import tempfile
 import logging
+import uuid
+from datetime import datetime
 
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
+from bentoml import archive
+from bentoml import repository
 from bentoml.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
 from bentoml.utils import isidentifier
-from bentoml.utils.s3 import is_s3_url, download_from_s3
-from bentoml.utils.usage_stats import track_save
-from bentoml.repository import get_default_repository, LocalRepository
-
 
 logger = logging.getLogger(__name__)
 
@@ -311,9 +311,9 @@ def ver_decorator(major, minor):
     >>>     pass
     >>>
     >>>  svc = MyMLService.pack(model="my ML model object")
-    >>>  svc.save('/path_to_archive', version="2019-08.iteration20")
+    >>>  svc.set_version("2019-08.iteration20")
+    >>>  svc.save('/path_to_archive')
     >>>  # The final produced BentoArchive version will be "1.4.2019-08.iteration20"
-
     """
 
     def decorator(bento_service_cls):
@@ -322,6 +322,21 @@ def ver_decorator(major, minor):
         return bento_service_cls
 
     return decorator
+
+
+def _validate_version_str(version_str):
+    """
+    Validate that version str format:
+    * Consist of only ALPHA / DIGIT / "-" / "." / "_"
+    * Length between 1-128
+    """
+    regex = r"[A-Za-z0-9_.-]{1,128}\Z"
+    if re.match(regex, version_str) is None:
+        raise ValueError(
+            'Invalid BentoService version: "{}", it can only consist'
+            ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'
+            "128 characthers".format(version_str)
+        )
 
 
 class BentoService(BentoServiceBase):
@@ -343,11 +358,11 @@ class BentoService(BentoServiceBase):
     >>>         return self.artifacts.clf.predict(df)
     >>>
     >>>  bento_service = MyMLService.pack(clf=my_trained_clf_object)
-    >>>  bentoml.save(bento_service, './export')
+    >>>  bentoml.save_to_dir(bento_service, './export')
     """
 
-    # User may override this if they don't want the generated model to
-    # have the same name as their Python model class name
+    # User may use @name to override this if they don't want the generated model
+    # to have the same name as their Python model class name
     _bento_service_name = None
 
     # For BentoService loaded from achive directory, this will be set to archive path
@@ -421,30 +436,60 @@ class BentoService(BentoServiceBase):
 
     @classmethod
     def name(cls):  # pylint:disable=method-hidden
-        if cls._bento_service_name is not None and isidentifier(
-            cls._bento_service_name
-        ):
+        if cls._bento_service_name is not None:
+            if not isidentifier(cls._bento_service_name):
+                raise ValueError(
+                    'BentoService#_bento_service_name must be valid python identifier'
+                    'matching regex `(letter|"_")(letter|digit|"_")*`'
+                )
+
             return cls._bento_service_name
         else:
             # Use python class name as service name
             return cls.__name__
 
-    @property
-    def version(self):
-        try:
-            return self.__class__._bento_service_version
-        except AttributeError:
-            raise BentoMLException(
-                "Only BentoService loaded from archive has version attribute"
+    def set_version(self, version_str=None):
+        if version_str is None:
+            version_str = self._new_version_str()
+
+        if self._version_major is not None and self._version_minor is not None:
+            # BentoML uses semantic versioning for BentoService distribution
+            # when user specified the MAJOR and MINOR version number along with
+            # the BentoService class definition with '@ver' decorator.
+            # The parameter version(or auto generated version) here will be used as
+            # PATCH field in the final version:
+            version_str = ".".join(
+                [str(self._version_major), str(self._version_minor), version_str]
             )
 
+        _validate_version_str(version_str)
+        self._bento_service_version = version_str
+        return self._bento_service_version
+
+    def _new_version_str(self):
+        """
+        Default new version string generator function
+        User can override this function in their custom BentoService to get a customized
+        version format
+        """
+        time_obj = datetime.now()
+        date_string = time_obj.strftime("%Y_%m_%d")
+        random_hash = uuid.uuid4().hex[:8]
+
+        return date_string + "_" + random_hash
+
+    @property
+    def version(self):
+        if self._bento_service_version is None:
+            self.set_version(self._new_version_str())
+
+        return self._bento_service_version
+
     def save(self, base_path=None, version=None):
-        track_save(self)
-        if base_path:
-            repo = LocalRepository(base_path)
-        else:
-            repo = get_default_repository()
-        return repo.add(self, version=version)
+        return repository.save(self, base_path, version)
+
+    def save_to_dir(self, path):
+        return archive.save_to_dir(self, path)
 
     @classmethod
     def pack(cls, *args, **kwargs):
@@ -461,20 +506,16 @@ class BentoService(BentoServiceBase):
         return cls(artifacts)
 
     @classmethod
-    def from_archive(cls, path):
+    def load_from_dir(cls, path):
         from bentoml.archive import load_bentoml_config
 
         if cls._bento_archive_path is not None and cls._bento_archive_path != path:
-            raise BentoMLException(
-                "Loaded BentoArchive(from {}) can't be loaded again from a different"
-                "archive path {}".format(cls._bento_archive_path, path)
+            logger.warning(
+                "Loaded BentoArchive from '%' can't be loaded again from a different"
+                "path %",
+                cls._bento_archive_path,
+                path,
             )
-
-        if is_s3_url(path):
-            temporary_path = tempfile.mkdtemp()
-            download_from_s3(path, temporary_path)
-            # Use loacl temp path for the following loading operations
-            path = temporary_path
 
         artifacts_path = path
         # For pip installed BentoService, artifacts directory is located at

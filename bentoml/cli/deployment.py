@@ -76,15 +76,16 @@ def display_deployment_info(deployment, output):
     _echo(result)
 
 
-def get_state_after_await_action_complete(yaitai_service, name, namespace, message):
+def get_state_after_await_action_complete(
+    yatai_service, name, namespace, message, timeout_limit=600, wait_time=50,
+):
     start_time = time.time()
-    timeout_limit = 600
     while (time.time() - start_time) < timeout_limit:
-        result = yaitai_service.DescribeDeployment(
+        result = yatai_service.DescribeDeployment(
             DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
         )
         if result.state.state is DeploymentState.PENDING:
-            time.sleep(20)
+            time.sleep(wait_time)
             _echo(message)
             continue
         else:
@@ -176,6 +177,7 @@ def get_deployment_sub_command():
         wait,
     ):
         track_cli('deploy-create', platform)
+
         if platform == 'aws_sagemaker':
             if not api_name:
                 raise click.BadParameter(
@@ -215,9 +217,9 @@ def get_deployment_sub_command():
                 'Custom deployment is not supported in the current version of BentoML'
             )
 
-        bento_name, bento_verison = bento.split(':')
+        bento_name, bento_version = bento.split(':')
         spec.bento_name = bento_name
-        spec.bento_version = bento_verison
+        spec.bento_version = bento_version
         spec.operator = DeploymentOperator.Value(platform.upper())
 
         yatai_service = get_yatai_service()
@@ -245,7 +247,7 @@ def get_deployment_sub_command():
         else:
             if wait:
                 result_state = get_state_after_await_action_complete(
-                    yaitai_service=yatai_service,
+                    yatai_service=yatai_service,
                     name=name,
                     namespace=namespace,
                     message='Creating deployment...',
@@ -256,18 +258,17 @@ def get_deployment_sub_command():
             display_deployment_info(result.deployment, output)
 
     @deploy.command(help='Apply model service deployment from yaml file')
-    @click.option("--file", callback=parse_yaml_file_or_string_callback)
-    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option('-f', '--file', 'deployment_yaml', callback=parse_yaml_file_or_string_callback)
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait/--no-wait',
         default=True,
         help='Wait for apply action to complete or encounter an error.'
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
-    def apply(file, output, wait):
-        yaml_content = file
-        track_cli('deploy-apply', yaml_content.get('spec').get('operator'))
-        deployment_pb = deployment_yaml_to_pb(yaml_content)
+    def apply(deployment_yaml, output, wait):
+        track_cli('deploy-apply', deployment_yaml.get('spec').get('operator'))
+        deployment_pb = deployment_yaml_to_pb(deployment_yaml)
         yatai_service = get_yatai_service()
         result = yatai_service.ApplyDeployment(
             ApplyDeploymentRequest(deployment=deployment_pb)
@@ -285,7 +286,7 @@ def get_deployment_sub_command():
         else:
             if wait:
                 result_state = get_state_after_await_action_complete(
-                    yaitai_service=yatai_service,
+                    yatai_service=yatai_service,
                     name=deployment_pb.name,
                     namespace=deployment_pb.namespace,
                     message='Applying deployment...',

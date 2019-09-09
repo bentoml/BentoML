@@ -43,10 +43,7 @@ from ruamel.yaml import YAML
 #     'bright_cyan': 96,
 #     'bright_white': 97,
 # }
-from bentoml.exceptions import BentoMLException
 from bentoml.utils import Path
-from bentoml.utils.s3 import is_s3_url, download_from_s3
-from bentoml.utils.tempdir import TempDirectory
 
 CLI_COLOR_SUCCESS = "green"
 CLI_COLOR_ERROR = "red"
@@ -121,55 +118,11 @@ def parse_bento_tag_callback(ctx, param, value):
     return value
 
 
-class TemporaryYamlFileFromRemoteSource(object):
-    def __init__(self, remote_file_path, remote_storage_type='s3', _cleanup=True):
-        if not remote_file_path.endswith(('.yml', '.yaml')):
-            raise BentoMLException('Remote source must be YAML file.')
-        self.remote_file_path = remote_file_path
-        self.remote_storage_type = remote_storage_type
-        self._cleanup = _cleanup
-        self.temp_directory = TempDirectory()
-        self.file_name = self.remote_file_path.split('/')[-1]
-        self.file = None
-
-    def __enter__(self):
-        self.generate()
-        return self.file
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._cleanup:
-            self.cleanup()
-
-    def generate(self):
-        self.temp_directory.create()
-        tempdir = self.temp_directory.path
-
-        if self.remote_storage_type == 's3':
-            download_from_s3(self.remote_file_path, tempdir)
-            file_path = os.path.join(tempdir, self.file_name)
-            self.file = open(file_path, 'rb')
-            return self.file
-        else:
-            raise BentoMLException(
-                'Remote storage {name} is not supported at the moment'.format(
-                    name=self.remote_storage_type
-                )
-            )
-        pass
-
-    def cleanup(self):
-        self.temp_directory.cleanup()
-        self.file = None
-
-
 def parse_yaml_file_or_string_callback(ctx, param, value):
     yaml = YAML()
 
     if os.path.isfile(Path(value)):
         with open(value, "rb") as yaml_file:
-            yml_content = yaml_file.read()
-    elif is_s3_url(value):
-        with TemporaryYamlFileFromRemoteSource(value) as yaml_file:
             yml_content = yaml_file.read()
     else:
         yml_content = value

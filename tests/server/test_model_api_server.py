@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 from io import BytesIO
 
@@ -50,3 +51,10 @@ def test_api_function_route(bento_service):
         },
     )
     assert 200 == response.status_code
+
+    # Test Fastai Image Handlers.
+    if sys.version_info.major >= 3 and sys.version_info.minor >= 6:
+        response = test_client.post(
+            "/predictFastaiImage", data=img, content_type="image/png"
+        )
+        assert 200 == response.status_code

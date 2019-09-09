@@ -94,7 +94,7 @@ def get_state_after_await_action_complete(
 
 
 def get_deployment_sub_command():
-    @click.group()
+    @click.group(help='Deployment commands. Shorthand is `deploy`')
     def deployment():
         pass
 
@@ -185,9 +185,7 @@ def get_deployment_sub_command():
         if get_deployment.status.status_code == Status.OK:
             raise BentoMLDeploymentException(
                 'Deployment {name} already existed, please use update or apply command'
-                ' instead'.format(
-                    name=name
-                )
+                ' instead'.format(name=name)
             )
 
         if platform == 'aws_sagemaker':

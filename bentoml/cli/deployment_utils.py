@@ -37,8 +37,12 @@ def check_required_fields(yaml_content, required_fields):
     else:
         missing_keys = [i for i in required_fields if i not in current_keys]
         if len(missing_keys) == 1:
-            raise BentoMLException('Required field: {name} is missing'.format(name=missing_keys[0]))
-        raise BentoMLException('Required fields: {names} are missing'.format(names=','.join(missing_keys)))
+            raise BentoMLException(
+                'Required field: {name} is missing'.format(name=missing_keys[0])
+            )
+        raise BentoMLException(
+            'Required fields: {names} are missing'.format(names=','.join(missing_keys))
+        )
 
 
 def deployment_yaml_to_pb(deployment_yaml):

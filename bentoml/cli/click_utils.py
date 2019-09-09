@@ -48,6 +48,9 @@ CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
 
 
+COMMAND_ALIASES = {'deploy': 'deployment'}
+
+
 def _echo(message, color="reset"):
     click.secho(message, fg=color)
 
@@ -91,6 +94,13 @@ class BentoMLCommandGroup(click.Group):
             # command did not parse, assume it is the default command
             args.insert(0, self.default_command)
             return super(BentoMLCommandGroup, self).resolve_command(ctx, args)
+
+    def get_command(self, ctx, cmd_name):
+        try:
+            cmd_name = COMMAND_ALIASES[cmd_name]
+        except KeyError:
+            pass
+        return super(BentoMLCommandGroup, self).get_command(ctx, cmd_name)
 
 
 def conditional_argument(condition, *param_decls, **attrs):

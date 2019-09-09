@@ -95,10 +95,10 @@ def get_state_after_await_action_complete(
 
 def get_deployment_sub_command():
     @click.group()
-    def deploy():
+    def deployment():
         pass
 
-    @deploy.command(
+    @deployment.command(
         short_help='Create a model serving deployment',
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
@@ -268,7 +268,7 @@ def get_deployment_sub_command():
             _echo('Finished create deployment {}'.format(name), CLI_COLOR_SUCCESS)
             display_deployment_info(result.deployment, output)
 
-    @deploy.command(help='Apply model service deployment from yaml file')
+    @deployment.command(help='Apply model service deployment from yaml file')
     @click.option(
         '-f',
         '--file',
@@ -325,7 +325,7 @@ def get_deployment_sub_command():
                 )
             )
 
-    @deploy.command(help='Delete deployment')
+    @deployment.command(help='Delete deployment')
     @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     def delete(name, namespace):
@@ -347,7 +347,7 @@ def get_deployment_sub_command():
         else:
             _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
-    @deploy.command(help='Get deployment spec')
+    @deployment.command(help='Get deployment spec')
     @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
@@ -370,7 +370,7 @@ def get_deployment_sub_command():
         else:
             display_deployment_info(result.deployment, output)
 
-    @deploy.command(help='Get deployment state')
+    @deployment.command(help='Get deployment state')
     @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
@@ -393,7 +393,7 @@ def get_deployment_sub_command():
         else:
             display_deployment_info(result.deployment, output)
 
-    @deploy.command(help='List deployments')
+    @deployment.command(help='List deployments')
     @click.option('--namespace', type=click.STRING)
     @click.option('--all-namespace', type=click.BOOL, default=False)
     @click.option(
@@ -440,4 +440,4 @@ def get_deployment_sub_command():
             for deployment_pb in result.deployments:
                 display_deployment_info(deployment_pb, output)
 
-    return deploy
+    return deployment

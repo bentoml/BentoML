@@ -21,10 +21,10 @@ from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
+from bentoml.config import config
 from bentoml import archive
 from bentoml import repository
 from bentoml import handlers
-from bentoml.config import config
 from bentoml.service import (
     BentoService,
     api_decorator as api,

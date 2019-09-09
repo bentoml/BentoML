@@ -234,7 +234,7 @@ def get_deployment_sub_command():
         )
         if result.status.status_code != Status.OK:
             _echo(
-                'Failed to apply deployment {name}. code: {error_code}, message: '
+                'Failed to create deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(
                     name=name,
                     error_code=Status.Code.Name(result.status.status_code),
@@ -248,14 +248,14 @@ def get_deployment_sub_command():
                     yaitai_service=yatai_service,
                     name=name,
                     namespace=namespace,
-                    message='Applying deployment...',
+                    message='Creating deployment...',
                 )
                 result.deployment.state.CopyFrom(result_state.state)
 
-            _echo('Finished apply deployment {}'.format(name), CLI_COLOR_SUCCESS)
+            _echo('Finished create deployment {}'.format(name), CLI_COLOR_SUCCESS)
             display_deployment_info(result.deployment, output)
 
-    @deploy.command(help='Create or update model service deployment')
+    @deploy.command(help='Apply model service deployment from yaml file')
     @click.option("--file", callback=parse_yaml_file_or_string_callback)
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(

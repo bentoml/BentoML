@@ -121,10 +121,10 @@ def parse_bento_tag_callback(ctx, param, value):
     return value
 
 
-class TemporaryRemoteYamlFile(object):
+class TemporaryYamlFileFromRemoteSource(object):
     def __init__(self, remote_file_path, remote_storage_type='s3', _cleanup=True):
         if not remote_file_path.endswith(('.yml', '.yaml')):
-            raise BentoMLException('Remote file must be YAML file.')
+            raise BentoMLException('Remote source must be YAML file.')
         self.remote_file_path = remote_file_path
         self.remote_storage_type = remote_storage_type
         self._cleanup = _cleanup
@@ -169,7 +169,7 @@ def parse_yaml_file_or_string_callback(ctx, param, value):
         with open(value, "rb") as yaml_file:
             yml_content = yaml_file.read()
     elif is_s3_url(value):
-        with TemporaryRemoteYamlFile(value) as yaml_file:
+        with TemporaryYamlFileFromRemoteSource(value) as yaml_file:
             yml_content = yaml_file.read()
     else:
         yml_content = value

@@ -102,7 +102,7 @@ def get_deployment_sub_command():
         short_help='Create a model serving deployment',
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
-    @click.argument("deployment-name", type=click.STRING, required=True)
+    @click.argument("name", type=click.STRING, required=True)
     @click.option(
         '--bento',
         type=click.STRING,
@@ -159,8 +159,8 @@ def get_deployment_sub_command():
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def create(
-        bento,
         name,
+        bento,
         platform,
         output,
         namespace,
@@ -177,6 +177,17 @@ def get_deployment_sub_command():
         wait,
     ):
         track_cli('deploy-create', platform)
+
+        yatai_service = get_yatai_service()
+        get_deployment = yatai_service.GetDeployment(
+            GetDeploymentRequest(deployment_name=name, namespace=namespace)
+        )
+        if get_deployment.status.status_code == Status.OK:
+            raise BentoMLDeploymentException(
+                'Deployment {name} already existed, please use update or apply command instead'.format(
+                    name=name
+                )
+            )
 
         if platform == 'aws_sagemaker':
             if not api_name:
@@ -222,7 +233,6 @@ def get_deployment_sub_command():
         spec.bento_version = bento_version
         spec.operator = DeploymentOperator.Value(platform.upper())
 
-        yatai_service = get_yatai_service()
         result = yatai_service.ApplyDeployment(
             ApplyDeploymentRequest(
                 deployment=Deployment(

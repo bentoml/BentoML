@@ -42,7 +42,6 @@ from ruamel.yaml import YAML
 #     'bright_cyan': 96,
 #     'bright_white': 97,
 # }
-from bentoml.utils import Path
 
 CLI_COLOR_SUCCESS = "green"
 CLI_COLOR_ERROR = "red"

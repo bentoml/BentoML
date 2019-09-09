@@ -35,7 +35,7 @@ from bentoml.proto.yatai_service_pb2 import (
     HealthCheckResponse,
     GetYataiServiceVersionResponse,
 )
-from bentoml.config import config
+from bentoml import config
 from bentoml.deployment.operator import get_deployment_operator
 from bentoml.deployment.store import DeploymentStore
 from bentoml.exceptions import BentoMLException

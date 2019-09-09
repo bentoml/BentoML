@@ -53,32 +53,47 @@ def parameterized_config(template):
     return template.format(**all_vars)
 
 
-BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
-try:
-    Path(BENTOML_HOME).mkdir(exist_ok=True)
-except OSError as err:
-    raise BentoMLConfigException(
-        "Error creating bentoml home dir '{}': {}".format(BENTOML_HOME, err.strerror)
-    )
+def get_local_config_file():
+    if "BENTOML_CONFIG" in os.environ:
+        # User local config file for customizing bentoml
+        return expand_env_var(os.environ.get("BENTOML_CONFIG"))
+    else:
+        return os.path.join(BENTOML_HOME, "bentoml.cfg")
+
+
+DEFAULT_BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
+BENTOML_HOME = DEFAULT_BENTOML_HOME
+LOCAL_CONFIG_FILE = get_local_config_file()
 
 # Default bentoml config comes with the library bentoml/config/default_bentoml.cfg
 DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.cfg")
-with open(DEFAULT_CONFIG_FILE, "rb") as f:
-    DEFAULT_CONFIG = f.read().decode("utf-8")
 
-config = BentoMLConfigParser(default_config=parameterized_config(DEFAULT_CONFIG))
 
-if "BENTML_CONFIG" in os.environ:
-    # User local config file for customizing bentoml
-    LOCAL_CONFIG_FILE = expand_env_var(os.environ.get("BENTML_CONFIG"))
-    logger.info("Using BentoML config file $BENTML_CONFIG: %s", LOCAL_CONFIG_FILE)
-    with open(LOCAL_CONFIG_FILE, "rb") as f:
-        config.read_string(parameterized_config(f.read().decode("utf-8")))
-else:
-    LOCAL_CONFIG_FILE = os.path.join(BENTOML_HOME, "bentoml.cfg")
+def load_config(bentoml_home=DEFAULT_BENTOML_HOME):
+    global BENTOML_HOME, LOCAL_CONFIG_FILE
+
+    BENTOML_HOME = bentoml_home
+    LOCAL_CONFIG_FILE = get_local_config_file()
+
+    try:
+        Path(BENTOML_HOME).mkdir(exist_ok=True)
+    except OSError as err:
+        raise BentoMLConfigException(
+            "Error creating bentoml home directory '{}': {}".format(
+                BENTOML_HOME, err.strerror
+            )
+        )
+
+    with open(DEFAULT_CONFIG_FILE, "rb") as f:
+        DEFAULT_CONFIG = f.read().decode("utf-8")
+
+    config = BentoMLConfigParser(default_config=parameterized_config(DEFAULT_CONFIG))
+
     if os.path.isfile(LOCAL_CONFIG_FILE):
-        logger.info("Using local default BentoML config file: %s", LOCAL_CONFIG_FILE)
+        logger.info("Loading local BentoML config file: %s", LOCAL_CONFIG_FILE)
         with open(LOCAL_CONFIG_FILE, "rb") as f:
             config.read_string(parameterized_config(f.read().decode("utf-8")))
     else:
         logger.info("No local BentoML config file found, using default configurations")
+
+    return config

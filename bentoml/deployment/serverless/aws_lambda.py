@@ -45,10 +45,14 @@ from bentoml.archive.loader import load_bentoml_config
 logger = logging.getLogger(__name__)
 
 AWS_HANDLER_PY_TEMPLATE_HEADER = """\
+import os
 try:
     import unzip_requirements
 except ImportError:
     pass
+
+# Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
+os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 
 from {class_name} import {class_name}
 

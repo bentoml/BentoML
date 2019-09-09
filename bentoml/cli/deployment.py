@@ -26,7 +26,7 @@ from bentoml.cli.click_utils import (
     CLI_COLOR_ERROR,
     CLI_COLOR_SUCCESS,
     parse_bento_tag_callback,
-    parse_yaml_file_or_string_callback,
+    parse_yaml_file_callback,
 )
 from bentoml.cli.deployment_utils import deployment_yaml_to_pb
 from bentoml.yatai import get_yatai_service
@@ -77,7 +77,7 @@ def display_deployment_info(deployment, output):
 
 
 def get_state_after_await_action_complete(
-    yatai_service, name, namespace, message, timeout_limit=600, wait_time=50
+    yatai_service, name, namespace, message, timeout_limit=600, wait_time=5
 ):
     start_time = time.time()
     while (time.time() - start_time) < timeout_limit:
@@ -274,7 +274,7 @@ def get_deployment_sub_command():
         '--file',
         'deployment_yaml',
         type=click.File('r'),
-        callback=parse_yaml_file_or_string_callback,
+        callback=parse_yaml_file_callback,
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(

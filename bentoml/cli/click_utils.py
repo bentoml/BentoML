@@ -116,7 +116,7 @@ def parse_bento_tag_callback(ctx, param, value):
     return value
 
 
-def parse_yaml_file_or_string_callback(ctx, param, value):
+def parse_yaml_file_callback(ctx, param, value):
     yaml = YAML()
     yml_content = value.read()
     try:

@@ -120,15 +120,9 @@ def parse_bento_tag_callback(ctx, param, value):
 
 def parse_yaml_file_or_string_callback(ctx, param, value):
     yaml = YAML()
-
-    if os.path.isfile(Path(value)):
-        with open(value, "rb") as yaml_file:
-            yml_content = yaml_file.read()
-    else:
-        yml_content = value
+    yml_content = value.read()
     try:
-        result = yaml.load(yml_content)
-        return result
+        return yaml.load(yml_content)
     except Exception:
         raise click.BadParameter(
             'Input value is not recognizable yaml file or yaml content'

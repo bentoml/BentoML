@@ -268,7 +268,7 @@ def get_deployment_sub_command():
             display_deployment_info(result.deployment, output)
 
     @deploy.command(help='Apply model service deployment from yaml file')
-    @click.option('-f', '--file', 'deployment_yaml', callback=parse_yaml_file_or_string_callback)
+    @click.option('-f', '--file', 'deployment_yaml', type=click.File('r'), callback=parse_yaml_file_or_string_callback)
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait/--no-wait',

@@ -21,7 +21,14 @@ from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-from bentoml.config import config
+from bentoml.config import load_config
+
+config = load_config()
+
+from bentoml.utils.log import configure_logging
+
+configure_logging()
+
 from bentoml import archive
 from bentoml import repository
 from bentoml import handlers
@@ -33,9 +40,7 @@ from bentoml.service import (
     ver_decorator as ver,
 )
 from bentoml.server import metrics
-from bentoml.utils.log import configure_logging
 
-configure_logging()
 
 load = archive.load
 save = repository.save

@@ -24,11 +24,8 @@ import logging
 
 from configparser import ConfigParser
 
-from bentoml.config import (
-    config as bentoml_config,
-    LOCAL_CONFIG_FILE,
-    DEFAULT_CONFIG_FILE,
-)
+from bentoml import config as bentoml_config
+from bentoml.config import LOCAL_CONFIG_FILE, DEFAULT_CONFIG_FILE
 from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR
 from bentoml.utils.usage_stats import track_cli
 

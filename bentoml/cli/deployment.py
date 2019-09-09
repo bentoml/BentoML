@@ -28,7 +28,7 @@ from bentoml.cli.click_utils import (
     parse_bento_tag_callback,
     parse_yaml_file_or_string_callback,
 )
-from bentoml.cli.utils import deployment_yaml_to_pb
+from bentoml.cli.deployment_utils import deployment_yaml_to_pb
 from bentoml.yatai import get_yatai_service
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentRequest,
@@ -77,7 +77,7 @@ def display_deployment_info(deployment, output):
 
 
 def get_state_after_await_action_complete(
-    yatai_service, name, namespace, message, timeout_limit=600, wait_time=50,
+    yatai_service, name, namespace, message, timeout_limit=600, wait_time=50
 ):
     start_time = time.time()
     while (time.time() - start_time) < timeout_limit:
@@ -268,7 +268,13 @@ def get_deployment_sub_command():
             display_deployment_info(result.deployment, output)
 
     @deploy.command(help='Apply model service deployment from yaml file')
-    @click.option('-f', '--file', 'deployment_yaml', type=click.File('r'), callback=parse_yaml_file_or_string_callback)
+    @click.option(
+        '-f',
+        '--file',
+        'deployment_yaml',
+        type=click.File('r'),
+        callback=parse_yaml_file_or_string_callback,
+    )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait/--no-wait',
@@ -277,37 +283,46 @@ def get_deployment_sub_command():
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def apply(deployment_yaml, output, wait):
+        print('deployment yaml', deployment_yaml)
+        return
         track_cli('deploy-apply', deployment_yaml.get('spec').get('operator'))
-        deployment_pb = deployment_yaml_to_pb(deployment_yaml)
-        yatai_service = get_yatai_service()
-        result = yatai_service.ApplyDeployment(
-            ApplyDeploymentRequest(deployment=deployment_pb)
-        )
-        if result.status.status_code != Status.OK:
-            _echo(
-                'Failed to apply deployment {name}. code: {error_code}, message: '
-                '{error_message}'.format(
-                    name=deployment_pb.name,
-                    error_code=Status.Code.Name(result.status.status_code),
-                    error_message=result.status.error_message,
-                ),
-                CLI_COLOR_ERROR,
+        try:
+            deployment_pb = deployment_yaml_to_pb(deployment_yaml)
+            yatai_service = get_yatai_service()
+            result = yatai_service.ApplyDeployment(
+                ApplyDeploymentRequest(deployment=deployment_pb)
             )
-        else:
-            if wait:
-                result_state = get_state_after_await_action_complete(
-                    yatai_service=yatai_service,
-                    name=deployment_pb.name,
-                    namespace=deployment_pb.namespace,
-                    message='Applying deployment...',
+            if result.status.status_code != Status.OK:
+                _echo(
+                    'Failed to apply deployment {name}. code: {error_code}, message: '
+                    '{error_message}'.format(
+                        name=deployment_pb.name,
+                        error_code=Status.Code.Name(result.status.status_code),
+                        error_message=result.status.error_message,
+                    ),
+                    CLI_COLOR_ERROR,
                 )
-                result.deployment.state.CopyFrom(result_state.state)
+            else:
+                if wait:
+                    result_state = get_state_after_await_action_complete(
+                        yatai_service=yatai_service,
+                        name=deployment_pb.name,
+                        namespace=deployment_pb.namespace,
+                        message='Applying deployment...',
+                    )
+                    result.deployment.state.CopyFrom(result_state.state)
 
+                _echo(
+                    'Finished apply deployment {}'.format(deployment_pb.name),
+                    CLI_COLOR_SUCCESS,
+                )
+                display_deployment_info(result.deployment, output)
+        except BentoMLException as e:
             _echo(
-                'Finished apply deployment {}'.format(deployment_pb.name),
-                CLI_COLOR_SUCCESS,
+                'Failed to apply deployment {name}. Error message: {message}'.format(
+                    name=deployment_pb.name, message=e.message
+                )
             )
-            display_deployment_info(result.deployment, output)
 
     @deploy.command(help='Delete deployment')
     @click.argument("name", type=click.STRING, required=True)

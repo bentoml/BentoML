@@ -44,7 +44,7 @@ from bentoml.proto.deployment_pb2 import (
 from bentoml.proto.status_pb2 import Status
 from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
-from bentoml.exceptions import BentoMLDeploymentException
+from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
 from bentoml import config
 
@@ -184,7 +184,8 @@ def get_deployment_sub_command():
         )
         if get_deployment.status.status_code == Status.OK:
             raise BentoMLDeploymentException(
-                'Deployment {name} already existed, please use update or apply command instead'.format(
+                'Deployment {name} already existed, please use update or apply command'
+                ' instead'.format(
                     name=name
                 )
             )
@@ -320,7 +321,7 @@ def get_deployment_sub_command():
         except BentoMLException as e:
             _echo(
                 'Failed to apply deployment {name}. Error message: {message}'.format(
-                    name=deployment_pb.name, message=e.message
+                    name=deployment_pb.name, message=e
                 )
             )
 

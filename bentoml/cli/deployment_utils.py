@@ -19,9 +19,8 @@ from __future__ import print_function
 
 import logging
 
-from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec, DeploymentOperator
+from bentoml.proto.deployment_pb2 import Deployment, DeploymentOperator
 from bentoml.exceptions import BentoMLException
-from bentoml import config
 
 logger = logging.getLogger(__name__)
 

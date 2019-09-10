@@ -26,7 +26,9 @@ from bentoml.cli.click_utils import (
     CLI_COLOR_ERROR,
     CLI_COLOR_SUCCESS,
     parse_bento_tag_callback,
+    parse_yaml_file_callback,
 )
+from bentoml.cli.deployment_utils import deployment_yaml_to_pb
 from bentoml.yatai import get_yatai_service
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentRequest,
@@ -42,7 +44,7 @@ from bentoml.proto.deployment_pb2 import (
 from bentoml.proto.status_pb2 import Status
 from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
-from bentoml.exceptions import BentoMLDeploymentException
+from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
 from bentoml import config
 
@@ -66,10 +68,6 @@ def parse_key_value_pairs(key_value_pairs_str):
     return result
 
 
-def get_deployment_operator_type(platform):
-    return DeploymentOperator.Value(platform.upper())
-
-
 def display_deployment_info(deployment, output):
     if output == 'yaml':
         result = pb_to_yaml(deployment)
@@ -78,15 +76,16 @@ def display_deployment_info(deployment, output):
     _echo(result)
 
 
-def get_state_after_await_action_complete(yaitai_service, name, namespace, message):
+def get_state_after_await_action_complete(
+    yatai_service, name, namespace, message, timeout_limit=600, wait_time=5
+):
     start_time = time.time()
-    timeout_limit = 600
     while (time.time() - start_time) < timeout_limit:
-        result = yaitai_service.DescribeDeployment(
+        result = yatai_service.DescribeDeployment(
             DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
         )
         if result.state.state is DeploymentState.PENDING:
-            time.sleep(10)
+            time.sleep(wait_time)
             _echo(message)
             continue
         else:
@@ -95,15 +94,15 @@ def get_state_after_await_action_complete(yaitai_service, name, namespace, messa
 
 
 def get_deployment_sub_command():
-    @click.group()
-    def deploy():
+    @click.group(help='Deployment commands. Shorthand is `deploy`')
+    def deployment():
         pass
 
-    @deploy.command(
-        short_help='Create or update a model serving deployment',
+    @deployment.command(
+        short_help='Create a model serving deployment',
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
-    @click.argument("deployment-name", type=click.STRING, required=True)
+    @click.argument("name", type=click.STRING, required=True)
     @click.option(
         '--bento',
         type=click.STRING,
@@ -159,9 +158,9 @@ def get_deployment_sub_command():
         help='Wait for apply action to complete or encounter an error.'
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
-    def apply(
+    def create(
+        name,
         bento,
-        deployment_name,
         platform,
         output,
         namespace,
@@ -177,10 +176,18 @@ def get_deployment_sub_command():
         service_type,
         wait,
     ):
-        track_cli('deploy-apply', platform)
+        track_cli('deploy-create', platform)
 
-        bento_name, bento_verison = bento.split(':')
-        operator = get_deployment_operator_type(platform)
+        yatai_service = get_yatai_service()
+        get_deployment = yatai_service.GetDeployment(
+            GetDeploymentRequest(deployment_name=name, namespace=namespace)
+        )
+        if get_deployment.status.status_code != Status.NOT_FOUND:
+            raise BentoMLDeploymentException(
+                'Deployment {name} already existed, please use update or apply command'
+                ' instead'.format(name=name)
+            )
+
         if platform == 'aws_sagemaker':
             if not api_name:
                 raise click.BadParameter(
@@ -217,19 +224,19 @@ def get_deployment_sub_command():
             spec = DeploymentSpec(kubernetes_operator_config=kubernetes_operator_config)
         else:
             raise BentoMLDeploymentException(
-                'Custom deployment is not supported in current version of BentoML'
+                'Custom deployment is not supported in the current version of BentoML'
             )
 
+        bento_name, bento_version = bento.split(':')
         spec.bento_name = bento_name
-        spec.bento_version = bento_verison
-        spec.operator = operator
+        spec.bento_version = bento_version
+        spec.operator = DeploymentOperator.Value(platform.upper())
 
-        yatai_service = get_yatai_service()
         result = yatai_service.ApplyDeployment(
             ApplyDeploymentRequest(
                 deployment=Deployment(
                     namespace=namespace,
-                    name=deployment_name,
+                    name=name,
                     annotations=parse_key_value_pairs(annotations),
                     labels=parse_key_value_pairs(labels),
                     spec=spec,
@@ -238,9 +245,9 @@ def get_deployment_sub_command():
         )
         if result.status.status_code != Status.OK:
             _echo(
-                'Failed to apply deployment {name}. code: {error_code}, message: '
+                'Failed to create deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(
-                    name=deployment_name,
+                    name=name,
                     error_code=Status.Code.Name(result.status.status_code),
                     error_message=result.status.error_message,
                 ),
@@ -249,21 +256,73 @@ def get_deployment_sub_command():
         else:
             if wait:
                 result_state = get_state_after_await_action_complete(
-                    yaitai_service=yatai_service,
-                    name=deployment_name,
+                    yatai_service=yatai_service,
+                    name=name,
                     namespace=namespace,
-                    message='Applying deployment...',
+                    message='Creating deployment...',
                 )
                 result.deployment.state.CopyFrom(result_state.state)
 
-            _echo(
-                'Finished apply deployment {}'.format(deployment_name),
-                CLI_COLOR_SUCCESS,
-            )
+            _echo('Finished create deployment {}'.format(name), CLI_COLOR_SUCCESS)
             display_deployment_info(result.deployment, output)
 
-    @deploy.command(help='Delete deployment')
-    @click.option('--name', type=click.STRING, help='Deployment name', required=True)
+    @deployment.command(help='Apply model service deployment from yaml file')
+    @click.option(
+        '-f',
+        '--file',
+        'deployment_yaml',
+        type=click.File('r'),
+        callback=parse_yaml_file_callback,
+    )
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '--wait/--no-wait',
+        default=True,
+        help='Wait for apply action to complete or encounter an error.'
+        'If set to no-wait, CLI will return immediately. The default value is wait',
+    )
+    def apply(deployment_yaml, output, wait):
+        track_cli('deploy-apply', deployment_yaml.get('spec', {}).get('operator'))
+        try:
+            deployment_pb = deployment_yaml_to_pb(deployment_yaml)
+            yatai_service = get_yatai_service()
+            result = yatai_service.ApplyDeployment(
+                ApplyDeploymentRequest(deployment=deployment_pb)
+            )
+            if result.status.status_code != Status.OK:
+                _echo(
+                    'Failed to apply deployment {name}. code: {error_code}, message: '
+                    '{error_message}'.format(
+                        name=deployment_pb.name,
+                        error_code=Status.Code.Name(result.status.status_code),
+                        error_message=result.status.error_message,
+                    ),
+                    CLI_COLOR_ERROR,
+                )
+            else:
+                if wait:
+                    result_state = get_state_after_await_action_complete(
+                        yatai_service=yatai_service,
+                        name=deployment_pb.name,
+                        namespace=deployment_pb.namespace,
+                        message='Applying deployment...',
+                    )
+                    result.deployment.state.CopyFrom(result_state.state)
+
+                _echo(
+                    'Finished apply deployment {}'.format(deployment_pb.name),
+                    CLI_COLOR_SUCCESS,
+                )
+                display_deployment_info(result.deployment, output)
+        except BentoMLException as e:
+            _echo(
+                'Failed to apply deployment {name}. Error message: {message}'.format(
+                    name=deployment_pb.name, message=e
+                )
+            )
+
+    @deployment.command(help='Delete deployment')
+    @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     def delete(name, namespace):
         track_cli('deploy-delete')
@@ -284,8 +343,8 @@ def get_deployment_sub_command():
         else:
             _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
-    @deploy.command(help='Get deployment spec')
-    @click.option('--name', type=click.STRING, help='Deployment name', required=True)
+    @deployment.command(help='Get deployment spec')
+    @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def get(name, output, namespace):
@@ -307,8 +366,8 @@ def get_deployment_sub_command():
         else:
             display_deployment_info(result.deployment, output)
 
-    @deploy.command(help='Get deployment state')
-    @click.option('--name', type=click.STRING, help='Deployment name', required=True)
+    @deployment.command(help='Get deployment state')
+    @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def describe(name, output, namespace):
@@ -330,7 +389,7 @@ def get_deployment_sub_command():
         else:
             display_deployment_info(result.deployment, output)
 
-    @deploy.command(help='List deployments')
+    @deployment.command(help='List deployments')
     @click.option('--namespace', type=click.STRING)
     @click.option('--all-namespace', type=click.BOOL, default=False)
     @click.option(
@@ -377,4 +436,4 @@ def get_deployment_sub_command():
             for deployment_pb in result.deployments:
                 display_deployment_info(deployment_pb, output)
 
-    return deploy
+    return deployment

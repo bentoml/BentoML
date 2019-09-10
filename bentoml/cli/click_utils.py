@@ -19,6 +19,7 @@ from __future__ import print_function
 import re
 import click
 
+from ruamel.yaml import YAML
 
 # Available CLI colors for _echo:
 #
@@ -41,9 +42,13 @@ import click
 #     'bright_cyan': 96,
 #     'bright_white': 97,
 # }
+
 CLI_COLOR_SUCCESS = "green"
 CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
+
+
+COMMAND_ALIASES = {'deploy': 'deployment'}
 
 
 def _echo(message, color="reset"):
@@ -90,6 +95,13 @@ class BentoMLCommandGroup(click.Group):
             args.insert(0, self.default_command)
             return super(BentoMLCommandGroup, self).resolve_command(ctx, args)
 
+    def get_command(self, ctx, cmd_name):
+        try:
+            cmd_name = COMMAND_ALIASES[cmd_name]
+        except KeyError:
+            pass
+        return super(BentoMLCommandGroup, self).get_command(ctx, cmd_name)
+
 
 def conditional_argument(condition, *param_decls, **attrs):
     """
@@ -112,3 +124,14 @@ def parse_bento_tag_callback(ctx, param, value):
         )
 
     return value
+
+
+def parse_yaml_file_callback(ctx, param, value):
+    yaml = YAML()
+    yml_content = value.read()
+    try:
+        return yaml.load(yml_content)
+    except Exception:
+        raise click.BadParameter(
+            'Input value is not recognizable yaml file or yaml content'
+        )

@@ -59,15 +59,28 @@ def download_from_s3(s3_url, file_path):
     parse_result = urlparse(s3_url)
     bucket = parse_result.netloc
     base_path = parse_result.path
+    if base_path.startswith('/'):
+        base_path = base_path[1:]
 
     s3_client = boto3.client("s3")
     list_object_result = s3_client.list_objects(Bucket=bucket, Prefix=base_path)
     result_content = list_object_result["Contents"]
-
     for content in result_content:
-        relative_file_path = content["Key"][len(base_path) + 1 :]  # noqa: E203
-        local_file_path = os.path.join(file_path, relative_file_path)
-        Path(os.path.dirname(local_file_path)).mkdir(parents=True, exist_ok=True)
-        s3_client.download_file(
-            Bucket=bucket, Key=content["Key"], Filename=local_file_path
-        )
+        if len(base_path) == len(content["Key"]):
+            # single file
+            local_file_path = os.path.join(file_path, base_path.split('/')[-1])
+        else:
+            relative_file_path = content["Key"][len(base_path) + 1 :]  # noqa: E203
+            if not relative_file_path:
+                continue
+            elif relative_file_path.endswith('/'):
+                local_dir_path = os.path.join(file_path, relative_file_path)
+                Path(os.path.dirname(local_dir_path)).mkdir(parents=True, exist_ok=True)
+                continue
+            else:
+                local_file_path = os.path.join(file_path, relative_file_path)
+
+        if local_file_path:
+            s3_client.download_file(
+                Bucket=bucket, Key=content["Key"], Filename=local_file_path
+            )

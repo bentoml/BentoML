@@ -25,94 +25,59 @@ from bentoml import config
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_DEPLOYMENT_FIELDS = ['name', 'spec']
-REQUIRED_DEPLOYMENT_SPEC_FIELDS = ['bento_name', 'bento_version', 'operator']
-REQUIRED_SAGEMAKER_FIELDS = ['api_name']
-
-
-def check_required_fields(yaml_content, required_fields):
-    current_keys = list(yaml_content._keys())
-    if set(required_fields).issubset(current_keys):
-        return
-    else:
-        missing_keys = [i for i in required_fields if i not in current_keys]
-        if len(missing_keys) == 1:
-            raise BentoMLException(
-                'Required field: {name} is missing'.format(name=missing_keys[0])
-            )
-        raise BentoMLException(
-            'Required fields: {names} are missing'.format(names=','.join(missing_keys))
-        )
-
 
 def deployment_yaml_to_pb(deployment_yaml):
-    check_required_fields(deployment_yaml, REQUIRED_DEPLOYMENT_FIELDS)
+    deployment_pb = Deployment()
+
+    if deployment_yaml.get('name') is not None:
+        deployment_pb.name = deployment_yaml.get('name')
+    if deployment_yaml.get('namespace') is not None:
+        deployment_pb.namespace = deployment_yaml.get('namespace')
+    if deployment_yaml.get('labels') is not None:
+        deployment_pb.labels = deployment_yaml.get('labels')
+    if deployment_yaml.get('annotations') is not None:
+        deployment_pb.annotations = deployment_yaml.get('annotations')
+
     spec_yaml = deployment_yaml.get('spec')
-    check_required_fields(spec_yaml, REQUIRED_DEPLOYMENT_SPEC_FIELDS)
     platform = spec_yaml.get('operator')
+    if platform is not None:
+        deployment_pb.spec.operator = DeploymentOperator.Value(platform.upper())
+    if spec_yaml.get('bento_name'):
+        deployment_pb.spec.bento_name = spec_yaml.get('bento_name')
+    if spec_yaml.get('bento_version'):
+        deployment_pb.spec.bento_version = spec_yaml.get('bento_version')
+
     if platform == 'aws_sagemaker':
         sagemaker_config = spec_yaml.get('sagemaker_operator_config')
-        check_required_fields(sagemaker_config, REQUIRED_SAGEMAKER_FIELDS)
-        spec = DeploymentSpec(
-            sagemaker_operator_config=DeploymentSpec.SageMakerOperatorConfig(
-                api_name=sagemaker_config.get('api_name'),
-                region=sagemaker_config.get(
-                    'region', config.get('aws', 'default_region')
-                ),
-                instance_count=sagemaker_config.get(
-                    'instance_count', config.getint('sagemaker', 'instance_count')
-                ),
-                instance_type=sagemaker_config.get(
-                    'instance_type', config.get('sagemaker', 'instance_type')
-                ),
-            )
-        )
+        if sagemaker_config.get('api_name'):
+            deployment_pb.spec.sagemaker_operator_config.api_name = sagemaker_config.get('api_name')
+        if sagemaker_config.get('region'):
+            deployment_pb.spec.sagemaker_operator_config.region = sagemaker_config.get('region')
+        if sagemaker_config.get('instance_count'):
+            deployment_pb.spec.sagemaker_operator_config.instance_count = sagemaker_config.get('instance_count')
+        if sagemaker_config.get('instance_type'):
+            deployment_pb.spec.sagemaker_operator_config.instance_type = sagemaker_config.get('instance_type')
     elif platform == 'aws_lambda':
-        lambda_config = spec_yaml.get('aws_lambda_operator_config', {})
-        spec = DeploymentSpec(
-            aws_lambda_operator_config=DeploymentSpec.AwsLambdaOperatorConfig(
-                region=lambda_config.get('region', config.get('aws', 'default_region'))
-            )
-        )
+        lambda_config = spec_yaml.get('aws_lambda_operator_config')
+        if lambda_config.get('region'):
+            deployment_pb.spec.aws_lambda_config.region = lambda_config.get('region')
     elif platform == 'gcp_function':
-        gcp_config = spec_yaml.get('gcp_function_operator_config', {})
-        spec = DeploymentSpec(
-            gcp_function_operator_config=DeploymentSpec.GcpFunctionOperatorConfig(
-                region=gcp_config.get(
-                    'region', config.get('google-cloud', 'default_region')
-                )
-            )
-        )
+        gcp_config = spec_yaml.get('gcp_function_operator_config')
+        if gcp_config.get('region'):
+            deployment_pb.spec.gcp_function_operator_config.region = gcp_config.get('region')
     elif platform == 'kubernetes':
         k8s_config = spec_yaml.get('kubernetes_operator_config')
-        spec = DeploymentSpec(
-            kubernetes_operator_config=DeploymentSpec.KubernetesOperatorConfig(
-                kube_namespace=k8s_config.get(
-                    'kube_namespace', config.get('kubernetes', 'default_namespace')
-                ),
-                replicas=k8s_config.get(
-                    'replicas', config.get('kubernetes', 'default_replicas')
-                ),
-                service_name=k8s_config.get(
-                    'service_name', deployment_yaml.get('name')
-                ),
-                service_type=k8s_config.get(
-                    'service_type', config.get('kubernetes', 'default_service_type')
-                ),
-            )
-        )
+        if k8s_config.get('kube_namespace'):
+            deployment_pb.spec.kubernetes_operator_config.kube_namespace = k8s_config.get('kube_namespace')
+        if k8s_config.get('replicas'):
+            deployment_pb.spec.kubernetes_operator_config.replicas = k8s_config.get('replicas')
+        if k8s_config.get('service_name'):
+            deployment_pb.spec.kubernetes_operator_config.service_name = k8s_config.get('service_name')
+        if k8s_config.get('service_type'):
+            deployment_pb.spec.kubernetes_operator_config.service_type = k8s_config.get('service_type')
     else:
         raise BentoMLException(
             'Custom deployment is not supported in the current version of BentoML'
         )
 
-    spec.operator = DeploymentOperator.Value(platform.upper())
-    spec.bento_name = spec_yaml.get('bento_name')
-    spec.bento_version = spec_yaml.get('bento_version')
-    return Deployment(
-        name=deployment_yaml.get('name'),
-        namespace=deployment_yaml.get('namespace'),
-        annotations=deployment_yaml.get('annotations'),
-        labels=deployment_yaml.get('labels'),
-        spec=spec,
-    )
+    return deployment_pb

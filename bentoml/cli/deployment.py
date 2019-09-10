@@ -282,7 +282,7 @@ def get_deployment_sub_command():
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def apply(deployment_yaml, output, wait):
-        track_cli('deploy-apply', deployment_yaml.get('spec').get('operator'))
+        track_cli('deploy-apply', deployment_yaml.get('spec', {}).get('operator'))
         try:
             deployment_pb = deployment_yaml_to_pb(deployment_yaml)
             yatai_service = get_yatai_service()

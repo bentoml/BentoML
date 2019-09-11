@@ -41,6 +41,7 @@ from bentoml.deployment.store import DeploymentStore
 from bentoml.exceptions import BentoMLException
 from bentoml.repository import BentoRepository
 from bentoml.db import init_db
+from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml.yatai.status import Status
 from bentoml.proto import status_pb2
 from bentoml import __version__ as BENTOML_VERSION
@@ -77,6 +78,16 @@ class YataiService(YataiServicer):
             request.deployment.namespace = (
                 request.deployment.namespace or self.default_namespace
             )
+
+            validation_errors = validate_deployment_pb_schema(request.deployment)
+            if validation_errors:
+                return ApplyDeploymentResponse(
+                    status=Status.ABORTED(
+                        'Failed to validate deployment. {errors}'.format(
+                            errors=validation_errors
+                        )
+                    )
+                )
 
             previous_deployment = self.deployment_store.get(
                 request.deployment.name, request.deployment.namespace

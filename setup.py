@@ -38,6 +38,7 @@ install_requires = [
     "sqlalchemy",
     "protobuf>=3.6.0",
     "grpcio",
+    "cerberus",
 ]
 
 imageio = ["imageio>=2.5.0"]

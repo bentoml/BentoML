@@ -33,9 +33,9 @@ def deployment_yaml_to_pb(deployment_yaml):
     if deployment_yaml.get('namespace') is not None:
         deployment_pb.namespace = deployment_yaml.get('namespace')
     if deployment_yaml.get('labels') is not None:
-        deployment_pb.labels = deployment_yaml.get('labels')
+        deployment_pb.labels.update(dict(deployment_yaml.get('labels')))
     if deployment_yaml.get('annotations') is not None:
-        deployment_pb.annotations = deployment_yaml.get('annotations')
+        deployment_pb.annotations.update(dict(deployment_yaml.get('annotations')))
 
     spec_yaml = deployment_yaml.get('spec')
     platform = spec_yaml.get('operator')

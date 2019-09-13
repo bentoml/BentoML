@@ -67,10 +67,10 @@ class YataiStub(object):
         request_serializer=repository__pb2.AddBentoRequest.SerializeToString,
         response_deserializer=repository__pb2.AddBentoResponse.FromString,
         )
-    self.UpdateUploadStatus = channel.unary_unary(
-        '/bentoml.Yatai/UpdateUploadStatus',
-        request_serializer=repository__pb2.UpdateUploadStatusRequest.SerializeToString,
-        response_deserializer=repository__pb2.UpdateUploadStatusResponse.FromString,
+    self.UpdateBento = channel.unary_unary(
+        '/bentoml.Yatai/UpdateBento',
+        request_serializer=repository__pb2.UpdateBentoRequest.SerializeToString,
+        response_deserializer=repository__pb2.UpdateBentoResponse.FromString,
         )
     self.GetBento = channel.unary_unary(
         '/bentoml.Yatai/GetBento',
@@ -160,8 +160,10 @@ class YataiServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def UpdateUploadStatus(self, request, context):
-    """Yatai server expects the client to use this RPC for notifying that, for a
+  def UpdateBento(self, request, context):
+    """RPC for updating a previously added Bento's information, including
+    the BentoService's Metadata(apis, env, artifacts etc) and the upload status.
+    Yatai server expects the client to use this RPC for notifying that, for a
     previously requested AddBento call, what's the uploading progress and when the
     upload is completed
     """
@@ -235,10 +237,10 @@ def add_YataiServicer_to_server(servicer, server):
           request_deserializer=repository__pb2.AddBentoRequest.FromString,
           response_serializer=repository__pb2.AddBentoResponse.SerializeToString,
       ),
-      'UpdateUploadStatus': grpc.unary_unary_rpc_method_handler(
-          servicer.UpdateUploadStatus,
-          request_deserializer=repository__pb2.UpdateUploadStatusRequest.FromString,
-          response_serializer=repository__pb2.UpdateUploadStatusResponse.SerializeToString,
+      'UpdateBento': grpc.unary_unary_rpc_method_handler(
+          servicer.UpdateBento,
+          request_deserializer=repository__pb2.UpdateBentoRequest.FromString,
+          response_serializer=repository__pb2.UpdateBentoResponse.SerializeToString,
       ),
       'GetBento': grpc.unary_unary_rpc_method_handler(
           servicer.GetBento,

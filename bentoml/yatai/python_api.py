@@ -15,14 +15,13 @@
 # List of APIs for accessing remote or local yatai service via Python
 
 import logging
-import datetime
 
 from bentoml.service import BentoService
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.repository_pb2 import (
     AddBentoRequest,
     BentoUri,
-    UpdateUploadStatusRequest,
+    UpdateBentoRequest,
     UploadStatus,
 )
 from bentoml.proto.status_pb2 import Status
@@ -82,12 +81,13 @@ def upload_bento_service(bento_service, base_path=None, version=None):
 
         upload_status = UploadStatus(status=UploadStatus.DONE)
         upload_status.updated_at.GetCurrentTime()
-        update_upload_status_request = UpdateUploadStatusRequest(
+        update_bento_req = UpdateBentoRequest(
             bento_name=bento_service.name,
             bento_version=bento_service.version,
             upload_status=upload_status,
+            service_metadata=bento_service._get_bento_service_metadata_pb(),
         )
-        yatai.UpdateUploadStatus(update_upload_status_request)
+        yatai.UpdateBento(update_bento_req)
 
         # Return URI to saved bento in repository storage
         return response.uri.uri

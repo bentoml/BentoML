@@ -34,7 +34,12 @@ from google.protobuf.json_format import MessageToDict, ParseDict
 
 from bentoml.exceptions import BentoMLRepositoryException
 from bentoml.db import Base, create_session
-from bentoml.proto.repository_pb2 import UploadStatus, BentoUri, BentoMetadata
+from bentoml.proto.repository_pb2 import (
+    UploadStatus,
+    BentoUri,
+    BentoServiceMetadata,
+    Bento as BentoPB,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,8 +59,8 @@ class Bento(Base):
     uri = Column(String, nullable=False)
     uri_type = Column(Enum(*BentoUri.StorageType.keys()), default=BentoUri.UNSET)
 
-    # JSON filed mapping directly to BentoMetadata proto message
-    bento_metadata = Column(JSON, nullable=False, default={})
+    # JSON filed mapping directly to BentoServiceMetadata proto message
+    bento_service_metadata = Column(JSON, nullable=False, default={})
 
     # Time of AddBento call, the time of Bento creation can be found in metadata field
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
@@ -70,29 +75,31 @@ class Bento(Base):
 
 
 def _bento_orm_obj_to_pb(bento_obj):
-    bento_pb = BentoMetadata()
-    # parse fields env, artifacts, apis, including name and version, which are
-    # duplicated in this table's top level properties
-    if bento_obj.bento_metadata:
-        ParseDict(bento_obj.bento_metadata, bento_pb)
-    bento_pb.name = bento_obj.name
-    bento_pb.version = bento_obj.version
-    return bento_pb
+    bento_service_metadata_pb = ParseDict(
+        bento_obj.bento_service_metadata, BentoServiceMetadata()
+    )
+    bento_uri = BentoUri(
+        uri=bento_obj.uri, uri_type=BentoUri.StorageType.Value(bento_obj.uri_type)
+    )
+    return BentoPB(
+        name=bento_obj.name,
+        version=bento_obj.version,
+        uri=bento_uri,
+        bento_service_metadata=bento_service_metadata_pb,
+    )
 
 
 class BentoMetadataStore(object):
     def __init__(self, sess_maker):
         self.sess_maker = sess_maker
 
-    def add(self, bento_name, bento_version, uri, uri_type, bento_metadata=None):
+    def add(self, bento_name, bento_version, uri, uri_type):
         with create_session(self.sess_maker) as sess:
             bento_obj = Bento()
             bento_obj.name = bento_name
             bento_obj.version = bento_version
             bento_obj.uri = uri
             bento_obj.uri_type = BentoUri.StorageType.Name(uri_type)
-            if bento_metadata is not None:
-                bento_obj.bento_metadata = MessageToDict(bento_metadata)
             return sess.add(bento_obj)
 
     def get(self, bento_name, bento_version):
@@ -110,7 +117,9 @@ class BentoMetadataStore(object):
             except NoResultFound:
                 return None
 
-    def update_bento_metadata(self, bento_name, bento_version, bento_metadata):
+    def update_bento_service_metadata(
+        self, bento_name, bento_version, bento_service_metadata_pb
+    ):
         with create_session(self.sess_maker) as sess:
             try:
                 bento_obj = (
@@ -118,7 +127,9 @@ class BentoMetadataStore(object):
                     .filter_by(name=bento_name, version=bento_version, deleted=False)
                     .one()
                 )
-                bento_obj.bento_metadata = MessageToDict(bento_metadata)
+                bento_obj.bento_service_metadata = MessageToDict(
+                    bento_service_metadata_pb
+                )
             except NoResultFound:
                 raise BentoMLRepositoryException(
                     "Bento %s:%s is not found in repository", bento_name, bento_version

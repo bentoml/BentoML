@@ -35,7 +35,7 @@ from bentoml.proto.repository_pb2 import (
     AddBentoResponse,
     DangerouslyDeleteBentoResponse,
     GetBentoResponse,
-    UpdateUploadStatusResponse,
+    UpdateBentoResponse,
     ListBentoResponse,
 )
 from bentoml.proto.yatai_service_pb2_grpc import YataiServicer, YataiStub
@@ -228,22 +228,26 @@ class YataiService(YataiServicer):
                 bento_version=request.bento_version,
                 uri=new_bento_uri.uri,
                 uri_type=new_bento_uri.type,
-                bento_metadata=request.bento_metadata,
             )
             return AddBentoResponse(status=Status.OK(), uri=new_bento_uri)
         except BentoMLException as e:
             logger.error("INTERNAL ERROR: %s", e)
             return AddBentoResponse(status=Status.INTERNAL(str(e)))
 
-    def UpdateUploadStatus(self, request, context=None):
+    def UpdateBento(self, request, context=None):
         try:
             # TODO: validate request
-            self.bento_metadata_store.update_upload_status(
-                request.bento_name, request.bento_version, request.upload_status
-            )
+            if request.upload_status:
+                self.bento_metadata_store.update_upload_status(
+                    request.bento_name, request.bento_version, request.upload_status
+                )
+            if request.service_metadata:
+                self.bento_metadata_store.update_bento_service_metadata(
+                    request.bento_name, request.bento_version, request.service_metadata
+                )
         except BentoMLException as e:
             logger.error("INTERNAL ERROR: %s", e)
-            return UpdateUploadStatusResponse(status=Status.INTERNAL(str(e)))
+            return UpdateBentoResponse(status=Status.INTERNAL(str(e)))
 
     def DangerouslyDeleteBento(self, request, context=None):
         try:

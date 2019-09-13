@@ -29,7 +29,7 @@ from bentoml.utils.log import configure_logging
 
 configure_logging()
 
-from bentoml import archive
+from bentoml.archive import load, save_to_dir
 from bentoml import handlers
 from bentoml.service import (
     BentoService,
@@ -42,8 +42,6 @@ from bentoml.server import metrics
 from bentoml.utils.log import configure_logging
 from bentoml.yatai.python_api import upload_bento_service
 
-load = archive.load
-save_to_dir = archive.save_to_dir
 save = upload_bento_service
 
 # For BentoML internal and testing
@@ -51,6 +49,7 @@ def reset_bentoml_home(new_bentoml_home_directory):
     _reset_bentoml_home_dir(new_bentoml_home_directory)
     global config
     config = load_config()
+
 
 __all__ = [
     "__version__",

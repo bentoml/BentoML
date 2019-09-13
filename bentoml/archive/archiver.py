@@ -19,7 +19,6 @@ from __future__ import print_function
 import os
 import logging
 
-from bentoml.service import BentoService
 from bentoml.exceptions import BentoMLException
 from bentoml.archive.py_module_utils import copy_used_py_modules
 from bentoml.archive.templates import (
@@ -73,6 +72,8 @@ def save_to_dir(bento_service, path, version=None):
         path (str): Destination of where the bento service will be saved
     """
     track_save(bento_service)
+
+    from bentoml.service import BentoService
 
     if not isinstance(bento_service, BentoService):
         raise BentoMLException(

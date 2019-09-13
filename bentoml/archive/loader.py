@@ -19,12 +19,13 @@ from __future__ import print_function
 import os
 import sys
 import logging
+import datetime
 
 from bentoml.utils import dump_to_yaml_str
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
 from bentoml.exceptions import BentoMLException
 from bentoml.archive.config import BentoArchiveConfig
-from bentoml.proto.repository_pb2 import BentoMetadata, BentoUri
+from bentoml.proto.repository_pb2 import BentoServiceMetadata
 
 LOG = logging.getLogger(__name__)
 
@@ -39,49 +40,51 @@ def load_bentoml_config(archive_path):
         )
 
 
-def load_bento_metadata_pb(archive_path):
+def load_bento_service_metadata(archive_path):
     config = load_bentoml_config(archive_path)
 
-    bento_metadata = BentoMetadata()
-    bento_metadata.uri.type = BentoUri.LOCAL
-    bento_metadata.uri.uri = archive_path
-    bento_metadata.name = config["metadata"]["service_name"]
-    bento_metadata.version = config["metadata"]["service_version"]
-    bento_metadata.created_at = config["metadata"]["created_at"]
+    bento_service_metadata = BentoServiceMetadata()
+    bento_service_metadata.name = config["metadata"]["service_name"]
+    bento_service_metadata.version = config["metadata"]["service_version"]
+
+    created_at_dt = datetime.datetime.fromisoformat(config["metadata"]["created_at"])
+    bento_service_metadata.created_at.FromDatetime(created_at_dt)
 
     if "env" in config:
         if "setup_sh" in config["env"]:
-            bento_metadata.env.setup_sh = config["env"]["setup_sh"]
+            bento_service_metadata.env.setup_sh = config["env"]["setup_sh"]
 
         if "conda_env" in config["env"]:
-            bento_metadata.env.conda_env = dump_to_yaml_str(config["env"]["conda_env"])
+            bento_service_metadata.env.conda_env = dump_to_yaml_str(
+                config["env"]["conda_env"]
+            )
 
         if "pip_dependencies" in config["env"]:
-            bento_metadata.env.pip_dependencies = "\n".join(
+            bento_service_metadata.env.pip_dependencies = "\n".join(
                 config["env"]["pip_dependencies"]
             )
 
     if "apis" in config:
         for api_config in config["apis"]:
-            api_metadata = BentoMetadata.BentoServiceApi()
+            api_metadata = BentoServiceMetadata.BentoServiceApi()
             if "name" in api_config:
                 api_metadata.name = api_config["name"]
             if "handler_type" in api_config:
                 api_metadata.handler_type = api_config["handler_type"]
             if "docs" in api_config:
                 api_metadata.docs = api_config["docs"]
-            bento_metadata.apis.append(api_metadata)
+            bento_service_metadata.apis.append(api_metadata)
 
     if "artifacts" in config:
         for artifact_config in config["artifacts"]:
-            artifact_metadata = BentoMetadata.BentoArtifact()
+            artifact_metadata = BentoServiceMetadata.BentoArtifact()
             if "name" in artifact_config:
                 artifact_metadata.name = artifact_config["name"]
             if "artifact_type" in artifact_config:
                 artifact_metadata.artifact_type = artifact_config["artifact_type"]
-            bento_metadata.artifacts.append(artifact_metadata)
+            bento_service_metadata.artifacts.append(artifact_metadata)
 
-    return bento_metadata
+    return bento_service_metadata
 
 
 def load_bento_service_class(archive_path):

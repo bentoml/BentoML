@@ -2,7 +2,6 @@ import pytest
 import tempfile
 
 import bentoml
-from bentoml.artifact import PickleArtifact
 
 
 class TestModel(object):
@@ -23,7 +22,7 @@ class TestModel(object):
         return {"ok": True}
 
 
-@bentoml.artifacts([PickleArtifact("model")])
+@bentoml.artifacts([bentoml.artifact.PickleArtifact("model")])
 @bentoml.env()
 class TestBentoService(bentoml.BentoService):
     """My RestServiceTestModel packaging with BentoML
@@ -87,4 +86,3 @@ def set_test_config():
     tempdir = tempfile.mkdtemp(prefix="bentoml-test-")
     bentoml.reset_bentoml_home(tempdir)
     bentoml.config.set('core', 'usage_tracking', 'false')
-    return False

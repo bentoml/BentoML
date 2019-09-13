@@ -60,9 +60,9 @@ def isidentifier(s):
 
 def dump_to_yaml_str(yaml_dict):
     yaml = YAML()
-    io = StringIO()
-    yaml.dump(yaml_dict, io)
-    return io.getvalue()
+    string_io = StringIO()
+    yaml.dump(yaml_dict, string_io)
+    return string_io.getvalue()
 
 
 def pb_to_yaml(message):

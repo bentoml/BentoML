@@ -44,7 +44,7 @@ class BentoArchiveConfig(object):
             BENTOML_CONFIG_YAML_TEPMLATE.format(
                 kind=self.kind,
                 bentoml_version=BENTOML_VERSION,
-                created_at=str(datetime.now()),
+                created_at=str(datetime.utcnow()),
             )
         )
 

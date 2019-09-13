@@ -28,7 +28,6 @@ from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
 from bentoml import archive
-from bentoml import repository
 from bentoml.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
@@ -486,10 +485,12 @@ class BentoService(BentoServiceBase):
         return self._bento_service_version
 
     def save(self, base_path=None, version=None):
-        return repository.save(self, base_path, version)
+        from bentoml.yatai import python_api
 
-    def save_to_dir(self, path):
-        return archive.save_to_dir(self, path)
+        return python_api.upload_bento_service(self, base_path, version)
+
+    def save_to_dir(self, path, version=None):
+        return archive.save_to_dir(self, path, version)
 
     @classmethod
     def pack(cls, *args, **kwargs):

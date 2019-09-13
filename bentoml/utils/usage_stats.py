@@ -42,7 +42,7 @@ PY_VERSION = "{major}.{minor}.{micro}".format(
 SESSION_ID = str(uuid.uuid4())  # uuid that marks current python session
 
 
-def is_pypi_release():
+def _is_pypi_release():
     is_installed_package = hasattr(version_mod, 'version_json')
     is_tagged = not BENTOML_VERSION.startswith('0+untagged')
     is_clean = not version_mod.get_versions()['dirty']
@@ -51,12 +51,35 @@ def is_pypi_release():
 
 # Use dev amplitude key
 API_KEY = '7f65f2446427226eb86f6adfacbbf47a'
-if is_pypi_release():
+if _is_pypi_release():
     # Use prod amplitude key
     API_KEY = '1ad6ee0e81b9666761aebd55955bbd3a'
 
 
-def get_bento_service_info(bento_service):
+def _send_amplitude_event(event_type, event_properties):
+    """Send event to amplitude
+    https://developers.amplitude.com/?java#keys-for-the-event-argument
+    """
+    event = [
+        {
+            "event_type": event_type,
+            "user_id": SESSION_ID,
+            "event_properties": event_properties,
+        }
+    ]
+    event_data = {"api_key": API_KEY, "event": json.dumps(event)}
+
+    try:
+        return requests.post(AMPLITUDE_URL, data=event_data, timeout=1)
+    except Exception as err:  # pylint:disable=broad-except
+        # silently fail since this error does not concern BentoML end users
+        logger.debug(str(err))
+
+
+def _get_bento_service_event_properties(bento_service, properties=None):
+    if properties is None:
+        properties = {}
+
     artifact_types = []
     handler_types = []
 
@@ -67,25 +90,29 @@ def get_bento_service_info(bento_service):
     for api in bento_service.get_service_apis():
         handler_types.append(api.handler.__class__.__name__)
 
-    return {
-        "handler_types": handler_types,
-        "artifact_types": artifact_types,
-        "env": bento_service.env.to_dict(),
-    }
+    properties["handler_types"] = handler_types
+    properties["artifact_types"] = artifact_types
+    properties["env"] = bento_service.env.to_dict()
+    return properties
 
 
-def track(event_type, info):
-    if config['core'].getboolean("usage_tracking"):
-        info['py_version'] = PY_VERSION
-        info["bento_version"] = BENTOML_VERSION
-        info["platform_info"] = PLATFORM
+def track(event_type, event_properties=None):
+    if not config['core'].getboolean("usage_tracking"):
+        return  # Usage tracking disabled
 
-        return send_amplitude_event(event_type, info)
+    if event_properties is None:
+        event_properties = {}
+
+    event_properties['py_version'] = PY_VERSION
+    event_properties["bento_version"] = BENTOML_VERSION
+    event_properties["platform_info"] = PLATFORM
+
+    return _send_amplitude_event(event_type, event_properties)
 
 
-def track_save(bento_service):
-    info = get_bento_service_info(bento_service)
-    return track("save", info)
+def track_save(bento_service, extra_properties=None):
+    properties = _get_bento_service_event_properties(bento_service, extra_properties)
+    return track("save", properties)
 
 
 def track_load_start():
@@ -93,44 +120,30 @@ def track_load_start():
 
 
 def track_load_finish(bento_service):
-    info = get_bento_service_info(bento_service)
-    return track("load", info)
+    properties = _get_bento_service_event_properties(bento_service)
+    return track("load", properties)
 
 
 def track_cli(command, deploy_platform=None):
-    info = {}
+    properties = {}
     if deploy_platform is not None:
-        info['platform'] = deploy_platform
-    return track('cli-' + command, info)
+        properties['platform'] = deploy_platform
+    return track('cli-' + command, properties)
 
 
-def track_server(server_type, info=None):
-    if info is None:
-        info = {}
+def track_server(server_type, extra_properties=None):
+    properties = extra_properties or {}
+
+    # track server start event
+    track('server-{server_type}-start'.format(server_type=server_type), properties)
+
     start_time = time.time()
 
     @atexit.register
     def log_exit():
+        # track server stop event
         duration = time.time() - start_time
-        info['uptime'] = int(duration)
-        return track('server-{server_type}'.format(server_type=server_type), info)
-
-
-def send_amplitude_event(event, event_properties):
-    """Send event to amplitude
-    https://developers.amplitude.com/?java#keys-for-the-event-argument
-    """
-    event_info = [
-        {
-            "event_type": event,
-            "user_id": SESSION_ID,
-            "event_properties": event_properties,
-        }
-    ]
-    event_data = {"api_key": API_KEY, "event": json.dumps(event_info)}
-
-    try:
-        return requests.post(AMPLITUDE_URL, data=event_data, timeout=1)
-    except Exception as err:  # pylint:disable=broad-except
-        # silently fail since this error is not important for BentoML user
-        logger.info(str(err))
+        properties['uptime'] = int(duration)
+        return track(
+            'server-{server_type}-stop'.format(server_type=server_type), properties
+        )

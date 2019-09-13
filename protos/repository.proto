@@ -20,7 +20,7 @@ message BentoUri {
   string uri = 2;
 }
 
-message BentoMetadata {
+message BentoServiceMetadata {
   message BentoServiceEnv {
     string setup_sh = 1;
     string conda_env = 2;
@@ -38,20 +38,25 @@ message BentoMetadata {
     string docs = 3;
   }
 
-  string created_at = 2;
-  string name = 3;
-  string version = 4;
-  BentoServiceEnv env = 5;
-  repeated BentoArtifact artifacts = 6;
-  repeated BentoServiceApi apis = 7;
+  string name = 1;
+  string version = 2;
+  google.protobuf.Timestamp created_at = 3;
+  BentoServiceEnv env = 4;
+  repeated BentoArtifact artifacts = 5;
+  repeated BentoServiceApi apis = 6;
+}
+
+message Bento {
+  string name = 1;
+  string version = 2;
+  BentoUri uri = 3;
+  BentoServiceMetadata bento_service_metadata = 4;
+  UploadStatus status = 5;
 }
 
 message AddBentoRequest {
   string bento_name = 1;
   string bento_version = 2;
-
-  // Optionally provide the full metadata instead of just name and version
-  BentoMetadata bento_metadata = 3;
 }
 
 message AddBentoResponse {
@@ -73,13 +78,14 @@ message UploadStatus {
   string message = 4; // for error message
 }
 
-message UpdateUploadStatusRequest {
+message UpdateBentoRequest {
   string bento_name = 1;
   string bento_version = 2;
   UploadStatus upload_status = 3;
+  BentoServiceMetadata service_metadata = 4;
 }
 
-message UpdateUploadStatusResponse {
+message UpdateBentoResponse {
   Status status = 1;
 }
 
@@ -99,7 +105,7 @@ message GetBentoRequest {
 
 message GetBentoResponse {
   Status status = 1;
-  BentoMetadata bento = 2;
+  Bento bento = 2;
 }
 
 message ListBentoRequest {
@@ -111,5 +117,5 @@ message ListBentoRequest {
 
 message ListBentoResponse {
   Status status = 1;
-  repeated BentoMetadata bentos = 2;
+  repeated Bento bentos = 2;
 }

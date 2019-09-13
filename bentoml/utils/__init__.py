@@ -58,9 +58,13 @@ def isidentifier(s):
         return re.match(r"[A-Za-z_][A-Za-z_0-9]*\Z", s) is not None
 
 
-def pb_to_yaml(message):
-    result = MessageToJson(message)
+def dump_to_yaml_str(yaml_dict):
     yaml = YAML()
     io = StringIO()
-    yaml.dump(result, io)
+    yaml.dump(yaml_dict, io)
     return io.getvalue()
+
+
+def pb_to_yaml(message):
+    message_dict = MessageToJson(message)
+    return dump_to_yaml_str(message_dict)

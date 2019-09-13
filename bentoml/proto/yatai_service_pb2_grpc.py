@@ -62,15 +62,15 @@ class YataiStub(object):
         request_serializer=deployment__pb2.ListDeploymentsRequest.SerializeToString,
         response_deserializer=deployment__pb2.ListDeploymentsResponse.FromString,
         )
-    self.UploadBento = channel.stream_unary(
-        '/bentoml.Yatai/UploadBento',
-        request_serializer=yatai__service__pb2.Chunk.SerializeToString,
-        response_deserializer=repository__pb2.UploadBentoResponse.FromString,
-        )
     self.AddBento = channel.unary_unary(
         '/bentoml.Yatai/AddBento',
         request_serializer=repository__pb2.AddBentoRequest.SerializeToString,
         response_deserializer=repository__pb2.AddBentoResponse.FromString,
+        )
+    self.UpdateUploadStatus = channel.unary_unary(
+        '/bentoml.Yatai/UpdateUploadStatus',
+        request_serializer=repository__pb2.UpdateUploadStatusRequest.SerializeToString,
+        response_deserializer=repository__pb2.UpdateUploadStatusResponse.FromString,
         )
     self.GetBento = channel.unary_unary(
         '/bentoml.Yatai/GetBento',
@@ -152,17 +152,18 @@ class YataiServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def UploadBento(self, request_iterator, context):
-    """Upload new packed Bento files to repository
+  def AddBento(self, request, context):
+    """Add new saved Bento to repository by providing the Bento name and version
+    this will return an upload address that allows client to upload the bento files
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def AddBento(self, request, context):
-    """Add new packed Bento to repository by providing a URI to saved path
-    This can be a file path in local file system, a s3 url, or another
-    Bento Repository (for example adding a Bento in local repo to remote)
+  def UpdateUploadStatus(self, request, context):
+    """Yatai server expects the client to use this RPC for notifying that, for a
+    previously requested AddBento call, what's the uploading progress and when the
+    upload is completed
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -229,15 +230,15 @@ def add_YataiServicer_to_server(servicer, server):
           request_deserializer=deployment__pb2.ListDeploymentsRequest.FromString,
           response_serializer=deployment__pb2.ListDeploymentsResponse.SerializeToString,
       ),
-      'UploadBento': grpc.stream_unary_rpc_method_handler(
-          servicer.UploadBento,
-          request_deserializer=yatai__service__pb2.Chunk.FromString,
-          response_serializer=repository__pb2.UploadBentoResponse.SerializeToString,
-      ),
       'AddBento': grpc.unary_unary_rpc_method_handler(
           servicer.AddBento,
           request_deserializer=repository__pb2.AddBentoRequest.FromString,
           response_serializer=repository__pb2.AddBentoResponse.SerializeToString,
+      ),
+      'UpdateUploadStatus': grpc.unary_unary_rpc_method_handler(
+          servicer.UpdateUploadStatus,
+          request_deserializer=repository__pb2.UpdateUploadStatusRequest.FromString,
+          response_serializer=repository__pb2.UpdateUploadStatusResponse.SerializeToString,
       ),
       'GetBento': grpc.unary_unary_rpc_method_handler(
           servicer.GetBento,

@@ -1,6 +1,8 @@
 syntax = "proto3";
 package bentoml;
 
+import "google/protobuf/timestamp.proto";
+
 import "status.proto";
 
 
@@ -36,7 +38,6 @@ message BentoMetadata {
     string docs = 3;
   }
 
-  BentoUri uri = 1;
   string created_at = 2;
   string name = 3;
   string version = 4;
@@ -46,17 +47,40 @@ message BentoMetadata {
 }
 
 message AddBentoRequest {
-  BentoUri uri = 1;
+  string bento_name = 1;
+  string bento_version = 2;
+
+  // Optionally provide the full metadata instead of just name and version
+  BentoMetadata bento_metadata = 3;
 }
 
 message AddBentoResponse {
   Status status = 1;
-  BentoMetadata bento = 2;
+  BentoUri uri = 2;
 }
 
-message UploadBentoResponse {
+message UploadStatus {
+  enum Status {
+    UNINITIALIZED = 0; // default
+    UPLOADING = 1;
+    DONE = 2;
+    ERROR = 3;
+    TIMEOUT = 4;
+  }
   Status status = 1;
-  BentoMetadata bento = 2;
+  google.protobuf.Timestamp updated_at = 2;
+  int32 percentage = 3; // for uploading completion percentage
+  string message = 4; // for error message
+}
+
+message UpdateUploadStatusRequest {
+  string bento_name = 1;
+  string bento_version = 2;
+  UploadStatus upload_status = 3;
+}
+
+message UpdateUploadStatusResponse {
+  Status status = 1;
 }
 
 message DangerouslyDeleteBentoRequest {
@@ -66,7 +90,6 @@ message DangerouslyDeleteBentoRequest {
 
 message DangerouslyDeleteBentoResponse {
   Status status = 1;
-  BentoMetadata bento = 2;
 }
 
 message GetBentoRequest {

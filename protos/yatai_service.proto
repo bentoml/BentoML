@@ -48,15 +48,16 @@ service Yatai {
   rpc ListDeployments(ListDeploymentsRequest)
     returns (ListDeploymentsResponse);
 
-  // Upload new packed Bento files to repository
-  rpc UploadBento(stream Chunk)
-    returns (UploadBentoResponse);
-
-  // Add new packed Bento to repository by providing a URI to saved path
-  // This can be a file path in local file system, a s3 url, or another
-  // Bento Repository (for example adding a Bento in local repo to remote)
+  // Add new saved Bento to repository by providing the Bento name and version
+  // this will return an upload address that allows client to upload the bento files
   rpc AddBento(AddBentoRequest)
     returns (AddBentoResponse);
+
+  // Yatai server expects the client to use this RPC for notifying that, for a
+  // previously requested AddBento call, what's the uploading progress and when the
+  // upload is completed
+  rpc UpdateUploadStatus(UpdateUploadStatusRequest)
+    returns (UpdateUploadStatusResponse);
 
   // Get a file path to the saved Bento files, path must be accessible form client
   // machine either through HTTP, FTP, etc

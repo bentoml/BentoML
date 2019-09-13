@@ -22,10 +22,10 @@ from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
 from bentoml import config
-from bentoml import archive
 from bentoml.exceptions import BentoMLRepositoryException
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils import Path
+from bentoml.proto.repository_pb2 import BentoUri
 
 
 @add_metaclass(ABCMeta)
@@ -40,14 +40,12 @@ class BentoRepositoryBase(object):
     """
 
     @abstractmethod
-    def add(self, bento_service):
+    def add(self, bento_name, bento_version):
         """
-        Adding a BentoService instance to target repository - this will resolve in a
-        call to BentoService#save_to_dir, which creates a new Bento that contains all
-        serialized artifacts and related source code and configuration. Repository
-        implementation will take care of storing and retriving the Bento files.
-        Return value is an URL(file path or s3 path for example), pointing to the
-        saved Bento file directory
+        Proposing to add a saved BentoService to target repository by providing the
+        bento name and version.
+        Return value is an URL(file path or s3 path for example), that is ready for
+        the client to upload saved Bento files.
         """
 
     @abstractmethod
@@ -73,32 +71,32 @@ class _LocalBentoRepository(BentoRepositoryBase):
             )
 
         self.base_path = base_url
+        self.uri_type = BentoUri.LOCAL
 
-    def add(self, bento_service):
-        Path(os.path.join(self.base_path), bento_service.name).mkdir(
-            parents=True, exist_ok=True
-        )
+    def add(self, bento_name, bento_version):
         # Full path containing saved BentoArchive, it the base path with service name
         # and service version as prefix. e.g.:
         # with base_path = '/tmp/my_bento_archive/', the saved bento will resolve in
         # the directory: '/tmp/my_bento_archive/service_name/version/'
-        target_dir = os.path.join(
-            self.base_path, bento_service.name, bento_service.version
+        target_dir = os.path.join(self.base_path, bento_name, bento_version)
+
+        # Ensure parent directory exist
+        Path(os.path.join(self.base_path), bento_name).mkdir(
+            parents=True, exist_ok=True
         )
 
+        # Raise if target bento version already exist in storage
         if os.path.exists(target_dir):
             raise BentoMLRepositoryException(
                 "Existing Bento {name}:{version} found in archive: {target_dir}".format(
-                    name=bento_service.name,
-                    version=bento_service.version,
-                    target_dir=target_dir,
+                    name=bento_name, version=bento_version, target_dir=target_dir
                 )
             )
+
+        # Create target directory for upload
         os.mkdir(target_dir)
 
-        archive.save_to_dir(bento_service, target_dir)
-
-        return target_dir
+        return BentoUri(type=self.uri_type, uri=target_dir)
 
     def get(self, bento_name, bento_version):
         saved_path = os.path.join(self.base_path, bento_name, bento_version)
@@ -117,15 +115,20 @@ class _LocalBentoRepository(BentoRepositoryBase):
 
 class _S3BentoRepository(BentoRepositoryBase):
     def __init__(self, base_url):
+        # Ensure bucket exist and server has permission to manage files under base_path
         self.base_url = base_url
+        self.uri_type = BentoUri.S3
 
-    def add(self, bento_service):
+    def add(self, bento_name, bento_version):
+        # Generate pre-signed s3 path for upload
         raise NotImplementedError
 
     def get(self, bento_name, bento_version):
+        # Return s3 path containing uploaded Bento files
         raise NotImplementedError
 
     def dangerously_delete(self, bento_name, bento_version):
+        # Remove s3 path containing related Bento files
         raise NotImplementedError
 
 
@@ -142,22 +145,11 @@ class BentoRepository(BentoRepositoryBase):
         else:
             self._repo = _LocalBentoRepository(base_url)
 
-    def add(self, bento_service):
-        return self._repo.add(bento_service)
+    def add(self, bento_name, bento_version):
+        return self._repo.add(bento_name, bento_version)
 
     def get(self, bento_name, bento_version):
         return self._repo.get(bento_name, bento_version)
 
     def dangerously_delete(self, bento_name, bento_version):
         return self._repo.dangerously_delete(bento_name, bento_version)
-
-
-def save(bento_service, base_path=None, version=None):
-    if version is not None:
-        bento_service.set_version(version)
-
-    # TODO: Callding BentoRepository directly for now, this should be changed to
-    # a yatei service call instead, which can be either a local service or RPC
-    # client calling remote service
-    repo = BentoRepository(base_path)
-    return repo.add(bento_service)

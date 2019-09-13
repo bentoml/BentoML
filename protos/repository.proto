@@ -75,7 +75,7 @@ message UploadStatus {
   Status status = 1;
   google.protobuf.Timestamp updated_at = 2;
   int32 percentage = 3; // for uploading completion percentage
-  string message = 4; // for error message
+  string error_message = 4; // for error message
 }
 
 message UpdateBentoRequest {

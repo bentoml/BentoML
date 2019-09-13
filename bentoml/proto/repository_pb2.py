@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='bentoml',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x10repository.proto\x12\x07\x62\x65ntoml\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0cstatus.proto\"\x9c\x01\n\x08\x42\x65ntoUri\x12+\n\x04type\x18\x01 \x01(\x0e\x32\x1d.bentoml.BentoUri.StorageType\x12\x0b\n\x03uri\x18\x02 \x01(\t\"V\n\x0bStorageType\x12\t\n\x05UNSET\x10\x00\x12\t\n\x05LOCAL\x10\x01\x12\x06\n\x02S3\x10\x02\x12\x07\n\x03GCS\x10\x03\x12\x16\n\x12\x41ZURE_BLOB_STORAGE\x10\x04\x12\x08\n\x04HDFS\x10\x05\"\xeb\x03\n\x14\x42\x65ntoServiceMetadata\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12.\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12:\n\x03\x65nv\x18\x04 \x01(\x0b\x32-.bentoml.BentoServiceMetadata.BentoServiceEnv\x12>\n\tartifacts\x18\x05 \x03(\x0b\x32+.bentoml.BentoServiceMetadata.BentoArtifact\x12;\n\x04\x61pis\x18\x06 \x03(\x0b\x32-.bentoml.BentoServiceMetadata.BentoServiceApi\x1aP\n\x0f\x42\x65ntoServiceEnv\x12\x10\n\x08setup_sh\x18\x01 \x01(\t\x12\x11\n\tconda_env\x18\x02 \x01(\t\x12\x18\n\x10pip_dependencies\x18\x03 \x01(\t\x1a\x34\n\rBentoArtifact\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x15\n\rartifact_type\x18\x02 \x01(\t\x1a\x43\n\x0f\x42\x65ntoServiceApi\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0chandler_type\x18\x02 \x01(\t\x12\x0c\n\x04\x64ocs\x18\x03 \x01(\t\"\xac\x01\n\x05\x42\x65nto\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x1e\n\x03uri\x18\x03 \x01(\x0b\x32\x11.bentoml.BentoUri\x12=\n\x16\x62\x65nto_service_metadata\x18\x04 \x01(\x0b\x32\x1d.bentoml.BentoServiceMetadata\x12%\n\x06status\x18\x05 \x01(\x0b\x32\x15.bentoml.UploadStatus\"<\n\x0f\x41\x64\x64\x42\x65ntoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"S\n\x10\x41\x64\x64\x42\x65ntoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1e\n\x03uri\x18\x02 \x01(\x0b\x32\x11.bentoml.BentoUri\"\xdf\x01\n\x0cUploadStatus\x12,\n\x06status\x18\x01 \x01(\x0e\x32\x1c.bentoml.UploadStatus.Status\x12.\n\nupdated_at\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x12\n\npercentage\x18\x03 \x01(\x05\x12\x0f\n\x07message\x18\x04 \x01(\t\"L\n\x06Status\x12\x11\n\rUNINITIALIZED\x10\x00\x12\r\n\tUPLOADING\x10\x01\x12\x08\n\x04\x44ONE\x10\x02\x12\t\n\x05\x45RROR\x10\x03\x12\x0b\n\x07TIMEOUT\x10\x04\"\xa6\x01\n\x12UpdateBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12,\n\rupload_status\x18\x03 \x01(\x0b\x32\x15.bentoml.UploadStatus\x12\x37\n\x10service_metadata\x18\x04 \x01(\x0b\x32\x1d.bentoml.BentoServiceMetadata\"6\n\x13UpdateBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"J\n\x1d\x44\x61ngerouslyDeleteBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"A\n\x1e\x44\x61ngerouslyDeleteBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"<\n\x0fGetBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"R\n\x10GetBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1d\n\x05\x62\x65nto\x18\x02 \x01(\x0b\x32\x0e.bentoml.Bento\"U\n\x10ListBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x05\x12\r\n\x05limit\x18\x03 \x01(\x05\x12\x0e\n\x06\x66ilter\x18\x04 \x01(\t\"T\n\x11ListBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1e\n\x06\x62\x65ntos\x18\x02 \x03(\x0b\x32\x0e.bentoml.Bentob\x06proto3')
+  serialized_pb=_b('\n\x10repository.proto\x12\x07\x62\x65ntoml\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0cstatus.proto\"\x9c\x01\n\x08\x42\x65ntoUri\x12+\n\x04type\x18\x01 \x01(\x0e\x32\x1d.bentoml.BentoUri.StorageType\x12\x0b\n\x03uri\x18\x02 \x01(\t\"V\n\x0bStorageType\x12\t\n\x05UNSET\x10\x00\x12\t\n\x05LOCAL\x10\x01\x12\x06\n\x02S3\x10\x02\x12\x07\n\x03GCS\x10\x03\x12\x16\n\x12\x41ZURE_BLOB_STORAGE\x10\x04\x12\x08\n\x04HDFS\x10\x05\"\xeb\x03\n\x14\x42\x65ntoServiceMetadata\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12.\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12:\n\x03\x65nv\x18\x04 \x01(\x0b\x32-.bentoml.BentoServiceMetadata.BentoServiceEnv\x12>\n\tartifacts\x18\x05 \x03(\x0b\x32+.bentoml.BentoServiceMetadata.BentoArtifact\x12;\n\x04\x61pis\x18\x06 \x03(\x0b\x32-.bentoml.BentoServiceMetadata.BentoServiceApi\x1aP\n\x0f\x42\x65ntoServiceEnv\x12\x10\n\x08setup_sh\x18\x01 \x01(\t\x12\x11\n\tconda_env\x18\x02 \x01(\t\x12\x18\n\x10pip_dependencies\x18\x03 \x01(\t\x1a\x34\n\rBentoArtifact\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x15\n\rartifact_type\x18\x02 \x01(\t\x1a\x43\n\x0f\x42\x65ntoServiceApi\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0chandler_type\x18\x02 \x01(\t\x12\x0c\n\x04\x64ocs\x18\x03 \x01(\t\"\xac\x01\n\x05\x42\x65nto\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x1e\n\x03uri\x18\x03 \x01(\x0b\x32\x11.bentoml.BentoUri\x12=\n\x16\x62\x65nto_service_metadata\x18\x04 \x01(\x0b\x32\x1d.bentoml.BentoServiceMetadata\x12%\n\x06status\x18\x05 \x01(\x0b\x32\x15.bentoml.UploadStatus\"<\n\x0f\x41\x64\x64\x42\x65ntoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"S\n\x10\x41\x64\x64\x42\x65ntoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1e\n\x03uri\x18\x02 \x01(\x0b\x32\x11.bentoml.BentoUri\"\xe5\x01\n\x0cUploadStatus\x12,\n\x06status\x18\x01 \x01(\x0e\x32\x1c.bentoml.UploadStatus.Status\x12.\n\nupdated_at\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x12\n\npercentage\x18\x03 \x01(\x05\x12\x15\n\rerror_message\x18\x04 \x01(\t\"L\n\x06Status\x12\x11\n\rUNINITIALIZED\x10\x00\x12\r\n\tUPLOADING\x10\x01\x12\x08\n\x04\x44ONE\x10\x02\x12\t\n\x05\x45RROR\x10\x03\x12\x0b\n\x07TIMEOUT\x10\x04\"\xa6\x01\n\x12UpdateBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12,\n\rupload_status\x18\x03 \x01(\x0b\x32\x15.bentoml.UploadStatus\x12\x37\n\x10service_metadata\x18\x04 \x01(\x0b\x32\x1d.bentoml.BentoServiceMetadata\"6\n\x13UpdateBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"J\n\x1d\x44\x61ngerouslyDeleteBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"A\n\x1e\x44\x61ngerouslyDeleteBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"<\n\x0fGetBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"R\n\x10GetBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1d\n\x05\x62\x65nto\x18\x02 \x01(\x0b\x32\x0e.bentoml.Bento\"U\n\x10ListBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x05\x12\r\n\x05limit\x18\x03 \x01(\x05\x12\x0e\n\x06\x66ilter\x18\x04 \x01(\t\"T\n\x11ListBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1e\n\x06\x62\x65ntos\x18\x02 \x03(\x0b\x32\x0e.bentoml.Bentob\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,status__pb2.DESCRIPTOR,])
 
@@ -95,8 +95,8 @@ _UPLOADSTATUS_STATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1199,
-  serialized_end=1275,
+  serialized_start=1205,
+  serialized_end=1281,
 )
 _sym_db.RegisterEnumDescriptor(_UPLOADSTATUS_STATUS)
 
@@ -495,7 +495,7 @@ _UPLOADSTATUS = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='message', full_name='bentoml.UploadStatus.message', index=3,
+      name='error_message', full_name='bentoml.UploadStatus.error_message', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -515,7 +515,7 @@ _UPLOADSTATUS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=1052,
-  serialized_end=1275,
+  serialized_end=1281,
 )
 
 
@@ -566,8 +566,8 @@ _UPDATEBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1278,
-  serialized_end=1444,
+  serialized_start=1284,
+  serialized_end=1450,
 )
 
 
@@ -597,8 +597,8 @@ _UPDATEBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1446,
-  serialized_end=1500,
+  serialized_start=1452,
+  serialized_end=1506,
 )
 
 
@@ -635,8 +635,8 @@ _DANGEROUSLYDELETEBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1502,
-  serialized_end=1576,
+  serialized_start=1508,
+  serialized_end=1582,
 )
 
 
@@ -666,8 +666,8 @@ _DANGEROUSLYDELETEBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1578,
-  serialized_end=1643,
+  serialized_start=1584,
+  serialized_end=1649,
 )
 
 
@@ -704,8 +704,8 @@ _GETBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1645,
-  serialized_end=1705,
+  serialized_start=1651,
+  serialized_end=1711,
 )
 
 
@@ -742,8 +742,8 @@ _GETBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1707,
-  serialized_end=1789,
+  serialized_start=1713,
+  serialized_end=1795,
 )
 
 
@@ -794,8 +794,8 @@ _LISTBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1791,
-  serialized_end=1876,
+  serialized_start=1797,
+  serialized_end=1882,
 )
 
 
@@ -832,8 +832,8 @@ _LISTBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1878,
-  serialized_end=1962,
+  serialized_start=1884,
+  serialized_end=1968,
 )
 
 _BENTOURI.fields_by_name['type'].enum_type = _BENTOURI_STORAGETYPE

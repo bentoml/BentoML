@@ -1,4 +1,5 @@
 import pytest
+import tempfile
 
 import bentoml
 from bentoml.artifact import PickleArtifact
@@ -82,6 +83,8 @@ def bento_archive_path(bento_service, tmpdir):  # pylint:disable=redefined-outer
 
 
 @pytest.fixture(scope='session', autouse=True)
-def turn_off_tracking():
+def set_test_config():
+    tempdir = tempfile.mkdtemp(prefix="bentoml-test-")
+    bentoml.reset_bentoml_home(tempdir)
     bentoml.config.set('core', 'usage_tracking', 'false')
     return False

@@ -69,12 +69,13 @@ LOCAL_CONFIG_FILE = get_local_config_file()
 DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.cfg")
 
 
-def load_config(bentoml_home=DEFAULT_BENTOML_HOME):
+def _reset_bentoml_home_dir(bentoml_home):
     global BENTOML_HOME, LOCAL_CONFIG_FILE
-
     BENTOML_HOME = bentoml_home
     LOCAL_CONFIG_FILE = get_local_config_file()
 
+
+def load_config():
     try:
         Path(BENTOML_HOME).mkdir(exist_ok=True)
     except OSError as err:

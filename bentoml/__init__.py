@@ -30,7 +30,6 @@ from bentoml.utils.log import configure_logging
 configure_logging()
 
 from bentoml import archive
-from bentoml import repository
 from bentoml import handlers
 from bentoml.service import (
     BentoService,
@@ -40,10 +39,13 @@ from bentoml.service import (
     ver_decorator as ver,
 )
 from bentoml.server import metrics
-
+from bentoml.utils.log import configure_logging
+from bentoml.yatai.python_api import upload_bento_service
 
 load = archive.load
-save = repository.save
+save_to_dir = archive.save_to_dir
+save = upload_bento_service
+
 
 __all__ = [
     "__version__",
@@ -57,4 +59,5 @@ __all__ = [
     "handlers",
     "load",
     "save",
+    "save_to_dir",
 ]

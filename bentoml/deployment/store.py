@@ -17,12 +17,14 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
+import datetime
 from contextlib import contextmanager
 
-from sqlalchemy import Column, String, Integer, JSON, UniqueConstraint
+from sqlalchemy import Column, String, Integer, DateTime, JSON, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import MessageToDict, ParseDict
 
+from bentoml.exceptions import BentoMLDeploymentException
 from bentoml.db import Base, create_session
 from bentoml.proto import deployment_pb2
 
@@ -47,8 +49,10 @@ class Deployment(Base):
     labels = Column(JSON, nullable=False, default={})
     annotations = Column(JSON, nullable=False, default={})
 
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-def deployment_pb_to_orm_obj(deployment_pb, deployment_obj=Deployment()):
+
+def _deployment_pb_to_orm_obj(deployment_pb, deployment_obj=Deployment()):
     deployment_obj.name = deployment_pb.name
     deployment_obj.namespace = deployment_pb.namespace
     deployment_obj.spec = MessageToDict(deployment_pb.spec)
@@ -58,7 +62,7 @@ def deployment_pb_to_orm_obj(deployment_pb, deployment_obj=Deployment()):
     return deployment_obj
 
 
-def deployment_orm_obj_to_pb(deployment_obj):
+def _deployment_orm_obj_to_pb(deployment_obj):
     return deployment_pb2.Deployment(
         name=deployment_obj.name,
         namespace=deployment_obj.namespace,
@@ -75,7 +79,7 @@ class DeploymentStore(object):
 
     def insert(self, deployment_pb):
         with create_session(self.sess_maker) as sess:
-            deployment_obj = deployment_pb_to_orm_obj(deployment_pb)
+            deployment_obj = _deployment_pb_to_orm_obj(deployment_pb)
             return sess.add(deployment_obj)
 
     def insert_or_update(self, deployment_pb):
@@ -90,9 +94,9 @@ class DeploymentStore(object):
                 )
                 if deployment_obj:
                     # updating deployment record in db
-                    deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
+                    _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
             except NoResultFound:
-                sess.add(deployment_pb_to_orm_obj(deployment_pb))
+                sess.add(_deployment_pb_to_orm_obj(deployment_pb))
 
     @contextmanager
     def update_deployment(self, name, namespace):
@@ -118,14 +122,21 @@ class DeploymentStore(object):
             except NoResultFound:
                 return None
 
-            return deployment_orm_obj_to_pb(deployment_obj)
+            return _deployment_orm_obj_to_pb(deployment_obj)
 
     def delete(self, name, namespace):
         with create_session(self.sess_maker) as sess:
-            deployment = (
-                sess.query(Deployment).filter_by(name=name, namespace=namespace).one()
-            )
-            return sess.delete(deployment)
+            try:
+                deployment = (
+                    sess.query(Deployment)
+                    .filter_by(name=name, namespace=namespace)
+                    .one()
+                )
+                return sess.delete(deployment)
+            except NoResultFound:
+                raise BentoMLDeploymentException(
+                    "Deployment '%s' in namespace: '%s' is not found", name, namespace
+                )
 
     def list(self, namespace, filter_str=None, labels=None, offset=None, limit=None):
         with create_session(self.sess_maker) as sess:

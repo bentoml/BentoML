@@ -20,6 +20,7 @@ from bentoml.archive.archiver import save_to_dir
 from bentoml.archive.loader import (
     load,
     load_bentoml_config,
+    load_bento_metadata_pb,
     load_bento_service_class,
     load_service_api,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "save_to_dir",
     "load",
     "load_bentoml_config",
+    "load_bento_metadata_pb",
     "load_bento_service_class",
     "load_service_api",
 ]

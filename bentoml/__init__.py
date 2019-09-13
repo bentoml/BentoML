@@ -21,7 +21,7 @@ from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-from bentoml.config import load_config
+from bentoml.config import load_config, _reset_bentoml_home_dir
 
 config = load_config()
 
@@ -46,6 +46,11 @@ load = archive.load
 save_to_dir = archive.save_to_dir
 save = upload_bento_service
 
+# For BentoML internal and testing
+def reset_bentoml_home(new_bentoml_home_directory):
+    _reset_bentoml_home_dir(new_bentoml_home_directory)
+    global config
+    config = load_config()
 
 __all__ = [
     "__version__",

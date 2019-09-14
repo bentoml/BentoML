@@ -16,13 +16,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import uuid
 import json
+import time
 import logging
 from functools import partial
 from collections import OrderedDict
 
 from flask import Flask, jsonify, Response, request
+from werkzeug.utils import secure_filename
 from prometheus_client import generate_latest, Summary
 
 from bentoml import config
@@ -59,12 +62,8 @@ def _request_to_json(req):
     """
     if req.content_type == "application/json":
         return req.get_json()
-    elif "image" in req.content_type:
-        return {"data": "dont handle"}
-    elif "video" in req.content_type:
-        return {"data": "dont handle"}
 
-    return {"data": req.get_data().decode("utf-8")}
+    return {"data": "ignore content type other than JSON."}
 
 
 def has_empty_params(rule):
@@ -194,21 +193,54 @@ def bento_service_api_wrapper(api, service_name, service_version):
     summary_name = str(service_name) + "_" + str(api.name)
     request_metric_time = Summary(summary_name, summary_name + " request latency")
 
+    def log_image(request, request_id):
+        img_prefix = 'image/'
+        log_folder = config['logging'].get('base_log_folder')
+
+        if request.content_type.startswith(img_prefix):
+            filename = '{request_id}-{timestamp}.{ext}'.format(
+                request_id=request_id,
+                timestamp=int(time.time()),
+                ext=request.content_type[len(img_prefix) :],
+            )
+            with open(os.path.join(log_folder, filename), 'w') as f:
+                f.write(request.get_data())
+
+        for name in request.files:
+            file = request.files[name]
+            if file and file.filename:
+                orig_filename = secure_filename(file.filename)
+                filename = '{request_id}-{timestamp}-{orig_filename}'.format(
+                    request_id=request_id,
+                    timestamp=int(time.time()),
+                    orig_filename=orig_filename,
+                )
+                file.save(os.path.join(log_folder, filename))
+
     def wrapper():
         with request_metric_time.time():
             request_id = str(uuid.uuid4())
+            # Assume there is not a strong use case for idempotency check here.
+            # Will revise later if we find a case.
+
+            if not config['logging'].getboolean('disable_logging_image'):
+                log_image(request, request_id)
+
             response = api.handle_request(request)
-            if response.status_code == 200:
-                prediction_logger.info(
-                    {
-                        "uuid": request_id,
-                        "service_name": service_name,
-                        "service_version": service_version,
-                        "api": api.name,
-                        "request": _request_to_json(request),
-                        "response": response.response,
-                    }
-                )
+
+            request_log = {
+                "uuid": request_id,
+                "service_name": service_name,
+                "service_version": service_version,
+                "api": api.name,
+                "request": _request_to_json(request),
+                "response_code": response.status_code,
+            }
+
+            if 200 <= response.status_code < 300:
+                request_log['response'] = response.response
+
+            prediction_logger.info(request_log)
 
             response.headers["request_id"] = request_id
             return response

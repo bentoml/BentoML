@@ -21,7 +21,8 @@ import logging
 
 from bentoml.utils import Path
 from bentoml.exceptions import BentoMLConfigException
-from bentoml.config.configparser import BentoMLConfigParser
+from bentoml.configuration.configparser import BentoMLConfigParser
+
 
 logger = logging.getLogger(__name__)
 
@@ -69,13 +70,8 @@ LOCAL_CONFIG_FILE = get_local_config_file()
 DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.cfg")
 
 
-def _reset_bentoml_home_dir(bentoml_home):
-    global BENTOML_HOME, LOCAL_CONFIG_FILE
-    BENTOML_HOME = bentoml_home
-    LOCAL_CONFIG_FILE = get_local_config_file()
-
-
 def load_config():
+    global BENTOML_HOME, LOCAL_CONFIG_FILE
     try:
         Path(BENTOML_HOME).mkdir(exist_ok=True)
     except OSError as err:
@@ -98,3 +94,30 @@ def load_config():
         logger.info("No local BentoML config file found, using default configurations")
 
     return config
+
+
+_config = load_config()
+
+
+def _reset_bentoml_home(new_bentoml_home_directory):
+    # For BentoML internal and testing
+    global _config, DEFAULT_BENTOML_HOME, BENTOML_HOME, LOCAL_CONFIG_FILE
+    DEFAULT_BENTOML_HOME = new_bentoml_home_directory
+    BENTOML_HOME = new_bentoml_home_directory
+    LOCAL_CONFIG_FILE = get_local_config_file()
+
+    # reload config
+    _config = load_config()
+
+    # re-config logging
+    from bentoml.utils.log import configure_logging
+    root = logging.getLogger()
+    map(root.removeHandler, root.handlers[:])
+    map(root.removeFilter, root.filters[:])
+    configure_logging()
+
+def config(section=None):
+    if section is not None:
+        return _config[section]
+    else:
+        return _config

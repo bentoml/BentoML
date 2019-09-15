@@ -97,7 +97,7 @@ def _get_bento_service_event_properties(bento_service, properties=None):
 
 
 def track(event_type, event_properties=None):
-    if not config['core'].getboolean("usage_tracking"):
+    if not config().getboolean("core", "usage_tracking"):
         return  # Usage tracking disabled
 
     if event_properties is None:

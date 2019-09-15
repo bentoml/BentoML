@@ -21,14 +21,7 @@ from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-from bentoml.config import load_config, _reset_bentoml_home_dir
-
-config = load_config()
-
-from bentoml.utils.log import configure_logging
-
-configure_logging()
-
+from bentoml.configuration import config
 from bentoml.archive import load, save_to_dir
 from bentoml import handlers
 from bentoml.service import (
@@ -43,12 +36,6 @@ from bentoml.utils.log import configure_logging
 from bentoml.yatai.python_api import upload_bento_service
 
 save = upload_bento_service
-
-# For BentoML internal and testing
-def reset_bentoml_home(new_bentoml_home_directory):
-    _reset_bentoml_home_dir(new_bentoml_home_directory)
-    global config
-    config = load_config()
 
 
 __all__ = [

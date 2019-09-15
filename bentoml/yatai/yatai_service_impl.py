@@ -38,7 +38,7 @@ from bentoml.proto.repository_pb2 import (
     UpdateBentoResponse,
     ListBentoResponse,
 )
-from bentoml.proto.yatai_service_pb2_grpc import YataiServicer, YataiStub
+from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
 from bentoml.proto.yatai_service_pb2 import (
     HealthCheckResponse,
     GetYataiServiceVersionResponse,
@@ -56,8 +56,11 @@ from bentoml import __version__ as BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
 
-# pylint: disable=unused-argument
+
 class YataiService(YataiServicer):
+
+    # pylint: disable=unused-argument
+
     def __init__(self, db_url, repo_base_url, default_namespace):
         self.default_namespace = default_namespace
         self.repo = BentoRepository(repo_base_url)
@@ -89,8 +92,9 @@ class YataiService(YataiServicer):
                 ):
                     return ApplyDeploymentResponse(
                         status=Status.ABORTED(
-                            'New deployment spec has different platform from existing one. '
-                            'Please delete existing deployment and apply again'
+                            'Can not change the target deploy platform of existing '
+                            'active deployment. Try delete existing deployment and '
+                            'deploy to new target platform again'
                         )
                     )
                 request.deployment.state = DeploymentState(
@@ -290,5 +294,4 @@ class YataiService(YataiServicer):
             logger.error("INTERNAL ERROR: %s", e)
             return ListBentoResponse(status=Status.INTERNAL(str(e)))
 
-
-# pylint: enable=unused-argument
+    # pylint: enable=unused-argument

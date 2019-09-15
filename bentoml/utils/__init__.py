@@ -20,7 +20,7 @@ import re
 
 from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 from google.protobuf.json_format import MessageToJson
-from ruamel.yaml import YAML, StringIO
+from ruamel.yaml import YAML
 
 try:
     from pathlib import Path

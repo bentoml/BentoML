@@ -3,7 +3,7 @@ import contextlib
 
 from configparser import ConfigParser
 
-from bentoml.config.configparser import BentoMLConfigParser
+from bentoml.configuration.configparser import BentoMLConfigParser
 
 
 @contextlib.contextmanager

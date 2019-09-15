@@ -23,22 +23,19 @@ import logging.config
 from bentoml import config
 from bentoml.utils import Path
 
-conf = config["logging"]  # proxy to logging section in bentoml config file
 
-DEFAULT_LOGGING_LEVEL = conf.get("LOGGING_LEVEL").upper()
-LOG_FORMAT = conf.get("LOG_FORMAT")
-DEV_LOG_FORMAT = conf.get("DEV_LOG_FORMAT")
+def get_logging_config_dict(logging_level, base_log_directory):
+    conf = config("logging")  # proxy to logging section in bentoml config file
 
-BASE_LOG_FOLDER = os.path.expanduser(conf.get("BASE_LOG_FOLDER"))
+    LOG_FORMAT = conf.get("LOG_FORMAT")
+    DEV_LOG_FORMAT = conf.get("DEV_LOG_FORMAT")
 
-PREDICTION_LOG_FILENAME = conf.get("prediction_log_filename")
-PREDICTION_LOG_JSON_FORMAT = conf.get("prediction_log_json_format")
+    PREDICTION_LOG_FILENAME = conf.get("prediction_log_filename")
+    PREDICTION_LOG_JSON_FORMAT = conf.get("prediction_log_json_format")
 
-FEEDBACK_LOG_FILENAME = conf.get("feedback_log_filename")
-FEEDBACK_LOG_JSON_FORMAT = conf.get("feedback_log_json_format")
+    FEEDBACK_LOG_FILENAME = conf.get("feedback_log_filename")
+    FEEDBACK_LOG_JSON_FORMAT = conf.get("feedback_log_json_format")
 
-
-def get_logging_config_dict(logging_level):
     return {
         "version": 1,
         "disable_existing_loggers": False,
@@ -65,7 +62,7 @@ def get_logging_config_dict(logging_level):
                 "level": logging_level,
                 "formatter": "dev",
                 "class": "logging.handlers.RotatingFileHandler",
-                "filename": os.path.join(BASE_LOG_FOLDER, "active.log"),
+                "filename": os.path.join(base_log_directory, "active.log"),
                 "maxBytes": 100 * 1000 * 1000,
                 "backupCount": 2,
             },
@@ -73,7 +70,7 @@ def get_logging_config_dict(logging_level):
                 "class": "logging.handlers.RotatingFileHandler",
                 "formatter": "prediction",
                 "level": "INFO",
-                "filename": os.path.join(BASE_LOG_FOLDER, PREDICTION_LOG_FILENAME),
+                "filename": os.path.join(base_log_directory, PREDICTION_LOG_FILENAME),
                 "maxBytes": 100 * 1000 * 1000,
                 "backupCount": 10,
             },
@@ -81,7 +78,7 @@ def get_logging_config_dict(logging_level):
                 "class": "logging.handlers.RotatingFileHandler",
                 "formatter": "feedback",
                 "level": "INFO",
-                "filename": os.path.join(BASE_LOG_FOLDER, FEEDBACK_LOG_FILENAME),
+                "filename": os.path.join(base_log_directory, FEEDBACK_LOG_FILENAME),
                 "maxBytes": 100 * 1000 * 1000,
                 "backupCount": 10,
             },
@@ -106,6 +103,11 @@ def get_logging_config_dict(logging_level):
     }
 
 
-def configure_logging(logging_level=DEFAULT_LOGGING_LEVEL):
-    Path(BASE_LOG_FOLDER).mkdir(parents=True, exist_ok=True)
-    logging.config.dictConfig(get_logging_config_dict(logging_level))
+def configure_logging(logging_level=None):
+    if logging_level is None:
+        logging_level = config("logging").get("LOGGING_LEVEL").upper()
+
+    base_log_dir = os.path.expanduser(config("logging").get("BASE_LOG_DIR"))
+    Path(base_log_dir).mkdir(parents=True, exist_ok=True)
+    logging_config = get_logging_config_dict(logging_level, base_log_dir)
+    logging.config.dictConfig(logging_config)

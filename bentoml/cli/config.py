@@ -25,7 +25,7 @@ import logging
 from configparser import ConfigParser
 
 from bentoml import config as bentoml_config
-from bentoml.config import LOCAL_CONFIG_FILE, DEFAULT_CONFIG_FILE
+from bentoml.configuration import LOCAL_CONFIG_FILE, DEFAULT_CONFIG_FILE
 from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR
 from bentoml.utils.usage_stats import track_cli
 
@@ -68,7 +68,7 @@ def get_configuration_sub_command():
     @config.command()
     def view_effective():
         track_cli('config-view-effective')
-        bentoml_config.write(sys.stdout)
+        bentoml_config().write(sys.stdout)
         return
 
     @config.command(

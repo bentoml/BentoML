@@ -59,11 +59,11 @@ def get_yatai_service(
     else:
         logger.info("Using BentoML with local Yatai server")
 
-        default_namespace = default_namespace or config.get(
+        default_namespace = default_namespace or config().get(
             'deployment', 'default_namespace'
         )
-        repo_base_url = repo_base_url or config.get('default_repository_base_url')
-        db_url = db_url or config.get('db', 'url')
+        repo_base_url = repo_base_url or config().get('default_repository_base_url')
+        db_url = db_url or config().get('db', 'url')
 
         return YataiService(
             db_url=db_url,

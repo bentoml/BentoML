@@ -132,13 +132,10 @@ class _S3BentoRepository(BentoRepositoryBase):
         raise NotImplementedError
 
 
-DEFAULT_REPOSITORY_BASE_URL = config.get('default_repository_base_url')
-
-
 class BentoRepository(BentoRepositoryBase):
     def __init__(self, base_url=None):
         if base_url is None:
-            base_url = DEFAULT_REPOSITORY_BASE_URL
+            base_url = config().get('default_repository_base_url')
 
         if is_s3_url(base_url):
             self._repo = _S3BentoRepository(base_url)

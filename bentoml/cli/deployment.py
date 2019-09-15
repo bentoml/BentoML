@@ -198,8 +198,8 @@ def get_deployment_sub_command():
                 region=region or config().get('aws', 'default_region'),
                 instance_count=instance_count
                 or config().getint('sagemaker', 'instance_count'),
-                instance_type=instance_type or config().get('sagemaker',
-                                                           'instance_type'),
+                instance_type=instance_type
+                or config().get('sagemaker', 'instance_type'),
                 api_name=api_name,
             )
             spec = DeploymentSpec(sagemaker_operator_config=sagemaker_operator_config)

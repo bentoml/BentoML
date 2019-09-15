@@ -25,7 +25,7 @@ import logging
 from configparser import ConfigParser
 
 from bentoml import config as bentoml_config
-from bentoml.configuration import LOCAL_CONFIG_FILE, DEFAULT_CONFIG_FILE
+from bentoml.configuration import get_local_config_file, DEFAULT_CONFIG_FILE
 from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR
 from bentoml.utils.usage_stats import track_cli
 
@@ -42,9 +42,10 @@ Example usage for `bentoml config`:
 
 
 def create_local_config_file_if_not_found():
-    if not os.path.isfile(LOCAL_CONFIG_FILE):
-        LOG.info("Creating new default BentoML config file at: %s", LOCAL_CONFIG_FILE)
-        shutil.copyfile(DEFAULT_CONFIG_FILE, LOCAL_CONFIG_FILE)
+    local_config_file = get_local_config_file()
+    if not os.path.isfile(local_config_file):
+        LOG.info("Creating new default BentoML config file at: %s", local_config_file)
+        shutil.copyfile(DEFAULT_CONFIG_FILE, local_config_file)
 
 
 def get_configuration_sub_command():
@@ -59,7 +60,7 @@ def get_configuration_sub_command():
     def view():
         track_cli('config-view')
         local_config = ConfigParser()
-        with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
+        with open(get_local_config_file(), 'rb') as config_file:
             local_config.read_string(config_file.read().decode('utf-8'))
 
         local_config.write(sys.stdout)
@@ -79,7 +80,8 @@ def get_configuration_sub_command():
     def set(updates):
         track_cli('config-set')
         local_config = ConfigParser()
-        with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
+        local_config_file = get_local_config_file()
+        with open(local_config_file, 'rb') as config_file:
             local_config.read_string(config_file.read().decode('utf-8'))
         try:
             for update in updates:
@@ -94,7 +96,7 @@ def get_configuration_sub_command():
                     local_config.add_section(sec)
                 local_config.set(sec.strip(), opt.strip(), value.strip())
 
-            local_config.write(open(LOCAL_CONFIG_FILE, 'w'))
+            local_config.write(open(local_config_file, 'w'))
             return
         except ValueError:
             _echo('Wrong config format: %s' % str(updates), CLI_COLOR_ERROR)
@@ -109,7 +111,8 @@ def get_configuration_sub_command():
     def unset(updates):
         track_cli('config-unset')
         local_config = ConfigParser()
-        with open(LOCAL_CONFIG_FILE, 'rb') as config_file:
+        local_config_file = get_local_config_file()
+        with open(local_config_file, 'rb') as config_file:
             local_config.read_string(config_file.read().decode('utf-8'))
         try:
             for update in updates:
@@ -123,7 +126,7 @@ def get_configuration_sub_command():
                     local_config.add_section(sec)
                 local_config.remove_option(sec.strip(), opt.strip())
 
-            local_config.write(open(LOCAL_CONFIG_FILE, 'w'))
+            local_config.write(open(local_config_file, 'w'))
             return
         except ValueError:
             _echo('Wrong config format: %s' % str(updates), CLI_COLOR_ERROR)
@@ -133,9 +136,10 @@ def get_configuration_sub_command():
     @config.command(help="Reset BentoML configuration to default")
     def reset():
         track_cli('config-reset')
-        if os.path.isfile(LOCAL_CONFIG_FILE):
-            LOG.info("Removing existing BentoML config file: %s", LOCAL_CONFIG_FILE)
-            os.remove(LOCAL_CONFIG_FILE)
+        local_config_file = get_local_config_file()
+        if os.path.isfile(local_config_file):
+            LOG.info("Removing existing BentoML config file: %s", local_config_file)
+            os.remove(local_config_file)
         create_local_config_file_if_not_found()
         return
 

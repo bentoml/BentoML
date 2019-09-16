@@ -374,8 +374,9 @@ def get_deployment_sub_command():
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def describe(name, output, namespace):
         track_cli('deploy-describe')
+        yatai_service = get_yatai_service()
 
-        result = get_yatai_service().DescribeDeployment(
+        result = yatai_service.DescribeDeployment(
             DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
         )
         if result.status.status_code != Status.OK:
@@ -389,7 +390,12 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
         else:
-            display_deployment_info(result.deployment, output)
+            get_response = yatai_service.GetDeployment(
+                GetDeploymentRequest(deployment_name=name, namespace=namespace)
+            )
+            deployment_pb = get_response.deployment
+            deployment_pb.state.CopyFrom(result.state)
+            display_deployment_info(deployment_pb, output)
 
     @deployment.command(help='List deployments')
     @click.option('--namespace', type=click.STRING)

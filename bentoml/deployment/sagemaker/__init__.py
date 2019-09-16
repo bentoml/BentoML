@@ -28,9 +28,7 @@ import boto3
 import docker
 
 from bentoml import config
-from bentoml.deployment.utils import (
-    process_docker_api_line,
-)
+from bentoml.deployment.utils import process_docker_api_line
 from bentoml.yatai.status import Status
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.exceptions import BentoMLDeploymentException

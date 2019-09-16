@@ -127,4 +127,3 @@ def config(section=None):
         return _config[section]
     else:
         return _config
-

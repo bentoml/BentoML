@@ -16,26 +16,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import json
 import logging
 
-from datetime import datetime
-
-from bentoml.config import BENTOML_HOME
 
 logger = logging.getLogger(__name__)
-
-
-def generate_bentoml_deployment_snapshot_path(service_name, service_version, platform):
-    return os.path.join(
-        BENTOML_HOME,
-        "deployment-snapshots",
-        platform,
-        service_name,
-        service_version,
-        datetime.now().isoformat(),
-    )
 
 
 def process_docker_api_line(payload):

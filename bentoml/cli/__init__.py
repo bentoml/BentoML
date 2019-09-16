@@ -158,13 +158,14 @@ def create_bento_service_cli(archive_path=None):
         )
         _echo(output)
 
-    # Example usage: bentoml docs /SAVED_ARCHIVE_PATH
+    # Example usage: bentoml open-api-spec /SAVED_ARCHIVE_PATH
     @bentoml_cli.command(
-        help="Display API documents in Open API format",
-        short_help="Display OpenAPI docs",
+        name="open-api-spec",
+        help="Display API specification JSON in Open-API format",
+        short_help="Display OpenAPI/Swagger JSON specs",
     )
     @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
-    def docs(archive_path=archive_path):
+    def open_api_spec(archive_path=archive_path):
         track_cli('docs')
         bento_service = load(archive_path)
 

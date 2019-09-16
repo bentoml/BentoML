@@ -172,10 +172,10 @@ Try out the full getting started notebook
 
 ### Deployment guides:
 
-- [Serverless deployment with AWS Lambda](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-serverless)
-- [API server deployment with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-sagemaker)
-- [API server deployment with Clipper](https://github.com/bentoml/BentoML/blob/master/example/deploy-with-clipper/deploy-iris-classifier-to-clipper.ipynb)
-- [API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/examples/deploy-with-kubernetes)
+- [Serverless deployment with AWS Lambda](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-serverless)
+- [API server deployment with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-sagemaker)
+- [API server deployment with Clipper](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/deploy-iris-classifier-to-clipper.ipynb)
+- [API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
 
 
 ## Feature Highlights

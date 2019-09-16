@@ -26,8 +26,6 @@ from bentoml.server import BentoAPIServer
 from bentoml.server.utils import get_bento_recommend_gunicorn_worker_count
 from bentoml.utils.usage_stats import track_server
 
-conf = config["apiserver"]
-
 
 class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
     """
@@ -45,21 +43,17 @@ class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
     :param workers: number of worker processes
     """
 
-    _DEFAULT_PORT = conf.getint("default_port")
-    _DEFAULT_TIMEOUT = conf.getint("default_timeout")
-    _DEFAULT_WORKER = conf.getint("default_gunicorn_workers_count")
-
     def __init__(
         self, bento_archive_path, port=None, num_of_workers=None, timeout=None
     ):
         self.bento_archive_path = bento_archive_path
-        self.port = port or self._DEFAULT_PORT
+        self.port = port or config("apiserver").getint("default_port")
         self.num_of_workers = (
             num_of_workers
-            or self._DEFAULT_WORKER
+            or config("apiserver").getint("default_gunicorn_workers_count")
             or get_bento_recommend_gunicorn_worker_count()
         )
-        self.timeout = timeout or self._DEFAULT_TIMEOUT
+        self.timeout = timeout or config("apiserver").getint("default_timeout")
 
         self.options = {
             "workers": self.num_of_workers,

@@ -31,6 +31,7 @@ from bentoml.archive.templates import (
 from bentoml.utils.usage_stats import track_save
 from bentoml.archive.config import BentoArchiveConfig
 
+
 DEFAULT_BENTO_ARCHIVE_DESCRIPTION = """\
 # BentoML(bentoml.ai) generated model archive
 """
@@ -61,7 +62,7 @@ def _get_artifacts_list(bento_service):
     return result
 
 
-def save_to_dir(bento_service, path):
+def save_to_dir(bento_service, path, version=None):
     """Save given BentoService along with all its artifacts, source code and
     dependencies to target file path, assuming path exist and empty. If target path
     is not empty, this call may override existing files in the given path.
@@ -69,11 +70,18 @@ def save_to_dir(bento_service, path):
     Args:
         bento_service (bentoml.service.BentoService): a Bento Service instance
         path (str): Destination of where the bento service will be saved
-
-    Returns:
-        string: The complete path of saved Bento service.
     """
     track_save(bento_service)
+
+    from bentoml.service import BentoService
+
+    if not isinstance(bento_service, BentoService):
+        raise BentoMLException(
+            "save_to_dir only work with instance of custom BentoService class"
+        )
+
+    if version is not None:
+        bento_service.set_version(version)
 
     if not os.path.exists(path):
         raise BentoMLException("Directory '{}' not found".format(path))

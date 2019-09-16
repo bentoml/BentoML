@@ -27,12 +27,12 @@ from datetime import datetime
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
-from bentoml import archive
-from bentoml import repository
+from bentoml.archive import save_to_dir
 from bentoml.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
 from bentoml.utils import isidentifier
+from bentoml.proto.repository_pb2 import BentoServiceMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -486,10 +486,12 @@ class BentoService(BentoServiceBase):
         return self._bento_service_version
 
     def save(self, base_path=None, version=None):
-        return repository.save(self, base_path, version)
+        from bentoml.yatai import python_api
 
-    def save_to_dir(self, path):
-        return archive.save_to_dir(self, path)
+        return python_api.upload_bento_service(self, base_path, version)
+
+    def save_to_dir(self, path, version=None):
+        return save_to_dir(self, path, version)
 
     @classmethod
     def pack(cls, *args, **kwargs):
@@ -542,3 +544,31 @@ class BentoService(BentoServiceBase):
         artifacts = ArtifactCollection.load(artifacts_path, cls._artifacts_spec)
         svc = cls(artifacts)
         return svc
+
+    def _get_bento_service_metadata_pb(self):
+        bento_service_metadata = BentoServiceMetadata()
+
+        bento_service_metadata.name = self.name
+        bento_service_metadata.version = self.version
+        bento_service_metadata.created_at.GetCurrentTime()
+
+        if self.env._setup_sh is not None:
+            bento_service_metadata.env.setup_sh = self.env._setup_sh
+
+        bento_service_metadata.env.conda_env = self.env._conda_env.to_yaml_str()
+        bento_service_metadata.env.pip_dependencies = "\n".join(
+            self.env._pip_dependencies
+        )
+
+        for api in self.get_service_apis():
+            api_metadata = BentoServiceMetadata.BentoServiceApi()
+            api_metadata.name = api.name
+            api_metadata.handler_type = api.handler.__class__.__name__
+            api_metadata.docs = api.doc
+
+        for artifact_spec in self._artifacts_spec:
+            artifact_metadata = BentoServiceMetadata.BentoArtifact()
+            artifact_metadata.name = artifact_spec.name
+            artifact_metadata.artifact_type = artifact_spec.__class__.__name__
+
+        return bento_service_metadata

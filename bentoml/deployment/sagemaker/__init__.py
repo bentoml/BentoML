@@ -27,7 +27,7 @@ from six.moves.urllib.parse import urlparse
 import boto3
 import docker
 
-from bentoml.config import config
+from bentoml import config
 from bentoml.deployment.utils import (
     generate_bentoml_deployment_snapshot_path,
     process_docker_api_line,
@@ -50,6 +50,7 @@ from bentoml.proto.deployment_pb2 import (
 )
 
 logger = logging.getLogger(__name__)
+
 
 DEFAULT_REGION = "us-west-2"
 DEFAULT_INSTANCE_TYPE = "ml.m4.xlarge"
@@ -278,8 +279,10 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 "Image": ecr_image_path,
                 "Environment": {
                     "API_NAME": sagemaker_config.api_name,
-                    "BENTO_SERVER_TIMEOUT": config.get('apiserver', 'default_timeout'),
-                    "BENTO_SERVER_WORKERS": config.get(
+                    "BENTO_SERVER_TIMEOUT": config().get(
+                        'apiserver', 'default_timeout'
+                    ),
+                    "BENTO_SERVER_WORKERS": config().get(
                         'apiserver', 'default_gunicorn_workers_count'
                     ),
                 },

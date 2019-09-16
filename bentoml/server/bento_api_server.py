@@ -28,7 +28,6 @@ from prometheus_client import generate_latest, Summary
 from bentoml import config
 from bentoml.utils.usage_stats import track_server
 
-conf = config["apiserver"]
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
@@ -114,7 +113,7 @@ def get_docs(bento_service):
             responses=default_response,
         )
     )
-    if conf.getboolean("enable_metrics"):
+    if config("apiserver").getboolean("enable_metrics"):
         paths["/metrics"] = OrderedDict(
             get=OrderedDict(
                 tags=["infra"],
@@ -122,7 +121,7 @@ def get_docs(bento_service):
                 responses=default_response,
             )
         )
-    if conf.getboolean("enable_feedback"):
+    if config("apiserver").getboolean("enable_feedback"):
         paths["/feedback"] = OrderedDict(
             get=OrderedDict(
                 tags=["infra"],
@@ -251,10 +250,10 @@ def setup_routes(app, bento_service):
     app.add_url_rule("/docs.json", "docs", partial(docs_view_func, bento_service))
     app.add_url_rule("/healthz", "healthz", healthz_view_func)
 
-    if conf.getboolean("enable_metrics"):
+    if config("apiserver").getboolean("enable_metrics"):
         app.add_url_rule("/metrics", "metrics", metrics_view_func)
 
-    if conf.getboolean("enable_feedback"):
+    if config("apiserver").getboolean("enable_feedback"):
         app.add_url_rule(
             "/feedback",
             "feedback",
@@ -275,7 +274,7 @@ class BentoAPIServer:
     request data into a Service API function
     """
 
-    _DEFAULT_PORT = conf.getint("default_port")
+    _DEFAULT_PORT = config("apiserver").getint("default_port")
 
     def __init__(self, bento_service, port=_DEFAULT_PORT, app_name=None):
         app_name = bento_service.name if app_name is None else app_name

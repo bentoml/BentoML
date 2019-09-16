@@ -195,21 +195,22 @@ def get_deployment_sub_command():
                 )
 
             sagemaker_operator_config = DeploymentSpec.SageMakerOperatorConfig(
-                region=region or config.get('aws', 'default_region'),
+                region=region or config().get('aws', 'default_region'),
                 instance_count=instance_count
-                or config.getint('sagemaker', 'instance_count'),
-                instance_type=instance_type or config.get('sagemaker', 'instance_type'),
+                or config().getint('sagemaker', 'instance_count'),
+                instance_type=instance_type
+                or config().get('sagemaker', 'instance_type'),
                 api_name=api_name,
             )
             spec = DeploymentSpec(sagemaker_operator_config=sagemaker_operator_config)
         elif platform == 'aws_lambda':
             aws_lambda_operator_config = DeploymentSpec.AwsLambdaOperatorConfig(
-                region=region or config.get('aws', 'default_region')
+                region=region or config().get('aws', 'default_region')
             )
             spec = DeploymentSpec(aws_lambda_operator_config=aws_lambda_operator_config)
         elif platform == 'gcp_function':
             gcp_function_operator_config = DeploymentSpec.GcpFunctionOperatorConfig(
-                region=region or config.get('google-cloud', 'default_region')
+                region=region or config().get('google-cloud', 'default_region')
             )
             spec = DeploymentSpec(
                 gcp_function_operator_config=gcp_function_operator_config

@@ -20,7 +20,7 @@ import re
 
 from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 from google.protobuf.json_format import MessageToJson
-from ruamel.yaml import YAML, StringIO
+from ruamel.yaml import YAML
 
 try:
     from pathlib import Path
@@ -58,9 +58,13 @@ def isidentifier(s):
         return re.match(r"[A-Za-z_][A-Za-z_0-9]*\Z", s) is not None
 
 
-def pb_to_yaml(message):
-    result = MessageToJson(message)
+def dump_to_yaml_str(yaml_dict):
     yaml = YAML()
-    io = StringIO()
-    yaml.dump(result, io)
-    return io.getvalue()
+    string_io = StringIO()
+    yaml.dump(yaml_dict, string_io)
+    return string_io.getvalue()
+
+
+def pb_to_yaml(message):
+    message_dict = MessageToJson(message)
+    return dump_to_yaml_str(message_dict)

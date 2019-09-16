@@ -13,6 +13,7 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 import bentoml.proto.status_pb2 as status__pb2
 
 
@@ -21,9 +22,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='bentoml',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x10repository.proto\x12\x07\x62\x65ntoml\x1a\x0cstatus.proto\"\x9c\x01\n\x08\x42\x65ntoUri\x12+\n\x04type\x18\x01 \x01(\x0e\x32\x1d.bentoml.BentoUri.StorageType\x12\x0b\n\x03uri\x18\x02 \x01(\t\"V\n\x0bStorageType\x12\t\n\x05UNSET\x10\x00\x12\t\n\x05LOCAL\x10\x01\x12\x06\n\x02S3\x10\x02\x12\x07\n\x03GCS\x10\x03\x12\x16\n\x12\x41ZURE_BLOB_STORAGE\x10\x04\x12\x08\n\x04HDFS\x10\x05\"\xd3\x03\n\rBentoMetadata\x12\x1e\n\x03uri\x18\x01 \x01(\x0b\x32\x11.bentoml.BentoUri\x12\x12\n\ncreated_at\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x33\n\x03\x65nv\x18\x05 \x01(\x0b\x32&.bentoml.BentoMetadata.BentoServiceEnv\x12\x37\n\tartifacts\x18\x06 \x03(\x0b\x32$.bentoml.BentoMetadata.BentoArtifact\x12\x34\n\x04\x61pis\x18\x07 \x03(\x0b\x32&.bentoml.BentoMetadata.BentoServiceApi\x1aP\n\x0f\x42\x65ntoServiceEnv\x12\x10\n\x08setup_sh\x18\x01 \x01(\t\x12\x11\n\tconda_env\x18\x02 \x01(\t\x12\x18\n\x10pip_dependencies\x18\x03 \x01(\t\x1a\x34\n\rBentoArtifact\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x15\n\rartifact_type\x18\x02 \x01(\t\x1a\x43\n\x0f\x42\x65ntoServiceApi\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0chandler_type\x18\x02 \x01(\t\x12\x0c\n\x04\x64ocs\x18\x03 \x01(\t\"1\n\x0f\x41\x64\x64\x42\x65ntoRequest\x12\x1e\n\x03uri\x18\x01 \x01(\x0b\x32\x11.bentoml.BentoUri\"Z\n\x10\x41\x64\x64\x42\x65ntoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12%\n\x05\x62\x65nto\x18\x02 \x01(\x0b\x32\x16.bentoml.BentoMetadata\"]\n\x13UploadBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12%\n\x05\x62\x65nto\x18\x02 \x01(\x0b\x32\x16.bentoml.BentoMetadata\"J\n\x1d\x44\x61ngerouslyDeleteBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"h\n\x1e\x44\x61ngerouslyDeleteBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12%\n\x05\x62\x65nto\x18\x02 \x01(\x0b\x32\x16.bentoml.BentoMetadata\"<\n\x0fGetBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"Z\n\x10GetBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12%\n\x05\x62\x65nto\x18\x02 \x01(\x0b\x32\x16.bentoml.BentoMetadata\"U\n\x10ListBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x05\x12\r\n\x05limit\x18\x03 \x01(\x05\x12\x0e\n\x06\x66ilter\x18\x04 \x01(\t\"\\\n\x11ListBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12&\n\x06\x62\x65ntos\x18\x02 \x03(\x0b\x32\x16.bentoml.BentoMetadatab\x06proto3')
+  serialized_pb=_b('\n\x10repository.proto\x12\x07\x62\x65ntoml\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0cstatus.proto\"\x9c\x01\n\x08\x42\x65ntoUri\x12+\n\x04type\x18\x01 \x01(\x0e\x32\x1d.bentoml.BentoUri.StorageType\x12\x0b\n\x03uri\x18\x02 \x01(\t\"V\n\x0bStorageType\x12\t\n\x05UNSET\x10\x00\x12\t\n\x05LOCAL\x10\x01\x12\x06\n\x02S3\x10\x02\x12\x07\n\x03GCS\x10\x03\x12\x16\n\x12\x41ZURE_BLOB_STORAGE\x10\x04\x12\x08\n\x04HDFS\x10\x05\"\xeb\x03\n\x14\x42\x65ntoServiceMetadata\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12.\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12:\n\x03\x65nv\x18\x04 \x01(\x0b\x32-.bentoml.BentoServiceMetadata.BentoServiceEnv\x12>\n\tartifacts\x18\x05 \x03(\x0b\x32+.bentoml.BentoServiceMetadata.BentoArtifact\x12;\n\x04\x61pis\x18\x06 \x03(\x0b\x32-.bentoml.BentoServiceMetadata.BentoServiceApi\x1aP\n\x0f\x42\x65ntoServiceEnv\x12\x10\n\x08setup_sh\x18\x01 \x01(\t\x12\x11\n\tconda_env\x18\x02 \x01(\t\x12\x18\n\x10pip_dependencies\x18\x03 \x01(\t\x1a\x34\n\rBentoArtifact\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x15\n\rartifact_type\x18\x02 \x01(\t\x1a\x43\n\x0f\x42\x65ntoServiceApi\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0chandler_type\x18\x02 \x01(\t\x12\x0c\n\x04\x64ocs\x18\x03 \x01(\t\"\xac\x01\n\x05\x42\x65nto\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x1e\n\x03uri\x18\x03 \x01(\x0b\x32\x11.bentoml.BentoUri\x12=\n\x16\x62\x65nto_service_metadata\x18\x04 \x01(\x0b\x32\x1d.bentoml.BentoServiceMetadata\x12%\n\x06status\x18\x05 \x01(\x0b\x32\x15.bentoml.UploadStatus\"<\n\x0f\x41\x64\x64\x42\x65ntoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"S\n\x10\x41\x64\x64\x42\x65ntoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1e\n\x03uri\x18\x02 \x01(\x0b\x32\x11.bentoml.BentoUri\"\xe5\x01\n\x0cUploadStatus\x12,\n\x06status\x18\x01 \x01(\x0e\x32\x1c.bentoml.UploadStatus.Status\x12.\n\nupdated_at\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x12\n\npercentage\x18\x03 \x01(\x05\x12\x15\n\rerror_message\x18\x04 \x01(\t\"L\n\x06Status\x12\x11\n\rUNINITIALIZED\x10\x00\x12\r\n\tUPLOADING\x10\x01\x12\x08\n\x04\x44ONE\x10\x02\x12\t\n\x05\x45RROR\x10\x03\x12\x0b\n\x07TIMEOUT\x10\x04\"\xa6\x01\n\x12UpdateBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12,\n\rupload_status\x18\x03 \x01(\x0b\x32\x15.bentoml.UploadStatus\x12\x37\n\x10service_metadata\x18\x04 \x01(\x0b\x32\x1d.bentoml.BentoServiceMetadata\"6\n\x13UpdateBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"J\n\x1d\x44\x61ngerouslyDeleteBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"A\n\x1e\x44\x61ngerouslyDeleteBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"<\n\x0fGetBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"R\n\x10GetBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1d\n\x05\x62\x65nto\x18\x02 \x01(\x0b\x32\x0e.bentoml.Bento\"U\n\x10ListBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x05\x12\r\n\x05limit\x18\x03 \x01(\x05\x12\x0e\n\x06\x66ilter\x18\x04 \x01(\t\"T\n\x11ListBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1e\n\x06\x62\x65ntos\x18\x02 \x03(\x0b\x32\x0e.bentoml.Bentob\x06proto3')
   ,
-  dependencies=[status__pb2.DESCRIPTOR,])
+  dependencies=[google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,status__pb2.DESCRIPTOR,])
 
 
 
@@ -60,10 +61,44 @@ _BENTOURI_STORAGETYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=114,
-  serialized_end=200,
+  serialized_start=147,
+  serialized_end=233,
 )
 _sym_db.RegisterEnumDescriptor(_BENTOURI_STORAGETYPE)
+
+_UPLOADSTATUS_STATUS = _descriptor.EnumDescriptor(
+  name='Status',
+  full_name='bentoml.UploadStatus.Status',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='UNINITIALIZED', index=0, number=0,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='UPLOADING', index=1, number=1,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='DONE', index=2, number=2,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='ERROR', index=3, number=3,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='TIMEOUT', index=4, number=4,
+      serialized_options=None,
+      type=None),
+  ],
+  containing_type=None,
+  serialized_options=None,
+  serialized_start=1205,
+  serialized_end=1281,
+)
+_sym_db.RegisterEnumDescriptor(_UPLOADSTATUS_STATUS)
 
 
 _BENTOURI = _descriptor.Descriptor(
@@ -100,34 +135,34 @@ _BENTOURI = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=44,
-  serialized_end=200,
+  serialized_start=77,
+  serialized_end=233,
 )
 
 
-_BENTOMETADATA_BENTOSERVICEENV = _descriptor.Descriptor(
+_BENTOSERVICEMETADATA_BENTOSERVICEENV = _descriptor.Descriptor(
   name='BentoServiceEnv',
-  full_name='bentoml.BentoMetadata.BentoServiceEnv',
+  full_name='bentoml.BentoServiceMetadata.BentoServiceEnv',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='setup_sh', full_name='bentoml.BentoMetadata.BentoServiceEnv.setup_sh', index=0,
+      name='setup_sh', full_name='bentoml.BentoServiceMetadata.BentoServiceEnv.setup_sh', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='conda_env', full_name='bentoml.BentoMetadata.BentoServiceEnv.conda_env', index=1,
+      name='conda_env', full_name='bentoml.BentoServiceMetadata.BentoServiceEnv.conda_env', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='pip_dependencies', full_name='bentoml.BentoMetadata.BentoServiceEnv.pip_dependencies', index=2,
+      name='pip_dependencies', full_name='bentoml.BentoServiceMetadata.BentoServiceEnv.pip_dependencies', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -145,26 +180,26 @@ _BENTOMETADATA_BENTOSERVICEENV = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=467,
-  serialized_end=547,
+  serialized_start=524,
+  serialized_end=604,
 )
 
-_BENTOMETADATA_BENTOARTIFACT = _descriptor.Descriptor(
+_BENTOSERVICEMETADATA_BENTOARTIFACT = _descriptor.Descriptor(
   name='BentoArtifact',
-  full_name='bentoml.BentoMetadata.BentoArtifact',
+  full_name='bentoml.BentoServiceMetadata.BentoArtifact',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='bentoml.BentoMetadata.BentoArtifact.name', index=0,
+      name='name', full_name='bentoml.BentoServiceMetadata.BentoArtifact.name', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='artifact_type', full_name='bentoml.BentoMetadata.BentoArtifact.artifact_type', index=1,
+      name='artifact_type', full_name='bentoml.BentoServiceMetadata.BentoArtifact.artifact_type', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -182,33 +217,33 @@ _BENTOMETADATA_BENTOARTIFACT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=549,
-  serialized_end=601,
+  serialized_start=606,
+  serialized_end=658,
 )
 
-_BENTOMETADATA_BENTOSERVICEAPI = _descriptor.Descriptor(
+_BENTOSERVICEMETADATA_BENTOSERVICEAPI = _descriptor.Descriptor(
   name='BentoServiceApi',
-  full_name='bentoml.BentoMetadata.BentoServiceApi',
+  full_name='bentoml.BentoServiceMetadata.BentoServiceApi',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='bentoml.BentoMetadata.BentoServiceApi.name', index=0,
+      name='name', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.name', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='handler_type', full_name='bentoml.BentoMetadata.BentoServiceApi.handler_type', index=1,
+      name='handler_type', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.handler_type', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='docs', full_name='bentoml.BentoMetadata.BentoServiceApi.docs', index=2,
+      name='docs', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.docs', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -226,70 +261,63 @@ _BENTOMETADATA_BENTOSERVICEAPI = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=603,
-  serialized_end=670,
+  serialized_start=660,
+  serialized_end=727,
 )
 
-_BENTOMETADATA = _descriptor.Descriptor(
-  name='BentoMetadata',
-  full_name='bentoml.BentoMetadata',
+_BENTOSERVICEMETADATA = _descriptor.Descriptor(
+  name='BentoServiceMetadata',
+  full_name='bentoml.BentoServiceMetadata',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='uri', full_name='bentoml.BentoMetadata.uri', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='name', full_name='bentoml.BentoServiceMetadata.name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='created_at', full_name='bentoml.BentoMetadata.created_at', index=1,
+      name='version', full_name='bentoml.BentoServiceMetadata.version', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='name', full_name='bentoml.BentoMetadata.name', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='version', full_name='bentoml.BentoMetadata.version', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='env', full_name='bentoml.BentoMetadata.env', index=4,
-      number=5, type=11, cpp_type=10, label=1,
+      name='created_at', full_name='bentoml.BentoServiceMetadata.created_at', index=2,
+      number=3, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='artifacts', full_name='bentoml.BentoMetadata.artifacts', index=5,
+      name='env', full_name='bentoml.BentoServiceMetadata.env', index=3,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='artifacts', full_name='bentoml.BentoServiceMetadata.artifacts', index=4,
+      number=5, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='apis', full_name='bentoml.BentoServiceMetadata.apis', index=5,
       number=6, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='apis', full_name='bentoml.BentoMetadata.apis', index=6,
-      number=7, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
-  nested_types=[_BENTOMETADATA_BENTOSERVICEENV, _BENTOMETADATA_BENTOARTIFACT, _BENTOMETADATA_BENTOSERVICEAPI, ],
+  nested_types=[_BENTOSERVICEMETADATA_BENTOSERVICEENV, _BENTOSERVICEMETADATA_BENTOARTIFACT, _BENTOSERVICEMETADATA_BENTOSERVICEAPI, ],
   enum_types=[
   ],
   serialized_options=None,
@@ -298,8 +326,67 @@ _BENTOMETADATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=203,
-  serialized_end=670,
+  serialized_start=236,
+  serialized_end=727,
+)
+
+
+_BENTO = _descriptor.Descriptor(
+  name='Bento',
+  full_name='bentoml.Bento',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='name', full_name='bentoml.Bento.name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='version', full_name='bentoml.Bento.version', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='uri', full_name='bentoml.Bento.uri', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='bento_service_metadata', full_name='bentoml.Bento.bento_service_metadata', index=3,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='status', full_name='bentoml.Bento.status', index=4,
+      number=5, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=730,
+  serialized_end=902,
 )
 
 
@@ -311,9 +398,16 @@ _ADDBENTOREQUEST = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='uri', full_name='bentoml.AddBentoRequest.uri', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='bento_name', full_name='bentoml.AddBentoRequest.bento_name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='bento_version', full_name='bentoml.AddBentoRequest.bento_version', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
@@ -329,8 +423,8 @@ _ADDBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=672,
-  serialized_end=721,
+  serialized_start=904,
+  serialized_end=964,
 )
 
 
@@ -349,7 +443,7 @@ _ADDBENTORESPONSE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='bento', full_name='bentoml.AddBentoResponse.bento', index=1,
+      name='uri', full_name='bentoml.AddBentoResponse.uri', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -367,28 +461,95 @@ _ADDBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=723,
-  serialized_end=813,
+  serialized_start=966,
+  serialized_end=1049,
 )
 
 
-_UPLOADBENTORESPONSE = _descriptor.Descriptor(
-  name='UploadBentoResponse',
-  full_name='bentoml.UploadBentoResponse',
+_UPLOADSTATUS = _descriptor.Descriptor(
+  name='UploadStatus',
+  full_name='bentoml.UploadStatus',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='bentoml.UploadBentoResponse.status', index=0,
-      number=1, type=11, cpp_type=10, label=1,
+      name='status', full_name='bentoml.UploadStatus.status', index=0,
+      number=1, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='updated_at', full_name='bentoml.UploadStatus.updated_at', index=1,
+      number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='bento', full_name='bentoml.UploadBentoResponse.bento', index=1,
-      number=2, type=11, cpp_type=10, label=1,
+      name='percentage', full_name='bentoml.UploadStatus.percentage', index=2,
+      number=3, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='error_message', full_name='bentoml.UploadStatus.error_message', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+    _UPLOADSTATUS_STATUS,
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1052,
+  serialized_end=1281,
+)
+
+
+_UPDATEBENTOREQUEST = _descriptor.Descriptor(
+  name='UpdateBentoRequest',
+  full_name='bentoml.UpdateBentoRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='bento_name', full_name='bentoml.UpdateBentoRequest.bento_name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='bento_version', full_name='bentoml.UpdateBentoRequest.bento_version', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='upload_status', full_name='bentoml.UpdateBentoRequest.upload_status', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='service_metadata', full_name='bentoml.UpdateBentoRequest.service_metadata', index=3,
+      number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -405,8 +566,39 @@ _UPLOADBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=815,
-  serialized_end=908,
+  serialized_start=1284,
+  serialized_end=1450,
+)
+
+
+_UPDATEBENTORESPONSE = _descriptor.Descriptor(
+  name='UpdateBentoResponse',
+  full_name='bentoml.UpdateBentoResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='status', full_name='bentoml.UpdateBentoResponse.status', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1452,
+  serialized_end=1506,
 )
 
 
@@ -443,8 +635,8 @@ _DANGEROUSLYDELETEBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=910,
-  serialized_end=984,
+  serialized_start=1508,
+  serialized_end=1582,
 )
 
 
@@ -462,13 +654,6 @@ _DANGEROUSLYDELETEBENTORESPONSE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='bento', full_name='bentoml.DangerouslyDeleteBentoResponse.bento', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -481,8 +666,8 @@ _DANGEROUSLYDELETEBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=986,
-  serialized_end=1090,
+  serialized_start=1584,
+  serialized_end=1649,
 )
 
 
@@ -519,8 +704,8 @@ _GETBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1092,
-  serialized_end=1152,
+  serialized_start=1651,
+  serialized_end=1711,
 )
 
 
@@ -557,8 +742,8 @@ _GETBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1154,
-  serialized_end=1244,
+  serialized_start=1713,
+  serialized_end=1795,
 )
 
 
@@ -609,8 +794,8 @@ _LISTBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1246,
-  serialized_end=1331,
+  serialized_start=1797,
+  serialized_end=1882,
 )
 
 
@@ -647,35 +832,43 @@ _LISTBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1333,
-  serialized_end=1425,
+  serialized_start=1884,
+  serialized_end=1968,
 )
 
 _BENTOURI.fields_by_name['type'].enum_type = _BENTOURI_STORAGETYPE
 _BENTOURI_STORAGETYPE.containing_type = _BENTOURI
-_BENTOMETADATA_BENTOSERVICEENV.containing_type = _BENTOMETADATA
-_BENTOMETADATA_BENTOARTIFACT.containing_type = _BENTOMETADATA
-_BENTOMETADATA_BENTOSERVICEAPI.containing_type = _BENTOMETADATA
-_BENTOMETADATA.fields_by_name['uri'].message_type = _BENTOURI
-_BENTOMETADATA.fields_by_name['env'].message_type = _BENTOMETADATA_BENTOSERVICEENV
-_BENTOMETADATA.fields_by_name['artifacts'].message_type = _BENTOMETADATA_BENTOARTIFACT
-_BENTOMETADATA.fields_by_name['apis'].message_type = _BENTOMETADATA_BENTOSERVICEAPI
-_ADDBENTOREQUEST.fields_by_name['uri'].message_type = _BENTOURI
+_BENTOSERVICEMETADATA_BENTOSERVICEENV.containing_type = _BENTOSERVICEMETADATA
+_BENTOSERVICEMETADATA_BENTOARTIFACT.containing_type = _BENTOSERVICEMETADATA
+_BENTOSERVICEMETADATA_BENTOSERVICEAPI.containing_type = _BENTOSERVICEMETADATA
+_BENTOSERVICEMETADATA.fields_by_name['created_at'].message_type = google_dot_protobuf_dot_timestamp__pb2._TIMESTAMP
+_BENTOSERVICEMETADATA.fields_by_name['env'].message_type = _BENTOSERVICEMETADATA_BENTOSERVICEENV
+_BENTOSERVICEMETADATA.fields_by_name['artifacts'].message_type = _BENTOSERVICEMETADATA_BENTOARTIFACT
+_BENTOSERVICEMETADATA.fields_by_name['apis'].message_type = _BENTOSERVICEMETADATA_BENTOSERVICEAPI
+_BENTO.fields_by_name['uri'].message_type = _BENTOURI
+_BENTO.fields_by_name['bento_service_metadata'].message_type = _BENTOSERVICEMETADATA
+_BENTO.fields_by_name['status'].message_type = _UPLOADSTATUS
 _ADDBENTORESPONSE.fields_by_name['status'].message_type = status__pb2._STATUS
-_ADDBENTORESPONSE.fields_by_name['bento'].message_type = _BENTOMETADATA
-_UPLOADBENTORESPONSE.fields_by_name['status'].message_type = status__pb2._STATUS
-_UPLOADBENTORESPONSE.fields_by_name['bento'].message_type = _BENTOMETADATA
+_ADDBENTORESPONSE.fields_by_name['uri'].message_type = _BENTOURI
+_UPLOADSTATUS.fields_by_name['status'].enum_type = _UPLOADSTATUS_STATUS
+_UPLOADSTATUS.fields_by_name['updated_at'].message_type = google_dot_protobuf_dot_timestamp__pb2._TIMESTAMP
+_UPLOADSTATUS_STATUS.containing_type = _UPLOADSTATUS
+_UPDATEBENTOREQUEST.fields_by_name['upload_status'].message_type = _UPLOADSTATUS
+_UPDATEBENTOREQUEST.fields_by_name['service_metadata'].message_type = _BENTOSERVICEMETADATA
+_UPDATEBENTORESPONSE.fields_by_name['status'].message_type = status__pb2._STATUS
 _DANGEROUSLYDELETEBENTORESPONSE.fields_by_name['status'].message_type = status__pb2._STATUS
-_DANGEROUSLYDELETEBENTORESPONSE.fields_by_name['bento'].message_type = _BENTOMETADATA
 _GETBENTORESPONSE.fields_by_name['status'].message_type = status__pb2._STATUS
-_GETBENTORESPONSE.fields_by_name['bento'].message_type = _BENTOMETADATA
+_GETBENTORESPONSE.fields_by_name['bento'].message_type = _BENTO
 _LISTBENTORESPONSE.fields_by_name['status'].message_type = status__pb2._STATUS
-_LISTBENTORESPONSE.fields_by_name['bentos'].message_type = _BENTOMETADATA
+_LISTBENTORESPONSE.fields_by_name['bentos'].message_type = _BENTO
 DESCRIPTOR.message_types_by_name['BentoUri'] = _BENTOURI
-DESCRIPTOR.message_types_by_name['BentoMetadata'] = _BENTOMETADATA
+DESCRIPTOR.message_types_by_name['BentoServiceMetadata'] = _BENTOSERVICEMETADATA
+DESCRIPTOR.message_types_by_name['Bento'] = _BENTO
 DESCRIPTOR.message_types_by_name['AddBentoRequest'] = _ADDBENTOREQUEST
 DESCRIPTOR.message_types_by_name['AddBentoResponse'] = _ADDBENTORESPONSE
-DESCRIPTOR.message_types_by_name['UploadBentoResponse'] = _UPLOADBENTORESPONSE
+DESCRIPTOR.message_types_by_name['UploadStatus'] = _UPLOADSTATUS
+DESCRIPTOR.message_types_by_name['UpdateBentoRequest'] = _UPDATEBENTOREQUEST
+DESCRIPTOR.message_types_by_name['UpdateBentoResponse'] = _UPDATEBENTORESPONSE
 DESCRIPTOR.message_types_by_name['DangerouslyDeleteBentoRequest'] = _DANGEROUSLYDELETEBENTOREQUEST
 DESCRIPTOR.message_types_by_name['DangerouslyDeleteBentoResponse'] = _DANGEROUSLYDELETEBENTORESPONSE
 DESCRIPTOR.message_types_by_name['GetBentoRequest'] = _GETBENTOREQUEST
@@ -691,36 +884,43 @@ BentoUri = _reflection.GeneratedProtocolMessageType('BentoUri', (_message.Messag
   })
 _sym_db.RegisterMessage(BentoUri)
 
-BentoMetadata = _reflection.GeneratedProtocolMessageType('BentoMetadata', (_message.Message,), {
+BentoServiceMetadata = _reflection.GeneratedProtocolMessageType('BentoServiceMetadata', (_message.Message,), {
 
   'BentoServiceEnv' : _reflection.GeneratedProtocolMessageType('BentoServiceEnv', (_message.Message,), {
-    'DESCRIPTOR' : _BENTOMETADATA_BENTOSERVICEENV,
+    'DESCRIPTOR' : _BENTOSERVICEMETADATA_BENTOSERVICEENV,
     '__module__' : 'repository_pb2'
-    # @@protoc_insertion_point(class_scope:bentoml.BentoMetadata.BentoServiceEnv)
+    # @@protoc_insertion_point(class_scope:bentoml.BentoServiceMetadata.BentoServiceEnv)
     })
   ,
 
   'BentoArtifact' : _reflection.GeneratedProtocolMessageType('BentoArtifact', (_message.Message,), {
-    'DESCRIPTOR' : _BENTOMETADATA_BENTOARTIFACT,
+    'DESCRIPTOR' : _BENTOSERVICEMETADATA_BENTOARTIFACT,
     '__module__' : 'repository_pb2'
-    # @@protoc_insertion_point(class_scope:bentoml.BentoMetadata.BentoArtifact)
+    # @@protoc_insertion_point(class_scope:bentoml.BentoServiceMetadata.BentoArtifact)
     })
   ,
 
   'BentoServiceApi' : _reflection.GeneratedProtocolMessageType('BentoServiceApi', (_message.Message,), {
-    'DESCRIPTOR' : _BENTOMETADATA_BENTOSERVICEAPI,
+    'DESCRIPTOR' : _BENTOSERVICEMETADATA_BENTOSERVICEAPI,
     '__module__' : 'repository_pb2'
-    # @@protoc_insertion_point(class_scope:bentoml.BentoMetadata.BentoServiceApi)
+    # @@protoc_insertion_point(class_scope:bentoml.BentoServiceMetadata.BentoServiceApi)
     })
   ,
-  'DESCRIPTOR' : _BENTOMETADATA,
+  'DESCRIPTOR' : _BENTOSERVICEMETADATA,
   '__module__' : 'repository_pb2'
-  # @@protoc_insertion_point(class_scope:bentoml.BentoMetadata)
+  # @@protoc_insertion_point(class_scope:bentoml.BentoServiceMetadata)
   })
-_sym_db.RegisterMessage(BentoMetadata)
-_sym_db.RegisterMessage(BentoMetadata.BentoServiceEnv)
-_sym_db.RegisterMessage(BentoMetadata.BentoArtifact)
-_sym_db.RegisterMessage(BentoMetadata.BentoServiceApi)
+_sym_db.RegisterMessage(BentoServiceMetadata)
+_sym_db.RegisterMessage(BentoServiceMetadata.BentoServiceEnv)
+_sym_db.RegisterMessage(BentoServiceMetadata.BentoArtifact)
+_sym_db.RegisterMessage(BentoServiceMetadata.BentoServiceApi)
+
+Bento = _reflection.GeneratedProtocolMessageType('Bento', (_message.Message,), {
+  'DESCRIPTOR' : _BENTO,
+  '__module__' : 'repository_pb2'
+  # @@protoc_insertion_point(class_scope:bentoml.Bento)
+  })
+_sym_db.RegisterMessage(Bento)
 
 AddBentoRequest = _reflection.GeneratedProtocolMessageType('AddBentoRequest', (_message.Message,), {
   'DESCRIPTOR' : _ADDBENTOREQUEST,
@@ -736,12 +936,26 @@ AddBentoResponse = _reflection.GeneratedProtocolMessageType('AddBentoResponse', 
   })
 _sym_db.RegisterMessage(AddBentoResponse)
 
-UploadBentoResponse = _reflection.GeneratedProtocolMessageType('UploadBentoResponse', (_message.Message,), {
-  'DESCRIPTOR' : _UPLOADBENTORESPONSE,
+UploadStatus = _reflection.GeneratedProtocolMessageType('UploadStatus', (_message.Message,), {
+  'DESCRIPTOR' : _UPLOADSTATUS,
   '__module__' : 'repository_pb2'
-  # @@protoc_insertion_point(class_scope:bentoml.UploadBentoResponse)
+  # @@protoc_insertion_point(class_scope:bentoml.UploadStatus)
   })
-_sym_db.RegisterMessage(UploadBentoResponse)
+_sym_db.RegisterMessage(UploadStatus)
+
+UpdateBentoRequest = _reflection.GeneratedProtocolMessageType('UpdateBentoRequest', (_message.Message,), {
+  'DESCRIPTOR' : _UPDATEBENTOREQUEST,
+  '__module__' : 'repository_pb2'
+  # @@protoc_insertion_point(class_scope:bentoml.UpdateBentoRequest)
+  })
+_sym_db.RegisterMessage(UpdateBentoRequest)
+
+UpdateBentoResponse = _reflection.GeneratedProtocolMessageType('UpdateBentoResponse', (_message.Message,), {
+  'DESCRIPTOR' : _UPDATEBENTORESPONSE,
+  '__module__' : 'repository_pb2'
+  # @@protoc_insertion_point(class_scope:bentoml.UpdateBentoResponse)
+  })
+_sym_db.RegisterMessage(UpdateBentoResponse)
 
 DangerouslyDeleteBentoRequest = _reflection.GeneratedProtocolMessageType('DangerouslyDeleteBentoRequest', (_message.Message,), {
   'DESCRIPTOR' : _DANGEROUSLYDELETEBENTOREQUEST,

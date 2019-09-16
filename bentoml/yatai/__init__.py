@@ -19,231 +19,57 @@ from __future__ import print_function
 
 import logging
 
-from google.protobuf.json_format import MessageToDict
+import grpc
 
-
-from bentoml.proto.deployment_pb2 import (
-    GetDeploymentResponse,
-    DescribeDeploymentResponse,
-    ListDeploymentsResponse,
-    ApplyDeploymentResponse,
-    DeleteDeploymentResponse,
-    DeploymentState,
-)
-from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
-from bentoml.proto.yatai_service_pb2 import (
-    HealthCheckResponse,
-    GetYataiServiceVersionResponse,
-)
 from bentoml import config
-from bentoml.deployment.operator import get_deployment_operator
-from bentoml.deployment.store import DeploymentStore
-from bentoml.exceptions import BentoMLException
-from bentoml.repository import BentoRepository
-from bentoml.db import init_db
-from bentoml.utils.validator import validate_deployment_pb_schema
-from bentoml.yatai.status import Status
-from bentoml.proto import status_pb2
-from bentoml import __version__ as BENTOML_VERSION
-
+from bentoml.yatai.yatai_service_impl import YataiService
+from bentoml.proto.yatai_service_pb2_grpc import YataiStub
+from bentoml.yatai.python_api import upload_bento_service
 
 logger = logging.getLogger(__name__)
 
 
-def get_yatai_service():
-    return YataiService()
+def get_yatai_service(
+    channel_address=None, db_url=None, repo_base_url=None, default_namespace=None
+):
+    if channel_address is not None:
+        if db_url is not None:
+            logger.warning(
+                "Config 'db_url' is ignored in favor of remote YataiService at `%s`",
+                channel_address,
+            )
+        if repo_base_url is not None:
+            logger.warning(
+                "Config 'repo_base_url:%s' is ignored in favor of remote YataiService "
+                "at `%s`",
+                repo_base_url,
+                channel_address,
+            )
+        if default_namespace is not None:
+            logger.warning(
+                "Config 'default_namespace:%s' is ignored in favor of remote "
+                "YataiService at `%s`",
+                default_namespace,
+                channel_address,
+            )
+        logger.info("Using BentoML with remote Yatai server: %s", channel_address)
 
+        channel = grpc.insecure_channel(channel_address)
+        return YataiStub(channel)
+    else:
+        logger.info("Using BentoML with local Yatai server")
 
-# pylint: disable=unused-argument
-class YataiService(YataiServicer):
-    def __init__(self, db_url=None, repo_base_url=None, default_namespace=None):
-        self.default_namespace = default_namespace or config.get(
+        default_namespace = default_namespace or config().get(
             'deployment', 'default_namespace'
         )
-        self.repo = BentoRepository(
-            repo_base_url or config.get('default_repository_base_url')
+        repo_base_url = repo_base_url or config().get('default_repository_base_url')
+        db_url = db_url or config().get('db', 'url')
+
+        return YataiService(
+            db_url=db_url,
+            repo_base_url=repo_base_url,
+            default_namespace=default_namespace,
         )
-        self.sess_maker = init_db(db_url or config.get('db', 'url'))
-        self.deployment_store = DeploymentStore(self.sess_maker)
-
-    def HealthCheck(self, request, context=None):
-        return HealthCheckResponse(status=Status.OK())
-
-    def GetYataiServiceVersion(self, request, context=None):
-        return GetYataiServiceVersionResponse(status=Status.OK, version=BENTOML_VERSION)
-
-    def ApplyDeployment(self, request, context=None):
-        try:
-            # apply default namespace if not set
-            request.deployment.namespace = (
-                request.deployment.namespace or self.default_namespace
-            )
-
-            validation_errors = validate_deployment_pb_schema(request.deployment)
-            if validation_errors:
-                return ApplyDeploymentResponse(
-                    status=Status.ABORTED(
-                        'Failed to validate deployment. {errors}'.format(
-                            errors=validation_errors
-                        )
-                    )
-                )
-
-            previous_deployment = self.deployment_store.get(
-                request.deployment.name, request.deployment.namespace
-            )
-            if previous_deployment:
-                # check deployment platform
-                if (
-                    previous_deployment.spec.operator
-                    != request.deployment.spec.operator
-                ):
-                    return ApplyDeploymentResponse(
-                        status=Status.ABORTED(
-                            'New deployment spec has different platform from existing one. '
-                            'Please delete existing deployment and apply again'
-                        )
-                    )
-                request.deployment.state = DeploymentState(
-                    state=DeploymentState.PENDING
-                )
-
-            self.deployment_store.insert_or_update(request.deployment)
-            # find deployment operator based on deployment spec
-            operator = get_deployment_operator(request.deployment)
-
-            # deploying to target platform
-            response = operator.apply(
-                request.deployment, self.repo, previous_deployment
-            )
-
-            # update deployment state
-            self.deployment_store.insert_or_update(response.deployment)
-
-            return response
-
-        except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return ApplyDeploymentResponse(status=Status.INTERNAL(e))
-
-    def DeleteDeployment(self, request, context=None):
-        try:
-            request.namespace = request.namespace or self.default_namespace
-            deployment_pb = self.deployment_store.get(
-                request.deployment_name, request.namespace
-            )
-
-            if deployment_pb:
-                # find deployment operator based on deployment spec
-                operator = get_deployment_operator(deployment_pb)
-
-                # executing deployment deletion
-                response = operator.delete(deployment_pb, self.repo)
-
-                # if delete successful, remove it from active deployment records table
-                if response.status.status_code == status_pb2.Status.OK:
-                    self.deployment_store.delete(
-                        request.deployment_name, request.namespace
-                    )
-
-                return response
-            else:
-                return DeleteDeploymentResponse(
-                    status=Status.NOT_FOUND(
-                        'Deployment "{}" in namespace "{}" not found'.format(
-                            request.deployment_name, request.namespace
-                        )
-                    )
-                )
-
-        except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return DeleteDeploymentResponse(status=Status.INTERNAL(e))
-
-    def GetDeployment(self, request, context=None):
-        try:
-            request.namespace = request.namespace or self.default_namespace
-            deployment_pb = self.deployment_store.get(
-                request.deployment_name, request.namespace
-            )
-            if deployment_pb:
-                return GetDeploymentResponse(
-                    status=Status.OK(), deployment=deployment_pb
-                )
-            else:
-                return GetDeploymentResponse(
-                    status=Status.NOT_FOUND(
-                        'Deployment "{}" in namespace "{}" not found'.format(
-                            request.deployment_name, request.namespace
-                        )
-                    )
-                )
-        except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return GetDeploymentResponse(status=Status.INTERNAL(e))
-
-    def DescribeDeployment(self, request, context=None):
-        try:
-            request.namespace = request.namespace or self.default_namespace
-            deployment_pb = self.deployment_store.get(
-                request.deployment_name, request.namespace
-            )
-
-            if deployment_pb:
-                operator = get_deployment_operator(deployment_pb)
-                response = operator.describe(deployment_pb, self.repo)
-
-                if response.status.status_code == status_pb2.Status.OK:
-                    with self.deployment_store.update_deployment(
-                        request.deployment_name, request.namespace
-                    ) as deployment:
-                        deployment.state = MessageToDict(response.state)
-
-                return response
-            else:
-                return DescribeDeploymentResponse(
-                    status=Status.NOT_FOUND(
-                        'Deployment "{}" in namespace "{}" not found'.format(
-                            request.deployment_name, request.namespace
-                        )
-                    )
-                )
-        except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return DescribeDeploymentResponse(Status.INTERNAL(e))
-
-    def ListDeployments(self, request, context=None):
-        try:
-            namespace = request.namespace or self.default_namespace
-            deployment_pb_list = self.deployment_store.list(
-                namespace=namespace,
-                filter_str=request.filter,
-                labels=request.labels,
-                offset=request.offset,
-                limit=request.limit,
-            )
-
-            return ListDeploymentsResponse(
-                status=Status.OK(), deployments=deployment_pb_list
-            )
-        except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return ListDeploymentsResponse(status=Status.INTERNAL(e))
-
-    def UploadBento(self, request_iterator, context):
-        raise NotImplementedError('UploadBento RPC is not implemented')
-
-    def AddBento(self, request, context):
-        raise NotImplementedError('Method not implemented!')
-
-    def RemoveBento(self, request, context=None):
-        raise NotImplementedError('Method not implemented!')
-
-    def GetBento(self, request, context=None):
-        raise NotImplementedError('Method not implemented!')
-
-    def ListBento(self, request, context=None):
-        raise NotImplementedError('Method not implemented!')
 
 
-# pylint: enable=unused-argument
+__all__ = ["get_yatai_service", "upload_bento_service"]

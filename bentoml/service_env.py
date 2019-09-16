@@ -20,7 +20,7 @@ import os
 from sys import version_info
 from ruamel.yaml import YAML
 
-from bentoml.utils import Path
+from bentoml.utils import Path, StringIO
 from bentoml import __version__ as LOCAL_BENTOML_VERSION
 
 PYTHON_VERSION = "{major}.{minor}.{micro}".format(
@@ -84,6 +84,11 @@ class CondaEnv(object):
 
     def add_channels(self, channels):
         self._conda_env["channels"] += channels
+
+    def to_yaml_str(self):
+        string_io = StringIO()
+        self._yaml.dump(self._conda_env, string_io)
+        return string_io.getvalue()
 
     def write_to_yaml_file(self, filepath):
         output_yaml = Path(filepath)

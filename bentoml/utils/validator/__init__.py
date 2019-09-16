@@ -50,7 +50,7 @@ deployment_schema = {
                     'region': {'type': 'string'},
                     'api_name': {'type': 'string', 'required': True},
                     'instance_type': {'type': 'string'},
-                    'instance_count': {'type': 'string', 'min': 1},
+                    'instance_count': {'type': 'integer', 'min': 1},
                 },
             },
             'aws_lambda_operator_config': {

@@ -138,6 +138,7 @@ def get_deployment_sub_command():
     @click.option(
         '--instance-count',
         help='Number of instance will be used. For platform: AWS_SageMaker',
+        type=click.INT,
     )
     @click.option(
         '--api-name',

@@ -561,13 +561,13 @@ class BentoService(BentoServiceBase):
         )
 
         for api in self.get_service_apis():
-            api_metadata = BentoServiceMetadata.BentoServiceApi()
+            api_metadata = bento_service_metadata.apis.add()
             api_metadata.name = api.name
             api_metadata.handler_type = api.handler.__class__.__name__
             api_metadata.docs = api.doc
 
         for artifact_spec in self._artifacts_spec:
-            artifact_metadata = BentoServiceMetadata.BentoArtifact()
+            artifact_metadata = bento_service_metadata.artifacts.add()
             artifact_metadata.name = artifact_spec.name
             artifact_metadata.artifact_type = artifact_spec.__class__.__name__
 

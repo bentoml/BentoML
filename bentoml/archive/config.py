@@ -83,3 +83,6 @@ class BentoArchiveConfig(object):
 
     def __setitem__(self, key, value):
         self.config[key] = value
+
+    def __contains__(self, item):
+        return item in self.config

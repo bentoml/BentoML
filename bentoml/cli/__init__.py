@@ -25,8 +25,9 @@ import tempfile
 import subprocess
 
 from ruamel.yaml import YAML
+from google.protobuf.json_format import MessageToDict
 
-from bentoml.archive import load, load_service_api, load_bentoml_config
+from bentoml.archive import load, load_service_api, load_bentoml_config, load_bento_service_metadata
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
@@ -145,15 +146,9 @@ def create_bento_service_cli(archive_path=None):
         List all APIs defined in the BentoService loaded from archive
         """
         track_cli('info')
-        bento_service = load(archive_path)
-
-        service_apis = bento_service.get_service_apis()
+        bento_service_metadata_pb = load_bento_service_metadata(archive_path)
         output = json.dumps(
-            dict(
-                name=bento_service.name,
-                version=bento_service.version,
-                apis=[api.name for api in service_apis],
-            ),
+            MessageToDict(bento_service_metadata_pb),
             indent=2,
         )
         _echo(output)

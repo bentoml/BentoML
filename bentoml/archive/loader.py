@@ -46,9 +46,7 @@ def load_bento_service_metadata(archive_path):
     bento_service_metadata = BentoServiceMetadata()
     bento_service_metadata.name = config["metadata"]["service_name"]
     bento_service_metadata.version = config["metadata"]["service_version"]
-
-    created_at_dt = datetime.datetime.fromisoformat(config["metadata"]["created_at"])
-    bento_service_metadata.created_at.FromDatetime(created_at_dt)
+    bento_service_metadata.created_at.FromDatetime(config["metadata"]["created_at"])
 
     if "env" in config:
         if "setup_sh" in config["env"]:
@@ -73,7 +71,7 @@ def load_bento_service_metadata(archive_path):
                 api_metadata.handler_type = api_config["handler_type"]
             if "docs" in api_config:
                 api_metadata.docs = api_config["docs"]
-            bento_service_metadata.apis.append(api_metadata)
+            bento_service_metadata.apis.extend([api_metadata])
 
     if "artifacts" in config:
         for artifact_config in config["artifacts"]:
@@ -82,7 +80,7 @@ def load_bento_service_metadata(archive_path):
                 artifact_metadata.name = artifact_config["name"]
             if "artifact_type" in artifact_config:
                 artifact_metadata.artifact_type = artifact_config["artifact_type"]
-            bento_service_metadata.artifacts.append(artifact_metadata)
+            bento_service_metadata.artifacts.extend([artifact_metadata])
 
     return bento_service_metadata
 

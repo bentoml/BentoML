@@ -97,7 +97,7 @@ def load_config():
     return config
 
 
-_config = load_config()
+_config = None
 
 
 def _reset_bentoml_home(new_bentoml_home_directory):
@@ -119,7 +119,12 @@ def _reset_bentoml_home(new_bentoml_home_directory):
 
 
 def config(section=None):
+    global _config
+    if _config is None:
+        _config = load_config()
+
     if section is not None:
         return _config[section]
     else:
         return _config
+

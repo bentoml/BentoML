@@ -1,5 +1,0 @@
-pytorch
-torchvision
-scikit-image
-pandas
-numpy

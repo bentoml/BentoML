@@ -1,3 +1,0 @@
-tensorflow
-numpy
-matplotlib

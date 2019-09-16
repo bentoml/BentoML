@@ -5,24 +5,24 @@ import "google/protobuf/any.proto";
 
 import "status.proto";
 
-// DeploymentOperator is a platform (Deployment Target) specific implementation
-// of how a packaged Bento can be deployed and managed
-enum DeploymentOperator {
-  UNSET = 0;
-
-  // Reserved for user-defined deployment operator
-  CUSTOM = 1;
-
-  // Built-in deployment operator types
-  AWS_SAGEMAKER = 2;
-  AWS_LAMBDA = 3;
-  GCP_FUNCTION = 4;
-  KUBERNETES = 5;
-}
-
 // DeploymentSpec defines a model serving deployment that can be reproduced to target
 // deployment target
 message DeploymentSpec {
+  // DeploymentOperator is a platform (Deployment Target) specific implementation
+  // of how a packaged Bento can be deployed and managed
+  enum DeploymentOperator {
+    UNSET = 0;
+
+    // Reserved for user-defined deployment operator
+    CUSTOM = 1;
+
+    // Built-in deployment operator types
+    AWS_SAGEMAKER = 2;
+    AWS_LAMBDA = 3;
+    GCP_FUNCTION = 4;
+    KUBERNETES = 5;
+  }
+
   message CustomOperatorConfig {
     string name = 1;
     map<string, google.protobuf.Any> config = 2;

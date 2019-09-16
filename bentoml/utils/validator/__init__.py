@@ -19,7 +19,7 @@ from __future__ import print_function
 from google.protobuf.json_format import MessageToDict
 from cerberus import Validator
 
-from bentoml.proto.deployment_pb2 import DeploymentOperator
+from bentoml.proto.deployment_pb2 import DeploymentSpec
 
 deployment_schema = {
     'name': {'type': 'string', 'required': True, 'minlength': 4},
@@ -33,7 +33,7 @@ deployment_schema = {
             'operator': {
                 'type': 'string',
                 'required': True,
-                'allowed': DeploymentOperator.keys(),
+                'allowed': DeploymentSpec.DeploymentOperator.keys(),
             },
             'bento_name': {'type': 'string', 'required': True},
             'bento_version': {'type': 'string', 'required': True},

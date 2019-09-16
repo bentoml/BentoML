@@ -19,7 +19,7 @@ from __future__ import print_function
 
 import logging
 
-from bentoml.proto.deployment_pb2 import Deployment, DeploymentOperator
+from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
 from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,8 @@ def deployment_yaml_to_pb(deployment_yaml):
     spec_yaml = deployment_yaml.get('spec')
     platform = spec_yaml.get('operator')
     if platform is not None:
-        deployment_pb.spec.operator = DeploymentOperator.Value(platform.upper())
+        deployment_pb.spec.operator = DeploymentSpec.DeploymentOperator.Value(
+            platform.replace('-', '_').upper())
     if spec_yaml.get('bento_name'):
         deployment_pb.spec.bento_name = spec_yaml.get('bento_name')
     if spec_yaml.get('bento_version'):

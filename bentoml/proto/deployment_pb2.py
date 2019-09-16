@@ -4,7 +4,6 @@
 
 import sys
 _b=sys.version_info[0]<3 and (lambda x:x) or (lambda x:x.encode('latin1'))
-from google.protobuf.internal import enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
@@ -23,13 +22,15 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='bentoml',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x10\x64\x65ployment.proto\x12\x07\x62\x65ntoml\x1a\x19google/protobuf/any.proto\x1a\x0cstatus.proto\"\xa4\x08\n\x0e\x44\x65ploymentSpec\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12-\n\x08operator\x18\x03 \x01(\x0e\x32\x1b.bentoml.DeploymentOperator\x12N\n\x16\x63ustom_operator_config\x18\x04 \x01(\x0b\x32,.bentoml.DeploymentSpec.CustomOperatorConfigH\x00\x12T\n\x19sagemaker_operator_config\x18\x05 \x01(\x0b\x32/.bentoml.DeploymentSpec.SageMakerOperatorConfigH\x00\x12U\n\x1a\x61ws_lambda_operator_config\x18\x06 \x01(\x0b\x32/.bentoml.DeploymentSpec.AwsLambdaOperatorConfigH\x00\x12Y\n\x1cgcp_function_operator_config\x18\x07 \x01(\x0b\x32\x31.bentoml.DeploymentSpec.GcpFunctionOperatorConfigH\x00\x12V\n\x1akubernetes_operator_config\x18\x08 \x01(\x0b\x32\x30.bentoml.DeploymentSpec.KubernetesOperatorConfigH\x00\x1a\xb3\x01\n\x14\x43ustomOperatorConfig\x12\x0c\n\x04name\x18\x01 \x01(\t\x12H\n\x06\x63onfig\x18\x02 \x03(\x0b\x32\x38.bentoml.DeploymentSpec.CustomOperatorConfig.ConfigEntry\x1a\x43\n\x0b\x43onfigEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any:\x02\x38\x01\x1aj\n\x17SageMakerOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x12\x15\n\rinstance_type\x18\x02 \x01(\t\x12\x16\n\x0einstance_count\x18\x03 \x01(\x05\x12\x10\n\x08\x61pi_name\x18\x04 \x01(\t\x1a)\n\x17\x41wsLambdaOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x1a+\n\x19GcpFunctionOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x1ap\n\x18KubernetesOperatorConfig\x12\x16\n\x0ekube_namespace\x18\x01 \x01(\t\x12\x10\n\x08replicas\x18\x02 \x01(\x05\x12\x14\n\x0cservice_name\x18\x03 \x01(\t\x12\x14\n\x0cservice_type\x18\x04 \x01(\tB\x1c\n\x1a\x64\x65ployment_operator_config\"\xfa\x01\n\x0f\x44\x65ploymentState\x12-\n\x05state\x18\x01 \x01(\x0e\x32\x1e.bentoml.DeploymentState.State\x12\x15\n\rerror_message\x18\x02 \x01(\t\x12\x11\n\tinfo_json\x18\x03 \x01(\t\"\x8d\x01\n\x05State\x12\x0b\n\x07PENDING\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\r\n\tSUCCEEDED\x10\x02\x12\n\n\x06\x46\x41ILED\x10\x03\x12\x0b\n\x07UNKNOWN\x10\x04\x12\r\n\tCOMPLETED\x10\x05\x12\x17\n\x13\x43RASH_LOOP_BACK_OFF\x10\x06\x12\t\n\x05\x45RROR\x10\x07\x12\x0f\n\x0bINACTIVATED\x10\x08\"\xcc\x02\n\nDeployment\x12\x11\n\tnamespace\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12%\n\x04spec\x18\x03 \x01(\x0b\x32\x17.bentoml.DeploymentSpec\x12\'\n\x05state\x18\x04 \x01(\x0b\x32\x18.bentoml.DeploymentState\x12\x39\n\x0b\x61nnotations\x18\x05 \x03(\x0b\x32$.bentoml.Deployment.AnnotationsEntry\x12/\n\x06labels\x18\x06 \x03(\x0b\x32\x1f.bentoml.Deployment.LabelsEntry\x1a\x32\n\x10\x41nnotationsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\";\n\x10\x44\x65ploymentStatus\x12\'\n\x05state\x18\x01 \x01(\x0b\x32\x18.bentoml.DeploymentState\"A\n\x16\x41pplyDeploymentRequest\x12\'\n\ndeployment\x18\x01 \x01(\x0b\x32\x13.bentoml.Deployment\"c\n\x17\x41pplyDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\'\n\ndeployment\x18\x02 \x01(\x0b\x32\x13.bentoml.Deployment\"E\n\x17\x44\x65leteDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\x12\x11\n\tnamespace\x18\x02 \x01(\t\";\n\x18\x44\x65leteDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"B\n\x14GetDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\x12\x11\n\tnamespace\x18\x02 \x01(\t\"a\n\x15GetDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\'\n\ndeployment\x18\x02 \x01(\x0b\x32\x13.bentoml.Deployment\"G\n\x19\x44\x65scribeDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\x12\x11\n\tnamespace\x18\x02 \x01(\t\"f\n\x1a\x44\x65scribeDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\'\n\x05state\x18\x02 \x01(\x0b\x32\x18.bentoml.DeploymentState\"\xc6\x01\n\x16ListDeploymentsRequest\x12\x11\n\tnamespace\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x05\x12\r\n\x05limit\x18\x03 \x01(\x05\x12\x0e\n\x06\x66ilter\x18\x04 \x01(\t\x12;\n\x06labels\x18\x05 \x03(\x0b\x32+.bentoml.ListDeploymentsRequest.LabelsEntry\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"d\n\x17ListDeploymentsResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12(\n\x0b\x64\x65ployments\x18\x02 \x03(\x0b\x32\x13.bentoml.Deployment*p\n\x12\x44\x65ploymentOperator\x12\t\n\x05UNSET\x10\x00\x12\n\n\x06\x43USTOM\x10\x01\x12\x11\n\rAWS_SAGEMAKER\x10\x02\x12\x0e\n\nAWS_LAMBDA\x10\x03\x12\x10\n\x0cGCP_FUNCTION\x10\x04\x12\x0e\n\nKUBERNETES\x10\x05\x62\x06proto3')
+  serialized_pb=_b('\n\x10\x64\x65ployment.proto\x12\x07\x62\x65ntoml\x1a\x19google/protobuf/any.proto\x1a\x0cstatus.proto\"\xa5\t\n\x0e\x44\x65ploymentSpec\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12<\n\x08operator\x18\x03 \x01(\x0e\x32*.bentoml.DeploymentSpec.DeploymentOperator\x12N\n\x16\x63ustom_operator_config\x18\x04 \x01(\x0b\x32,.bentoml.DeploymentSpec.CustomOperatorConfigH\x00\x12T\n\x19sagemaker_operator_config\x18\x05 \x01(\x0b\x32/.bentoml.DeploymentSpec.SageMakerOperatorConfigH\x00\x12U\n\x1a\x61ws_lambda_operator_config\x18\x06 \x01(\x0b\x32/.bentoml.DeploymentSpec.AwsLambdaOperatorConfigH\x00\x12Y\n\x1cgcp_function_operator_config\x18\x07 \x01(\x0b\x32\x31.bentoml.DeploymentSpec.GcpFunctionOperatorConfigH\x00\x12V\n\x1akubernetes_operator_config\x18\x08 \x01(\x0b\x32\x30.bentoml.DeploymentSpec.KubernetesOperatorConfigH\x00\x1a\xb3\x01\n\x14\x43ustomOperatorConfig\x12\x0c\n\x04name\x18\x01 \x01(\t\x12H\n\x06\x63onfig\x18\x02 \x03(\x0b\x32\x38.bentoml.DeploymentSpec.CustomOperatorConfig.ConfigEntry\x1a\x43\n\x0b\x43onfigEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any:\x02\x38\x01\x1aj\n\x17SageMakerOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x12\x15\n\rinstance_type\x18\x02 \x01(\t\x12\x16\n\x0einstance_count\x18\x03 \x01(\x05\x12\x10\n\x08\x61pi_name\x18\x04 \x01(\t\x1a)\n\x17\x41wsLambdaOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x1a+\n\x19GcpFunctionOperatorConfig\x12\x0e\n\x06region\x18\x01 \x01(\t\x1ap\n\x18KubernetesOperatorConfig\x12\x16\n\x0ekube_namespace\x18\x01 \x01(\t\x12\x10\n\x08replicas\x18\x02 \x01(\x05\x12\x14\n\x0cservice_name\x18\x03 \x01(\t\x12\x14\n\x0cservice_type\x18\x04 \x01(\t\"p\n\x12\x44\x65ploymentOperator\x12\t\n\x05UNSET\x10\x00\x12\n\n\x06\x43USTOM\x10\x01\x12\x11\n\rAWS_SAGEMAKER\x10\x02\x12\x0e\n\nAWS_LAMBDA\x10\x03\x12\x10\n\x0cGCP_FUNCTION\x10\x04\x12\x0e\n\nKUBERNETES\x10\x05\x42\x1c\n\x1a\x64\x65ployment_operator_config\"\xfa\x01\n\x0f\x44\x65ploymentState\x12-\n\x05state\x18\x01 \x01(\x0e\x32\x1e.bentoml.DeploymentState.State\x12\x15\n\rerror_message\x18\x02 \x01(\t\x12\x11\n\tinfo_json\x18\x03 \x01(\t\"\x8d\x01\n\x05State\x12\x0b\n\x07PENDING\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\r\n\tSUCCEEDED\x10\x02\x12\n\n\x06\x46\x41ILED\x10\x03\x12\x0b\n\x07UNKNOWN\x10\x04\x12\r\n\tCOMPLETED\x10\x05\x12\x17\n\x13\x43RASH_LOOP_BACK_OFF\x10\x06\x12\t\n\x05\x45RROR\x10\x07\x12\x0f\n\x0bINACTIVATED\x10\x08\"\xcc\x02\n\nDeployment\x12\x11\n\tnamespace\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12%\n\x04spec\x18\x03 \x01(\x0b\x32\x17.bentoml.DeploymentSpec\x12\'\n\x05state\x18\x04 \x01(\x0b\x32\x18.bentoml.DeploymentState\x12\x39\n\x0b\x61nnotations\x18\x05 \x03(\x0b\x32$.bentoml.Deployment.AnnotationsEntry\x12/\n\x06labels\x18\x06 \x03(\x0b\x32\x1f.bentoml.Deployment.LabelsEntry\x1a\x32\n\x10\x41nnotationsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\";\n\x10\x44\x65ploymentStatus\x12\'\n\x05state\x18\x01 \x01(\x0b\x32\x18.bentoml.DeploymentState\"A\n\x16\x41pplyDeploymentRequest\x12\'\n\ndeployment\x18\x01 \x01(\x0b\x32\x13.bentoml.Deployment\"c\n\x17\x41pplyDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\'\n\ndeployment\x18\x02 \x01(\x0b\x32\x13.bentoml.Deployment\"E\n\x17\x44\x65leteDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\x12\x11\n\tnamespace\x18\x02 \x01(\t\";\n\x18\x44\x65leteDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"B\n\x14GetDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\x12\x11\n\tnamespace\x18\x02 \x01(\t\"a\n\x15GetDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\'\n\ndeployment\x18\x02 \x01(\x0b\x32\x13.bentoml.Deployment\"G\n\x19\x44\x65scribeDeploymentRequest\x12\x17\n\x0f\x64\x65ployment_name\x18\x01 \x01(\t\x12\x11\n\tnamespace\x18\x02 \x01(\t\"f\n\x1a\x44\x65scribeDeploymentResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\'\n\x05state\x18\x02 \x01(\x0b\x32\x18.bentoml.DeploymentState\"\xc6\x01\n\x16ListDeploymentsRequest\x12\x11\n\tnamespace\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x05\x12\r\n\x05limit\x18\x03 \x01(\x05\x12\x0e\n\x06\x66ilter\x18\x04 \x01(\t\x12;\n\x06labels\x18\x05 \x03(\x0b\x32+.bentoml.ListDeploymentsRequest.LabelsEntry\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"d\n\x17ListDeploymentsResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12(\n\x0b\x64\x65ployments\x18\x02 \x03(\x0b\x32\x13.bentoml.Deploymentb\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_any__pb2.DESCRIPTOR,status__pb2.DESCRIPTOR,])
 
-_DEPLOYMENTOPERATOR = _descriptor.EnumDescriptor(
+
+
+_DEPLOYMENTSPEC_DEPLOYMENTOPERATOR = _descriptor.EnumDescriptor(
   name='DeploymentOperator',
-  full_name='bentoml.DeploymentOperator',
+  full_name='bentoml.DeploymentSpec.DeploymentOperator',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -60,19 +61,10 @@ _DEPLOYMENTOPERATOR = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2729,
-  serialized_end=2841,
+  serialized_start=1118,
+  serialized_end=1230,
 )
-_sym_db.RegisterEnumDescriptor(_DEPLOYMENTOPERATOR)
-
-DeploymentOperator = enum_type_wrapper.EnumTypeWrapper(_DEPLOYMENTOPERATOR)
-UNSET = 0
-CUSTOM = 1
-AWS_SAGEMAKER = 2
-AWS_LAMBDA = 3
-GCP_FUNCTION = 4
-KUBERNETES = 5
-
+_sym_db.RegisterEnumDescriptor(_DEPLOYMENTSPEC_DEPLOYMENTOPERATOR)
 
 _DEPLOYMENTSTATE_STATE = _descriptor.EnumDescriptor(
   name='State',
@@ -119,8 +111,8 @@ _DEPLOYMENTSTATE_STATE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1243,
-  serialized_end=1384,
+  serialized_start=1372,
+  serialized_end=1513,
 )
 _sym_db.RegisterEnumDescriptor(_DEPLOYMENTSTATE_STATE)
 
@@ -158,8 +150,8 @@ _DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG_CONFIGENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=724,
-  serialized_end=791,
+  serialized_start=739,
+  serialized_end=806,
 )
 
 _DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG = _descriptor.Descriptor(
@@ -195,8 +187,8 @@ _DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=612,
-  serialized_end=791,
+  serialized_start=627,
+  serialized_end=806,
 )
 
 _DEPLOYMENTSPEC_SAGEMAKEROPERATORCONFIG = _descriptor.Descriptor(
@@ -246,8 +238,8 @@ _DEPLOYMENTSPEC_SAGEMAKEROPERATORCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=793,
-  serialized_end=899,
+  serialized_start=808,
+  serialized_end=914,
 )
 
 _DEPLOYMENTSPEC_AWSLAMBDAOPERATORCONFIG = _descriptor.Descriptor(
@@ -276,8 +268,8 @@ _DEPLOYMENTSPEC_AWSLAMBDAOPERATORCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=901,
-  serialized_end=942,
+  serialized_start=916,
+  serialized_end=957,
 )
 
 _DEPLOYMENTSPEC_GCPFUNCTIONOPERATORCONFIG = _descriptor.Descriptor(
@@ -306,8 +298,8 @@ _DEPLOYMENTSPEC_GCPFUNCTIONOPERATORCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=944,
-  serialized_end=987,
+  serialized_start=959,
+  serialized_end=1002,
 )
 
 _DEPLOYMENTSPEC_KUBERNETESOPERATORCONFIG = _descriptor.Descriptor(
@@ -357,8 +349,8 @@ _DEPLOYMENTSPEC_KUBERNETESOPERATORCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=989,
-  serialized_end=1101,
+  serialized_start=1004,
+  serialized_end=1116,
 )
 
 _DEPLOYMENTSPEC = _descriptor.Descriptor(
@@ -429,6 +421,7 @@ _DEPLOYMENTSPEC = _descriptor.Descriptor(
   ],
   nested_types=[_DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG, _DEPLOYMENTSPEC_SAGEMAKEROPERATORCONFIG, _DEPLOYMENTSPEC_AWSLAMBDAOPERATORCONFIG, _DEPLOYMENTSPEC_GCPFUNCTIONOPERATORCONFIG, _DEPLOYMENTSPEC_KUBERNETESOPERATORCONFIG, ],
   enum_types=[
+    _DEPLOYMENTSPEC_DEPLOYMENTOPERATOR,
   ],
   serialized_options=None,
   is_extendable=False,
@@ -440,7 +433,7 @@ _DEPLOYMENTSPEC = _descriptor.Descriptor(
       index=0, containing_type=None, fields=[]),
   ],
   serialized_start=71,
-  serialized_end=1131,
+  serialized_end=1260,
 )
 
 
@@ -485,8 +478,8 @@ _DEPLOYMENTSTATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1134,
-  serialized_end=1384,
+  serialized_start=1263,
+  serialized_end=1513,
 )
 
 
@@ -523,8 +516,8 @@ _DEPLOYMENT_ANNOTATIONSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1622,
-  serialized_end=1672,
+  serialized_start=1751,
+  serialized_end=1801,
 )
 
 _DEPLOYMENT_LABELSENTRY = _descriptor.Descriptor(
@@ -560,8 +553,8 @@ _DEPLOYMENT_LABELSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1674,
-  serialized_end=1719,
+  serialized_start=1803,
+  serialized_end=1848,
 )
 
 _DEPLOYMENT = _descriptor.Descriptor(
@@ -625,8 +618,8 @@ _DEPLOYMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1387,
-  serialized_end=1719,
+  serialized_start=1516,
+  serialized_end=1848,
 )
 
 
@@ -656,8 +649,8 @@ _DEPLOYMENTSTATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1721,
-  serialized_end=1780,
+  serialized_start=1850,
+  serialized_end=1909,
 )
 
 
@@ -687,8 +680,8 @@ _APPLYDEPLOYMENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1782,
-  serialized_end=1847,
+  serialized_start=1911,
+  serialized_end=1976,
 )
 
 
@@ -725,8 +718,8 @@ _APPLYDEPLOYMENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1849,
-  serialized_end=1948,
+  serialized_start=1978,
+  serialized_end=2077,
 )
 
 
@@ -763,8 +756,8 @@ _DELETEDEPLOYMENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1950,
-  serialized_end=2019,
+  serialized_start=2079,
+  serialized_end=2148,
 )
 
 
@@ -794,8 +787,8 @@ _DELETEDEPLOYMENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2021,
-  serialized_end=2080,
+  serialized_start=2150,
+  serialized_end=2209,
 )
 
 
@@ -832,8 +825,8 @@ _GETDEPLOYMENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2082,
-  serialized_end=2148,
+  serialized_start=2211,
+  serialized_end=2277,
 )
 
 
@@ -870,8 +863,8 @@ _GETDEPLOYMENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2150,
-  serialized_end=2247,
+  serialized_start=2279,
+  serialized_end=2376,
 )
 
 
@@ -908,8 +901,8 @@ _DESCRIBEDEPLOYMENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2249,
-  serialized_end=2320,
+  serialized_start=2378,
+  serialized_end=2449,
 )
 
 
@@ -946,8 +939,8 @@ _DESCRIBEDEPLOYMENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2322,
-  serialized_end=2424,
+  serialized_start=2451,
+  serialized_end=2553,
 )
 
 
@@ -984,8 +977,8 @@ _LISTDEPLOYMENTSREQUEST_LABELSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1674,
-  serialized_end=1719,
+  serialized_start=1803,
+  serialized_end=1848,
 )
 
 _LISTDEPLOYMENTSREQUEST = _descriptor.Descriptor(
@@ -1042,8 +1035,8 @@ _LISTDEPLOYMENTSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2427,
-  serialized_end=2625,
+  serialized_start=2556,
+  serialized_end=2754,
 )
 
 
@@ -1080,8 +1073,8 @@ _LISTDEPLOYMENTSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2627,
-  serialized_end=2727,
+  serialized_start=2756,
+  serialized_end=2856,
 )
 
 _DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG_CONFIGENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_any__pb2._ANY
@@ -1092,12 +1085,13 @@ _DEPLOYMENTSPEC_SAGEMAKEROPERATORCONFIG.containing_type = _DEPLOYMENTSPEC
 _DEPLOYMENTSPEC_AWSLAMBDAOPERATORCONFIG.containing_type = _DEPLOYMENTSPEC
 _DEPLOYMENTSPEC_GCPFUNCTIONOPERATORCONFIG.containing_type = _DEPLOYMENTSPEC
 _DEPLOYMENTSPEC_KUBERNETESOPERATORCONFIG.containing_type = _DEPLOYMENTSPEC
-_DEPLOYMENTSPEC.fields_by_name['operator'].enum_type = _DEPLOYMENTOPERATOR
+_DEPLOYMENTSPEC.fields_by_name['operator'].enum_type = _DEPLOYMENTSPEC_DEPLOYMENTOPERATOR
 _DEPLOYMENTSPEC.fields_by_name['custom_operator_config'].message_type = _DEPLOYMENTSPEC_CUSTOMOPERATORCONFIG
 _DEPLOYMENTSPEC.fields_by_name['sagemaker_operator_config'].message_type = _DEPLOYMENTSPEC_SAGEMAKEROPERATORCONFIG
 _DEPLOYMENTSPEC.fields_by_name['aws_lambda_operator_config'].message_type = _DEPLOYMENTSPEC_AWSLAMBDAOPERATORCONFIG
 _DEPLOYMENTSPEC.fields_by_name['gcp_function_operator_config'].message_type = _DEPLOYMENTSPEC_GCPFUNCTIONOPERATORCONFIG
 _DEPLOYMENTSPEC.fields_by_name['kubernetes_operator_config'].message_type = _DEPLOYMENTSPEC_KUBERNETESOPERATORCONFIG
+_DEPLOYMENTSPEC_DEPLOYMENTOPERATOR.containing_type = _DEPLOYMENTSPEC
 _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config'].fields.append(
   _DEPLOYMENTSPEC.fields_by_name['custom_operator_config'])
 _DEPLOYMENTSPEC.fields_by_name['custom_operator_config'].containing_oneof = _DEPLOYMENTSPEC.oneofs_by_name['deployment_operator_config']
@@ -1148,7 +1142,6 @@ DESCRIPTOR.message_types_by_name['DescribeDeploymentRequest'] = _DESCRIBEDEPLOYM
 DESCRIPTOR.message_types_by_name['DescribeDeploymentResponse'] = _DESCRIBEDEPLOYMENTRESPONSE
 DESCRIPTOR.message_types_by_name['ListDeploymentsRequest'] = _LISTDEPLOYMENTSREQUEST
 DESCRIPTOR.message_types_by_name['ListDeploymentsResponse'] = _LISTDEPLOYMENTSRESPONSE
-DESCRIPTOR.enum_types_by_name['DeploymentOperator'] = _DEPLOYMENTOPERATOR
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 DeploymentSpec = _reflection.GeneratedProtocolMessageType('DeploymentSpec', (_message.Message,), {

@@ -29,7 +29,6 @@ import docker
 
 from bentoml import config
 from bentoml.deployment.utils import (
-    generate_bentoml_deployment_snapshot_path,
     process_docker_api_line,
 )
 from bentoml.yatai.status import Status
@@ -168,25 +167,6 @@ def create_push_image_to_ecr(bento_name, bento_version, snapshot_path):
         process_docker_api_line(line)
     logger.info("Finished pushing image: %s", ecr_tag)
     return ecr_tag
-
-
-def generate_sagemaker_snapshot(name, version, archive_path):
-    snapshot_path = generate_bentoml_deployment_snapshot_path(
-        name, version, "aws-sagemaker"
-    )
-    shutil.copytree(archive_path, snapshot_path)
-    with open(os.path.join(snapshot_path, "nginx.conf"), "w") as f:
-        f.write(DEFAULT_NGINX_CONFIG)
-    with open(os.path.join(snapshot_path, "wsgi.py"), "w") as f:
-        f.write(DEFAULT_WSGI_PY)
-    with open(os.path.join(snapshot_path, "serve"), "w") as f:
-        f.write(DEFAULT_SERVE_SCRIPT)
-
-    # permission 755 is required for entry script 'serve'
-    permission = "755"
-    octal_permission = int(permission, 8)
-    os.chmod(os.path.join(snapshot_path, "serve"), octal_permission)
-    return snapshot_path
 
 
 class TemporarySageMakerContent(object):

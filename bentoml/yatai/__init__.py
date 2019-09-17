@@ -52,12 +52,12 @@ def get_yatai_service(
                 default_namespace,
                 channel_address,
             )
-        logger.info("Using BentoML with remote Yatai server: %s", channel_address)
+        logger.debug("Using BentoML with remote Yatai server: %s", channel_address)
 
         channel = grpc.insecure_channel(channel_address)
         return YataiStub(channel)
     else:
-        logger.info("Using BentoML with local Yatai server")
+        logger.debug("Using BentoML with local Yatai server")
 
         default_namespace = default_namespace or config().get(
             'deployment', 'default_namespace'

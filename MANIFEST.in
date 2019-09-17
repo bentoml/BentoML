@@ -16,7 +16,7 @@ include README.md
 include LICENSE
 
 # include ".cfg" files
-graft bentoml/config
+graft bentoml/configuration
 
 # Don't include examples, tests directory
 prune examples

@@ -13,19 +13,26 @@
 [Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Examples](https://github.com/bentoml/BentoML#examples) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) | [License](https://github.com/bentoml/BentoML/blob/master/LICENSE) | [Blog](https://medium.com/bentoml)
 
 
-BentoML is a python framework for __serving and operating machine learning
-models__, making it easy to promote trained models into high performance
-prediction services.
+BentoML is a platform for __serving and deploying machine learning
+models__, making it easy to productionize trained models.
 
-The framework provides high-level APIs for defining an ML service and packaging
-its trained model artifacts, preprocessing source code, dependencies, and
-configurations into a standard file format called Bento - which can be
-deployed as containerize REST API server, PyPI package, CLI tool, and
-batch/streaming inference job.
+BentoML framework provides:
 
-Check out our 5-mins quick start notebook [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda.
+* BentoService: High-level APIs for defining an ML service and packaging its
+  trained model artifacts, preprocessing source code, dependencies, and 
+  configurations into a standard file format "Bento" that can be deployed
+  as containerize REST API server, PyPI package, CLI tool, or batch/streaming
+  inference job. 
+
+* Yatai: A stateful server that provides Web UI and APIs for accesing model
+  registry on top of cloud storage and manages model serving deployments on
+  cloud platforms such as AWS, Azure and GCP.
+
+
+Check out the 5-mins quick start notebook using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda: [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb) 
 
 ---
+
 
 ## Getting Started
 

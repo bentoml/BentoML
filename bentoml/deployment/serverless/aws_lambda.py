@@ -133,7 +133,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         template = 'aws-python3'
         minimum_python_version = version.parse('3.0.0')
         bento_python_version = version.parse(bento_config['env']['python_version'])
-        if bento_python_version > minimum_python_version:
+        if bento_python_version < minimum_python_version:
             template = 'aws-python'
 
         with TemporaryServerlessContent(
@@ -153,8 +153,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 stage=deployment_pb.namespace,
             )
             logger.info(
-                'Installing additional packages: serverless-python-requirements, \
-                serverless-apigw-binary'
+                'Installing additional packages: serverless-python-requirements, '
+                'serverless-apigw-binary'
             )
             install_serverless_plugin("serverless-python-requirements", output_path)
             install_serverless_plugin("serverless-apigw-binary", output_path)

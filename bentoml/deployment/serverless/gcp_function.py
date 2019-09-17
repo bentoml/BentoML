@@ -43,7 +43,7 @@ from bentoml.deployment.serverless.serverless_utils import (
 logger = logging.getLogger(__name__)
 
 GOOGLE_MAIN_PY_TEMPLATE_HEADER = """\
-from {class_name} import load 
+from {class_name} import load
 
 bento_service = load()
 
@@ -161,8 +161,12 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
     def delete(self, deployment_pb, repo=None):
         state = self.describe(deployment_pb, repo).state
         if state.state != DeploymentState.RUNNING:
-            message = 'Failed to delete, no active deployment {name}. The current state is {state}'.format(
-                name=deployment_pb.name, state=DeploymentState.State.Name(state.state)
+            message = (
+                'Failed to delete, no active deployment {name}. '
+                'The current state is {state}'.format(
+                    name=deployment_pb.name,
+                    state=DeploymentState.State.Name(state.state),
+                )
             )
             return DeleteDeploymentResponse(status=Status.ABORTED(message))
 

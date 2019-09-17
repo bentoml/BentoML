@@ -170,8 +170,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def delete(self, deployment_pb, repo=None):
         state = self.describe(deployment_pb, repo).state
         if state.state != DeploymentState.RUNNING:
-            message = 'Failed to delete, no active deployment {name}. The current state is {state}'.format(
-                name=deployment_pb.name, state=DeploymentState.State.Name(state.state)
+            message = (
+                'Failed to delete, no active deployment {name}. '
+                'The current state is {state}'.format(
+                    name=deployment_pb.name,
+                    state=DeploymentState.State.Name(state.state),
+                )
             )
             return DeleteDeploymentResponse(status=Status.ABORTED(message))
 

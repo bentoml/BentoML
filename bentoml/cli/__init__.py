@@ -161,7 +161,7 @@ def create_bento_service_cli(archive_path=None):
     )
     @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
     def open_api_spec(archive_path=archive_path):
-        track_cli('docs')
+        track_cli('open-api-spec')
         bento_service = load(archive_path)
 
         _echo(json.dumps(get_docs(bento_service), indent=2))

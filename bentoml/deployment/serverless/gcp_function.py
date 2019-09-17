@@ -43,9 +43,9 @@ from bentoml.deployment.serverless.serverless_utils import (
 logger = logging.getLogger(__name__)
 
 GOOGLE_MAIN_PY_TEMPLATE_HEADER = """\
-from {class_name} import {class_name}
+from {class_name} import load 
 
-bento_service = {class_name}.load()
+bento_service = load()
 
 """
 

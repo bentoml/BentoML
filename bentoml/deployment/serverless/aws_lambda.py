@@ -54,9 +54,9 @@ except ImportError:
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 
-from {class_name} import {class_name}
+from {class_name} import load
 
-bento_service = {class_name}.load()
+bento_service = load()
 
 """
 

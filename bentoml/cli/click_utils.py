@@ -48,10 +48,7 @@ CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
 
 
-COMMAND_ALIASES = {
-    'deploy': 'deployment',
-    'deployments': 'deployment'
-}
+COMMAND_ALIASES = {'deploy': 'deployment', 'deployments': 'deployment'}
 
 
 def _echo(message, color="reset"):

@@ -151,4 +151,4 @@ class DeploymentStore(object):
                 query.filter(Deployment.name.contains(filter_str))
             if labels:
                 raise NotImplementedError("Listing by labels is not yet implemented")
-            return list(map( _deployment_orm_obj_to_pb, query.all()))
+            return list(map(_deployment_orm_obj_to_pb, query.all()))

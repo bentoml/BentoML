@@ -30,8 +30,9 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.orm.exc import NoResultFound
-from google.protobuf.json_format import MessageToDict, ParseDict
+from google.protobuf.json_format import ParseDict
 
+from bentoml.utils import ProtoMessageToDict
 from bentoml.exceptions import BentoMLRepositoryException
 from bentoml.db import Base, create_session
 from bentoml.proto.repository_pb2 import (
@@ -67,7 +68,7 @@ class Bento(Base):
 
     # latest upload status, JSON message also includes last update timestamp
     upload_status = Column(
-        JSON, nullable=False, default=MessageToDict(DEFAULT_UPLOAD_STATUS)
+        JSON, nullable=False, default=ProtoMessageToDict(DEFAULT_UPLOAD_STATUS)
     )
 
     # mark as deleted
@@ -127,7 +128,7 @@ class BentoMetadataStore(object):
                     .filter_by(name=bento_name, version=bento_version, deleted=False)
                     .one()
                 )
-                bento_obj.bento_service_metadata = MessageToDict(
+                bento_obj.bento_service_metadata = ProtoMessageToDict(
                     bento_service_metadata_pb
                 )
             except NoResultFound:
@@ -146,7 +147,7 @@ class BentoMetadataStore(object):
                 # TODO:
                 # if bento_obj.upload_status and bento_obj.upload_status.updated_at >
                 # upload_status_pb.updated_at, update should be ignored
-                bento_obj.upload_status = MessageToDict(upload_status_pb)
+                bento_obj.upload_status = ProtoMessageToDict(upload_status_pb)
             except NoResultFound:
                 raise BentoMLRepositoryException(
                     "Bento %s:%s is not found in repository" % bento_name, bento_version

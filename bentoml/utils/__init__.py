@@ -19,7 +19,7 @@ from __future__ import print_function
 import re
 
 from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
-from google.protobuf.json_format import MessageToJson
+from google.protobuf.json_format import MessageToJson, MessageToDict
 from ruamel.yaml import YAML
 
 try:
@@ -68,3 +68,10 @@ def dump_to_yaml_str(yaml_dict):
 def pb_to_yaml(message):
     message_dict = MessageToJson(message)
     return dump_to_yaml_str(message_dict)
+
+
+def ProtoMessageToDict(protobuf_msg, **kwargs):
+    if 'preserving_proto_field_name' not in kwargs:
+        kwargs['preserving_proto_field_name'] = True
+
+    return MessageToDict(protobuf_msg, **kwargs)

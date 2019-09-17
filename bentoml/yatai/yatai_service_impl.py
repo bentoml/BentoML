@@ -20,9 +20,6 @@ from __future__ import print_function
 import logging
 
 
-from google.protobuf.json_format import MessageToDict
-
-
 from bentoml.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,
@@ -51,6 +48,7 @@ from bentoml.repository.metadata_store import BentoMetadataStore
 from bentoml.db import init_db
 from bentoml.yatai.status import Status
 from bentoml.proto import status_pb2
+from bentoml.utils import ProtoMessageToDict
 from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -201,7 +199,7 @@ class YataiService(YataiServicer):
                     with self.deployment_store.update_deployment(
                         request.deployment_name, request.namespace
                     ) as deployment:
-                        deployment.state = MessageToDict(response.state)
+                        deployment.state = ProtoMessageToDict(response.state)
 
                 return response
             else:

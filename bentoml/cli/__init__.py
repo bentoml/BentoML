@@ -25,7 +25,6 @@ import tempfile
 import subprocess
 
 from ruamel.yaml import YAML
-from google.protobuf.json_format import MessageToDict
 
 from bentoml.archive import (
     load,
@@ -38,7 +37,7 @@ from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
-from bentoml.utils import Path
+from bentoml.utils import Path, ProtoMessageToDict
 from bentoml.utils.log import configure_logging
 from bentoml.utils.usage_stats import track_cli
 
@@ -152,7 +151,7 @@ def create_bento_service_cli(archive_path=None):
         """
         track_cli('info')
         bento_service_metadata_pb = load_bento_service_metadata(archive_path)
-        output = json.dumps(MessageToDict(bento_service_metadata_pb), indent=2)
+        output = json.dumps(ProtoMessageToDict(bento_service_metadata_pb), indent=2)
         _echo(output)
 
     # Example usage: bentoml open-api-spec /SAVED_ARCHIVE_PATH

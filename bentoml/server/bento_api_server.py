@@ -195,7 +195,9 @@ def bento_service_api_wrapper(api, service_name, service_version):
 
     def log_image(request, request_id):
         img_prefix = 'image/'
-        log_folder = config['logging'].get('base_log_folder')
+        log_folder = config('logging').get('base_log_folder')
+
+        all_paths = []
 
         if request.content_type.startswith(img_prefix):
             filename = '{request_id}-{timestamp}.{ext}'.format(
@@ -203,7 +205,9 @@ def bento_service_api_wrapper(api, service_name, service_version):
                 timestamp=int(time.time()),
                 ext=request.content_type[len(img_prefix) :],
             )
-            with open(os.path.join(log_folder, filename), 'w') as f:
+            path = os.path.join(log_folder, filename)
+            all_paths.append(path)
+            with open(path, 'w') as f:
                 f.write(request.get_data())
 
         for name in request.files:
@@ -215,7 +219,11 @@ def bento_service_api_wrapper(api, service_name, service_version):
                     timestamp=int(time.time()),
                     orig_filename=orig_filename,
                 )
-                file.save(os.path.join(log_folder, filename))
+                path = os.path.join(log_folder, filename)
+                all_paths.append(path)
+                file.save(path)
+
+        return all_paths
 
     def wrapper():
         with request_metric_time.time():
@@ -223,8 +231,9 @@ def bento_service_api_wrapper(api, service_name, service_version):
             # Assume there is not a strong use case for idempotency check here.
             # Will revise later if we find a case.
 
-            if not config['logging'].getboolean('disable_logging_image'):
-                log_image(request, request_id)
+            image_paths = None
+            if not config('logging').getboolean('disable_logging_image'):
+                image_paths = log_image(request, request_id)
 
             response = api.handle_request(request)
 
@@ -236,6 +245,9 @@ def bento_service_api_wrapper(api, service_name, service_version):
                 "request": _request_to_json(request),
                 "response_code": response.status_code,
             }
+
+            if image_paths is not None:
+                request_log['image_paths'] = image_paths
 
             if 200 <= response.status_code < 300:
                 request_log['response'] = response.response

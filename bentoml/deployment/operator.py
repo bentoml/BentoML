@@ -19,30 +19,30 @@ from __future__ import print_function
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
-from bentoml.proto import deployment_pb2
+from bentoml.proto.deployment_pb2 import DeploymentSpec
 from bentoml.exceptions import BentoMLDeploymentException
 
 
 def get_deployment_operator(deployment_pb):
     operator = deployment_pb.spec.operator
 
-    if operator == deployment_pb2.AWS_SAGEMAKER:
+    if operator == DeploymentSpec.AWS_SAGEMAKER:
         from bentoml.deployment.sagemaker import SageMakerDeploymentOperator
 
         return SageMakerDeploymentOperator()
-    elif operator == deployment_pb2.AWS_LAMBDA:
+    elif operator == DeploymentSpec.AWS_LAMBDA:
         from bentoml.deployment.serverless.aws_lambda import AwsLambdaDeploymentOperator
 
         return AwsLambdaDeploymentOperator()
-    elif operator == deployment_pb2.GCP_FUNCTION:
+    elif operator == DeploymentSpec.GCP_FUNCTION:
         from bentoml.deployment.serverless.gcp_function import (
             GcpFunctionDeploymentOperator,
         )
 
         return GcpFunctionDeploymentOperator()
-    elif operator == deployment_pb2.KUBERNETES:
+    elif operator == DeploymentSpec.KUBERNETES:
         raise NotImplementedError("Kubernetes deployment operator is not implemented")
-    elif operator == deployment_pb2.CUSTOM:
+    elif operator == DeploymentSpec.CUSTOM:
         raise NotImplementedError("Custom deployment operator is not implemented")
     else:
         raise BentoMLDeploymentException("DeployOperator must be set")

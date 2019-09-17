@@ -31,7 +31,7 @@ from bentoml.utils import Path
 from bentoml.exceptions import BentoMLException
 
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _get_module_src_file(module):
@@ -98,7 +98,7 @@ def copy_used_py_modules(target_module, destination):
         target_module_name = target_module.__name__
 
     target_module_file = _get_module_src_file(target_module)
-    LOG.debug(
+    logger.debug(
         "copy_used_py_modules target_module_name: %s, target_module_file: %s",
         target_module_name,
         target_module_file,
@@ -108,7 +108,7 @@ def copy_used_py_modules(target_module, destination):
         # Assuming no relative import in this case
         target_module_file_name = os.path.split(target_module_file)[1]
         target_module_name = target_module_file_name[:-3]  # remove '.py'
-        LOG.debug(
+        logger.debug(
             "Updating for __main__ module, target_module_name: %s, "
             "target_module_file: %s",
             target_module_name,
@@ -119,7 +119,7 @@ def copy_used_py_modules(target_module, destination):
     finder = ModuleFinder()
     # NOTE: This method could take a few seconds to run
     try:
-        LOG.info(
+        logger.debug(
             "Searching for dependant modules of %s:%s",
             target_module_name,
             target_module_file,
@@ -155,7 +155,7 @@ def copy_used_py_modules(target_module, destination):
     except AttributeError:
         # ignore when in PY2 there is no sys.base_prefix
         pass
-    LOG.debug(
+    logger.debug(
         "Ignoring deps within local site-packages path: %s", site_or_dist_package_path
     )
 
@@ -176,7 +176,7 @@ def copy_used_py_modules(target_module, destination):
                     break
 
             if not is_module_in_site_or_dist_package:
-                LOG.debug("User local module deps found: %s", name)
+                logger.debug("User local module deps found: %s", name)
                 user_packages_and_modules[name] = module
 
     # Remove "__main__" module, if target module is loaded as __main__, it should
@@ -186,7 +186,7 @@ def copy_used_py_modules(target_module, destination):
 
     # Lastly, add target module itself
     user_packages_and_modules[target_module_name] = target_module
-    LOG.debug("Copying user local python dependecies: %s", user_packages_and_modules)
+    logger.debug("Copying user local python dependecies: %s", user_packages_and_modules)
 
     for module_name, module in iteritems(user_packages_and_modules):
         module_file = _get_module_src_file(module)
@@ -197,17 +197,17 @@ def copy_used_py_modules(target_module, destination):
         Path(os.path.dirname(target_file)).mkdir(parents=True, exist_ok=True)
 
         # Copy module file to BentoArchive for distribution
-        LOG.info("Copying local python module '%s'", module_file)
+        logger.debug("Copying local python module '%s'", module_file)
         copyfile(module_file, target_file)
 
     for root, _, files in os.walk(destination):
         if "__init__.py" not in files:
-            LOG.debug("Creating empty __init__.py under folder:'%s'", root)
+            logger.debug("Creating empty __init__.py under folder:'%s'", root)
             Path(os.path.join(root, "__init__.py")).touch()
 
     target_module_relative_path = _get_module_relative_file_path(
         target_module_name, target_module_file
     )
-    LOG.info("Done copying local python dependant modules")
+    logger.debug("Done copying local python dependant modules")
 
     return target_module_name, target_module_relative_path

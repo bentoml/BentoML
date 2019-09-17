@@ -71,7 +71,8 @@ def get_local_config_file():
 
 
 def load_config():
-    global BENTOML_HOME
+    global BENTOML_HOME  # pylint: disable=global-statement
+
     try:
         Path(BENTOML_HOME).mkdir(exist_ok=True)
     except OSError as err:
@@ -84,25 +85,28 @@ def load_config():
     with open(DEFAULT_CONFIG_FILE, "rb") as f:
         DEFAULT_CONFIG = f.read().decode("utf-8")
 
-    config = BentoMLConfigParser(default_config=parameterized_config(DEFAULT_CONFIG))
+    loaded_config = BentoMLConfigParser(
+        default_config=parameterized_config(DEFAULT_CONFIG)
+    )
 
     local_config_file = get_local_config_file()
     if os.path.isfile(local_config_file):
         logger.info("Loading local BentoML config file: %s", local_config_file)
         with open(local_config_file, "rb") as f:
-            config.read_string(parameterized_config(f.read().decode("utf-8")))
+            loaded_config.read_string(parameterized_config(f.read().decode("utf-8")))
     else:
         logger.info("No local BentoML config file found, using default configurations")
 
-    return config
+    return loaded_config
 
 
 _config = None
 
 
 def _reset_bentoml_home(new_bentoml_home_directory):
-    # For BentoML internal and testing
-    global _config, DEFAULT_BENTOML_HOME, BENTOML_HOME
+    global _config  # pylint: disable=global-statement
+    global DEFAULT_BENTOML_HOME, BENTOML_HOME  # pylint: disable=global-statement
+
     DEFAULT_BENTOML_HOME = new_bentoml_home_directory
     BENTOML_HOME = new_bentoml_home_directory
 
@@ -118,8 +122,13 @@ def _reset_bentoml_home(new_bentoml_home_directory):
     configure_logging()
 
 
+def _get_bentoml_home():
+    return BENTOML_HOME
+
+
 def config(section=None):
-    global _config
+    global _config  # pylint: disable=global-statement
+
     if _config is None:
         _config = load_config()
 

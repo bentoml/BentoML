@@ -116,7 +116,7 @@ def conditional_argument(condition, *param_decls, **attrs):
     return decorator
 
 
-def parse_bento_tag_callback(ctx, param, value):
+def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argument
     if re.match(r"^[A-Za-z_][A-Za-z_0-9]*:[A-Za-z0-9.+-_]*$", value) is None:
         raise click.BadParameter(
             "Bad formatting. Please present in BentoName:Version, for example "
@@ -126,7 +126,7 @@ def parse_bento_tag_callback(ctx, param, value):
     return value
 
 
-def parse_yaml_file_callback(ctx, param, value):
+def parse_yaml_file_callback(ctx, param, value):  # pylint: disable=unused-argument
     yaml = YAML()
     yml_content = value.read()
     try:

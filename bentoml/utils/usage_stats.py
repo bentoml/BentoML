@@ -140,7 +140,7 @@ def track_server(server_type, extra_properties=None):
     start_time = time.time()
 
     @atexit.register
-    def log_exit():
+    def log_exit():  # pylint: disable=unused-variable
         # track server stop event
         duration = time.time() - start_time
         properties['uptime'] = int(duration)

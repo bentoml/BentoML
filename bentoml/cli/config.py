@@ -73,11 +73,12 @@ def get_configuration_sub_command():
         return
 
     @config.command(
+        name="set",
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
         help="Set value to BentoML configuration",
     )
     @click.argument("updates", nargs=-1)
-    def set(updates):
+    def set_command(updates):
         track_cli('config-set')
         local_config = ConfigParser()
         local_config_file = get_local_config_file()

@@ -38,7 +38,6 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsRequest,
     Deployment,
     DeploymentSpec,
-    DeploymentOperator,
     DeploymentState,
 )
 from bentoml.proto.status_pb2 import Status
@@ -47,8 +46,6 @@ from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
 from bentoml import config
-
-SERVERLESS_PLATFORMS = ['aws-lambda', 'aws-lambda-py2', 'gcp-function']
 
 # pylint: disable=unused-variable
 
@@ -108,13 +105,14 @@ def get_deployment_sub_command():
         type=click.STRING,
         required=True,
         callback=parse_bento_tag_callback,
-        help='Deployed bento archive, in format of name:version.  For example, '
+        help='Deployed bento archive, in format of name:version. For example, '
         'iris_classifier:v1.2.0',
     )
     @click.option(
         '--platform',
         type=click.Choice(
-            ['aws_lambda', 'gcp_function', 'aws_sagemaker', 'kubernetes', 'custom']
+            ['aws-lambda', 'gcp-function', 'aws-sagemaker', 'kubernetes', 'custom'],
+            case_sensitive=False,
         ),
         required=True,
         help='Target platform that Bento archive is going to deployed to',
@@ -128,22 +126,22 @@ def get_deployment_sub_command():
     @click.option('--annotations', type=click.STRING)
     @click.option(
         '--region',
-        help='Name of the deployed region. For platforms: AWS_Lambda, AWS_SageMaker, '
-        'GCP_Function',
+        help='Name of the deployed region. For platforms: AWS Lambda, AWS SageMaker, '
+        'GCP Function',
     )
     @click.option(
         '--instance-type',
-        help='Type of instance will be used for inference. For platform: AWS_SageMaker',
+        help='Type of instance will be used for inference. For platform: AWS SageMaker',
     )
     @click.option(
         '--instance-count',
-        help='Number of instance will be used. For platform: AWS_SageMaker',
+        help='Number of instance will be used. For platform: AWS SageMaker',
         type=click.INT,
     )
     @click.option(
         '--api-name',
         help='User defined API function will be used for inference. For platform: '
-        'AWS_SageMaker',
+        'AWS SageMaker',
     )
     @click.option(
         '--kube-namespace',
@@ -177,9 +175,16 @@ def get_deployment_sub_command():
         service_type,
         wait,
     ):
+        # converting platform parameter to DeploymentOperator name in proto
+        # e.g. 'aws-lambda' to 'AWS_LAMBDA'
+        platform = platform.replace('-', '_').upper()
+        operator = DeploymentSpec.DeploymentOperator.Value(platform)
+
         track_cli('deploy-create', platform)
 
         yatai_service = get_yatai_service()
+
+        # Make sure there is no active deployment with the same deployment name
         get_deployment = yatai_service.GetDeployment(
             GetDeploymentRequest(deployment_name=name, namespace=namespace)
         )
@@ -189,7 +194,7 @@ def get_deployment_sub_command():
                 ' instead'.format(name=name)
             )
 
-        if platform == 'aws_sagemaker':
+        if operator == DeploymentSpec.AWS_SAGEMAKER:
             if not api_name:
                 raise click.BadParameter(
                     'api-name is required for Sagemaker deployment'
@@ -204,19 +209,19 @@ def get_deployment_sub_command():
                 api_name=api_name,
             )
             spec = DeploymentSpec(sagemaker_operator_config=sagemaker_operator_config)
-        elif platform == 'aws_lambda':
+        elif operator == DeploymentSpec.AWS_LAMBDA:
             aws_lambda_operator_config = DeploymentSpec.AwsLambdaOperatorConfig(
                 region=region or config().get('aws', 'default_region')
             )
             spec = DeploymentSpec(aws_lambda_operator_config=aws_lambda_operator_config)
-        elif platform == 'gcp_function':
+        elif operator == DeploymentSpec.GCP_FUNCTION:
             gcp_function_operator_config = DeploymentSpec.GcpFunctionOperatorConfig(
                 region=region or config().get('google-cloud', 'default_region')
             )
             spec = DeploymentSpec(
                 gcp_function_operator_config=gcp_function_operator_config
             )
-        elif platform == 'kubernetes':
+        elif operator == DeploymentSpec.KUBERNETES:
             kubernetes_operator_config = DeploymentSpec.KubernetesOperatorConfig(
                 kube_namespace=kube_namespace,
                 replicas=replicas,
@@ -232,7 +237,7 @@ def get_deployment_sub_command():
         bento_name, bento_version = bento.split(':')
         spec.bento_name = bento_name
         spec.bento_version = bento_version
-        spec.operator = DeploymentOperator.Value(platform.upper())
+        spec.operator = operator
 
         result = yatai_service.ApplyDeployment(
             ApplyDeploymentRequest(
@@ -397,7 +402,7 @@ def get_deployment_sub_command():
             deployment_pb.state.CopyFrom(result.state)
             display_deployment_info(deployment_pb, output)
 
-    @deployment.command(help='List deployments')
+    @deployment.command(name="list", help='List deployments')
     @click.option('--namespace', type=click.STRING)
     @click.option('--all-namespace', type=click.BOOL, default=False)
     @click.option(
@@ -412,7 +417,7 @@ def get_deployment_sub_command():
         '--labels', type=click.STRING, help='List deployments with the giving labels'
     )
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def list(output, limit, filters, labels, namespace, all_namespace):
+    def list_deployments(output, limit, filters, labels, namespace, all_namespace):
         track_cli('deploy-list')
 
         if all_namespace:

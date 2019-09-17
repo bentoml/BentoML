@@ -123,8 +123,8 @@ class FastaiImageHandler(BentoHandler):
                 )
 
         input_data = []
-        for i, input in enumerate(input_streams):
-            data = imread(input, pilmode=self.convert_mode)
+        for input_stream in input_streams:
+            data = imread(input_stream, pilmode=self.convert_mode)
 
             if self.after_open:
                 data = self.after_open(data)

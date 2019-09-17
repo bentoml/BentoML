@@ -25,8 +25,14 @@ import tempfile
 import subprocess
 
 from ruamel.yaml import YAML
+from google.protobuf.json_format import MessageToDict
 
-from bentoml.archive import load, load_service_api, load_bentoml_config
+from bentoml.archive import (
+    load,
+    load_service_api,
+    load_bentoml_config,
+    load_bento_service_metadata,
+)
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
@@ -145,27 +151,19 @@ def create_bento_service_cli(archive_path=None):
         List all APIs defined in the BentoService loaded from archive
         """
         track_cli('info')
-        bento_service = load(archive_path)
-
-        service_apis = bento_service.get_service_apis()
-        output = json.dumps(
-            dict(
-                name=bento_service.name,
-                version=bento_service.version,
-                apis=[api.name for api in service_apis],
-            ),
-            indent=2,
-        )
+        bento_service_metadata_pb = load_bento_service_metadata(archive_path)
+        output = json.dumps(MessageToDict(bento_service_metadata_pb), indent=2)
         _echo(output)
 
-    # Example usage: bentoml docs /SAVED_ARCHIVE_PATH
+    # Example usage: bentoml open-api-spec /SAVED_ARCHIVE_PATH
     @bentoml_cli.command(
-        help="Display API documents in Open API format",
-        short_help="Display OpenAPI docs",
+        name="open-api-spec",
+        help="Display API specification JSON in Open-API format",
+        short_help="Display OpenAPI/Swagger JSON specs",
     )
     @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
-    def docs(archive_path=archive_path):
-        track_cli('docs')
+    def open_api_spec(archive_path=archive_path):
+        track_cli('open-api-spec')
         bento_service = load(archive_path)
 
         _echo(json.dumps(get_docs(bento_service), indent=2))

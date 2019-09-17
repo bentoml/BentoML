@@ -11,6 +11,7 @@ exclude = '''
     | build
     | dist
     | examples
+    | guides
   )/
   | bentoml/utils/cloudpickle.py
   | bentoml/proto

@@ -132,7 +132,7 @@ class BentoMetadataStore(object):
                 )
             except NoResultFound:
                 raise BentoMLRepositoryException(
-                    "Bento %s:%s is not found in repository", bento_name, bento_version
+                    "Bento %s:%s is not found in repository" % bento_name, bento_version
                 )
 
     def update_upload_status(self, bento_name, bento_version, upload_status_pb):
@@ -149,7 +149,7 @@ class BentoMetadataStore(object):
                 bento_obj.upload_status = MessageToDict(upload_status_pb)
             except NoResultFound:
                 raise BentoMLRepositoryException(
-                    "Bento %s:%s is not found in repository", bento_name, bento_version
+                    "Bento %s:%s is not found in repository" % bento_name, bento_version
                 )
 
     def dangerously_delete(self, bento_name, bento_version):
@@ -162,14 +162,13 @@ class BentoMetadataStore(object):
                 )
                 if not bento_obj.deleted:
                     raise BentoMLRepositoryException(
-                        "Bento %s:%s has already been deleted",
-                        bento_name,
+                        "Bento %s:%s has already been deleted" % bento_name,
                         bento_version,
                     )
                 bento_obj.deleted = True
             except NoResultFound:
                 raise BentoMLRepositoryException(
-                    "Bento %s:%s is not found in repository", bento_name, bento_version
+                    "Bento %s:%s is not found in repository" % bento_name, bento_version
                 )
 
     def list(self, bento_name=None, offset=None, limit=None, filter_str=None):

@@ -32,7 +32,6 @@ from bentoml.service import (
     ver_decorator as ver,
 )
 from bentoml.server import metrics
-from bentoml.utils.log import configure_logging
 from bentoml.yatai.python_api import upload_bento_service
 
 save = upload_bento_service

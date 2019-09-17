@@ -168,7 +168,7 @@ Try out the full getting started notebook
 * League of Legend win Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb)
 
 
-#### H2o
+#### H2O
 
 * Loan Default Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb)
 * Prostate Cancer Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb)
@@ -179,10 +179,10 @@ Try out the full getting started notebook
 
 ### Deployment guides:
 
-- [Serverless deployment with AWS Lambda](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-serverless)
-- [API server deployment with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/examples/deploy-with-sagemaker)
-- [API server deployment with Clipper](https://github.com/bentoml/BentoML/blob/master/example/deploy-with-clipper/deploy-iris-classifier-to-clipper.ipynb)
-- [API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/examples/deploy-with-kubernetes)
+- [Serverless deployment with AWS Lambda](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-serverless)
+- [API server deployment with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-sagemaker)
+- [API server deployment with Clipper](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/deploy-iris-classifier-to-clipper.ipynb)
+- [API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
 
 
 ## Feature Highlights

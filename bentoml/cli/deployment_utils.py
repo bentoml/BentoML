@@ -19,7 +19,7 @@ from __future__ import print_function
 
 import logging
 
-from bentoml.proto.deployment_pb2 import Deployment, DeploymentOperator
+from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
 from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,9 @@ def deployment_yaml_to_pb(deployment_yaml):
     spec_yaml = deployment_yaml.get('spec')
     platform = spec_yaml.get('operator')
     if platform is not None:
-        deployment_pb.spec.operator = DeploymentOperator.Value(platform.upper())
+        deployment_pb.spec.operator = DeploymentSpec.DeploymentOperator.Value(
+            platform.replace('-', '_').upper()
+        )
     if spec_yaml.get('bento_name'):
         deployment_pb.spec.bento_name = spec_yaml.get('bento_name')
     if spec_yaml.get('bento_version'):
@@ -48,20 +50,17 @@ def deployment_yaml_to_pb(deployment_yaml):
 
     if platform == 'aws_sagemaker':
         sagemaker_config = spec_yaml.get('sagemaker_operator_config')
+        sagemaker_operator_config_pb = deployment_pb.spec.sagemaker_operator_config
         if sagemaker_config.get('api_name'):
-            deployment_pb.spec.sagemaker_operator_config.api_name = sagemaker_config.get(
-                'api_name'
-            )
+            sagemaker_operator_config_pb.api_name = sagemaker_config.get('api_name')
         if sagemaker_config.get('region'):
-            deployment_pb.spec.sagemaker_operator_config.region = sagemaker_config.get(
-                'region'
-            )
+            sagemaker_operator_config_pb.region = sagemaker_config.get('region')
         if sagemaker_config.get('instance_count'):
-            deployment_pb.spec.sagemaker_operator_config.instance_count = sagemaker_config.get(
+            sagemaker_operator_config_pb.instance_count = sagemaker_config.get(
                 'instance_count'
             )
         if sagemaker_config.get('instance_type'):
-            deployment_pb.spec.sagemaker_operator_config.instance_type = sagemaker_config.get(
+            sagemaker_operator_config_pb.instance_type = sagemaker_config.get(
                 'instance_type'
             )
     elif platform == 'aws_lambda':
@@ -76,22 +75,16 @@ def deployment_yaml_to_pb(deployment_yaml):
             )
     elif platform == 'kubernetes':
         k8s_config = spec_yaml.get('kubernetes_operator_config')
+        k8s_operator_config_pb = deployment_pb.spec.kubernetes_operator_config
+
         if k8s_config.get('kube_namespace'):
-            deployment_pb.spec.kubernetes_operator_config.kube_namespace = k8s_config.get(
-                'kube_namespace'
-            )
+            k8s_operator_config_pb.kube_namespace = k8s_config.get('kube_namespace')
         if k8s_config.get('replicas'):
-            deployment_pb.spec.kubernetes_operator_config.replicas = k8s_config.get(
-                'replicas'
-            )
+            k8s_operator_config_pb.replicas = k8s_config.get('replicas')
         if k8s_config.get('service_name'):
-            deployment_pb.spec.kubernetes_operator_config.service_name = k8s_config.get(
-                'service_name'
-            )
+            k8s_operator_config_pb.service_name = k8s_config.get('service_name')
         if k8s_config.get('service_type'):
-            deployment_pb.spec.kubernetes_operator_config.service_type = k8s_config.get(
-                'service_type'
-            )
+            k8s_operator_config_pb.service_type = k8s_config.get('service_type')
     else:
         raise BentoMLException(
             'Custom deployment is not supported in the current version of BentoML'

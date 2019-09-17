@@ -38,10 +38,10 @@ def test_pip_install_bento_archive(bento_archive_path, tmpdir):
     output = json.loads(output)
     assert output["name"] == "TestBentoService"
     assert output["version"] == svc.version
-    assert "predict" in output["apis"]
+    assert "predict" in map(lambda x: x["name"], output["apis"])
 
     output = subprocess.check_output(
-        [cli_bin_path, "--quiet", "docs"], env=env
+        [cli_bin_path, "--quiet", "open-api-spec"], env=env
     ).decode()
     output = json.loads(output)
     assert output["info"]["version"] == svc.version

@@ -54,9 +54,9 @@ except ImportError:
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 
-from {class_name} import {class_name}
+from {class_name} import load
 
-bento_service = {class_name}.load()
+bento_service = load()
 
 """
 
@@ -133,7 +133,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         template = 'aws-python3'
         minimum_python_version = version.parse('3.0.0')
         bento_python_version = version.parse(bento_config['env']['python_version'])
-        if bento_python_version > minimum_python_version:
+        if bento_python_version < minimum_python_version:
             template = 'aws-python'
 
         with TemporaryServerlessContent(
@@ -153,8 +153,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 stage=deployment_pb.namespace,
             )
             logger.info(
-                'Installing additional packages: serverless-python-requirements, \
-                serverless-apigw-binary'
+                'Installing additional packages: serverless-python-requirements, '
+                'serverless-apigw-binary'
             )
             install_serverless_plugin("serverless-python-requirements", output_path)
             install_serverless_plugin("serverless-apigw-binary", output_path)
@@ -170,8 +170,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def delete(self, deployment_pb, repo=None):
         state = self.describe(deployment_pb, repo).state
         if state.state != DeploymentState.RUNNING:
-            message = 'Failed to delete, no active deployment {name}. The current state is {state}'.format(
-                name=deployment_pb.name, state=DeploymentState.State.Name(state.state)
+            message = (
+                'Failed to delete, no active deployment {name}. '
+                'The current state is {state}'.format(
+                    name=deployment_pb.name,
+                    state=DeploymentState.State.Name(state.state),
+                )
             )
             return DeleteDeploymentResponse(status=Status.ABORTED(message))
 

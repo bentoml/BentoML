@@ -86,10 +86,12 @@ def parse_serverless_response(serverless_response):
 
 def parse_serverless_info_response_to_json_string(responses):
     result = {}
-    for line in responses:
+    for i in range(len(responses)):
+        line = responses[i]
         if ': ' in line:
             items = line.split(': ')
             result[items[0]] = items[1]
+    result['raw_response'] = responses
     return json.dumps(result)
 
 
@@ -129,7 +131,8 @@ class TemporaryServerlessContent(object):
         )
         shutil.copy(os.path.join(self.archive_path, "requirements.txt"), tempdir)
         model_serivce_archive_path = os.path.join(tempdir, self.bento_name)
-        shutil.copytree(self.archive_path, model_serivce_archive_path)
+        model_path = os.path.join(self.archive_path, self.bento_name)
+        shutil.copytree(model_path, model_serivce_archive_path)
         self.path = tempdir
 
     def cleanup(self):

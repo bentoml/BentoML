@@ -41,7 +41,8 @@ def deployment_yaml_to_pb(deployment_yaml):
     platform = spec_yaml.get('operator')
     if platform is not None:
         deployment_pb.spec.operator = DeploymentSpec.DeploymentOperator.Value(
-            platform.replace('-', '_').upper())
+            platform.replace('-', '_').upper()
+        )
     if spec_yaml.get('bento_name'):
         deployment_pb.spec.bento_name = spec_yaml.get('bento_name')
     if spec_yaml.get('bento_version'):

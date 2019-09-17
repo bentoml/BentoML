@@ -112,7 +112,7 @@ def get_deployment_sub_command():
         '--platform',
         type=click.Choice(
             ['aws-lambda', 'gcp-function', 'aws-sagemaker', 'kubernetes', 'custom'],
-            case_sensitive=False
+            case_sensitive=False,
         ),
         required=True,
         help='Target platform that Bento archive is going to deployed to',

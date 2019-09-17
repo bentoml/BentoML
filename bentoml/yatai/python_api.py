@@ -70,8 +70,7 @@ def upload_bento_service(bento_service, base_path=None, version=None):
 
     if response.status.status_code != Status.OK:
         raise BentoMLException(
-            "Error adding bento to repository: %s:%s" %
-            response.status.status_code,
+            "Error adding bento to repository: %s:%s" % response.status.status_code,
             response.status.error_message,
         )
 
@@ -93,7 +92,7 @@ def upload_bento_service(bento_service, base_path=None, version=None):
         return response.uri.uri
     else:
         raise BentoMLException(
-            "Error saving Bento to target repository, URI type %s at %s not supported" %
-            response.uri.type,
+            "Error saving Bento to target repository, URI type %s at %s not supported"
+            % response.uri.type,
             response.uri.uri,
         )

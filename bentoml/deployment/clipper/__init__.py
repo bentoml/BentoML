@@ -21,13 +21,12 @@ import shutil
 import re
 
 import docker
+from datetime import datetime
 
+from bentoml.configuration import _get_bentoml_home
 from bentoml.archive import load
 from bentoml.handlers import ImageHandler
-from bentoml.deployment.utils import (
-    generate_bentoml_deployment_snapshot_path,
-    process_docker_api_line,
-)
+from bentoml.deployment.utils import process_docker_api_line
 from bentoml.deployment.clipper.templates import (
     DEFAULT_CLIPPER_ENTRY,
     DOCKERFILE_CLIPPER,
@@ -49,13 +48,24 @@ def generate_clipper_compatiable_string(item):
     return result.lower()
 
 
+def generate_clipper_deployment_snapshot_path(service_name, service_version):
+    return os.path.join(
+        _get_bentoml_home(),
+        "internal",
+        "clipper-deployment-snapshots",
+        service_name,
+        service_version,
+        datetime.now().isoformat(),
+    )
+
+
 def deploy_bentoml(
     clipper_conn,
     archive_path,
     api_name,
     input_type="strings",
     model_name=None,
-    labels=["bentoml"],
+    labels=None,
 ):
     """Deploy bentoml bundle to clipper cluster
 
@@ -91,8 +101,8 @@ def deploy_bentoml(
     except Exception:
         raise BentoMLException("Can't start or connect with clipper cluster")
 
-    snapshot_path = generate_bentoml_deployment_snapshot_path(
-        bento_service.name, bento_service.version, "clipper"
+    snapshot_path = generate_clipper_deployment_snapshot_path(
+        bento_service.name, bento_service.version
     )
 
     entry_py_content = DEFAULT_CLIPPER_ENTRY.format(

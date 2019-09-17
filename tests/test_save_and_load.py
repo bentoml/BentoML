@@ -1,5 +1,4 @@
 import os
-import pytest
 import uuid
 
 import bentoml

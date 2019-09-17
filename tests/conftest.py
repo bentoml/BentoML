@@ -11,15 +11,19 @@ class TestModel(object):
         return df
 
     def predictImage(self, input_data):
+        assert input_data is not None
         return [10, 24]
 
     def predictJson(self, input_data):
+        assert input_data is not None
         return {"ok": True}
 
     def predictTF(self, input_data):
+        assert input_data is not None
         return {"ok": True}
 
     def predictTorch(self, input_data):
+        assert input_data is not None
         return {"ok": True}
 
 

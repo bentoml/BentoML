@@ -513,8 +513,8 @@ class BentoService(BentoServiceBase):
 
         if cls._bento_archive_path is not None and cls._bento_archive_path != path:
             logger.warning(
-                "Loaded BentoArchive from '%' can't be loaded again from a different"
-                "path %",
+                "Loaded BentoArchive from '%s' can't be loaded again from a different"
+                "path %s",
                 cls._bento_archive_path,
                 path,
             )

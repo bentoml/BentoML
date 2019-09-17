@@ -285,8 +285,9 @@ class YataiService(YataiServicer):
             else:
                 return GetBentoResponse(
                     status=Status.NOT_FOUND(
-                        "Bento `%s:%s` is not found" % request.bento_name,
-                        request.bento_version,
+                        "Bento `{}:{}` is not found".format(
+                            request.bento_name, request.bento_version
+                        )
                     )
                 )
         except BentoMLException as e:

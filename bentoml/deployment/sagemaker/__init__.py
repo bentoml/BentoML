@@ -199,7 +199,7 @@ class TemporarySageMakerContent(object):
         os.chmod(os.path.join(saved_path, "serve"), octal_permission)
         self.path = saved_path
 
-    def cleanup(self, ignore_errors=False):
+    def cleanup(self):
         self.temp_directory.cleanup()
         self.path = None
 

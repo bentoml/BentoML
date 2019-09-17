@@ -76,7 +76,7 @@ def has_empty_params(rule):
     return len(defaults) < len(arguments)
 
 
-def index_view_func(bento_service):
+def index_view_func():
     """
     The index route for bento model server
     """
@@ -246,7 +246,7 @@ def setup_routes(app, bento_service):
     /predict
     """
 
-    app.add_url_rule("/", "index", partial(index_view_func, bento_service))
+    app.add_url_rule("/", "index", index_view_func)
     app.add_url_rule("/docs.json", "docs", partial(docs_view_func, bento_service))
     app.add_url_rule("/healthz", "healthz", healthz_view_func)
 

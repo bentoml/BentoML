@@ -19,7 +19,7 @@ from __future__ import print_function
 import os
 import sys
 import logging
-import datetime
+
 
 from bentoml.utils import dump_to_yaml_str
 from bentoml.utils.usage_stats import track_load_finish, track_load_start

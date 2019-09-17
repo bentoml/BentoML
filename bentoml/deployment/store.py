@@ -135,7 +135,7 @@ class DeploymentStore(object):
                 return sess.delete(deployment)
             except NoResultFound:
                 raise BentoMLDeploymentException(
-                    "Deployment '%s' in namespace: '%s' is not found", name, namespace
+                    "Deployment '%s' in namespace: '%s' is not found" % name, namespace
                 )
 
     def list(self, namespace, filter_str=None, labels=None, offset=None, limit=None):

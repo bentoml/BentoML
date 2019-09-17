@@ -402,7 +402,7 @@ def get_deployment_sub_command():
             deployment_pb.state.CopyFrom(result.state)
             display_deployment_info(deployment_pb, output)
 
-    @deployment.command(help='List deployments')
+    @deployment.command(name="list", help='List deployments')
     @click.option('--namespace', type=click.STRING)
     @click.option('--all-namespace', type=click.BOOL, default=False)
     @click.option(
@@ -417,7 +417,7 @@ def get_deployment_sub_command():
         '--labels', type=click.STRING, help='List deployments with the giving labels'
     )
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
-    def list(output, limit, filters, labels, namespace, all_namespace):
+    def list_deployments(output, limit, filters, labels, namespace, all_namespace):
         track_cli('deploy-list')
 
         if all_namespace:

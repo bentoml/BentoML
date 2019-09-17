@@ -37,7 +37,7 @@ from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
-    parse_serverless_info_response_to_json_string,
+    parse_serverless_info_response_to_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -147,10 +147,15 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         ) as tempdir:
             try:
                 response = call_serverless_command(["serverless", "info"], tempdir)
-                info_json = parse_serverless_info_response_to_json_string(response)
-                state = DeploymentState(
-                    state=DeploymentState.RUNNING, info_json=info_json
-                )
+                info_json = parse_serverless_info_response_to_json(response)
+                if info_json.get('Error'):
+                    state = DeploymentState(
+                        state=DeploymentState.ERROR, info_json=str(info_json)
+                    )
+                else:
+                    state = DeploymentState(
+                        state=DeploymentState.RUNNING, info_json=str(info_json)
+                    )
             except BentoMLException as e:
                 state = DeploymentState(
                     state=DeploymentState.ERROR, error_message=str(e)

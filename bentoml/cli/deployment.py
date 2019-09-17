@@ -316,10 +316,7 @@ def get_deployment_sub_command():
                     )
                     result.deployment.state.CopyFrom(result_state.state)
 
-                _echo(
-                    'Finished apply deployment {}'.format(deployment_pb.name),
-                    CLI_COLOR_SUCCESS,
-                )
+                logger.log('Applied deployment {}'.format(deployment_pb.name))
                 display_deployment_info(result.deployment, output)
         except BentoMLException as e:
             _echo(

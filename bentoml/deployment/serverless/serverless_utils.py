@@ -20,7 +20,6 @@ import os
 import shutil
 import logging
 import subprocess
-import json
 from subprocess import PIPE
 
 from ruamel.yaml import YAML
@@ -78,21 +77,23 @@ def parse_serverless_response(serverless_response):
     str_list = serverless_response.strip().split("\n")
     error = [s for s in str_list if "Serverless Error" in s]
     if error:
+        print(str_list)
         error_pos = str_list.index(error[0])
         error_message = str_list[error_pos + 2]
         raise BentoMLException(error_message)
     return str_list
 
 
-def parse_serverless_info_response_to_json_string(responses):
+def parse_serverless_info_response_to_json(responses):
     result = {}
     for i in range(len(responses)):
         line = responses[i]
         if ': ' in line:
             items = line.split(': ')
-            result[items[0]] = items[1]
+            name = items[0].strip()
+            result[name] = items[1]
     result['raw_response'] = responses
-    return json.dumps(result)
+    return result
 
 
 class TemporaryServerlessContent(object):
@@ -112,12 +113,14 @@ class TemporaryServerlessContent(object):
         return self.path
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._cleanup:
-            self.cleanup()
+        return
+        # if self._cleanup:
+        #     self.cleanup()
 
     def generate(self):
         self.temp_directory.create()
         tempdir = self.temp_directory.path
+        print(tempdir)
         call_serverless_command(
             [
                 "serverless",

@@ -33,6 +33,10 @@ from bentoml.service import (
 )
 from bentoml.server import metrics
 from bentoml.yatai.python_api import upload_bento_service
+from bentoml.utils.log import configure_logging
+
+configure_logging()
+
 
 save = upload_bento_service
 

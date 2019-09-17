@@ -16,9 +16,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from google.protobuf.json_format import MessageToDict
 from cerberus import Validator
 
+from bentoml.utils import ProtoMessageToDict
 from bentoml.proto.deployment_pb2 import DeploymentSpec
 
 deployment_schema = {
@@ -84,7 +84,7 @@ deployment_schema = {
 
 
 def validate_pb_schema(pb, schema):
-    pb_dict = MessageToDict(pb, preserving_proto_field_name=True)
+    pb_dict = ProtoMessageToDict(pb)
     v = Validator(schema)
     if v.validate(pb_dict):
         return None

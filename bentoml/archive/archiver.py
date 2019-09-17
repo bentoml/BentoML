@@ -157,3 +157,10 @@ def save_to_dir(bento_service, path, version=None):
     # Also write bentoml.yml to module base path to make it accessible
     # as package data after pip installed as a python package
     config.write_to_path(module_base_path)
+
+    logger.info(
+        "Successfully saved Bento '%s:%s' to path: %s",
+        bento_service.name,
+        bento_service.version,
+        path,
+    )

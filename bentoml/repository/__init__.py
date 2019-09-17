@@ -66,9 +66,8 @@ class BentoRepositoryBase(object):
 class _LocalBentoRepository(BentoRepositoryBase):
     def __init__(self, base_url):
         if not os.path.exists(base_url):
-            raise BentoMLRepositoryException(
-                "Local path '{}' not found when " "initializing local Bento repository"
-            )
+            # make sure local repo base path exist
+            os.mkdir(base_url)
 
         self.base_path = base_url
         self.uri_type = BentoUri.LOCAL

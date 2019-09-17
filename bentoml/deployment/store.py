@@ -22,11 +22,12 @@ from contextlib import contextmanager
 
 from sqlalchemy import Column, String, Integer, DateTime, JSON, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
-from google.protobuf.json_format import MessageToDict, ParseDict
+from google.protobuf.json_format import ParseDict
 
 from bentoml.exceptions import BentoMLDeploymentException
 from bentoml.db import Base, create_session
 from bentoml.proto import deployment_pb2
+from bentoml.utils import ProtoMessageToDict
 
 
 logger = logging.getLogger(__name__)
@@ -55,8 +56,8 @@ class Deployment(Base):
 def _deployment_pb_to_orm_obj(deployment_pb, deployment_obj=Deployment()):
     deployment_obj.name = deployment_pb.name
     deployment_obj.namespace = deployment_pb.namespace
-    deployment_obj.spec = MessageToDict(deployment_pb.spec)
-    deployment_obj.state = MessageToDict(deployment_pb.state)
+    deployment_obj.spec = ProtoMessageToDict(deployment_pb.spec)
+    deployment_obj.state = ProtoMessageToDict(deployment_pb.state)
     deployment_obj.labels = dict(deployment_pb.labels)
     deployment_obj.annotations = dict(deployment_pb.annotations)
     return deployment_obj

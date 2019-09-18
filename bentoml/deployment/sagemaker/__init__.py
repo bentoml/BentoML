@@ -241,13 +241,19 @@ def _parse_aws_client_exception_or_raise(e):
     """
     error_response = e.response.get('Error', {})
     error_code = error_response.get('Code')
+    error_message = error_response.get('Message', 'Unknown')
+    error_log_message = 'AWS ClientError for {operation}: {code} - {message}'.format(
+        operation=e.operation_name, code=error_code, message=error_message
+    )
     if error_code == 'ValidationException':
-        logger.info(str(error_response))
+        logger.info(error_log_message)
         return Status.NOT_FOUND(error_response.get('Message', 'Unknown'))
     elif error_code == 'InvalidSignatureException':
-        logger.info(str(error_response))
+        logger.info(error_log_message)
         return Status.UNAUTHENTICATED(error_response.get('Message', 'Unknown'))
-    logger.error(str(error_response))
+    else:
+        logger.error(error_log_message)
+        raise e
 
 
 def _cleanup_sagemaker_model(client, name, version):
@@ -386,7 +392,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         )
         try:
             if prev_deployment:
-                logger.info("Updating sagemaker endpoint %s", endpoint_name)
+                logger.debug("Updating sagemaker endpoint %s", endpoint_name)
                 update_endpoint_response = sagemaker_client.update_endpoint(
                     EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
                 )
@@ -394,7 +400,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     "AWS update endpoint response: %s", update_endpoint_response
                 )
             else:
-                logger.info("Creating sagemaker endpoint %s", endpoint_name)
+                logger.debug("Creating sagemaker endpoint %s", endpoint_name)
                 create_endpoint_response = sagemaker_client.create_endpoint(
                     EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
                 )

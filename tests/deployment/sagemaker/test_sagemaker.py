@@ -8,7 +8,7 @@ from bentoml.proto.status_pb2 import Status
 
 
 def test_sagemaker_handle_client_errors():
-    client = boto3.client('sagemaker')
+    client = boto3.client('sagemaker', 'us-west-2')
     stubber = Stubber(client)
 
     result = None

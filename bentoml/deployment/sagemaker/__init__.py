@@ -250,20 +250,7 @@ def _parse_aws_client_exception_or_raise(e):
     logger.error(str(error_response))
 
 
-def _cleanup(client, name, version, cleanup_endpoint_config=False):
-    if cleanup_endpoint_config:
-        endpoint_config_name = create_sagemaker_endpoint_config_name(name, version)
-        try:
-            delete_endpoint_config_response = client.delete_endpoint_config(
-                EndpointConfigName=endpoint_config_name
-            )
-            logger.debug(
-                "AWS delete endpoint config response: %s",
-                delete_endpoint_config_response,
-            )
-        except ClientError as e:
-            return _parse_aws_client_exception_or_raise(e)
-
+def _cleanup_sagemaker_model(client, name, version):
     model_name = create_sagemaker_model_name(name, version)
     try:
         delete_model_response = client.delete_model(ModelName=model_name)
@@ -271,6 +258,20 @@ def _cleanup(client, name, version, cleanup_endpoint_config=False):
     except ClientError as e:
         return _parse_aws_client_exception_or_raise(e)
 
+    return
+
+
+def _cleanup_sagemaker_endpoint_config(client, name, version):
+    endpoint_config_name = create_sagemaker_endpoint_config_name(name, version)
+    try:
+        delete_endpoint_config_response = client.delete_endpoint_config(
+            EndpointConfigName=endpoint_config_name
+        )
+        logger.debug(
+            "AWS delete endpoint config response: %s", delete_endpoint_config_response
+        )
+    except ClientError as e:
+        return _parse_aws_client_exception_or_raise(e)
     return
 
 
@@ -326,7 +327,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         except ClientError as e:
             status = _parse_aws_client_exception_or_raise(e)
             status.error_message = (
-                'Failed to apply SageMaker deployment: ' + status.error_message
+                'Failed to create model for SageMaker Deployment: %s', status.error_message
             )
             return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
@@ -357,23 +358,24 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 create_endpoint_config_response,
             )
         except ClientError as e:
-            cleanup_error = _cleanup(
+            cleanup_model_error = _cleanup_sagemaker_model(
                 sagemaker_client,
                 deployment_spec.bento_name,
                 deployment_spec.bento_version,
             )
-            if cleanup_error:
-                cleanup_error.error_message = (
-                    'Failed to clean up resources after unsuccessfully apply SageMaker deployment: %s',
-                    cleanup_error.error_message,
+            if cleanup_model_error:
+                cleanup_model_error.error_message = (
+                    'Failed to clean up model after unsuccessfully '
+                    'create endpoint config: %s',
+                    cleanup_model_error.error_message,
                 )
                 return ApplyDeploymentResponse(
-                    status=cleanup_error, deployment=deployment_pb
+                    status=cleanup_model_error, deployment=deployment_pb
                 )
 
             status = _parse_aws_client_exception_or_raise(e)
             status.error_message = (
-                'Failed to apply SageMaker deployment: ' + status.error_message
+                'Failed to create endpoint config for SageMaker deployment: %s', status.error_message
             )
             return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
@@ -398,24 +400,39 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     "AWS create endpoint response: %s", create_endpoint_response
                 )
         except ClientError as e:
-            cleanup_error = _cleanup(
+            cleanup_model_error = _cleanup_sagemaker_endpoint_config(
                 client=sagemaker_client,
                 name=deployment_spec.bento_name,
                 version=deployment_spec.bento_version,
-                cleanup_endpoint_config=True,
             )
-            if cleanup_error:
-                cleanup_error.error_message = (
-                    'Failed to clean up resources after unsuccessfully apply SageMaker deployment: %s',
-                    cleanup_error.error_message,
+            if cleanup_model_error:
+                cleanup_model_error.error_message = (
+                    'Failed to clean up endpoint config after unsuccessfully '
+                    'apply SageMaker deployment: %s',
+                    cleanup_model_error.error_message,
                 )
                 return ApplyDeploymentResponse(
-                    status=cleanup_error, deployment=deployment_pb
+                    status=cleanup_model_error, deployment=deployment_pb
+                )
+
+            cleanup_model_error = _cleanup_sagemaker_endpoint_config(
+                client=sagemaker_client,
+                name=deployment_spec.bento_name,
+                version=deployment_spec.bento_version,
+            )
+            if cleanup_model_error:
+                cleanup_model_error.error_message = (
+                    'Failed to clean up model after unsuccessfully '
+                    'apply SageMaker deployment: %s',
+                    cleanup_model_error.error_message,
+                )
+                return ApplyDeploymentResponse(
+                    status=cleanup_model_error, deployment=deployment_pb
                 )
 
             status = _parse_aws_client_exception_or_raise(e)
             status.error_message = (
-                'Failed to apply SageMaker deployment: ' + status.error_message
+                'Failed to apply SageMaker deployment: %s', status.error_message
             )
             return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
@@ -442,18 +459,33 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         except ClientError as e:
             status = _parse_aws_client_exception_or_raise(e)
             status.error_message = (
-                'Failed to delete SageMaker deployment: ' + status.error_message
+                'Failed to delete SageMaker deployment: %s', status.error_message
             )
             return DeleteDeploymentResponse(status=status)
 
-        error_status = _cleanup(
+        delete_config_error = _cleanup_sagemaker_model(
             client=sagemaker_client,
             name=deployment_spec.bento_name,
             version=deployment_spec.bento_version,
-            cleanup_endpoint_config=True,
         )
-        if error_status:
-            return DeleteDeploymentResponse(status=error_status)
+        if delete_config_error:
+            delete_config_error.error_message = (
+                'Failed to delete SageMaker endpoint config: %s',
+                delete_config_error.error_message,
+            )
+            return DeleteDeploymentResponse(status=delete_config_error)
+
+        delete_model_error = _cleanup_sagemaker_model(
+            client=sagemaker_client,
+            name=deployment_spec.bento_name,
+            version=deployment_spec.bento_version,
+        )
+        if delete_model_error:
+            delete_model_error.error_message = (
+                'Failed to delete SageMaker model: %s',
+                delete_model_error.error_message,
+            )
+            return DeleteDeploymentResponse(status=delete_model_error)
 
         return DeleteDeploymentResponse(status=Status.OK())
 
@@ -473,7 +505,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         except ClientError as e:
             status = _parse_aws_client_exception_or_raise(e)
             status.error_message = (
-                'Failed to describe SageMaker deployment: ' + status.error_message
+                'Failed to describe SageMaker deployment: %s', status.error_message
             )
             return DescribeDeploymentResponse(status=status)
 

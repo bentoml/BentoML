@@ -146,7 +146,6 @@ Try out the full getting started notebook
 #### Scikit-Learn
 
 * Sentiment Analysis - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb)
-* Loan Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/scikit-learn/loan-prediction/sklearn-loan-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/scikit-learn/loan-prediction/sklearn-loan-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/scikit-learn/loan-prediction/sklearn-loan-prediction.ipynb)
 
 
 #### PyTorch

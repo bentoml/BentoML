@@ -327,7 +327,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         except ClientError as e:
             status = _parse_aws_client_exception_or_raise(e)
             status.error_message = (
-                'Failed to create model for SageMaker Deployment: %s', status.error_message
+                'Failed to create model for SageMaker Deployment: %s',
+                status.error_message,
             )
             return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
@@ -375,7 +376,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
             status = _parse_aws_client_exception_or_raise(e)
             status.error_message = (
-                'Failed to create endpoint config for SageMaker deployment: %s', status.error_message
+                'Failed to create endpoint config for SageMaker deployment: %s',
+                status.error_message,
             )
             return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
@@ -432,7 +434,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
             status = _parse_aws_client_exception_or_raise(e)
             status.error_message = (
-                'Failed to apply SageMaker deployment: %s', status.error_message
+                'Failed to apply SageMaker deployment: %s',
+                status.error_message,
             )
             return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
@@ -459,7 +462,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         except ClientError as e:
             status = _parse_aws_client_exception_or_raise(e)
             status.error_message = (
-                'Failed to delete SageMaker deployment: %s', status.error_message
+                'Failed to delete SageMaker deployment: %s',
+                status.error_message,
             )
             return DeleteDeploymentResponse(status=status)
 
@@ -505,7 +509,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         except ClientError as e:
             status = _parse_aws_client_exception_or_raise(e)
             status.error_message = (
-                'Failed to describe SageMaker deployment: %s', status.error_message
+                'Failed to describe SageMaker deployment: %s',
+                status.error_message,
             )
             return DescribeDeploymentResponse(status=status)
 

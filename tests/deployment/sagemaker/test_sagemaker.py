@@ -1,22 +1,15 @@
-from botocore.exceptions import ParamValidationError, ClientError
+from botocore.exceptions import ClientError
 from botocore.stub import Stubber
 
 import boto3
 
-from bentoml.deployment.sagemaker import parse_aws_client_exception_or_raise
+from bentoml.deployment.sagemaker import _parse_aws_client_exception_or_raise
 from bentoml.proto.status_pb2 import Status
 
 
 def test_sagemaker_handle_client_errors():
     client = boto3.client('sagemaker', 'us-west-2')
     stubber = Stubber(client)
-
-    result = None
-    try:
-        client.create_endpoint(EndpointName="Test1")
-    except ParamValidationError as e:
-        result = parse_aws_client_exception_or_raise(e)
-    assert result.status_code == Status.INVALID_ARGUMENT
 
     stubber.add_client_error(
         method='create_endpoint', service_error_code='ValidationException'
@@ -26,7 +19,7 @@ def test_sagemaker_handle_client_errors():
     try:
         client.create_endpoint(EndpointName='Test', EndpointConfigName='test-config')
     except ClientError as e:
-        result = parse_aws_client_exception_or_raise(e)
+        result = _parse_aws_client_exception_or_raise(e)
 
     assert result.status_code == Status.NOT_FOUND
 
@@ -36,5 +29,5 @@ def test_sagemaker_handle_client_errors():
     try:
         client.describe_endpoint(EndpointName='Test')
     except ClientError as e:
-        result = parse_aws_client_exception_or_raise(e)
+        result = _parse_aws_client_exception_or_raise(e)
     assert result.status_code == Status.UNAUTHENTICATED

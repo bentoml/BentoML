@@ -1,7 +1,6 @@
-import pytest
-
 from botocore.exceptions import ParamValidationError, ClientError
-from botocore.stub import Stubber, ANY
+from botocore.stub import Stubber
+
 import boto3
 
 from bentoml.deployment.sagemaker import parse_aws_client_exception_or_raise
@@ -39,6 +38,3 @@ def test_sagemaker_handle_client_errors():
     except ClientError as e:
         result = parse_aws_client_exception_or_raise(e)
     assert result.status_code == Status.UNAUTHENTICATED
-
-
-    # assert 'invalide arguments'

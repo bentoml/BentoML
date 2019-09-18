@@ -240,13 +240,6 @@ def parse_aws_client_exception_or_raise(e):
 
 
 def _cleanup(client, name, version, cleanup_endpoint_config=False):
-    model_name = create_sagemaker_model_name(name, version)
-    try:
-        delete_model_response = client.delete_model(ModelName=model_name)
-        logger.debug("AWS delete model response: %s", delete_model_response)
-    except (ClientError, ParamValidationError) as e:
-        return parse_aws_client_exception_or_raise(e)
-
     if cleanup_endpoint_config:
         endpoint_config_name = create_sagemaker_endpoint_config_name(name, version)
         try:
@@ -259,6 +252,14 @@ def _cleanup(client, name, version, cleanup_endpoint_config=False):
             )
         except (ClientError, ParamValidationError) as e:
             return parse_aws_client_exception_or_raise(e)
+
+    model_name = create_sagemaker_model_name(name, version)
+    try:
+        delete_model_response = client.delete_model(ModelName=model_name)
+        logger.debug("AWS delete model response: %s", delete_model_response)
+    except (ClientError, ParamValidationError) as e:
+        return parse_aws_client_exception_or_raise(e)
+
     return
 
 
@@ -417,9 +418,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             cleanup_endpoint_config=True,
         )
         if error_status:
-            return DeleteDeploymentResponse(
-                status=error_status
-            )
+            return DeleteDeploymentResponse(status=error_status)
 
         return DeleteDeploymentResponse(status=Status.OK())
 

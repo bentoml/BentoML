@@ -237,8 +237,29 @@ def parse_aws_client_exception_or_raise(e):
             raise e
     elif type(e) == ParamValidationError:
         return Status.INVALID_ARGUMENT(str(e))
-    else:
-        raise e
+
+
+def _cleanup(client, name, version, cleanup_endpoint_config=False):
+    model_name = create_sagemaker_model_name(name, version)
+    try:
+        delete_model_response = client.delete_model(ModelName=model_name)
+        logger.debug("AWS delete model response: %s", delete_model_response)
+    except (ClientError, ParamValidationError) as e:
+        return parse_aws_client_exception_or_raise(e)
+
+    if cleanup_endpoint_config:
+        endpoint_config_name = create_sagemaker_endpoint_config_name(name, version)
+        try:
+            delete_endpoint_config_response = client.delete_endpoint_config(
+                EndpointConfigName=endpoint_config_name
+            )
+            logger.debug(
+                "AWS delete endpoint config response: %s",
+                delete_endpoint_config_response,
+            )
+        except (ClientError, ParamValidationError) as e:
+            return parse_aws_client_exception_or_raise(e)
+    return
 
 
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
@@ -324,6 +345,11 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 create_endpoint_config_response,
             )
         except (ClientError, ParamValidationError) as e:
+            _cleanup(
+                sagemaker_client,
+                deployment_spec.bento_name,
+                deployment_spec.bento_version,
+            )
             return ApplyDeploymentResponse(
                 status=parse_aws_client_exception_or_raise(e), deployment=deployment_pb
             )
@@ -349,6 +375,12 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     "AWS create endpoint response: %s", create_endpoint_response
                 )
         except (ClientError, ParamValidationError) as e:
+            _cleanup(
+                client=sagemaker_client,
+                name=deployment_spec.bento_name,
+                version=deployment_spec.bento_version,
+                cleanup_endpoint_config=True,
+            )
             return ApplyDeploymentResponse(
                 status=parse_aws_client_exception_or_raise(e), deployment=deployment_pb
             )
@@ -378,31 +410,15 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 status=parse_aws_client_exception_or_raise(e)
             )
 
-        model_name = create_sagemaker_model_name(
-            deployment_spec.bento_name, deployment_spec.bento_version
+        error_status = _cleanup(
+            client=sagemaker_client,
+            name=deployment_spec.bento_name,
+            version=deployment_spec.bento_version,
+            cleanup_endpoint_config=True,
         )
-        try:
-            delete_model_response = sagemaker_client.delete_model(ModelName=model_name)
-            logger.debug("AWS delete model response: %s", delete_model_response)
-        except (ClientError, ParamValidationError) as e:
+        if error_status:
             return DeleteDeploymentResponse(
-                status=parse_aws_client_exception_or_raise(e)
-            )
-
-        endpoint_config_name = create_sagemaker_endpoint_config_name(
-            deployment_spec.bento_name, deployment_spec.bento_version
-        )
-        try:
-            delete_endpoint_config_response = sagemaker_client.delete_endpoint_config(
-                EndpointConfigName=endpoint_config_name
-            )
-            logger.debug(
-                "AWS delete endpoint config response: %s",
-                delete_endpoint_config_response,
-            )
-        except (ClientError, ParamValidationError) as e:
-            return DeleteDeploymentResponse(
-                status=parse_aws_client_exception_or_raise(e)
+                status=error_status
             )
 
         return DeleteDeploymentResponse(status=Status.OK())

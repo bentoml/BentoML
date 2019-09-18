@@ -231,7 +231,7 @@ def parse_aws_client_exception_or_raise(e):
         error_code = error_response.get('Code')
         if error_code == 'ValidationException':
             return Status.NOT_FOUND(error_response.get('Message', 'Unknown'))
-        elif error_response == 'InvalidSignatureException':
+        elif error_code == 'InvalidSignatureException':
             return Status.UNAUTHENTICATED(error_response.get('Message', 'Unknown'))
         else:
             raise e

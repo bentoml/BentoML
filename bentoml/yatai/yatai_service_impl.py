@@ -154,6 +154,18 @@ class YataiService(YataiServicer):
                     return DeleteDeploymentResponse(
                         status=Status.OK('Cloud resources not found')
                     )
+                else:
+                    if request.force_delete:
+                        self.deployment_store.delete(
+                            request.deployment_name, request.namespace
+                        )
+                        return DeleteDeploymentResponse(
+                            status=Status.OK(
+                                'Forced remove deployment '
+                                'record for "{}".'.format(request.deployment_name)
+                            )
+                        )
+
                 return response
             else:
                 return DeleteDeploymentResponse(

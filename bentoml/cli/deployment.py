@@ -332,11 +332,14 @@ def get_deployment_sub_command():
     @deployment.command(help='Delete deployment')
     @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
-    def delete(name, namespace):
+    @click.option('--force', is_flag=True)
+    def delete(name, namespace, force):
         track_cli('deploy-delete')
 
         result = get_yatai_service().DeleteDeployment(
-            DeleteDeploymentRequest(deployment_name=name, namespace=namespace)
+            DeleteDeploymentRequest(
+                deployment_name=name, namespace=namespace, force_delete=force
+            )
         )
         if result.status.status_code == Status.OK:
             if result.status.error_message:

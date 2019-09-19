@@ -27,6 +27,8 @@ from six.moves.urllib.parse import urlparse
 import boto3
 import docker
 
+from botocore.exceptions import ClientError
+
 from bentoml import config
 from bentoml.deployment.utils import process_docker_api_line
 from bentoml.yatai.status import Status
@@ -121,7 +123,8 @@ def create_push_image_to_ecr(bento_name, bento_version, snapshot_path):
     3. build tag and push docker image
 
     Args:
-        bento_service(BentoService)
+        bento_name(String)
+        bento_version(String)
         snapshot_path(Path)
 
     Returns:
@@ -223,6 +226,61 @@ ENDPOINT_STATUS_TO_STATE = {
 }
 
 
+def _parse_aws_client_exception_or_raise(e):
+    """parse botocore.exceptions.ClientError into Bento StatusProto
+
+    We handle two most common errors when deploying to Sagemaker.
+        1. Authenication issue/invalid access(InvalidSignatureException)
+        2. resources not found (ValidationException)
+    It will return correlated StatusProto(NOT_FOUND, UNAUTHENTICATED)
+
+    Args:
+        e: ClientError from botocore.exceptions
+    Returns:
+        StatusProto
+    """
+    error_response = e.response.get('Error', {})
+    error_code = error_response.get('Code')
+    error_message = error_response.get('Message', 'Unknown')
+    error_log_message = 'AWS ClientError for {operation}: {code} - {message}'.format(
+        operation=e.operation_name, code=error_code, message=error_message
+    )
+    if error_code == 'ValidationException':
+        logger.info(error_log_message)
+        return Status.NOT_FOUND(error_response.get('Message', 'Unknown'))
+    elif error_code == 'InvalidSignatureException':
+        logger.info(error_log_message)
+        return Status.UNAUTHENTICATED(error_response.get('Message', 'Unknown'))
+    else:
+        logger.error(error_log_message)
+        raise e
+
+
+def _cleanup_sagemaker_model(client, name, version):
+    model_name = create_sagemaker_model_name(name, version)
+    try:
+        delete_model_response = client.delete_model(ModelName=model_name)
+        logger.debug("AWS delete model response: %s", delete_model_response)
+    except ClientError as e:
+        return _parse_aws_client_exception_or_raise(e)
+
+    return
+
+
+def _cleanup_sagemaker_endpoint_config(client, name, version):
+    endpoint_config_name = create_sagemaker_endpoint_config_name(name, version)
+    try:
+        delete_endpoint_config_response = client.delete_endpoint_config(
+            EndpointConfigName=endpoint_config_name
+        )
+        logger.debug(
+            "AWS delete endpoint config response: %s", delete_endpoint_config_response
+        )
+    except ClientError as e:
+        return _parse_aws_client_exception_or_raise(e)
+    return
+
+
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, repo, prev_deployment=None):
         deployment_spec = deployment_pb.spec
@@ -233,8 +291,6 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         archive_path = repo.get(
             deployment_spec.bento_name, deployment_spec.bento_version
         )
-
-        # config = load_bentoml_config(bento_path)...
 
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
@@ -267,9 +323,20 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             },
             "ExecutionRoleArn": execution_role_arn,
         }
+
         logger.info("Creating sagemaker model %s", model_name)
-        create_model_response = sagemaker_client.create_model(**sagemaker_model_info)
-        logger.debug("AWS create model response: %s", create_model_response)
+        try:
+            create_model_response = sagemaker_client.create_model(
+                **sagemaker_model_info
+            )
+            logger.debug("AWS create model response: %s", create_model_response)
+        except ClientError as e:
+            status = _parse_aws_client_exception_or_raise(e)
+            status.error_message = (
+                'Failed to create model for SageMaker Deployment: %s',
+                status.error_message,
+            )
+            return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
         production_variants = [
             {
@@ -284,32 +351,99 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         endpoint_config_name = create_sagemaker_endpoint_config_name(
             deployment_spec.bento_name, deployment_spec.bento_version
         )
+
         logger.info(
             "Creating Sagemaker endpoint %s configuration", endpoint_config_name
         )
-        create_endpoint_config_response = sagemaker_client.create_endpoint_config(
-            EndpointConfigName=endpoint_config_name,
-            ProductionVariants=production_variants,
-        )
-        logger.debug(
-            "AWS create endpoint config response: %s", create_endpoint_config_response
-        )
+        try:
+            create_endpoint_config_response = sagemaker_client.create_endpoint_config(
+                EndpointConfigName=endpoint_config_name,
+                ProductionVariants=production_variants,
+            )
+            logger.debug(
+                "AWS create endpoint config response: %s",
+                create_endpoint_config_response,
+            )
+        except ClientError as e:
+            cleanup_model_error = _cleanup_sagemaker_model(
+                sagemaker_client,
+                deployment_spec.bento_name,
+                deployment_spec.bento_version,
+            )
+            if cleanup_model_error:
+                cleanup_model_error.error_message = (
+                    'Failed to clean up model after unsuccessfully '
+                    'create endpoint config: %s',
+                    cleanup_model_error.error_message,
+                )
+                return ApplyDeploymentResponse(
+                    status=cleanup_model_error, deployment=deployment_pb
+                )
+
+            status = _parse_aws_client_exception_or_raise(e)
+            status.error_message = (
+                'Failed to create endpoint config for SageMaker deployment: %s',
+                status.error_message,
+            )
+            return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
         endpoint_name = generate_aws_compatible_string(
             deployment_pb.namespace + '-' + deployment_spec.bento_name
         )
-        if prev_deployment:
-            logger.info("Updating sagemaker endpoint %s", endpoint_name)
-            update_endpoint_response = sagemaker_client.update_endpoint(
-                EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
+        try:
+            if prev_deployment:
+                logger.debug("Updating sagemaker endpoint %s", endpoint_name)
+                update_endpoint_response = sagemaker_client.update_endpoint(
+                    EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
+                )
+                logger.debug(
+                    "AWS update endpoint response: %s", update_endpoint_response
+                )
+            else:
+                logger.debug("Creating sagemaker endpoint %s", endpoint_name)
+                create_endpoint_response = sagemaker_client.create_endpoint(
+                    EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
+                )
+                logger.debug(
+                    "AWS create endpoint response: %s", create_endpoint_response
+                )
+        except ClientError as e:
+            cleanup_model_error = _cleanup_sagemaker_endpoint_config(
+                client=sagemaker_client,
+                name=deployment_spec.bento_name,
+                version=deployment_spec.bento_version,
             )
-            logger.debug("AWS update endpoint response: %s", update_endpoint_response)
-        else:
-            logger.info("Creating sagemaker endpoint %s", endpoint_name)
-            create_endpoint_response = sagemaker_client.create_endpoint(
-                EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
+            if cleanup_model_error:
+                cleanup_model_error.error_message = (
+                    'Failed to clean up endpoint config after unsuccessfully '
+                    'apply SageMaker deployment: %s',
+                    cleanup_model_error.error_message,
+                )
+                return ApplyDeploymentResponse(
+                    status=cleanup_model_error, deployment=deployment_pb
+                )
+
+            cleanup_model_error = _cleanup_sagemaker_endpoint_config(
+                client=sagemaker_client,
+                name=deployment_spec.bento_name,
+                version=deployment_spec.bento_version,
             )
-            logger.debug("AWS create endpoint response: %s", create_endpoint_response)
+            if cleanup_model_error:
+                cleanup_model_error.error_message = (
+                    'Failed to clean up model after unsuccessfully '
+                    'apply SageMaker deployment: %s',
+                    cleanup_model_error.error_message,
+                )
+                return ApplyDeploymentResponse(
+                    status=cleanup_model_error, deployment=deployment_pb
+                )
+
+            status = _parse_aws_client_exception_or_raise(e)
+            status.error_message = (
+                'Failed to apply SageMaker deployment: %s',
+                status.error_message,
+            )
+            return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
         res_deployment_pb = Deployment(state=DeploymentState())
         res_deployment_pb.CopyFrom(deployment_pb)
@@ -326,39 +460,44 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         endpoint_name = generate_aws_compatible_string(
             deployment_pb.namespace + '-' + deployment_spec.bento_name
         )
-        delete_endpoint_response = sagemaker_client.delete_endpoint(
-            EndpointName=endpoint_name
-        )
-        logger.debug("AWS delete endpoint response: %s", delete_endpoint_response)
-        if delete_endpoint_response["ResponseMetadata"]["HTTPStatusCode"] == 200:
-            # We will also try to delete both model and endpoint configuration for user.
-            # Since they are not critical, even they failed, we will still count delete
-            # deployment a success action
-            model_name = create_sagemaker_model_name(
-                deployment_spec.bento_name, deployment_spec.bento_version
+        try:
+            delete_endpoint_response = sagemaker_client.delete_endpoint(
+                EndpointName=endpoint_name
             )
-            delete_model_response = sagemaker_client.delete_model(ModelName=model_name)
-            logger.debug("AWS delete model response: %s", delete_model_response)
-            if delete_model_response["ResponseMetadata"]["HTTPStatusCode"] != 200:
-                logger.error(
-                    "Encounter error when deleting model: %s", delete_model_response
-                )
+            logger.debug("AWS delete endpoint response: %s", delete_endpoint_response)
+        except ClientError as e:
+            status = _parse_aws_client_exception_or_raise(e)
+            status.error_message = (
+                'Failed to delete SageMaker deployment: %s',
+                status.error_message,
+            )
+            return DeleteDeploymentResponse(status=status)
 
-            endpoint_config_name = create_sagemaker_endpoint_config_name(
-                deployment_spec.bento_name, deployment_spec.bento_version
+        delete_config_error = _cleanup_sagemaker_model(
+            client=sagemaker_client,
+            name=deployment_spec.bento_name,
+            version=deployment_spec.bento_version,
+        )
+        if delete_config_error:
+            delete_config_error.error_message = (
+                'Failed to delete SageMaker endpoint config: %s',
+                delete_config_error.error_message,
             )
-            delete_endpoint_config_response = sagemaker_client.delete_endpoint_config(  # noqa: E501
-                EndpointConfigName=endpoint_config_name
+            return DeleteDeploymentResponse(status=delete_config_error)
+
+        delete_model_error = _cleanup_sagemaker_model(
+            client=sagemaker_client,
+            name=deployment_spec.bento_name,
+            version=deployment_spec.bento_version,
+        )
+        if delete_model_error:
+            delete_model_error.error_message = (
+                'Failed to delete SageMaker model: %s',
+                delete_model_error.error_message,
             )
-            logger.debug(
-                "AWS delete endpoint config response: %s",
-                delete_endpoint_config_response,
-            )
-            return DeleteDeploymentResponse(status=Status.OK())
-        else:
-            return DeleteDeploymentResponse(
-                status=Status.INTERNAL(str(delete_endpoint_response))
-            )
+            return DeleteDeploymentResponse(status=delete_model_error)
+
+        return DeleteDeploymentResponse(status=Status.OK())
 
     def describe(self, deployment_pb, repo=None):
         deployment_spec = deployment_pb.spec
@@ -369,9 +508,18 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         endpoint_name = generate_aws_compatible_string(
             deployment_pb.namespace + '-' + deployment_spec.bento_name
         )
-        endpoint_status_response = sagemaker_client.describe_endpoint(
-            EndpointName=endpoint_name
-        )
+        try:
+            endpoint_status_response = sagemaker_client.describe_endpoint(
+                EndpointName=endpoint_name
+            )
+        except ClientError as e:
+            status = _parse_aws_client_exception_or_raise(e)
+            status.error_message = (
+                'Failed to describe SageMaker deployment: %s',
+                status.error_message,
+            )
+            return DescribeDeploymentResponse(status=status)
+
         logger.debug("AWS describe endpoint response: %s", endpoint_status_response)
         endpoint_status = endpoint_status_response["EndpointStatus"]
 

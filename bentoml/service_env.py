@@ -35,7 +35,7 @@ dependencies:
   - python={python_version}
   - pip
   - pip:
-    - bentoml[api_server]=={bentoml_version}
+    - {bentoml_package}
 """
 
 CONDA_ENV_DEFAULT_NAME = "bentoml-custom-conda-env"
@@ -56,11 +56,14 @@ class CondaEnv(object):
     ):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
+        bentoml_package = 'bentoml[api_server]=={}'.format(bentoml_version)
+        if os.environ['BENTOML_DEVELOPMENT_PACKAGE']:
+            bentoml_package = os.environ['BENTOML_DEVELOPMENT_PACKAGE']
         self._conda_env = self._yaml.load(
             CONDA_ENV_BASE_YAML.format(
                 name=name,
                 python_version=python_version,
-                bentoml_version=bentoml_version,
+                bentoml_package=bentoml_package,
             )
         )
 
@@ -119,7 +122,10 @@ class BentoServiceEnv(object):
     def __init__(self, bentoml_version=LOCAL_BENTOML_VERSION):
         self._setup_sh = None
         self._conda_env = CondaEnv()
-        self._pip_dependencies = ["bentoml=={}".format(bentoml_version)]
+        bentoml_dependency = "bentoml=={}".format(bentoml_version)
+        if os.environ['BENTOML_DEVELOPMENT_PACKAGE']:
+            bentoml_dependency = os.environ['BENTOML_DEVELOPMENT_PACKAGE']
+        self._pip_dependencies = [bentoml_dependency]
 
     def get_conda_env_name(self):
         return self._conda_env.get_name()

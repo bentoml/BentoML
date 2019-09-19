@@ -38,6 +38,7 @@ from bentoml.deployment.serverless.serverless_utils import (
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
     parse_serverless_info_response_to_json_string,
+    install_serverless_plugin,
 )
 
 logger = logging.getLogger(__name__)
@@ -122,6 +123,9 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 region=gcp_config.region,
                 stage=deployment_pb.namespace,
             )
+            logger.info('Install additional packages: serverless-google-cloudfunctions')
+            install_serverless_plugin("serverless-google-cloudfunctions", output_path)
+            logger.info('Deploying to Google cloud function')
             call_serverless_command(["serverless", "deploy"], output_path)
 
         res_deployment_pb = Deployment(state=DeploymentState())

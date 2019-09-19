@@ -339,9 +339,15 @@ def get_deployment_sub_command():
             DeleteDeploymentRequest(deployment_name=name, namespace=namespace)
         )
         if result.status.status_code == Status.OK:
-            _echo(
-                'Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS
-            )
+            if result.status.error_message:
+                _echo(
+                    'Delete deployment record.  Message: %s',
+                    result.status.error_message,
+                )
+            else:
+                _echo(
+                    'Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS
+                )
         else:
             _echo(
                 'Failed to delete deployment {name}. code: {error_code}, message: '

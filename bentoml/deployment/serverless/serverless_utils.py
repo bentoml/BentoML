@@ -72,10 +72,11 @@ def call_serverless_command(command, cwd_path):
 
 
 def parse_serverless_response(serverless_response):
-    """Parse serverless response string, raise error if it is a serverless error,
-  otherwise, return information.
-  """
+    """Parse serverless response string raise error if it is a serverless error,
+      otherwise, return information.
+    """
     str_list = serverless_response.strip().split("\n")
+
     serverless_error = [s for s in str_list if "Serverless Error" in s]
     if serverless_error:
         error_pos = str_list.index(serverless_error[0])

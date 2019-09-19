@@ -338,7 +338,11 @@ def get_deployment_sub_command():
         result = get_yatai_service().DeleteDeployment(
             DeleteDeploymentRequest(deployment_name=name, namespace=namespace)
         )
-        if result.status.status_code != Status.OK:
+        if result.status.status_code == Status.OK:
+            _echo(
+                'Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS
+            )
+        else:
             _echo(
                 'Failed to delete deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(
@@ -348,8 +352,6 @@ def get_deployment_sub_command():
                 ),
                 CLI_COLOR_ERROR,
             )
-        else:
-            _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
     @deployment.command(help='Get deployment spec')
     @click.argument("name", type=click.STRING, required=True)

@@ -147,7 +147,16 @@ class YataiService(YataiServicer):
                     self.deployment_store.delete(
                         request.deployment_name, request.namespace
                     )
-
+                elif response.status.status_code == status_pb2.Status.NOT_FOUND:
+                    self.deployment_store.delete(
+                        request.deployment_name, request.namespace
+                    )
+                    return DeleteDeploymentResponse(
+                        status=Status.OK(
+                            'Cloud resources not found, remove deployment '
+                            'record for "{}"'.format(request.deployment_name)
+                        )
+                    )
                 return response
             else:
                 return DeleteDeploymentResponse(

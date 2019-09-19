@@ -200,9 +200,9 @@ def bento_service_api_wrapper(api, service_name, service_version):
         all_paths = []
 
         if request.content_type.startswith(img_prefix):
-            filename = '{request_id}-{timestamp}.{ext}'.format(
-                request_id=request_id,
+            filename = '{timestamp}-{request_id}.{ext}'.format(
                 timestamp=int(time.time()),
+                request_id=request_id,
                 ext=request.content_type[len(img_prefix) :],
             )
             path = os.path.join(log_folder, filename)
@@ -214,9 +214,9 @@ def bento_service_api_wrapper(api, service_name, service_version):
             file = request.files[name]
             if file and file.filename:
                 orig_filename = secure_filename(file.filename)
-                filename = '{request_id}-{timestamp}-{orig_filename}'.format(
-                    request_id=request_id,
+                filename = '{timestamp}-{request_id}-{orig_filename}'.format(
                     timestamp=int(time.time()),
+                    request_id=request_id,
                     orig_filename=orig_filename,
                 )
                 path = os.path.join(log_folder, filename)
@@ -231,14 +231,14 @@ def bento_service_api_wrapper(api, service_name, service_version):
             # Assume there is not a strong use case for idempotency check here.
             # Will revise later if we find a case.
 
-            image_paths = None
+            image_paths = []
             if not config('logging').getboolean('disable_logging_image'):
                 image_paths = log_image(request, request_id)
 
             response = api.handle_request(request)
 
             request_log = {
-                "uuid": request_id,
+                "request_id": request_id,
                 "service_name": service_name,
                 "service_version": service_version,
                 "api": api.name,
@@ -246,7 +246,7 @@ def bento_service_api_wrapper(api, service_name, service_version):
                 "response_code": response.status_code,
             }
 
-            if image_paths is not None:
+            if len(image_paths) > 0:
                 request_log['image_paths'] = image_paths
 
             if 200 <= response.status_code < 300:

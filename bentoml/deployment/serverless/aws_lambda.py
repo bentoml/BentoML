@@ -194,7 +194,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             functions=generate_aws_handler_functions_config(bento_config['apis']),
         ) as tempdir:
             response = call_serverless_command(['serverless', 'remove'], tempdir)
-            stack_name = '{name}-{namespace}'.format(name=deployment_pb.name, namespace=deployment_pb.namespace)
+            stack_name = '{name}-{namespace}'.format(
+                name=deployment_pb.name, namespace=deployment_pb.namespace
+            )
             if "Serverless: Stack removal finished..." in response:
                 status = Status.OK()
             elif "Stack '{}' does not exist".format(stack_name) in response:

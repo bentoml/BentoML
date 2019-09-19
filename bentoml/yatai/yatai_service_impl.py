@@ -19,7 +19,7 @@ from __future__ import print_function
 
 import logging
 
-
+from bentoml.deployment.utils import add_local_bentoml_package_to_repo
 from bentoml.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,
@@ -46,6 +46,7 @@ from bentoml.exceptions import BentoMLException
 from bentoml.repository import BentoRepository
 from bentoml.repository.metadata_store import BentoMetadataStore
 from bentoml.db import init_db
+from bentoml.utils.usage_stats import _is_pypi_release
 from bentoml.yatai.status import Status
 from bentoml.proto import status_pb2
 from bentoml.utils import ProtoMessageToDict
@@ -113,6 +114,10 @@ class YataiService(YataiServicer):
             self.deployment_store.insert_or_update(request.deployment)
             # find deployment operator based on deployment spec
             operator = get_deployment_operator(request.deployment)
+
+            # Generate BentoML whl file to repository
+            if not _is_pypi_release():
+                add_local_bentoml_package_to_repo(request.deployment, self.repo)
 
             # deploying to target platform
             response = operator.apply(

@@ -17,7 +17,11 @@ from __future__ import division
 from __future__ import print_function
 
 import json
+import os
 import logging
+import imp
+
+from setuptools import sandbox
 
 
 logger = logging.getLogger(__name__)
@@ -44,3 +48,32 @@ def process_docker_api_line(payload):
                     )
                 elif "stream" in line_payload:
                     logger.info(line_payload['stream'])
+
+
+INSTALL_WHEEL_TEMPLATE = """\
+#!/bin/bash
+
+for filename in ./wheel_dependencies/*.whl; do
+    [ -e "$filename" ] || continue
+    # pip install "$filename" --ignore-installed
+done
+"""
+
+
+def add_local_bentoml_package_to_repo(deployment_pb, repo):
+    deployment_spec = deployment_pb.spec
+    archive_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
+    bentoml_location = imp.find_module('bentoml')[1]
+
+    wheel_dir = os.path.join(archive_path, 'wheel_dependencies')
+    install_script_path = os.path.join(archive_path, 'install_wheels.sh')
+    setup_py = os.path.join(bentoml_location, 'setup.py')
+    sandbox.run_setup(setup_py, ['bdist_wheel', '--dist-dir', wheel_dir])
+
+    with open(install_script_path, 'w') as f:
+        f.write(INSTALL_WHEEL_TEMPLATE)
+    permission = "755"
+    octal_permission = int(permission, 8)
+    os.chmod(install_script_path, octal_permission)
+
+    return

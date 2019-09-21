@@ -115,8 +115,9 @@ class FastaiImageHandler(BentoHandler):
                 input_streams.append(BytesIO(file.read()))
 
         if len(input_streams) == 0:
-            if request.data:
-                input_streams = (request.data,)
+            data = request.get_data()
+            if data:
+                input_streams = (data,)
             else:
                 raise ValueError(
                     "BentoML#ImageHandler unexpected HTTP request: %s" % request

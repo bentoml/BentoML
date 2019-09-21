@@ -207,7 +207,7 @@ def bento_service_api_wrapper(api, service_name, service_version):
             )
             path = os.path.join(log_folder, filename)
             all_paths.append(path)
-            with open(path, 'w') as f:
+            with open(path, 'wb') as f:
                 f.write(request.get_data())
 
         for name in request.files:

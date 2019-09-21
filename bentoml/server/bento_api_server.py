@@ -222,6 +222,7 @@ def bento_service_api_wrapper(api, service_name, service_version):
                 path = os.path.join(log_folder, filename)
                 all_paths.append(path)
                 file.save(path)
+                file.stream.seek(0)
 
         return all_paths
 

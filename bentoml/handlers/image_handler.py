@@ -113,8 +113,9 @@ class ImageHandler(BentoHandler):
 
         input_files = [request.files.get(filename) for filename in self.input_names]
         if len(input_files) == 1 and input_files[0] is None:
-            if request.data:
-                input_streams = (request.data,)
+            data = request.get_data()
+            if data:
+                input_streams = (data,)
             else:
                 raise ValueError(
                     "BentoML#ImageHandler unexpected HTTP request: %s" % request

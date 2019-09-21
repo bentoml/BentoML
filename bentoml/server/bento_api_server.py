@@ -63,7 +63,7 @@ def _request_to_json(req):
     if req.content_type == "application/json":
         return req.get_json()
 
-    return {"data": "ignore content type other than JSON."}
+    return {}
 
 
 def has_empty_params(rule):
@@ -195,7 +195,7 @@ def bento_service_api_wrapper(api, service_name, service_version):
 
     def log_image(request, request_id):
         img_prefix = 'image/'
-        log_folder = config('logging').get('base_log_folder')
+        log_folder = config('logging').get('base_log_dir')
 
         all_paths = []
 

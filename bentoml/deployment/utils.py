@@ -20,9 +20,12 @@ import json
 import os
 import logging
 import imp
+import shutil
+from datetime import datetime
 
 from setuptools import sandbox
 
+from bentoml.utils import Path
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +56,7 @@ def process_docker_api_line(payload):
 INSTALL_WHEEL_TEMPLATE = """\
 #!/bin/bash
 
-for filename in ./wheel_dependencies/*.whl; do
+for filename in ./bundled_dependencies/*.tar.gz; do
     [ -e "$filename" ] || continue
     # pip install "$filename" --ignore-installed
 done
@@ -63,17 +66,25 @@ done
 def add_local_bentoml_package_to_repo(deployment_pb, repo):
     deployment_spec = deployment_pb.spec
     archive_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
-    bentoml_location = imp.find_module('bentoml')[1]
+    bentoml_location = Path(imp.find_module('bentoml')[1])
 
-    wheel_dir = os.path.join(archive_path, 'wheel_dependencies')
-    install_script_path = os.path.join(archive_path, 'install_wheels.sh')
-    setup_py = os.path.join(bentoml_location, 'setup.py')
-    sandbox.run_setup(setup_py, ['bdist_wheel', '--dist-dir', wheel_dir])
+    date_string = datetime.now().strftime("%Y_%m_%d")
+    bundle_dir = '__bento_dev_{}'.format(date_string)
 
+    install_script_path = os.path.join(archive_path, 'install_bundled_dependencies.sh')
+    setup_py = os.path.join(bentoml_location.parent, 'setup.py')
+    sandbox.run_setup(setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir])
+
+    files = os.listdir(os.path.join(bentoml_location, bundle_dir))
+    for file in files:
+        shutil.move(os.path.join(bentoml_location, bundle_dir, file), os.path.join(archive_path, 'bundle_dependencies'))
+    shutil.rmtree(os.path.join(bentoml_location, bundle_dir))
+    
     with open(install_script_path, 'w') as f:
         f.write(INSTALL_WHEEL_TEMPLATE)
     permission = "755"
     octal_permission = int(permission, 8)
     os.chmod(install_script_path, octal_permission)
 
+    print(archive_path)
     return

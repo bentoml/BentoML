@@ -92,7 +92,7 @@ RUN conda env update -n base -f /bento/environment.yml
 RUN pip install -r /bento/requirements.txt
 
 # Install wheel files
-RUN if [ -f /bento/install_wheels.sh ] then /bin/bash -c /bento/install_wheels.sh; fi
+RUN if [ -f /bento/install_wheels.sh ] then /bin/bash -c /bento/install_bundled_dependencies.sh; fi
 
 # run user defined setup script
 RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi

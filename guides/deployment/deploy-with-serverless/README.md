@@ -30,28 +30,12 @@ We will train a scikit-learn model, and then we will use BentoML to package it. 
 ## Deploy to AWS lambda
 It is simple to deploy to AWS Lambda with BentoML. After you saved your model as BentoML bundle, you invoke a single command.
 
-You have two ways to invoke that command.
-
-One way is invoke the command inside the training notebook. You add a new cell after you save the model with BentoML.
-Make sure you add `!` before you call any command
-
-```
-!bentoml deploy /SAVED_PATH --platform aws-lambda --region us-west-2
-```
-
-The second way is invoke the same command from a terminal. 
-
 ```bash
-bentoml deploy /ARCHIVE_PATH --platform aws-lambda --region us-west-2
+bentoml deployment create my-serverless-deployment --bento BENTO_NAME:BENTO_VERSION --platform aws-lambda --region us-west-2
 ```
 
 #### What happens after the deploy command
 BentoML does serveal things under the hood that help data scientists to deploy their model services to AWS lambda.
-
-BentoML will first generate a serverless project and store it in the snapshot directory.
-The snapshot contains your BentoML model archive and configuration files for AWS Lambda
-
-![ScreenShot](./file-structures.png)
 
 BentoML will invoke AWS to create different services.  Those services managed by CloudFormation.  When the process complete, you will see the Lambda function in service.
 
@@ -75,12 +59,12 @@ https://URL
 
 ## Check deployment status
 ```bash
-bentoml check-deployment-status /ARCHIVE_PATH --platform aws-lambda -region us-west-2
+bentoml deployment describe my-serverless-deployment
 ```
 
 
 ## Delete deployment from AWS lambda
 Delete deployment from AWS lambda is as simple as deploy it. To delete deployment use `bentoml delete-deployment` command.
 ```bash
-bentoml delete-deployment /ARCHIVE_PATH --platform aws-lambda --region us-west-2
+bentoml deployment delete my-serverless-deployment
 ```

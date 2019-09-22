@@ -21,21 +21,16 @@ It offer remote Jupyter notebook for building model and help you train and deplo
 
 ## Deploy to AWS SageMaker with BentoML
 
-After you exported your model with BentoML, you can invoke `bentoml deploy` command for SageMaker deployment. You can invoke that command either inside the Jupyter notebook or inside your terminal.
-Update `/ARCHIVED_PATH` with your saved BentoML archive path and run the following command
+After you exported your model with BentoML, you can invoke `bentoml deployment create` command for SageMaker deployment. You can invoke that command either inside the Jupyter notebook or inside your terminal.
+Update `BENTO_NAME` and `BENTO_VERSION` with your saved BentoML service's inforamtion and run the following command
 
 ```bash
-bentoml deploy /ARCHIVED_PATH --platform=aws-sagemaker --region=AWS_REGION --api-name=predict
+bentoml deployment create my-sagemaker-deployment --bento BENTO_NAME:BENTO_VERSION --platform=aws-sagemaker --region=AWS_REGION --api-name=predict
 ```
 
 After you invoke the command, BentoML will first generated a snapshot of this model archive in your local file system with additional files for AWS SageMaker.
 
 After you invoke deploy command, BentoML will perform serveal operations for SageMaker deployment.
-
-First, BentoML will generate snapshot of this deployment in your local file system.  The default snapshot location is `~/bentoml/deployments`.
-It will place the snapshot in the format of `platform/model_archive_name/model_archive_version/timestamp`
-
-![ScreenShot](./file-struc.png)
 
 BentoML will use docker to build an image with the snapshot archive and then push the image to AWS ECR(Elasitc Container Registry)
 
@@ -67,7 +62,7 @@ You can invoke the example model with following command.
 
 ```bash
 aws sagemaker-runtime invoke-endpoint \
---endpoint-name SentimentLRModel \
+--endpoint-name default-SentimentLRModel \
 --body '["sweet food", "bad food", "happy day"]' \
 --content-type "application/json" \
 output.json
@@ -76,7 +71,7 @@ output.json
 ## Check deployment status
 
 ```bash
-bentoml check-deployment-status /ARCHIVED_PATH --platform=aws-sagemaker --region=AWS_REGION
+bentoml deployment describe my-sagemaker-deployment
 ```
 
 ## Delete deployment
@@ -84,5 +79,5 @@ bentoml check-deployment-status /ARCHIVED_PATH --platform=aws-sagemaker --region
 Delete a SageMaker deployment is as easy as deploying it.
 
 ```bash
-bentoml delete-deployment /ARCHIVED_PATH --platform=aws-sagemaker --region=AWS_REGION
+bentoml deployment delete my-sagemaker-deployment
 ```

@@ -126,6 +126,7 @@ message ApplyDeploymentResponse {
 message DeleteDeploymentRequest {
   string deployment_name = 1;
   string namespace = 2;
+  // force delete the deployment record in database and ignore errors when deleting cloud resources
   bool force_delete = 3;
 }
 

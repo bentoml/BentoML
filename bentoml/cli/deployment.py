@@ -332,7 +332,12 @@ def get_deployment_sub_command():
     @deployment.command(help='Delete deployment')
     @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
-    @click.option('--force', is_flag=True)
+    @click.option(
+        '--force',
+        is_flag=True,
+        help='Remove deployment record, despite error or not. Please '
+        'remove any orphan cloud resources',
+    )
     def delete(name, namespace, force):
         track_cli('deploy-delete')
 
@@ -341,17 +346,7 @@ def get_deployment_sub_command():
                 deployment_name=name, namespace=namespace, force_delete=force
             )
         )
-        if result.status.status_code == Status.OK:
-            if result.status.error_message:
-                _echo(
-                    'Delete deployment record.  Message: %s',
-                    result.status.error_message,
-                )
-            else:
-                _echo(
-                    'Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS
-                )
-        else:
+        if result.status.status_code != Status.OK:
             _echo(
                 'Failed to delete deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(
@@ -361,6 +356,10 @@ def get_deployment_sub_command():
                 ),
                 CLI_COLOR_ERROR,
             )
+        _echo(
+            'Successfully deleted deployment "{}"'.format(name),
+            CLI_COLOR_SUCCESS,
+        )
 
     @deployment.command(help='Get deployment spec')
     @click.argument("name", type=click.STRING, required=True)

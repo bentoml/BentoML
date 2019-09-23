@@ -408,22 +408,22 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     "AWS create endpoint response: %s", create_endpoint_response
                 )
         except ClientError as e:
-            cleanup_model_error = _cleanup_sagemaker_endpoint_config(
+            cleanup_endpoint_config_error = _cleanup_sagemaker_endpoint_config(
                 client=sagemaker_client,
                 name=deployment_spec.bento_name,
                 version=deployment_spec.bento_version,
             )
-            if cleanup_model_error:
-                cleanup_model_error.error_message = (
+            if cleanup_endpoint_config_error:
+                cleanup_endpoint_config_error.error_message = (
                     'Failed to clean up endpoint config after unsuccessfully '
                     'apply SageMaker deployment: %s',
-                    cleanup_model_error.error_message,
+                    cleanup_endpoint_config_error.error_message,
                 )
                 return ApplyDeploymentResponse(
-                    status=cleanup_model_error, deployment=deployment_pb
+                    status=cleanup_endpoint_config_error, deployment=deployment_pb
                 )
 
-            cleanup_model_error = _cleanup_sagemaker_endpoint_config(
+            cleanup_model_error = _cleanup_sagemaker_model(
                 client=sagemaker_client,
                 name=deployment_spec.bento_name,
                 version=deployment_spec.bento_version,
@@ -473,7 +473,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             )
             return DeleteDeploymentResponse(status=status)
 
-        delete_config_error = _cleanup_sagemaker_model(
+        delete_config_error = _cleanup_sagemaker_endpoint_config(
             client=sagemaker_client,
             name=deployment_spec.bento_name,
             version=deployment_spec.bento_version,

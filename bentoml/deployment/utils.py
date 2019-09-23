@@ -21,8 +21,9 @@ import os
 import logging
 import imp
 import shutil
-from datetime import datetime
 
+from distutils.dir_util import copy_tree
+from datetime import datetime
 from setuptools import sandbox
 
 from bentoml.utils import Path
@@ -53,7 +54,7 @@ def process_docker_api_line(payload):
                     logger.info(line_payload['stream'])
 
 
-INSTALL_WHEEL_TEMPLATE = """\
+INSTALL_TARGZ_TEMPLATE = """\
 #!/bin/bash
 
 for filename in ./bundled_dependencies/*.tar.gz; do
@@ -69,22 +70,23 @@ def add_local_bentoml_package_to_repo(deployment_pb, repo):
     bentoml_location = Path(imp.find_module('bentoml')[1])
 
     date_string = datetime.now().strftime("%Y_%m_%d")
-    bundle_dir = '__bento_dev_{}'.format(date_string)
+    bundle_dir_name = '__bento_dev_{}'.format(date_string)
+    Path(bundle_dir_name).mkdir(exist_ok=True, parents=True)
+
+    setup_py = os.path.join(bentoml_location.parent, 'setup.py')
+    sandbox.run_setup(setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name])
+
+    source_dir = os.path.join(bentoml_location.parent, bundle_dir_name)
+    dist_dir = os.path.join(archive_path, 'bundle_dependencies')
+    copy_tree(source_dir, dist_dir)
 
     install_script_path = os.path.join(archive_path, 'install_bundled_dependencies.sh')
-    setup_py = os.path.join(bentoml_location.parent, 'setup.py')
-    sandbox.run_setup(setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir])
-
-    files = os.listdir(os.path.join(bentoml_location, bundle_dir))
-    for file in files:
-        shutil.move(os.path.join(bentoml_location, bundle_dir, file), os.path.join(archive_path, 'bundle_dependencies'))
-    shutil.rmtree(os.path.join(bentoml_location, bundle_dir))
-    
     with open(install_script_path, 'w') as f:
-        f.write(INSTALL_WHEEL_TEMPLATE)
+        f.write(INSTALL_TARGZ_TEMPLATE)
     permission = "755"
     octal_permission = int(permission, 8)
     os.chmod(install_script_path, octal_permission)
 
-    print(archive_path)
+    shutil.rmtree(source_dir)
+
     return

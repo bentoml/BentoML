@@ -138,7 +138,10 @@ class TemporaryServerlessContent(object):
 
         if not _is_pypi_release():
             dest_bundle_path = os.path.join(tempdir, 'bundle_dependencies')
-            bundle_dependencies_path = os.path.join(self.archive_path, 'bundle_dependencies')
+            bundle_dependencies_path = os.path.join(
+                self.archive_path,
+                'bundle_dependencies'
+            )
             shutil.copytree(bundle_dependencies_path, dest_bundle_path)
             requirement_txt_path = os.path.join(tempdir, 'requirements.txt')
 

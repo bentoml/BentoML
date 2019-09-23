@@ -115,7 +115,7 @@ class YataiService(YataiServicer):
             # find deployment operator based on deployment spec
             operator = get_deployment_operator(request.deployment)
 
-            # Generate BentoML whl file to repository
+            # Generate BentoML bundle to repository
             if not _is_pypi_release():
                 add_local_bentoml_package_to_repo(request.deployment, self.repo)
 

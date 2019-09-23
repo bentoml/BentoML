@@ -74,7 +74,9 @@ def add_local_bentoml_package_to_repo(deployment_pb, repo):
     Path(bundle_dir_name).mkdir(exist_ok=True, parents=True)
 
     setup_py = os.path.join(bentoml_location.parent, 'setup.py')
-    sandbox.run_setup(setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name])
+    sandbox.run_setup(
+        setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name]
+    )
 
     source_dir = os.path.join(bentoml_location.parent, bundle_dir_name)
     dist_dir = os.path.join(archive_path, 'bundle_dependencies')

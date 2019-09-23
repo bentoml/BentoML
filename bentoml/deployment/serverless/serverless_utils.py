@@ -27,6 +27,7 @@ from ruamel.yaml import YAML
 from packaging import version
 
 from bentoml.utils import Path
+from bentoml.utils.usage_stats import _is_pypi_release
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
 from bentoml.exceptions import BentoMLException
@@ -129,10 +130,25 @@ class TemporaryServerlessContent(object):
             ],
             tempdir,
         )
-        shutil.copy(os.path.join(self.archive_path, "requirements.txt"), tempdir)
+        requirement_txt_path = os.path.join(self.archive_path, 'requirements.txt')
+        shutil.copy(requirement_txt_path, tempdir)
         model_serivce_archive_path = os.path.join(tempdir, self.bento_name)
         model_path = os.path.join(self.archive_path, self.bento_name)
         shutil.copytree(model_path, model_serivce_archive_path)
+
+        if not _is_pypi_release():
+            dest_bundle_path = os.path.join(tempdir, 'bundle_dependencies')
+            bundle_dependencies_path = os.path.join(self.archive_path, 'bundle_dependencies')
+            shutil.copytree(bundle_dependencies_path, dest_bundle_path)
+            requirement_txt_path = os.path.join(tempdir, 'requirements.txt')
+
+            with open(requirement_txt_path, 'r+') as file:
+                content = file.read()
+                requirement_list = content.split('\n')
+                bundle_files = os.listdir(dest_bundle_path)
+                requirement_list[0] = './bundle_dependencies/{}'.format(bundle_files[0])
+                file.write('\n'.join(requirement_list))
+
         self.path = tempdir
 
     def cleanup(self):

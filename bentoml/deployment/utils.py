@@ -79,8 +79,8 @@ def add_local_bentoml_package_to_repo(deployment_pb, repo):
     )
 
     source_dir = os.path.join(bentoml_location.parent, bundle_dir_name)
-    dist_dir = os.path.join(archive_path, 'bundle_dependencies')
-    copy_tree(source_dir, dist_dir)
+    dest_dir = os.path.join(archive_path, 'bundle_dependencies')
+    copy_tree(source_dir, dest_dir)
 
     install_script_path = os.path.join(archive_path, 'install_bundled_dependencies.sh')
     with open(install_script_path, 'w') as f:

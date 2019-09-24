@@ -59,7 +59,7 @@ INSTALL_TARGZ_TEMPLATE = """\
 
 for filename in ./bundled_dependencies/*.tar.gz; do
     [ -e "$filename" ] || continue
-    # pip install "$filename" --ignore-installed
+    pip install "$filename" --ignore-installed
 done
 """
 

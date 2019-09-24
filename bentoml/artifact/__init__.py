@@ -17,11 +17,11 @@ from __future__ import division
 from __future__ import print_function
 
 from bentoml.artifact.artifact import ArtifactSpec, ArtifactWrapper, ArtifactCollection
+from bentoml.artifact.text_file_artifact import TextFileArtifact
 from bentoml.artifact.pickle_artifact import PickleArtifact
 from bentoml.artifact.pytorch_model_artifact import PytorchModelArtifact
-from bentoml.artifact.text_file_artifact import TextFileArtifact
 from bentoml.artifact.keras_model_artifact import KerasModelArtifact
-from bentoml.artifact.xgboost_artifact import XgboostModelArtifact
+from bentoml.artifact.xgboost_model_artifact import XgboostModelArtifact
 from bentoml.artifact.h2o_model_artifact import H2oModelArtifact
 from bentoml.artifact.fastai_model_artifact import FastaiModelArtifact
 

@@ -21,9 +21,15 @@ import os
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 try:
-    from sklearn.externals import joblib
+    import joblib
 except ImportError:
     joblib = None
+
+if joblib is None:
+    try:
+        from sklearn.externals import joblib
+    except ImportError:
+        pass
 
 
 class SklearnModelArtifact(BentoServiceArtifact):

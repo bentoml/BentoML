@@ -22,7 +22,7 @@ from bentoml.artifact.pytorch_model_artifact import PytorchModelArtifact
 from bentoml.artifact.text_file_artifact import TextFileArtifact
 from bentoml.artifact.keras_model_artifact import KerasModelArtifact
 from bentoml.artifact.xgboost_artifact import XgboostModelArtifact
-from bentoml.artifact.h2o_artifact import H2oModelArtifact
+from bentoml.artifact.h2o_model_artifact import H2oModelArtifact
 from bentoml.artifact.fastai_model_artifact import FastaiModelArtifact
 
 __all__ = [

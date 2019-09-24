@@ -250,7 +250,7 @@ def artifacts_decorator(artifact_specs):
     """Define artifact spec for BentoService
 
     Args:
-        artifact_specs (list(bentoml.artifact.ArtifactSpec)): A list of desired
+        artifact_specs (list(bentoml.artifact.BentoServiceArtifact)): A list of desired
             artifacts for initializing this BentoService
         for initializing this BentoService being decorated
     """

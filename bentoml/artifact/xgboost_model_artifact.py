@@ -18,10 +18,10 @@ from __future__ import print_function
 
 import os
 
-from bentoml.artifact import ArtifactSpec, ArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 
-class XgboostModelArtifact(ArtifactSpec):
+class XgboostModelArtifact(BentoServiceArtifact):
     """Abstraction for save/load object with Xgboost.
 
     Args:
@@ -53,7 +53,7 @@ class XgboostModelArtifact(ArtifactSpec):
         return self.pack(bst)
 
 
-class _XgboostModelArtifactWrapper(ArtifactWrapper):
+class _XgboostModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model):
         super(_XgboostModelArtifactWrapper, self).__init__(spec)
 

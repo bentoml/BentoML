@@ -21,12 +21,12 @@ import os
 ARTIFACTS_SUBPATH = "artifacts"
 
 
-class ArtifactSpec(object):
+class BentoServiceArtifact(object):
     """
     Artifact is a spec describing how to pack and load different types
     of model dependencies to/from file system.
 
-    A call to pack and load should return an ArtifactWrapper that can
+    A call to pack and load should return an BentoServiceArtifactWrapper that can
     be saved to file system or retrieved for BentoService workload
     """
 
@@ -56,10 +56,10 @@ class ArtifactSpec(object):
         """
 
 
-class ArtifactWrapper(object):
+class BentoServiceArtifactWrapper(object):
     """
-    ArtifactWrapper is an object representing a materialized Artifact, either
-    loaded from file system or packed with data in a python session
+    BentoServiceArtifactWrapper is an object representing a materialized Artifact,
+    either loaded from file system or packed with data in a python session
     """
 
     def __init__(self, spec):
@@ -68,7 +68,8 @@ class ArtifactWrapper(object):
     @property
     def spec(self):
         """
-        :return: reference to the ArtifactSpec that generated this ArtifactWrapper
+        :return: reference to the BentoServiceArtifact that generated this
+        BentoServiceArtifactWrapper
         """
         return self._spec
 
@@ -102,11 +103,11 @@ class ArtifactCollection(dict):
         return self[item].get()
 
     def add(self, artifact):
-        if not isinstance(artifact, ArtifactWrapper):
+        if not isinstance(artifact, BentoServiceArtifactWrapper):
             raise TypeError(
-                "ArtifactCollection only accepts type bentoml.ArtifactWrapper,"
-                "Must call Artifact#pack or Artifact#load before adding to"
-                "an ArtifactCollection"
+                "ArtifactCollection only accepts type BentoServiceArtifactWrapper,"
+                "Must call BentoServiceArtifact#pack or BentoServiceArtifact#load "
+                "before adding to an ArtifactCollection"
             )
 
         super(ArtifactCollection, self).__setitem__(artifact.spec.name, artifact)
@@ -123,7 +124,7 @@ class ArtifactCollection(dict):
     @classmethod
     def load(cls, path, artifacts_spec):
         """bulk operation for loading all artifacts from path based on a list of
-        ArtifactSpec
+        BentoServiceArtifact
         """
         load_path = os.path.join(path, ARTIFACTS_SUBPATH)
         artifacts = cls()

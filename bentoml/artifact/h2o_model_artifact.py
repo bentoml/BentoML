@@ -19,10 +19,10 @@ from __future__ import print_function
 import os
 import shutil
 
-from bentoml.artifact import ArtifactSpec, ArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 
-class H2oModelArtifact(ArtifactSpec):
+class H2oModelArtifact(BentoServiceArtifact):
     """Abstraction for saving/loading objects with h2o.save_model and h2o.load_model
 
     Args:
@@ -49,7 +49,7 @@ class H2oModelArtifact(ArtifactSpec):
         return self.pack(model)
 
 
-class _H2oModelArtifactWrapper(ArtifactWrapper):
+class _H2oModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model):
         super(_H2oModelArtifactWrapper, self).__init__(spec)
         self._model = model

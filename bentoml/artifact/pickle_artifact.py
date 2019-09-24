@@ -21,10 +21,10 @@ import os
 import dill
 from six import string_types
 
-from bentoml.artifact import ArtifactSpec, ArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 
-class PickleArtifact(ArtifactSpec):
+class PickleArtifact(BentoServiceArtifact):
     """Abstraction for saving/loading python objects with pickle serialization
 
     Args:
@@ -56,7 +56,7 @@ class PickleArtifact(ArtifactSpec):
         return self.pack(obj)
 
 
-class _PickleArtifactWrapper(ArtifactWrapper):
+class _PickleArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, obj):
         super(_PickleArtifactWrapper, self).__init__(spec)
 

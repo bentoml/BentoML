@@ -19,10 +19,10 @@ from __future__ import print_function
 import os
 import re
 
-from bentoml.artifact import ArtifactSpec, ArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 
-class TextFileArtifact(ArtifactSpec):
+class TextFileArtifact(BentoServiceArtifact):
     """Abstraction for saving/loading string to/from text files
 
     Args:
@@ -54,7 +54,7 @@ class TextFileArtifact(ArtifactSpec):
         return _TextFileArtifactWrapper(self, content)
 
 
-class _TextFileArtifactWrapper(ArtifactWrapper):
+class _TextFileArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, content):
         super(_TextFileArtifactWrapper, self).__init__(spec)
 

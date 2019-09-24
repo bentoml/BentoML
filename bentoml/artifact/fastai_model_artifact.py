@@ -20,10 +20,10 @@ import os
 import sys
 import shutil
 
-from bentoml.artifact import ArtifactSpec, ArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 
-class FastaiModelArtifact(ArtifactSpec):
+class FastaiModelArtifact(BentoServiceArtifact):
     """Saving and Loading FastAI Model
 
     Args:
@@ -55,7 +55,7 @@ class FastaiModelArtifact(ArtifactSpec):
         return self.pack(model)
 
 
-class _FastaiModelArtifactWrapper(ArtifactWrapper):
+class _FastaiModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model):
         super(_FastaiModelArtifactWrapper, self).__init__(spec)
         if sys.version_info.major < 3 or sys.version_info.minor < 6:

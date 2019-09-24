@@ -16,7 +16,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.artifact.artifact import ArtifactSpec, ArtifactWrapper, ArtifactCollection
+from bentoml.artifact.artifact import (
+    BentoServiceArtifact,
+    BentoServiceArtifactWrapper,
+    ArtifactCollection,
+)
 from bentoml.artifact.text_file_artifact import TextFileArtifact
 from bentoml.artifact.pickle_artifact import PickleArtifact
 from bentoml.artifact.pytorch_model_artifact import PytorchModelArtifact
@@ -26,8 +30,8 @@ from bentoml.artifact.h2o_model_artifact import H2oModelArtifact
 from bentoml.artifact.fastai_model_artifact import FastaiModelArtifact
 
 __all__ = [
-    "ArtifactSpec",
-    "ArtifactWrapper",
+    "BentoServiceArtifact",
+    "BentoServiceArtifactWrapper",
     "ArtifactCollection",
     "PickleArtifact",
     "PytorchModelArtifact",

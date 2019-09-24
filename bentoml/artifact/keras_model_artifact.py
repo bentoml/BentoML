@@ -19,7 +19,7 @@ from __future__ import print_function
 import os
 
 from bentoml.utils import cloudpickle
-from bentoml.artifact import ArtifactSpec, ArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 try:
     import tensorflow as tf
@@ -29,7 +29,7 @@ except ImportError:
     keras = None
 
 
-class KerasModelArtifact(ArtifactSpec):
+class KerasModelArtifact(BentoServiceArtifact):
     """
     Abstraction for saving/loading Keras model
     """
@@ -119,7 +119,7 @@ class KerasModelArtifact(ArtifactSpec):
         return self.pack(model)
 
 
-class _TfKerasModelArtifactWrapper(ArtifactWrapper):
+class _TfKerasModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model, custom_objects):
         super(_TfKerasModelArtifactWrapper, self).__init__(spec)
 

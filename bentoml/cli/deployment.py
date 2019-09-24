@@ -335,8 +335,8 @@ def get_deployment_sub_command():
     @click.option(
         '--force',
         is_flag=True,
-        help='Remove deployment record, despite error or not. Please '
-        'remove any orphan cloud resources',
+        help='delete deployment ignore cloud provider errors and '
+             'force deleting the deployment record'
     )
     def delete(name, namespace, force):
         track_cli('deploy-delete')

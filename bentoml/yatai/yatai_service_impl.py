@@ -157,6 +157,8 @@ class YataiService(YataiServicer):
                         )
                     )
                 else:
+                    # If force delete flag is True, we will remove the record
+                    # from yatai database.
                     if request.force_delete:
                         self.deployment_store.delete(
                             request.deployment_name, request.namespace

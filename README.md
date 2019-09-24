@@ -45,14 +45,14 @@ Defining a machine learning service with BentoML:
 
 ```python
 import bentoml
-from bentoml.artifact import PickleArtifact
+from bentoml.artifact import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler
 
 # You can also import your own Python module here and BentoML will automatically
 # figure out the dependency chain and package all those Python modules
 import my_preproceesing_lib
 
-@bentoml.artifacts([PickleArtifact('model')])
+@bentoml.artifacts([SklearnModelArtifact('model')])
 @bentoml.env(pip_dependencies=["scikit-learn"])
 class IrisClassifier(bentoml.BentoService):
 
@@ -79,7 +79,10 @@ X, y = iris.data, iris.target
 clf.fit(X, y)
 
 # Packaging trained model for serving in production:
-saved_path = IrisClassifier.pack(model=clf).save('/tmp/bento')
+iris_classifier_service = IrisClassifier.pack(model=clf)
+
+# Save prediction service to file archive
+saved_path = = iris_classifier_service.save()
 ```
 
 A Bento is a versioned archive, containing the BentoService you defined, along

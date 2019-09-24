@@ -19,7 +19,7 @@ from __future__ import print_function
 import os
 import shutil
 
-from bentoml.artifact import ArtifactSpec, ArtifactInstance
+from bentoml.artifact import ArtifactSpec, ArtifactWrapper
 
 
 class H2oModelArtifact(ArtifactSpec):
@@ -36,7 +36,7 @@ class H2oModelArtifact(ArtifactSpec):
         return os.path.join(base_path, self.name)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        return _H2oModelArtifactInstance(self, model)
+        return _H2oModelArtifactWrapper(self, model)
 
     def load(self, path):
         try:
@@ -49,9 +49,9 @@ class H2oModelArtifact(ArtifactSpec):
         return self.pack(model)
 
 
-class _H2oModelArtifactInstance(ArtifactInstance):
+class _H2oModelArtifactWrapper(ArtifactWrapper):
     def __init__(self, spec, model):
-        super(_H2oModelArtifactInstance, self).__init__(spec)
+        super(_H2oModelArtifactWrapper, self).__init__(spec)
         self._model = model
 
     def save(self, dst):

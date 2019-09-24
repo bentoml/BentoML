@@ -21,7 +21,7 @@ import os
 import dill
 from six import string_types
 
-from bentoml.artifact import ArtifactSpec, ArtifactInstance
+from bentoml.artifact import ArtifactSpec, ArtifactWrapper
 
 
 class PickleArtifact(ArtifactSpec):
@@ -48,7 +48,7 @@ class PickleArtifact(ArtifactSpec):
         return os.path.join(base_path, self.name + self._pickle_extension)
 
     def pack(self, obj):  # pylint:disable=arguments-differ
-        return _PickleArtifactInstance(self, obj)
+        return _PickleArtifactWrapper(self, obj)
 
     def load(self, path):
         with open(self._pkl_file_path(path), "rb") as pkl_file:
@@ -56,9 +56,9 @@ class PickleArtifact(ArtifactSpec):
         return self.pack(obj)
 
 
-class _PickleArtifactInstance(ArtifactInstance):
+class _PickleArtifactWrapper(ArtifactWrapper):
     def __init__(self, spec, obj):
-        super(_PickleArtifactInstance, self).__init__(spec)
+        super(_PickleArtifactWrapper, self).__init__(spec)
 
         self._obj = obj
 

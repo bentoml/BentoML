@@ -19,7 +19,7 @@ from __future__ import print_function
 import os
 
 from bentoml.utils import cloudpickle
-from bentoml.artifact import ArtifactSpec, ArtifactInstance
+from bentoml.artifact import ArtifactSpec, ArtifactWrapper
 
 try:
     import tensorflow as tf
@@ -94,7 +94,7 @@ class KerasModelArtifact(ArtifactSpec):
 
         self.bind_keras_backend_session()
         model._make_predict_function()
-        return _TfKerasModelArtifactInstance(self, model, custom_objects)
+        return _TfKerasModelArtifactWrapper(self, model, custom_objects)
 
     def load(self, path):
         if tf is None:
@@ -119,9 +119,9 @@ class KerasModelArtifact(ArtifactSpec):
         return self.pack(model)
 
 
-class _TfKerasModelArtifactInstance(ArtifactInstance):
+class _TfKerasModelArtifactWrapper(ArtifactWrapper):
     def __init__(self, spec, model, custom_objects):
-        super(_TfKerasModelArtifactInstance, self).__init__(spec)
+        super(_TfKerasModelArtifactWrapper, self).__init__(spec)
 
         if tf is None:
             raise ImportError(

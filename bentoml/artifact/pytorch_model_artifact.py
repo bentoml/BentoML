@@ -18,7 +18,7 @@ from __future__ import print_function
 
 import os
 
-from bentoml.artifact import ArtifactSpec, ArtifactInstance
+from bentoml.artifact import ArtifactSpec, ArtifactWrapper
 from bentoml.utils import cloudpickle
 
 
@@ -35,7 +35,7 @@ class PytorchModelArtifact(ArtifactSpec):
         return os.path.join(base_path, self.name + self._file_extension)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        return _PytorchModelArtifactInstance(self, model)
+        return _PytorchModelArtifactWrapper(self, model)
 
     def load(self, path):
         try:
@@ -54,9 +54,9 @@ class PytorchModelArtifact(ArtifactSpec):
         return self.pack(model)
 
 
-class _PytorchModelArtifactInstance(ArtifactInstance):
+class _PytorchModelArtifactWrapper(ArtifactWrapper):
     def __init__(self, spec, model):
-        super(_PytorchModelArtifactInstance, self).__init__(spec)
+        super(_PytorchModelArtifactWrapper, self).__init__(spec)
 
         try:
             import torch

@@ -26,7 +26,7 @@ class ArtifactSpec(object):
     Artifact is a spec describing how to pack and load different types
     of model dependencies to/from file system.
 
-    A call to pack and load should return an ArtifactInstance that can
+    A call to pack and load should return an ArtifactWrapper that can
     be saved to file system or retrieved for BentoService workload
     """
 
@@ -56,9 +56,9 @@ class ArtifactSpec(object):
         """
 
 
-class ArtifactInstance(object):
+class ArtifactWrapper(object):
     """
-    ArtifactInstance is an object representing a materialized Artifact, either
+    ArtifactWrapper is an object representing a materialized Artifact, either
     loaded from file system or packed with data in a python session
     """
 
@@ -68,7 +68,7 @@ class ArtifactInstance(object):
     @property
     def spec(self):
         """
-        :return: reference to the ArtifactSpec that produced this ArtifactInstance
+        :return: reference to the ArtifactSpec that generated this ArtifactWrapper
         """
         return self._spec
 
@@ -79,8 +79,7 @@ class ArtifactInstance(object):
 
     def get(self):
         """
-        Get returns an python object which provides all the functionality this
-        artifact provides
+        Get returns a reference to the artifact being packed
         """
 
 
@@ -103,9 +102,9 @@ class ArtifactCollection(dict):
         return self[item].get()
 
     def add(self, artifact):
-        if not isinstance(artifact, ArtifactInstance):
+        if not isinstance(artifact, ArtifactWrapper):
             raise TypeError(
-                "ArtifactCollection only accepts type bentoml.ArtifactInstance,"
+                "ArtifactCollection only accepts type bentoml.ArtifactWrapper,"
                 "Must call Artifact#pack or Artifact#load before adding to"
                 "an ArtifactCollection"
             )

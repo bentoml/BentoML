@@ -18,10 +18,10 @@ from __future__ import print_function
 
 import os
 
-from bentoml.artifact import ArtifactSpec, ArtifactInstance
+from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 
-class XgboostModelArtifact(ArtifactSpec):
+class XgboostModelArtifact(BentoServiceArtifact):
     """Abstraction for save/load object with Xgboost.
 
     Args:
@@ -40,7 +40,7 @@ class XgboostModelArtifact(ArtifactSpec):
         return os.path.join(base_path, self.name + self._model_extension)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        return _XgboostModelArtifactInstance(self, model)
+        return _XgboostModelArtifactWrapper(self, model)
 
     def load(self, path):
         try:
@@ -53,9 +53,9 @@ class XgboostModelArtifact(ArtifactSpec):
         return self.pack(bst)
 
 
-class _XgboostModelArtifactInstance(ArtifactInstance):
+class _XgboostModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model):
-        super(_XgboostModelArtifactInstance, self).__init__(spec)
+        super(_XgboostModelArtifactWrapper, self).__init__(spec)
 
         try:
             import xgboost as xgb

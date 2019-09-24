@@ -20,10 +20,10 @@ import os
 import sys
 import shutil
 
-from bentoml.artifact import ArtifactSpec, ArtifactInstance
+from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 
-class FastaiModelArtifact(ArtifactSpec):
+class FastaiModelArtifact(BentoServiceArtifact):
     """Saving and Loading FastAI Model
 
     Args:
@@ -42,7 +42,7 @@ class FastaiModelArtifact(ArtifactSpec):
         return os.path.join(base_path, self._file_name)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        return _FastaiModelArtifactInstance(self, model)
+        return _FastaiModelArtifactWrapper(self, model)
 
     def load(self, path):
         try:
@@ -55,9 +55,9 @@ class FastaiModelArtifact(ArtifactSpec):
         return self.pack(model)
 
 
-class _FastaiModelArtifactInstance(ArtifactInstance):
+class _FastaiModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model):
-        super(_FastaiModelArtifactInstance, self).__init__(spec)
+        super(_FastaiModelArtifactWrapper, self).__init__(spec)
         if sys.version_info.major < 3 or sys.version_info.minor < 6:
             raise SystemError("fast ai requires python 3.6 version or higher")
 

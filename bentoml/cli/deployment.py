@@ -279,6 +279,7 @@ def get_deployment_sub_command():
         '--file',
         'deployment_yaml',
         type=click.File('r'),
+        required=True,
         callback=parse_yaml_file_callback,
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')

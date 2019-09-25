@@ -18,13 +18,14 @@ from __future__ import print_function
 
 import re
 import os
-import imp
+import importlib
 
 from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 from google.protobuf.json_format import MessageToJson, MessageToDict
 from ruamel.yaml import YAML
 
 from bentoml import __version__ as BENTOML_VERSION, _version as version_mod
+from bentoml import config
 
 try:
     from pathlib import Path
@@ -88,12 +89,15 @@ def _is_pypi_release():
     return is_installed_package and is_tagged and is_clean
 
 
-def _is_bentoml_in_development_mode():
-    is_editor = False
-    bentoml_location = Path(imp.find_module('bentoml')[1]).parent
+# this is for BentoML developer to create BentoService containing custom develop
+# branches of BentoML library, it gets triggered when BentoML module is installed
+# via "pip install --editable ."
+def _is_bentoml_in_develop_mode():
+    module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
+    bentoml_location = Path(module_location)
 
-    setup_py_path = os.path.join(bentoml_location, 'setup.py')
+    setup_py_path = os.path.abspath(os.path.join(bentoml_location, '..', 'setup.py'))
     if not _is_pypi_release() and os.path.isfile(setup_py_path):
-        is_editor = True
+        return True
 
-    return is_editor
+    return False

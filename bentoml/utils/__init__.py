@@ -88,7 +88,7 @@ def _is_pypi_release():
     return is_installed_package and is_tagged and is_clean
 
 
-def _is_bentoml_in_editor_mode():
+def _is_bentoml_in_development_mode():
     is_editor = False
     bentoml_location = Path(imp.find_module('bentoml')[1]).parent
 

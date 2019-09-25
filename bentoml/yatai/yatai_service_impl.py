@@ -48,7 +48,7 @@ from bentoml.repository.metadata_store import BentoMetadataStore
 from bentoml.db import init_db
 from bentoml.yatai.status import Status
 from bentoml.proto import status_pb2
-from bentoml.utils import ProtoMessageToDict, _is_bentoml_in_editor_mode
+from bentoml.utils import ProtoMessageToDict, _is_bentoml_in_development_mode
 from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -116,7 +116,7 @@ class YataiService(YataiServicer):
 
             # if bentoml package in editor mode(pip install -e), will include
             # that bentoml package to bento archive
-            if _is_bentoml_in_editor_mode():
+            if _is_bentoml_in_development_mode():
                 add_local_bentoml_package_to_repo(request.deployment, self.repo)
 
             # deploying to target platform

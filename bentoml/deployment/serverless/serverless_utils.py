@@ -26,7 +26,7 @@ from subprocess import PIPE
 from ruamel.yaml import YAML
 from packaging import version
 
-from bentoml.utils import Path, _is_bentoml_in_editor_mode
+from bentoml.utils import Path, _is_bentoml_in_development_mode
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
 from bentoml.exceptions import BentoMLException
@@ -135,7 +135,7 @@ class TemporaryServerlessContent(object):
         model_path = os.path.join(self.archive_path, self.bento_name)
         shutil.copytree(model_path, model_serivce_archive_path)
 
-        if _is_bentoml_in_editor_mode():
+        if _is_bentoml_in_development_mode():
             dest_bundle_path = os.path.join(tempdir, 'bundle_dependencies')
             bundle_dependencies_path = os.path.join(
                 self.archive_path, 'bundle_dependencies'

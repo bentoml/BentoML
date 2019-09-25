@@ -17,10 +17,14 @@ from __future__ import division
 from __future__ import print_function
 
 import re
+import os
+import imp
 
 from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 from google.protobuf.json_format import MessageToJson, MessageToDict
 from ruamel.yaml import YAML
+
+from bentoml import __version__ as BENTOML_VERSION, _version as version_mod
 
 try:
     from pathlib import Path
@@ -75,3 +79,21 @@ def ProtoMessageToDict(protobuf_msg, **kwargs):
         kwargs['preserving_proto_field_name'] = True
 
     return MessageToDict(protobuf_msg, **kwargs)
+
+
+def _is_pypi_release():
+    is_installed_package = hasattr(version_mod, 'version_json')
+    is_tagged = not BENTOML_VERSION.startswith('0+untagged')
+    is_clean = not version_mod.get_versions()['dirty']
+    return is_installed_package and is_tagged and is_clean
+
+
+def _is_bentoml_in_editor_mode():
+    is_editor = False
+    bentoml_location = Path(imp.find_module('bentoml')[1])
+
+    setup_py_path = os.path.join(bentoml_location, 'setup.py')
+    if not _is_pypi_release() and os.path.isfile(setup_py_path):
+        is_editor = True
+
+    return is_editor

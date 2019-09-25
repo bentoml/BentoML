@@ -46,10 +46,9 @@ from bentoml.exceptions import BentoMLException
 from bentoml.repository import BentoRepository
 from bentoml.repository.metadata_store import BentoMetadataStore
 from bentoml.db import init_db
-from bentoml.utils.usage_stats import _is_pypi_release
 from bentoml.yatai.status import Status
 from bentoml.proto import status_pb2
-from bentoml.utils import ProtoMessageToDict
+from bentoml.utils import ProtoMessageToDict, _is_bentoml_in_editor_mode
 from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -115,8 +114,9 @@ class YataiService(YataiServicer):
             # find deployment operator based on deployment spec
             operator = get_deployment_operator(request.deployment)
 
-            # Generate BentoML bundle to repository
-            if not _is_pypi_release():
+            # if bentoml package in editor mode(pip install -e), will include
+            # that bentoml package to bento archive
+            if _is_bentoml_in_editor_mode():
                 add_local_bentoml_package_to_repo(request.deployment, self.repo)
 
             # deploying to target platform

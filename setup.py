@@ -35,7 +35,7 @@ install_requires = [
     "packaging",
     "docker",
     "configparser",
-    "sqlalchemy",
+    "sqlalchemy>=1.3.0",
     "protobuf>=3.6.0",
     "grpcio",
     "cerberus",

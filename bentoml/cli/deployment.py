@@ -335,8 +335,8 @@ def get_deployment_sub_command():
     @click.option(
         '--force',
         is_flag=True,
-        help='delete deployment ignore cloud provider errors and '
-             'force deleting the deployment record'
+        help='force delete the deployment record in database and '
+             'ignore errors when deleting cloud resources'
     )
     def delete(name, namespace, force):
         track_cli('deploy-delete')

@@ -29,6 +29,7 @@ import requests
 
 from bentoml.utils import _is_pypi_release
 from bentoml import config
+from bentoml import __version__ as BENTOML_VERSION
 
 
 logger = logging.getLogger(__name__)

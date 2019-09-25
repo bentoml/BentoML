@@ -25,7 +25,6 @@ from google.protobuf.json_format import MessageToJson, MessageToDict
 from ruamel.yaml import YAML
 
 from bentoml import __version__ as BENTOML_VERSION, _version as version_mod
-from bentoml import config
 
 try:
     from pathlib import Path

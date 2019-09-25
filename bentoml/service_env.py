@@ -59,13 +59,6 @@ class CondaEnv(object):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
 
-        # If bentoml deploy version is set in config,
-        # will use that as bentoml version for the archive
-        try:
-            bentoml_version = config().get('bentoml_deploy_version')
-        except BentoMLConfigException:
-            pass
-
         self._conda_env = self._yaml.load(
             CONDA_ENV_BASE_YAML.format(
                 name=name,
@@ -130,12 +123,6 @@ class BentoServiceEnv(object):
         self._setup_sh = None
         self._conda_env = CondaEnv()
 
-        # If bentoml deploy version is set in config,
-        # will use that as bentoml version for the archive
-        try:
-            bentoml_version = config().get('bentoml_deploy_version')
-        except BentoMLConfigException:
-            pass
         self._pip_dependencies = ["bentoml=={}".format(bentoml_version)]
 
     def get_conda_env_name(self):

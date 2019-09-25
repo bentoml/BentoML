@@ -20,7 +20,6 @@ import os
 from sys import version_info
 from ruamel.yaml import YAML
 
-from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils import Path, StringIO
 from bentoml import __version__ as LOCAL_BENTOML_VERSION
 from bentoml import config

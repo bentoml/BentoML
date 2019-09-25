@@ -20,6 +20,7 @@ import os
 from sys import version_info
 from ruamel.yaml import YAML
 
+from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils import Path, StringIO
 from bentoml import __version__ as LOCAL_BENTOML_VERSION
 from bentoml import config
@@ -60,8 +61,10 @@ class CondaEnv(object):
 
         # If bentoml deploy version is set in config,
         # will use that as bentoml version for the archive
-        if config('core').get('bentoml_deploy_version'):
-            bentoml_version = config('core').get('bentoml_deploy_version')
+        try:
+            bentoml_version = config().get('bentoml_deploy_version')
+        except BentoMLConfigException:
+            pass
 
         self._conda_env = self._yaml.load(
             CONDA_ENV_BASE_YAML.format(
@@ -126,11 +129,13 @@ class BentoServiceEnv(object):
     def __init__(self, bentoml_version=LOCAL_BENTOML_VERSION):
         self._setup_sh = None
         self._conda_env = CondaEnv()
-        
+
         # If bentoml deploy version is set in config,
         # will use that as bentoml version for the archive
-        if config('core').get('bentoml_deploy_version'):
-            bentoml_version = config('core').get('bentoml_deploy_version')
+        try:
+            bentoml_version = config().get('bentoml_deploy_version')
+        except BentoMLConfigException:
+            pass
         self._pip_dependencies = ["bentoml=={}".format(bentoml_version)]
 
     def get_conda_env_name(self):

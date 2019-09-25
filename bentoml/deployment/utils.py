@@ -101,6 +101,25 @@ def add_local_bentoml_package_to_repo(deployment_pb, repo):
     octal_permission = int(permission, 8)
     os.chmod(install_script_path, octal_permission)
 
-    shutil.rmtree(source_dir)
+    # remove the 'dirty' and 'hash' tags for bentoml in the environment.yml
+    # and requirements.txt in archive
+    with open(os.path.join(archive_path, 'requirements.txt'), 'r+') as file:
+        content = file.read()
+        req_list = content.split('\n')
+        bento_string = [s for s in req_list if 'bentoml==' in s][0]
+        if bento_string:
+            req_list[req_list.index(bento_string)] = bento_string.split('+')[0]
+        else:
+            logger.error('no bentoml in requirements.txt')
+        file.write('\n'.join(req_list))
+
+    with open(os.path.join(archive_path, 'environment.yml'), 'rb') as file:
+        content = file.read()
+    yaml = YAML()
+    yaml_content = yaml.load(content)
+    pip_list_index = yaml_content['dependencies'].index('pip') + 1
+    pip_list = yaml_content['dependencies'][pip_list_index].get('pip')
+    pip_list[0] = pip_list[0].split('+')[0]
+    yaml.dump(yaml_content, os.path.join(archive_path, 'environment.yml'))
 
     return

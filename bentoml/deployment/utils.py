@@ -25,7 +25,9 @@ import shutil
 from distutils.dir_util import copy_tree
 from datetime import datetime
 from setuptools import sandbox
+from ruamel.yaml import YAML
 
+from bentoml import config
 from bentoml.utils import Path
 
 logger = logging.getLogger(__name__)
@@ -69,6 +71,12 @@ def add_local_bentoml_package_to_repo(deployment_pb, repo):
     archive_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
     bentoml_location = Path(imp.find_module('bentoml')[1])
 
+    bentoml_setup_py = os.path.join(bentoml_location, 'setup.py')
+    if not os.path.isfile(bentoml_setup_py):
+        raise KeyError('"setup.py" for Bentoml module not found')
+
+    # Create random directory inside bentoml module for storing the bundled
+    # targz file. Since dist-dir can only be inside of the module directory
     date_string = datetime.now().strftime("%Y_%m_%d")
     bundle_dir_name = '__bento_dev_{}'.format(date_string)
     Path(bundle_dir_name).mkdir(exist_ok=True, parents=True)
@@ -78,10 +86,14 @@ def add_local_bentoml_package_to_repo(deployment_pb, repo):
         setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name]
     )
 
+    # copy the generated targz to archive directory and remove it from
+    # bentoml module directory
     source_dir = os.path.join(bentoml_location.parent, bundle_dir_name)
     dest_dir = os.path.join(archive_path, 'bundle_dependencies')
     copy_tree(source_dir, dest_dir)
+    shutil.rmtree(source_dir)
 
+    # Include script for install targz file in archive directory
     install_script_path = os.path.join(archive_path, 'install_bundled_dependencies.sh')
     with open(install_script_path, 'w') as f:
         f.write(INSTALL_TARGZ_TEMPLATE)

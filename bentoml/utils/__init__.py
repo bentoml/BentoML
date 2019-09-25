@@ -90,7 +90,7 @@ def _is_pypi_release():
 
 def _is_bentoml_in_editor_mode():
     is_editor = False
-    bentoml_location = Path(imp.find_module('bentoml')[1])
+    bentoml_location = Path(imp.find_module('bentoml')[1]).parent
 
     setup_py_path = os.path.join(bentoml_location, 'setup.py')
     if not _is_pypi_release() and os.path.isfile(setup_py_path):

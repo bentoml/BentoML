@@ -69,7 +69,7 @@ done
 def add_local_bentoml_package_to_repo(deployment_pb, repo):
     deployment_spec = deployment_pb.spec
     archive_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
-    bentoml_location = Path(imp.find_module('bentoml')[1])
+    bentoml_location = Path(imp.find_module('bentoml')[1]).parent
 
     bentoml_setup_py = os.path.join(bentoml_location, 'setup.py')
     if not os.path.isfile(bentoml_setup_py):
@@ -81,15 +81,15 @@ def add_local_bentoml_package_to_repo(deployment_pb, repo):
     bundle_dir_name = '__bento_dev_{}'.format(date_string)
     Path(bundle_dir_name).mkdir(exist_ok=True, parents=True)
 
-    setup_py = os.path.join(bentoml_location.parent, 'setup.py')
+    setup_py = os.path.join(bentoml_location, 'setup.py')
     sandbox.run_setup(
         setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name]
     )
 
     # copy the generated targz to archive directory and remove it from
     # bentoml module directory
-    source_dir = os.path.join(bentoml_location.parent, bundle_dir_name)
-    dest_dir = os.path.join(archive_path, 'bundle_dependencies')
+    source_dir = os.path.join(bentoml_location, bundle_dir_name)
+    dest_dir = os.path.join(archive_path, 'bundled_dependencies')
     copy_tree(source_dir, dest_dir)
     shutil.rmtree(source_dir)
 
@@ -111,7 +111,9 @@ def add_local_bentoml_package_to_repo(deployment_pb, repo):
             req_list[req_list.index(bento_string)] = bento_string.split('+')[0]
         else:
             logger.error('no bentoml in requirements.txt')
+        file.seek(0)
         file.write('\n'.join(req_list))
+        file.truncate()
 
     with open(os.path.join(archive_path, 'environment.yml'), 'rb') as file:
         content = file.read()
@@ -120,6 +122,6 @@ def add_local_bentoml_package_to_repo(deployment_pb, repo):
     pip_list_index = yaml_content['dependencies'].index('pip') + 1
     pip_list = yaml_content['dependencies'][pip_list_index].get('pip')
     pip_list[0] = pip_list[0].split('+')[0]
-    yaml.dump(yaml_content, os.path.join(archive_path, 'environment.yml'))
+    yaml.dump(yaml_content, Path(os.path.join(archive_path, 'environment.yml')))
 
     return

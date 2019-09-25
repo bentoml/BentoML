@@ -27,7 +27,6 @@ from datetime import datetime
 from setuptools import sandbox
 from ruamel.yaml import YAML
 
-from bentoml import config
 from bentoml.utils import Path
 
 logger = logging.getLogger(__name__)

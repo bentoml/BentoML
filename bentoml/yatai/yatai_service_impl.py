@@ -147,23 +147,26 @@ class YataiService(YataiServicer):
                     self.deployment_store.delete(
                         request.deployment_name, request.namespace
                     )
-                elif response.status.status_code == status_pb2.Status.NOT_FOUND:
-                    return DeleteDeploymentResponse(
-                        status=Status.INTERNAL(
-                            'Cloud resources not found, it may have been deleted '
-                            'manually. Try delete deployment with "--force" '
-                            'option to ignore this error and force deleting '
-                            'the deployment record'
+                    return response
+
+                # If force delete flag is True, we will remove the record
+                # from yatai database.
+                if request.force_delete:
+                    self.deployment_store.delete(
+                        request.deployment_name, request.namespace
+                    )
+                    return DeleteDeploymentResponse(status=Status.OK())
+
+                if response.status.status_code == status_pb2.Status.NOT_FOUND:
+                    modified_message = (
+                        'Cloud resources not found, it may have been deleted '
+                        'manually. Try delete deployment '
+                        'with "--force" option to ignore this error '
+                        'and force deleting the deployment record.\n{}'.format(
+                            response.status.error_message
                         )
                     )
-                else:
-                    # If force delete flag is True, we will remove the record
-                    # from yatai database.
-                    if request.force_delete:
-                        self.deployment_store.delete(
-                            request.deployment_name, request.namespace
-                        )
-                        return DeleteDeploymentResponse(status=Status.OK())
+                    response.status.error_message = modified_message
 
                 return response
             else:

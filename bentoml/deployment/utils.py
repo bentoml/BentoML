@@ -79,9 +79,8 @@ def add_local_bentoml_package_to_repo(archive_path):
     bundle_dir_name = '__bento_dev_{}'.format(date_string)
     Path(bundle_dir_name).mkdir(exist_ok=True, parents=True)
 
-    setup_py = os.path.join(bentoml_location, 'setup.py')
     sandbox.run_setup(
-        setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name]
+        bentoml_setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name]
     )
 
     # copy the generated targz to archive directory and remove it from

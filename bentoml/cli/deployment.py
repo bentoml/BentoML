@@ -332,11 +332,19 @@ def get_deployment_sub_command():
     @deployment.command(help='Delete deployment')
     @click.argument("name", type=click.STRING, required=True)
     @click.option('--namespace', type=click.STRING, help='Deployment namespace')
-    def delete(name, namespace):
+    @click.option(
+        '--force',
+        is_flag=True,
+        help='force delete the deployment record in database and '
+             'ignore errors when deleting cloud resources'
+    )
+    def delete(name, namespace, force):
         track_cli('deploy-delete')
 
         result = get_yatai_service().DeleteDeployment(
-            DeleteDeploymentRequest(deployment_name=name, namespace=namespace)
+            DeleteDeploymentRequest(
+                deployment_name=name, namespace=namespace, force_delete=force
+            )
         )
         if result.status.status_code != Status.OK:
             _echo(
@@ -348,8 +356,10 @@ def get_deployment_sub_command():
                 ),
                 CLI_COLOR_ERROR,
             )
-        else:
-            _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
+        _echo(
+            'Successfully deleted deployment "{}"'.format(name),
+            CLI_COLOR_SUCCESS,
+        )
 
     @deployment.command(help='Get deployment spec')
     @click.argument("name", type=click.STRING, required=True)

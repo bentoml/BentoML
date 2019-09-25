@@ -70,8 +70,9 @@ def upload_bento_service(bento_service, base_path=None, version=None):
 
     if response.status.status_code != Status.OK:
         raise BentoMLException(
-            "Error adding bento to repository: %s:%s" % response.status.status_code,
-            response.status.error_message,
+            "Error adding bento to repository: {}:{}".format(
+                response.status.status_code, response.status.error_message
+            )
         )
 
     if response.uri.type == BentoUri.LOCAL:

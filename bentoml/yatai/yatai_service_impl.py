@@ -19,7 +19,6 @@ from __future__ import print_function
 
 import logging
 
-from bentoml.deployment.utils import add_local_bentoml_package_to_repo
 from bentoml.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,
@@ -48,7 +47,7 @@ from bentoml.repository.metadata_store import BentoMetadataStore
 from bentoml.db import init_db
 from bentoml.yatai.status import Status
 from bentoml.proto import status_pb2
-from bentoml.utils import ProtoMessageToDict, _is_bentoml_in_development_mode
+from bentoml.utils import ProtoMessageToDict
 from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -113,11 +112,6 @@ class YataiService(YataiServicer):
             self.deployment_store.insert_or_update(request.deployment)
             # find deployment operator based on deployment spec
             operator = get_deployment_operator(request.deployment)
-
-            # if bentoml package in editor mode(pip install -e), will include
-            # that bentoml package to bento archive
-            if _is_bentoml_in_development_mode():
-                add_local_bentoml_package_to_repo(request.deployment, self.repo)
 
             # deploying to target platform
             response = operator.apply(

@@ -19,6 +19,7 @@ from __future__ import print_function
 import os
 import logging
 
+from bentoml.deployment.utils import add_local_bentoml_package_to_repo
 from bentoml.exceptions import BentoMLException
 from bentoml.archive.py_module_utils import copy_used_py_modules
 from bentoml.archive.templates import (
@@ -28,6 +29,7 @@ from bentoml.archive.templates import (
     BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE,
     INIT_PY_TEMPLATE,
 )
+from bentoml.utils import _is_bentoml_in_develop_mode
 from bentoml.utils.usage_stats import track_save
 from bentoml.archive.config import BentoArchiveConfig
 
@@ -157,6 +159,11 @@ def save_to_dir(bento_service, path, version=None):
     # Also write bentoml.yml to module base path to make it accessible
     # as package data after pip installed as a python package
     config.write_to_path(module_base_path)
+
+    # if bentoml package in editor mode(pip install -e), will include
+    # that bentoml package to bento archive
+    if _is_bentoml_in_develop_mode():
+        add_local_bentoml_package_to_repo(path)
 
     logger.info(
         "Successfully saved Bento '%s:%s' to path: %s",

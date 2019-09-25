@@ -19,7 +19,7 @@ from __future__ import print_function
 import json
 import os
 import logging
-import imp
+import importlib
 import shutil
 
 from distutils.dir_util import copy_tree
@@ -65,12 +65,11 @@ done
 """
 
 
-def add_local_bentoml_package_to_repo(deployment_pb, repo):
-    deployment_spec = deployment_pb.spec
-    archive_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
-    bentoml_location = Path(imp.find_module('bentoml')[1]).parent
+def add_local_bentoml_package_to_repo(archive_path):
+    module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
+    bentoml_location = Path(module_location)
 
-    bentoml_setup_py = os.path.join(bentoml_location, 'setup.py')
+    bentoml_setup_py = os.path.abspath(os.path.join(bentoml_location, '..', 'setup.py'))
     if not os.path.isfile(bentoml_setup_py):
         raise KeyError('"setup.py" for Bentoml module not found')
 

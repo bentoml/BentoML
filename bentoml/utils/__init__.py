@@ -100,7 +100,4 @@ def _is_bentoml_in_develop_mode():
         _, module_location, _ = imp.find_module('bentoml')
 
     setup_py_path = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
-    if not _is_pypi_release() and os.path.isfile(setup_py_path):
-        return True
-
-    return False
+    return not _is_pypi_release() and os.path.isfile(setup_py_path)

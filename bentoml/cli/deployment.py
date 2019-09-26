@@ -375,7 +375,7 @@ def get_deployment_sub_command():
         '--force',
         is_flag=True,
         help='force delete the deployment record in database and '
-             'ignore errors when deleting cloud resources'
+        'ignore errors when deleting cloud resources',
     )
     def delete(name, namespace, force):
         track_cli('deploy-delete')
@@ -395,10 +395,7 @@ def get_deployment_sub_command():
                 ),
                 CLI_COLOR_ERROR,
             )
-        _echo(
-            'Successfully deleted deployment "{}"'.format(name),
-            CLI_COLOR_SUCCESS,
-        )
+        _echo('Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS)
 
     @deployment.command(help='Get deployment current state')
     @click.argument("name", type=click.STRING, required=True)

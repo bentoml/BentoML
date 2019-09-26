@@ -113,7 +113,8 @@ def get_deployment_sub_command():
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
-        '-p' '--platform',
+        '-p',
+        '--platform',
         type=click.Choice(
             ['aws-lambda', 'gcp-function', 'aws-sagemaker', 'kubernetes', 'custom'],
             case_sensitive=False,
@@ -480,7 +481,7 @@ def get_deployment_sub_command():
         type=click.STRING,
         help='List deployments matching the giving labels',
     )
-    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     def list_deployments(output, limit, filters, labels, namespace, all_namespace):
         track_cli('deploy-list')
 

@@ -73,7 +73,11 @@ def add_local_bentoml_package_to_repo(archive_path):
         _, module_location, _ = imp.find_module('bentoml')
     bentoml_location = Path(module_location)
 
-    bentoml_setup_py = os.path.abspath(os.path.join(bentoml_location, '..', 'setup.py'))
+    try:
+        bentoml_setup_py = os.path.abspath(os.path.join(bentoml_location, '..', 'setup.py'))
+    except AttributeError:
+        # python 2.7 'PosixPath' object has no attribute 'endswith'
+        bentoml_setup_py = os.path.join(bentoml_location.parent, 'setup.py')
     if not os.path.isfile(bentoml_setup_py):
         raise KeyError('"setup.py" for Bentoml module not found')
 

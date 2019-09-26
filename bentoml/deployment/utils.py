@@ -54,10 +54,13 @@ def process_docker_api_line(payload):
 
 def add_local_bentoml_package_to_repo(archive_path):
     try:
-        module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
+        module_location, = importlib.util.find_spec(
+            'bentoml'
+        ).submodule_search_locations
     except AttributeError:
         # python 2.7 doesn't have importlib.util, will fall back to imp instead
         import imp
+
         _, module_location, _ = imp.find_module('bentoml')
     bentoml_setup_py = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
 
@@ -78,10 +81,5 @@ def add_local_bentoml_package_to_repo(archive_path):
     dest_dir = os.path.join(archive_path, 'bundled_dependencies')
     shutil.copytree(source_dir, dest_dir)
     shutil.rmtree(source_dir)
-
-    # Include script for install targz file in archive directory
-    install_script_path = os.path.join(archive_path, 'install_bundled_dependencies.sh')
-    with open(install_script_path, 'w') as f:
-        f.write(INSTALL_TARGZ_TEMPLATE)
 
     return

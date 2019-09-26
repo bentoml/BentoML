@@ -93,10 +93,13 @@ def _is_pypi_release():
 # via "pip install --editable ."
 def _is_bentoml_in_develop_mode():
     try:
-        module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
+        module_location, = importlib.util.find_spec(
+            'bentoml'
+        ).submodule_search_locations
     except AttributeError:
         # python 2.7 doesn't have importlib.util, will fall back to imp instead
         import imp
+
         _, module_location, _ = imp.find_module('bentoml')
 
     setup_py_path = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))

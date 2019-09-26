@@ -92,7 +92,12 @@ def _is_pypi_release():
 # branches of BentoML library, it gets triggered when BentoML module is installed
 # via "pip install --editable ."
 def _is_bentoml_in_develop_mode():
-    module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
+    try:
+        module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
+    except AttributeError:
+        # python 2.7 doesn't have importlib.util, will fall back to imp instead
+        import imp
+        _, module_location, _ = imp.find_module('bentoml')
     bentoml_location = Path(module_location)
 
     setup_py_path = os.path.abspath(os.path.join(bentoml_location, '..', 'setup.py'))

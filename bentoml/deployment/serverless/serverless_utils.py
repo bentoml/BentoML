@@ -129,10 +129,33 @@ class TemporaryServerlessContent(object):
             ],
             tempdir,
         )
-        shutil.copy(os.path.join(self.archive_path, "requirements.txt"), tempdir)
-        model_serivce_archive_path = os.path.join(tempdir, self.bento_name)
+        requirement_txt_path = os.path.join(self.archive_path, 'requirements.txt')
+        shutil.copy(requirement_txt_path, tempdir)
+        bento_archive_path = os.path.join(tempdir, self.bento_name)
         model_path = os.path.join(self.archive_path, self.bento_name)
-        shutil.copytree(model_path, model_serivce_archive_path)
+        shutil.copytree(model_path, bento_archive_path)
+
+        bundled_dependencies_path = os.path.join(
+            self.archive_path, 'bundled_pip_dependencies'
+        )
+        # If bundled_pip_dependencies directory exists, we copy over and update
+        # requirements.txt
+        if os.path.isdir(bundled_dependencies_path):
+            dest_bundle_path = os.path.join(tempdir, 'bundled_pip_dependencies')
+            shutil.copytree(bundled_dependencies_path, dest_bundle_path)
+            requirement_txt_path = os.path.join(tempdir, 'requirements.txt')
+
+            with open(requirement_txt_path, 'r+') as file:
+                content = file.read()
+                requirement_list = content.split('\n')
+                bundled_files = os.listdir(dest_bundle_path)
+                for bundled_module_name in bundled_files:
+                    requirement_list.append(
+                        './bundled_pip_dependencies/{}'.format(bundled_module_name)
+                    )
+                requirement_list.extend(bundled_files)
+                file.write('\n'.join(requirement_list))
+
         self.path = tempdir
 
     def cleanup(self):

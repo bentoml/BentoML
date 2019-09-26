@@ -19,7 +19,6 @@ from __future__ import print_function
 
 import logging
 
-
 from bentoml.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,

@@ -27,7 +27,9 @@ import atexit
 import uuid
 import requests
 
-from bentoml import config, __version__ as BENTOML_VERSION, _version as version_mod
+from bentoml.utils import _is_pypi_release
+from bentoml import config
+from bentoml import __version__ as BENTOML_VERSION
 
 
 logger = logging.getLogger(__name__)
@@ -40,13 +42,6 @@ PY_VERSION = "{major}.{minor}.{micro}".format(
     micro=sys.version_info.micro,
 )
 SESSION_ID = str(uuid.uuid4())  # uuid that marks current python session
-
-
-def _is_pypi_release():
-    is_installed_package = hasattr(version_mod, 'version_json')
-    is_tagged = not BENTOML_VERSION.startswith('0+untagged')
-    is_clean = not version_mod.get_versions()['dirty']
-    return is_installed_package and is_tagged and is_clean
 
 
 # Use dev amplitude key

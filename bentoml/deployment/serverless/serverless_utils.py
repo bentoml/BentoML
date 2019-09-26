@@ -131,23 +131,29 @@ class TemporaryServerlessContent(object):
         )
         requirement_txt_path = os.path.join(self.archive_path, 'requirements.txt')
         shutil.copy(requirement_txt_path, tempdir)
-        model_serivce_archive_path = os.path.join(tempdir, self.bento_name)
+        model_service_archive_path = os.path.join(tempdir, self.bento_name)
         model_path = os.path.join(self.archive_path, self.bento_name)
-        shutil.copytree(model_path, model_serivce_archive_path)
+        shutil.copytree(model_path, model_service_archive_path)
 
-        if _is_bentoml_in_develop_mode():
-            dest_bundle_path = os.path.join(tempdir, 'bundle_dependencies')
-            bundle_dependencies_path = os.path.join(
-                self.archive_path, 'bundle_dependencies'
-            )
-            shutil.copytree(bundle_dependencies_path, dest_bundle_path)
+        bundled_dependencies_path = os.path.join(
+            self.archive_path, 'bundled_pip_dependencies'
+        )
+        # If bundled_dependencies directory exists, we copy over and update
+        # requirements.txt
+        if os.path.isdir(bundled_dependencies_path):
+            dest_bundle_path = os.path.join(tempdir, 'bundled_pip_dependencies')
+            shutil.copytree(bundled_dependencies_path, dest_bundle_path)
             requirement_txt_path = os.path.join(tempdir, 'requirements.txt')
 
             with open(requirement_txt_path, 'r+') as file:
                 content = file.read()
                 requirement_list = content.split('\n')
-                bundle_files = os.listdir(dest_bundle_path)
-                requirement_list[0] = './bundle_dependencies/{}'.format(bundle_files[0])
+                bundled_files = os.listdir(dest_bundle_path)
+                for bundled_module_name in bundled_files:
+                    requirement_list.append(
+                        './bundled_pip_dependencies/{}'.format(bundled_module_name)
+                    )
+                requirement_list.extend(bundled_files)
                 file.write('\n'.join(requirement_list))
 
         self.path = tempdir

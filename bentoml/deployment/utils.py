@@ -66,10 +66,13 @@ def add_local_bentoml_package_to_repo(archive_path):
 
     assert os.path.isfile(bentoml_setup_py), '"setup.py" for Bentoml module not found'
 
-    # Create random directory inside bentoml module for storing the bundled
+    # Create tmp directory inside bentoml module for storing the bundled
     # targz file. Since dist-dir can only be inside of the module directory
     bundle_dir_name = '__bento_dev_tmp'
-    Path(bundle_dir_name).mkdir(exist_ok=True, parents=True)
+    source_dir = os.path.abspath(os.path.join(module_location, '..', bundle_dir_name))
+    if os.path.isdir(source_dir):
+        shutil.rmtree(source_dir, ignore_errors=True)
+    os.mkdir(source_dir)
 
     sandbox.run_setup(
         bentoml_setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name]
@@ -77,9 +80,6 @@ def add_local_bentoml_package_to_repo(archive_path):
 
     # copy the generated targz to archive directory and remove it from
     # bentoml module directory
-    source_dir = os.path.abspath(os.path.join(module_location, '..', bundle_dir_name))
-    dest_dir = os.path.join(archive_path, 'bundled_dependencies')
+    dest_dir = os.path.join(archive_path, 'bundled_pip_dependencies')
     shutil.copytree(source_dir, dest_dir)
     shutil.rmtree(source_dir)
-
-    return

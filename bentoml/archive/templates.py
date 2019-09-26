@@ -92,7 +92,7 @@ RUN conda env update -n base -f /bento/environment.yml
 RUN pip install -r /bento/requirements.txt
 
 # Install additional dependencies bundle
-RUN if [ -f /bento/install_bundled_dependencies.sh ]; then /bin/bash -c /bento/install_bundled_dependencies.sh; fi
+RUN if [ -f /bento/bentoml_init.sh ]; then /bin/bash -c /bento/bentoml_init.sh; fi
 
 # run user defined setup script
 RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
@@ -126,7 +126,7 @@ RUN conda env update -n base -f /opt/program/environment.yml
 RUN pip install -r /opt/program/requirements.txt
 
 # Install additional dependencies bundle
-RUN if [ -f /bento/install_bundled_dependencies.sh ]; then /bin/bash -c /bento/install_bundled_dependencies.sh; fi
+RUN if [ -f /bento/bentoml_init.sh ]; then /bin/bash -c /bento/bentoml_init.sh; fi
 
 # run user defined setup script
 RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
@@ -156,4 +156,14 @@ def load():
 
 
 __all__ = ['__version__', '{service_name}', 'load']
+"""
+
+
+BENTO_INIT_SH_TEMPLATE = """\
+#!/bin/bash
+
+for filename in ./bundled_dependencies/*.tar.gz; do
+    [ -e "$filename" ] || continue
+    pip install "$filename" --ignore-installed
+done
 """

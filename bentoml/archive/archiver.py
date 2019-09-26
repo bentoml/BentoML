@@ -28,6 +28,7 @@ from bentoml.archive.templates import (
     BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE,
     BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE,
     INIT_PY_TEMPLATE,
+    BENTO_INIT_SH_TEMPLATE,
 )
 from bentoml.utils import _is_bentoml_in_develop_mode
 from bentoml.utils.usage_stats import track_save
@@ -140,6 +141,10 @@ def save_to_dir(bento_service, path, version=None):
         f.write(BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE)
     with open(os.path.join(path, "Dockerfile-sagemaker"), "w") as f:
         f.write(BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE)
+
+    # write bento init sh for install targz bundles
+    with open(os.path.join(path, 'bentoml_init.sh'), 'w') as f:
+        f.write(BENTO_INIT_SH_TEMPLATE)
 
     # write bentoml.yml
     config = BentoArchiveConfig()

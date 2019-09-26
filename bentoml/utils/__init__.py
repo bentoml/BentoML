@@ -98,13 +98,8 @@ def _is_bentoml_in_develop_mode():
         # python 2.7 doesn't have importlib.util, will fall back to imp instead
         import imp
         _, module_location, _ = imp.find_module('bentoml')
-    bentoml_location = Path(module_location)
 
-    try:
-        setup_py_path = os.path.abspath(os.path.join(bentoml_location, '..', 'setup.py'))
-    except AttributeError:
-        # python 2.7 'PosixPath' object has no attribute 'endswith'
-        setup_py_path = os.path.join(bentoml_location.parent, 'setup.py')
+    setup_py_path = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
     if not _is_pypi_release() and os.path.isfile(setup_py_path):
         return True
 

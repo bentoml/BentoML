@@ -71,13 +71,8 @@ def add_local_bentoml_package_to_repo(archive_path):
         # python 2.7 doesn't have importlib.util, will fall back to imp instead
         import imp
         _, module_location, _ = imp.find_module('bentoml')
-    bentoml_location = Path(module_location)
+    bentoml_setup_py = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
 
-    try:
-        bentoml_setup_py = os.path.abspath(os.path.join(bentoml_location, '..', 'setup.py'))
-    except AttributeError:
-        # python 2.7 'PosixPath' object has no attribute 'endswith'
-        bentoml_setup_py = os.path.join(bentoml_location.parent, 'setup.py')
     if not os.path.isfile(bentoml_setup_py):
         raise KeyError('"setup.py" for Bentoml module not found')
 
@@ -93,7 +88,7 @@ def add_local_bentoml_package_to_repo(archive_path):
 
     # copy the generated targz to archive directory and remove it from
     # bentoml module directory
-    source_dir = os.path.join(bentoml_location, bundle_dir_name)
+    source_dir = os.path.abspath(os.path.join(module_location, '..', bundle_dir_name))
     dest_dir = os.path.join(archive_path, 'bundled_dependencies')
     if os.path.isdir(source_dir):
         shutil.copytree(source_dir, dest_dir)

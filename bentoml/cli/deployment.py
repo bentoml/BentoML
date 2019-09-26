@@ -91,71 +91,101 @@ def get_state_after_await_action_complete(
 
 
 def get_deployment_sub_command():
-    @click.group(help='Deployment commands. Shorthand is `deploy`')
+    @click.group(
+        help='Commands for creating and managing BentoService deployments on cloud'
+        'computing platforms or kubernetes cluster'
+    )
     def deployment():
         pass
 
     @deployment.command(
-        short_help='Create a model serving deployment',
+        short_help='Create a BentoService model serving deployment',
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
     @click.argument("name", type=click.STRING, required=True)
     @click.option(
+        '-b',
         '--bento',
         type=click.STRING,
         required=True,
         callback=parse_bento_tag_callback,
-        help='Deployed bento archive, in format of name:version. For example, '
-        'iris_classifier:v1.2.0',
+        help='Target BentoService to be deployed, referenced by its name and version '
+        'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
-        '--platform',
+        '-p' '--platform',
         type=click.Choice(
             ['aws-lambda', 'gcp-function', 'aws-sagemaker', 'kubernetes', 'custom'],
             case_sensitive=False,
         ),
         required=True,
-        help='Target platform that Bento archive is going to deployed to',
+        help='Which cloud platform to deploy this BentoService to',
     )
-    @click.option('--namespace', type=click.STRING, help='Deployment namespace')
     @click.option(
+        '-n',
+        '--namespace',
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "default" which'
+        'can be changed in BentoML configuration file',
+    )
+    @click.option(
+        '-l',
         '--labels',
         type=click.STRING,
-        help='Key:value pairs that attached to deployment.',
+        help='Key:value pairs that are attached to deployments and intended to be used'
+        'to specify identifying attributes of the deployments that are meaningful to '
+        'users',
     )
-    @click.option('--annotations', type=click.STRING)
+    @click.option(
+        '--annotations',
+        type=click.STRING,
+        help='Used to attach arbitary metadata to BentoService deployments, BentoML '
+        'library and other plugins can then retrieve this metadata.',
+    )
     @click.option(
         '--region',
-        help='Name of the deployed region. For platforms: AWS Lambda, AWS SageMaker, '
-        'GCP Function',
+        help='Directly mapping to cloud provider region. Option applicable to platform:'
+        'AWS Lambda, AWS SageMaker, GCP Function',
     )
     @click.option(
         '--instance-type',
-        help='Type of instance will be used for inference. For platform: AWS SageMaker',
+        help='Type of instance will be used for inference. Option applicable to '
+        'platform: AWS SageMaker',
     )
     @click.option(
         '--instance-count',
-        help='Number of instance will be used. For platform: AWS SageMaker',
+        help='Number of instance will be used. Option applicable to platform: AWS '
+        'SageMaker',
         type=click.INT,
     )
     @click.option(
         '--api-name',
-        help='User defined API function will be used for inference. For platform: '
-        'AWS SageMaker',
+        help='User defined API function will be used for inference. Option applicable'
+        'to platform: AWS SageMaker',
     )
     @click.option(
         '--kube-namespace',
-        help='Namespace for kubernetes deployment. For platform: Kubernetes',
+        help='Namespace for kubernetes deployment. Option applicable to platform: '
+        'Kubernetes',
     )
-    @click.option('--replicas', help='Number of replicas. For platform: Kubernetes')
-    @click.option('--service-name', help='Name for service. For platform: Kubernetes')
-    @click.option('--service-type', help='Service Type. For platform: Kubernetes')
-    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '--replicas',
+        help='Number of replicas. Option applicable to platform: Kubernetes',
+    )
+    @click.option(
+        '--service-name',
+        help='Name for service. Option applicable to platform: Kubernetes',
+    )
+    @click.option(
+        '--service-type', help='Service Type. Option applicable to platform: Kubernetes'
+    )
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait/--no-wait',
         default=True,
-        help='Wait for apply action to complete or encounter an error.'
-        'If set to no-wait, CLI will return immediately. The default value is wait',
+        help='Wait for cloud resources to complete creation or until an error is '
+        'encountered. When set to no-wait, CLI will return immediately after sending'
+        'request to cloud platform.',
     )
     def create(
         name,
@@ -270,7 +300,7 @@ def get_deployment_sub_command():
                 )
                 result.deployment.state.CopyFrom(result_state.state)
 
-            _echo('Finished create deployment {}'.format(name), CLI_COLOR_SUCCESS)
+            _echo('Successfully created deployment {}'.format(name), CLI_COLOR_SUCCESS)
             display_deployment_info(result.deployment, output)
 
     @deployment.command(help='Apply model service deployment from yaml file')
@@ -318,7 +348,9 @@ def get_deployment_sub_command():
                     result.deployment.state.CopyFrom(result_state.state)
 
                 _echo(
-                    'Finished apply deployment {}'.format(deployment_pb.name),
+                    'Successfully applied spec to deployment {}'.format(
+                        deployment_pb.name
+                    ),
                     CLI_COLOR_SUCCESS,
                 )
                 display_deployment_info(result.deployment, output)
@@ -331,7 +363,13 @@ def get_deployment_sub_command():
 
     @deployment.command(help='Delete deployment')
     @click.argument("name", type=click.STRING, required=True)
-    @click.option('--namespace', type=click.STRING, help='Deployment namespace')
+    @click.option(
+        '-n',
+        '--namespace',
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "default" which'
+        'can be changed in BentoML configuration file',
+    )
     def delete(name, namespace):
         track_cli('deploy-delete')
 
@@ -349,12 +387,12 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
         else:
-            _echo('Successfully delete deployment {}'.format(name), CLI_COLOR_SUCCESS)
+            _echo('Successfully deleted deployment {}'.format(name), CLI_COLOR_SUCCESS)
 
-    @deployment.command(help='Get deployment spec')
+    @deployment.command(help='Get deployment current state')
     @click.argument("name", type=click.STRING, required=True)
-    @click.option('--namespace', type=click.STRING, help='Deployment namespace')
-    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option('-n', '--namespace', type=click.STRING, help='Deployment namespace')
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     def get(name, output, namespace):
         track_cli('deploy-get')
 
@@ -374,10 +412,16 @@ def get_deployment_sub_command():
         else:
             display_deployment_info(result.deployment, output)
 
-    @deployment.command(help='Get deployment state')
+    @deployment.command(help='View the detailed state of the deployment')
     @click.argument("name", type=click.STRING, required=True)
-    @click.option('--namespace', type=click.STRING, help='Deployment namespace')
-    @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '-n',
+        '--namespace',
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "default" which'
+        'can be changed in BentoML configuration file',
+    )
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     def describe(name, output, namespace):
         track_cli('deploy-describe')
         yatai_service = get_yatai_service()
@@ -403,8 +447,14 @@ def get_deployment_sub_command():
             deployment_pb.state.CopyFrom(result.state)
             display_deployment_info(deployment_pb, output)
 
-    @deployment.command(name="list", help='List deployments')
-    @click.option('--namespace', type=click.STRING)
+    @deployment.command(name="list", help='List active deployments')
+    @click.option(
+        '-n',
+        '--namespace',
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "default" which'
+        'can be changed in BentoML configuration file',
+    )
     @click.option('--all-namespace', type=click.BOOL, default=False)
     @click.option(
         '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
@@ -412,10 +462,13 @@ def get_deployment_sub_command():
     @click.option(
         '--filters',
         type=click.STRING,
-        help='Filter retrieved deployments with keywords',
+        help='List deployments containing the filter string in name or version',
     )
     @click.option(
-        '--labels', type=click.STRING, help='List deployments with the giving labels'
+        '-l',
+        '--labels',
+        type=click.STRING,
+        help='List deployments matching the giving labels',
     )
     @click.option('--output', type=click.Choice(['json', 'yaml']), default='json')
     def list_deployments(output, limit, filters, labels, namespace, all_namespace):

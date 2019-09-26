@@ -131,14 +131,14 @@ class TemporaryServerlessContent(object):
         )
         requirement_txt_path = os.path.join(self.archive_path, 'requirements.txt')
         shutil.copy(requirement_txt_path, tempdir)
-        model_service_archive_path = os.path.join(tempdir, self.bento_name)
+        bento_archive_path = os.path.join(tempdir, self.bento_name)
         model_path = os.path.join(self.archive_path, self.bento_name)
-        shutil.copytree(model_path, model_service_archive_path)
+        shutil.copytree(model_path, bento_archive_path)
 
         bundled_dependencies_path = os.path.join(
             self.archive_path, 'bundled_pip_dependencies'
         )
-        # If bundled_dependencies directory exists, we copy over and update
+        # If bundled_pip_dependencies directory exists, we copy over and update
         # requirements.txt
         if os.path.isdir(bundled_dependencies_path):
             dest_bundle_path = os.path.join(tempdir, 'bundled_pip_dependencies')

@@ -91,7 +91,7 @@ WORKDIR /bento
 RUN conda env update -n base -f /bento/environment.yml
 RUN pip install -r /bento/requirements.txt
 
-# Install additional dependencies bundle
+ # Install additional pip dependencies inside bundled_pip_dependencies dir
 RUN if [ -f /bento/bentoml_init.sh ]; then /bin/bash -c /bento/bentoml_init.sh; fi
 
 # run user defined setup script

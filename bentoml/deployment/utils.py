@@ -86,8 +86,9 @@ def add_local_bentoml_package_to_repo(archive_path):
     # bentoml module directory
     source_dir = os.path.join(bentoml_location, bundle_dir_name)
     dest_dir = os.path.join(archive_path, 'bundled_dependencies')
-    shutil.copytree(source_dir, dest_dir)
-    shutil.rmtree(source_dir)
+    if os.path.isdir(source_dir):
+        shutil.copytree(source_dir, dest_dir)
+        shutil.rmtree(source_dir)
 
     # Include script for install targz file in archive directory
     install_script_path = os.path.join(archive_path, 'install_bundled_dependencies.sh')

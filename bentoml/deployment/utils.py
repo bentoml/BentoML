@@ -65,7 +65,12 @@ done
 
 
 def add_local_bentoml_package_to_repo(archive_path):
-    module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
+    try:
+        module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
+    except AttributeError:
+        # python 2.7 doesn't have importlib.util, will fall back to imp instead
+        import imp
+        _, module_location, _ = imp.find_module('bentoml')
     bentoml_location = Path(module_location)
 
     bentoml_setup_py = os.path.abspath(os.path.join(bentoml_location, '..', 'setup.py'))

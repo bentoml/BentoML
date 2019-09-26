@@ -193,25 +193,25 @@ def bento_service_api_wrapper(api, service_name, service_version):
     summary_name = str(service_name) + "_" + str(api.name)
     request_metric_time = Summary(summary_name, summary_name + " request latency")
 
-    def log_image(request, request_id):
+    def log_image(req, request_id):
         img_prefix = 'image/'
         log_folder = config('logging').get('base_log_dir')
 
         all_paths = []
 
-        if request.content_type.startswith(img_prefix):
+        if req.content_type.startswith(img_prefix):
             filename = '{timestamp}-{request_id}.{ext}'.format(
                 timestamp=int(time.time()),
                 request_id=request_id,
-                ext=request.content_type[len(img_prefix) :],
+                ext=req.content_type[len(img_prefix):],
             )
             path = os.path.join(log_folder, filename)
             all_paths.append(path)
             with open(path, 'wb') as f:
-                f.write(request.get_data())
+                f.write(req.get_data())
 
-        for name in request.files:
-            file = request.files[name]
+        for name in req.files:
+            file = req.files[name]
             if file and file.filename:
                 orig_filename = secure_filename(file.filename)
                 filename = '{timestamp}-{request_id}-{orig_filename}'.format(

@@ -22,7 +22,6 @@ import logging
 import importlib
 import shutil
 
-from distutils.dir_util import copy_tree
 from datetime import datetime
 from setuptools import sandbox
 from ruamel.yaml import YAML
@@ -87,7 +86,7 @@ def add_local_bentoml_package_to_repo(archive_path):
     # bentoml module directory
     source_dir = os.path.join(bentoml_location, bundle_dir_name)
     dest_dir = os.path.join(archive_path, 'bundled_dependencies')
-    copy_tree(source_dir, dest_dir)
+    shutil.copytree(source_dir, dest_dir)
     shutil.rmtree(source_dir)
 
     # Include script for install targz file in archive directory

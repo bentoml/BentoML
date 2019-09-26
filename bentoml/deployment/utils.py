@@ -24,7 +24,6 @@ import shutil
 
 from setuptools import sandbox
 
-from bentoml.utils import Path
 
 logger = logging.getLogger(__name__)
 

@@ -26,7 +26,7 @@ from subprocess import PIPE
 from ruamel.yaml import YAML
 from packaging import version
 
-from bentoml.utils import Path, _is_bentoml_in_develop_mode
+from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
 from bentoml.exceptions import BentoMLException

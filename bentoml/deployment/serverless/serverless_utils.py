@@ -153,8 +153,9 @@ class TemporaryServerlessContent(object):
                     requirement_list.append(
                         './bundled_pip_dependencies/{}'.format(bundled_module_name)
                     )
-                requirement_list.extend(bundled_files)
+                file.seek(0)
                 file.write('\n'.join(requirement_list))
+                file.truncate()
 
         self.path = tempdir
 

@@ -80,7 +80,7 @@ def generate_aws_handler_functions_config(apis):
 
 
 def generate_serverless_configuration_for_aws_lambda(
-    service_name, apis, output_path, region, stage
+    service_name, apis, output_path, region, stage, temp_dir
 ):
     config_path = os.path.join(output_path, "serverless.yml")
     yaml = YAML()
@@ -106,6 +106,12 @@ def generate_serverless_configuration_for_aws_lambda(
             "slim": True,
             "strip": True,
             "zip": True,
+            "dockerRunCmdExtraArgs": [
+                '-v',
+                '{}/bundled_dependencies:/var/task/bundled_dependencies'.format(
+                    temp_dir
+                ),
+            ],
         },
     }
 
@@ -151,6 +157,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 output_path=output_path,
                 region=aws_config.region,
                 stage=deployment_pb.namespace,
+                temp_dir=output_path,
             )
             logger.info(
                 'Installing additional packages: serverless-python-requirements, '

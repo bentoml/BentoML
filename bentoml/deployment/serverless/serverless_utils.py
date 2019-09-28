@@ -76,7 +76,7 @@ def parse_serverless_response(serverless_response):
   otherwise, return information.
   """
     str_list = serverless_response.strip().split("\n")
-    
+
     serverless_error = [s for s in str_list if "Serverless Error" in s]
     if serverless_error:
         error_pos = str_list.index(serverless_error[0])

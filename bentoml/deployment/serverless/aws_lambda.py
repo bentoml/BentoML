@@ -108,7 +108,7 @@ def generate_serverless_configuration_for_aws_lambda(
             "zip": True,
             "dockerRunCmdExtraArgs": [
                 '-v',
-                '{}/bundled_dependencies:/var/task/bundled_dependencies'.format(
+                '{}/bundled_pip_dependencies:/var/task/bundled_pip_dependencies:z'.format(
                     temp_dir
                 ),
             ],

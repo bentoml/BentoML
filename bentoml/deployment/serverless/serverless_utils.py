@@ -76,7 +76,14 @@ def parse_serverless_response(serverless_response):
   otherwise, return information.
   """
     str_list = serverless_response.strip().split("\n")
-    error = [s for s in str_list if "Serverless Error" in s]
+    
+    serverless_error = [s for s in str_list if "Serverless Error" in s]
+    if serverless_error:
+        error_pos = str_list.index(serverless_error[0])
+        error_message = str_list[error_pos + 2]
+        raise BentoMLException(error_message)
+
+    error = [s for s in str_list if "Error ----" in s]
     if error:
         error_pos = str_list.index(error[0])
         error_message = str_list[error_pos + 2]

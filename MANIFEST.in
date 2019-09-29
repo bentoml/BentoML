@@ -22,6 +22,9 @@ graft bentoml/configuration
 graft bentoml/migrations
 include bentoml/alembic.ini
 
+# include yatai dashboard files
+graft bentoml/yatai/dashboard/front-end
+
 # Don't include examples, tests directory
 prune examples
 prune tests

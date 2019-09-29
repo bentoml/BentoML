@@ -42,10 +42,10 @@ LOG = logging.getLogger(__name__)
 INDEX_HTML = '''
 <!DOCTYPE html>
 <head><link rel="stylesheet" type="text/css"
-            href="//unpkg.com/swagger-ui-dist@3/swagger-ui.css"></head>
+            href="/static/swagger-ui.css"></head>
 <body>
 <div id="swagger-ui-container"></div>
-<script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+<script src="/static/swagger-ui-bundle.js"></script>
 <script>
     SwaggerUIBundle({{
       url: '{url}',
@@ -203,7 +203,7 @@ def bento_service_api_wrapper(api, service_name, service_version):
             filename = '{timestamp}-{request_id}.{ext}'.format(
                 timestamp=int(time.time()),
                 request_id=request_id,
-                ext=req.content_type[len(img_prefix):],
+                ext=req.content_type[len(img_prefix) :],
             )
             path = os.path.join(log_folder, filename)
             all_paths.append(path)
@@ -327,7 +327,12 @@ class BentoAPIServer:
         self.port = port
         self.bento_service = bento_service
 
-        self.app = Flask(app_name)
+        self.app = Flask(
+            app_name,
+            static_folder=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), 'static'
+            ),
+        )
         setup_routes(self.app, self.bento_service)
 
     def start(self):

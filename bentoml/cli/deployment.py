@@ -48,6 +48,7 @@ from bentoml.yatai.python_api import (
     list_deployments,
 )
 from bentoml.yatai import get_yatai_service
+from bentoml.yatai.dashboard import app
 
 # pylint: disable=unused-variable
 
@@ -546,5 +547,11 @@ def get_deployment_sub_command():
             )
         else:
             _print_deployments_info(result.deployments, output)
+
+    @deployment.command()
+    @click.option("-p", "--port", type=click.INT, default=5002)
+    def dashboard(port):
+        print(port)
+        app.run(port=port)
 
     return deployment

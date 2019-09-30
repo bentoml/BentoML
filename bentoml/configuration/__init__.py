@@ -19,11 +19,14 @@ from __future__ import print_function
 import os
 import logging
 
+from bentoml import __version__, _version as version_mod
 from bentoml.utils import Path
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
 
 
+# Note this file is loaded prior to logging being configured, thus logger is only
+# used within functions in this file
 logger = logging.getLogger(__name__)
 
 
@@ -60,6 +63,22 @@ def parameterized_config(template):
 
 DEFAULT_BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
 BENTOML_HOME = DEFAULT_BENTOML_HOME
+
+# This is used as default for config('core', 'bentoml_deploy_version') - which is used
+# for getting the BentoML PyPI version string or the URL to a BentoML sdist, indicating
+# the BentoML module to be used when loading and using a saved BentoService archive.
+# This is useful when using customized BentoML fork/branch or when working with
+# development branches of BentoML
+BENTOML_VERSION = __version__
+
+# e.g. from '0.4.2+5.g6cac97f.dirty' to '0.4.2'
+PREV_PYPI_RELEASE_VERSION = __version__.split('+')[0]
+
+
+if version_mod.get_versions()['dirty']:
+    # Reset to LAST_PYPI_RELEASE_VERSION if bentoml module is 'dirty'
+    # This will be used as default value of 'core/deploy_bentoml_version' config
+    BENTOML_VERSION = PREV_PYPI_RELEASE_VERSION
 
 
 def get_local_config_file():
@@ -136,3 +155,26 @@ def config(section=None):
         return _config[section]
     else:
         return _config
+
+
+def get_bentoml_deploy_version():
+    """
+    BentoML version to use for generated docker image or serverless function bundle to
+    be deployed, this can be changed to an url to your fork of BentoML on github, or an
+    url to your custom BentoML build, for example:
+
+    bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{branch}
+    """
+    bentoml_deploy_version = config('core').get('bentoml_deploy_version')
+
+    if bentoml_deploy_version != __version__:
+        logger.warning(
+            "BentoML local changes detected - BentoService archive saved with this "
+            "version of BentoML will be loaded by default using previous PyPI released "
+            "BentoML, version: %s. To allow deploying BentoService with your dev "
+            "branch changes, push your changes to a github branch and set bentoml "
+            "config 'core/bentoml_deploy_version' to your fork, for example: "
+            "'git+https://github.com/{username}/bentoml.git@{branch}'",
+            PREV_PYPI_RELEASE_VERSION,
+        )
+    return bentoml_deploy_version

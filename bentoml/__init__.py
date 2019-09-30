@@ -22,6 +22,11 @@ __version__ = get_versions()['version']
 del get_versions
 
 from bentoml.configuration import config
+from bentoml.utils.log import configure_logging
+
+# Configuring logging properly before loading other modules
+configure_logging()
+
 from bentoml.archive import load, save_to_dir
 from bentoml import handlers
 from bentoml.service import (
@@ -33,9 +38,6 @@ from bentoml.service import (
 )
 from bentoml.server import metrics
 from bentoml.yatai.python_api import upload_bento_service
-from bentoml.utils.log import configure_logging
-
-configure_logging()
 
 
 save = upload_bento_service

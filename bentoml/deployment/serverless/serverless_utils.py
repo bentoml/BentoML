@@ -156,16 +156,25 @@ class TemporaryServerlessContent(object):
             dest_bundle_path = os.path.join(tempdir, 'bundled_pip_dependencies')
             shutil.copytree(bundled_dependencies_path, dest_bundle_path)
             bundled_files = os.listdir(dest_bundle_path)
-            for index, value in enumerate(bundled_files):
-                bundled_files[index] = './bundled_pip_dependencies/{}\n'.format(value)
+            has_bentoml_bundle = False
+            for index, bundled_file_name in enumerate(bundled_files):
+                bundled_files[index] = './bundled_pip_dependencies/{}\n'.format(
+                    bundled_file_name
+                )
+                if 'BentoML-' in bundled_file_name:
+                    has_bentoml_bundle = True
 
-            with open(os.path.join(tempdir, 'requirements.txt'), 'r+') as requirement_file:
+            with open(
+                os.path.join(tempdir, 'requirements.txt'), 'r+'
+            ) as requirement_file:
                 required_modules = requirement_file.readlines()
-                # Assuming bentoml is always the first one in requirements.txt. We are
-                # removing it
-                required_modules.pop(0)
+                if has_bentoml_bundle:
+                    # Assuming bentoml is always the first one in
+                    # requirements.txt. We are removing it
+                    required_modules.pop(0)
                 required_modules.extend(bundled_files)
-                # Write from beginning of the file, instead of appending to the end.
+                # Write from beginning of the file, instead of appending to
+                # the end.
                 requirement_file.seek(0)
                 requirement_file.writelines(required_modules)
 

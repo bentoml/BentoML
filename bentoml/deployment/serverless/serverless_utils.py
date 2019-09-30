@@ -75,13 +75,23 @@ def parse_serverless_response(serverless_response):
     """Parse serverless response string, raise error if it is a serverless error,
   otherwise, return information.
   """
-    str_list = serverless_response.strip().split("\n")
-    error = [s for s in str_list if "Serverless Error" in s]
-    if error:
-        error_pos = str_list.index(error[0])
-        error_message = str_list[error_pos + 2]
+    serverless_outputs = serverless_response.strip().split("\n")
+
+    # Parsing serverless response brutally.  The current serverless
+    # response format is:
+    # ServerlessError|Error -----{fill dash to 56 line lenght}
+    # empty space
+    # Error Message
+    # empty space
+    # We are just going to find the index of serverless error/error is
+    # and raise Exception base on the message +2 index away from it.
+    error_message = ''
+    for index, message in enumerate(serverless_outputs):
+        if 'Serverless Error' in message or 'Error -----' in message:
+            error_message += serverless_outputs[index + 2]
+    if error_message:
         raise BentoMLException(error_message)
-    return str_list
+    return serverless_outputs
 
 
 def parse_serverless_info_response_to_json_string(responses):
@@ -145,16 +155,12 @@ class TemporaryServerlessContent(object):
             shutil.copytree(bundled_dependencies_path, dest_bundle_path)
             requirement_txt_path = os.path.join(tempdir, 'requirements.txt')
 
-            with open(requirement_txt_path, 'r+') as file:
-                content = file.read()
-                requirement_list = content.split('\n')
+            with open(requirement_txt_path, 'a+') as requirement_file:
                 bundled_files = os.listdir(dest_bundle_path)
                 for bundled_module_name in bundled_files:
-                    requirement_list.append(
-                        './bundled_pip_dependencies/{}'.format(bundled_module_name)
+                    requirement_file.write(
+                        '\n./bundled_pip_dependencies/{}'.format(bundled_module_name)
                     )
-                requirement_list.extend(bundled_files)
-                file.write('\n'.join(requirement_list))
 
         self.path = tempdir
 

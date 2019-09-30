@@ -97,6 +97,8 @@ def generate_serverless_configuration_for_aws_lambda(
 
     serverless_config["functions"] = generate_aws_handler_functions_config(apis)
 
+    # We are passing the bundled_pip_dependencies directory for python
+    # requirement package, so it can installs the bundled tar gz file.
     serverless_config["custom"] = {
         "apigwBinary": ["image/jpg", "image/jpeg", "image/png"],
         "pythonRequirements": {
@@ -106,6 +108,11 @@ def generate_serverless_configuration_for_aws_lambda(
             "slim": True,
             "strip": True,
             "zip": True,
+            "dockerRunCmdExtraArgs": [
+                '-v',
+                '{}/bundled_pip_dependencies:'
+                '/var/task/bundled_pip_dependencies:z'.format(output_path),
+            ],
         },
     }
 

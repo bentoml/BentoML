@@ -21,7 +21,7 @@ from sys import version_info
 from ruamel.yaml import YAML
 
 from bentoml.utils import Path, StringIO
-from bentoml import __version__ as LOCAL_BENTOML_VERSION
+from bentoml.configuration import get_bentoml_deploy_version
 
 PYTHON_VERSION = "{major}.{minor}.{micro}".format(
     major=version_info.major, minor=version_info.minor, micro=version_info.micro
@@ -52,10 +52,13 @@ class CondaEnv(object):
         self,
         name=CONDA_ENV_DEFAULT_NAME,
         python_version=PYTHON_VERSION,
-        bentoml_version=LOCAL_BENTOML_VERSION,
+        bentoml_version=None,
     ):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
+
+        if bentoml_version is None:
+            bentoml_version = get_bentoml_deploy_version()
 
         self._conda_env = self._yaml.load(
             CONDA_ENV_BASE_YAML.format(
@@ -117,11 +120,12 @@ class BentoServiceEnv(object):
     setup_sh - for customizing the environment with user defined bash script
     """
 
-    def __init__(self, bentoml_version=LOCAL_BENTOML_VERSION):
-        self._setup_sh = None
-        self._conda_env = CondaEnv()
+    def __init__(self):
+        bentoml_deploy_version = get_bentoml_deploy_version()
+        self._conda_env = CondaEnv(bentoml_version=bentoml_deploy_version)
+        self._pip_dependencies = ["bentoml=={}".format(bentoml_deploy_version)]
 
-        self._pip_dependencies = ["bentoml=={}".format(bentoml_version)]
+        self._setup_sh = None
 
     def get_conda_env_name(self):
         return self._conda_env.get_name()

@@ -138,9 +138,16 @@ ENV PATH="/opt/program:${PATH}"
 INIT_PY_TEMPLATE = """\
 import os
 import sys
+import logging
 
 from bentoml import archive
 from bentoml.cli import create_bento_service_cli
+from bentoml.utils.log import configure_logging
+
+# By default, ignore warnings when loading BentoService installed as PyPI distribution
+# CLI will change back to default log level in config(info), and by adding --quiet or
+# --verbose CLI option, user can change the CLI output behavior
+configure_logging(logging.ERROR)
 
 __VERSION__ = "{pypi_package_version}"
 

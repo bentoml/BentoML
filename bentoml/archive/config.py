@@ -23,6 +23,7 @@ from datetime import datetime
 from ruamel.yaml import YAML
 
 from bentoml import __version__ as BENTOML_VERSION
+from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.utils import Path
 
 BENTOML_CONFIG_YAML_TEPMLATE = """\
@@ -43,7 +44,7 @@ class BentoArchiveConfig(object):
         self.config = self._yaml.load(
             BENTOML_CONFIG_YAML_TEPMLATE.format(
                 kind=self.kind,
-                bentoml_version=BENTOML_VERSION,
+                bentoml_version=get_bentoml_deploy_version(),
                 created_at=str(datetime.utcnow()),
             )
         )

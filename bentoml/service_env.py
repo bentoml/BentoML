@@ -127,7 +127,6 @@ class BentoServiceEnv(object):
 
         self._setup_sh = None
 
-
     def get_conda_env_name(self):
         return self._conda_env.get_name()
 

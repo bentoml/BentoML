@@ -71,9 +71,11 @@ class ImageHandler(BentoHandler):
         accept_file_extensions (string[]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
             'apiserver/default_image_handler_accept_file_extensions', which is
-            set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default
+            set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
+            List of supported format can be found here:
+            https://imageio.readthedocs.io/en/stable/formats.html
         pilmode (string): The pilmode to be used for reading image file into numpy
-            array. Default value is RGB.  Find more information at
+            array. Default value is RGB.  Find more information at:
             https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
 
     Raises:

@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 MINIMUM_SERVERLESS_VERSION = '1.40.0'
 
 
-def check_serverless_compatiable_version():
+def check_serverless_compatible_version():
     if which("serverless") is None:
         raise ValueError(
             "Serverless framework is not installed, please visit "
@@ -126,6 +126,7 @@ class TemporaryServerlessContent(object):
             self.cleanup()
 
     def generate(self):
+        check_serverless_compatible_version()
         self.temp_directory.create()
         tempdir = self.temp_directory.path
         call_serverless_command(
@@ -149,18 +150,24 @@ class TemporaryServerlessContent(object):
             self.archive_path, 'bundled_pip_dependencies'
         )
         # If bundled_pip_dependencies directory exists, we copy over and update
-        # requirements.txt
+        # requirements.txt.  We need to remove the bentoml entry in the file, because
+        # when pip install, it will NOT override the pypi released version.
         if os.path.isdir(bundled_dependencies_path):
             dest_bundle_path = os.path.join(tempdir, 'bundled_pip_dependencies')
             shutil.copytree(bundled_dependencies_path, dest_bundle_path)
-            requirement_txt_path = os.path.join(tempdir, 'requirements.txt')
+            bundled_files = os.listdir(dest_bundle_path)
+            for index, value in enumerate(bundled_files):
+                bundled_files[index] = './bundled_pip_dependencies/{}\n'.format(value)
 
-            with open(requirement_txt_path, 'a+') as requirement_file:
-                bundled_files = os.listdir(dest_bundle_path)
-                for bundled_module_name in bundled_files:
-                    requirement_file.write(
-                        '\n./bundled_pip_dependencies/{}'.format(bundled_module_name)
-                    )
+            with open(os.path.join(tempdir, 'requirements.txt'), 'r+') as requirement_file:
+                required_modules = requirement_file.readlines()
+                # Assuming bentoml is always the first one in requirements.txt. We are
+                # removing it
+                required_modules.pop(0)
+                required_modules.extend(bundled_files)
+                # Write from beginning of the file, instead of appending to the end.
+                requirement_file.seek(0)
+                requirement_file.writelines(required_modules)
 
         self.path = tempdir
 

@@ -23,6 +23,7 @@ from packaging import version
 from ruamel.yaml import YAML
 
 from bentoml.utils import Path
+from bentoml.utils.whichcraft import which
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.status import Status
 from bentoml.exceptions import BentoMLException
@@ -131,6 +132,9 @@ def generate_handler_py(bento_name, apis, output_path):
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, repo, prev_deployment=None):
+        if which('docker') is None:
+            raise ValueError('Docker is not installed. Please visit '
+                             'www.docker.com for instructions')
         deployment_spec = deployment_pb.spec
         aws_config = deployment_spec.aws_lambda_operator_config
 

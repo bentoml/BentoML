@@ -28,6 +28,11 @@ from bentoml import config
 from bentoml.exceptions import BentoMLException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 
+try:
+    from imageio import imread
+except ImportError:
+    imread = None
+
 
 def check_file_format(file_name, accept_format_list):
     """
@@ -78,6 +83,9 @@ class ImageHandler(BentoHandler):
     def __init__(
         self, input_names=("image",), accept_file_extensions=None, pilmode="RGB"
     ):
+        if imread is None:
+            raise ImportError("imageio package is required to use ImageHandler")
+
         self.input_names = tuple(input_names)
         self.pilmode = pilmode
         self.accept_file_extensions = (
@@ -114,11 +122,6 @@ class ImageHandler(BentoHandler):
         Return:
             response object
         """
-        try:
-            from imageio import imread
-        except ImportError:
-            raise ImportError("imageio package is required to use ImageHandler")
-
         if request.method != "POST":
             return Response(response="Only accept POST request", status=400)
 
@@ -158,11 +161,6 @@ class ImageHandler(BentoHandler):
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(file_path)
 
-        try:
-            from imageio import imread
-        except ImportError:
-            raise ImportError("imageio package is required to use ImageHandler")
-
         image_array = imread(file_path, pilmode=self.pilmode)
 
         result = func(image_array)
@@ -170,11 +168,6 @@ class ImageHandler(BentoHandler):
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        try:
-            from imageio import imread
-        except ImportError:
-            raise ImportError("imageio package is required to use ImageHandler")
-
         if event["headers"].get("Content-Type", "").startswith("images/"):
             # decodebytes introduced at python3.1
             try:

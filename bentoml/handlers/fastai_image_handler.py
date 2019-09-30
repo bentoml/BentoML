@@ -33,7 +33,7 @@ from bentoml.handlers.image_handler import (
 )
 
 try:
-    from fastai.vision import Image, pil2tensor
+    from fastai.vision import Image, pil2tensor, open_image
 except ImportError:
     Image = None
     pil2tensor = None
@@ -89,7 +89,7 @@ class FastaiImageHandler(BentoHandler):
                 "imageio package is required to use bentoml.handlers.FastaiImageHandler"
             )
 
-        if Image is None or pil2tensor is None:
+        if Image is None or pil2tensor is None or open_image is None:
             raise ImportError(
                 "fastai package is required to use bentoml.handlers.FastaiImageHandler"
             )
@@ -178,11 +178,6 @@ class FastaiImageHandler(BentoHandler):
         verify_image_format_or_raise(file_path, self.accept_image_formats)
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(file_path)
-
-        try:
-            from fastai.vision import open_image, Image
-        except ImportError:
-            raise ImportError("fastai package is required to use")
 
         image_array = open_image(
             fn=file_path,

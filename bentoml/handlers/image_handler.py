@@ -75,8 +75,8 @@ class ImageHandler(BentoHandler):
             List of all supported format can be found here:
             https://imageio.readthedocs.io/en/stable/formats.html
         pilmode (string): The pilmode to be used for reading image file into numpy
-            array. Default value is RGB.  Find more information at:
-            https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
+            array. Default value is 'RGB'.  Find more information at:
+            https://imageio.readthedocs.io/en/stable/format_png-pil.html
 
     Raises:
         ImportError: imageio package is required to use ImageHandler

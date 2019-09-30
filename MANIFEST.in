@@ -32,3 +32,4 @@ global-exclude .ipynb_checkpoints
 global-exclude __pycache__
 include versioneer.py
 include bentoml/_version.py
+recursive-include bentoml/server/static *

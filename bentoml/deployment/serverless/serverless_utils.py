@@ -161,7 +161,9 @@ class TemporaryServerlessContent(object):
                 bundled_files[index] = './bundled_pip_dependencies/{}\n'.format(
                     bundled_file_name
                 )
-                if 'BentoML-' in bundled_file_name:
+                # If file name start with `BentoML-`, assuming it is a
+                # bentoml targz bundle
+                if bundled_file_name.startswith('BentoML-'):
                     has_bentoml_bundle = True
 
             with open(

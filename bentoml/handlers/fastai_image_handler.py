@@ -30,7 +30,6 @@ from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 from bentoml.handlers.image_handler import (
     check_file_format,
     get_default_accept_file_extensions,
-    get_default_accept_content_types,
 )
 
 
@@ -76,9 +75,6 @@ class FastaiImageHandler(BentoHandler):
         self.cls = cls
         self.accept_file_extensions = (
             accept_file_extensions or get_default_accept_file_extensions()
-        )
-        self.accept_content_types = get_default_accept_content_types(
-            self.accept_file_extensions
         )
         self.after_open = after_open
 
@@ -191,7 +187,7 @@ class FastaiImageHandler(BentoHandler):
         except ImportError:
             raise ImportError("imageio package is required to use ImageHandler")
 
-        if event["headers"].get("Content-Type", None) in ACCEPTED_CONTENT_TYPES:
+        if event["headers"].get("Content-Type", "").startswith("images/"):
             # decodebytes introduced at python3.1
             try:
                 image_data = imread(

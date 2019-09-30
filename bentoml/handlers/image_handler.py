@@ -53,14 +53,6 @@ def get_default_accept_file_extensions():
     ]
 
 
-def get_default_accept_content_types(accept_file_extensions):
-    """With default bentoML config, this returns:
-        ["images/png", "images/jpeg", "images/jpg", "images/tiff", "images/webp",
-        "images/bmp"]
-    """
-    return list(map(lambda x: "images/" + x[1:], accept_file_extensions))
-
-
 class ImageHandler(BentoHandler):
     """Transform incoming image data from http request, cli or lambda event into numpy
     array.
@@ -90,9 +82,6 @@ class ImageHandler(BentoHandler):
         self.pilmode = pilmode
         self.accept_file_extensions = (
             accept_file_extensions or get_default_accept_file_extensions()
-        )
-        self.accept_content_types = get_default_accept_content_types(
-            self.accept_file_extensions
         )
 
     @property
@@ -186,7 +175,7 @@ class ImageHandler(BentoHandler):
         except ImportError:
             raise ImportError("imageio package is required to use ImageHandler")
 
-        if event["headers"].get("Content-Type", None) in self.accept_content_types:
+        if event["headers"].get("Content-Type", "").startswith("images/"):
             # decodebytes introduced at python3.1
             try:
                 image = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)

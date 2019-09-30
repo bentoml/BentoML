@@ -80,7 +80,7 @@ def generate_aws_handler_functions_config(apis):
 
 
 def generate_serverless_configuration_for_aws_lambda(
-    service_name, apis, output_path, region, stage, temp_dir
+    service_name, apis, output_path, region, stage
 ):
     config_path = os.path.join(output_path, "serverless.yml")
     yaml = YAML()
@@ -97,6 +97,8 @@ def generate_serverless_configuration_for_aws_lambda(
 
     serverless_config["functions"] = generate_aws_handler_functions_config(apis)
 
+    # We are passing the bundled_pip_dependencies directory for python
+    # requirement package, so it can installs the bundled tar gz file.
     serverless_config["custom"] = {
         "apigwBinary": ["image/jpg", "image/jpeg", "image/png"],
         "pythonRequirements": {
@@ -110,7 +112,7 @@ def generate_serverless_configuration_for_aws_lambda(
                 '-v',
                 '{}/bundled_pip_dependencies:'
                 '/var/task/bundled_pip_dependencies:z'.format(
-                    temp_dir
+                   output_path
                 ),
             ],
         },
@@ -158,7 +160,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 output_path=output_path,
                 region=aws_config.region,
                 stage=deployment_pb.namespace,
-                temp_dir=output_path,
             )
             logger.info(
                 'Installing additional packages: serverless-python-requirements, '

@@ -152,17 +152,11 @@ class TemporaryServerlessContent(object):
             shutil.copytree(bundled_dependencies_path, dest_bundle_path)
             requirement_txt_path = os.path.join(tempdir, 'requirements.txt')
 
-            with open(requirement_txt_path, 'r+') as file:
-                content = file.read()
-                requirement_list = content.split('\n')
+            with open(requirement_txt_path, 'a+') as requirement_file:
                 bundled_files = os.listdir(dest_bundle_path)
+                requirement_file.write('\n')
                 for bundled_module_name in bundled_files:
-                    requirement_list.append(
-                        './bundled_pip_dependencies/{}'.format(bundled_module_name)
-                    )
-                file.seek(0)
-                file.write('\n'.join(requirement_list))
-                file.truncate()
+                    requirement_file.write('./bundled_pip_dependencies/{}\n'.format(bundled_module_name))
 
         self.path = tempdir
 

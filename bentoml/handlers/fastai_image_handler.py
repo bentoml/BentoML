@@ -27,7 +27,11 @@ import numpy as np
 
 from bentoml.exceptions import BentoMLException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
-from bentoml.handlers.image_handler import ACCEPTED_CONTENT_TYPES, check_file_format
+from bentoml.handlers.image_handler import (
+    check_file_format,
+    get_default_accept_file_extensions,
+    get_default_accept_content_types,
+)
 
 
 class FastaiImageHandler(BentoHandler):
@@ -59,18 +63,23 @@ class FastaiImageHandler(BentoHandler):
 
     def __init__(
         self,
-        input_names=None,
+        input_names=("image",),
         accept_file_extensions=None,
-        convert_mode=None,
+        convert_mode="RGB",
         div=True,
         cls=None,
         after_open=None,
     ):
-        self.input_names = input_names or ("image",)
-        self.convert_mode = convert_mode or "RGB"
-        self.div = (div or True,)
+        self.input_names = input_names
+        self.convert_mode = convert_mode
+        self.div = div
         self.cls = cls
-        self.accept_file_extensions = accept_file_extensions or [".jpg", ".png", "jpeg"]
+        self.accept_file_extensions = (
+            accept_file_extensions or get_default_accept_file_extensions()
+        )
+        self.accept_content_types = get_default_accept_content_types(
+            self.accept_file_extensions
+        )
         self.after_open = after_open
 
     @property

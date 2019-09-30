@@ -24,10 +24,9 @@ from io import BytesIO
 from werkzeug.utils import secure_filename
 from flask import Response
 
+from bentoml import config
 from bentoml.exceptions import BentoMLException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
-
-ACCEPTED_CONTENT_TYPES = ["images/png", "images/jpeg", "images/jpg"]
 
 
 def check_file_format(file_name, accept_format_list):
@@ -42,6 +41,26 @@ def check_file_format(file_name, accept_format_list):
             )
 
 
+def get_default_accept_file_extensions():
+    """With default bentoML config, this returns:
+        ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
+    """
+    return [
+        extension.strip()
+        for extension in config('apiserver')
+        .get('default_image_handler_accept_file_extensions')
+        .split(',')
+    ]
+
+
+def get_default_accept_content_types(accept_file_extensions):
+    """With default bentoML config, this returns:
+        ["images/png", "images/jpeg", "images/jpg", "images/tiff", "images/webp",
+        "images/bmp"]
+    """
+    return list(map(lambda x: "images/" + x[1:], accept_file_extensions))
+
+
 class ImageHandler(BentoHandler):
     """Transform incoming image data from http request, cli or lambda event into numpy
     array.
@@ -52,8 +71,10 @@ class ImageHandler(BentoHandler):
     Args:
         input_names (string[]]): A tuple of acceptable input name for HTTP request.
             Default value is (image,)
-        accept_file_extensions (string[]):  A list of acceptable image extensions.
-            Default value is [.jpg, .jpeg, .png]
+        accept_file_extensions (string[]):  A list of acceptable image formats.
+            Default value is loaded from bentoml config
+            'apiserver/default_image_handler_accept_file_extensions', which is
+            set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default
         pilmode (string): The pilmode to be used for reading image file into numpy
             array. Default value is RGB.  Find more information at
             https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
@@ -67,11 +88,12 @@ class ImageHandler(BentoHandler):
     ):
         self.input_names = tuple(input_names)
         self.pilmode = pilmode
-        self.accept_file_extensions = accept_file_extensions or [
-            ".jpg",
-            ".png",
-            ".jpeg",
-        ]
+        self.accept_file_extensions = (
+            accept_file_extensions or get_default_accept_file_extensions()
+        )
+        self.accept_content_types = get_default_accept_content_types(
+            self.accept_file_extensions
+        )
 
     @property
     def request_schema(self):
@@ -164,7 +186,7 @@ class ImageHandler(BentoHandler):
         except ImportError:
             raise ImportError("imageio package is required to use ImageHandler")
 
-        if event["headers"].get("Content-Type", None) in ACCEPTED_CONTENT_TYPES:
+        if event["headers"].get("Content-Type", None) in self.accept_content_types:
             # decodebytes introduced at python3.1
             try:
                 image = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)

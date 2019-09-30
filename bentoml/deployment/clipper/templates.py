@@ -70,7 +70,7 @@ if __name__ == "__main__":
 """
 
 DOCKERFILE_CLIPPER = """\
-FROM clipper/python36-closure-container:0.3
+FROM clipper/python36-closure-container:0.4.1
 
 # Install miniconda3 for python. Copied from
 # https://github.com/ContinuumIO/docker-images/blob/master/miniconda3/debian/Dockerfile

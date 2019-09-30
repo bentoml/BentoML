@@ -34,7 +34,7 @@ except ImportError:
     imread = None
 
 
-def check_file_format(file_name, accept_format_list):
+def verify_image_format_or_raise(file_name, accept_format_list):
     """
     Raise error if file's extension is not in the accept_format_list
     """
@@ -46,7 +46,7 @@ def check_file_format(file_name, accept_format_list):
             )
 
 
-def get_default_accept_file_extensions():
+def get_default_accept_image_formats():
     """With default bentoML config, this returns:
         ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
     """
@@ -68,11 +68,11 @@ class ImageHandler(BentoHandler):
     Args:
         input_names (string[]]): A tuple of acceptable input name for HTTP request.
             Default value is (image,)
-        accept_file_extensions (string[]):  A list of acceptable image formats.
+        accept_image_formats (string[]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
             'apiserver/default_image_handler_accept_file_extensions', which is
             set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
-            List of supported format can be found here:
+            List of all supported format can be found here:
             https://imageio.readthedocs.io/en/stable/formats.html
         pilmode (string): The pilmode to be used for reading image file into numpy
             array. Default value is RGB.  Find more information at:
@@ -83,15 +83,15 @@ class ImageHandler(BentoHandler):
     """
 
     def __init__(
-        self, input_names=("image",), accept_file_extensions=None, pilmode="RGB"
+        self, input_names=("image",), accept_image_formats=None, pilmode="RGB"
     ):
         if imread is None:
             raise ImportError("imageio package is required to use ImageHandler")
 
         self.input_names = tuple(input_names)
         self.pilmode = pilmode
-        self.accept_file_extensions = (
-            accept_file_extensions or get_default_accept_file_extensions()
+        self.accept_image_formats = (
+            accept_image_formats or get_default_accept_image_formats()
         )
 
     @property
@@ -139,7 +139,7 @@ class ImageHandler(BentoHandler):
         else:
             file_names = [secure_filename(file.filename) for file in input_files]
             for file_name in file_names:
-                check_file_format(file_name, self.accept_file_extensions)
+                verify_image_format_or_raise(file_name, self.accept_image_formats)
             input_streams = [BytesIO(input_file.read()) for input_file in input_files]
 
         input_data = tuple(
@@ -159,7 +159,7 @@ class ImageHandler(BentoHandler):
         parsed_args = parser.parse_args(args)
         file_path = parsed_args.input
 
-        check_file_format(file_path, self.accept_file_extensions)
+        verify_image_format_or_raise(file_path, self.accept_image_formats)
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(file_path)
 

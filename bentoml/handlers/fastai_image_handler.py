@@ -28,8 +28,8 @@ import numpy as np
 from bentoml.exceptions import BentoMLException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 from bentoml.handlers.image_handler import (
-    check_file_format,
-    get_default_accept_file_extensions,
+    verify_image_format_or_raise,
+    get_default_accept_image_formats,
 )
 
 try:
@@ -54,8 +54,12 @@ class FastaiImageHandler(BentoHandler):
     Args:
         input_names ([str]]): A tuple of acceptable input name for HTTP request.
             Default value is (image,)
-        accept_file_extensions ([str]):  A list of acceptable image extensions.
-            Default value is [.jpg, .jpeg, .png]
+        accept_image_formats ([str]):  A list of acceptable image formats.
+            Default value is loaded from bentoml config
+            'apiserver/default_image_handler_accept_file_extensions', which is
+            set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
+            List of all supported format can be found here:
+            https://imageio.readthedocs.io/en/stable/formats.html
         convert_mode (str): The pilmode to be used for reading image file into
             numpy array. Default value is RGB.  Find more information at
             https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
@@ -74,7 +78,7 @@ class FastaiImageHandler(BentoHandler):
     def __init__(
         self,
         input_names=("image",),
-        accept_file_extensions=None,
+        accept_image_formats=None,
         convert_mode="RGB",
         div=True,
         cls=None,
@@ -94,8 +98,8 @@ class FastaiImageHandler(BentoHandler):
         self.convert_mode = convert_mode
         self.div = div
         self.cls = cls
-        self.accept_file_extensions = (
-            accept_file_extensions or get_default_accept_file_extensions()
+        self.accept_image_formats = (
+            accept_image_formats or get_default_accept_image_formats()
         )
         self.after_open = after_open
 
@@ -127,7 +131,7 @@ class FastaiImageHandler(BentoHandler):
             file = request.files.get(filename)
             if file is not None:
                 file_name = secure_filename(file.filename)
-                check_file_format(file_name, self.accept_file_extensions)
+                verify_image_format_or_raise(file_name, self.accept_image_formats)
                 input_streams.append(BytesIO(file.read()))
 
         if len(input_streams) == 0:
@@ -171,7 +175,7 @@ class FastaiImageHandler(BentoHandler):
         parsed_args = parser.parse_args(args)
         file_path = parsed_args.input
 
-        check_file_format(file_path, self.accept_file_extensions)
+        verify_image_format_or_raise(file_path, self.accept_image_formats)
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(file_path)
 

@@ -111,9 +111,7 @@ def generate_serverless_configuration_for_aws_lambda(
             "dockerRunCmdExtraArgs": [
                 '-v',
                 '{}/bundled_pip_dependencies:'
-                '/var/task/bundled_pip_dependencies:z'.format(
-                   output_path
-                ),
+                '/var/task/bundled_pip_dependencies:z'.format(output_path),
             ],
         },
     }

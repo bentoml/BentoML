@@ -122,7 +122,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 region=gcp_config.region,
                 stage=deployment_pb.namespace,
             )
-            call_serverless_command(["serverless", "deploy"], output_path)
+            call_serverless_command(["deploy"], output_path)
 
         res_deployment_pb = Deployment(state=DeploymentState())
         res_deployment_pb.CopyFrom(deployment_pb)
@@ -146,7 +146,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             functions=generate_gcp_handler_functions_config(bento_config['apis']),
         ) as tempdir:
             try:
-                response = call_serverless_command(["serverless", "info"], tempdir)
+                response = call_serverless_command(["info"], tempdir)
                 info_json = parse_serverless_info_response_to_json_string(response)
                 state = DeploymentState(
                     state=DeploymentState.RUNNING, info_json=info_json
@@ -184,7 +184,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             functions=generate_gcp_handler_functions_config(bento_config['apis']),
         ) as tempdir:
             try:
-                response = call_serverless_command(['serverless', 'remove'], tempdir)
+                response = call_serverless_command(['remove'], tempdir)
                 if "Serverless: Stack removal finished..." in response:
                     status = Status.OK()
                 else:

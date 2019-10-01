@@ -30,41 +30,39 @@ from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
 from bentoml.exceptions import BentoMLException
+from bentoml.deployment.utils import _find_bentoml_module_location
 
 logger = logging.getLogger(__name__)
 
-MINIMUM_SERVERLESS_VERSION = '1.40.0'
+
+SERVERLESS_VERSION = '1.53.0'
+BENTOML_MODULE_LOCATION = _find_bentoml_module_location()
+
+# We will install serverless package and use the installed one, instead
+# of user's installation
+SERVERLESS_BIN_COMMAND = './{}/node_modules/.bin/serverless'.format(
+    BENTOML_MODULE_LOCATION
+)
 
 
-def check_serverless_compatible_version():
-    if which("serverless") is None:
+def install_serverless_package():
+    if which('npm') is None:
         raise ValueError(
-            "Serverless framework is not installed, please visit "
-            + "www.serverless.com for install instructions."
+            'Node and NPM is not installed.'
+            ' Please visit www.nodejs.org for instructions'
         )
-
-    version_result = (
-        subprocess.check_output(["serverless", "-v"]).decode("utf-8").strip()
-    )
-    if "(Enterprise Plugin:" in version_result:
-        slice_end_index = version_result.find(" (Enterprise")
-        version_result = version_result[0:slice_end_index]
-    parsed_version = version.parse(version_result)
-
-    if parsed_version >= version.parse(MINIMUM_SERVERLESS_VERSION):
-        return
-    else:
-        raise ValueError(
-            "Incompatiable serverless version, please install version 1.40.0 or greater"
-        )
+    install_command = ['npm', 'install', 'serverless@{}'.join(SERVERLESS_VERSION)]
+    subprocess.call(install_command, cwd=BENTOML_MODULE_LOCATION)
 
 
 def install_serverless_plugin(plugin_name, install_dir_path):
-    command = ["serverless", "plugin", "install", "-n", plugin_name]
+    command = ["plugin", "install", "-n", plugin_name]
     call_serverless_command(command, install_dir_path)
 
 
 def call_serverless_command(command, cwd_path):
+    command = [SERVERLESS_BIN_COMMAND].extend(command)
+
     with subprocess.Popen(command, cwd=cwd_path, stdout=PIPE, stderr=PIPE) as proc:
         response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
         logger.debug("Serverless response: %s", "\n".join(response))
@@ -126,12 +124,11 @@ class TemporaryServerlessContent(object):
             self.cleanup()
 
     def generate(self):
-        check_serverless_compatible_version()
+        install_serverless_package()
         self.temp_directory.create()
         tempdir = self.temp_directory.path
         call_serverless_command(
             [
-                "serverless",
                 "create",
                 "--template",
                 self.template_type,

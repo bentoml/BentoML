@@ -24,35 +24,32 @@ import json
 from subprocess import PIPE
 
 from ruamel.yaml import YAML
-from packaging import version
 
+from bentoml.configuration import BENTOML_HOME
 from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
-from bentoml.exceptions import BentoMLException
-from bentoml.deployment.utils import _find_bentoml_module_location
+from bentoml.exceptions import BentoMLException, BentoMLMissingDepdencyException
 
 logger = logging.getLogger(__name__)
 
 
 SERVERLESS_VERSION = '1.53.0'
-BENTOML_MODULE_LOCATION = _find_bentoml_module_location()
 
 # We will install serverless package and use the installed one, instead
 # of user's installation
-SERVERLESS_BIN_COMMAND = './{}/node_modules/.bin/serverless'.format(
-    BENTOML_MODULE_LOCATION
-)
+SERVERLESS_BIN_COMMAND = '{}/node_modules/.bin/serverless'.format(BENTOML_HOME)
 
 
 def install_serverless_package():
-    if which('npm') is None:
-        raise ValueError(
-            'Node and NPM is not installed.'
-            ' Please visit www.nodejs.org for instructions'
-        )
-    install_command = ['npm', 'install', 'serverless@{}'.join(SERVERLESS_VERSION)]
-    subprocess.call(install_command, cwd=BENTOML_MODULE_LOCATION)
+    if not os.path.isfile(SERVERLESS_BIN_COMMAND):
+        if which('npm') is None:
+            raise BentoMLMissingDepdencyException(
+                'Node and NPM is not installed.'
+                ' Please visit www.nodejs.org for instructions'
+            )
+        install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]
+        subprocess.call(install_command, cwd=BENTOML_HOME)
 
 
 def install_serverless_plugin(plugin_name, install_dir_path):
@@ -61,7 +58,7 @@ def install_serverless_plugin(plugin_name, install_dir_path):
 
 
 def call_serverless_command(command, cwd_path):
-    command = [SERVERLESS_BIN_COMMAND].extend(command)
+    command = [SERVERLESS_BIN_COMMAND] + command
 
     with subprocess.Popen(command, cwd=cwd_path, stdout=PIPE, stderr=PIPE) as proc:
         response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
@@ -77,7 +74,7 @@ def parse_serverless_response(serverless_response):
 
     # Parsing serverless response brutally.  The current serverless
     # response format is:
-    # ServerlessError|Error -----{fill dash to 56 line lenght}
+    # ServerlessError|Error -----{fill dash to 56 line length}
     # empty space
     # Error Message
     # empty space
@@ -170,8 +167,8 @@ class TemporaryServerlessContent(object):
                 if has_bentoml_bundle:
                     # Assuming bentoml is always the first one in
                     # requirements.txt. We are removing it
-                    required_modules.pop(0)
-                required_modules.extend(bundled_files)
+                    required_modules = required_modules[1:]
+                required_modules = required_modules + bundled_files
                 # Write from beginning of the file, instead of appending to
                 # the end.
                 requirement_file.seek(0)
@@ -214,6 +211,7 @@ class TemporaryServerlessConfig(object):
             self.cleanup()
 
     def generate(self):
+        install_serverless_package()
         serverless_config = {
             "service": self.deployment_name,
             "provider": {

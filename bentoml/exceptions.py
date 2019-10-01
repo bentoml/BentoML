@@ -36,3 +36,7 @@ class BentoMLDeploymentException(BentoMLException):
 
 class BentoMLRepositoryException(BentoMLException):
     pass
+
+
+class BentoMLMissingDepdencyException(BentoMLException):
+    pass

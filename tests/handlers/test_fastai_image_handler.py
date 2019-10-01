@@ -1,20 +1,7 @@
 import sys
 
-from bentoml import BentoService, api, artifacts
-from bentoml.artifact import PickleArtifact
+import bentoml
 from bentoml.handlers import FastaiImageHandler
-
-
-class TestImageModel(object):
-    def predict(self, image_ndarray):
-        return image_ndarray.shape
-
-
-@artifacts([PickleArtifact("clf")])
-class ImageHandlerModelForFastai(BentoService):
-    @api(FastaiImageHandler)
-    def predict(self, input_data):
-        return type(input_data).__name__
 
 
 def test_fastai_image_handler(capsys, tmpdir):
@@ -22,8 +9,12 @@ def test_fastai_image_handler(capsys, tmpdir):
         # fast ai is required 3.6 or higher.
         assert True
     else:
-        test_model = TestImageModel()
-        ms = ImageHandlerModelForFastai.pack(clf=test_model)
+        class ImageHandlerModelForFastai(bentoml.BentoService):
+            @bentoml.api(FastaiImageHandler)
+            def predict(self, image):
+                return list(image.shape)
+
+        ms = ImageHandlerModelForFastai()
 
         import cv2
         import numpy as np
@@ -34,4 +25,4 @@ def test_fastai_image_handler(capsys, tmpdir):
         test_args = ["--input={}".format(img_file)]
         api.handle_cli(test_args)
         out, err = capsys.readouterr()
-        assert out.strip() == "Image"
+        assert out.strip() == '[3, 10, 10]'

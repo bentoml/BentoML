@@ -1,3 +1,4 @@
+import sys
 import pytest
 
 import bentoml
@@ -32,18 +33,30 @@ def test_custom_api_name():
     assert str(e.value).startswith("Invalid API name")
 
 
-def test_handler_pip_dependencies():
-    @bentoml.artifacts([bentoml.artifact.PickleArtifact('artifact')])
-    class TestModel(bentoml.BentoService):
-        @bentoml.api(bentoml.handlers.FastaiImageHandler)
+def test_fastai_image_handler_pip_dependencies():
+    if sys.version_info < (3, 6):
+        # fast ai is required 3.6 or higher.
+        assert True
+    else:
+        class TestFastAiImageService(bentoml.BentoService):
+            @bentoml.api(bentoml.handlers.FastaiImageHandler)
+            def test(self, image):
+                return image
+
+        service = TestFastAiImageService()
+
+        assert 'imageio' in service._env._pip_dependencies
+        assert 'fastai' in service._env._pip_dependencies
+
+
+def test_image_handler_pip_dependencies():
+    class TestImageService(bentoml.BentoService):
+        @bentoml.api(bentoml.handlers.ImageHandler)
         def test(self, image):
             return image
 
-    empy_artifact = []
-    service = TestModel.pack(artifact=empy_artifact)
-
+    service = TestImageService()
     assert 'imageio' in service._env._pip_dependencies
-    assert 'fastai' in service._env._pip_dependencies
 
 
 def test_validate_version_str_fails():

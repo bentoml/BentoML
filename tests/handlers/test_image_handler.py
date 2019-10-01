@@ -1,25 +1,18 @@
 import base64
 
-from bentoml import BentoService, api, artifacts
-from bentoml.artifact import PickleArtifact
+from bentoml import BentoService, api
 from bentoml.handlers import ImageHandler
 
 
-class TestImageModel(object):
-    def predict(self, image_ndarray):
-        return image_ndarray.shape
 
-
-@artifacts([PickleArtifact("clf")])
 class ImageHandlerModel(BentoService):
     @api(ImageHandler)
-    def predict(self, input_data):
-        return self.artifacts.clf.predict(input_data)
+    def predict(self, image):
+        return image.shape
 
 
 def test_image_handler(capsys, tmpdir):
-    test_model = TestImageModel()
-    ms = ImageHandlerModel.pack(clf=test_model)
+    ms = ImageHandlerModel()
     api = ms.get_service_apis()[0]
 
     import cv2

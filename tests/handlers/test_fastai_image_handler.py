@@ -5,7 +5,7 @@ from bentoml.handlers import FastaiImageHandler
 
 
 def test_fastai_image_handler(capsys, tmpdir):
-    if sys.version_info.major < 3 or sys.version_info.minor < 6:
+    if sys.version_info < (3, 6):
         # fast ai is required 3.6 or higher.
         assert True
     else:

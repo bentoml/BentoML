@@ -4,7 +4,6 @@ from bentoml import BentoService, api
 from bentoml.handlers import ImageHandler
 
 
-
 class ImageHandlerModel(BentoService):
     @api(ImageHandler)
     def predict(self, image):

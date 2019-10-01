@@ -23,10 +23,9 @@ from packaging import version
 from ruamel.yaml import YAML
 
 from bentoml.utils import Path
-from bentoml.utils.whichcraft import which
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.status import Status
-from bentoml.exceptions import BentoMLException, BentoMLMissingDepdencyException
+from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import (
     Deployment,
     ApplyDeploymentResponse,

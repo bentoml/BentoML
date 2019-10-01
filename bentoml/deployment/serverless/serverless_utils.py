@@ -22,10 +22,11 @@ import logging
 import subprocess
 import json
 from subprocess import PIPE
+from packaging import version
 
 from ruamel.yaml import YAML
 
-from bentoml.configuration import BENTOML_HOME
+from bentoml.configuration import _get_bentoml_home
 from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
@@ -35,21 +36,36 @@ logger = logging.getLogger(__name__)
 
 
 SERVERLESS_VERSION = '1.53.0'
+BENTOML_HOME = _get_bentoml_home()
 
 # We will install serverless package and use the installed one, instead
 # of user's installation
 SERVERLESS_BIN_COMMAND = '{}/node_modules/.bin/serverless'.format(BENTOML_HOME)
 
 
+def check_nodejs_comptaible_version():
+    if which('npm') is None:
+        raise BentoMLMissingDepdencyException(
+            'NPM is not installed. Please visit www.nodejs.org for instructions'
+        )
+    if which("node") is None:
+        raise BentoMLMissingDepdencyException(
+            "NodeJs is not installed, please visit www.nodejs.org for install "
+            "instructions."
+        )
+    version_result = subprocess.check_output(["node", "-v"]).decode("utf-8").strip()
+    parsed_version = version.parse(version_result)
+
+    if not parsed_version >= version.parse('v8.10.0'):
+        raise ValueError(
+            "Incompatible Nodejs version, please install version v8.10.0 " "or greater"
+        )
+
+
 def install_serverless_package():
-    if not os.path.isfile(SERVERLESS_BIN_COMMAND):
-        if which('npm') is None:
-            raise BentoMLMissingDepdencyException(
-                'Node and NPM is not installed.'
-                ' Please visit www.nodejs.org for instructions'
-            )
-        install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]
-        subprocess.call(install_command, cwd=BENTOML_HOME)
+    check_nodejs_comptaible_version()
+    install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]
+    subprocess.call(install_command, cwd=BENTOML_HOME)
 
 
 def install_serverless_plugin(plugin_name, install_dir_path):
@@ -240,3 +256,17 @@ class TemporaryServerlessConfig(object):
     def cleanup(self):
         self.temp_directory.cleanup()
         self.path = None
+
+
+def is_docker_available():
+    try:
+        subprocess.check_output(['docker', 'info'])
+    except subprocess.CalledProcessError:
+        raise BentoMLException(
+            'Docker is not running. Please start Docker and then try again.'
+        )
+    except FileNotFoundError:
+        raise BentoMLMissingDepdencyException(
+            'Docker is required for AWS Lambda deployment. Please visit '
+            'www.docker.come for instructions'
+        )

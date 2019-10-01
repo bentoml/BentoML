@@ -40,7 +40,7 @@ from bentoml.deployment.serverless.serverless_utils import (
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
     parse_serverless_info_response_to_json_string,
-)
+    is_docker_available)
 from bentoml.archive.loader import load_bentoml_config
 
 logger = logging.getLogger(__name__)
@@ -132,11 +132,7 @@ def generate_handler_py(bento_name, apis, output_path):
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, repo, prev_deployment=None):
-        if which('docker') is None:
-            raise BentoMLMissingDepdencyException(
-                'Docker is not installed. Please visit '
-                'www.docker.com for instructions'
-            )
+        is_docker_available()
         deployment_spec = deployment_pb.spec
         aws_config = deployment_spec.aws_lambda_operator_config
 

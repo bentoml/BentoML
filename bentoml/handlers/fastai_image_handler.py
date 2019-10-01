@@ -27,24 +27,40 @@ import numpy as np
 
 from bentoml.exceptions import BentoMLException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
-from bentoml.handlers.image_handler import ACCEPTED_CONTENT_TYPES, check_file_format
+from bentoml.handlers.image_handler import (
+    verify_image_format_or_raise,
+    get_default_accept_image_formats,
+)
+
+try:
+    from fastai.vision import Image, pil2tensor, open_image
+except ImportError:
+    Image = None
+    pil2tensor = None
+
+try:
+    from imageio import imread
+except ImportError:
+    imread = None
 
 
 class FastaiImageHandler(BentoHandler):
-    """Transform incoming image data to fastai.vision.Image
-
-    Handle incoming image data, process them into fastai.vision.Image instance and
-    pass down to user defined API functions
-
+    """BentoHandler specified for handling image input following fastai conventions
+    by passing type fastai.vision.Image to user API function and providing options
+    such as div, cls, and after_open
 
     Args:
         input_names ([str]]): A tuple of acceptable input name for HTTP request.
             Default value is (image,)
-        accept_file_extensions ([str]):  A list of acceptable image extensions.
-            Default value is [.jpg, .jpeg, .png]
+        accept_image_formats ([str]):  A list of acceptable image formats.
+            Default value is loaded from bentoml config
+            'apiserver/default_image_handler_accept_file_extensions', which is
+            set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
+            List of all supported format can be found here:
+            https://imageio.readthedocs.io/en/stable/formats.html
         convert_mode (str): The pilmode to be used for reading image file into
-            numpy array. Default value is RGB.  Find more information at
-            https://imageio.readthedocs.io/en/stable/format_png-pil.html#png-pil
+            numpy array. Default value is 'RGB'.  Find more information at
+            https://imageio.readthedocs.io/en/stable/format_png-pil.html
         div (bool): If True, pixel values are divided by 255 to become floats
             between 0. and 1.
         cls (Class): Parameter from fastai.vision ``open_image``, default is
@@ -59,18 +75,30 @@ class FastaiImageHandler(BentoHandler):
 
     def __init__(
         self,
-        input_names=None,
-        accept_file_extensions=None,
-        convert_mode=None,
+        input_names=("image",),
+        accept_image_formats=None,
+        convert_mode="RGB",
         div=True,
         cls=None,
         after_open=None,
     ):
-        self.input_names = input_names or ("image",)
-        self.convert_mode = convert_mode or "RGB"
-        self.div = (div or True,)
+        if imread is None:
+            raise ImportError(
+                "imageio package is required to use bentoml.handlers.FastaiImageHandler"
+            )
+
+        if Image is None or pil2tensor is None or open_image is None:
+            raise ImportError(
+                "fastai package is required to use bentoml.handlers.FastaiImageHandler"
+            )
+
+        self.input_names = input_names
+        self.convert_mode = convert_mode
+        self.div = div
         self.cls = cls
-        self.accept_file_extensions = accept_file_extensions or [".jpg", ".png", "jpeg"]
+        self.accept_image_formats = (
+            accept_image_formats or get_default_accept_image_formats()
+        )
         self.after_open = after_open
 
     @property
@@ -93,16 +121,6 @@ class FastaiImageHandler(BentoHandler):
         return ['imageio', 'fastai']
 
     def handle_request(self, request, func):
-        try:
-            from fastai.vision import Image, pil2tensor
-        except ImportError:
-            raise ImportError("fastai package is required to use FastaiImageHandler")
-
-        try:
-            from imageio import imread
-        except ImportError:
-            raise ImportError("imageio package is required to use FastaiImageHandler")
-
         if request.method != "POST":
             return Response(response="Only accept POST request", status=400)
 
@@ -111,7 +129,7 @@ class FastaiImageHandler(BentoHandler):
             file = request.files.get(filename)
             if file is not None:
                 file_name = secure_filename(file.filename)
-                check_file_format(file_name, self.accept_file_extensions)
+                verify_image_format_or_raise(file_name, self.accept_image_formats)
                 input_streams.append(BytesIO(file.read()))
 
         if len(input_streams) == 0:
@@ -155,14 +173,9 @@ class FastaiImageHandler(BentoHandler):
         parsed_args = parser.parse_args(args)
         file_path = parsed_args.input
 
-        check_file_format(file_path, self.accept_file_extensions)
+        verify_image_format_or_raise(file_path, self.accept_image_formats)
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(file_path)
-
-        try:
-            from fastai.vision import open_image, Image
-        except ImportError:
-            raise ImportError("fastai package is required to use")
 
         image_array = open_image(
             fn=file_path,
@@ -177,12 +190,7 @@ class FastaiImageHandler(BentoHandler):
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        try:
-            from imageio import imread
-        except ImportError:
-            raise ImportError("imageio package is required to use ImageHandler")
-
-        if event["headers"].get("Content-Type", None) in ACCEPTED_CONTENT_TYPES:
+        if event["headers"].get("Content-Type", "").startswith("images/"):
             # decodebytes introduced at python3.1
             try:
                 image_data = imread(
@@ -198,10 +206,6 @@ class FastaiImageHandler(BentoHandler):
                 "BentoML currently doesn't support Content-Type: {content_type} for "
                 "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
             )
-        try:
-            from fastai.vision import pil2tensor, Image
-        except ImportError:
-            raise ImportError("fastai package is required")
 
         if self.after_open:
             image_data = self.after_open(image_data)
@@ -225,11 +229,6 @@ class FastaiImageHandler(BentoHandler):
             raise ImportError(
                 "opencv-python package is required to use FastaiImageHandler"
             )
-
-        try:
-            from fastai.vision import pil2tensor, Image
-        except ImportError:
-            raise ImportError("fastai package is required to use")
 
         def transform_and_predict(input_bytes):
             image_data = cv2.imdecode(input_bytes, cv2.IMREAD_COLOR)

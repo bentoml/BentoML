@@ -22,6 +22,13 @@ import shutil
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
+try:
+    import fastai
+    from fastai.basic_train import load_learner
+except ImportError:
+    fastai = None
+    load_learner = None
+
 
 class FastaiModelArtifact(BentoServiceArtifact):
     """Saving and Loading FastAI Model
@@ -35,6 +42,13 @@ class FastaiModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
+        if sys.version_info.major < 3 or sys.version_info.minor < 6:
+            raise SystemError("fast ai requires python 3.6 version or higher")
+
+        if fastai is None:
+            raise ImportError("fastai package is required to use "
+                              "bentoml.artifacts.FastaiModelArtifact")
+
         super(FastaiModelArtifact, self).__init__(name)
         self._file_name = name + '.pkl'
 
@@ -42,14 +56,17 @@ class FastaiModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self._file_name)
 
     def pack(self, model):  # pylint:disable=arguments-differ
+        if not isinstance(model, fastai.basic_train.Learner):
+            raise ValueError(
+                "Expect `model` argument to be `fastai.basic_train.Learner` instance"
+            )
+
         return _FastaiModelArtifactWrapper(self, model)
 
     def load(self, path):
-        try:
-            # We need matplotlib and torch for fastai.  Make sure we install those.
-            from fastai.basic_train import load_learner
-        except ImportError:
-            raise ImportError('fastai package is required to use FastaiModelArtifact')
+        if load_learner is None:
+            raise ImportError("fastai package is required to use "
+                              "bentoml.artifacts.FastaiModelArtifact")
 
         model = load_learner(path, self._file_name)
         return self.pack(model)
@@ -58,18 +75,6 @@ class FastaiModelArtifact(BentoServiceArtifact):
 class _FastaiModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model):
         super(_FastaiModelArtifactWrapper, self).__init__(spec)
-        if sys.version_info.major < 3 or sys.version_info.minor < 6:
-            raise SystemError("fast ai requires python 3.6 version or higher")
-
-        try:
-            import fastai
-        except ImportError:
-            raise ImportError("fastai package is required to use FastaiModelArtifact")
-
-        if not isinstance(model, fastai.basic_train.Learner):
-            raise ValueError(
-                "Expect `model` argument to be `fastai.basic_train.Learner` instance"
-            )
 
         self._model = model
 
@@ -80,7 +85,6 @@ class _FastaiModelArtifactWrapper(BentoServiceArtifactWrapper):
             os.path.join(self._model.path, self.spec._file_name),
             self.spec._model_file_path(dst),
         )
-        return
 
     def get(self):
         return self._model

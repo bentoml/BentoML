@@ -45,11 +45,9 @@ except ImportError:
 
 
 class FastaiImageHandler(BentoHandler):
-    """Transform incoming image data to fastai.vision.Image
-
-    Handle incoming image data, process them into fastai.vision.Image instance and
-    pass down to user defined API functions
-
+    """BentoHandler specified for handling image input following fastai conventions
+    by passing type fastai.vision.Image to user API function and providing options
+    such as div, cls, and after_open
 
     Args:
         input_names ([str]]): A tuple of acceptable input name for HTTP request.

@@ -258,7 +258,7 @@ class TemporaryServerlessConfig(object):
         self.path = None
 
 
-def is_docker_available():
+def ensure_docker_available_or_raise():
     try:
         subprocess.check_output(['docker', 'info'])
     except subprocess.CalledProcessError:

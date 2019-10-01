@@ -39,7 +39,7 @@ from bentoml.deployment.serverless.serverless_utils import (
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
     parse_serverless_info_response_to_json_string,
-    is_docker_available,
+    ensure_docker_available_or_raise,
 )
 from bentoml.archive.loader import load_bentoml_config
 
@@ -132,7 +132,7 @@ def generate_handler_py(bento_name, apis, output_path):
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, repo, prev_deployment=None):
-        is_docker_available()
+        ensure_docker_available_or_raise()
         deployment_spec = deployment_pb.spec
         aws_config = deployment_spec.aws_lambda_operator_config
 

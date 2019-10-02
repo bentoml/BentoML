@@ -65,7 +65,7 @@ def check_nodejs_comptaible_version():
 def install_serverless_package():
     check_nodejs_comptaible_version()
     install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]
-    subprocess.call(install_command, cwd=BENTOML_HOME)
+    subprocess.call(install_command, cwd=BENTOML_HOME, stdout=PIPE)
 
 
 def install_serverless_plugin(plugin_name, install_dir_path):
@@ -238,14 +238,6 @@ class TemporaryServerlessConfig(object):
             "functions": self.functions,
         }
 
-        # if self.platform == "google-python":
-        #     serverless_config["provider"]["name"] = "google"
-        #     for api in apis:
-        #         serverless_config["functions"][api.name] = {
-        #             "handler": api.name,
-        #             "events": [{"http": "path"}],
-        #         }
-
         yaml = YAML()
         self.temp_directory.create()
         tempdir = self.temp_directory.path
@@ -256,17 +248,3 @@ class TemporaryServerlessConfig(object):
     def cleanup(self):
         self.temp_directory.cleanup()
         self.path = None
-
-
-def ensure_docker_available_or_raise():
-    try:
-        subprocess.check_call(['docker', 'info'])
-    except subprocess.CalledProcessError as error:
-        raise BentoMLException(
-            'Error executing docker command: {}'.format(error.output)
-        )
-    except FileNotFoundError:
-        raise BentoMLMissingDepdencyException(
-            'Docker is required for AWS Lambda deployment. Please visit '
-            'www.docker.come for instructions'
-        )

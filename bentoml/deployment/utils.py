@@ -21,9 +21,11 @@ import os
 import logging
 import importlib
 import shutil
+import subprocess
 
 from setuptools import sandbox
 
+from bentoml.exceptions import BentoMLException, BentoMLMissingDepdencyException
 
 logger = logging.getLogger(__name__)
 
@@ -87,3 +89,17 @@ def add_local_bentoml_package_to_repo(archive_path):
     dest_dir = os.path.join(archive_path, 'bundled_pip_dependencies')
     shutil.copytree(source_dir, dest_dir)
     shutil.rmtree(source_dir)
+
+
+def ensure_docker_available_or_raise():
+    try:
+        subprocess.check_call(['docker', 'info'], stdout=subprocess.PIPE)
+    except subprocess.CalledProcessError as error:
+        raise BentoMLException(
+            'Error executing docker command: {}'.format(error.output)
+        )
+    except FileNotFoundError:
+        raise BentoMLMissingDepdencyException(
+            'Docker is required for this deployment. Please visit '
+            'www.docker.come for instructions'
+        )

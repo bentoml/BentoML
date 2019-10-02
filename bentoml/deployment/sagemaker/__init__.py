@@ -30,7 +30,10 @@ import docker
 from botocore.exceptions import ClientError
 
 from bentoml import config
-from bentoml.deployment.utils import process_docker_api_line
+from bentoml.deployment.utils import (
+    process_docker_api_line,
+    ensure_docker_available_or_raise,
+)
 from bentoml.yatai.status import Status
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.exceptions import BentoMLDeploymentException
@@ -130,6 +133,7 @@ def create_push_image_to_ecr(bento_name, bento_version, snapshot_path):
     Returns:
         str: AWS ECR Tag
     """
+    ensure_docker_available_or_raise()
     ecr_client = boto3.client("ecr")
     token = ecr_client.get_authorization_token()
     logger.info("Getting docker login info from AWS")

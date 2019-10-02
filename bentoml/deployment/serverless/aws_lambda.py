@@ -33,13 +33,13 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentResponse,
     DeploymentState,
 )
+from bentoml.deployment.utils import ensure_docker_available_or_raise
 from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
     install_serverless_plugin,
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
     parse_serverless_info_response_to_json_string,
-    ensure_docker_available_or_raise,
 )
 from bentoml.archive.loader import load_bentoml_config
 

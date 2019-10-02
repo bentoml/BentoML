@@ -93,7 +93,7 @@ def add_local_bentoml_package_to_repo(archive_path):
 
 def ensure_docker_available_or_raise():
     try:
-        subprocess.check_call(['docker', 'info'], stdout=subprocess.PIPE)
+        subprocess.check_output(['docker', 'info'])
     except subprocess.CalledProcessError as error:
         raise BentoMLException(
             'Error executing docker command: {}'.format(error.output)

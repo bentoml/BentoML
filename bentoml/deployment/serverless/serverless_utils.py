@@ -260,10 +260,10 @@ class TemporaryServerlessConfig(object):
 
 def ensure_docker_available_or_raise():
     try:
-        subprocess.check_output(['docker', 'info'])
-    except subprocess.CalledProcessError:
+        subprocess.check_call(['docker', 'info'])
+    except subprocess.CalledProcessError as error:
         raise BentoMLException(
-            'Docker is not running. Please start Docker and then try again.'
+            'Error executing docker command: {}'.format(error.output)
         )
     except FileNotFoundError:
         raise BentoMLMissingDepdencyException(

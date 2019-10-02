@@ -168,7 +168,7 @@ class TemporaryServerlessContent(object):
             bundled_files = os.listdir(dest_bundle_path)
             has_bentoml_bundle = False
             for index, bundled_file_name in enumerate(bundled_files):
-                bundled_files[index] = './bundled_pip_dependencies/{}\n'.format(
+                bundled_files[index] = '\n./bundled_pip_dependencies/{}'.format(
                     bundled_file_name
                 )
                 # If file name start with `BentoML-`, assuming it is a

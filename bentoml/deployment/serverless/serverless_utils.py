@@ -22,49 +22,60 @@ import logging
 import subprocess
 import json
 from subprocess import PIPE
-
-from ruamel.yaml import YAML
 from packaging import version
 
+from ruamel.yaml import YAML
+
+from bentoml.configuration import _get_bentoml_home
 from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BentoMLMissingDepdencyException
 
 logger = logging.getLogger(__name__)
 
-MINIMUM_SERVERLESS_VERSION = '1.40.0'
+
+SERVERLESS_VERSION = '1.53.0'
+BENTOML_HOME = _get_bentoml_home()
+
+# We will install serverless package and use the installed one, instead
+# of user's installation
+SERVERLESS_BIN_COMMAND = '{}/node_modules/.bin/serverless'.format(BENTOML_HOME)
 
 
-def check_serverless_compatiable_version():
-    if which("serverless") is None:
-        raise ValueError(
-            "Serverless framework is not installed, please visit "
-            + "www.serverless.com for install instructions."
+def check_nodejs_comptaible_version():
+    if which('npm') is None:
+        raise BentoMLMissingDepdencyException(
+            'NPM is not installed. Please visit www.nodejs.org for instructions'
         )
-
-    version_result = (
-        subprocess.check_output(["serverless", "-v"]).decode("utf-8").strip()
-    )
-    if "(Enterprise Plugin:" in version_result:
-        slice_end_index = version_result.find(" (Enterprise")
-        version_result = version_result[0:slice_end_index]
+    if which("node") is None:
+        raise BentoMLMissingDepdencyException(
+            "NodeJs is not installed, please visit www.nodejs.org for install "
+            "instructions."
+        )
+    version_result = subprocess.check_output(["node", "-v"]).decode("utf-8").strip()
     parsed_version = version.parse(version_result)
 
-    if parsed_version >= version.parse(MINIMUM_SERVERLESS_VERSION):
-        return
-    else:
+    if not parsed_version >= version.parse('v8.10.0'):
         raise ValueError(
-            "Incompatiable serverless version, please install version 1.40.0 or greater"
+            "Incompatible Nodejs version, please install version v8.10.0 " "or greater"
         )
+
+
+def install_serverless_package():
+    check_nodejs_comptaible_version()
+    install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]
+    subprocess.call(install_command, cwd=BENTOML_HOME)
 
 
 def install_serverless_plugin(plugin_name, install_dir_path):
-    command = ["serverless", "plugin", "install", "-n", plugin_name]
+    command = ["plugin", "install", "-n", plugin_name]
     call_serverless_command(command, install_dir_path)
 
 
 def call_serverless_command(command, cwd_path):
+    command = [SERVERLESS_BIN_COMMAND] + command
+
     with subprocess.Popen(command, cwd=cwd_path, stdout=PIPE, stderr=PIPE) as proc:
         response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
         logger.debug("Serverless response: %s", "\n".join(response))
@@ -79,7 +90,7 @@ def parse_serverless_response(serverless_response):
 
     # Parsing serverless response brutally.  The current serverless
     # response format is:
-    # ServerlessError|Error -----{fill dash to 56 line lenght}
+    # ServerlessError|Error -----{fill dash to 56 line length}
     # empty space
     # Error Message
     # empty space
@@ -126,11 +137,11 @@ class TemporaryServerlessContent(object):
             self.cleanup()
 
     def generate(self):
+        install_serverless_package()
         self.temp_directory.create()
         tempdir = self.temp_directory.path
         call_serverless_command(
             [
-                "serverless",
                 "create",
                 "--template",
                 self.template_type,
@@ -149,18 +160,35 @@ class TemporaryServerlessContent(object):
             self.archive_path, 'bundled_pip_dependencies'
         )
         # If bundled_pip_dependencies directory exists, we copy over and update
-        # requirements.txt
+        # requirements.txt.  We need to remove the bentoml entry in the file, because
+        # when pip install, it will NOT override the pypi released version.
         if os.path.isdir(bundled_dependencies_path):
             dest_bundle_path = os.path.join(tempdir, 'bundled_pip_dependencies')
             shutil.copytree(bundled_dependencies_path, dest_bundle_path)
-            requirement_txt_path = os.path.join(tempdir, 'requirements.txt')
+            bundled_files = os.listdir(dest_bundle_path)
+            has_bentoml_bundle = False
+            for index, bundled_file_name in enumerate(bundled_files):
+                bundled_files[index] = './bundled_pip_dependencies/{}\n'.format(
+                    bundled_file_name
+                )
+                # If file name start with `BentoML-`, assuming it is a
+                # bentoml targz bundle
+                if bundled_file_name.startswith('BentoML-'):
+                    has_bentoml_bundle = True
 
-            with open(requirement_txt_path, 'a+') as requirement_file:
-                bundled_files = os.listdir(dest_bundle_path)
-                for bundled_module_name in bundled_files:
-                    requirement_file.write(
-                        '\n./bundled_pip_dependencies/{}'.format(bundled_module_name)
-                    )
+            with open(
+                os.path.join(tempdir, 'requirements.txt'), 'r+'
+            ) as requirement_file:
+                required_modules = requirement_file.readlines()
+                if has_bentoml_bundle:
+                    # Assuming bentoml is always the first one in
+                    # requirements.txt. We are removing it
+                    required_modules = required_modules[1:]
+                required_modules = required_modules + bundled_files
+                # Write from beginning of the file, instead of appending to
+                # the end.
+                requirement_file.seek(0)
+                requirement_file.writelines(required_modules)
 
         self.path = tempdir
 
@@ -199,6 +227,7 @@ class TemporaryServerlessConfig(object):
             self.cleanup()
 
     def generate(self):
+        install_serverless_package()
         serverless_config = {
             "service": self.deployment_name,
             "provider": {
@@ -227,3 +256,17 @@ class TemporaryServerlessConfig(object):
     def cleanup(self):
         self.temp_directory.cleanup()
         self.path = None
+
+
+def ensure_docker_available_or_raise():
+    try:
+        subprocess.check_call(['docker', 'info'])
+    except subprocess.CalledProcessError as error:
+        raise BentoMLException(
+            'Error executing docker command: {}'.format(error.output)
+        )
+    except FileNotFoundError:
+        raise BentoMLMissingDepdencyException(
+            'Docker is required for AWS Lambda deployment. Please visit '
+            'www.docker.come for instructions'
+        )

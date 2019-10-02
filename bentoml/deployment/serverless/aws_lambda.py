@@ -39,6 +39,7 @@ from bentoml.deployment.serverless.serverless_utils import (
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
     parse_serverless_info_response_to_json_string,
+    ensure_docker_available_or_raise,
 )
 from bentoml.archive.loader import load_bentoml_config
 
@@ -131,6 +132,7 @@ def generate_handler_py(bento_name, apis, output_path):
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, repo, prev_deployment=None):
+        ensure_docker_available_or_raise()
         deployment_spec = deployment_pb.spec
         aws_config = deployment_spec.aws_lambda_operator_config
 
@@ -166,7 +168,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             install_serverless_plugin("serverless-python-requirements", output_path)
             install_serverless_plugin("serverless-apigw-binary", output_path)
             logger.info('Deploying to AWS Lambda')
-            call_serverless_command(["serverless", "deploy"], output_path)
+            call_serverless_command(["deploy"], output_path)
 
         res_deployment_pb = Deployment(state=DeploymentState())
         res_deployment_pb.CopyFrom(deployment_pb)
@@ -200,7 +202,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             provider_name='aws',
             functions=generate_aws_handler_functions_config(bento_config['apis']),
         ) as tempdir:
-            response = call_serverless_command(['serverless', 'remove'], tempdir)
+            response = call_serverless_command(['remove'], tempdir)
             stack_name = '{name}-{namespace}'.format(
                 name=deployment_pb.name, namespace=deployment_pb.namespace
             )
@@ -228,7 +230,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             functions=generate_aws_handler_functions_config(bento_config['apis']),
         ) as tempdir:
             try:
-                response = call_serverless_command(["serverless", "info"], tempdir)
+                response = call_serverless_command(["info"], tempdir)
                 info_json = parse_serverless_info_response_to_json_string(response)
                 state = DeploymentState(
                     state=DeploymentState.RUNNING, info_json=info_json

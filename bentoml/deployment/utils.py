@@ -51,7 +51,7 @@ def process_docker_api_line(payload):
                     logger.info(line_payload['stream'])
 
 
-def add_local_bentoml_package_to_repo(archive_path):
+def _find_bentoml_module_location():
     try:
         module_location, = importlib.util.find_spec(
             'bentoml'
@@ -61,6 +61,11 @@ def add_local_bentoml_package_to_repo(archive_path):
         import imp
 
         _, module_location, _ = imp.find_module('bentoml')
+    return module_location
+
+
+def add_local_bentoml_package_to_repo(archive_path):
+    module_location = _find_bentoml_module_location()
     bentoml_setup_py = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
 
     assert os.path.isfile(bentoml_setup_py), '"setup.py" for Bentoml module not found'

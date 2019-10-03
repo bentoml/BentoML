@@ -151,7 +151,7 @@ def get_deployment_sub_command():
     @click.option(
         '--instance-type',
         help='Type of instance will be used for inference. Option applicable to '
-        'platform: AWS SageMaker',
+        'platform: AWS SageMaker, AWS Lambda, GCP Function',
     )
     @click.option(
         '--instance-count',
@@ -244,11 +244,15 @@ def get_deployment_sub_command():
             aws_lambda_operator_config = DeploymentSpec.AwsLambdaOperatorConfig(
                 region=region or config().get('aws', 'default_region')
             )
+            if api_name:
+                aws_lambda_operator_config.api_name = api_name
             spec = DeploymentSpec(aws_lambda_operator_config=aws_lambda_operator_config)
         elif operator == DeploymentSpec.GCP_FUNCTION:
             gcp_function_operator_config = DeploymentSpec.GcpFunctionOperatorConfig(
                 region=region or config().get('google-cloud', 'default_region')
             )
+            if api_name:
+                gcp_function_operator_config.api_name = api_name
             spec = DeploymentSpec(
                 gcp_function_operator_config=gcp_function_operator_config
             )
@@ -385,7 +389,9 @@ def get_deployment_sub_command():
                 deployment_name=name, namespace=namespace, force_delete=force
             )
         )
-        if result.status.status_code != Status.OK:
+        if result.status.status_code == Status.OK:
+            _echo('Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS)
+        else:
             _echo(
                 'Failed to delete deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(
@@ -395,7 +401,6 @@ def get_deployment_sub_command():
                 ),
                 CLI_COLOR_ERROR,
             )
-        _echo('Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS)
 
     @deployment.command(help='Get deployment current state')
     @click.argument("name", type=click.STRING, required=True)

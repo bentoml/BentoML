@@ -145,6 +145,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         if bento_python_version < minimum_python_version:
             template = 'aws-python'
 
+        if aws_config.api_name:
+            apis = [{'name': aws_config.api_name}]
+        else:
+            apis = bento_config['apis']
+
         with TemporaryServerlessContent(
             archive_path=bento_path,
             deployment_name=deployment_pb.name,
@@ -152,11 +157,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             template_type=template,
         ) as output_path:
             generate_handler_py(
-                deployment_spec.bento_name, bento_config['apis'], output_path
+                deployment_spec.bento_name, apis, output_path
             )
             generate_serverless_configuration_for_aws_lambda(
                 service_name=deployment_pb.name,
-                apis=bento_config['apis'],
+                apis=apis,
                 output_path=output_path,
                 region=aws_config.region,
                 stage=deployment_pb.namespace,
@@ -193,6 +198,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
+        if aws_config.api_name:
+            apis = [{'name': aws_config.api_name}]
+        else:
+            apis = bento_config['apis']
 
         with TemporaryServerlessConfig(
             archive_path=bento_path,
@@ -200,7 +209,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             region=aws_config.region,
             stage=deployment_pb.namespace,
             provider_name='aws',
-            functions=generate_aws_handler_functions_config(bento_config['apis']),
+            functions=generate_aws_handler_functions_config(apis),
         ) as tempdir:
             response = call_serverless_command(['remove'], tempdir)
             stack_name = '{name}-{namespace}'.format(
@@ -221,13 +230,17 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
+        if aws_config.api_name:
+            apis = [{'name': aws_config.api_name}]
+        else:
+            apis = bento_config['apis']
         with TemporaryServerlessConfig(
             archive_path=bento_path,
             deployment_name=deployment_pb.name,
             region=aws_config.region,
             stage=deployment_pb.namespace,
             provider_name='aws',
-            functions=generate_aws_handler_functions_config(bento_config['apis']),
+            functions=generate_aws_handler_functions_config(apis),
         ) as tempdir:
             try:
                 response = call_serverless_command(["info"], tempdir)

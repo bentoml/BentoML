@@ -108,16 +108,20 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
 
         bento_config = load_bentoml_config(bento_path)
+        if gcp_config.api_name:
+            apis = [{'name': gcp_config.api_name}]
+        else:
+            apis = bento_config['apis']
         with TemporaryServerlessContent(
             archive_path=bento_path,
             deployment_name=deployment_pb.name,
             bento_name=deployment_spec.bento_name,
             template_type='google-python',
         ) as output_path:
-            generate_main_py(bento_config['name'], bento_config['apis'], output_path)
+            generate_main_py(bento_config['name'], apis, output_path)
             generate_serverless_configuration_for_gcp_function(
                 service_name=bento_config['name'],
-                apis=bento_config['apis'],
+                apis=apis,
                 output_path=output_path,
                 region=gcp_config.region,
                 stage=deployment_pb.namespace,
@@ -137,13 +141,17 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
 
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
+        if gcp_config.api_name:
+            apis = [{'name': gcp_config.api_name}]
+        else:
+            apis = bento_config['apis']
         with TemporaryServerlessConfig(
             archive_path=bento_path,
             deployment_name=deployment_pb.name,
             region=gcp_config.region,
             stage=deployment_pb.namespace,
             provider_name='google',
-            functions=generate_gcp_handler_functions_config(bento_config['apis']),
+            functions=generate_gcp_handler_functions_config(apis),
         ) as tempdir:
             try:
                 response = call_serverless_command(["info"], tempdir)
@@ -175,13 +183,17 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
 
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
+        if gcp_config.api_name:
+            apis = [{'name': gcp_config.api_name}]
+        else:
+            apis = bento_config['apis']
         with TemporaryServerlessConfig(
             archive_path=bento_path,
             deployment_name=deployment_pb.name,
             region=gcp_config.region,
             stage=deployment_pb.namespace,
             provider_name='google',
-            functions=generate_gcp_handler_functions_config(bento_config['apis']),
+            functions=generate_gcp_handler_functions_config(apis),
         ) as tempdir:
             try:
                 response = call_serverless_command(['remove'], tempdir)

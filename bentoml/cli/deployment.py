@@ -19,6 +19,7 @@ from __future__ import print_function
 import click
 import logging
 import time
+import json
 
 from google.protobuf.json_format import MessageToJson
 from bentoml.cli.click_utils import (
@@ -65,11 +66,16 @@ def parse_key_value_pairs(key_value_pairs_str):
     return result
 
 
-def display_deployment_info(deployment, output):
-    if output == 'yaml':
+def display_deployment_info(deployment, output_type):
+    if output_type == 'yaml':
         result = pb_to_yaml(deployment)
     else:
         result = MessageToJson(deployment)
+        if deployment.state.info_json:
+            result = json.loads(result)
+            result['state']['infoJson'] = json.loads(deployment.state.info_json)
+            _echo(json.dumps(result, indent=2, separators=(',', ': ')))
+            return
     _echo(result)
 
 

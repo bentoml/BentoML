@@ -18,9 +18,11 @@ from __future__ import print_function
 
 import os
 import logging
+import json
 from packaging import version
 
 from ruamel.yaml import YAML
+import boto3
 
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
@@ -106,6 +108,7 @@ def generate_serverless_configuration_for_aws_lambda(
             "useDownloadCache": True,
             "useStaticCache": True,
             "dockerizePip": True,
+            "layer": True,
             "slim": True,
             "strip": True,
             "zip": True,
@@ -225,6 +228,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def describe(self, deployment_pb, repo=None):
         deployment_spec = deployment_pb.spec
         aws_config = deployment_spec.aws_lambda_operator_config
+        info_json = {'endpoints': []}
 
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
@@ -232,23 +236,32 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             apis = [{'name': aws_config.api_name}]
         else:
             apis = bento_config['apis']
-        with TemporaryServerlessConfig(
-            archive_path=bento_path,
-            deployment_name=deployment_pb.name,
-            region=aws_config.region,
-            stage=deployment_pb.namespace,
-            provider_name='aws',
-            functions=generate_aws_handler_functions_config(apis),
-        ) as tempdir:
-            try:
-                response = call_serverless_command(["info"], tempdir)
-                info_json = parse_serverless_info_response_to_json_string(response)
-                state = DeploymentState(
-                    state=DeploymentState.RUNNING, info_json=info_json
-                )
-            except BentoMLException as e:
-                state = DeploymentState(
-                    state=DeploymentState.ERROR, error_message=str(e)
-                )
 
-        return DescribeDeploymentResponse(status=Status.OK(), state=state)
+        try:
+            cloud_formation_stack_result = boto3.client(
+                'cloudformation'
+            ).describe_stacks(
+                StackName='{name}-{ns}'.format(
+                    ns=deployment_pb.namespace, name=deployment_pb.name
+                )
+            )
+            outputs = cloud_formation_stack_result.get('Stacks')[0]['Outputs']
+        except Exception as error:
+            return DescribeDeploymentResponse(
+                status=Status.INTERNAL(str(error)),
+                state=DeploymentState(
+                    state=DeploymentState.ERROR, error_message=str(error)
+                ),
+            )
+
+        base_url = ''
+        for output in outputs:
+            if output['OutputKey'] == 'ServiceEndpoint':
+                base_url = output['OutputValue']
+                break
+        if base_url:
+            info_json['endpoints'] = [base_url + '/' + api['name'] for api in apis]
+        return DescribeDeploymentResponse(
+            status=Status.OK(),
+            state=DeploymentState(state=DeploymentState.RUNNING, info_json=json.dumps(info_json)),
+        )

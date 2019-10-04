@@ -139,7 +139,10 @@ class YataiService(YataiServicer):
                 operator = get_deployment_operator(deployment_pb)
 
                 # executing deployment deletion
-                response = operator.delete(deployment_pb, self.repo)
+                try:
+                    response = operator.delete(deployment_pb, self.repo)
+                except BentoMLException as e:
+                    response = DeleteDeploymentResponse(status=Status.INTERNAL(str(e)))
 
                 # if delete successful, remove it from active deployment records table
                 if response.status.status_code == status_pb2.Status.OK:

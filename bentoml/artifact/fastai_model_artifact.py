@@ -46,8 +46,10 @@ class FastaiModelArtifact(BentoServiceArtifact):
             raise SystemError("fast ai requires python 3.6 version or higher")
 
         if fastai is None:
-            raise ImportError("fastai package is required to use "
-                              "bentoml.artifacts.FastaiModelArtifact")
+            raise ImportError(
+                "fastai package is required to use "
+                "bentoml.artifacts.FastaiModelArtifact"
+            )
 
         super(FastaiModelArtifact, self).__init__(name)
         self._file_name = name + '.pkl'
@@ -65,8 +67,10 @@ class FastaiModelArtifact(BentoServiceArtifact):
 
     def load(self, path):
         if load_learner is None:
-            raise ImportError("fastai package is required to use "
-                              "bentoml.artifacts.FastaiModelArtifact")
+            raise ImportError(
+                "fastai package is required to use "
+                "bentoml.artifacts.FastaiModelArtifact"
+            )
 
         model = load_learner(path, self._file_name)
         return self.pack(model)

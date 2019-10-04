@@ -17,9 +17,13 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import uuid
 import shutil
+import boto3
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
+from six.moves.urllib.parse import urlparse
+
 
 from bentoml import config
 from bentoml.exceptions import BentoMLRepositoryException
@@ -117,6 +121,21 @@ class _S3BentoRepository(BentoRepositoryBase):
         # Ensure bucket exist and server has permission to manage files under base_path
         self.base_url = base_url
         self.uri_type = BentoUri.S3
+
+        parse_result = urlparse(base_url)
+        bucket = parse_result.netloc
+        base_path = parse_result.path
+
+        s3_client = boto3.client("s3")
+
+        try:
+            filename = uuid.uuid4().hex
+            s3_path = os.path.join(base_path, filename)
+            s3_client.upload_file(Filename=filename, Bucket=bucket, Key=s3_path)
+        except Exception as e:
+            raise BentoMLRepositoryException(
+                "Bento is not able to access S3 bucket with error {}".format(e)
+            )
 
     def add(self, bento_name, bento_version):
         # Generate pre-signed s3 path for upload

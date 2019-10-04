@@ -33,6 +33,7 @@ from bentoml import config
 from bentoml.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
+    ensure_api_exists_in_bento_archive,
 )
 from bentoml.yatai.status import Status
 from bentoml.utils.tempdir import TempDirectory
@@ -50,6 +51,7 @@ from bentoml.proto.deployment_pb2 import (
     DescribeDeploymentResponse,
     DeploymentState,
 )
+from bentoml.archive.loader import load_bentoml_config
 
 logger = logging.getLogger(__name__)
 
@@ -294,6 +296,10 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         archive_path = repo.get(
             deployment_spec.bento_name, deployment_spec.bento_version
+        )
+        bento_config = load_bentoml_config(archive_path)
+        ensure_api_exists_in_bento_archive(
+            bento_config['apis'], sagemaker_config.api_name, deployment_spec.bento_name
         )
 
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)

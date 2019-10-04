@@ -103,3 +103,15 @@ def ensure_docker_available_or_raise():
             'Docker is required for this deployment. Please visit '
             'www.docker.come for instructions'
         )
+
+
+def ensure_api_exists_in_bento_archive(apis, api_name, bento_name):
+    for api in apis:
+        if api['name'] == api_name:
+            return
+
+    raise BentoMLException(
+        "API name {api_name} doesn't exist in {bento_name}.".format(
+            api_name=api_name, bento_name=bento_name
+        )
+    )

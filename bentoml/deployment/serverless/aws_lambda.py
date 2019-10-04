@@ -27,7 +27,6 @@ import boto3
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.status import Status
-from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import (
     Deployment,
     ApplyDeploymentResponse,
@@ -35,13 +34,15 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentResponse,
     DeploymentState,
 )
-from bentoml.deployment.utils import ensure_docker_available_or_raise
+from bentoml.deployment.utils import (
+    ensure_docker_available_or_raise,
+    ensure_api_exists_in_bento_archive,
+)
 from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
     install_serverless_plugin,
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
-    parse_serverless_info_response_to_json_string,
 )
 from bentoml.archive.loader import load_bentoml_config
 
@@ -108,7 +109,6 @@ def generate_serverless_configuration_for_aws_lambda(
             "useDownloadCache": True,
             "useStaticCache": True,
             "dockerizePip": True,
-            "layer": True,
             "slim": True,
             "strip": True,
             "zip": True,
@@ -149,6 +149,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             template = 'aws-python'
 
         if aws_config.api_name:
+            ensure_api_exists_in_bento_archive(
+                bento_config['apis'], aws_config.api_name, deployment_spec.bento_name
+            )
             apis = [{'name': aws_config.api_name}]
         else:
             apis = bento_config['apis']
@@ -200,6 +203,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
         if aws_config.api_name:
+            ensure_api_exists_in_bento_archive(
+                bento_config['apis'], aws_config.api_name, deployment_spec.bento_name
+            )
             apis = [{'name': aws_config.api_name}]
         else:
             apis = bento_config['apis']
@@ -233,6 +239,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
         if aws_config.api_name:
+            ensure_api_exists_in_bento_archive(
+                bento_config['apis'], aws_config.api_name, deployment_spec.bento_name
+            )
             apis = [{'name': aws_config.api_name}]
         else:
             apis = bento_config['apis']
@@ -263,5 +272,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             info_json['endpoints'] = [base_url + '/' + api['name'] for api in apis]
         return DescribeDeploymentResponse(
             status=Status.OK(),
-            state=DeploymentState(state=DeploymentState.RUNNING, info_json=json.dumps(info_json)),
+            state=DeploymentState(
+                state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
+            ),
         )

@@ -21,6 +21,7 @@ import logging
 
 from ruamel.yaml import YAML
 
+from bentoml.deployment.utils import ensure_api_exists_in_bento_archive
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.archive.loader import load_bentoml_config
@@ -109,6 +110,9 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
 
         bento_config = load_bentoml_config(bento_path)
         if gcp_config.api_name:
+            ensure_api_exists_in_bento_archive(
+                bento_config['apis'], gcp_config.api_name, deployment_spec.bento_name
+            )
             apis = [{'name': gcp_config.api_name}]
         else:
             apis = bento_config['apis']
@@ -142,6 +146,9 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
         if gcp_config.api_name:
+            ensure_api_exists_in_bento_archive(
+                bento_config['apis'], gcp_config.api_name, deployment_spec.bento_name
+            )
             apis = [{'name': gcp_config.api_name}]
         else:
             apis = bento_config['apis']
@@ -184,6 +191,9 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
         if gcp_config.api_name:
+            ensure_api_exists_in_bento_archive(
+                bento_config['apis'], gcp_config.api_name, deployment_spec.bento_name
+            )
             apis = [{'name': gcp_config.api_name}]
         else:
             apis = bento_config['apis']

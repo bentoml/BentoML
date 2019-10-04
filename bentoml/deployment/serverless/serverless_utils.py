@@ -62,9 +62,9 @@ def check_nodejs_comptaible_version():
         )
 
 
-# We are using serverless framework for deployment, instead of using user's own serverless
-# framework, we will install a specific one just for BentoML. It will be installed in
-# BentoML home directory.
+# We are using serverless framework for deployment, instead of using user's own
+# serverless framework, we will install a specific one just for BentoML.
+# It will be installed in BentoML home directory.
 def install_serverless_package():
     check_nodejs_comptaible_version()
     install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]

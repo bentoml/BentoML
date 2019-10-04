@@ -57,14 +57,14 @@ deployment_schema = {
                 'type': 'dict',
                 'schema': {
                     'region': {'type': 'string', 'required': True},
-                    'api_name': {'type': 'string'}
+                    'api_name': {'type': 'string'},
                 },
             },
             'gcp_function_operator_config': {
                 'type': 'dict',
                 'schema': {
                     'region': {'type': 'string', 'required': True},
-                    'api_name': {'type': 'string'}
+                    'api_name': {'type': 'string'},
                 },
             },
             'kubernetes_operator_config': {

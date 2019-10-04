@@ -62,10 +62,18 @@ def check_nodejs_comptaible_version():
         )
 
 
+# We are using serverless framework for deployment, instead of using user's own serverless
+# framework, we will install a specific one just for BentoML. It will be installed in
+# BentoML home directory.
 def install_serverless_package():
     check_nodejs_comptaible_version()
     install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]
-    subprocess.call(install_command, cwd=BENTOML_HOME, stdout=PIPE)
+    try:
+        subprocess.check_call(
+            install_command, cwd=BENTOML_HOME, stdout=PIPE, stderr=PIPE
+        )
+    except subprocess.CalledProcessError as error:
+        raise BentoMLException(error.output)
 
 
 def install_serverless_plugin(plugin_name, install_dir_path):

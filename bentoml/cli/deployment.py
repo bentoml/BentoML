@@ -390,7 +390,9 @@ def get_deployment_sub_command():
             )
         )
         if result.status.status_code == Status.OK:
-            _echo('Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS)
+            _echo(
+                'Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS
+            )
         else:
             _echo(
                 'Failed to delete deployment {name}. code: {error_code}, message: '

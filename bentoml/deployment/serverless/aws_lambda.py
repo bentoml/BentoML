@@ -156,9 +156,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             bento_name=deployment_spec.bento_name,
             template_type=template,
         ) as output_path:
-            generate_handler_py(
-                deployment_spec.bento_name, apis, output_path
-            )
+            generate_handler_py(deployment_spec.bento_name, apis, output_path)
             generate_serverless_configuration_for_aws_lambda(
                 service_name=deployment_pb.name,
                 apis=apis,

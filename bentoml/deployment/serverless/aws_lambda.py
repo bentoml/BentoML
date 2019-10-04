@@ -24,7 +24,7 @@ from packaging import version
 from ruamel.yaml import YAML
 import boto3
 
-from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
+from bentoml.exceptions import BentoMLException
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.status import Status

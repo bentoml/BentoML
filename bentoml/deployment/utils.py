@@ -28,7 +28,6 @@ from setuptools import sandbox
 from bentoml.exceptions import (
     BentoMLException,
     BentoMLMissingDepdencyException,
-    BentoMLDeploymentException,
     BentoMLInvalidArgumentException,
 )
 from bentoml.yatai.status import Status

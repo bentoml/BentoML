@@ -29,7 +29,7 @@ from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.archive.loader import load_bentoml_config
 from bentoml.yatai.status import Status
-from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
+from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DescribeDeploymentResponse,

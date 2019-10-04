@@ -370,13 +370,12 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 "Creating Sagemaker endpoint %s configuration", endpoint_config_name
             )
             try:
-                create_endpoint_config_response = sagemaker_client.create_endpoint_config(
+                create_config_response = sagemaker_client.create_endpoint_config(
                     EndpointConfigName=endpoint_config_name,
                     ProductionVariants=production_variants,
                 )
                 logger.debug(
-                    "AWS create endpoint config response: %s",
-                    create_endpoint_config_response,
+                    "AWS create endpoint config response: %s", create_config_response
                 )
             except ClientError as e:
                 cleanup_model_error = _cleanup_sagemaker_model(

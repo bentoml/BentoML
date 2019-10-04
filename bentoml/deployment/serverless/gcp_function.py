@@ -21,12 +21,12 @@ import logging
 
 from ruamel.yaml import YAML
 
-from bentoml.deployment.utils import ensure_api_exists_in_bento_archive
+from bentoml.deployment.utils import ensure_api_exists_in_bento_archive_api_lists
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.archive.loader import load_bentoml_config
 from bentoml.yatai.status import Status
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DescribeDeploymentResponse,
@@ -110,9 +110,16 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
 
         bento_config = load_bentoml_config(bento_path)
         if gcp_config.api_name:
-            ensure_api_exists_in_bento_archive(
-                bento_config['apis'], gcp_config.api_name, deployment_spec.bento_name
-            )
+            try:
+                ensure_api_exists_in_bento_archive_api_lists(
+                    bento_config['apis'],
+                    gcp_config.api_name,
+                    deployment_spec.bento_name,
+                )
+            except BentoMLDeploymentException as error:
+                return ApplyDeploymentResponse(
+                    status=Status.INVALID_ARGUMENT(str(error))
+                )
             apis = [{'name': gcp_config.api_name}]
         else:
             apis = bento_config['apis']
@@ -146,9 +153,16 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
         if gcp_config.api_name:
-            ensure_api_exists_in_bento_archive(
-                bento_config['apis'], gcp_config.api_name, deployment_spec.bento_name
-            )
+            try:
+                ensure_api_exists_in_bento_archive_api_lists(
+                    bento_config['apis'],
+                    gcp_config.api_name,
+                    deployment_spec.bento_name,
+                )
+            except BentoMLDeploymentException as error:
+                return DescribeDeploymentResponse(
+                    status=Status.INVALID_ARGUMENT(str(error))
+                )
             apis = [{'name': gcp_config.api_name}]
         else:
             apis = bento_config['apis']
@@ -191,9 +205,16 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
         bento_config = load_bentoml_config(bento_path)
         if gcp_config.api_name:
-            ensure_api_exists_in_bento_archive(
-                bento_config['apis'], gcp_config.api_name, deployment_spec.bento_name
-            )
+            try:
+                ensure_api_exists_in_bento_archive_api_lists(
+                    bento_config['apis'],
+                    gcp_config.api_name,
+                    deployment_spec.bento_name,
+                )
+            except BentoMLDeploymentException as error:
+                return DeleteDeploymentResponse(
+                    status=Status.INVALID_ARGUMENT(str(error))
+                )
             apis = [{'name': gcp_config.api_name}]
         else:
             apis = bento_config['apis']

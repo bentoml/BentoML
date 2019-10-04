@@ -33,11 +33,11 @@ from bentoml import config
 from bentoml.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
-    ensure_api_exists_in_bento_archive,
+    ensure_api_exists_in_bento_archive_api_lists,
 )
 from bentoml.yatai.status import Status
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.exceptions import BentoMLDeploymentException
+from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 from bentoml.deployment.sagemaker.templates import (
     DEFAULT_NGINX_CONFIG,
     DEFAULT_WSGI_PY,
@@ -135,7 +135,6 @@ def create_push_image_to_ecr(bento_name, bento_version, snapshot_path):
     Returns:
         str: AWS ECR Tag
     """
-    ensure_docker_available_or_raise()
     ecr_client = boto3.client("ecr")
     token = ecr_client.get_authorization_token()
     logger.info("Getting docker login info from AWS")
@@ -289,6 +288,10 @@ def _cleanup_sagemaker_endpoint_config(client, name, version):
 
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, repo, prev_deployment=None):
+        try:
+            ensure_docker_available_or_raise()
+        except BentoMLException as error:
+            return ApplyDeploymentResponse(status=Status.INTERNAL(str(error)))
         deployment_spec = deployment_pb.spec
         sagemaker_config = deployment_spec.sagemaker_operator_config
         if sagemaker_config is None:
@@ -298,9 +301,14 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             deployment_spec.bento_name, deployment_spec.bento_version
         )
         bento_config = load_bentoml_config(archive_path)
-        ensure_api_exists_in_bento_archive(
-            bento_config['apis'], sagemaker_config.api_name, deployment_spec.bento_name
-        )
+        try:
+            ensure_api_exists_in_bento_archive_api_lists(
+                bento_config['apis'],
+                sagemaker_config.api_name,
+                deployment_spec.bento_name,
+            )
+        except BentoMLDeploymentException as error:
+            return ApplyDeploymentResponse(status=Status.INVALID_ARGUMENT(str(error)))
 
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 

@@ -29,7 +29,9 @@ from bentoml.exceptions import (
     BentoMLException,
     BentoMLMissingDepdencyException,
     BentoMLDeploymentException,
+    BentoMLInvalidArgumentException,
 )
+from bentoml.yatai.status import Status
 
 logger = logging.getLogger(__name__)
 
@@ -114,8 +116,15 @@ def ensure_api_exists_in_bento_archive_api_lists(apis, api_name, bento_name):
         if api['name'] == api_name:
             return
 
-    raise BentoMLDeploymentException(
+    raise BentoMLInvalidArgumentException(
         "API name {api_name} doesn't exist in {bento_name}.".format(
             api_name=api_name, bento_name=bento_name
         )
     )
+
+
+def exception_to_return_status(error):
+    if type(error) is BentoMLInvalidArgumentException:
+        return Status.INVALID_ARGUMENT(str(error))
+    else:
+        return Status.INTERNAL(str(error))

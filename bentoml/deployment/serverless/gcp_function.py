@@ -21,7 +21,10 @@ import logging
 
 from ruamel.yaml import YAML
 
-from bentoml.deployment.utils import ensure_api_exists_in_bento_archive_api_lists
+from bentoml.deployment.utils import (
+    ensure_api_exists_in_bento_archive_api_lists,
+    exception_to_return_status,
+)
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.archive.loader import load_bentoml_config
@@ -104,135 +107,137 @@ def generate_main_py(bento_name, apis, output_path):
 
 class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, repo, prev_deployment=None):
-        deployment_spec = deployment_pb.spec
-        gcp_config = deployment_spec.gcp_function_operator_config
-        bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
+        try:
+            deployment_spec = deployment_pb.spec
+            gcp_config = deployment_spec.gcp_function_operator_config
+            bento_path = repo.get(
+                deployment_spec.bento_name, deployment_spec.bento_version
+            )
 
-        bento_config = load_bentoml_config(bento_path)
-        if gcp_config.api_name:
-            try:
+            bento_config = load_bentoml_config(bento_path)
+            if gcp_config.api_name:
                 ensure_api_exists_in_bento_archive_api_lists(
                     bento_config['apis'],
                     gcp_config.api_name,
                     deployment_spec.bento_name,
                 )
-            except BentoMLDeploymentException as error:
-                return ApplyDeploymentResponse(
-                    status=Status.INVALID_ARGUMENT(str(error))
+                apis = [{'name': gcp_config.api_name}]
+            else:
+                apis = bento_config['apis']
+            with TemporaryServerlessContent(
+                archive_path=bento_path,
+                deployment_name=deployment_pb.name,
+                bento_name=deployment_spec.bento_name,
+                template_type='google-python',
+            ) as output_path:
+                generate_main_py(bento_config['name'], apis, output_path)
+                generate_serverless_configuration_for_gcp_function(
+                    service_name=bento_config['name'],
+                    apis=apis,
+                    output_path=output_path,
+                    region=gcp_config.region,
+                    stage=deployment_pb.namespace,
                 )
-            apis = [{'name': gcp_config.api_name}]
-        else:
-            apis = bento_config['apis']
-        with TemporaryServerlessContent(
-            archive_path=bento_path,
-            deployment_name=deployment_pb.name,
-            bento_name=deployment_spec.bento_name,
-            template_type='google-python',
-        ) as output_path:
-            generate_main_py(bento_config['name'], apis, output_path)
-            generate_serverless_configuration_for_gcp_function(
-                service_name=bento_config['name'],
-                apis=apis,
-                output_path=output_path,
-                region=gcp_config.region,
-                stage=deployment_pb.namespace,
+                call_serverless_command(["deploy"], output_path)
+
+            res_deployment_pb = Deployment(state=DeploymentState())
+            res_deployment_pb.CopyFrom(deployment_pb)
+            state = self.describe(res_deployment_pb, repo).state
+            res_deployment_pb.state.CopyFrom(state)
+
+            return ApplyDeploymentResponse(
+                status=Status.OK(), deployment=res_deployment_pb
             )
-            call_serverless_command(["deploy"], output_path)
-
-        res_deployment_pb = Deployment(state=DeploymentState())
-        res_deployment_pb.CopyFrom(deployment_pb)
-        state = self.describe(res_deployment_pb, repo).state
-        res_deployment_pb.state.CopyFrom(state)
-
-        return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
+        except BentoMLException as error:
+            return ApplyDeploymentResponse(status=exception_to_return_status(error))
 
     def describe(self, deployment_pb, repo=None):
-        deployment_spec = deployment_pb.spec
-        gcp_config = deployment_spec.gcp_function_operator_config
+        try:
+            deployment_spec = deployment_pb.spec
+            gcp_config = deployment_spec.gcp_function_operator_config
 
-        bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
-        bento_config = load_bentoml_config(bento_path)
-        if gcp_config.api_name:
-            try:
+            bento_path = repo.get(
+                deployment_spec.bento_name, deployment_spec.bento_version
+            )
+            bento_config = load_bentoml_config(bento_path)
+            if gcp_config.api_name:
                 ensure_api_exists_in_bento_archive_api_lists(
                     bento_config['apis'],
                     gcp_config.api_name,
                     deployment_spec.bento_name,
                 )
-            except BentoMLDeploymentException as error:
-                return DescribeDeploymentResponse(
-                    status=Status.INVALID_ARGUMENT(str(error))
-                )
-            apis = [{'name': gcp_config.api_name}]
-        else:
-            apis = bento_config['apis']
-        with TemporaryServerlessConfig(
-            archive_path=bento_path,
-            deployment_name=deployment_pb.name,
-            region=gcp_config.region,
-            stage=deployment_pb.namespace,
-            provider_name='google',
-            functions=generate_gcp_handler_functions_config(apis),
-        ) as tempdir:
-            try:
-                response = call_serverless_command(["info"], tempdir)
-                info_json = parse_serverless_info_response_to_json_string(response)
-                state = DeploymentState(
-                    state=DeploymentState.RUNNING, info_json=info_json
-                )
-            except BentoMLException as e:
-                state = DeploymentState(
-                    state=DeploymentState.ERROR, error_message=str(e)
-                )
+                apis = [{'name': gcp_config.api_name}]
+            else:
+                apis = bento_config['apis']
+            with TemporaryServerlessConfig(
+                archive_path=bento_path,
+                deployment_name=deployment_pb.name,
+                region=gcp_config.region,
+                stage=deployment_pb.namespace,
+                provider_name='google',
+                functions=generate_gcp_handler_functions_config(apis),
+            ) as tempdir:
+                try:
+                    response = call_serverless_command(["info"], tempdir)
+                    info_json = parse_serverless_info_response_to_json_string(response)
+                    state = DeploymentState(
+                        state=DeploymentState.RUNNING, info_json=info_json
+                    )
+                except BentoMLException as e:
+                    state = DeploymentState(
+                        state=DeploymentState.ERROR, error_message=str(e)
+                    )
 
-        return DescribeDeploymentResponse(status=Status.OK(), state=state)
+            return DescribeDeploymentResponse(status=Status.OK(), state=state)
+        except BentoMLException as error:
+            return DescribeDeploymentResponse(status=exception_to_return_status(error))
 
     def delete(self, deployment_pb, repo=None):
-        state = self.describe(deployment_pb, repo).state
-        if state.state != DeploymentState.RUNNING:
-            message = (
-                'Failed to delete, no active deployment {name}. '
-                'The current state is {state}'.format(
-                    name=deployment_pb.name,
-                    state=DeploymentState.State.Name(state.state),
+        try:
+            state = self.describe(deployment_pb, repo).state
+            if state.state != DeploymentState.RUNNING:
+                message = (
+                    'Failed to delete, no active deployment {name}. '
+                    'The current state is {state}'.format(
+                        name=deployment_pb.name,
+                        state=DeploymentState.State.Name(state.state),
+                    )
                 )
+                return DeleteDeploymentResponse(status=Status.ABORTED(message))
+
+            deployment_spec = deployment_pb.spec
+            gcp_config = deployment_spec.gcp_function_operator_config
+
+            bento_path = repo.get(
+                deployment_spec.bento_name, deployment_spec.bento_version
             )
-            return DeleteDeploymentResponse(status=Status.ABORTED(message))
-
-        deployment_spec = deployment_pb.spec
-        gcp_config = deployment_spec.gcp_function_operator_config
-
-        bento_path = repo.get(deployment_spec.bento_name, deployment_spec.bento_version)
-        bento_config = load_bentoml_config(bento_path)
-        if gcp_config.api_name:
-            try:
+            bento_config = load_bentoml_config(bento_path)
+            if gcp_config.api_name:
                 ensure_api_exists_in_bento_archive_api_lists(
                     bento_config['apis'],
                     gcp_config.api_name,
                     deployment_spec.bento_name,
                 )
-            except BentoMLDeploymentException as error:
-                return DeleteDeploymentResponse(
-                    status=Status.INVALID_ARGUMENT(str(error))
-                )
-            apis = [{'name': gcp_config.api_name}]
-        else:
-            apis = bento_config['apis']
-        with TemporaryServerlessConfig(
-            archive_path=bento_path,
-            deployment_name=deployment_pb.name,
-            region=gcp_config.region,
-            stage=deployment_pb.namespace,
-            provider_name='google',
-            functions=generate_gcp_handler_functions_config(apis),
-        ) as tempdir:
-            try:
-                response = call_serverless_command(['remove'], tempdir)
-                if "Serverless: Stack removal finished..." in response:
-                    status = Status.OK()
-                else:
-                    status = Status.ABORTED()
-            except BentoMLException as e:
-                status = Status.INTERNAL(str(e))
+                apis = [{'name': gcp_config.api_name}]
+            else:
+                apis = bento_config['apis']
+            with TemporaryServerlessConfig(
+                archive_path=bento_path,
+                deployment_name=deployment_pb.name,
+                region=gcp_config.region,
+                stage=deployment_pb.namespace,
+                provider_name='google',
+                functions=generate_gcp_handler_functions_config(apis),
+            ) as tempdir:
+                try:
+                    response = call_serverless_command(['remove'], tempdir)
+                    if "Serverless: Stack removal finished..." in response:
+                        status = Status.OK()
+                    else:
+                        status = Status.ABORTED()
+                except BentoMLException as e:
+                    status = Status.INTERNAL(str(e))
 
-        return DeleteDeploymentResponse(status=status)
+            return DeleteDeploymentResponse(status=status)
+        except BentoMLException as error:
+            return DeleteDeploymentResponse(status=exception_to_return_status(error))

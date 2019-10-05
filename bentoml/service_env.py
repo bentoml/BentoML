@@ -124,6 +124,7 @@ class BentoServiceEnv(object):
         bentoml_deploy_version = get_bentoml_deploy_version()
         self._conda_env = CondaEnv(bentoml_version=bentoml_deploy_version)
         self._pip_dependencies = ["bentoml=={}".format(bentoml_deploy_version)]
+        self._python_version = PYTHON_VERSION
 
         self._setup_sh = None
 
@@ -225,5 +226,5 @@ class BentoServiceEnv(object):
 
         env_dict["conda_env"] = self._conda_env._conda_env
 
-        env_dict["python_version"] = PYTHON_VERSION
+        env_dict["python_version"] = self._python_version
         return env_dict

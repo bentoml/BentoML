@@ -559,6 +559,7 @@ class BentoService(BentoServiceBase):
         bento_service_metadata.env.pip_dependencies = "\n".join(
             self.env._pip_dependencies
         )
+        bento_service_metadata.env.python_version = self.env._python_version
 
         for api in self.get_service_apis():
             api_metadata = bento_service_metadata.apis.add()

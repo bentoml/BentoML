@@ -128,7 +128,24 @@ class _S3BentoRepository(BentoRepositoryBase):
 
     def add(self, bento_name, bento_version):
         # Generate pre-signed s3 path for upload
-        raise NotImplementedError
+        expiration = 3600
+        object_name = os.path.join(
+            self.base_path, '{}-{}'.format(bento_name, bento_version)
+        )
+
+        try:
+            response = self.s3_client.generate_presigned_post(
+                self.bucket,
+                object_name,
+                Fields=None,
+                Conditions=None,
+                ExpiresIn=expiration,
+            )
+        except Exception as e:
+            raise BentoMLRepositoryException(
+                "Not able to get pre-signed URL on S3. Error: {}".format(e)
+            )
+        return response
 
     def get(self, bento_name, bento_version):
         # Return s3 path containing uploaded Bento files

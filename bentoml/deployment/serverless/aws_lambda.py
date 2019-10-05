@@ -37,7 +37,6 @@ from bentoml.proto.deployment_pb2 import (
 )
 from bentoml.deployment.utils import (
     ensure_docker_available_or_raise,
-    ensure_api_exists_in_bento_archive_api_lists,
     exception_to_return_status,
 )
 from bentoml.deployment.serverless.serverless_utils import (
@@ -45,8 +44,9 @@ from bentoml.deployment.serverless.serverless_utils import (
     install_serverless_plugin,
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
+    generate_api_list,
 )
-from bentoml.archive.loader import load_bentoml_config
+from bentoml.archive.loader import load_bento_service_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +78,9 @@ def {api_name}(event, context):
 def generate_aws_handler_functions_config(apis):
     function_list = {}
     for api in apis:
-        function_list[api['name']] = {
-            "handler": "handler." + api['name'],
-            "events": [{"http": {"path": "/" + api['name'], "method": "post"}}],
+        function_list[api.name] = {
+            "handler": "handler." + api.name,
+            "events": [{"http": {"path": "/" + api.name, "method": "post"}}],
         }
     return function_list
 
@@ -145,23 +145,17 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             bento_path = repo.get(
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
-            bento_config = load_bentoml_config(bento_path)
+            bento_config = load_bento_service_metadata(bento_path)
 
             template = 'aws-python3'
             minimum_python_version = version.parse('3.0.0')
-            bento_python_version = version.parse(bento_config['env']['python_version'])
+            bento_python_version = version.parse(bento_config.env.python_version)
             if bento_python_version < minimum_python_version:
                 template = 'aws-python'
 
-            if aws_config.api_name:
-                ensure_api_exists_in_bento_archive_api_lists(
-                    bento_config['apis'],
-                    aws_config.api_name,
-                    deployment_spec.bento_name,
-                )
-                apis = [{'name': aws_config.api_name}]
-            else:
-                apis = bento_config['apis']
+            apis = generate_api_list(
+                bento_config.apis, aws_config.api_name, deployment_spec.bento_name
+            )
 
             with TemporaryServerlessContent(
                 archive_path=bento_path,
@@ -215,16 +209,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             bento_path = repo.get(
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
-            bento_config = load_bentoml_config(bento_path)
-            if aws_config.api_name:
-                ensure_api_exists_in_bento_archive_api_lists(
-                    bento_config['apis'],
-                    aws_config.api_name,
-                    deployment_spec.bento_name,
-                )
-                apis = [{'name': aws_config.api_name}]
-            else:
-                apis = bento_config['apis']
+            bento_config = load_bento_service_metadata(bento_path)
+            apis = generate_api_list(
+                bento_config.apis, aws_config.api_name, deployment_spec.bento_name
+            )
 
             with TemporaryServerlessConfig(
                 archive_path=bento_path,
@@ -258,16 +246,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             bento_path = repo.get(
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
-            bento_config = load_bentoml_config(bento_path)
-            if aws_config.api_name:
-                ensure_api_exists_in_bento_archive_api_lists(
-                    bento_config['apis'],
-                    aws_config.api_name,
-                    deployment_spec.bento_name,
-                )
-                apis = [{'name': aws_config.api_name}]
-            else:
-                apis = bento_config['apis']
+            bento_config = load_bento_service_metadata(bento_path)
+            apis = generate_api_list(
+                bento_config.apis, aws_config.api_name, deployment_spec.bento_name
+            )
 
             try:
                 cloud_formation_stack_result = boto3.client(

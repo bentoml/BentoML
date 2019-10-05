@@ -52,7 +52,7 @@ from bentoml.proto.deployment_pb2 import (
     DescribeDeploymentResponse,
     DeploymentState,
 )
-from bentoml.archive.loader import load_bentoml_config
+from bentoml.archive.loader import load_bento_service_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -299,11 +299,9 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             archive_path = repo.get(
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
-            bento_config = load_bentoml_config(archive_path)
+            bento_config = load_bento_service_metadata(archive_path)
             ensure_api_exists_in_bento_archive_api_lists(
-                bento_config['apis'],
-                sagemaker_config.api_name,
-                deployment_spec.bento_name,
+                bento_config.apis, sagemaker_config.api_name, deployment_spec.bento_name
             )
 
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)

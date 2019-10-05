@@ -21,13 +21,10 @@ import logging
 
 from ruamel.yaml import YAML
 
-from bentoml.deployment.utils import (
-    ensure_api_exists_in_bento_archive_api_lists,
-    exception_to_return_status,
-)
+from bentoml.deployment.utils import exception_to_return_status
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
-from bentoml.archive.loader import load_bentoml_config
+from bentoml.archive.loader import load_bento_service_metadata
 from bentoml.yatai.status import Status
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import (
@@ -42,6 +39,7 @@ from bentoml.deployment.serverless.serverless_utils import (
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
     parse_serverless_info_response_to_json_string,
+    generate_api_list,
 )
 
 logger = logging.getLogger(__name__)
@@ -114,25 +112,19 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
 
-            bento_config = load_bentoml_config(bento_path)
-            if gcp_config.api_name:
-                ensure_api_exists_in_bento_archive_api_lists(
-                    bento_config['apis'],
-                    gcp_config.api_name,
-                    deployment_spec.bento_name,
-                )
-                apis = [{'name': gcp_config.api_name}]
-            else:
-                apis = bento_config['apis']
+            bento_config = load_bento_service_metadata(bento_path)
+            apis = generate_api_list(
+                bento_config.apis, gcp_config.api_name, deployment_spec.bento_name
+            )
             with TemporaryServerlessContent(
                 archive_path=bento_path,
                 deployment_name=deployment_pb.name,
                 bento_name=deployment_spec.bento_name,
                 template_type='google-python',
             ) as output_path:
-                generate_main_py(bento_config['name'], apis, output_path)
+                generate_main_py(deployment_spec.bento_name, apis, output_path)
                 generate_serverless_configuration_for_gcp_function(
-                    service_name=bento_config['name'],
+                    service_name=deployment_pb.name,
                     apis=apis,
                     output_path=output_path,
                     region=gcp_config.region,
@@ -159,16 +151,10 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             bento_path = repo.get(
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
-            bento_config = load_bentoml_config(bento_path)
-            if gcp_config.api_name:
-                ensure_api_exists_in_bento_archive_api_lists(
-                    bento_config['apis'],
-                    gcp_config.api_name,
-                    deployment_spec.bento_name,
-                )
-                apis = [{'name': gcp_config.api_name}]
-            else:
-                apis = bento_config['apis']
+            bento_config = load_bento_service_metadata(bento_path)
+            apis = generate_api_list(
+                bento_config.apis, gcp_config.api_name, deployment_spec.bento_name
+            )
             with TemporaryServerlessConfig(
                 archive_path=bento_path,
                 deployment_name=deployment_pb.name,
@@ -211,16 +197,10 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             bento_path = repo.get(
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
-            bento_config = load_bentoml_config(bento_path)
-            if gcp_config.api_name:
-                ensure_api_exists_in_bento_archive_api_lists(
-                    bento_config['apis'],
-                    gcp_config.api_name,
-                    deployment_spec.bento_name,
-                )
-                apis = [{'name': gcp_config.api_name}]
-            else:
-                apis = bento_config['apis']
+            bento_config = load_bento_service_metadata(bento_path)
+            apis = generate_api_list(
+                bento_config.apis, gcp_config.api_name, deployment_spec.bento_name
+            )
             with TemporaryServerlessConfig(
                 archive_path=bento_path,
                 deployment_name=deployment_pb.name,

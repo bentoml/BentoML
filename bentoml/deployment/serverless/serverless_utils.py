@@ -23,10 +23,12 @@ import subprocess
 import json
 from subprocess import PIPE
 from packaging import version
+from types import SimpleNamespace
 
 from ruamel.yaml import YAML
 
 from bentoml.configuration import _get_bentoml_home
+from bentoml.deployment.utils import ensure_api_exists_in_bento_archive_api_lists
 from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
@@ -256,3 +258,13 @@ class TemporaryServerlessConfig(object):
     def cleanup(self):
         self.temp_directory.cleanup()
         self.path = None
+
+
+def generate_api_list(api_list, user_input_api_name, bento_name):
+    if user_input_api_name:
+        ensure_api_exists_in_bento_archive_api_lists(
+            api_list, user_input_api_name, bento_name
+        )
+        return [SimpleNamespace(name=user_input_api_name)]
+    else:
+        return api_list

@@ -118,24 +118,13 @@ class _LocalBentoRepository(BentoRepositoryBase):
 
 class _S3BentoRepository(BentoRepositoryBase):
     def __init__(self, base_url):
-        # Ensure bucket exist and server has permission to manage files under base_path
-        self.base_url = base_url
         self.uri_type = BentoUri.S3
 
         parse_result = urlparse(base_url)
-        bucket = parse_result.netloc
-        base_path = parse_result.path
+        self.bucket = parse_result.netloc
+        self.base_path = parse_result.path
 
-        s3_client = boto3.client("s3")
-
-        try:
-            filename = uuid.uuid4().hex
-            s3_path = os.path.join(base_path, filename)
-            s3_client.upload_file(Filename=filename, Bucket=bucket, Key=s3_path)
-        except Exception as e:
-            raise BentoMLRepositoryException(
-                "Bento is not able to access S3 bucket with error {}".format(e)
-            )
+        self.s3_client = boto3.client("s3")
 
     def add(self, bento_name, bento_version):
         # Generate pre-signed s3 path for upload

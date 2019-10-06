@@ -23,7 +23,7 @@ from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 try:
     import tensorflow as tf
-    from tensorflow.python import keras
+    import keras
 except ImportError:
     tf = None
     keras = None

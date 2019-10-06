@@ -32,11 +32,17 @@ except ImportError:
 class KerasModelArtifact(BentoServiceArtifact):
     """
     Abstraction for saving/loading Keras model
+
+    Args:
+        name (string): name of the artifact
+        custom_objects (dict): dictionary of Keras custom objects for model
+        store_as_json_and_weights (bool): flag allowing storage of the Keras model as JSON and weights
     """
 
-    def __init__(self, name, custom_objects=None, model_extension=".h5"):
+    def __init__(self, name, custom_objects=None, model_extension=".h5", store_as_json_and_weights=False):
         super(KerasModelArtifact, self).__init__(name)
         self._model_extension = model_extension
+        self._store_as_json_and_weights = store_as_json_and_weights
 
         self.custom_objects = custom_objects
         self.graph = None
@@ -47,6 +53,12 @@ class KerasModelArtifact(BentoServiceArtifact):
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._model_extension)
+
+    def _model_weights_path(self, base_path):
+        return os.path.join(base_path, self.name + '_weights.hdf5')
+
+    def _model_json_path(self, base_path):
+        return os.path.join(base_path, self.name + '_json.json')
 
     def bind_keras_backend_session(self):
         if tf is None:
@@ -113,9 +125,17 @@ class KerasModelArtifact(BentoServiceArtifact):
 
         with self.graph.as_default():
             with self.sess.as_default():
-                model = keras.models.load_model(
-                    self._model_file_path(path), custom_objects=self.custom_objects
-                )
+                # load keras model via json and weights if requested
+                if self._store_as_json_and_weights:
+                    with open(self._model_json_path(path), 'r') as json_file:
+                        model_json = json_file.read()
+                    model = keras.models.model_from_json(loaded_model_json)
+                    model.load_weights(self._model_weights_path(path))
+                # otherwise, load keras model via standard load_model
+                else:
+                    model = keras.models.load_model(
+                        self._model_file_path(path), custom_objects=self.custom_objects
+                    )
         return self.pack(model)
 
 
@@ -138,6 +158,7 @@ class _TfKerasModelArtifactWrapper(BentoServiceArtifactWrapper):
         self.sess = spec.sess
         self._model = model
         self._custom_objects = custom_objects
+        self._store_as_json_and_weights = spec._store_as_json_and_weights
         self._model_wrapper = _TfKerasModelWrapper(self._model, self.graph, self.sess)
 
     def save(self, dst):
@@ -146,8 +167,15 @@ class _TfKerasModelArtifactWrapper(BentoServiceArtifactWrapper):
             self._custom_objects, open(self.spec._custom_objects_path(dst), "wb")
         )
 
-        # save keras model
-        self._model.save(self.spec._model_file_path(dst))
+        # save keras model using json and weights if requested
+        if self.spec._store_as_json_and_weights:
+            with open(self.spec._model_json_path(dst), "w") as json_file:
+                json_file.write(self._model.to_json())
+            self._model.save_weights(self.spec._model_weights_path(dst))
+
+        # otherwise, save standard keras model
+        else:
+            self._model.save(self.spec._model_file_path(dst))
 
     def get(self):
         return self._model_wrapper

@@ -135,7 +135,9 @@ class KerasModelArtifact(BentoServiceArtifact):
                 if self._store_as_json_and_weights:
                     with open(self._model_json_path(path), 'r') as json_file:
                         model_json = json_file.read()
-                    model = keras.models.model_from_json(model_json)
+                    model = keras.models.model_from_json(
+                        model_json, custom_objects=self.custom_objects
+                    )
                     model.load_weights(self._model_weights_path(path))
                 # otherwise, load keras model via standard load_model
                 else:

@@ -39,7 +39,13 @@ class KerasModelArtifact(BentoServiceArtifact):
         store_as_json_and_weights (bool): flag allowing storage of the Keras model as JSON and weights
     """
 
-    def __init__(self, name, custom_objects=None, model_extension=".h5", store_as_json_and_weights=False):
+    def __init__(
+        self,
+        name,
+        custom_objects=None,
+        model_extension=".h5",
+        store_as_json_and_weights=False,
+    ):
         super(KerasModelArtifact, self).__init__(name)
         self._model_extension = model_extension
         self._store_as_json_and_weights = store_as_json_and_weights
@@ -129,7 +135,7 @@ class KerasModelArtifact(BentoServiceArtifact):
                 if self._store_as_json_and_weights:
                     with open(self._model_json_path(path), 'r') as json_file:
                         model_json = json_file.read()
-                    model = keras.models.model_from_json(loaded_model_json)
+                    model = keras.models.model_from_json(model_json)
                     model.load_weights(self._model_weights_path(path))
                 # otherwise, load keras model via standard load_model
                 else:

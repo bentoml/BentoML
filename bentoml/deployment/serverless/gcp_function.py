@@ -22,6 +22,7 @@ import logging
 from ruamel.yaml import YAML
 
 from bentoml.deployment.utils import exception_to_return_status
+from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.archive.loader import load_bento_service_metadata
@@ -105,17 +106,26 @@ def generate_main_py(bento_name, api_names, output_path):
 
 
 class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb, repo, prev_deployment=None):
+    def apply(self, deployment_pb, yatai_service, prev_deployment=None):
         try:
             deployment_spec = deployment_pb.spec
             gcp_config = deployment_spec.gcp_function_operator_config
-            bento_path = repo.get(
-                deployment_spec.bento_name, deployment_spec.bento_version
+            bento_pb = yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
             )
+            if bento_pb.uri.type != BentoUri.LOCAL:
+                raise BentoMLException('BentoML currently only support local repository')
+            else:
+                bento_path = bento_pb.bento.uri.path
+            bento_service_metadata = bento_pb.bento.bento_service_metadata
 
-            bento_config = load_bento_service_metadata(bento_path)
-            api_names = generate_api_list(
-                bento_config.apis, gcp_config.api_name, deployment_spec.bento_name
+            api_names = (
+                [gcp_config.api_name]
+                if gcp_config.api_name is not None
+                else [api.name for api in bento_service_metadata.apis]
             )
             with TempDirectory() as serverless_project_dir:
                 init_serverless_project_dir(
@@ -140,7 +150,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
 
             res_deployment_pb = Deployment(state=DeploymentState())
             res_deployment_pb.CopyFrom(deployment_pb)
-            state = self.describe(res_deployment_pb, repo).state
+            state = self.describe(res_deployment_pb, yatai_service).state
             res_deployment_pb.state.CopyFrom(state)
 
             return ApplyDeploymentResponse(
@@ -149,17 +159,22 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         except BentoMLException as error:
             return ApplyDeploymentResponse(status=exception_to_return_status(error))
 
-    def describe(self, deployment_pb, repo=None):
+    def describe(self, deployment_pb, yatai_service=None):
         try:
             deployment_spec = deployment_pb.spec
             gcp_config = deployment_spec.gcp_function_operator_config
 
-            bento_path = repo.get(
-                deployment_spec.bento_name, deployment_spec.bento_version
+            bento_pb = yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
             )
-            bento_config = load_bento_service_metadata(bento_path)
-            api_names = generate_api_list(
-                bento_config.apis, gcp_config.api_name, deployment_spec.bento_name
+            bento_service_metadata = bento_pb.bento.bento_service_metadata
+            api_names = (
+                [gcp_config.api_name]
+                if gcp_config.api_name is not None
+                else [api.name for api in bento_service_metadata.apis]
             )
             with TempDirectory() as serverless_project_dir:
                 generate_gcp_function_serverless_config(
@@ -185,9 +200,9 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
         except BentoMLException as error:
             return DescribeDeploymentResponse(status=exception_to_return_status(error))
 
-    def delete(self, deployment_pb, repo=None):
+    def delete(self, deployment_pb, yatai_service=None):
         try:
-            state = self.describe(deployment_pb, repo).state
+            state = self.describe(deployment_pb, yatai_service).state
             if state.state != DeploymentState.RUNNING:
                 message = (
                     'Failed to delete, no active deployment {name}. '
@@ -201,12 +216,17 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             gcp_config = deployment_spec.gcp_function_operator_config
 
-            bento_path = repo.get(
-                deployment_spec.bento_name, deployment_spec.bento_version
+            bento_pb = yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
             )
-            bento_config = load_bento_service_metadata(bento_path)
-            api_names = generate_api_list(
-                bento_config.apis, gcp_config.api_name, deployment_spec.bento_name
+            bento_service_metadata = bento_pb.bento.bento_service_metadata
+            api_names = (
+                [gcp_config.api_name]
+                if gcp_config.api_name is not None
+                else [api.name for api in bento_service_metadata.apis]
             )
             with TempDirectory() as serverless_project_dir:
                 generate_gcp_function_serverless_config(

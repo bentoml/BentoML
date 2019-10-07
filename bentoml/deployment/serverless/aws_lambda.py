@@ -44,13 +44,8 @@ from bentoml.deployment.utils import (
 from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
     install_serverless_plugin,
-    TemporaryServerlessContent,
-    TemporaryServerlessConfig,
-    generate_api_list,
     init_serverless_project_dir,
-    init_serverless_config,
 )
-from bentoml.archive.loader import load_bento_service_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -133,17 +128,17 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             aws_config = deployment_spec.aws_lambda_operator_config
 
-            bento_service_pb = yatai_service.GetBento(
+            bento_pb = yatai_service.GetBento(
                 GetBentoRequest(
                     bento_name=deployment_spec.bento_name,
                     bento_version=deployment_spec.bento_version,
                 )
             )
-            if bento_service_pb.uri.type != BentoUri.LOCAL:
-                raise BentoMLException('not now')
+            if bento_pb.uri.type != BentoUri.LOCAL:
+                raise BentoMLException('BentoML currently only support local repository')
             else:
-                bento_path = bento_service_pb.bento.uri.path
-            bento_service_metadata = bento_service_pb.bento.bento_service_metadata
+                bento_path = bento_pb.bento.uri.path
+            bento_service_metadata = bento_pb.bento.bento_service_metadata
 
             template = 'aws-python3'
             bento_python_version = version.parse(
@@ -200,9 +195,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         except BentoMLException as error:
             return ApplyDeploymentResponse(status=exception_to_return_status(error))
 
-    def delete(self, deployment_pb, repo=None):
+    def delete(self, deployment_pb, yatai_service=None):
         try:
-            state = self.describe(deployment_pb, repo).state
+            state = self.describe(deployment_pb, yatai_service).state
             if state.state != DeploymentState.RUNNING:
                 message = (
                     'Failed to delete, no active deployment {name}. '
@@ -216,14 +211,17 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             aws_config = deployment_spec.aws_lambda_operator_config
 
-            bento_path = repo.get(
-                deployment_spec.bento_name, deployment_spec.bento_version
+            bento_pb = yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
             )
-            bento_config = load_bento_service_metadata(bento_path)
+            bento_service_metadata = bento_pb.bento.bento_service_metadata
             api_names = (
                 [aws_config.api_name]
                 if aws_config.api_name is not None
-                else [api.name for api in bento_config.apis]
+                else [api.name for api in bento_service_metadata.apis]
             )
 
             with TempDirectory() as serverless_project_dir:
@@ -250,18 +248,23 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         except BentoMLException as error:
             return DeleteDeploymentResponse(status=exception_to_return_status(error))
 
-    def describe(self, deployment_pb, repo=None):
+    def describe(self, deployment_pb, yatai_service=None):
         try:
             deployment_spec = deployment_pb.spec
             aws_config = deployment_spec.aws_lambda_operator_config
             info_json = {'endpoints': []}
 
-            bento_path = repo.get(
-                deployment_spec.bento_name, deployment_spec.bento_version
+            bento_pb = yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
             )
-            bento_config = load_bento_service_metadata(bento_path)
-            apis = generate_api_list(
-                bento_config.apis, aws_config.api_name, deployment_spec.bento_name
+            bento_service_metadata = bento_pb.bento.bento_service_metadata
+            api_names = (
+                [aws_config.api_name]
+                if aws_config.api_name is not None
+                else [api.name for api in bento_service_metadata.apis]
             )
 
             try:
@@ -287,7 +290,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     base_url = output['OutputValue']
                     break
             if base_url:
-                info_json['endpoints'] = [base_url + '/' + api.name for api in apis]
+                info_json['endpoints'] = [base_url + '/' + api_name for api_name in api_names]
             return DescribeDeploymentResponse(
                 status=Status.OK(),
                 state=DeploymentState(

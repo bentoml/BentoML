@@ -63,8 +63,8 @@ def {api_name}(request):
 def generate_gcp_handler_functions_config(apis):
     function_list = {}
     for api in apis:
-        function_list[api['name']] = {
-            "handler": api['name'],
+        function_list[api.name] = {
+            "handler": api.name,
             "events": [{"http": "path"}],
         }
     return function_list
@@ -98,7 +98,7 @@ def generate_main_py(bento_name, apis, output_path):
     with open(os.path.join(output_path, "main.py"), "w") as f:
         f.write(GOOGLE_MAIN_PY_TEMPLATE_HEADER.format(class_name=bento_name))
         for api in apis:
-            api_content = GOOGLE_FUNCTION_TEMPLATE.format(api_name=api['name'])
+            api_content = GOOGLE_FUNCTION_TEMPLATE.format(api_name=api.name)
             f.write(api_content)
     return
 

@@ -111,7 +111,7 @@ def ensure_docker_available_or_raise():
 
 def ensure_api_exists_in_bento_archive_api_lists(apis, api_name, bento_name):
     for api in apis:
-        if api['name'] == api_name:
+        if api.name == api_name:
             return
 
     raise BentoMLInvalidArgumentException(

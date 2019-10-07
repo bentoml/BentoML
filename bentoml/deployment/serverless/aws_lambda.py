@@ -274,7 +274,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     base_url = output['OutputValue']
                     break
             if base_url:
-                info_json['endpoints'] = [base_url + '/' + api['name'] for api in apis]
+                info_json['endpoints'] = [base_url + '/' + api.name for api in apis]
             return DescribeDeploymentResponse(
                 status=Status.OK(),
                 state=DeploymentState(

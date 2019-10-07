@@ -64,10 +64,13 @@ def check_nodejs_comptaible_version():
         )
 
 
-# We are using serverless framework for deployment, instead of using user's own
-# serverless framework, we will install a specific one just for BentoML.
-# It will be installed in BentoML home directory.
 def install_serverless_package():
+    """ Install serverless npm package to BentoML home directory
+
+    We are using serverless framework for deployment, instead of using user's own
+    serverless framework, we will install a specific one just for BentoML.
+    It will be installed in BentoML home directory.
+    """
     check_nodejs_comptaible_version()
     install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]
     try:
@@ -265,6 +268,71 @@ def generate_api_list(api_list, user_input_api_name, bento_name):
         ensure_api_exists_in_bento_archive_api_lists(
             api_list, user_input_api_name, bento_name
         )
-        return [SimpleNamespace(name=user_input_api_name)]
+        return [user_input_api_name]
     else:
-        return api_list
+        return [api.name for api in api_list]
+
+
+def init_serverless_project_dir(
+    project_dir, archive_path, deployment_name, bento_name, template_type, _cleanup=True
+):
+    install_serverless_package()
+    call_serverless_command(
+        ["create", "--template", template_type, "--name", deployment_name], project_dir
+    )
+    requirement_txt_path = os.path.join(archive_path, 'requirements.txt')
+    shutil.copy(requirement_txt_path, project_dir)
+    bento_archive_path = os.path.join(project_dir, bento_name)
+    model_path = os.path.join(archive_path, bento_name)
+    shutil.copytree(model_path, bento_archive_path)
+
+    bundled_dependencies_path = os.path.join(archive_path, 'bundled_pip_dependencies')
+    # If bundled_pip_dependencies directory exists, we copy over and update
+    # requirements.txt.  We need to remove the bentoml entry in the file, because
+    # when pip install, it will NOT override the pypi released version.
+    if os.path.isdir(bundled_dependencies_path):
+        dest_bundle_path = os.path.join(project_dir, 'bundled_pip_dependencies')
+        shutil.copytree(bundled_dependencies_path, dest_bundle_path)
+        bundled_files = os.listdir(dest_bundle_path)
+        has_bentoml_bundle = False
+        for index, bundled_file_name in enumerate(bundled_files):
+            bundled_files[index] = '\n./bundled_pip_dependencies/{}'.format(
+                bundled_file_name
+            )
+            # If file name start with `BentoML-`, assuming it is a
+            # bentoml targz bundle
+            if bundled_file_name.startswith('BentoML-'):
+                has_bentoml_bundle = True
+
+        with open(
+            os.path.join(project_dir, 'requirements.txt'), 'r+'
+        ) as requirement_file:
+            required_modules = requirement_file.readlines()
+            if has_bentoml_bundle:
+                # Assuming bentoml is always the first one in
+                # requirements.txt. We are removing it
+                required_modules = required_modules[1:]
+            required_modules = required_modules + bundled_files
+            # Write from beginning of the file, instead of appending to
+            # the end.
+            requirement_file.seek(0)
+            requirement_file.writelines(required_modules)
+
+
+def init_serverless_config(
+    serverless_project_dir, deployment_name, api_names, provider_name, region, stage
+):
+    install_serverless_package()
+    serverless_config = {
+        "service": deployment_name,
+        "provider": {"region": region, "stage": stage, "name": provider_name},
+        "functions": {},
+    }
+    for api_name in api_names:
+        serverless_config["functions"].append(
+            {"handler": api_name, "events": [{"http": "path"}]}
+        )
+
+    yaml = YAML()
+    saved_path = os.path.join(serverless_project_dir, "serverless.yml")
+    yaml.dump(serverless_config, Path(saved_path))

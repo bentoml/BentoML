@@ -27,6 +27,7 @@ import boto3
 from bentoml.exceptions import BentoMLException
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
+from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
 from bentoml.proto.deployment_pb2 import (
     Deployment,
@@ -35,6 +36,7 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentResponse,
     DeploymentState,
 )
+from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.deployment.utils import (
     ensure_docker_available_or_raise,
     exception_to_return_status,
@@ -45,6 +47,8 @@ from bentoml.deployment.serverless.serverless_utils import (
     TemporaryServerlessContent,
     TemporaryServerlessConfig,
     generate_api_list,
+    init_serverless_project_dir,
+    init_serverless_config,
 )
 from bentoml.archive.loader import load_bento_service_metadata
 
@@ -75,114 +79,120 @@ def {api_name}(event, context):
 """
 
 
-def generate_aws_handler_functions_config(apis):
-    function_list = {}
-    for api in apis:
-        function_list[api.name] = {
-            "handler": "handler." + api.name,
-            "events": [{"http": {"path": "/" + api.name, "method": "post"}}],
-        }
-    return function_list
-
-
-def generate_serverless_configuration_for_aws_lambda(
-    service_name, apis, output_path, region, stage
+def generate_aws_lambda_serverless_config(
+    deployment_name, api_names, serverless_project_dir, region, stage
 ):
-    config_path = os.path.join(output_path, "serverless.yml")
+    config_path = os.path.join(serverless_project_dir, "serverless.yml")
+    if os.path.isfile(config_path):
+        os.remove(config_path)
     yaml = YAML()
-    with open(config_path, "r") as f:
-        content = f.read()
-    serverless_config = yaml.load(content)
-
-    serverless_config["service"] = service_name
-    serverless_config["provider"]["region"] = region
-    logger.info("Using user AWS region: %s", region)
-
-    serverless_config["provider"]["stage"] = stage
-    logger.info("Using AWS stage: %s", stage)
-
-    serverless_config["functions"] = generate_aws_handler_functions_config(apis)
-
-    # We are passing the bundled_pip_dependencies directory for python
-    # requirement package, so it can installs the bundled tar gz file.
-    serverless_config["custom"] = {
-        "apigwBinary": ["image/jpg", "image/jpeg", "image/png"],
-        "pythonRequirements": {
-            "useDownloadCache": True,
-            "useStaticCache": True,
-            "dockerizePip": True,
-            "slim": True,
-            "strip": True,
-            "zip": True,
-            "dockerRunCmdExtraArgs": [
-                '-v',
-                '{}/bundled_pip_dependencies:'
-                '/var/task/bundled_pip_dependencies:z'.format(output_path),
-            ],
+    serverless_config = {
+        "service": deployment_name,
+        "provider": {"region": region, "stage": stage, "name": 'aws'},
+        "functions": {
+            api_name: {
+                "handler": "handler." + api_name,
+                "events": [{"http": {"path": "/" + api_name, "method": "post"}}],
+            } for api_name in api_names
+        },
+        "custom": {
+            "apigwBinary": ["image/jpg", "image/jpeg", "image/png"],
+            "pythonRequirements": {
+                "useDownloadCache": True,
+                "useStaticCache": True,
+                "dockerizePip": True,
+                "slim": True,
+                "strip": True,
+                "zip": True,
+                # We are passing the bundled_pip_dependencies directory for python
+                # requirement package, so it can installs the bundled tar gz file.
+                "dockerRunCmdExtraArgs": [
+                    '-v',
+                    '{}/bundled_pip_dependencies:'
+                    '/var/task/bundled_pip_dependencies:z'.format(serverless_project_dir),
+                ],
+            },
         },
     }
 
     yaml.dump(serverless_config, Path(config_path))
-    return
 
 
-def generate_handler_py(bento_name, apis, output_path):
+def generate_aws_lambda_handler_py(bento_name, apis, output_path):
     with open(os.path.join(output_path, "handler.py"), "w") as f:
         f.write(AWS_HANDLER_PY_TEMPLATE_HEADER.format(class_name=bento_name))
         for api in apis:
             api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api.name)
             f.write(api_content)
-    return
 
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb, repo, prev_deployment=None):
+    def apply(self, deployment_pb, yatai_service, prev_deployment=None):
         try:
             ensure_docker_available_or_raise()
             deployment_spec = deployment_pb.spec
             aws_config = deployment_spec.aws_lambda_operator_config
 
-            bento_path = repo.get(
-                deployment_spec.bento_name, deployment_spec.bento_version
+            bento_service_pb = yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
             )
-            bento_config = load_bento_service_metadata(bento_path)
+            if bento_service_pb.uri.type != BentoUri.LOCAL:
+                raise BentoMLException('not now')
+            else:
+                bento_path = bento_service_pb.bento.uri.path
+            bento_service_metadata = bento_service_pb.bento.bento_service_metadata
 
             template = 'aws-python3'
-            minimum_python_version = version.parse('3.0.0')
-            bento_python_version = version.parse(bento_config.env.python_version)
-            if bento_python_version < minimum_python_version:
+            bento_python_version = version.parse(
+                bento_service_metadata.env.python_version
+            )
+            if bento_python_version < version.parse('3.0.0'):
                 template = 'aws-python'
 
-            apis = generate_api_list(
-                bento_config.apis, aws_config.api_name, deployment_spec.bento_name
+            api_names = (
+                [aws_config.api_name]
+                if aws_config.api_name is not None
+                else [api.name for api in bento_service_metadata.apis]
             )
 
-            with TemporaryServerlessContent(
-                archive_path=bento_path,
-                deployment_name=deployment_pb.name,
-                bento_name=deployment_spec.bento_name,
-                template_type=template,
-            ) as output_path:
-                generate_handler_py(deployment_spec.bento_name, apis, output_path)
-                generate_serverless_configuration_for_aws_lambda(
-                    service_name=deployment_pb.name,
-                    apis=apis,
-                    output_path=output_path,
-                    region=aws_config.region,
+            with TempDirectory() as serverless_project_dir:
+                init_serverless_project_dir(
+                    serverless_project_dir,
+                    bento_path,
+                    deployment_pb.name,
+                    deployment_spec.bento_name,
+                    template,
+                )
+                generate_aws_lambda_handler_py(
+                    deployment_spec.bento_name, api_names, serverless_project_dir
+                )
+                generate_aws_lambda_serverless_config(
+                    deployment_pb.name,
+                    api_names,
+                    serverless_project_dir,
+                    aws_config.region,
+                    # BentoML deployment namespace is mapping to serverless `stage` concept
                     stage=deployment_pb.namespace,
                 )
                 logger.info(
                     'Installing additional packages: serverless-python-requirements, '
                     'serverless-apigw-binary'
                 )
-                install_serverless_plugin("serverless-python-requirements", output_path)
-                install_serverless_plugin("serverless-apigw-binary", output_path)
+                install_serverless_plugin(
+                    "serverless-python-requirements", serverless_project_dir
+                )
+                install_serverless_plugin(
+                    "serverless-apigw-binary", serverless_project_dir
+                )
                 logger.info('Deploying to AWS Lambda')
-                call_serverless_command(["deploy"], output_path)
+                call_serverless_command(["deploy"], serverless_project_dir)
 
             res_deployment_pb = Deployment(state=DeploymentState())
             res_deployment_pb.CopyFrom(deployment_pb)
-            state = self.describe(res_deployment_pb, repo).state
+            state = self.describe(res_deployment_pb, yatai_service).state
             res_deployment_pb.state.CopyFrom(state)
             return ApplyDeploymentResponse(
                 status=Status.OK(), deployment=res_deployment_pb
@@ -210,19 +220,22 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
             bento_config = load_bento_service_metadata(bento_path)
-            apis = generate_api_list(
-                bento_config.apis, aws_config.api_name, deployment_spec.bento_name
+            api_names = (
+                [aws_config.api_name]
+                if aws_config.api_name is not None
+                else [api.name for api in bento_config.apis]
             )
 
-            with TemporaryServerlessConfig(
-                archive_path=bento_path,
-                deployment_name=deployment_pb.name,
-                region=aws_config.region,
-                stage=deployment_pb.namespace,
-                provider_name='aws',
-                functions=generate_aws_handler_functions_config(apis),
-            ) as tempdir:
-                response = call_serverless_command(['remove'], tempdir)
+            with TempDirectory() as serverless_project_dir:
+                generate_aws_lambda_serverless_config(
+                    deployment_pb.name,
+                    api_names,
+                    serverless_project_dir,
+                    aws_config.region,
+                    # BentoML deployment namespace is mapping to serverless `stage` concept
+                    stage=deployment_pb.namespace,
+                )
+                response = call_serverless_command(['remove'], serverless_project_dir)
                 stack_name = '{name}-{namespace}'.format(
                     name=deployment_pb.name, namespace=deployment_pb.namespace
                 )

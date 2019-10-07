@@ -25,6 +25,7 @@ from bentoml.deployment.utils import exception_to_return_status
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.archive.loader import load_bento_service_metadata
+from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import (
@@ -40,6 +41,8 @@ from bentoml.deployment.serverless.serverless_utils import (
     TemporaryServerlessConfig,
     parse_serverless_info_response_to_json_string,
     generate_api_list,
+    init_serverless_project_dir,
+    init_serverless_config,
 )
 
 logger = logging.getLogger(__name__)
@@ -63,44 +66,42 @@ def {api_name}(request):
 def generate_gcp_handler_functions_config(apis):
     function_list = {}
     for api in apis:
-        function_list[api.name] = {
-            "handler": api.name,
-            "events": [{"http": "path"}],
-        }
+        function_list[api.name] = {"handler": api.name, "events": [{"http": "path"}]}
     return function_list
 
 
-def generate_serverless_configuration_for_gcp_function(
-    service_name, apis, output_path, region, stage
+def generate_gcp_function_serverless_config(
+    deployment_name, api_names, serverless_project_dir, region, stage
 ):
-    config_path = os.path.join(output_path, "serverless.yml")
+    config_path = os.path.join(serverless_project_dir, "serverless.yml")
+    if os.path.isfile(config_path):
+        os.remove(config_path)
     yaml = YAML()
-    with open(config_path, "r") as f:
-        content = f.read()
-    serverless_config = yaml.load(content)
-
-    serverless_config["service"] = service_name
-    serverless_config["provider"]["project"] = service_name
-
-    serverless_config["provider"]["region"] = region
-    logger.info("Using user defined Google region: %s", region)
-
-    serverless_config["provider"]["stage"] = stage
-    logger.info("Using user defined Google stage: %s", stage)
-
-    serverless_config["functions"] = generate_gcp_handler_functions_config(apis)
+    serverless_config = {
+        "service": deployment_name,
+        "provider": {
+            "region": region,
+            "stage": stage,
+            "name": 'google',
+            "project": deployment_name,
+        },
+        "functions": {
+            api_name: {
+                "handler": api_name,
+                "events": [{"http": "path"}],
+            } for api_name in api_names
+        },
+    }
 
     yaml.dump(serverless_config, Path(config_path))
-    return
 
 
-def generate_main_py(bento_name, apis, output_path):
+def generate_main_py(bento_name, api_names, output_path):
     with open(os.path.join(output_path, "main.py"), "w") as f:
         f.write(GOOGLE_MAIN_PY_TEMPLATE_HEADER.format(class_name=bento_name))
-        for api in apis:
-            api_content = GOOGLE_FUNCTION_TEMPLATE.format(api_name=api.name)
+        for api_name in api_names:
+            api_content = GOOGLE_FUNCTION_TEMPLATE.format(api_name=api_name)
             f.write(api_content)
-    return
 
 
 class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
@@ -113,24 +114,29 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             )
 
             bento_config = load_bento_service_metadata(bento_path)
-            apis = generate_api_list(
+            api_names = generate_api_list(
                 bento_config.apis, gcp_config.api_name, deployment_spec.bento_name
             )
-            with TemporaryServerlessContent(
-                archive_path=bento_path,
-                deployment_name=deployment_pb.name,
-                bento_name=deployment_spec.bento_name,
-                template_type='google-python',
-            ) as output_path:
-                generate_main_py(deployment_spec.bento_name, apis, output_path)
-                generate_serverless_configuration_for_gcp_function(
-                    service_name=deployment_pb.name,
-                    apis=apis,
-                    output_path=output_path,
-                    region=gcp_config.region,
+            with TempDirectory() as serverless_project_dir:
+                init_serverless_project_dir(
+                    serverless_project_dir,
+                    bento_path,
+                    deployment_pb.name,
+                    deployment_spec.bento_name,
+                    'google-python',
+                )
+                generate_main_py(
+                    deployment_spec.bento_name, api_names, serverless_project_dir
+                )
+                generate_gcp_function_serverless_config(
+                    deployment_pb.name,
+                    api_names,
+                    serverless_project_dir,
+                    gcp_config.region,
+                    # BentoML namespace is mapping to serverless stage.
                     stage=deployment_pb.namespace,
                 )
-                call_serverless_command(["deploy"], output_path)
+                call_serverless_command(["deploy"], serverless_project_dir)
 
             res_deployment_pb = Deployment(state=DeploymentState())
             res_deployment_pb.CopyFrom(deployment_pb)
@@ -152,19 +158,20 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
             bento_config = load_bento_service_metadata(bento_path)
-            apis = generate_api_list(
+            api_names = generate_api_list(
                 bento_config.apis, gcp_config.api_name, deployment_spec.bento_name
             )
-            with TemporaryServerlessConfig(
-                archive_path=bento_path,
-                deployment_name=deployment_pb.name,
-                region=gcp_config.region,
-                stage=deployment_pb.namespace,
-                provider_name='google',
-                functions=generate_gcp_handler_functions_config(apis),
-            ) as tempdir:
+            with TempDirectory() as serverless_project_dir:
+                generate_gcp_function_serverless_config(
+                    deployment_pb.name,
+                    api_names,
+                    serverless_project_dir,
+                    gcp_config.region,
+                    # BentoML namespace is mapping to serverless stage.
+                    stage=deployment_pb.namespace,
+                )
                 try:
-                    response = call_serverless_command(["info"], tempdir)
+                    response = call_serverless_command(["info"], serverless_project_dir)
                     info_json = parse_serverless_info_response_to_json_string(response)
                     state = DeploymentState(
                         state=DeploymentState.RUNNING, info_json=info_json
@@ -198,19 +205,22 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
             bento_config = load_bento_service_metadata(bento_path)
-            apis = generate_api_list(
+            api_names = generate_api_list(
                 bento_config.apis, gcp_config.api_name, deployment_spec.bento_name
             )
-            with TemporaryServerlessConfig(
-                archive_path=bento_path,
-                deployment_name=deployment_pb.name,
-                region=gcp_config.region,
-                stage=deployment_pb.namespace,
-                provider_name='google',
-                functions=generate_gcp_handler_functions_config(apis),
-            ) as tempdir:
+            with TempDirectory() as serverless_project_dir:
+                generate_gcp_function_serverless_config(
+                    deployment_pb.name,
+                    api_names,
+                    serverless_project_dir,
+                    gcp_config.region,
+                    # BentoML namespace is mapping to serverless stage.
+                    stage=deployment_pb.namespace,
+                )
                 try:
-                    response = call_serverless_command(['remove'], tempdir)
+                    response = call_serverless_command(
+                        ['remove'], serverless_project_dir
+                    )
                     if "Serverless: Stack removal finished..." in response:
                         status = Status.OK()
                     else:

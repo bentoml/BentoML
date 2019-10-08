@@ -90,7 +90,7 @@ def generate_gcp_function_serverless_config(
     yaml.dump(serverless_config, Path(config_path))
 
 
-def generate_main_py(bento_name, api_names, output_path):
+def generate_gcp_function_main_py(bento_name, api_names, output_path):
     with open(os.path.join(output_path, "main.py"), "w") as f:
         f.write(GOOGLE_MAIN_PY_TEMPLATE_HEADER.format(class_name=bento_name))
         for api_name in api_names:
@@ -130,7 +130,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                     deployment_spec.bento_name,
                     'google-python',
                 )
-                generate_main_py(
+                generate_gcp_function_main_py(
                     deployment_spec.bento_name, api_names, serverless_project_dir
                 )
                 generate_gcp_function_serverless_config(

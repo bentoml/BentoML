@@ -266,7 +266,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
-            with TempDirectory as temp_dir:
+            with TempDirectory() as temp_dir:
                 sagemaker_project_dir = os.path.join(
                     temp_dir, deployment_spec.bento_name, deployment_spec.bento_version
                 )
@@ -463,13 +463,12 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     EndpointName=endpoint_name
                 )
                 logger.debug(
-                    "AWS delete endpoint response: %s", delete_endpoint_response
+                    "AWS delete endpoint response: ".format(delete_endpoint_response)
                 )
             except ClientError as e:
                 status = _parse_aws_client_exception_or_raise(e)
-                status.error_message = (
-                    'Failed to delete SageMaker deployment: %s',
-                    status.error_message,
+                status.error_message = 'Failed to delete SageMaker deployment: {}'.format(
+                    status.error_message
                 )
                 return DeleteDeploymentResponse(status=status)
 

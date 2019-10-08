@@ -25,7 +25,11 @@ import subprocess
 
 from setuptools import sandbox
 
-from bentoml.exceptions import BentoMLException, BentoMLMissingDepdencyException
+from bentoml.exceptions import (
+    BentoMLException,
+    BentoMLMissingDepdencyException,
+    BentoMLInvalidArgumentException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -103,3 +107,24 @@ def ensure_docker_available_or_raise():
             'Docker is required for this deployment. Please visit '
             'www.docker.come for instructions'
         )
+
+
+def ensure_api_exists_in_bento_archive_api_lists(apis, api_name, bento_name):
+    for api in apis:
+        if api.name == api_name:
+            return
+
+    raise BentoMLInvalidArgumentException(
+        "API name {api_name} doesn't exist in {bento_name}.".format(
+            api_name=api_name, bento_name=bento_name
+        )
+    )
+
+
+def exception_to_return_status(error):
+    from bentoml.yatai.status import Status
+
+    if type(error) is BentoMLInvalidArgumentException:
+        return Status.INVALID_ARGUMENT(str(error))
+    else:
+        return Status.INTERNAL(str(error))

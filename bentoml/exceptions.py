@@ -40,3 +40,7 @@ class BentoMLRepositoryException(BentoMLException):
 
 class BentoMLMissingDepdencyException(BentoMLException):
     pass
+
+
+class BentoMLInvalidArgumentException(BentoMLException):
+    pass

@@ -37,10 +37,12 @@ message DeploymentSpec {
 
   message AwsLambdaOperatorConfig {
     string region = 1;
+    string api_name = 2;
   }
 
   message GcpFunctionOperatorConfig {
     string region = 1;
+    string api_name = 2;
   }
 
   message KubernetesOperatorConfig {

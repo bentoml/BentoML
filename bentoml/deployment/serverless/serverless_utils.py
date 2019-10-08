@@ -23,10 +23,12 @@ import subprocess
 import json
 from subprocess import PIPE
 from packaging import version
+from types import SimpleNamespace
 
 from ruamel.yaml import YAML
 
 from bentoml.configuration import _get_bentoml_home
+from bentoml.deployment.utils import ensure_api_exists_in_bento_archive_api_lists
 from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
@@ -63,9 +65,20 @@ def check_nodejs_comptaible_version():
 
 
 def install_serverless_package():
+    """ Install serverless npm package to BentoML home directory
+
+    We are using serverless framework for deployment, instead of using user's own
+    serverless framework, we will install a specific one just for BentoML.
+    It will be installed in BentoML home directory.
+    """
     check_nodejs_comptaible_version()
     install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]
-    subprocess.call(install_command, cwd=BENTOML_HOME, stdout=PIPE)
+    try:
+        subprocess.check_call(
+            install_command, cwd=BENTOML_HOME, stdout=PIPE, stderr=PIPE
+        )
+    except subprocess.CalledProcessError as error:
+        raise BentoMLException(error.output)
 
 
 def install_serverless_plugin(plugin_name, install_dir_path):
@@ -77,8 +90,9 @@ def call_serverless_command(command, cwd_path):
     command = [SERVERLESS_BIN_COMMAND] + command
 
     with subprocess.Popen(command, cwd=cwd_path, stdout=PIPE, stderr=PIPE) as proc:
-        response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
-        logger.debug("Serverless response: %s", "\n".join(response))
+        stdout = proc.stdout.read().decode("utf-8")
+        logger.debug("sls cmd output: %s", stdout)
+        response = parse_serverless_response(stdout)
     return response
 
 
@@ -116,135 +130,47 @@ def parse_serverless_info_response_to_json_string(responses):
     return json.dumps(result)
 
 
-class TemporaryServerlessContent(object):
-    def __init__(
-        self, archive_path, deployment_name, bento_name, template_type, _cleanup=True
-    ):
-        self.archive_path = archive_path
-        self.deployment_name = deployment_name
-        self.bento_name = bento_name
-        self.temp_directory = TempDirectory()
-        self.template_type = template_type
-        self._cleanup = _cleanup
-        self.path = None
+def init_serverless_project_dir(
+    project_dir, archive_path, deployment_name, bento_name, template_type
+):
+    install_serverless_package()
+    call_serverless_command(
+        ["create", "--template", template_type, "--name", deployment_name], project_dir
+    )
+    requirement_txt_path = os.path.join(archive_path, 'requirements.txt')
+    shutil.copy(requirement_txt_path, project_dir)
+    bento_archive_path = os.path.join(project_dir, bento_name)
+    model_path = os.path.join(archive_path, bento_name)
+    shutil.copytree(model_path, bento_archive_path)
 
-    def __enter__(self):
-        self.generate()
-        return self.path
+    bundled_dependencies_path = os.path.join(archive_path, 'bundled_pip_dependencies')
+    # If bundled_pip_dependencies directory exists, we copy over and update
+    # requirements.txt.  We need to remove the bentoml entry in the file, because
+    # when pip install, it will NOT override the pypi released version.
+    if os.path.isdir(bundled_dependencies_path):
+        dest_bundle_path = os.path.join(project_dir, 'bundled_pip_dependencies')
+        shutil.copytree(bundled_dependencies_path, dest_bundle_path)
+        bundled_files = os.listdir(dest_bundle_path)
+        has_bentoml_bundle = False
+        for index, bundled_file_name in enumerate(bundled_files):
+            bundled_files[index] = '\n./bundled_pip_dependencies/{}'.format(
+                bundled_file_name
+            )
+            # If file name start with `BentoML-`, assuming it is a
+            # bentoml targz bundle
+            if bundled_file_name.startswith('BentoML-'):
+                has_bentoml_bundle = True
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._cleanup:
-            self.cleanup()
-
-    def generate(self):
-        install_serverless_package()
-        self.temp_directory.create()
-        tempdir = self.temp_directory.path
-        call_serverless_command(
-            [
-                "create",
-                "--template",
-                self.template_type,
-                "--name",
-                self.deployment_name,
-            ],
-            tempdir,
-        )
-        requirement_txt_path = os.path.join(self.archive_path, 'requirements.txt')
-        shutil.copy(requirement_txt_path, tempdir)
-        bento_archive_path = os.path.join(tempdir, self.bento_name)
-        model_path = os.path.join(self.archive_path, self.bento_name)
-        shutil.copytree(model_path, bento_archive_path)
-
-        bundled_dependencies_path = os.path.join(
-            self.archive_path, 'bundled_pip_dependencies'
-        )
-        # If bundled_pip_dependencies directory exists, we copy over and update
-        # requirements.txt.  We need to remove the bentoml entry in the file, because
-        # when pip install, it will NOT override the pypi released version.
-        if os.path.isdir(bundled_dependencies_path):
-            dest_bundle_path = os.path.join(tempdir, 'bundled_pip_dependencies')
-            shutil.copytree(bundled_dependencies_path, dest_bundle_path)
-            bundled_files = os.listdir(dest_bundle_path)
-            has_bentoml_bundle = False
-            for index, bundled_file_name in enumerate(bundled_files):
-                bundled_files[index] = '\n./bundled_pip_dependencies/{}'.format(
-                    bundled_file_name
-                )
-                # If file name start with `BentoML-`, assuming it is a
-                # bentoml targz bundle
-                if bundled_file_name.startswith('BentoML-'):
-                    has_bentoml_bundle = True
-
-            with open(
-                os.path.join(tempdir, 'requirements.txt'), 'r+'
-            ) as requirement_file:
-                required_modules = requirement_file.readlines()
-                if has_bentoml_bundle:
-                    # Assuming bentoml is always the first one in
-                    # requirements.txt. We are removing it
-                    required_modules = required_modules[1:]
-                required_modules = required_modules + bundled_files
-                # Write from beginning of the file, instead of appending to
-                # the end.
-                requirement_file.seek(0)
-                requirement_file.writelines(required_modules)
-
-        self.path = tempdir
-
-    def cleanup(self):
-        self.temp_directory.cleanup()
-        self.path = None
-
-
-class TemporaryServerlessConfig(object):
-    def __init__(
-        self,
-        archive_path,
-        deployment_name,
-        region,
-        stage,
-        functions,
-        provider_name,
-        _cleanup=True,
-    ):
-        self.archive_path = archive_path
-        self.temp_directory = TempDirectory()
-        self.deployment_name = deployment_name
-        self.region = region
-        self.stage = stage
-        self.functions = functions
-        self.provider_name = provider_name
-        self._cleanup = _cleanup
-        self.path = None
-
-    def __enter__(self):
-        self.generate()
-        return self.path
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._cleanup:
-            self.cleanup()
-
-    def generate(self):
-        install_serverless_package()
-        serverless_config = {
-            "service": self.deployment_name,
-            "provider": {
-                "region": self.region,
-                "stage": self.stage,
-                "name": self.provider_name,
-            },
-            "functions": self.functions,
-        }
-
-        yaml = YAML()
-        self.temp_directory.create()
-        tempdir = self.temp_directory.path
-        saved_path = os.path.join(tempdir, "serverless.yml")
-        yaml.dump(serverless_config, Path(saved_path))
-        self.path = tempdir
-
-    def cleanup(self):
-        self.temp_directory.cleanup()
-        self.path = None
+        with open(
+            os.path.join(project_dir, 'requirements.txt'), 'r+'
+        ) as requirement_file:
+            required_modules = requirement_file.readlines()
+            if has_bentoml_bundle:
+                # Assuming bentoml is always the first one in
+                # requirements.txt. We are removing it
+                required_modules = required_modules[1:]
+            required_modules = required_modules + bundled_files
+            # Write from beginning of the file, instead of appending to
+            # the end.
+            requirement_file.seek(0)
+            requirement_file.writelines(required_modules)

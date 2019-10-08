@@ -61,6 +61,8 @@ def load_bento_service_metadata(archive_path):
             bento_service_metadata.env.pip_dependencies = "\n".join(
                 config["env"]["pip_dependencies"]
             )
+        if "python_version" in config["env"]:
+            bento_service_metadata.env.python_version = config["env"]["python_version"]
 
     if "apis" in config:
         for api_config in config["apis"]:

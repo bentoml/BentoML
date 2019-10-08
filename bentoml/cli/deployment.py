@@ -19,6 +19,7 @@ from __future__ import print_function
 import click
 import logging
 import time
+import json
 
 from google.protobuf.json_format import MessageToJson
 from bentoml.cli.click_utils import (
@@ -65,11 +66,16 @@ def parse_key_value_pairs(key_value_pairs_str):
     return result
 
 
-def display_deployment_info(deployment, output):
-    if output == 'yaml':
+def display_deployment_info(deployment, output_type):
+    if output_type == 'yaml':
         result = pb_to_yaml(deployment)
     else:
         result = MessageToJson(deployment)
+        if deployment.state.info_json:
+            result = json.loads(result)
+            result['state']['infoJson'] = json.loads(deployment.state.info_json)
+            _echo(json.dumps(result, indent=2, separators=(',', ': ')))
+            return
     _echo(result)
 
 
@@ -151,7 +157,7 @@ def get_deployment_sub_command():
     @click.option(
         '--instance-type',
         help='Type of instance will be used for inference. Option applicable to '
-        'platform: AWS SageMaker',
+        'platform: AWS SageMaker, AWS Lambda, GCP Function',
     )
     @click.option(
         '--instance-count',
@@ -244,11 +250,15 @@ def get_deployment_sub_command():
             aws_lambda_operator_config = DeploymentSpec.AwsLambdaOperatorConfig(
                 region=region or config().get('aws', 'default_region')
             )
+            if api_name:
+                aws_lambda_operator_config.api_name = api_name
             spec = DeploymentSpec(aws_lambda_operator_config=aws_lambda_operator_config)
         elif operator == DeploymentSpec.GCP_FUNCTION:
             gcp_function_operator_config = DeploymentSpec.GcpFunctionOperatorConfig(
                 region=region or config().get('google-cloud', 'default_region')
             )
+            if api_name:
+                gcp_function_operator_config.api_name = api_name
             spec = DeploymentSpec(
                 gcp_function_operator_config=gcp_function_operator_config
             )
@@ -385,7 +395,11 @@ def get_deployment_sub_command():
                 deployment_name=name, namespace=namespace, force_delete=force
             )
         )
-        if result.status.status_code != Status.OK:
+        if result.status.status_code == Status.OK:
+            _echo(
+                'Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS
+            )
+        else:
             _echo(
                 'Failed to delete deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(
@@ -395,7 +409,6 @@ def get_deployment_sub_command():
                 ),
                 CLI_COLOR_ERROR,
             )
-        _echo('Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS)
 
     @deployment.command(help='Get deployment current state')
     @click.argument("name", type=click.STRING, required=True)

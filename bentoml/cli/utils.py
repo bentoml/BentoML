@@ -27,6 +27,8 @@ class Spinner:
         self.spinner = itertools.cycle(['-', '/', '|', '\\'])
         self.delay = delay
         self.busy = False
+        self._screen_lock = None
+        self.thread = None
         self.spinner_visible = False
         sys.stdout.write(message)
 

@@ -190,7 +190,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     api_names,
                     serverless_project_dir,
                     aws_config.region,
-                    # BentoML deployment namespace is mapping to serverless `stage` concept
+                    # BentoML deployment namespace is mapping to serverless `stage`
+                    # concept
                     stage=deployment_pb.namespace,
                 )
                 logger.info(
@@ -252,7 +253,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     api_names,
                     serverless_project_dir,
                     aws_config.region,
-                    # BentoML deployment namespace is mapping to serverless `stage` concept
+                    # BentoML deployment namespace is mapping to serverless `stage`
+                    # concept
                     stage=deployment_pb.namespace,
                 )
                 response = call_serverless_command(['remove'], serverless_project_dir)

@@ -463,11 +463,11 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     EndpointName=endpoint_name
                 )
                 logger.debug(
-                    "AWS delete endpoint response: ".format(delete_endpoint_response)
+                    "AWS delete endpoint response: %s", delete_endpoint_response
                 )
             except ClientError as e:
                 status = _parse_aws_client_exception_or_raise(e)
-                status.error_message = 'Failed to delete SageMaker deployment: {}'.format(
+                status.error_message = 'Failed to delete SageMaker endpoint: {}'.format(
                     status.error_message
                 )
                 return DeleteDeploymentResponse(status=status)

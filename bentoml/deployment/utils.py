@@ -123,6 +123,7 @@ def ensure_api_exists_in_bento_archive_api_lists(apis, api_name, bento_name):
 
 def exception_to_return_status(error):
     from bentoml.yatai.status import Status
+
     if type(error) is BentoMLInvalidArgumentException:
         return Status.INVALID_ARGUMENT(str(error))
     else:

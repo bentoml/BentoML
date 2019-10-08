@@ -75,20 +75,36 @@ def {api_name}(event, context):
 
 
 def generate_aws_lambda_serverless_config(
-    deployment_name, api_names, serverless_project_dir, region, stage
+    bento_python_version,
+    deployment_name,
+    api_names,
+    serverless_project_dir,
+    region,
+    stage,
 ):
     config_path = os.path.join(serverless_project_dir, "serverless.yml")
     if os.path.isfile(config_path):
         os.remove(config_path)
     yaml = YAML()
+
+    runtime = 'python3.7'
+    if version.parse(bento_python_version) < version.parse('3.0.0'):
+        runtime = 'python2.7'
+
     serverless_config = {
         "service": deployment_name,
-        "provider": {"region": region, "stage": stage, "name": 'aws'},
+        "provider": {
+            "region": region,
+            "stage": stage,
+            "name": 'aws',
+            'runtime': runtime,
+        },
         "functions": {
             api_name: {
                 "handler": "handler." + api_name,
                 "events": [{"http": {"path": "/" + api_name, "method": "post"}}],
-            } for api_name in api_names
+            }
+            for api_name in api_names
         },
         "custom": {
             "apigwBinary": ["image/jpg", "image/jpeg", "image/png"],
@@ -104,7 +120,9 @@ def generate_aws_lambda_serverless_config(
                 "dockerRunCmdExtraArgs": [
                     '-v',
                     '{}/bundled_pip_dependencies:'
-                    '/var/task/bundled_pip_dependencies:z'.format(serverless_project_dir),
+                    '/var/task/bundled_pip_dependencies:z'.format(
+                        serverless_project_dir
+                    ),
                 ],
             },
         },
@@ -113,11 +131,12 @@ def generate_aws_lambda_serverless_config(
     yaml.dump(serverless_config, Path(config_path))
 
 
-def generate_aws_lambda_handler_py(bento_name, apis, output_path):
+def generate_aws_lambda_handler_py(bento_name, api_names, output_path):
     with open(os.path.join(output_path, "handler.py"), "w") as f:
         f.write(AWS_HANDLER_PY_TEMPLATE_HEADER.format(class_name=bento_name))
-        for api in apis:
-            api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api.name)
+        print('API NAMES IN FILE', api_names)
+        for api_name in api_names:
+            api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api_name)
             f.write(api_content)
 
 
@@ -134,22 +153,23 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     bento_version=deployment_spec.bento_version,
                 )
             )
-            if bento_pb.uri.type != BentoUri.LOCAL:
-                raise BentoMLException('BentoML currently only support local repository')
+            if bento_pb.bento.uri.type != BentoUri.LOCAL:
+                raise BentoMLException(
+                    'BentoML currently only support local repository'
+                )
             else:
-                bento_path = bento_pb.bento.uri.path
+                bento_path = bento_pb.bento.uri.uri
             bento_service_metadata = bento_pb.bento.bento_service_metadata
 
             template = 'aws-python3'
-            bento_python_version = version.parse(
-                bento_service_metadata.env.python_version
-            )
-            if bento_python_version < version.parse('3.0.0'):
+            if version.parse(bento_service_metadata.env.python_version) < version.parse(
+                '3.0.0'
+            ):
                 template = 'aws-python'
 
             api_names = (
                 [aws_config.api_name]
-                if aws_config.api_name is not None
+                if aws_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
 
@@ -165,6 +185,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     deployment_spec.bento_name, api_names, serverless_project_dir
                 )
                 generate_aws_lambda_serverless_config(
+                    bento_service_metadata.env.python_version,
                     deployment_pb.name,
                     api_names,
                     serverless_project_dir,
@@ -220,12 +241,13 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             bento_service_metadata = bento_pb.bento.bento_service_metadata
             api_names = (
                 [aws_config.api_name]
-                if aws_config.api_name is not None
+                if aws_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
 
             with TempDirectory() as serverless_project_dir:
                 generate_aws_lambda_serverless_config(
+                    bento_service_metadata.env.python_version,
                     deployment_pb.name,
                     api_names,
                     serverless_project_dir,
@@ -263,7 +285,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             bento_service_metadata = bento_pb.bento.bento_service_metadata
             api_names = (
                 [aws_config.api_name]
-                if aws_config.api_name is not None
+                if aws_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
 
@@ -290,7 +312,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     base_url = output['OutputValue']
                     break
             if base_url:
-                info_json['endpoints'] = [base_url + '/' + api_name for api_name in api_names]
+                info_json['endpoints'] = [
+                    base_url + '/' + api_name for api_name in api_names
+                ]
             return DescribeDeploymentResponse(
                 status=Status.OK(),
                 state=DeploymentState(

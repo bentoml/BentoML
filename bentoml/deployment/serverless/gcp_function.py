@@ -25,7 +25,6 @@ from bentoml.deployment.utils import exception_to_return_status
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
-from bentoml.archive.loader import load_bento_service_metadata
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
 from bentoml.exceptions import BentoMLException
@@ -38,12 +37,8 @@ from bentoml.proto.deployment_pb2 import (
 )
 from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
-    TemporaryServerlessContent,
-    TemporaryServerlessConfig,
     parse_serverless_info_response_to_json_string,
-    generate_api_list,
     init_serverless_project_dir,
-    init_serverless_config,
 )
 
 logger = logging.getLogger(__name__)
@@ -87,10 +82,8 @@ def generate_gcp_function_serverless_config(
             "project": deployment_name,
         },
         "functions": {
-            api_name: {
-                "handler": api_name,
-                "events": [{"http": "path"}],
-            } for api_name in api_names
+            api_name: {"handler": api_name, "events": [{"http": "path"}]}
+            for api_name in api_names
         },
     }
 
@@ -116,15 +109,17 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                     bento_version=deployment_spec.bento_version,
                 )
             )
-            if bento_pb.uri.type != BentoUri.LOCAL:
-                raise BentoMLException('BentoML currently only support local repository')
+            if bento_pb.bento.uri.type != BentoUri.LOCAL:
+                raise BentoMLException(
+                    'BentoML currently only support local repository'
+                )
             else:
-                bento_path = bento_pb.bento.uri.path
+                bento_path = bento_pb.bento.uri.uri
             bento_service_metadata = bento_pb.bento.bento_service_metadata
 
             api_names = (
                 [gcp_config.api_name]
-                if gcp_config.api_name is not None
+                if gcp_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
             with TempDirectory() as serverless_project_dir:
@@ -173,7 +168,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             bento_service_metadata = bento_pb.bento.bento_service_metadata
             api_names = (
                 [gcp_config.api_name]
-                if gcp_config.api_name is not None
+                if gcp_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
             with TempDirectory() as serverless_project_dir:
@@ -225,7 +220,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
             bento_service_metadata = bento_pb.bento.bento_service_metadata
             api_names = (
                 [gcp_config.api_name]
-                if gcp_config.api_name is not None
+                if gcp_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
             with TempDirectory() as serverless_project_dir:

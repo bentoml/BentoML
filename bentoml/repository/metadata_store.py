@@ -80,7 +80,7 @@ def _bento_orm_obj_to_pb(bento_obj):
         bento_obj.bento_service_metadata, BentoServiceMetadata()
     )
     bento_uri = BentoUri(
-        uri=bento_obj.uri, uri_type=BentoUri.StorageType.Value(bento_obj.uri_type)
+        uri=bento_obj.uri, type=BentoUri.StorageType.Value(bento_obj.uri_type)
     )
     return BentoPB(
         name=bento_obj.name,

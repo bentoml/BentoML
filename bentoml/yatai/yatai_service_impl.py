@@ -114,9 +114,7 @@ class YataiService(YataiServicer):
             operator = get_deployment_operator(request.deployment)
 
             # deploying to target platform
-            response = operator.apply(
-                request.deployment, self, previous_deployment
-            )
+            response = operator.apply(request.deployment, self, previous_deployment)
 
             # update deployment state
             self.deployment_store.insert_or_update(response.deployment)

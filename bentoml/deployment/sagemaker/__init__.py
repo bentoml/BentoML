@@ -33,7 +33,6 @@ from bentoml import config
 from bentoml.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
-    ensure_api_exists_in_bento_archive_api_lists,
     exception_to_return_status,
 )
 from bentoml.yatai.status import Status
@@ -300,9 +299,6 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
             bento_config = load_bento_service_metadata(archive_path)
-            ensure_api_exists_in_bento_archive_api_lists(
-                bento_config.apis, sagemaker_config.api_name, deployment_spec.bento_name
-            )
 
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 

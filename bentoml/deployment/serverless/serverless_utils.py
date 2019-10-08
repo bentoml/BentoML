@@ -90,8 +90,9 @@ def call_serverless_command(command, cwd_path):
     command = [SERVERLESS_BIN_COMMAND] + command
 
     with subprocess.Popen(command, cwd=cwd_path, stdout=PIPE, stderr=PIPE) as proc:
-        response = parse_serverless_response(proc.stdout.read().decode("utf-8"))
-        logger.debug("Serverless response: %s", "\n".join(response))
+        stdout = proc.stdout.read().decode("utf-8")
+        logger.debug("sls cmd output: %s", stdout)
+        response = parse_serverless_response(stdout)
     return response
 
 
@@ -130,7 +131,7 @@ def parse_serverless_info_response_to_json_string(responses):
 
 
 def init_serverless_project_dir(
-    project_dir, archive_path, deployment_name, bento_name, template_type, _cleanup=True
+    project_dir, archive_path, deployment_name, bento_name, template_type
 ):
     install_serverless_package()
     call_serverless_command(

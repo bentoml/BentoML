@@ -60,9 +60,7 @@ def get_configuration_sub_command():
     def view():
         track_cli('config-view')
         local_config = ConfigParser()
-        with open(get_local_config_file(), 'rb') as config_file:
-            local_config.read_string(config_file.read().decode('utf-8'))
-
+        local_config.read(get_local_config_file(), encoding='utf-8')
         local_config.write(sys.stdout)
         return
 
@@ -82,8 +80,8 @@ def get_configuration_sub_command():
         track_cli('config-set')
         local_config = ConfigParser()
         local_config_file = get_local_config_file()
-        with open(local_config_file, 'rb') as config_file:
-            local_config.read_string(config_file.read().decode('utf-8'))
+        local_config.read(local_config_file, encoding='utf-8')
+
         try:
             for update in updates:
                 item, value = update.split('=')
@@ -113,8 +111,8 @@ def get_configuration_sub_command():
         track_cli('config-unset')
         local_config = ConfigParser()
         local_config_file = get_local_config_file()
-        with open(local_config_file, 'rb') as config_file:
-            local_config.read_string(config_file.read().decode('utf-8'))
+        local_config.read(local_config_file, encoding='utf-8')
+
         try:
             for update in updates:
                 if '.' in update:

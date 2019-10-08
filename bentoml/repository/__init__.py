@@ -128,10 +128,9 @@ class _S3BentoRepository(BentoRepositoryBase):
 
     def add(self, bento_name, bento_version):
         # Generate pre-signed s3 path for upload
-        expiration = 3600
-        object_name = os.path.join(
-            self.base_path, '{}-{}'.format(bento_name, bento_version)
-        )
+        expiration = config('yatai').getint('bento_uri_default_expiration')
+
+        object_name = "/".join([self.base_path, bento_name, bento_version])
 
         try:
             response = self.s3_client.generate_presigned_post(

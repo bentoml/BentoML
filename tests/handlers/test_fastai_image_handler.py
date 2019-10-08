@@ -9,6 +9,7 @@ def test_fastai_image_handler(capsys, tmpdir):
         # fast ai is required 3.6 or higher.
         assert True
     else:
+
         class ImageHandlerModelForFastai(bentoml.BentoService):
             @bentoml.api(FastaiImageHandler)
             def predict(self, image):

@@ -61,6 +61,7 @@ class TestBentoService(bentoml.BentoService):
         return self.artifacts.model.predictTorch(input_data)
 
     if sys.version_info >= (3, 6):
+
         @bentoml.api(bentoml.handlers.FastaiImageHandler)
         def predictFastaiImage(self, input_data):
             return self.artifacts.model.predictImage(input_data)
@@ -70,6 +71,7 @@ class TestBentoService(bentoml.BentoService):
         )
         def predictFastaiImages(self, original, compared):
             return all(original.data[0, 0] == compared.data[0, 0])
+
 
 @pytest.fixture()
 def bento_service():

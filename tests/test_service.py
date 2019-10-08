@@ -38,6 +38,7 @@ def test_fastai_image_handler_pip_dependencies():
         # fast ai is required 3.6 or higher.
         assert True
     else:
+
         class TestFastAiImageService(bentoml.BentoService):
             @bentoml.api(bentoml.handlers.FastaiImageHandler)
             def test(self, image):

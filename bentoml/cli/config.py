@@ -31,7 +31,7 @@ from bentoml.utils.usage_stats import track_cli
 
 # pylint: disable=unused-variable
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 EXAMPLE_CONFIG_USAGE = '''
 Example usage for `bentoml config`:
@@ -44,7 +44,7 @@ Example usage for `bentoml config`:
 def create_local_config_file_if_not_found():
     local_config_file = get_local_config_file()
     if not os.path.isfile(local_config_file):
-        LOG.info("Creating new default BentoML config file at: %s", local_config_file)
+        logger.info("Creating new default BentoML config file at: %s", local_config_file)
         shutil.copyfile(DEFAULT_CONFIG_FILE, local_config_file)
 
 
@@ -137,7 +137,7 @@ def get_configuration_sub_command():
         track_cli('config-reset')
         local_config_file = get_local_config_file()
         if os.path.isfile(local_config_file):
-            LOG.info("Removing existing BentoML config file: %s", local_config_file)
+            logger.info("Removing existing BentoML config file: %s", local_config_file)
             os.remove(local_config_file)
         create_local_config_file_if_not_found()
         return

@@ -34,6 +34,7 @@ from bentoml.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
     exception_to_return_status,
+    ensure_deploy_api_name_exists_in_bento,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.yatai.status import Status
@@ -242,6 +243,24 @@ def _cleanup_sagemaker_endpoint_config(client, name, version):
     return
 
 
+def init_sagemaker_project(project_dir, bento_path, bento_name):
+    sagemaker_project_dir = os.path.join(project_dir, bento_name)
+    shutil.copytree(bento_path, sagemaker_project_dir)
+
+    with open(os.path.join(sagemaker_project_dir, "nginx.conf"), "w") as f:
+        f.write(DEFAULT_NGINX_CONFIG)
+    with open(os.path.join(sagemaker_project_dir, "wsgi.py"), "w") as f:
+        f.write(DEFAULT_WSGI_PY)
+    with open(os.path.join(sagemaker_project_dir, "serve"), "w") as f:
+        f.write(DEFAULT_SERVE_SCRIPT)
+
+    # permission 755 is required for entry script 'serve'
+    permission = "755"
+    octal_permission = int(permission, 8)
+    os.chmod(os.path.join(sagemaker_project_dir, "serve"), octal_permission)
+    return sagemaker_project_dir
+
+
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, yatai_service, prev_deployment=None):
         try:
@@ -264,26 +283,18 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             else:
                 bento_path = bento_pb.bento.uri.uri
 
+            ensure_deploy_api_name_exists_in_bento(
+                [api.name for api in bento_pb.bento.bento_service_metadata.apis],
+                [sagemaker_config.api_name],
+                deployment_spec.bento_name,
+            )
+
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
             with TempDirectory() as temp_dir:
-                sagemaker_project_dir = os.path.join(
-                    temp_dir, deployment_spec.bento_name, deployment_spec.bento_version
+                sagemaker_project_dir = init_sagemaker_project(
+                    temp_dir, bento_path, deployment_spec.bento_name
                 )
-                shutil.copytree(bento_path, sagemaker_project_dir)
-
-                with open(os.path.join(sagemaker_project_dir, "nginx.conf"), "w") as f:
-                    f.write(DEFAULT_NGINX_CONFIG)
-                with open(os.path.join(sagemaker_project_dir, "wsgi.py"), "w") as f:
-                    f.write(DEFAULT_WSGI_PY)
-                with open(os.path.join(sagemaker_project_dir, "serve"), "w") as f:
-                    f.write(DEFAULT_SERVE_SCRIPT)
-
-                # permission 755 is required for entry script 'serve'
-                permission = "755"
-                octal_permission = int(permission, 8)
-                os.chmod(os.path.join(sagemaker_project_dir, "serve"), octal_permission)
-
                 ecr_image_path = create_push_docker_image_to_ecr(
                     deployment_spec.bento_name,
                     deployment_spec.bento_version,

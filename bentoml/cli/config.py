@@ -31,7 +31,7 @@ from bentoml.utils.usage_stats import track_cli
 
 # pylint: disable=unused-variable
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 EXAMPLE_CONFIG_USAGE = '''
 Example usage for `bentoml config`:
@@ -44,7 +44,7 @@ Example usage for `bentoml config`:
 def create_local_config_file_if_not_found():
     local_config_file = get_local_config_file()
     if not os.path.isfile(local_config_file):
-        LOG.info("Creating new default BentoML config file at: %s", local_config_file)
+        logger.info("Creating local BentoML config file at: %s", local_config_file)
         shutil.copyfile(DEFAULT_CONFIG_FILE, local_config_file)
 
 
@@ -56,17 +56,18 @@ def get_configuration_sub_command():
     def config():
         create_local_config_file_if_not_found()
 
-    @config.command(help="View BentoML configurations")
+    @config.command(help="View local BentoML configurations")
     def view():
         track_cli('config-view')
         local_config = ConfigParser()
-        with open(get_local_config_file(), 'rb') as config_file:
-            local_config.read_string(config_file.read().decode('utf-8'))
-
+        local_config.read(get_local_config_file(), encoding='utf-8')
         local_config.write(sys.stdout)
         return
 
-    @config.command()
+    @config.command(
+        help="View effective BentoML configs, including default config values and "
+        "local config overrides"
+    )
     def view_effective():
         track_cli('config-view-effective')
         bentoml_config().write(sys.stdout)
@@ -75,15 +76,15 @@ def get_configuration_sub_command():
     @config.command(
         name="set",
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
-        help="Set value to BentoML configuration",
+        help="Set config value in local BentoML configuration file",
     )
     @click.argument("updates", nargs=-1)
     def set_command(updates):
         track_cli('config-set')
         local_config = ConfigParser()
         local_config_file = get_local_config_file()
-        with open(local_config_file, 'rb') as config_file:
-            local_config.read_string(config_file.read().decode('utf-8'))
+        local_config.read(local_config_file, encoding='utf-8')
+
         try:
             for update in updates:
                 item, value = update.split('=')
@@ -106,15 +107,15 @@ def get_configuration_sub_command():
 
     @config.command(
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
-        help="Unset value from BentoML configuration",
+        help="Unset config in local BentoML configuration file",
     )
     @click.argument("updates", nargs=-1)
     def unset(updates):
         track_cli('config-unset')
         local_config = ConfigParser()
         local_config_file = get_local_config_file()
-        with open(local_config_file, 'rb') as config_file:
-            local_config.read_string(config_file.read().decode('utf-8'))
+        local_config.read(local_config_file, encoding='utf-8')
+
         try:
             for update in updates:
                 if '.' in update:
@@ -134,12 +135,12 @@ def get_configuration_sub_command():
             _echo(EXAMPLE_CONFIG_USAGE)
             return
 
-    @config.command(help="Reset BentoML configuration to default")
+    @config.command(help="Reset all local BentoML configs to default")
     def reset():
         track_cli('config-reset')
         local_config_file = get_local_config_file()
         if os.path.isfile(local_config_file):
-            LOG.info("Removing existing BentoML config file: %s", local_config_file)
+            logger.info("Removing existing BentoML config file: %s", local_config_file)
             os.remove(local_config_file)
         create_local_config_file_if_not_found()
         return

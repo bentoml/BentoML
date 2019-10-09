@@ -450,7 +450,7 @@ class BentoService(BentoServiceBase):
 
     def set_version(self, version_str=None):
         if version_str is None:
-            version_str = self._new_version_str()
+            version_str = self.versioneer()
 
         if self._version_major is not None and self._version_minor is not None:
             # BentoML uses semantic versioning for BentoService distribution
@@ -466,22 +466,22 @@ class BentoService(BentoServiceBase):
         self._bento_service_version = version_str
         return self._bento_service_version
 
-    def _new_version_str(self):
+    def versioneer(self):
         """
-        Default new version string generator function
-        User can override this function in their custom BentoService to get a customized
-        version format
+        Function used to generate a new version string when saving an archive of this
+        user defined BentoService. User can also override this function to get a
+        customized version format
         """
-        time_obj = datetime.now()
-        date_string = time_obj.strftime("%Y_%m_%d")
-        random_hash = uuid.uuid4().hex[:8]
+        datetime_string = datetime.now().strftime("%Y%m%d%H%M%S")
+        random_hash = uuid.uuid4().hex[:6].upper()
 
-        return date_string + "_" + random_hash
+        # Example output: '20191009135240_D246ED'
+        return datetime_string + "_" + random_hash
 
     @property
     def version(self):
         if self._bento_service_version is None:
-            self.set_version(self._new_version_str())
+            self.set_version(self.versioneer())
 
         return self._bento_service_version
 

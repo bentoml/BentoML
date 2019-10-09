@@ -478,7 +478,7 @@ def get_deployment_sub_command():
         help='Deployment namespace managed by BentoML, default value is "default" which'
         'can be changed in BentoML configuration file',
     )
-    @click.option('--all-namespace', type=click.BOOL, default=False)
+    @click.option('--all-namespaces', is_flag=True)
     @click.option(
         '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
     )
@@ -494,10 +494,10 @@ def get_deployment_sub_command():
         help='List deployments matching the giving labels',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
-    def list_deployments(output, limit, filters, labels, namespace, all_namespace):
+    def list_deployments(output, limit, filters, labels, namespace, all_namespaces):
         track_cli('deploy-list')
 
-        if all_namespace:
+        if all_namespaces:
             if namespace is not None:
                 logger.warning(
                     'Ignoring `namespace=%s` due to the --all-namespace flag presented',

@@ -174,9 +174,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 else [api.name for api in bento_service_metadata.apis]
             )
             ensure_deploy_api_name_exists_in_bento(
-                [api.name for api in bento_service_metadata.apis],
-                api_names,
-                deployment_spec.bento_name,
+                [api.name for api in bento_service_metadata.apis], api_names
             )
 
             with TempDirectory() as serverless_project_dir:
@@ -272,7 +270,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 if "Serverless: Stack removal finished..." in response:
                     status = Status.OK()
                 elif "Stack '{}' does not exist".format(stack_name) in response:
-                    status = Status.NOT_FOUND('Resource not found')
+                    status = Status.NOT_FOUND(
+                        'Deployment {} not found'.format(stack_name)
+                    )
                 else:
                     status = Status.ABORTED()
 

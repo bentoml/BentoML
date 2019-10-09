@@ -126,9 +126,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 else [api.name for api in bento_service_metadata.apis]
             )
             ensure_deploy_api_name_exists_in_bento(
-                [api.name for api in bento_service_metadata.apis],
-                api_names,
-                deployment_spec.bento_name,
+                [api.name for api in bento_service_metadata.apis], api_names
             )
             with TempDirectory() as serverless_project_dir:
                 init_serverless_project_dir(

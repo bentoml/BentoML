@@ -109,14 +109,10 @@ def ensure_docker_available_or_raise():
         )
 
 
-def ensure_deploy_api_name_exists_in_bento(
-    all_api_names, deployed_api_names, bento_name
-):
+def ensure_deploy_api_name_exists_in_bento(all_api_names, deployed_api_names):
     if not set(deployed_api_names).issubset(all_api_names):
         raise BentoMLInvalidArgumentException(
-            "API names {api_names} don't exist in {bento_name}.".format(
-                api_names=','.join(deployed_api_names), bento_name=bento_name
-            )
+            "API names {} don't exist.".format(','.join(deployed_api_names))
         )
 
 

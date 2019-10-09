@@ -153,17 +153,17 @@ class YataiService(YataiServicer):
                         request.deployment_name, request.namespace
                     )
                     return DeleteDeploymentResponse(status=Status.OK())
-                else:
-                    if response.status.status_code == status_pb2.Status.NOT_FOUND:
-                        modified_message = (
-                            'Cloud resources not found, it may have been deleted '
-                            'manually. Try delete deployment '
-                            'with "--force" option to ignore this error '
-                            'and force deleting the deployment record.\n{}'.format(
-                                response.status.error_message
-                            )
+
+                if response.status.status_code == status_pb2.Status.NOT_FOUND:
+                    modified_message = (
+                        'Cloud resources not found, error: {} it may have been deleted '
+                        'manually. Try delete deployment '
+                        'with "--force" option to ignore this error '
+                        'and force deleting the deployment record'.format(
+                            response.status.error_message
                         )
-                        response.status.error_message = modified_message
+                    )
+                    response.status.error_message = modified_message
 
                     return response
             else:

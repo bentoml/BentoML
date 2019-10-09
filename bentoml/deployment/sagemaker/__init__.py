@@ -208,10 +208,10 @@ def _parse_aws_client_exception_or_raise(e):
         operation=e.operation_name, code=error_code, message=error_message
     )
     if error_code == 'ValidationException':
-        logger.debug(error_log_message)
+        logger.error(error_log_message)
         return Status.NOT_FOUND(error_response.get('Message', 'Unknown'))
     elif error_code == 'InvalidSignatureException':
-        logger.debug(error_log_message)
+        logger.error(error_log_message)
         return Status.UNAUTHENTICATED(error_response.get('Message', 'Unknown'))
     else:
         logger.error(error_log_message)
@@ -243,8 +243,7 @@ def _cleanup_sagemaker_endpoint_config(client, name, version):
     return
 
 
-def init_sagemaker_project(project_dir, bento_path, bento_name):
-    sagemaker_project_dir = os.path.join(project_dir, bento_name)
+def init_sagemaker_project(sagemaker_project_dir, bento_path, bento_name):
     shutil.copytree(bento_path, sagemaker_project_dir)
 
     with open(os.path.join(sagemaker_project_dir, "nginx.conf"), "w") as f:
@@ -286,15 +285,15 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             ensure_deploy_api_name_exists_in_bento(
                 [api.name for api in bento_pb.bento.bento_service_metadata.apis],
                 [sagemaker_config.api_name],
-                deployment_spec.bento_name,
             )
 
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
             with TempDirectory() as temp_dir:
-                sagemaker_project_dir = init_sagemaker_project(
-                    temp_dir, bento_path, deployment_spec.bento_name
+                sagemaker_project_dir = os.path.jon(
+                    temp_dir, deployment_spec.bento_name
                 )
+                init_sagemaker_project(sagemaker_project_dir, bento_path)
                 ecr_image_path = create_push_docker_image_to_ecr(
                     deployment_spec.bento_name,
                     deployment_spec.bento_version,

@@ -246,12 +246,13 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
             )
             bento_service_metadata = bento_pb.bento.bento_service_metadata
+            # We are not validating api_name, because for delete, you don't
+            # need them.
             api_names = (
                 [aws_config.api_name]
                 if aws_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
-            ensure_deployed_api_names_exists_in_bento()
 
             with TempDirectory() as serverless_project_dir:
                 generate_aws_lambda_serverless_config(

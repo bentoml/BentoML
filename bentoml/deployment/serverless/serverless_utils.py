@@ -23,14 +23,9 @@ import subprocess
 import json
 from subprocess import PIPE
 from packaging import version
-from types import SimpleNamespace
 
-from ruamel.yaml import YAML
 
 from bentoml.configuration import _get_bentoml_home
-from bentoml.deployment.utils import ensure_api_exists_in_bento_archive_api_lists
-from bentoml.utils import Path
-from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.whichcraft import which
 from bentoml.exceptions import BentoMLException, BentoMLMissingDepdencyException
 

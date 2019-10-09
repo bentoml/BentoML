@@ -21,7 +21,10 @@ import logging
 
 from ruamel.yaml import YAML
 
-from bentoml.deployment.utils import exception_to_return_status
+from bentoml.deployment.utils import (
+    exception_to_return_status,
+    ensure_deploy_api_name_exists_in_bento,
+)
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
@@ -90,7 +93,7 @@ def generate_gcp_function_serverless_config(
     yaml.dump(serverless_config, Path(config_path))
 
 
-def generate_main_py(bento_name, api_names, output_path):
+def generate_gcp_function_main_py(bento_name, api_names, output_path):
     with open(os.path.join(output_path, "main.py"), "w") as f:
         f.write(GOOGLE_MAIN_PY_TEMPLATE_HEADER.format(class_name=bento_name))
         for api_name in api_names:
@@ -122,6 +125,9 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 if gcp_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
+            ensure_deploy_api_name_exists_in_bento(
+                [api.name for api in bento_service_metadata.apis], api_names
+            )
             with TempDirectory() as serverless_project_dir:
                 init_serverless_project_dir(
                     serverless_project_dir,
@@ -130,7 +136,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                     deployment_spec.bento_name,
                     'google-python',
                 )
-                generate_main_py(
+                generate_gcp_function_main_py(
                     deployment_spec.bento_name, api_names, serverless_project_dir
                 )
                 generate_gcp_function_serverless_config(

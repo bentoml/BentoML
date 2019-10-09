@@ -47,6 +47,7 @@ from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
 from bentoml import config
+from bentoml.cli.utils import Spinner
 
 # pylint: disable=unused-variable
 
@@ -83,16 +84,17 @@ def get_state_after_await_action_complete(
     yatai_service, name, namespace, message, timeout_limit=600, wait_time=5
 ):
     start_time = time.time()
-    while (time.time() - start_time) < timeout_limit:
-        result = yatai_service.DescribeDeployment(
-            DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
-        )
-        if result.state.state is DeploymentState.PENDING:
-            time.sleep(wait_time)
-            _echo(message)
-            continue
-        else:
-            break
+
+    with Spinner(message):
+        while (time.time() - start_time) < timeout_limit:
+            result = yatai_service.DescribeDeployment(
+                DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
+            )
+            if result.state.state is DeploymentState.PENDING:
+                time.sleep(wait_time)
+                continue
+            else:
+                break
     return result
 
 
@@ -293,7 +295,7 @@ def get_deployment_sub_command():
         )
         if result.status.status_code != Status.OK:
             _echo(
-                'Failed to create deployment {name}. code: {error_code}, message: '
+                'Failed to create deployment {name}. {error_code}: '
                 '{error_message}'.format(
                     name=name,
                     error_code=Status.Code.Name(result.status.status_code),
@@ -307,7 +309,7 @@ def get_deployment_sub_command():
                     yatai_service=yatai_service,
                     name=name,
                     namespace=namespace,
-                    message='Creating deployment...',
+                    message='Creating deployment ',
                 )
                 result.deployment.state.CopyFrom(result_state.state)
 
@@ -354,7 +356,7 @@ def get_deployment_sub_command():
                         yatai_service=yatai_service,
                         name=deployment_pb.name,
                         namespace=deployment_pb.namespace,
-                        message='Applying deployment...',
+                        message='Applying deployment',
                     )
                     result.deployment.state.CopyFrom(result_state.state)
 
@@ -476,7 +478,7 @@ def get_deployment_sub_command():
         help='Deployment namespace managed by BentoML, default value is "default" which'
         'can be changed in BentoML configuration file',
     )
-    @click.option('--all-namespace', type=click.BOOL, default=False)
+    @click.option('--all-namespaces', is_flag=True)
     @click.option(
         '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
     )
@@ -492,10 +494,10 @@ def get_deployment_sub_command():
         help='List deployments matching the giving labels',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
-    def list_deployments(output, limit, filters, labels, namespace, all_namespace):
+    def list_deployments(output, limit, filters, labels, namespace, all_namespaces):
         track_cli('deploy-list')
 
-        if all_namespace:
+        if all_namespaces:
             if namespace is not None:
                 logger.warning(
                     'Ignoring `namespace=%s` due to the --all-namespace flag presented',

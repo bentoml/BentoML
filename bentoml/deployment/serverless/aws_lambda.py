@@ -40,6 +40,7 @@ from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.deployment.utils import (
     ensure_docker_available_or_raise,
     exception_to_return_status,
+    ensure_deploy_api_name_exists_in_bento,
 )
 from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
@@ -172,6 +173,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 if aws_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
+            ensure_deploy_api_name_exists_in_bento(
+                [api.name for api in bento_service_metadata.apis], api_names
+            )
 
             with TempDirectory() as serverless_project_dir:
                 init_serverless_project_dir(
@@ -190,7 +194,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     api_names,
                     serverless_project_dir,
                     aws_config.region,
-                    # BentoML deployment namespace is mapping to serverless `stage` concept
+                    # BentoML deployment namespace is mapping to serverless `stage`
+                    # concept
                     stage=deployment_pb.namespace,
                 )
                 logger.info(
@@ -239,6 +244,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
             )
             bento_service_metadata = bento_pb.bento.bento_service_metadata
+            # We are not validating api_name, because for delete, you don't
+            # need them.
             api_names = (
                 [aws_config.api_name]
                 if aws_config.api_name
@@ -252,7 +259,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     api_names,
                     serverless_project_dir,
                     aws_config.region,
-                    # BentoML deployment namespace is mapping to serverless `stage` concept
+                    # BentoML deployment namespace is mapping to serverless `stage`
+                    # concept
                     stage=deployment_pb.namespace,
                 )
                 response = call_serverless_command(['remove'], serverless_project_dir)
@@ -262,7 +270,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 if "Serverless: Stack removal finished..." in response:
                     status = Status.OK()
                 elif "Stack '{}' does not exist".format(stack_name) in response:
-                    status = Status.NOT_FOUND('Resource not found')
+                    status = Status.NOT_FOUND(
+                        'Deployment {} not found'.format(stack_name)
+                    )
                 else:
                     status = Status.ABORTED()
 

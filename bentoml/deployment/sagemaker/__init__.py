@@ -34,7 +34,9 @@ from bentoml.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
     exception_to_return_status,
+    ensure_deploy_api_name_exists_in_bento,
 )
+from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.yatai.status import Status
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
@@ -51,14 +53,8 @@ from bentoml.proto.deployment_pb2 import (
     DescribeDeploymentResponse,
     DeploymentState,
 )
-from bentoml.archive.loader import load_bento_service_metadata
 
 logger = logging.getLogger(__name__)
-
-
-DEFAULT_REGION = "us-west-2"
-DEFAULT_INSTANCE_TYPE = "ml.m4.xlarge"
-DEFAULT_INSTANCE_COUNT = 1
 
 
 def strip_scheme(url):
@@ -85,11 +81,13 @@ def create_sagemaker_model_name(bento_name, bento_version):
 
 def create_sagemaker_endpoint_config_name(bento_name, bento_version):
     return generate_aws_compatible_string(
-        '{name}-{version}-configuration'.format(name=bento_name, version=bento_version)
+        'bentoml-{name}-{version}-configuration'.format(
+            name=bento_name, version=bento_version
+        )
     )
 
 
-def get_arn_role_from_current_user():
+def get_arn_role_from_current_aws_user():
     sts_client = boto3.client("sts")
     identity = sts_client.get_caller_identity()
     sts_arn = identity["Arn"]
@@ -118,7 +116,7 @@ def get_arn_role_from_current_user():
         return role_response["Role"]["Arn"]
 
 
-def create_push_image_to_ecr(bento_name, bento_version, snapshot_path):
+def create_push_docker_image_to_ecr(bento_name, bento_version, snapshot_path):
     """Create BentoService sagemaker image and push to AWS ECR
 
     Example: https://github.com/awslabs/amazon-sagemaker-examples/blob/\
@@ -175,47 +173,6 @@ def create_push_image_to_ecr(bento_name, bento_version, snapshot_path):
     return ecr_tag
 
 
-class TemporarySageMakerContent(object):
-    def __init__(self, archive_path, bento_name, bento_version, _cleanup=True):
-        self.archive_path = archive_path
-        self.bento_name = bento_name
-        self.bento_version = bento_version
-        self.temp_directory = TempDirectory()
-        self._cleanup = _cleanup
-        self.path = None
-
-    def __enter__(self):
-        self.generate()
-        return self.path
-
-    def generate(self):
-        self.temp_directory.create()
-        tempdir = self.temp_directory.path
-        saved_path = os.path.join(tempdir, self.bento_name, self.bento_version)
-        shutil.copytree(self.archive_path, saved_path)
-
-        with open(os.path.join(saved_path, "nginx.conf"), "w") as f:
-            f.write(DEFAULT_NGINX_CONFIG)
-        with open(os.path.join(saved_path, "wsgi.py"), "w") as f:
-            f.write(DEFAULT_WSGI_PY)
-        with open(os.path.join(saved_path, "serve"), "w") as f:
-            f.write(DEFAULT_SERVE_SCRIPT)
-
-        # permission 755 is required for entry script 'serve'
-        permission = "755"
-        octal_permission = int(permission, 8)
-        os.chmod(os.path.join(saved_path, "serve"), octal_permission)
-        self.path = saved_path
-
-    def cleanup(self):
-        self.temp_directory.cleanup()
-        self.path = None
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._cleanup:
-            self.cleanup()
-
-
 # Sagemaker response status: 'OutOfService'|'Creating'|'Updating'|
 #                            'SystemUpdating'|'RollingBack'|'InService'|
 #                            'Deleting'|'Failed'
@@ -251,10 +208,10 @@ def _parse_aws_client_exception_or_raise(e):
         operation=e.operation_name, code=error_code, message=error_message
     )
     if error_code == 'ValidationException':
-        logger.info(error_log_message)
+        logger.error(error_log_message)
         return Status.NOT_FOUND(error_response.get('Message', 'Unknown'))
     elif error_code == 'InvalidSignatureException':
-        logger.info(error_log_message)
+        logger.error(error_log_message)
         return Status.UNAUTHENTICATED(error_response.get('Message', 'Unknown'))
     else:
         logger.error(error_log_message)
@@ -286,8 +243,25 @@ def _cleanup_sagemaker_endpoint_config(client, name, version):
     return
 
 
+def init_sagemaker_project(sagemaker_project_dir, bento_path, bento_name):
+    shutil.copytree(bento_path, sagemaker_project_dir)
+
+    with open(os.path.join(sagemaker_project_dir, "nginx.conf"), "w") as f:
+        f.write(DEFAULT_NGINX_CONFIG)
+    with open(os.path.join(sagemaker_project_dir, "wsgi.py"), "w") as f:
+        f.write(DEFAULT_WSGI_PY)
+    with open(os.path.join(sagemaker_project_dir, "serve"), "w") as f:
+        f.write(DEFAULT_SERVE_SCRIPT)
+
+    # permission 755 is required for entry script 'serve'
+    permission = "755"
+    octal_permission = int(permission, 8)
+    os.chmod(os.path.join(sagemaker_project_dir, "serve"), octal_permission)
+    return sagemaker_project_dir
+
+
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb, repo, prev_deployment=None):
+    def apply(self, deployment_pb, yatai_service, prev_deployment=None):
         try:
             ensure_docker_available_or_raise()
             deployment_spec = deployment_pb.spec
@@ -295,21 +269,38 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             if sagemaker_config is None:
                 raise BentoMLDeploymentException('Sagemaker configuration is missing.')
 
-            archive_path = repo.get(
-                deployment_spec.bento_name, deployment_spec.bento_version
+            bento_pb = yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
             )
-            bento_config = load_bento_service_metadata(archive_path)
+            if bento_pb.bento.uri.type != BentoUri.LOCAL:
+                raise BentoMLException(
+                    'BentoML currently only support local repository'
+                )
+            else:
+                bento_path = bento_pb.bento.uri.uri
+
+            ensure_deploy_api_name_exists_in_bento(
+                [api.name for api in bento_pb.bento.bento_service_metadata.apis],
+                [sagemaker_config.api_name],
+            )
 
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
-            with TemporarySageMakerContent(
-                archive_path, deployment_spec.bento_name, deployment_spec.bento_version
-            ) as temp_path:
-                ecr_image_path = create_push_image_to_ecr(
-                    deployment_spec.bento_name, deployment_spec.bento_version, temp_path
+            with TempDirectory() as temp_dir:
+                sagemaker_project_dir = os.path.jon(
+                    temp_dir, deployment_spec.bento_name
+                )
+                init_sagemaker_project(sagemaker_project_dir, bento_path)
+                ecr_image_path = create_push_docker_image_to_ecr(
+                    deployment_spec.bento_name,
+                    deployment_spec.bento_version,
+                    sagemaker_project_dir,
                 )
 
-            execution_role_arn = get_arn_role_from_current_user()
+            execution_role_arn = get_arn_role_from_current_aws_user()
             model_name = create_sagemaker_model_name(
                 deployment_spec.bento_name, deployment_spec.bento_version
             )
@@ -372,6 +363,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     "AWS create endpoint config response: %s", create_config_response
                 )
             except ClientError as e:
+                # create endpoint failed, will remove previously created model
                 cleanup_model_error = _cleanup_sagemaker_model(
                     sagemaker_client,
                     deployment_spec.bento_name,
@@ -417,6 +409,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                         "AWS create endpoint response: %s", create_endpoint_response
                     )
             except ClientError as e:
+                # create/update endpoint failed, will remove previously created config
+                # and then remove the model
                 cleanup_endpoint_config_error = _cleanup_sagemaker_endpoint_config(
                     client=sagemaker_client,
                     name=deployment_spec.bento_name,
@@ -463,7 +457,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         except BentoMLException as error:
             return ApplyDeploymentResponse(status=exception_to_return_status(error))
 
-    def delete(self, deployment_pb, repo=None):
+    def delete(self, deployment_pb, yatai_service=None):
         try:
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
@@ -483,9 +477,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 )
             except ClientError as e:
                 status = _parse_aws_client_exception_or_raise(e)
-                status.error_message = (
-                    'Failed to delete SageMaker deployment: %s',
-                    status.error_message,
+                status.error_message = 'Failed to delete SageMaker endpoint: {}'.format(
+                    status.error_message
                 )
                 return DeleteDeploymentResponse(status=status)
 
@@ -517,7 +510,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         except BentoMLException as error:
             return DeleteDeploymentResponse(status=exception_to_return_status(error))
 
-    def describe(self, deployment_pb, repo=None):
+    def describe(self, deployment_pb, yatai_service=None):
         try:
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config

@@ -175,7 +175,7 @@ class _S3BentoRepository(BentoRepositoryBase):
 
         response = self.s3_client.delete_object(Bucket=self.bucket, Key=object_name)
 
-        DELETE_MARKER = 'DeleteMarker'
+        DELETE_MARKER = 'DeleteMarker'  # whether object is successfully deleted.
 
         return response[DELETE_MARKER]
 

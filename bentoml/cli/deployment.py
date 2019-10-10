@@ -100,7 +100,7 @@ def display_deployments_table(deployments):
                     label_key=label_key, label_value=labels[label_key]
                 )
             )
-        return ', '.join(result)
+        return '\n'.join(result)
 
     def display_endpoints(deployment_pb):
         if deployment_pb.spec.operator == DeploymentSpec.AWS_SAGEMAKER:
@@ -109,7 +109,7 @@ def display_deployments_table(deployments):
             DeploymentSpec.AWS_LAMBDA or DeploymentSpec.GCP_FUNCTION
         ):
             info_json = json.loads(deployment_pb.state.info_json)
-            return ' '.join(info_json['endpoints'])
+            return '\n'.join(info_json['endpoints'])
         else:
             return None
 
@@ -574,7 +574,7 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
         else:
-            if output:
+            if output != 'table':
                 for deployment_pb in result.deployments:
                     display_deployment_info(deployment_pb, output)
             else:

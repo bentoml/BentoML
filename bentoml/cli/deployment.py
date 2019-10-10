@@ -22,6 +22,8 @@ import time
 import json
 
 from google.protobuf.json_format import MessageToJson
+from tabulate import tabulate
+
 from bentoml.cli.click_utils import (
     _echo,
     CLI_COLOR_ERROR,
@@ -78,6 +80,53 @@ def display_deployment_info(deployment, output_type):
             _echo(json.dumps(result, indent=2, separators=(',', ': ')))
             return
     _echo(result)
+
+
+def display_deployments_table(deployments):
+    def display_platform_name(platform_value):
+        name = DeploymentSpec.DeploymentOperator.Name(platform_value)
+        return name.lower().replace('_', '-')
+
+    def display_deployment_state(state_value):
+        return DeploymentState.State.Name(state_value).lower().replace('_', ' ')
+
+    def display_labels(labels):
+        if not labels:
+            return None
+        result = []
+        for label_key in labels:
+            result.append(
+                '{label_key}:{label_value}'.format(
+                    label_key=label_key, label_value=labels[label_key]
+                )
+            )
+        return ', '.join(result)
+
+    def display_endpoints(deployment_pb):
+        if deployment_pb.spec.operator == DeploymentSpec.AWS_SAGEMAKER:
+            return ''
+        elif deployment_pb.spec.operator == (
+            DeploymentSpec.AWS_LAMBDA or DeploymentSpec.GCP_FUNCTION
+        ):
+            info_json = json.loads(deployment_pb.state.info_json)
+            return ' '.join(info_json['endpoints'])
+        else:
+            return None
+
+    table = []
+    headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'CURRENT STATUS', 'ENDPOINTS']
+    for deployment in deployments:
+        row = [
+            deployment.name,
+            deployment.namespace,
+            display_labels(deployment.labels),
+            display_platform_name(deployment.spec.operator),
+            display_deployment_state(deployment.state.state),
+            display_endpoints(deployment),
+        ]
+        table.append(row)
+    table_display = tabulate(table, headers, tablefmt='plain')
+    _echo(table_display)
 
 
 def get_state_after_await_action_complete(
@@ -493,7 +542,9 @@ def get_deployment_sub_command():
         type=click.STRING,
         help='List deployments matching the giving labels',
     )
-    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
+    )
     def list_deployments(output, limit, filters, labels, namespace, all_namespaces):
         track_cli('deploy-list')
 
@@ -523,7 +574,10 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
         else:
-            for deployment_pb in result.deployments:
-                display_deployment_info(deployment_pb, output)
+            if output:
+                for deployment_pb in result.deployments:
+                    display_deployment_info(deployment_pb, output)
+            else:
+                display_deployments_table(result.deployments)
 
     return deployment

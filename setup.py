@@ -39,6 +39,7 @@ install_requires = [
     "protobuf>=3.6.0",
     "grpcio",
     "cerberus",
+    "tabulate",
 ]
 
 imageio = ["imageio>=2.5.0"]

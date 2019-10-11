@@ -22,6 +22,8 @@ import time
 import json
 
 from google.protobuf.json_format import MessageToJson
+from tabulate import tabulate
+
 from bentoml.cli.click_utils import (
     _echo,
     CLI_COLOR_ERROR,
@@ -67,7 +69,7 @@ def parse_key_value_pairs(key_value_pairs_str):
     return result
 
 
-def display_deployment_info(deployment, output_type):
+def _print_deployment_info(deployment, output_type):
     if output_type == 'yaml':
         result = pb_to_yaml(deployment)
     else:
@@ -78,6 +80,47 @@ def display_deployment_info(deployment, output_type):
             _echo(json.dumps(result, indent=2, separators=(',', ': ')))
             return
     _echo(result)
+
+
+def _format_labels_for_print(labels):
+    if not labels:
+        return None
+    result = []
+    for label_key in labels:
+        result.append(
+            '{label_key}:{label_value}'.format(
+                label_key=label_key, label_value=labels[label_key]
+            )
+        )
+    return '\n'.join(result)
+
+
+def _print_deployments_table(deployments):
+    table = []
+    headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'STATUS']
+    for deployment in deployments:
+        row = [
+            deployment.name,
+            deployment.namespace,
+            _format_labels_for_print(deployment.labels),
+            DeploymentSpec.DeploymentOperator.Name(deployment.spec.operator)
+            .lower()
+            .replace('_', '-'),
+            DeploymentState.State.Name(deployment.state.state)
+            .lower()
+            .replace('_', ' '),
+        ]
+        table.append(row)
+    table_display = tabulate(table, headers, tablefmt='plain')
+    _echo(table_display)
+
+
+def _print_deployments_info(deployments, output_type):
+    if output_type == 'table':
+        _print_deployments_table(deployments)
+    else:
+        for deployment in deployments:
+            _print_deployment_info(deployment, output_type)
 
 
 def get_state_after_await_action_complete(
@@ -314,7 +357,7 @@ def get_deployment_sub_command():
                 result.deployment.state.CopyFrom(result_state.state)
 
             _echo('Successfully created deployment {}'.format(name), CLI_COLOR_SUCCESS)
-            display_deployment_info(result.deployment, output)
+            _print_deployment_info(result.deployment, output)
 
     @deployment.command(help='Apply model service deployment from yaml file')
     @click.option(
@@ -366,7 +409,7 @@ def get_deployment_sub_command():
                     ),
                     CLI_COLOR_SUCCESS,
                 )
-                display_deployment_info(result.deployment, output)
+                _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             _echo(
                 'Failed to apply deployment {name}. Error message: {message}'.format(
@@ -433,7 +476,7 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
         else:
-            display_deployment_info(result.deployment, output)
+            _print_deployment_info(result.deployment, output)
 
     @deployment.command(help='View the detailed state of the deployment')
     @click.argument("name", type=click.STRING, required=True)
@@ -468,7 +511,7 @@ def get_deployment_sub_command():
             )
             deployment_pb = get_response.deployment
             deployment_pb.state.CopyFrom(result.state)
-            display_deployment_info(deployment_pb, output)
+            _print_deployment_info(deployment_pb, output)
 
     @deployment.command(name="list", help='List active deployments')
     @click.option(
@@ -493,7 +536,9 @@ def get_deployment_sub_command():
         type=click.STRING,
         help='List deployments matching the giving labels',
     )
-    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
+    )
     def list_deployments(output, limit, filters, labels, namespace, all_namespaces):
         track_cli('deploy-list')
 
@@ -523,7 +568,6 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
         else:
-            for deployment_pb in result.deployments:
-                display_deployment_info(deployment_pb, output)
+            _print_deployments_info(result.deployments, output)
 
     return deployment

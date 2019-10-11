@@ -36,7 +36,8 @@ class KerasModelArtifact(BentoServiceArtifact):
     Args:
         name (string): name of the artifact
         custom_objects (dict): dictionary of Keras custom objects for model
-        store_as_json_and_weights (bool): flag allowing storage of the Keras model as JSON and weights
+        store_as_json_and_weights (bool): flag allowing storage of the Keras
+            model as JSON and weights
     """
 
     def __init__(

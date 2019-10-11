@@ -114,7 +114,7 @@ def display_deployments_table(deployments):
             return None
 
     table = []
-    headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'CURRENT STATUS', 'ENDPOINTS']
+    headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'STATUS', 'ENDPOINTS']
     for deployment in deployments:
         row = [
             deployment.name,

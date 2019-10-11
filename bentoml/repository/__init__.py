@@ -173,9 +173,14 @@ class _S3BentoRepository(BentoRepositoryBase):
 
         object_name = self._get_object_name(bento_name, bento_version)
 
-        response = self.s3_client.delete_object(Bucket=self.bucket, Key=object_name)
+        try:
+            response = self.s3_client.delete_object(Bucket=self.bucket, Key=object_name)
 
-        DELETE_MARKER = 'DeleteMarker'  # whether object is successfully deleted.
+            DELETE_MARKER = 'DeleteMarker'  # whether object is successfully deleted.
+        except Exception as e:
+            raise BentoMLRepositoryException(
+                "Not able to delete object on S3. Error: {}".format(e)
+            )
 
         return response[DELETE_MARKER]
 

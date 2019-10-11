@@ -125,11 +125,17 @@ class _S3BentoRepository(BentoRepositoryBase):
 
         self.s3_client = boto3.client("s3")
 
+    @property
+    def _expiration(self):
+        return config('yatai').getint('bento_uri_default_expiration')
+
+    def _get_object_name(self, bento_name, bento_version):
+        return "/".join([self.base_path, bento_name, bento_version])
+
     def add(self, bento_name, bento_version):
         # Generate pre-signed s3 path for upload
-        expiration = config('yatai').getint('bento_uri_default_expiration')
 
-        object_name = "/".join([self.base_path, bento_name, bento_version])
+        object_name = self._get_object_name(bento_name, bento_version)
 
         try:
             response = self.s3_client.generate_presigned_post(
@@ -137,7 +143,7 @@ class _S3BentoRepository(BentoRepositoryBase):
                 object_name,
                 Fields=None,
                 Conditions=None,
-                ExpiresIn=expiration,
+                ExpiresIn=self._expiration,
             )
         except Exception as e:
             raise BentoMLRepositoryException(
@@ -147,11 +153,36 @@ class _S3BentoRepository(BentoRepositoryBase):
 
     def get(self, bento_name, bento_version):
         # Return s3 path containing uploaded Bento files
-        raise NotImplementedError
+
+        object_name = self._get_object_name(bento_name, bento_version)
+
+        try:
+            response = self.s3_client.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': self.bucket, 'Key': object_name},
+                ExpiresIn=self._expiration,
+            )
+        except Exception as e:
+            raise BentoMLRepositoryException(
+                "Not able to get pre-signed URL on S3. Error: {}".format(e)
+            )
+        return response
 
     def dangerously_delete(self, bento_name, bento_version):
         # Remove s3 path containing related Bento files
-        raise NotImplementedError
+
+        object_name = self._get_object_name(bento_name, bento_version)
+
+        try:
+            response = self.s3_client.delete_object(Bucket=self.bucket, Key=object_name)
+
+            DELETE_MARKER = 'DeleteMarker'  # whether object is successfully deleted.
+        except Exception as e:
+            raise BentoMLRepositoryException(
+                "Not able to delete object on S3. Error: {}".format(e)
+            )
+
+        return response[DELETE_MARKER]
 
 
 class BentoRepository(BentoRepositoryBase):

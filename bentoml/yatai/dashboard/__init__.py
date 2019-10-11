@@ -21,6 +21,9 @@ import os
 from werkzeug.middleware.shared_data import SharedDataMiddleware
 from flask import Flask, send_from_directory, current_app
 
+from bentoml.proto.deployment_pb2 import ApplyDeploymentRequest, Deployment, \
+    DescribeDeploymentRequest, DeleteDeploymentRequest, ListDeploymentsRequest
+from bentoml.yatai import get_yatai_service
 
 static_dir = 'front-end/build'
 
@@ -30,12 +33,66 @@ app = Flask(__name__)
 # build.  For an actual production deployment you would have your web server
 # serve the data from `.../client/build/` and just forward API requests to
 # the Flask app!
-app.wsgi_app = SharedDataMiddleware(app.wsgi_app, {
-    '/': os.path.join(os.path.dirname(__file__), 'front-end', 'build')
-})
+app.wsgi_app = SharedDataMiddleware(
+    app.wsgi_app, {'/': os.path.join(os.path.dirname(__file__), 'front-end', 'build')}
+)
 
+static_dir_path = os.path.join(app.root_path, static_dir)
 
 # Serve the index.html for the React App for all other routes.
 @app.route('/')
 def index():
-    return send_from_directory(os.path.join(current_app.root_path, 'front-end', 'build'), 'index.html')
+    print(os.path.join(current_app.root_path, 'front-end', 'build'))
+    return send_from_directory(
+        os.path.join(current_app.root_path, 'front-end', 'build'), 'index.html'
+    )
+
+
+@app.route('/created_deployment')
+def create_deployment():
+    yatai_service = get_yatai_service()
+    deployment_pb = Deployment()
+    result = yatai_service.ApplyDeployment(
+        ApplyDeploymentRequest(deployment=deployment_pb)
+    )
+    return result.status.status_code
+
+
+@app.route('/apply_deployment')
+def apply_deployment():
+    yatai_service = get_yatai_service()
+    deployment_pb = Deployment()
+    result = yatai_service.ApplyDeployment(
+        ApplyDeploymentRequest(deployment=deployment_pb)
+    )
+    return result.status.status_code
+
+
+@app.route('/get_deployment')
+def get_deployment():
+    yatai_service = get_yatai_service()
+    deployment_pb = Deployment()
+    result = yatai_service.DescribeDeployment(
+        DescribeDeploymentRequest(deployment=deployment_pb)
+    )
+    return result.status.status_code
+
+
+@app.route('/delete_deployment')
+def delete_deployment():
+    yatai_service = get_yatai_service()
+    deployment_pb = Deployment()
+    result = yatai_service.DeleteDeployment(
+        DeleteDeploymentRequest(deployment=deployment_pb)
+    )
+    return result.status.status_code
+
+
+@app.route('/list_deployments')
+def list_deployments():
+    yatai_service = get_yatai_service()
+    deployment_pb = Deployment()
+    result = yatai_service.ListDeployments(
+        ListDeploymentsRequest(deployment=deployment_pb)
+    )
+    return result.status.status_code

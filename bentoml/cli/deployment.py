@@ -69,7 +69,7 @@ def parse_key_value_pairs(key_value_pairs_str):
     return result
 
 
-def _display_deployment_info(deployment, output_type):
+def _print_deployment_info(deployment, output_type):
     if output_type == 'yaml':
         result = pb_to_yaml(deployment)
     else:
@@ -82,7 +82,7 @@ def _display_deployment_info(deployment, output_type):
     _echo(result)
 
 
-def _display_labels(labels):
+def _format_labels_for_print(labels):
     if not labels:
         return None
     result = []
@@ -95,14 +95,14 @@ def _display_labels(labels):
     return '\n'.join(result)
 
 
-def _display_deployments_table(deployments):
+def _print_deployments_table(deployments):
     table = []
     headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'STATUS']
     for deployment in deployments:
         row = [
             deployment.name,
             deployment.namespace,
-            _display_labels(deployment.labels),
+            _format_labels_for_print(deployment.labels),
             DeploymentSpec.DeploymentOperator.Name(deployment.spec.operator)
             .lower()
             .replace('_', '-'),
@@ -115,12 +115,12 @@ def _display_deployments_table(deployments):
     _echo(table_display)
 
 
-def display_deployments_info(deployments, output_type):
+def _print_deployments_info(deployments, output_type):
     if output_type == 'table':
-        _display_deployments_table(deployments)
+        _print_deployments_table(deployments)
     else:
         for deployment in deployments:
-            _display_deployment_info(deployment, output_type)
+            _print_deployment_info(deployment, output_type)
 
 
 def get_state_after_await_action_complete(
@@ -357,7 +357,7 @@ def get_deployment_sub_command():
                 result.deployment.state.CopyFrom(result_state.state)
 
             _echo('Successfully created deployment {}'.format(name), CLI_COLOR_SUCCESS)
-            _display_deployment_info(result.deployment, output)
+            _print_deployment_info(result.deployment, output)
 
     @deployment.command(help='Apply model service deployment from yaml file')
     @click.option(
@@ -409,7 +409,7 @@ def get_deployment_sub_command():
                     ),
                     CLI_COLOR_SUCCESS,
                 )
-                _display_deployment_info(result.deployment, output)
+                _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             _echo(
                 'Failed to apply deployment {name}. Error message: {message}'.format(
@@ -476,7 +476,7 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
         else:
-            _display_deployment_info(result.deployment, output)
+            _print_deployment_info(result.deployment, output)
 
     @deployment.command(help='View the detailed state of the deployment')
     @click.argument("name", type=click.STRING, required=True)
@@ -511,7 +511,7 @@ def get_deployment_sub_command():
             )
             deployment_pb = get_response.deployment
             deployment_pb.state.CopyFrom(result.state)
-            _display_deployment_info(deployment_pb, output)
+            _print_deployment_info(deployment_pb, output)
 
     @deployment.command(name="list", help='List active deployments')
     @click.option(
@@ -568,6 +568,6 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
         else:
-            display_deployments_info(result.deployments, output)
+            _print_deployments_info(result.deployments, output)
 
     return deployment

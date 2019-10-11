@@ -95,24 +95,9 @@ def _display_labels(labels):
     return '\n'.join(result)
 
 
-def _display_endpoints(deployment_pb):
-    if deployment_pb.spec.operator == DeploymentSpec.AWS_SAGEMAKER:
-        # TODO
-        return None
-    elif deployment_pb.spec.operator == (
-        DeploymentSpec.AWS_LAMBDA or DeploymentSpec.GCP_FUNCTION
-    ):
-        if deployment_pb.state.info_json:
-            info_json = json.loads(deployment_pb.state.info_json)
-            return '\n'.join(info_json['endpoints'])
-        return None
-    else:
-        return None
-
-
 def _display_deployments_table(deployments):
     table = []
-    headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'STATUS', 'ENDPOINTS']
+    headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'STATUS']
     for deployment in deployments:
         row = [
             deployment.name,
@@ -124,7 +109,6 @@ def _display_deployments_table(deployments):
             DeploymentState.State.Name(deployment.state.state)
             .lower()
             .replace('_', ' '),
-            _display_endpoints(deployment),
         ]
         table.append(row)
     table_display = tabulate(table, headers, tablefmt='plain')

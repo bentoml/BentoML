@@ -33,7 +33,6 @@ from bentoml.archive import (
     load_bento_service_metadata,
 )
 from bentoml.server import BentoAPIServer, get_docs
-from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
@@ -274,6 +273,7 @@ def create_bento_service_cli(archive_path=None):
 
         track_cli('serve_gunicorn')
 
+        from bentoml.server.gunicorn_server import GunicornBentoServer
         gunicorn_app = GunicornBentoServer(archive_path, port, workers, timeout)
         gunicorn_app.run()
 

@@ -20,6 +20,7 @@ import logging
 import datetime
 from contextlib import contextmanager
 
+from google.protobuf.internal.well_known_types import Timestamp
 from sqlalchemy import Column, String, Integer, DateTime, JSON, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
@@ -51,6 +52,7 @@ class Deployment(Base):
     annotations = Column(JSON, nullable=False, default={})
 
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    last_updated_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
 def _deployment_pb_to_orm_obj(deployment_pb, deployment_obj=Deployment()):
@@ -60,6 +62,8 @@ def _deployment_pb_to_orm_obj(deployment_pb, deployment_obj=Deployment()):
     deployment_obj.state = ProtoMessageToDict(deployment_pb.state)
     deployment_obj.labels = dict(deployment_pb.labels)
     deployment_obj.annotations = dict(deployment_pb.annotations)
+    deployment_obj.created_at = deployment_pb.created_at.ToDatetime()
+    deployment_obj.last_updated_at = deployment_pb.last_updated_at.ToDatetime()
     return deployment_obj
 
 
@@ -71,6 +75,8 @@ def _deployment_orm_obj_to_pb(deployment_obj):
         state=ParseDict(deployment_obj.state, deployment_pb2.DeploymentState()),
         labels=deployment_obj.labels,
         annotations=deployment_obj.annotations,
+        created_at=Timestamp().FromDatetime(deployment_obj.created_at),
+        last_updated_at=Timestamp().FromDatetime(deployment_obj.last_updated_at),
     )
 
 
@@ -95,7 +101,7 @@ class DeploymentStore(object):
                 )
                 if deployment_obj:
                     # updating deployment record in db
-                    _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
+                   _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
             except NoResultFound:
                 sess.add(_deployment_pb_to_orm_obj(deployment_pb))
 

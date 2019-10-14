@@ -23,6 +23,11 @@ from bentoml.utils import cloudpickle
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 from bentoml.exceptions import BentoMLArtifactLoadingException
 
+import keras
+keras.engine.network.Network
+
+keras.engine.Model
+
 try:
     import tensorflow as tf
 except ImportError:
@@ -57,15 +62,15 @@ class KerasModelArtifact(BentoServiceArtifact):
         self._model_extension = model_extension
         self._store_as_json_and_weights = store_as_json_and_weights
 
-        # By default assume using tf.python.keras module
-        self._keras_module_name = tf.python.keras.__name__
+        # By default assume using tf.keras module
+        self._keras_module_name = tf.keras.__name__
 
         self.custom_objects = custom_objects
         self.graph = None
         self.sess = None
 
     def _keras_module_name_path(self, base_path):
-        # The name of the keras module used, can be 'keras' or 'tensorflow.python.keras'
+        # The name of the keras module used, can be 'keras' or 'tensorflow.keras'
         return os.path.join(base_path, self.name + '_keras_module_name.txt')
 
     def _custom_objects_path(self, base_path):
@@ -98,8 +103,8 @@ class KerasModelArtifact(BentoServiceArtifact):
             )
 
         self.graph = tf.compat.v1.get_default_graph()
-        self.sess = tf.Session(graph=self.graph)
-        tf.keras.backend.set_session(self.sess)
+        self.sess = tf.compat.v1.Session(graph=self.graph)
+        tf.compat.v1.keras.backend.set_session(self.sess)
 
     def pack(self, data):  # pylint:disable=arguments-differ
         if tf is None:
@@ -119,17 +124,17 @@ class KerasModelArtifact(BentoServiceArtifact):
             model = data
             custom_objects = self.custom_objects
 
-        if not isinstance(data, tf.python.keras.engine.training.Model):
+        if not isinstance(data, tf.keras.models.Model):
             error_msg = (
                 "KerasModelArtifact#pack expects model argument to be type: "
                 "keras.engine.training.Model or "
-                "tf.python.keras.engine.training.Model, instead got: "
+                "tf.keras.engine.training.Model, instead got: "
                 "{}".format(type(model))
             )
             try:
                 import keras
 
-                if not isinstance(data, keras.engine.training.Model):
+                if not isinstance(data, keras.engine.network.Network):
                     raise ValueError(error_msg)
                 else:
                     self._keras_module_name = keras.__name__
@@ -147,7 +152,7 @@ class KerasModelArtifact(BentoServiceArtifact):
                 "currently only support using Keras with Tensorflow backend."
             )
 
-        if os.isfile(self._keras_module_name_path(path)):
+        if os.path.isfile(self._keras_module_name_path(path)):
             with open(self._keras_module_name_path(path), "rb") as text_file:
                 keras_module_name = text_file.read().decode("utf-8")
                 try:

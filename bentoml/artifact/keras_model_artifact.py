@@ -23,16 +23,6 @@ from bentoml.utils import cloudpickle
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 from bentoml.exceptions import BentoMLArtifactLoadingException
 
-import keras
-keras.engine.network.Network
-
-keras.engine.Model
-
-try:
-    import tensorflow as tf
-except ImportError:
-    tf = None
-
 
 class KerasModelArtifact(BentoServiceArtifact):
     """
@@ -54,9 +44,12 @@ class KerasModelArtifact(BentoServiceArtifact):
     ):
         super(KerasModelArtifact, self).__init__(name)
 
-        if tf is None:
+        try:
+            import tensorflow as tf
+        except ImportError:
             raise ImportError(
-                "Tensorflow package is required to use KerasModelArtifact."
+                "Tensorflow package is required to use KerasModelArtifact. BentoML "
+                "currently only support using Keras with Tensorflow backend."
             )
 
         self._model_extension = model_extension
@@ -86,7 +79,9 @@ class KerasModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + '_json.json')
 
     def bind_keras_backend_session(self):
-        if tf is None:
+        try:
+            import tensorflow as tf
+        except ImportError:
             raise ImportError(
                 "Tensorflow package is required to use KerasModelArtifact. BentoML "
                 "currently only support using Keras with Tensorflow backend."
@@ -96,7 +91,9 @@ class KerasModelArtifact(BentoServiceArtifact):
         self.graph = self.sess.graph
 
     def creat_session(self):
-        if tf is None:
+        try:
+            import tensorflow as tf
+        except ImportError:
             raise ImportError(
                 "Tensorflow package is required to use KerasModelArtifact. BentoML "
                 "currently only support using Keras with Tensorflow backend."
@@ -107,7 +104,9 @@ class KerasModelArtifact(BentoServiceArtifact):
         tf.compat.v1.keras.backend.set_session(self.sess)
 
     def pack(self, data):  # pylint:disable=arguments-differ
-        if tf is None:
+        try:
+            import tensorflow as tf
+        except ImportError:
             raise ImportError(
                 "Tensorflow package is required to use KerasModelArtifact. BentoML "
                 "currently only support using Keras with Tensorflow backend."
@@ -146,12 +145,13 @@ class KerasModelArtifact(BentoServiceArtifact):
         return _KerasModelArtifactWrapper(self, model, custom_objects)
 
     def load(self, path):
-        if tf is None:
+        try:
+            import tensorflow as tf
+        except ImportError:
             raise ImportError(
                 "Tensorflow package is required to use KerasModelArtifact. BentoML "
                 "currently only support using Keras with Tensorflow backend."
             )
-
         if os.path.isfile(self._keras_module_name_path(path)):
             with open(self._keras_module_name_path(path), "rb") as text_file:
                 keras_module_name = text_file.read().decode("utf-8")

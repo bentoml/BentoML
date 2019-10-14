@@ -28,6 +28,7 @@ try:
 except ImportError:
     tf = None
 
+
 class KerasModelArtifact(BentoServiceArtifact):
     """
     Abstraction for saving/loading Keras model

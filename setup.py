@@ -24,7 +24,7 @@ install_requires = [
     "flask",
     "gunicorn",
     "six",
-    "click",
+    "click>=7.0",
     "pandas",
     "dill",
     "prometheus_client",

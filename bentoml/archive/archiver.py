@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import stat
 import logging
 
 from bentoml.deployment.utils import add_local_bentoml_package_to_repo
@@ -143,8 +144,12 @@ def save_to_dir(bento_service, path, version=None):
         f.write(BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE)
 
     # write bento init sh for install targz bundles
-    with open(os.path.join(path, 'bentoml_init.sh'), 'w') as f:
+    bentoml_init_script_file = os.path.join(path, 'bentoml_init.sh')
+    with open(bentoml_init_script_file, 'w') as f:
         f.write(BENTO_INIT_SH_TEMPLATE)
+    # chmod +x bentoml_init_script file
+    st = os.stat(bentoml_init_script_file)
+    os.chmod(bentoml_init_script_file, st.st_mode | stat.S_IEXEC)
 
     # write bentoml.yml
     config = BentoArchiveConfig()

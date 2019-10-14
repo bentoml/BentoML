@@ -26,6 +26,10 @@ class BentoMLException(Exception):
     status_code = 500
 
 
+class BentoMLArtifactLoadingException(BentoMLException):
+    pass
+
+
 class BentoMLConfigException(BentoMLException):
     pass
 

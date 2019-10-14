@@ -169,12 +169,15 @@ def get_bentoml_deploy_version():
 
     if bentoml_deploy_version != __version__:
         logger.warning(
-            "BentoML local changes detected - BentoService archive saved with this "
-            "version of BentoML will be loaded by default using previous PyPI released "
-            "BentoML, version: %s. To allow deploying BentoService with your dev "
-            "branch changes, push your changes to a github branch and set bentoml "
-            "config 'core/bentoml_deploy_version' to your fork, for example: "
-            "'git+https://github.com/{username}/bentoml.git@{branch}'",
+            "BentoML local changes detected - Local BentoML repository including all "
+            "code changes will be bundled together with the BentoService archive. "
+            "When used with docker, the base docker image will be default to same "
+            "version as last PyPI release at version: %s. You can also force bentoml "
+            "to use a specific version for deploying your BentoService archive, "
+            "by setting the config 'core/bentoml_deploy_version' to a pinned version "
+            "or your custom BentoML on github, e.g.:"
+            "'bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{"
+            "branch}'",
             PREV_PYPI_RELEASE_VERSION,
         )
     return bentoml_deploy_version

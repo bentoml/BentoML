@@ -274,6 +274,7 @@ def create_bento_service_cli(archive_path=None):
         track_cli('serve_gunicorn')
 
         from bentoml.server.gunicorn_server import GunicornBentoServer
+
         gunicorn_app = GunicornBentoServer(archive_path, port, workers, timeout)
         gunicorn_app.run()
 

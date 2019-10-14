@@ -19,10 +19,12 @@ from __future__ import print_function
 import os
 import logging
 import json
+
 from packaging import version
 
 from ruamel.yaml import YAML
 import boto3
+from google.protobuf.timestamp_pb2 import Timestamp
 
 from bentoml.exceptions import BentoMLException
 from bentoml.utils import Path
@@ -309,10 +311,14 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
                 outputs = cloud_formation_stack_result.get('Stacks')[0]['Outputs']
             except Exception as error:
+                timestamp = Timestamp()
+                timestamp.GetCurrentTime()
                 return DescribeDeploymentResponse(
                     status=Status.INTERNAL(str(error)),
                     state=DeploymentState(
-                        state=DeploymentState.ERROR, error_message=str(error)
+                        state=DeploymentState.ERROR,
+                        error_message=str(error),
+                        timestamp=timestamp,
                     ),
                 )
 
@@ -325,11 +331,15 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 info_json['endpoints'] = [
                     base_url + '/' + api_name for api_name in api_names
                 ]
+            timestamp = Timestamp()
+            timestamp.GetCurrentTime()
             return DescribeDeploymentResponse(
                 status=Status.OK(),
                 state=DeploymentState(
-                    state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
-                ),
+                    state=DeploymentState.RUNNING,
+                    info_json=json.dumps(info_json),
+                    timestamp=timestamp,
+                )
             )
         except BentoMLException as error:
             return DescribeDeploymentResponse(status=exception_to_return_status(error))

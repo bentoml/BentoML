@@ -22,6 +22,8 @@ import base64
 import logging
 import re
 import json
+
+from google.protobuf.timestamp_pb2 import Timestamp
 from six.moves.urllib.parse import urlparse
 
 import boto3
@@ -537,9 +539,12 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
             service_state = ENDPOINT_STATUS_TO_STATE[endpoint_status]
 
+            timestamp = Timestamp()
+            timestamp.GetCurrentTime()
             deployment_state = DeploymentState(
                 state=service_state,
                 info_json=json.dumps(endpoint_status_response, default=str),
+                timestampe=timestamp,
             )
 
             return DescribeDeploymentResponse(

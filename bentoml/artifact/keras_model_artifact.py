@@ -113,7 +113,7 @@ class KerasModelArtifact(BentoServiceArtifact):
 
         self.bind_keras_backend_session()
         model._make_predict_function()
-        return _TfKerasModelArtifactWrapper(self, model, custom_objects)
+        return _KerasModelArtifactWrapper(self, model, custom_objects)
 
     def load(self, path):
         if tf is None:
@@ -148,9 +148,9 @@ class KerasModelArtifact(BentoServiceArtifact):
         return self.pack(model)
 
 
-class _TfKerasModelArtifactWrapper(BentoServiceArtifactWrapper):
+class _KerasModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model, custom_objects):
-        super(_TfKerasModelArtifactWrapper, self).__init__(spec)
+        super(_KerasModelArtifactWrapper, self).__init__(spec)
 
         if tf is None:
             raise ImportError(
@@ -168,7 +168,7 @@ class _TfKerasModelArtifactWrapper(BentoServiceArtifactWrapper):
         self._model = model
         self._custom_objects = custom_objects
         self._store_as_json_and_weights = spec._store_as_json_and_weights
-        self._model_wrapper = _TfKerasModelWrapper(self._model, self.graph, self.sess)
+        self._model_wrapper = _KerasModelWrapper(self._model, self.graph, self.sess)
 
     def save(self, dst):
         # save custom_objects for model
@@ -190,7 +190,7 @@ class _TfKerasModelArtifactWrapper(BentoServiceArtifactWrapper):
         return self._model_wrapper
 
 
-class _TfKerasModelWrapper:
+class _KerasModelWrapper:
     def __init__(self, keras_model, graph, sess):
         self.keras_model = keras_model
         self.graph = graph

@@ -19,8 +19,8 @@ from __future__ import print_function
 import os
 import logging
 
-from bentoml import __version__, _version as version_mod
-from bentoml.utils import Path
+from bentoml import __version__
+from bentoml.utils import Path, _is_pypi_release
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
 
@@ -75,7 +75,7 @@ BENTOML_VERSION = __version__
 PREV_PYPI_RELEASE_VERSION = __version__.split('+')[0]
 
 
-if version_mod.get_versions()['dirty']:
+if not _is_pypi_release():
     # Reset to LAST_PYPI_RELEASE_VERSION if bentoml module is 'dirty'
     # This will be used as default value of 'core/deploy_bentoml_version' config
     BENTOML_VERSION = PREV_PYPI_RELEASE_VERSION
@@ -169,12 +169,15 @@ def get_bentoml_deploy_version():
 
     if bentoml_deploy_version != __version__:
         logger.warning(
-            "BentoML local changes detected - BentoService archive saved with this "
-            "version of BentoML will be loaded by default using previous PyPI released "
-            "BentoML, version: %s. To allow deploying BentoService with your dev "
-            "branch changes, push your changes to a github branch and set bentoml "
-            "config 'core/bentoml_deploy_version' to your fork, for example: "
-            "'git+https://github.com/{username}/bentoml.git@{branch}'",
+            "BentoML local changes detected - Local BentoML repository including all "
+            "code changes will be bundled together with the BentoService archive. "
+            "When used with docker, the base docker image will be default to same "
+            "version as last PyPI release at version: %s. You can also force bentoml "
+            "to use a specific version for deploying your BentoService archive, "
+            "by setting the config 'core/bentoml_deploy_version' to a pinned version "
+            "or your custom BentoML on github, e.g.:"
+            "'bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{"
+            "branch}'",
             PREV_PYPI_RELEASE_VERSION,
         )
     return bentoml_deploy_version

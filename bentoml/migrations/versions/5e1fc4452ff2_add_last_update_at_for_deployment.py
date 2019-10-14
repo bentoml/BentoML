@@ -1,7 +1,7 @@
 """add last_update_at timestamp for deployment
 
 Revision ID: 5e1fc4452ff2
-Revises: 
+Revises:
 Create Date: 2019-10-14 14:53:42.915298
 
 """

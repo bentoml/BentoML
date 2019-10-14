@@ -19,8 +19,8 @@ from __future__ import print_function
 import os
 import logging
 
-from bentoml import __version__, _version as version_mod
-from bentoml.utils import Path
+from bentoml import __version__
+from bentoml.utils import Path, _is_pypi_release
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
 
@@ -75,7 +75,7 @@ BENTOML_VERSION = __version__
 PREV_PYPI_RELEASE_VERSION = __version__.split('+')[0]
 
 
-if version_mod.get_versions()['dirty']:
+if not _is_pypi_release():
     # Reset to LAST_PYPI_RELEASE_VERSION if bentoml module is 'dirty'
     # This will be used as default value of 'core/deploy_bentoml_version' config
     BENTOML_VERSION = PREV_PYPI_RELEASE_VERSION

@@ -16,6 +16,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import logging
+import os
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
@@ -26,6 +28,7 @@ from bentoml.exceptions import BentoMLException
 
 Base = declarative_base()
 
+logger = logging.getLogger(__name__)
 
 def init_db(db_url):
     # Use default config if not provided
@@ -33,6 +36,7 @@ def init_db(db_url):
         db_url, echo=False, connect_args={'check_same_thread': False}
     )
     Base.metadata.create_all(engine)
+    upgrade_db(db_url)
 
     return sessionmaker(bind=engine)
 
@@ -48,3 +52,16 @@ def create_session(session_maker):
         raise BentoMLException(e)
     finally:
         session.close()
+
+
+def upgrade_db(db_url):
+    # alembic add a lot of import time, so we lazy import
+    from alembic import command
+    from alembic.config import Config
+
+    logger.info('Updating tables')
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    migrations_dir = os.path.join(current_dir, 'migrations')
+    alembic_config = Config(os.path.join(migrations_dir, 'alembic.ini'))
+    alembic_config.set_main_option('sqlalchemy.url', db_url)
+    command.upgrade(alembic_config, 'heads')

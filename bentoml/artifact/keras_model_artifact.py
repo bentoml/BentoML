@@ -145,13 +145,6 @@ class KerasModelArtifact(BentoServiceArtifact):
         return _KerasModelArtifactWrapper(self, model, custom_objects)
 
     def load(self, path):
-        try:
-            import tensorflow as tf
-        except ImportError:
-            raise ImportError(
-                "Tensorflow package is required to use KerasModelArtifact. BentoML "
-                "currently only support using Keras with Tensorflow backend."
-            )
         if os.path.isfile(self._keras_module_name_path(path)):
             with open(self._keras_module_name_path(path), "rb") as text_file:
                 keras_module_name = text_file.read().decode("utf-8")

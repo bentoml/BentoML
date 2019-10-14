@@ -23,12 +23,15 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import OperationalError
 
+from bentoml import config
 from bentoml.exceptions import BentoMLException
 
 Base = declarative_base()
 
 logger = logging.getLogger(__name__)
+
 
 def init_db(db_url):
     # Use default config if not provided
@@ -59,9 +62,8 @@ def upgrade_db(db_url):
     from alembic import command
     from alembic.config import Config
 
-    logger.info('Updating tables')
+    logger.debug('Updating tables')
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    migrations_dir = os.path.join(current_dir, 'migrations')
-    alembic_config = Config(os.path.join(migrations_dir, 'alembic.ini'))
+    alembic_config = Config(os.path.join(current_dir, 'alembic.ini'))
     alembic_config.set_main_option('sqlalchemy.url', db_url)
     command.upgrade(alembic_config, 'heads')

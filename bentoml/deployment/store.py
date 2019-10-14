@@ -101,7 +101,7 @@ class DeploymentStore(object):
                 )
                 if deployment_obj:
                     # updating deployment record in db
-                   _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
+                    _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
             except NoResultFound:
                 sess.add(_deployment_pb_to_orm_obj(deployment_pb))
 

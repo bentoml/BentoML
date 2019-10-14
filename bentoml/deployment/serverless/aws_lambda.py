@@ -339,7 +339,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     state=DeploymentState.RUNNING,
                     info_json=json.dumps(info_json),
                     timestamp=timestamp,
-                )
+                ),
             )
         except BentoMLException as error:
             return DescribeDeploymentResponse(status=exception_to_return_status(error))

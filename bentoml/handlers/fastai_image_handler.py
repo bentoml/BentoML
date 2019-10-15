@@ -37,7 +37,7 @@ def _import_fastai_vision():
     try:
         from fastai import vision
     except ImportError:
-        raise ImportError("fastai.vision package is required to use ImageHandler")
+        raise ImportError("fastai.vision package is required to use FastaiImageHandler")
 
     return vision
 
@@ -46,7 +46,7 @@ def _import_imageio_imread():
     try:
         from imageio import imread
     except ImportError:
-        raise ImportError("imageio package is required to use ImageHandler")
+        raise ImportError("imageio package is required to use FastaiImageHandler")
 
     return imread
 

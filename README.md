@@ -203,7 +203,7 @@ To learn more, try out the Getting Started with Bentoml notebook: [![Google Cola
   [FastAI](https://github.com/fastai/fastai) and can be easily extended to work
   with new or custom frameworks.
 
-* __Deploy Anywhere__ - BentoML bundled ML service can be easily deployed with
+* __Deploy Anywhere__ - BentoML bundle can be easily deployed with
   platforms such as [Docker](https://www.docker.com/),
   [Kubernetes](https://kubernetes.io/),
   [Serverless](https://github.com/serverless/serverless),

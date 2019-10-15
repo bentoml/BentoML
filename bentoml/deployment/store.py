@@ -76,7 +76,8 @@ def _deployment_orm_obj_to_pb(deployment_obj):
         annotations=deployment_obj.annotations,
     )
     deployment_pb.created_at.FromDatetime(deployment_obj.created_at)
-    deployment_pb.last_updated_at.FromDatetime(deployment_obj.last_updated_at)
+    if deployment_obj.last_updated_at:
+        deployment_pb.last_updated_at.FromDatetime(deployment_obj.last_updated_at)
     return deployment_pb
 
 

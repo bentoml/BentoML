@@ -14,22 +14,23 @@
 
 
 BentoML is a platform for __serving and deploying machine learning
-models__. It provides two components making it easy for data scientists
-to productionize trained models:
+models__. It provides three main components:
 
-* BentoService: High-level APIs for defining an ML service and packaging its
-  trained model artifacts, preprocessing source code, dependencies, and
-  configurations into a standard file format "Bento" that can be deployed
-  as containerize REST API server, PyPI package, CLI tool, or batch/streaming
-  inference job.
+* BentoService: High-level APIs for defining a prediction service by packaging
+  trained model, preprocessing source code, dependencies, and configurations 
+  into a standard BentoML bundle, which can be used as containerize REST API
+  server, PyPI package, CLI tool, or batch/streaming serving job.
 
-* Yatai: A stateful server that provides Web UI and APIs for model management
-  and model serving deployments on Kubernetes cluster or cloud platforms such
-  as AWS, Azure, GCP or
+* DeploymentOperator: The enssential module for deploying and managing your
+  prediction service workloads on Kubernetes cluster and cloud platforms such
+  as AWS Lambda, SageMaker, Azure ML, and GCP Function etc.
+
+* Yatai: A stateful server provides Web UI and APIs for model management
+  and model serving deployments management for teams
 
 
-Check out our 5-mins [BentoML Quick Start Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
- using BentoML to turn a trained sklearn model into REST API server, and deploy it to AWS Lambda:
+Check out our 5-mins [BentoML Quickstart Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+ using BentoML to turn a trained sklearn model into a REST API server, and deploy it to AWS Lambda:
 
 
 If you plan to adopt BentoML for production use case or wants to contribute, 
@@ -50,17 +51,15 @@ Defining a machine learning service with BentoML:
 
 ```python
 import bentoml
-from bentoml.artifact import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler
+from bentoml.artifact import SklearnModelArtifact
 
-@bentoml.artifacts([SklearnModelArtifact('model')])
 @bentoml.env(pip_dependencies=["scikit-learn"])
+@bentoml.artifacts([SklearnModelArtifact('model')])
 class IrisClassifier(bentoml.BentoService):
 
     @bentoml.api(DataframeHandler)
     def predict(self, df):
-
-        # Assess to serialized trained model artifact via self.artifacts
         return self.artifacts.model.predict(df)
 ```
 
@@ -240,14 +239,11 @@ bentoml config set usage_tracking=false
 ## Contributing
 
 Have questions or feedback? Post a [new github issue](https://github.com/bentoml/BentoML/issues/new/choose)
-or join our Slack chat room: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
+or join our Slack channel: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
 
 Want to help build BentoML? Check out our
 [contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md) and the
 [development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
-
-To make sure you have a pleasant experience, please read the [code of conduct](https://github.com/bentoml/BentoML/blob/master/CODE_OF_CONDUCT.md).
-It outlines core values and beliefs and will make working together a happier experience.
 
 Happy hacking!
 
@@ -257,16 +253,10 @@ BentoML is under active development and is evolving rapidly. **Currently it is a
 Beta release, we may change APIs in future releases**.
 
 Read more about the latest features and changes in BentoML from the [releases page](https://github.com/bentoml/BentoML/releases).
-and follow the [BentoML Community Calendar](http://bit.ly/2XvUiM2).
-
-Watch BentoML Github repo for future releases:
-
-![gh-watch](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/gh-watch-screenshot.png)
 
 
 ## License
 
 [Apache License 2.0](https://github.com/bentoml/BentoML/blob/master/LICENSE)
-
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)

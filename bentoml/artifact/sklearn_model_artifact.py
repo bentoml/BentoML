@@ -20,16 +20,23 @@ import os
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
-try:
-    import joblib
-except ImportError:
-    joblib = None
 
-if joblib is None:
+def _import_joblib_module():
     try:
-        from sklearn.externals import joblib
+        import joblib
     except ImportError:
-        pass
+        joblib = None
+
+    if joblib is None:
+        try:
+            from sklearn.externals import joblib
+        except ImportError:
+            pass
+
+    if joblib is None:
+        raise ImportError("sklearn module is required to use SklearnModelArtifact")
+
+    return joblib
 
 
 class SklearnModelArtifact(BentoServiceArtifact):
@@ -53,10 +60,7 @@ class SklearnModelArtifact(BentoServiceArtifact):
         return _SklearnModelArtifactWrapper(self, sklearn_model)
 
     def load(self, path):
-        if joblib is None:
-            raise ImportError(
-                "scikit-learn package is required to use " "SklearnModelArtifact"
-            )
+        joblib = _import_joblib_module()
 
         model_file_path = self._model_file_path(path)
         sklearn_model = joblib.load(model_file_path, mmap_mode='r')
@@ -73,9 +77,6 @@ class _SklearnModelArtifactWrapper(BentoServiceArtifactWrapper):
         return self._model
 
     def save(self, dst):
-        if joblib is None:
-            raise ImportError(
-                "scikit-learn package is required to use " "SklearnModelArtifact"
-            )
+        joblib = _import_joblib_module()
 
         joblib.dump(self._model, self.spec._model_file_path(dst))

@@ -3,8 +3,12 @@ import pytest
 import tempfile
 
 import bentoml
-from bentoml.handlers import DataframeHandler, ImageHandler, JsonHandler, \
-        FastaiImageHandler
+from bentoml.handlers import (
+    DataframeHandler,
+    ImageHandler,
+    JsonHandler,
+    FastaiImageHandler,
+)
 from bentoml.artifact import PickleArtifact
 from bentoml import config
 

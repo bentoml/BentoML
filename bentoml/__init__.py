@@ -16,6 +16,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 from ._version import get_versions
 
 __version__ = get_versions()['version']
@@ -28,7 +29,6 @@ from bentoml.utils.log import configure_logging
 configure_logging()
 
 from bentoml.archive import load, save_to_dir
-from bentoml import handlers
 from bentoml.service import (
     BentoService,
     api_decorator as api,
@@ -52,8 +52,9 @@ __all__ = [
     "ver",
     "metrics",
     "BentoService",
-    "handlers",
     "load",
     "save",
     "save_to_dir",
+    "handlers",
+    "artifact"
 ]

@@ -3,6 +3,7 @@ import pytest
 import tempfile
 
 import bentoml
+import bentoml.handlers
 from bentoml import config
 
 

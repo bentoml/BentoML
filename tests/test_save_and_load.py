@@ -2,6 +2,7 @@ import os
 import uuid
 
 import bentoml
+from bentoml.handlers import DataframeHandler
 from bentoml.artifact import PickleArtifact
 
 
@@ -14,7 +15,7 @@ class MyTestModel(object):
 @bentoml.env(conda_pip_dependencies=["scikit-learn"])
 @bentoml.artifacts([PickleArtifact("model")])
 class MyTestBentoService(bentoml.BentoService):
-    @bentoml.api(bentoml.handlers.DataframeHandler)
+    @bentoml.api(DataframeHandler)
     def predict(self, df):
         """
         An API for testing simple bento model service
@@ -41,7 +42,7 @@ def test_save_and_load_model(tmpdir):
     assert len(model_service.get_service_apis()) == 1
     api = model_service.get_service_apis()[0]
     assert api.name == "predict"
-    assert isinstance(api.handler, bentoml.handlers.DataframeHandler)
+    assert isinstance(api.handler, DataframeHandler)
     assert api.func(1) == 2
 
     # Check api methods are available
@@ -50,7 +51,7 @@ def test_save_and_load_model(tmpdir):
 
 
 class TestBentoWithOutArtifact(bentoml.BentoService):
-    @bentoml.api(bentoml.handlers.DataframeHandler)
+    @bentoml.api(DataframeHandler)
     def test(self, df):
         return df
 

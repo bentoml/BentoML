@@ -12,7 +12,7 @@ def test_pip_install_bento_archive(bento_archive_path, tmpdir):
     bentoml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
     output = subprocess.check_output(
-        ["pip", "install", "--target={}".format(install_path), bento_archive_path]
+        ["pip", "install", "-U", "--target={}".format(install_path), bento_archive_path]
     ).decode()
     assert "Successfully installed TestBentoService" in output
 

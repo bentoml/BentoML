@@ -28,10 +28,14 @@ from bentoml import config
 from bentoml.exceptions import BentoMLException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 
-try:
-    from imageio import imread
-except ImportError:
-    imread = None
+
+def _import_imageio_imread():
+    try:
+        from imageio import imread
+    except ImportError:
+        raise ImportError("imageio package is required to use ImageHandler")
+
+    return imread
 
 
 def verify_image_format_or_raise(file_name, accept_format_list):
@@ -85,8 +89,7 @@ class ImageHandler(BentoHandler):
     def __init__(
         self, input_names=("image",), accept_image_formats=None, pilmode="RGB"
     ):
-        if imread is None:
-            raise ImportError("imageio package is required to use ImageHandler")
+        self.imread = _import_imageio_imread()
 
         self.input_names = tuple(input_names)
         self.pilmode = pilmode
@@ -143,7 +146,8 @@ class ImageHandler(BentoHandler):
             input_streams = [BytesIO(input_file.read()) for input_file in input_files]
 
         input_data = tuple(
-            imread(input_stream, pilmode=self.pilmode) for input_stream in input_streams
+            self.imread(input_stream, pilmode=self.pilmode)
+            for input_stream in input_streams
         )
         result = func(*input_data)
 
@@ -163,7 +167,7 @@ class ImageHandler(BentoHandler):
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(file_path)
 
-        image_array = imread(file_path, pilmode=self.pilmode)
+        image_array = self.imread(file_path, pilmode=self.pilmode)
 
         result = func(image_array)
         result = get_output_str(result, output_format=parsed_args.output)
@@ -173,9 +177,11 @@ class ImageHandler(BentoHandler):
         if event["headers"].get("Content-Type", "").startswith("images/"):
             # decodebytes introduced at python3.1
             try:
-                image = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
+                image = self.imread(
+                    base64.decodebytes(event["body"]), pilmode=self.pilmode
+                )
             except AttributeError:
-                image = imread(
+                image = self.imread(
                     base64.decodestring(event["body"]),  # pylint: disable=W1505
                     pilmode=self.pilmode,
                 )

@@ -1,6 +1,7 @@
 import os
 
 import bentoml
+from bentoml.handlers import DataframeHandler
 
 
 def test_requirement_txt_env(tmpdir):
@@ -10,7 +11,7 @@ def test_requirement_txt_env(tmpdir):
 
     @bentoml.env(requirements_txt=str(req_txt_file))
     class ServiceWithFile(bentoml.BentoService):
-        @bentoml.api(bentoml.handlers.DataframeHandler)
+        @bentoml.api(DataframeHandler)
         def predict(self, df):
             return df
 
@@ -30,7 +31,7 @@ def test_requirement_txt_env(tmpdir):
 def test_pip_dependencies_env():
     @bentoml.env(pip_dependencies="numpy")
     class ServiceWithString(bentoml.BentoService):
-        @bentoml.api(bentoml.handlers.DataframeHandler)
+        @bentoml.api(DataframeHandler)
         def predict(self, df):
             return df
 
@@ -39,7 +40,7 @@ def test_pip_dependencies_env():
 
     @bentoml.env(pip_dependencies=['numpy', 'pandas', 'torch'])
     class ServiceWithList(bentoml.BentoService):
-        @bentoml.api(bentoml.handlers.DataframeHandler)
+        @bentoml.api(DataframeHandler)
         def predict(self, df):
             return df
 
@@ -52,7 +53,7 @@ def test_pip_dependencies_env():
 def test_pip_dependencies_with_archive(tmpdir):
     @bentoml.env(pip_dependencies=['numpy', 'pandas', 'torch'])
     class ServiceWithList(bentoml.BentoService):
-        @bentoml.api(bentoml.handlers.DataframeHandler)
+        @bentoml.api(DataframeHandler)
         def predict(self, df):
             return df
 

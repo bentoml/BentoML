@@ -2,10 +2,9 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from bentoml.handlers.dataframe_handler import (
-    DataframeHandler,
-    check_dataframe_column_contains,
-)
+from bentoml.handlers import DataframeHandler
+from bentoml.handlers.dataframe_handler import check_dataframe_column_contains
+
 
 try:
     from unittest.mock import Mock

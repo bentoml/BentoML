@@ -32,16 +32,23 @@ from bentoml.handlers.image_handler import (
     get_default_accept_image_formats,
 )
 
-try:
-    from fastai.vision import Image, pil2tensor, open_image
-except ImportError:
-    Image = None
-    pil2tensor = None
 
-try:
-    from imageio import imread
-except ImportError:
-    imread = None
+def _import_fastai_vision():
+    try:
+        from fastai import vision
+    except ImportError:
+        raise ImportError("fastai.vision package is required to use FastaiImageHandler")
+
+    return vision
+
+
+def _import_imageio_imread():
+    try:
+        from imageio import imread
+    except ImportError:
+        raise ImportError("imageio package is required to use FastaiImageHandler")
+
+    return imread
 
 
 class FastaiImageHandler(BentoHandler):
@@ -82,15 +89,8 @@ class FastaiImageHandler(BentoHandler):
         cls=None,
         after_open=None,
     ):
-        if imread is None:
-            raise ImportError(
-                "imageio package is required to use bentoml.handlers.FastaiImageHandler"
-            )
-
-        if Image is None or pil2tensor is None or open_image is None:
-            raise ImportError(
-                "fastai package is required to use bentoml.handlers.FastaiImageHandler"
-            )
+        self.imread = _import_imageio_imread()
+        self.fastai_vision = _import_fastai_vision()
 
         self.input_names = input_names
         self.convert_mode = convert_mode
@@ -143,12 +143,12 @@ class FastaiImageHandler(BentoHandler):
 
         input_data = []
         for input_stream in input_streams:
-            data = imread(input_stream, pilmode=self.convert_mode)
+            data = self.imread(input_stream, pilmode=self.convert_mode)
 
             if self.after_open:
                 data = self.after_open(data)
 
-            data = pil2tensor(data, np.float32)
+            data = self.fastai_vision.pil2tensor(data, np.float32)
 
             if self.div:
                 data = data.div_(255)
@@ -156,7 +156,7 @@ class FastaiImageHandler(BentoHandler):
             if self.cls:
                 data = self.cls(data)
             else:
-                data = Image(data)
+                data = self.fastai_vision.Image(data)
             input_data.append(data)
 
         result = func(*input_data)
@@ -177,12 +177,12 @@ class FastaiImageHandler(BentoHandler):
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(file_path)
 
-        image_array = open_image(
+        image_array = self.fastai_vision.open_image(
             fn=file_path,
             convert_mode=self.convert_mode,
             div=self.div,
             after_open=self.after_open,
-            cls=self.cls or Image,
+            cls=self.cls or self.fastai_vision.Image,
         )
 
         result = func(image_array)
@@ -193,11 +193,11 @@ class FastaiImageHandler(BentoHandler):
         if event["headers"].get("Content-Type", "").startswith("images/"):
             # decodebytes introduced at python3.1
             try:
-                image_data = imread(
+                image_data = self.imread(
                     base64.decodebytes(event["body"]), pilmode=self.pilmode
                 )
             except AttributeError:
-                image_data = imread(
+                image_data = self.imread(
                     base64.decodestring(event["body"]),  # pylint: disable=W1505
                     pilmode=self.convert_mode,
                 )
@@ -210,13 +210,13 @@ class FastaiImageHandler(BentoHandler):
         if self.after_open:
             image_data = self.after_open(image_data)
 
-        image_data = pil2tensor(image_data, np.float32)
+        image_data = self.fastai_vision.pil2tensor(image_data, np.float32)
         if self.div:
             image_data = image_data.div_(255)
         if self.cls:
             image_data = self.cls(image_data)
         else:
-            image_data = Image(image_data)
+            image_data = self.fastai_vision.Image(image_data)
 
         result = func(image_data)
         result = get_output_str(result, event["headers"].get("output", "json"))
@@ -234,7 +234,7 @@ class FastaiImageHandler(BentoHandler):
             image_data = cv2.imdecode(input_bytes, cv2.IMREAD_COLOR)
             if self.after_open:
                 image_data = self.after_open(image_data)
-            image_data = pil2tensor(image_data, np.float32)
+            image_data = self.fastai_vision.pil2tensor(image_data, np.float32)
 
             if self.div:
                 image_data = image_data.div_(255)
@@ -242,7 +242,7 @@ class FastaiImageHandler(BentoHandler):
             if self.cls:
                 image_data = self.cls(image_data)
             else:
-                image_data = Image(image_data)
+                image_data = self.fastai_vision.Image(image_data)
 
             return func(image_data)
 

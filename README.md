@@ -14,22 +14,27 @@
 
 
 BentoML is a platform for __serving and deploying machine learning
-models__, making it easy to productionize trained models.
-
-BentoML framework provides:
+models__. It provides two components making it easy for data scientists
+to productionize trained models:
 
 * BentoService: High-level APIs for defining an ML service and packaging its
-  trained model artifacts, preprocessing source code, dependencies, and 
+  trained model artifacts, preprocessing source code, dependencies, and
   configurations into a standard file format "Bento" that can be deployed
   as containerize REST API server, PyPI package, CLI tool, or batch/streaming
-  inference job. 
+  inference job.
 
-* Yatai: A stateful server that provides Web UI and APIs for accesing model
-  registry on top of cloud storage and manages model serving deployments on
-  cloud platforms such as AWS, Azure and GCP.
+* Yatai: A stateful server that provides Web UI and APIs for model management
+  and model serving deployments on Kubernetes cluster or cloud platforms such
+  as AWS, Azure, GCP or
 
 
-Check out the 5-mins quick start notebook using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda: [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb) 
+Check out our 5-mins [BentoML Quick Start Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+ using BentoML to turn a trained sklearn model into REST API server, and deploy it to AWS Lambda:
+
+
+If you plan to adopt BentoML for production use case or wants to contribute, 
+be sure to join our Slack channel and hear our latest development updates!
+[![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
 
 ---
 
@@ -48,27 +53,21 @@ import bentoml
 from bentoml.artifact import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler
 
-# You can also import your own Python module here and BentoML will automatically
-# figure out the dependency chain and package all those Python modules
-import my_preproceesing_lib
-
 @bentoml.artifacts([SklearnModelArtifact('model')])
 @bentoml.env(pip_dependencies=["scikit-learn"])
 class IrisClassifier(bentoml.BentoService):
 
     @bentoml.api(DataframeHandler)
     def predict(self, df):
-        # Preprocessing prediction request - DataframeHandler parses REST API
-        # request or CLI args into pandas Dataframe that can be easily processed
-        # into feature vectors that are ready for the trained model
-        df = my_preproceesing_lib.process(df)
 
         # Assess to serialized trained model artifact via self.artifacts
         return self.artifacts.model.predict(df)
 ```
 
 After training your ML model, you can pack it with the prediction service
-`IrisClassifier` defined above, and save them as a Bento to file system:
+`IrisClassifier` defined above, and save them as a BentoML Bundle to file
+system:
+
 ```python
 from sklearn import svm
 from sklearn import datasets
@@ -81,23 +80,21 @@ clf.fit(X, y)
 # Packaging trained model for serving in production:
 iris_classifier_service = IrisClassifier.pack(model=clf)
 
-# Save prediction service to file archive
+# Save prediction service to file bundle
 saved_path = = iris_classifier_service.save()
 ```
 
-A Bento is a versioned archive, containing the BentoService you defined, along
-with trained model artifacts, dependencies and configurations etc. BentoML
-library can then load in a Bento file and turn it into a high performance
-prediction service.
+A BentoML bundle is a versioned file archive, containing the BentoService you
+defined, along with trained model artifacts, dependencies and configurations.
 
-For example, you can now start a REST API server based off the saved Bento files:
+Now you can start a REST API server based off the saved BentoML bundle:
 ```bash
 bentoml serve {saved_path}
 ```
 
-Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser to play
-around with the Web UI of the REST API model server, sending testing requests
-from the UI, or try sending prediction request with `curl` from CLI:
+If you are doing this only local machine, visit [http://127.0.0.1:5000](http://127.0.0.1:5000)
+in your browser to play around with the API server's Web UI for debbugging and
+testing. You can also send prediction request with `curl` from command line:
 
 ```bash
 curl -i \
@@ -107,7 +104,7 @@ curl -i \
   http://localhost:5000/predict
 ```
 
-The saved archive can also be used directly from CLI:
+The saved BentoML bundle can also be used directly from command line for inferencing:
 ```bash
 bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
 
@@ -115,7 +112,7 @@ bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
 bentoml predict {saved_path} --input='./iris_test_data.csv'
 ```
 
-Saved Bento can also be installed and used as a Python PyPI package:
+BentoML bundle is also pip-installable and can be used as a Python package:
 ```bash
 pip install {saved_path}
 ```
@@ -127,15 +124,15 @@ installed_svc = IrisClassifier.load()
 installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
 ```
 
-You can also build a docker image for this API server with all dependencies and
-environments configured automatically by BentoML, and share the docker image 
-with your DevOps team for deployment in production:
+BentoML bundle is structure to be a docker build context where you can easily
+build a docker image for this API server containing all dependencies and
+environments settings:
+
 ```bash
 docker build -t my_api_server {saved_path}
 ```
 
-Try out the full getting started notebook
-[here on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb).
+To learn more, try out the Getting Started with Bentoml notebook: [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
 
 
 ## Examples
@@ -154,25 +151,30 @@ Try out the full getting started notebook
 #### PyTorch
 
 * Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb)
+
 * CIFAR-10 Image Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb)
 
 
-#### Tensorflow Keras
+#### Keras
 
 * Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb)
+
 * Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb)
+
 * Toxic Comment Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb)
 
 
 #### XGBoost
 
 * Titanic Survival Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb)
+
 * League of Legend win Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb)
 
 
 #### H2O
 
 * Loan Default Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb)
+
 * Prostate Cancer Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb)
 
  Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
@@ -183,8 +185,8 @@ Try out the full getting started notebook
 
 - [Serverless deployment with AWS Lambda](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-serverless)
 - [API server deployment with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-sagemaker)
-- [API server deployment with Clipper](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/deploy-iris-classifier-to-clipper.ipynb)
-- [API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
+- [(Beta) API server deployment with Clipper](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/deploy-iris-classifier-to-clipper.ipynb)
+- [(Beta) API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
 
 
 ## Feature Highlights
@@ -234,17 +236,6 @@ running the following command from terminal:
 ```bash
 bentoml config set usage_tracking=false
 ```
-
-Or from your python code:
-```python
-import bentoml
-bentoml.config.set('core', 'usage_tracking', 'false')
-```
-
-We also collect example notebook page views to help us understand the community
-interests. To opt-out of tracking, delete the ~~!\[Impression\]\(http...~~ line in the first
-markdown cell of our example notebooks. 
-
 
 ## Contributing
 

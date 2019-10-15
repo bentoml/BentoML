@@ -309,10 +309,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
                 outputs = cloud_formation_stack_result.get('Stacks')[0]['Outputs']
             except Exception as error:
-                state = (
-                    DeploymentState(
-                        state=DeploymentState.ERROR, error_message=str(error)
-                    ),
+                state = DeploymentState(
+                    state=DeploymentState.ERROR, error_message=str(error)
                 )
                 state.timestamp.GetCurrentTime()
                 return DescribeDeploymentResponse(

@@ -2,7 +2,7 @@ import sys
 import pytest
 
 import bentoml
-from bentoml.handlers import *
+from bentoml.handlers import DataframeHandler, FastaiImageHandler, ImageHandler
 from bentoml.service import _validate_version_str
 
 

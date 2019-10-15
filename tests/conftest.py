@@ -3,7 +3,8 @@ import pytest
 import tempfile
 
 import bentoml
-from bentoml.handlers import *
+from bentoml.handlers import DataframeHandler, ImageHandler, JsonHandler, \
+        FastaiImageHandler
 from bentoml.artifact import PickleArtifact
 from bentoml import config
 
@@ -53,14 +54,6 @@ class TestBentoService(bentoml.BentoService):
     @bentoml.api(JsonHandler)
     def predictJson(self, input_data):
         return self.artifacts.model.predictJson(input_data)
-
-    @bentoml.api(TensorflowTensorHandler)
-    def predictTF(self, input_data):
-        return self.artifacts.model.predictTF(input_data)
-
-    @bentoml.api(PytorchTensorHandler)
-    def predictTorch(self, input_data):
-        return self.artifacts.model.predictTorch(input_data)
 
     if sys.version_info >= (3, 6):
 

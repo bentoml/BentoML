@@ -1,7 +1,7 @@
 """init tables
 
 Revision ID: 095fb029da39
-Revises: 
+Revises:
 Create Date: 2019-10-15 14:27:22.948583
 
 """
@@ -10,8 +10,6 @@ import sqlalchemy as sa
 from sqlalchemy.engine.reflection import Inspector
 
 from bentoml.db import Base
-from bentoml.deployment.store import Deployment
-from bentoml.repository.metadata_store import Bento
 
 # revision identifiers, used by Alembic.
 

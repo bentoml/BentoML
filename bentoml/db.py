@@ -36,7 +36,6 @@ def init_db(db_url):
     engine = create_engine(
         db_url, echo=False, connect_args={'check_same_thread': False}
     )
-    Base.metadata.create_all(engine)
     upgrade_db(db_url)
 
     return sessionmaker(bind=engine)

@@ -14,22 +14,28 @@
 
 
 BentoML is a platform for __serving and deploying machine learning
-models__, making it easy to productionize trained models.
+models__. It provides three main components:
 
-BentoML framework provides:
+* BentoService: High-level APIs for defining a prediction service by packaging
+  trained model, preprocessing source code, dependencies, and configurations 
+  into a standard BentoML bundle, which can be used as containerize REST API
+  server, PyPI package, CLI tool, or batch/streaming serving job.
 
-* BentoService: High-level APIs for defining an ML service and packaging its
-  trained model artifacts, preprocessing source code, dependencies, and 
-  configurations into a standard file format "Bento" that can be deployed
-  as containerize REST API server, PyPI package, CLI tool, or batch/streaming
-  inference job. 
+* DeploymentOperator: The enssential module for deploying and managing your
+  prediction service workloads on Kubernetes cluster and cloud platforms such
+  as AWS Lambda, SageMaker, Azure ML, and GCP Function etc.
 
-* Yatai: A stateful server that provides Web UI and APIs for accesing model
-  registry on top of cloud storage and manages model serving deployments on
-  cloud platforms such as AWS, Azure and GCP.
+* Yatai: A stateful server provides Web UI and APIs for model management
+  and model serving deployments management for teams
 
 
-Check out the 5-mins quick start notebook using BentoML to productionize a scikit-learn model and deploy it to AWS Lambda: [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb) 
+Check out our 5-mins [BentoML Quickstart Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+ using BentoML to turn a trained sklearn model into a REST API server, and deploy it to AWS Lambda:
+
+
+If you plan to adopt BentoML for production use case or wants to contribute, 
+be sure to join our Slack channel and hear our latest development updates!
+[![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
 
 ---
 
@@ -45,30 +51,22 @@ Defining a machine learning service with BentoML:
 
 ```python
 import bentoml
-from bentoml.artifact import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler
+from bentoml.artifact import SklearnModelArtifact
 
-# You can also import your own Python module here and BentoML will automatically
-# figure out the dependency chain and package all those Python modules
-import my_preproceesing_lib
-
-@bentoml.artifacts([SklearnModelArtifact('model')])
 @bentoml.env(pip_dependencies=["scikit-learn"])
+@bentoml.artifacts([SklearnModelArtifact('model')])
 class IrisClassifier(bentoml.BentoService):
 
     @bentoml.api(DataframeHandler)
     def predict(self, df):
-        # Preprocessing prediction request - DataframeHandler parses REST API
-        # request or CLI args into pandas Dataframe that can be easily processed
-        # into feature vectors that are ready for the trained model
-        df = my_preproceesing_lib.process(df)
-
-        # Assess to serialized trained model artifact via self.artifacts
         return self.artifacts.model.predict(df)
 ```
 
 After training your ML model, you can pack it with the prediction service
-`IrisClassifier` defined above, and save them as a Bento to file system:
+`IrisClassifier` defined above, and save them as a BentoML Bundle to file
+system:
+
 ```python
 from sklearn import svm
 from sklearn import datasets
@@ -81,23 +79,21 @@ clf.fit(X, y)
 # Packaging trained model for serving in production:
 iris_classifier_service = IrisClassifier.pack(model=clf)
 
-# Save prediction service to file archive
+# Save prediction service to file bundle
 saved_path = = iris_classifier_service.save()
 ```
 
-A Bento is a versioned archive, containing the BentoService you defined, along
-with trained model artifacts, dependencies and configurations etc. BentoML
-library can then load in a Bento file and turn it into a high performance
-prediction service.
+A BentoML bundle is a versioned file archive, containing the BentoService you
+defined, along with trained model artifacts, dependencies and configurations.
 
-For example, you can now start a REST API server based off the saved Bento files:
+Now you can start a REST API server based off the saved BentoML bundle:
 ```bash
 bentoml serve {saved_path}
 ```
 
-Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser to play
-around with the Web UI of the REST API model server, sending testing requests
-from the UI, or try sending prediction request with `curl` from CLI:
+If you are doing this only local machine, visit [http://127.0.0.1:5000](http://127.0.0.1:5000)
+in your browser to play around with the API server's Web UI for debbugging and
+testing. You can also send prediction request with `curl` from command line:
 
 ```bash
 curl -i \
@@ -107,7 +103,7 @@ curl -i \
   http://localhost:5000/predict
 ```
 
-The saved archive can also be used directly from CLI:
+The saved BentoML bundle can also be used directly from command line for inferencing:
 ```bash
 bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
 
@@ -115,7 +111,7 @@ bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
 bentoml predict {saved_path} --input='./iris_test_data.csv'
 ```
 
-Saved Bento can also be installed and used as a Python PyPI package:
+BentoML bundle is also pip-installable and can be used as a Python package:
 ```bash
 pip install {saved_path}
 ```
@@ -127,15 +123,15 @@ installed_svc = IrisClassifier.load()
 installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
 ```
 
-You can also build a docker image for this API server with all dependencies and
-environments configured automatically by BentoML, and share the docker image 
-with your DevOps team for deployment in production:
+BentoML bundle is structure to be a docker build context where you can easily
+build a docker image for this API server containing all dependencies and
+environments settings:
+
 ```bash
 docker build -t my_api_server {saved_path}
 ```
 
-Try out the full getting started notebook
-[here on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb).
+To learn more, try out the Getting Started with Bentoml notebook: [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
 
 
 ## Examples
@@ -157,7 +153,7 @@ Try out the full getting started notebook
 * CIFAR-10 Image Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb)
 
 
-#### Tensorflow Keras
+#### Keras
 
 * Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb)
 * Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb)
@@ -176,15 +172,15 @@ Try out the full getting started notebook
 * Prostate Cancer Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb)
 
  Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
- example projects demonstrating how to use BentoML:
+ example projects demonstrating how to use BentoML.
 
 
 ### Deployment guides:
 
 - [Serverless deployment with AWS Lambda](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-serverless)
 - [API server deployment with AWS SageMaker](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-sagemaker)
-- [API server deployment with Clipper](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/deploy-iris-classifier-to-clipper.ipynb)
-- [API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
+- [(Beta) API server deployment with Clipper](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/deploy-iris-classifier-to-clipper.ipynb)
+- [(Beta) API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
 
 
 ## Feature Highlights
@@ -207,7 +203,7 @@ Try out the full getting started notebook
   [FastAI](https://github.com/fastai/fastai) and can be easily extended to work
   with new or custom frameworks.
 
-* __Deploy Anywhere__ - BentoML bundled ML service can be easily deployed with
+* __Deploy Anywhere__ - BentoML bundle can be easily deployed with
   platforms such as [Docker](https://www.docker.com/),
   [Kubernetes](https://kubernetes.io/),
   [Serverless](https://github.com/serverless/serverless),
@@ -235,30 +231,14 @@ running the following command from terminal:
 bentoml config set usage_tracking=false
 ```
 
-Or from your python code:
-```python
-import bentoml
-bentoml.config.set('core', 'usage_tracking', 'false')
-```
-
-We also collect example notebook page views to help us understand the community
-interests. To opt-out of tracking, delete the ~~!\[Impression\]\(http...~~ line in the first
-markdown cell of our example notebooks. 
-
-
 ## Contributing
 
 Have questions or feedback? Post a [new github issue](https://github.com/bentoml/BentoML/issues/new/choose)
-or join our Slack chat room: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
+or join our Slack channel: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
 
 Want to help build BentoML? Check out our
 [contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md) and the
 [development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
-
-To make sure you have a pleasant experience, please read the [code of conduct](https://github.com/bentoml/BentoML/blob/master/CODE_OF_CONDUCT.md).
-It outlines core values and beliefs and will make working together a happier experience.
-
-Happy hacking!
 
 ## Releases
 
@@ -266,16 +246,10 @@ BentoML is under active development and is evolving rapidly. **Currently it is a
 Beta release, we may change APIs in future releases**.
 
 Read more about the latest features and changes in BentoML from the [releases page](https://github.com/bentoml/BentoML/releases).
-and follow the [BentoML Community Calendar](http://bit.ly/2XvUiM2).
-
-Watch BentoML Github repo for future releases:
-
-![gh-watch](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/gh-watch-screenshot.png)
 
 
 ## License
 
 [Apache License 2.0](https://github.com/bentoml/BentoML/blob/master/LICENSE)
-
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)

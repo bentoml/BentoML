@@ -32,6 +32,7 @@ from bentoml.handlers.image_handler import (
     get_default_accept_image_formats,
 )
 
+
 def _import_fastai_vision():
     try:
         from fastai import vision

@@ -22,12 +22,16 @@ import shutil
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
-try:
-    import fastai
-    from fastai.basic_train import load_learner
-except ImportError:
-    fastai = None
-    load_learner = None
+
+def _import_fastai_module():
+    try:
+        import fastai
+    except ImportError:
+        raise ImportError(
+            "fastai package is required to use " "bentoml.artifacts.FastaiModelArtifact"
+        )
+
+    return fastai
 
 
 class FastaiModelArtifact(BentoServiceArtifact):
@@ -45,12 +49,6 @@ class FastaiModelArtifact(BentoServiceArtifact):
         if sys.version_info.major < 3 or sys.version_info.minor < 6:
             raise SystemError("fast ai requires python 3.6 version or higher")
 
-        if fastai is None:
-            raise ImportError(
-                "fastai package is required to use "
-                "bentoml.artifacts.FastaiModelArtifact"
-            )
-
         super(FastaiModelArtifact, self).__init__(name)
         self._file_name = name + '.pkl'
 
@@ -58,7 +56,9 @@ class FastaiModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self._file_name)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        if not isinstance(model, fastai.basic_train.Learner):
+        fastai_module = _import_fastai_module()
+
+        if not isinstance(model, fastai_module.basic_train.Learner):
             raise ValueError(
                 "Expect `model` argument to be `fastai.basic_train.Learner` instance"
             )
@@ -66,13 +66,9 @@ class FastaiModelArtifact(BentoServiceArtifact):
         return _FastaiModelArtifactWrapper(self, model)
 
     def load(self, path):
-        if load_learner is None:
-            raise ImportError(
-                "fastai package is required to use "
-                "bentoml.artifacts.FastaiModelArtifact"
-            )
+        fastai_module = _import_fastai_module()
 
-        model = load_learner(path, self._file_name)
+        model = fastai_module.basic_train.load_learner(path, self._file_name)
         return self.pack(model)
 
 

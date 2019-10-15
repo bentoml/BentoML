@@ -41,6 +41,7 @@ install_requires = [
     "cerberus",
     "tabulate",
     "humanfriendly",
+    "alembic",
 ]
 
 imageio = ["imageio>=2.5.0"]

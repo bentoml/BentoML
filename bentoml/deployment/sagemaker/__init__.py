@@ -245,7 +245,7 @@ def _cleanup_sagemaker_endpoint_config(client, name, version):
     return
 
 
-def init_sagemaker_project(sagemaker_project_dir, bento_path, bento_name):
+def init_sagemaker_project(sagemaker_project_dir, bento_path):
     shutil.copytree(bento_path, sagemaker_project_dir)
 
     with open(os.path.join(sagemaker_project_dir, "nginx.conf"), "w") as f:

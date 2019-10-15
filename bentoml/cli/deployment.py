@@ -20,9 +20,11 @@ import click
 import logging
 import time
 import json
+from datetime import datetime
 
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
+import humanfriendly
 
 from bentoml.cli.click_utils import (
     _echo,
@@ -95,9 +97,17 @@ def _format_labels_for_print(labels):
     return '\n'.join(result)
 
 
+def _format_deployment_age_for_print(deployment_pb):
+    if not deployment_pb.created_at:
+        return None
+    else:
+        deployment_duration = datetime.utcnow() - deployment_pb.created_at.ToDatetime()
+        return humanfriendly.format_timespan(deployment_duration)
+
+
 def _print_deployments_table(deployments):
     table = []
-    headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'STATUS']
+    headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'STATUS', 'AGE']
     for deployment in deployments:
         row = [
             deployment.name,
@@ -109,6 +119,7 @@ def _print_deployments_table(deployments):
             DeploymentState.State.Name(deployment.state.state)
             .lower()
             .replace('_', ' '),
+            _format_deployment_age_for_print(deployment),
         ]
         table.append(row)
     table_display = tabulate(table, headers, tablefmt='plain')
@@ -336,7 +347,12 @@ def get_deployment_sub_command():
                 )
             )
         )
-        if result.status.status_code != Status.OK:
+        if (
+            result
+            and result.status
+            and result.status.status_code
+            and result.status.status_code != Status.OK
+        ):
             _echo(
                 'Failed to create deployment {name}. {error_code}: '
                 '{error_message}'.format(
@@ -383,7 +399,12 @@ def get_deployment_sub_command():
             result = yatai_service.ApplyDeployment(
                 ApplyDeploymentRequest(deployment=deployment_pb)
             )
-            if result.status.status_code != Status.OK:
+            if (
+                result
+                and result.status
+                and result.status.status_code
+                and result.status.status_code != Status.OK
+            ):
                 _echo(
                     'Failed to apply deployment {name}. code: {error_code}, message: '
                     '{error_message}'.format(
@@ -440,7 +461,12 @@ def get_deployment_sub_command():
                 deployment_name=name, namespace=namespace, force_delete=force
             )
         )
-        if result.status.status_code == Status.OK:
+        if (
+            result
+            and result.status
+            and result.status.status_code
+            and result.status.status_code == Status.OK
+        ):
             _echo(
                 'Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS
             )
@@ -465,7 +491,11 @@ def get_deployment_sub_command():
         result = get_yatai_service().GetDeployment(
             GetDeploymentRequest(deployment_name=name, namespace=namespace)
         )
-        if result.status.status_code != Status.OK:
+        if (
+            result.status
+            and result.status.status_code
+            and result.status.status_code != Status.OK
+        ):
             _echo(
                 'Failed to get deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(

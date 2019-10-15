@@ -19,7 +19,6 @@ from __future__ import print_function
 import os
 import logging
 
-from google.protobuf.timestamp_pb2 import Timestamp
 from ruamel.yaml import YAML
 
 from bentoml.deployment.utils import (
@@ -190,21 +189,15 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 try:
                     response = call_serverless_command(["info"], serverless_project_dir)
                     info_json = parse_serverless_info_response_to_json_string(response)
-                    timestamp = Timestamp()
-                    timestamp.GetCurrentTime()
                     state = DeploymentState(
-                        state=DeploymentState.RUNNING,
-                        info_json=info_json,
-                        timestamp=timestamp,
+                        state=DeploymentState.RUNNING, info_json=info_json
                     )
+                    state.timestamp.GetCurrentTime()
                 except BentoMLException as e:
-                    timestamp = Timestamp()
-                    timestamp.GetCurrentTime()
                     state = DeploymentState(
-                        state=DeploymentState.ERROR,
-                        error_message=str(e),
-                        timestamp=timestamp,
+                        state=DeploymentState.ERROR, error_message=str(e)
                     )
+                    state.timestamp.GetCurrentTime()
 
             return DescribeDeploymentResponse(status=Status.OK(), state=state)
         except BentoMLException as error:

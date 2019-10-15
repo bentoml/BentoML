@@ -328,10 +328,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 info_json['endpoints'] = [
                     base_url + '/' + api_name for api_name in api_names
                 ]
-            state = (
-                DeploymentState(
-                    state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
-                ),
+            state = DeploymentState(
+                state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
             )
             state.timestamp.GetCurrentTime()
             return DescribeDeploymentResponse(status=Status.OK(), state=state)

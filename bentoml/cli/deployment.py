@@ -349,12 +349,8 @@ def get_deployment_sub_command():
                 )
             )
         )
-        if (
-            result
-            and result.status
-            and result.status.status_code
-            and result.status.status_code != Status.OK
-        ):
+
+        if result.status.status_code != Status.OK:
             _echo(
                 'Failed to create deployment {name}. {error_code}: '
                 '{error_message}'.format(

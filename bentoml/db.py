@@ -36,7 +36,7 @@ def init_db(db_url):
     engine = create_engine(
         db_url, echo=False, connect_args={'check_same_thread': False}
     )
-    upgrade_db(engine, db_url)
+    create_all_or_upgrade_db(engine, db_url)
 
     return sessionmaker(bind=engine)
 
@@ -54,13 +54,12 @@ def create_session(session_maker):
         session.close()
 
 
-def upgrade_db(engine, db_url):
+def create_all_or_upgrade_db(engine, db_url):
     # alembic add a lot of import time, so we lazy import
     from alembic import command
     from alembic.config import Config
     from sqlalchemy import inspect
 
-    logger.debug('Updating tables')
     current_dir = os.path.dirname(os.path.abspath(__file__))
     alembic_config = Config(os.path.join(current_dir, 'alembic.ini'))
     alembic_config.set_main_option('sqlalchemy.url', db_url)
@@ -69,7 +68,9 @@ def upgrade_db(engine, db_url):
     tables = inspector.get_table_names()
 
     if 'deployments' not in tables and 'bentos' not in tables:
+        logger.debug('Creating tables')
         Base.metadata.create_all(engine)
         command.stamp(alembic_config, 'head')
     else:
+        logger.debug('Upgrading tables to the latest revision')
         command.upgrade(alembic_config, 'heads')

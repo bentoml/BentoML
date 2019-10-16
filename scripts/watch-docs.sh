@@ -37,5 +37,3 @@ tell application "Google Chrome"
 end tell
     '
   done
-
-

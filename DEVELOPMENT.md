@@ -106,7 +106,7 @@ $ pip install -e .[dev]
 
 To build documentation for locally:
 ```bash
-$ ./script/build-docs.sh
+$ ./scripts/build-docs.sh
 ```
 
 Modify \*.rst files inside the `docs` folder to update content, and to

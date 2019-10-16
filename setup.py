@@ -51,17 +51,17 @@ fastai = ["fastai", "matplotlib"]
 tensorflow = ["tensorflow"]
 xgboost = ["xgboost"]
 h2o = ["h2o"]
-api_server = ["gunicorn", "prometheus_client", "Werkzeug"]
+api_server = ["gunicorn", "prometheus_client"]
 
 optional_requires = api_server + imageio + pytorch + tensorflow + fastai + xgboost + h2o
 
 tests_require = (
     [
-        "pytest==4.1.0",
-        "pytest-cov==2.7.1",
-        "snapshottest==0.5.0",
-        "mock==2.0.0",
-        "tox==3.12.1",
+        "pytest>=4.1.0",
+        "pytest-cov>=2.7.1",
+        "snapshottest>=0.5.0",
+        "mock>=2.0.0",
+        "tox>=3.12.1",
         "coverage>=4.4",
         "codecov",
     ]
@@ -71,9 +71,9 @@ tests_require = (
 )
 
 dev_requires = [
-    "pylint==2.3.1",
+    "pylint>=2.3.1",
     "flake8",
-    "tox-conda==0.2.0",
+    "tox-conda>=0.2.0",
     "twine",
     "black",
     "setuptools",
@@ -81,29 +81,22 @@ dev_requires = [
     "grpcio-tools",
 ] + tests_require
 
-sphinx_requires = [
+docs_requires = [
     "sphinx",
     "sphinx-click",
     "sphinx_rtd_theme",
     "sphinxcontrib-fulltoc",
 ]
 
-doc_builder_requires = sphinx_requires + install_requires
-
-dev_all = install_requires + dev_requires + optional_requires + sphinx_requires
+dev_all = install_requires + dev_requires + optional_requires + docs_requires
 
 extras_require = {
     "all": dev_all,
-    "api_server": api_server,
     "dev": dev_requires,
-    "doc_builder": doc_builder_requires,
-    "pytorch": pytorch,
-    "tensorflow": tensorflow,
-    "imageio": imageio,
+    "api_server": api_server,
     "test": tests_require,
-    "fastai": fastai,
-    "xgboost": xgboost,
-    "h2o": h2o,
+
+    "doc_builder": docs_requires + install_requires,  # required by readthedocs.io
 }
 
 setuptools.setup(

@@ -22,6 +22,7 @@ import base64
 import logging
 import re
 import json
+
 from six.moves.urllib.parse import urlparse
 
 import boto3
@@ -243,7 +244,7 @@ def _cleanup_sagemaker_endpoint_config(client, name, version):
     return
 
 
-def init_sagemaker_project(sagemaker_project_dir, bento_path, bento_name):
+def init_sagemaker_project(sagemaker_project_dir, bento_path):
     shutil.copytree(bento_path, sagemaker_project_dir)
 
     with open(os.path.join(sagemaker_project_dir, "nginx.conf"), "w") as f:
@@ -541,6 +542,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 state=service_state,
                 info_json=json.dumps(endpoint_status_response, default=str),
             )
+            deployment_state.timestamp.GetCurrentTime()
 
             return DescribeDeploymentResponse(
                 state=deployment_state, status=Status.OK()

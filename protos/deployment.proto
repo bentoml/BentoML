@@ -2,6 +2,7 @@ syntax = "proto3";
 package bentoml;
 
 import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
 
 import "status.proto";
 
@@ -87,6 +88,7 @@ message DeploymentState {
   // Raw json string that contains all deployment state information that is
   // platform specific
   string info_json = 3;
+  google.protobuf.Timestamp timestamp = 4;
 }
 
 message Deployment {
@@ -109,6 +111,9 @@ message Deployment {
   // Optional, used for managing deployments, this gets translate to similar 'labels'
   // concept in target deployment platform
   map<string, string> labels = 6;
+
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp last_updated_at = 8;
 }
 
 message DeploymentStatus {

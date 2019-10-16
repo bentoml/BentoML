@@ -192,10 +192,12 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                     state = DeploymentState(
                         state=DeploymentState.RUNNING, info_json=info_json
                     )
+                    state.timestamp.GetCurrentTime()
                 except BentoMLException as e:
                     state = DeploymentState(
                         state=DeploymentState.ERROR, error_message=str(e)
                     )
+                    state.timestamp.GetCurrentTime()
 
             return DescribeDeploymentResponse(status=Status.OK(), state=state)
         except BentoMLException as error:

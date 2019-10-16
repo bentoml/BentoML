@@ -108,6 +108,10 @@ class YataiService(YataiServicer):
                 request.deployment.state = DeploymentState(
                     state=DeploymentState.PENDING
                 )
+            else:
+                request.deployment.created_at.GetCurrentTime()
+
+            request.deployment.last_updated_at.GetCurrentTime()
 
             self.deployment_store.insert_or_update(request.deployment)
             # find deployment operator based on deployment spec

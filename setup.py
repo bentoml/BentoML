@@ -40,6 +40,8 @@ install_requires = [
     "grpcio",
     "cerberus",
     "tabulate",
+    "humanfriendly",
+    "alembic",
 ]
 
 imageio = ["imageio>=2.5.0"]

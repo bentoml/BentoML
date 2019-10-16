@@ -19,6 +19,7 @@ from __future__ import print_function
 import os
 import logging
 import json
+
 from packaging import version
 
 from ruamel.yaml import YAML
@@ -135,7 +136,6 @@ def generate_aws_lambda_serverless_config(
 def generate_aws_lambda_handler_py(bento_name, api_names, output_path):
     with open(os.path.join(output_path, "handler.py"), "w") as f:
         f.write(AWS_HANDLER_PY_TEMPLATE_HEADER.format(class_name=bento_name))
-        print('API NAMES IN FILE', api_names)
         for api_name in api_names:
             api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api_name)
             f.write(api_content)
@@ -309,11 +309,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
                 outputs = cloud_formation_stack_result.get('Stacks')[0]['Outputs']
             except Exception as error:
+                state = DeploymentState(
+                    state=DeploymentState.ERROR, error_message=str(error)
+                )
+                state.timestamp.GetCurrentTime()
                 return DescribeDeploymentResponse(
-                    status=Status.INTERNAL(str(error)),
-                    state=DeploymentState(
-                        state=DeploymentState.ERROR, error_message=str(error)
-                    ),
+                    status=Status.INTERNAL(str(error)), state=state
                 )
 
             base_url = ''
@@ -325,11 +326,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 info_json['endpoints'] = [
                     base_url + '/' + api_name for api_name in api_names
                 ]
-            return DescribeDeploymentResponse(
-                status=Status.OK(),
-                state=DeploymentState(
-                    state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
-                ),
+            state = DeploymentState(
+                state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
             )
+            state.timestamp.GetCurrentTime()
+            return DescribeDeploymentResponse(status=Status.OK(), state=state)
         except BentoMLException as error:
             return DescribeDeploymentResponse(status=exception_to_return_status(error))

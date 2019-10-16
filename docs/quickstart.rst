@@ -1,254 +1,135 @@
 Quick Start
 ===========
 
-Install BentoML
----------------
-Install BentoML is straightforward.
+See it in action
+----------------
 
-.. code-block:: python
-
-    pip install bentoml
-
-
-Running the quick start project
--------------------------------
-
-The easiest way to try out the quick start project is using Google's Colab to run the
-quick start project.
+Run the code in this guide here on Google's Colab:
 
 .. image:: https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal
     :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb
     :alt: Launch on Colab
 
-You can also run the quick start project locally. Download the quick start
-example by git clone the BentoML repo, and navigate to the quick start project
-inside the `example` folder
-
+Alternatively, download and run the notebook locally:
 
 .. code-block:: bash
 
     $ pip install jupyter
     $ git clone http://github.com/bentoml/bentoml
-    $ cd bentoml
-    $ jupyter notebook examples/quick-start/bentoml-quick-start-guide.ipynb
+    $ jupyter notebook bentoml/guides/quick-start/bentoml-quick-start-guide.ipynb
 
 
-We will go through each cell inside the notebook with explanation follows
-below.
 
 Quick start walk through
 ------------------------
-
-Add BentoML to the notebook and training classification model
-*************************************************************
-.. code-block:: python
-
-    !pip install -I bentoml
-    !pip install pandas sklearn
-
-We use jupyter notebook's built-in magic command to download and install
-python modules such as scikit-learn for our example model.
-We also download and install BentoML for define ML service later on.
+  
+Defining a prediction service with BentoML:
 
 .. code-block:: python
 
-    from sklearn import svm
-    from sklearn import datasets
+  :linenos:
 
-    clf = svm.SVC(gamma='scale')
-    iris = datasets.load_iris()
-    X, y = iris.data, iris.target
-    clf.fit(X, y)
+  import bentoml
+  from bentoml.handlers import DataframeHandler
+  from bentoml.artifact import SklearnModelArtifact
 
-We trained a classification model with scikit-learn's iris dataset.
+  @bentoml.env(pip_dependencies=["scikit-learn"])
+  @bentoml.artifacts([SklearnModelArtifact('model')])
+  class IrisClassifier(bentoml.BentoService):
 
-Define machine learning service with BentoML
-********************************************
-
-.. code-block:: python
-    :linenos:
-
-    %%writefile iris_classifier.py
-    from bentoml import BentoService, api, env, artifacts
-    from bentoml.artifact import PickleArtifact
-    from bentoml.handlers import DataframeHandler
-
-    @artifacts([PickleArtifact('model')])
-    @env(conda_pip_dependencies=["scikit-learn"])
-    class IrisClassifier(BentoService):
-
-        @api(DataframeHandler)
-        def predict(self, df):
-            return self.artifacts.model.predict(df)
-
-**Line 1**: We use jupyter notebook's built-in magic command to save our ML
-service definition into a python file
-
-**Line 2**: We import BentoService, our ML service will build on top of this
-by subclassing it. We also import decorators such as, artifacts, api and env
-for defining our ML service.
-
-* **artifacts** decorator define what artifacts are required for packaging
-  this service.
-
-* **env** decorator designed for specifying the desired system environment
-  and dependencies in order for this service to load. For this project we
-  are using conda environment. If you already have requirement.txt file
-  listing all of the python libraries you need:
-
-    ``@env(requirement_txt="../my_project/requirement.txt")``
-
-* **api**: decorator allow us to add an entry point to accessing this service.
-  Each *api* will be translated into a REST endpoint when deploying as API
-  server, or a CLI command when running the service as CLI tool.
+      @bentoml.api(DataframeHandler)
+      def predict(self, df):
+          return self.artifacts.model.predict(df)
 
 
-**Line 3**: Using **PickleArtifact** for packaging our classifier model. Beside
-  PickleArtifact, BentoML offers `KerasModelArtifact`,
-  `PytorchModelArtifact`, `H2oModelArtifact`, `XgboostModelArtifact` and etc.
+You can add multiple `bentoml.api` to a BentoService, and the `DataframeHandler` here
+tells BentoML the expected input format of this API.
 
-**Line 4**: Each API endpoint requires a Handler for defining the expect input
-  format. For this project, we are using **DataframeHandler** to transform
-  either a HTTP request or CLI command argument into a pandas dataframe and
-  pass it down to the user defined API function. BentoML also provides
-  `JsonHandler`, `ImageHandler` and `TensorHandler`
-
-
-**Line 6-7**: We defined what artifact need to be included for this service,
-and giving it a name `model`, and include the  python library that we need
-for this project.
-
-**Line 8**: We created our ML service called IrisClassifier by subclassing
-`BentoService`
-
-**Line 10-12**: We defined a function called `predict`. It will return result
-from the artifact, `model`, we defined earlier by calling `predict` on that
-artifact. We expose this predict function as our api for the service with the
-`api` decorator, and tell BentoML that the incoming data will be transformed
-into pandas dataframe for the user defined `predict` function to consume.
+The `bentoml.env` decorator allows user to specify the dependencies and environment 
+settings for this prediction service and `bentoml.artifact` is used to describe the
+trained models to be bundled with this prediction service. In addition to
+`SklearnModelArtifact`, BentoML libraries also provides `PytorchModelArtifact`,
+`KerasModelArtifact`, `FastaiModelArtifact`, and `XgboostModelArtifact` etc.
 
 
-Now we have defined the ML service with BentoML, we will package our trained
-model next and save it as archive to the file system.
-
-Save defined ML service as BentoML service archive
-**************************************************
-
-.. code-block:: python
-    :linenos:
-
-    from iris_classifier import IrisClassifier
-
-    svc = IrisClassifier.pack(model=clf)
-    saved_path = svc.save('/tmp/bentoml_archive')
-
-**Line 1**: We import the service definition we wrote in the previous cell.
-
-**Line 3**: We are packaging the trained model from above with the ML
-service.
-
-**Line 4-5**: We saved the packed service as BentoML archive into the local
-file system and print out the saved location path.
-
-We just created and saved our quick start project into BentoML service archive.
-It is a directory containing all of the source code, data, and configurations
-that required to load and run as Bento Service. You will find three `magic`
-files that generated within the archive directory:
-
-- bentoml.yml: A YAML file contains all of the metadata related to this service
-  and archive.
-
-- setup.py: The configuration file that makes this BentoML service archive
-  'pip' installable
-
-- Dockerfile: for building Docker image that expose this Bento service as REST
-  API service.
-
-
-Using BentoML archive
-*********************
-
-Real-time serving with REST API
-+++++++++++++++++++++++++++++++
-To exposing your ML service as HTTP API endpoint, you can simply use the
-bentoml serve command:
+Next, train a classifier model with Iris dataset and pack the trained model with the BentoService `IrisClassifier` defined above:
 
 .. code-block:: python
 
-    !bentoml serve {saved_path}
+  from sklearn import svm
+  from sklearn import datasets
 
-With `bentoml serve` command, a web server will start locally at the port 5000.
-We created additional endpoints that make this server ready for production.
+  clf = svm.SVC(gamma='scale')
+  iris = datasets.load_iris()
+  X, y = iris.data, iris.target
+  clf.fit(X, y)
 
-- `/`: The index page with OpenAPI definition.
+  # Create a iris classifier service with the newly trained model
+  iris_classifier_service = IrisClassifier.pack(model=clf)
 
-- `/docs.json`: The Open API definition for all endpoints in JSON format.
-
-- `/metrics`: Expose system and latency metrics with Prometheus.
-
-- `/healthz`: Check on your service health.
-
-- `/feedback`: Add business feedback for the predicted results.
-
-Open http://127.0.0.1:5000 to view the documentation for all API endpoints.
-
-Run REST API server with Docker
-+++++++++++++++++++++++++++++++
-To deploy the Bento service as REST api server for production use, we can use
-the generated Dockerfile to create Docker image for that.
-
-.. code-block:: python
-
-    !cd {saved_path} && docker build -t iris-classifier .
-
-.. code-block:: python
-
-    !docker run -p 5000:5000 iris-classifier
+  # Save the entire prediction service to file bundle
+  saved_path = iris_classifier_service.save()
 
 
-.. note::
-
-    To generate Docker image, you will need to install Docker on your system. Please
-    follow direction from this link: https://docs.docker.com/install
-
-
-(Optional) Get a Client SDK for the above REST API server
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-To get a client SDK, copy the content of http://127.0.0.1:5000/docs.json and paste to
-https://editor.swagger.io then click the tab Generate Client and choose the language.
-
-Currently, https://editor.swagger.io supports to generate a client SDK in Java, Kotlin,
-Swift, Python, PHP, Scala... ect.
-
-Loading Bento service archive in Python
-+++++++++++++++++++++++++++++++++++++++
-
-The easiest to use Bento service archive in your python application is using
-`bentoml.load`.
-
-.. code-block:: python
-
-    import bentoml
-    import pandas as pd
-
-    bento_svc = bentoml.load(saved_path)
-    bento_svc.predict([X[0]]
+You've just created a BentoML bundle, it's a versioned file archive, containing the
+BentoService you defined, including the trained model artifacts, pre-processing code,
+dependencies and configurations.
 
 
-`pip install` a BentoML service archive
-+++++++++++++++++++++++++++++++++++++++
 
-BentoML support distributing Bento service as PyPi package, with the generated
-`setup.py` file. Bento service archive can be installed with pip:
+Model serving via REST API
+++++++++++++++++++++++++++
+
+Now you can start a REST API server based off the saved BentoML bundle form command line:
+
+.. code-block:: bash
+
+  bentoml serve {saved_path}
+
+If you are doing this only local machine, visit http://127.0.0.1:5000 in your browser to play around with the API server's Web UI for debbugging and testing. You can also send prediction request with curl from command line:
+
+
+.. code-block:: bash
+
+  curl -i \
+    --header "Content-Type: application/json" \
+    --request POST \
+    --data '[[5.1, 3.5, 1.4, 0.2]]' \
+    http://localhost:5000/predict
+
+Model serving via Command Line Interface
+++++++++++++++++++++++++++++++++++++++++
+
+Load the saved BentoML bundle directly from command line for inferencing:
+
+.. code-block:: bash
+
+  bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
+
+  # alternatively:
+  bentoml predict {saved_path} --input='./iris_test_data.csv'
+
+
+Distribute BentoML Bundle as PyPI package
++++++++++++++++++++++++++++++++++++++++++
+
+BentoML bundle is pip-installable and can be directly distributed as a PyPI package:
+
+
+.. code-block:: bash
+
+  pip install {saved_path}
 
 .. code-block:: python
 
-    !pip install {saved_path}
+  # Your bentoML model class name will become packaged name
+  import IrisClassifier
 
-Bento service archive can be uploaded to pypi.org as public python package or
-to your organization's private PyPi index for all developers in your org to
-use.
+  installed_svc = IrisClassifier.load()
+  installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
+
+This allow users to upload their BentoService to pypi.org as public python package or
+to their organization's private PyPi index to share with other developers.
 
 .. code-block:: bash
 
@@ -261,59 +142,30 @@ use.
     https://docs.python.org/3.7/distributing/index.html#distributing-index
 
 
-After pip install, we can import the Bento service as regular python package.
+Run REST API server with Docker
++++++++++++++++++++++++++++++++
 
-.. code-block:: python
-
-    import IrisClassifier
-
-    installed_svc = IrisClassifier.load()
-    installed_svc.predict([X[0]]
+BentoML bundle is structured to work as a docker build context so you can easily build a docker image for this API server by using it as the build context directory:
 
 
-CLI access with BentoML service archive
-+++++++++++++++++++++++++++++++++++++++
+.. code-block:: bash
 
-`pip install` includes a CLI tool for accessing the Bento service.
+  docker build -t my_api_server {saved_path}
 
-From terminal, you can use `info` command to list all APIs defined in the
-service.
-
-.. code-block:: python
-
-    !IrisClassifier info
-
-You can use `docs` command to get all APIs in OpenAPI format.
-
-.. code-block:: python
-
-    !IrisClassifier docs
-
-Call prediction with user defined API function.
-
-.. code-block:: python
-
-    !IrisClassifier predict --help
-
-.. code-block:: python
-
-    !IrisClassifier predict --input='[[5.1, 3.5, 1.4, 0.2]]'
-
-Alternatively, use ``bentoml cli`` to load and run Bento service archive
-without installing.
-
-.. code-block:: python
-
-    !bentoml info {saved_path}
-
-.. code-block:: python
-
-    !bentoml docs {saved_path}
-
-.. code-block:: python
-
-    !bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
+  docker run -p 5000:5000 my_api_server
 
 
-Congratulation! You've train, build, and running your first Bento
-service.
+.. note::
+
+  You will need to install Docker before running this.
+  Follow direction from this link: https://docs.docker.com/install
+
+
+Learning More?
+++++++++++++++
+
+Interested in learning more about BentoML? Check out the
+`Examples <https://github.com/bentoml/BentoML#examples>`_ on BentoML github repository.
+
+Be sure to `join BentoML slack channel <http://bit.ly/2N5IpbB>` to hear about the latest
+development updates.

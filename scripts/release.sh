@@ -58,3 +58,5 @@ REPO=${REPO:=testpypi}
 
 echo "Uploading package to $REPO..."
 twine upload --repository $REPO dist/* --verbose
+
+echo "Done releasing BentoML-$VERSION_STR"

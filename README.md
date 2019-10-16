@@ -10,31 +10,18 @@
 
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/bentoml.png)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
 
-[Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Examples](https://github.com/bentoml/BentoML#examples) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) | [License](https://github.com/bentoml/BentoML/blob/master/LICENSE) | [Blog](https://medium.com/bentoml)
+[Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Gallery](https://github.com/bentoml/gallery) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) | [License](https://github.com/bentoml/BentoML/blob/master/LICENSE) | [Blog](https://medium.com/bentoml)
 
 
-BentoML is a platform for __serving and deploying machine learning
-models__. It provides three main components:
+BentoML is a flexible framework that accelerates the workflow of
+__serving and deploying machine learning models__ in the cloud. 
 
-* BentoService: High-level APIs for defining a prediction service by packaging
-  trained model, preprocessing source code, dependencies, and configurations 
-  into a standard BentoML bundle, which can be used as containerize REST API
-  server, PyPI package, CLI tool, or batch/streaming serving job.
+Check out our 5-mins [Quickstart Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+ using BentoML to turn a trained sklearn model into a containerized
+ REST API server, and then deploy it to AWS Lambda.
 
-* DeploymentOperator: The enssential module for deploying and managing your
-  prediction service workloads on Kubernetes cluster and cloud platforms such
-  as AWS Lambda, SageMaker, Azure ML, and GCP Function etc.
-
-* Yatai: A stateful server provides Web UI and APIs for model management
-  and model serving deployments management for teams
-
-
-Check out our 5-mins [BentoML Quickstart Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
- using BentoML to turn a trained sklearn model into a REST API server, and deploy it to AWS Lambda:
-
-
-If you plan to adopt BentoML for production use case or wants to contribute, 
-be sure to join our Slack channel and hear our latest development updates!
+If you are using BentoML for production workloads or wants to contribute,
+be sure to join our Slack channel and hear our latest development updates:
 [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](http://bit.ly/2N5IpbB)
 
 ---
@@ -47,7 +34,7 @@ Installation with pip:
 pip install bentoml
 ```
 
-Defining a machine learning service with BentoML:
+Defining a prediction service with BentoML:
 
 ```python
 import bentoml
@@ -63,10 +50,8 @@ class IrisClassifier(bentoml.BentoService):
         return self.artifacts.model.predict(df)
 ```
 
-After training your ML model, you can pack it with the prediction service
-`IrisClassifier` defined above, and save them as a BentoML Bundle to file
-system:
-
+Train a classifier model and pack it with the prediction service
+`IrisClassifier` defined above:
 ```python
 from sklearn import svm
 from sklearn import datasets
@@ -76,17 +61,18 @@ iris = datasets.load_iris()
 X, y = iris.data, iris.target
 clf.fit(X, y)
 
-# Packaging trained model for serving in production:
+# Create a iris classifier service with the newly trained model
 iris_classifier_service = IrisClassifier.pack(model=clf)
 
-# Save prediction service to file bundle
+# Save the entire prediction service to file bundle
 saved_path = = iris_classifier_service.save()
 ```
 
 A BentoML bundle is a versioned file archive, containing the BentoService you
 defined, along with trained model artifacts, dependencies and configurations.
 
-Now you can start a REST API server based off the saved BentoML bundle:
+Now you can start a REST API server based off the saved BentoML bundle form
+command line:
 ```bash
 bentoml serve {saved_path}
 ```
@@ -103,7 +89,7 @@ curl -i \
   http://localhost:5000/predict
 ```
 
-The saved BentoML bundle can also be used directly from command line for inferencing:
+The saved BentoML bundle can also be loaded directly from command line for inferencing:
 ```bash
 bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
 
@@ -111,7 +97,7 @@ bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
 bentoml predict {saved_path} --input='./iris_test_data.csv'
 ```
 
-BentoML bundle is also pip-installable and can be used as a Python package:
+BentoML bundle is pip-installable and can be directly distributed as a PyPI package:
 ```bash
 pip install {saved_path}
 ```
@@ -123,10 +109,9 @@ installed_svc = IrisClassifier.load()
 installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
 ```
 
-BentoML bundle is structure to be a docker build context where you can easily
-build a docker image for this API server containing all dependencies and
-environments settings:
-
+BentoML bundle is structured to work as a docker build context so you can easily
+build a docker image for this API server by using it as the build context
+directory:
 ```bash
 docker build -t my_api_server {saved_path}
 ```
@@ -183,7 +168,25 @@ To learn more, try out the Getting Started with Bentoml notebook: [![Google Cola
 - [(Beta) API server deployment on Kubernetes](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
 
 
+## Project Overview
+
+BentoML has three main components:
+
+* BentoService: High-level API for defining a prediction service by packaging
+  trained model, preprocessing source code, dependencies, and configurations 
+  into a BentoML bundle file, which can be deployed as containerize REST API
+  server, PyPI package, CLI tool, or batch/streaming serving job
+
+* DeploymentOperator: The enssential module for deploying and managing your
+  prediction service workloads on Kubernetes cluster and cloud platforms such
+  as AWS Lambda, SageMaker, Azure ML, and GCP Function etc
+
+* YataiServer: Web UI and APIs for model management and model serving
+  deployment process management for teams
+
+
 ## Feature Highlights
+
 
 * __Multiple Distribution Format__ - Easily package your Machine Learning models
   and preprocessing code into a format that works best with your inference scenario:

@@ -169,7 +169,7 @@ class YataiService(YataiServicer):
                     )
                     response.status.error_message = modified_message
 
-                    return response
+                return response
             else:
                 return DeleteDeploymentResponse(
                     status=Status.NOT_FOUND(

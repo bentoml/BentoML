@@ -100,6 +100,9 @@ def generate_aws_lambda_serverless_config(
             "stage": stage,
             "name": 'aws',
             'runtime': runtime,
+            "apiGateway": {
+                "binaryMediaTypes": ['image/*']
+            }
         },
         "functions": {
             api_name: {
@@ -108,9 +111,7 @@ def generate_aws_lambda_serverless_config(
             }
             for api_name in api_names
         },
-        "plugins": ['serverless-apigw-binary', 'serverless-python-requirements'],
         "custom": {
-            "apigwBinary": ["image/jpg", "image/jpeg", "image/png"],
             "pythonRequirements": {
                 "useDownloadCache": True,
                 "useStaticCache": True,
@@ -200,14 +201,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     stage=deployment_pb.namespace,
                 )
                 logger.info(
-                    'Installing additional packages: serverless-python-requirements, '
-                    'serverless-apigw-binary'
+                    'Installing additional packages: serverless-python-requirements'
                 )
                 install_serverless_plugin(
                     "serverless-python-requirements", serverless_project_dir
-                )
-                install_serverless_plugin(
-                    "serverless-apigw-binary", serverless_project_dir
                 )
                 logger.info('Deploying to AWS Lambda')
                 call_serverless_command(["deploy"], serverless_project_dir)

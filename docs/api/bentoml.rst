@@ -3,17 +3,15 @@ BentoML
 
 BentoService
 ++++++++++++
-.. autoclass:: bentoml.service.BentoService
+.. autoclass:: bentoml.BentoService
 
-  .. automethod:: bentoml.service.BentoService.name
+  .. automethod:: bentoml.BentoService.name
 
-  .. automethod:: bentoml.service.BentoService.version
+  .. automethod:: bentoml.BentoService.versioneer
 
-  .. automethod:: bentoml.service.BentoService.versioneer
+  .. automethod:: bentoml.BentoService.set_version
 
-  .. automethod:: bentoml.service.BentoService.set_version
-
-  .. automethod:: bentoml.service.BentoService.get_service_apis
+  .. automethod:: bentoml.BentoService.get_service_apis
 
 
 api

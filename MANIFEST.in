@@ -18,6 +18,10 @@ include LICENSE
 # include ".cfg" files
 graft bentoml/configuration
 
+# include migration files
+graft bentoml/migrations
+include bentoml/alembic.ini
+
 # Don't include examples, tests directory
 prune examples
 prune tests

@@ -23,6 +23,7 @@ import bentoml
 project = "BentoML"
 copyright = "2019, Atalaya"
 author = "Atalaya"
+version = bentoml.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -50,7 +51,13 @@ master_doc = "index"
 #
 html_theme_path = ["_themes"]
 html_theme = "sphinx_rtd_theme"
-html_theme_options = {"navigation_depth": 4}
+html_theme_options = {
+    "collapse_navigation": True,
+    "navigation_depth": 4,
+    "display_version": True,
+    "includehidden": False,
+    "titles_only": False,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

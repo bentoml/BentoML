@@ -50,8 +50,9 @@ class IrisClassifier(bentoml.BentoService):
         return self.artifacts.model.predict(df)
 ```
 
-Train a classifier model and pack it with the prediction service
-`IrisClassifier` defined above:
+Train a classifier model with default Iris dataset and pack the trained model
+with the BentoService `IrisClassifier` defined above:
+
 ```python
 from sklearn import svm
 from sklearn import datasets
@@ -65,7 +66,7 @@ clf.fit(X, y)
 iris_classifier_service = IrisClassifier.pack(model=clf)
 
 # Save the entire prediction service to file bundle
-saved_path = = iris_classifier_service.save()
+saved_path = iris_classifier_service.save()
 ```
 
 A BentoML bundle is a versioned file archive, containing the BentoService you
@@ -170,19 +171,15 @@ To learn more, try out the Getting Started with Bentoml notebook: [![Google Cola
 
 ## Project Overview
 
-BentoML has three main components:
+BentoML provides two set of high-level APIs:
 
-* BentoService: High-level API for defining a prediction service by packaging
-  trained model, preprocessing source code, dependencies, and configurations 
-  into a BentoML bundle file, which can be deployed as containerize REST API
-  server, PyPI package, CLI tool, or batch/streaming serving job
+* BentoService: Turn your trained ML model into versioned file bundle that can be
+  deployed as containerize REST API server, PyPI package, CLI tool, or
+  batch/streaming job
 
-* DeploymentOperator: The enssential module for deploying and managing your
-  prediction service workloads on Kubernetes cluster and cloud platforms such
-  as AWS Lambda, SageMaker, Azure ML, and GCP Function etc
-
-* YataiServer: Web UI and APIs for model management and model serving
-  deployment process management for teams
+* YataiService: Manage and deploy your saved BentoML bundles into prediction
+  services on Kubernetes cluster or cloud platforms such as AWS Lambda, SageMaker,
+  Azure ML, and GCP Function etc
 
 
 ## Feature Highlights

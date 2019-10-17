@@ -7,6 +7,4 @@ API Reference
   bentoml 
   artifacts
   handlers
-  deployments
-  exceptions
 

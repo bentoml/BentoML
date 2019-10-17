@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { Switch, Route } from 'react-router-dom';
 
+import { HomePage } from './components/home-page';
+
 interface RouteArgs {
   component: React.SFC<any> | React.ComponentClass<any>;
   layout: React.SFC<any>;
@@ -14,6 +16,12 @@ const AppRoute = ({component: Component, layout: Layout, ...rest}: RouteArgs) =>
       <Component {...props} />
     </Layout>
   )} />
+);
+
+const MainLayout = () => (
+  <div>
+  ok
+  </div>
 );
 
 export const AppRoutes = () => (

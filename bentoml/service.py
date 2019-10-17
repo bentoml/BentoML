@@ -139,14 +139,14 @@ class BentoServiceBase(object):
     @abstractmethod
     def name(self):
         """
-        return bento service name
+        return BentoService name
         """
 
     @property
     @abstractmethod
     def version(self):
         """
-        return bento service version str
+        return BentoService version str
         """
 
     def _config_service_apis(self):
@@ -449,6 +449,8 @@ class BentoService(BentoServiceBase):
             return cls.__name__
 
     def set_version(self, version_str=None):
+        """Manually override the version of this BentoService instance
+        """
         if version_str is None:
             version_str = self.versioneer()
 

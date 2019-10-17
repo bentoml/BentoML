@@ -9,10 +9,12 @@ BentoService
 
   .. automethod:: bentoml.service.BentoService.version
 
+  .. automethod:: bentoml.service.BentoService.versioneer
+
+  .. automethod:: bentoml.service.BentoService.set_version
+
   .. automethod:: bentoml.service.BentoService.get_service_apis
 
-
-.. autoclass:: bentoml.service.BentoServiceAPI
 
 api
 +++
@@ -34,12 +36,10 @@ save
 ++++
 .. autofunction:: bentoml.save
 
-.. _api-load-ref:
+save_to_dir
++++++++++++
+.. autofunction:: bentoml.save_to_dir
 
 load
 ++++
 .. autofunction:: bentoml.load
-
-config
-++++++
-.. autofunction:: bentoml.config

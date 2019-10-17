@@ -26,7 +26,6 @@ Quick start walk through
 Defining a prediction service with BentoML:
 
 .. code-block:: python
-
   :linenos:
 
   import bentoml

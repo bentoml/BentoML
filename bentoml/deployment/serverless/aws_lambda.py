@@ -108,6 +108,7 @@ def generate_aws_lambda_serverless_config(
             }
             for api_name in api_names
         },
+        "plugins": ['serverless-apigw-binary', 'serverless-python-requirements'],
         "custom": {
             "apigwBinary": ["image/jpg", "image/jpeg", "image/png"],
             "pythonRequirements": {

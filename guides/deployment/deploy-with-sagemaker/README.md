@@ -25,7 +25,7 @@ After you exported your model with BentoML, you can invoke `bentoml deployment c
 Update `BENTO_NAME` and `BENTO_VERSION` with your saved BentoML service's inforamtion and run the following command
 
 ```bash
-bentoml deployment create -deployment sentiment-sagemaker --bento BENTO_NAME:BENTO_VERSION --platform=aws-sagemaker --region=AWS_REGION --api-name=predict
+bentoml deployment create sentiment-sagemaker --bento BENTO_NAME:BENTO_VERSION --platform=aws-sagemaker --region=AWS_REGION --api-name=predict
 ```
 
 ![ScreenShot](./deploying-sagemaker.png)

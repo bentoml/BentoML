@@ -291,7 +291,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
             with TempDirectory() as temp_dir:
-                sagemaker_project_dir = os.path.jon(
+                sagemaker_project_dir = os.path.join(
                     temp_dir, deployment_spec.bento_name
                 )
                 init_sagemaker_project(sagemaker_project_dir, bento_path)

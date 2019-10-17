@@ -9,6 +9,9 @@
     :alt: BentoML
     :target: https://github.com/bentoml/BentoML
 
+BentoML Documenation
+====================
+
 BentoML is a flexible framework that accelerates the workflow of serving and deploying 
 machine learning models in the cloud. It provides two set of high-level APIs:
 

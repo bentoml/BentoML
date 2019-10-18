@@ -20,7 +20,6 @@ import os
 import stat
 import logging
 
-from bentoml.deployment.utils import add_local_bentoml_package_to_repo
 from bentoml.exceptions import BentoMLException
 from bentoml.archive.py_module_utils import copy_used_py_modules
 from bentoml.archive.templates import (
@@ -31,6 +30,7 @@ from bentoml.archive.templates import (
     INIT_PY_TEMPLATE,
     BENTO_INIT_SH_TEMPLATE,
 )
+from bentoml.archive.utils import add_local_bentoml_package_to_repo
 from bentoml.utils import _is_bentoml_in_develop_mode
 from bentoml.utils.usage_stats import track_save
 from bentoml.archive.config import BentoArchiveConfig

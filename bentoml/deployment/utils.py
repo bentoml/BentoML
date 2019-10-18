@@ -17,13 +17,8 @@ from __future__ import division
 from __future__ import print_function
 
 import json
-import os
 import logging
-import importlib
-import shutil
 import subprocess
-
-from setuptools import sandbox
 
 from bentoml.exceptions import (
     BentoMLException,
@@ -55,44 +50,6 @@ def process_docker_api_line(payload):
                     )
                 elif "stream" in line_payload:
                     logger.info(line_payload['stream'])
-
-
-def _find_bentoml_module_location():
-    try:
-        module_location, = importlib.util.find_spec(
-            'bentoml'
-        ).submodule_search_locations
-    except AttributeError:
-        # python 2.7 doesn't have importlib.util, will fall back to imp instead
-        import imp
-
-        _, module_location, _ = imp.find_module('bentoml')
-    return module_location
-
-
-def add_local_bentoml_package_to_repo(archive_path):
-    module_location = _find_bentoml_module_location()
-    bentoml_setup_py = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
-
-    assert os.path.isfile(bentoml_setup_py), '"setup.py" for Bentoml module not found'
-
-    # Create tmp directory inside bentoml module for storing the bundled
-    # targz file. Since dist-dir can only be inside of the module directory
-    bundle_dir_name = '__bento_dev_tmp'
-    source_dir = os.path.abspath(os.path.join(module_location, '..', bundle_dir_name))
-    if os.path.isdir(source_dir):
-        shutil.rmtree(source_dir, ignore_errors=True)
-    os.mkdir(source_dir)
-
-    sandbox.run_setup(
-        bentoml_setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name]
-    )
-
-    # copy the generated targz to archive directory and remove it from
-    # bentoml module directory
-    dest_dir = os.path.join(archive_path, 'bundled_pip_dependencies')
-    shutil.copytree(source_dir, dest_dir)
-    shutil.rmtree(source_dir)
 
 
 def ensure_docker_available_or_raise():

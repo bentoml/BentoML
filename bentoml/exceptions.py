@@ -42,7 +42,7 @@ class BentoMLRepositoryException(BentoMLException):
     pass
 
 
-class BentoMLMissingDepdencyException(BentoMLException):
+class BentoMLMissingDependencyException(BentoMLException):
     pass
 
 

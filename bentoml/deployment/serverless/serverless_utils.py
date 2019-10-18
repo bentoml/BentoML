@@ -27,7 +27,7 @@ from packaging import version
 
 from bentoml.configuration import _get_bentoml_home
 from bentoml.utils.whichcraft import which
-from bentoml.exceptions import BentoMLException, BentoMLMissingDepdencyException
+from bentoml.exceptions import BentoMLException, BentoMLMissingDependencyException
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +42,11 @@ SERVERLESS_BIN_COMMAND = '{}/node_modules/.bin/serverless'.format(BENTOML_HOME)
 
 def check_nodejs_comptaible_version():
     if which('npm') is None:
-        raise BentoMLMissingDepdencyException(
+        raise BentoMLMissingDependencyException(
             'NPM is not installed. Please visit www.nodejs.org for instructions'
         )
     if which("node") is None:
-        raise BentoMLMissingDepdencyException(
+        raise BentoMLMissingDependencyException(
             "NodeJs is not installed, please visit www.nodejs.org for install "
             "instructions."
         )

@@ -25,19 +25,19 @@ After you exported your model with BentoML, you can invoke `bentoml deployment c
 Update `BENTO_NAME` and `BENTO_VERSION` with your saved BentoML service's inforamtion and run the following command
 
 ```bash
-bentoml deployment create my-sagemaker-deployment --bento BENTO_NAME:BENTO_VERSION --platform=aws-sagemaker --region=AWS_REGION --api-name=predict
+bentoml deployment create sentiment-sagemaker --bento BENTO_NAME:BENTO_VERSION --platform=aws-sagemaker --region=AWS_REGION --api-name=predict
 ```
 
-After you invoke the command, BentoML will first generated a snapshot of this model archive in your local file system with additional files for AWS SageMaker.
+![ScreenShot](./deploying-sagemaker.png)
 
-After you invoke deploy command, BentoML will perform serveal operations for SageMaker deployment.
+After you invoke the command, BentoML will first generated a snapshot of this model archive in your local file system with files for AWS SageMaker.
+
+After you invoke deploy command, BentoML will perform few operations for SageMaker deployment.
 
 BentoML will use docker to build an image with the snapshot archive and then push the image to AWS ECR(Elasitc Container Registry)
 
 BentoML will build a docker image from the snapshot and then push the image to AWS ECR. If you run `docker images` command in your terminal. You will see the built docker image.
 You can also expect to see the same image in your AWS ECR dashboard.
-
-![ScreenShot](./docker-image.png)
 
 ![ScreenShot](./aws-ecr.png)
 
@@ -56,8 +56,6 @@ BentoML will create SageMaker endpoint base on the endpoint configuration we cre
 
 To test the newly deployed model.  We can use AWS cli to make prediction.  The result will be stored as JSON format in an output file.
 
-![ScreenShot](./test-prediction.png)
-
 You can invoke the example model with following command.
 
 ```bash
@@ -68,11 +66,15 @@ aws sagemaker-runtime invoke-endpoint \
 output.json
 ```
 
+![ScreenShot](./test-prediction.png)
+
 ## Check deployment status
 
 ```bash
 bentoml deployment describe my-sagemaker-deployment
 ```
+
+![ScreenShot](./describe-deployment.png)
 
 ## Delete deployment
 
@@ -81,3 +83,5 @@ Delete a SageMaker deployment is as easy as deploying it.
 ```bash
 bentoml deployment delete my-sagemaker-deployment
 ```
+
+![ScreenShot](./delete-deployment.png)

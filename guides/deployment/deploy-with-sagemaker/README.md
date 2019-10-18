@@ -30,7 +30,7 @@ bentoml deployment create sentiment-sagemaker --bento BENTO_NAME:BENTO_VERSION -
 
 ![ScreenShot](./deploying-sagemaker.png)
 
-After you invoke the command, BentoML will first generated a snapshot of this model archive in your local file system with additional files for AWS SageMaker.
+After you invoke the command, BentoML will first generated a snapshot of this model archive in your local file system with files for AWS SageMaker.
 
 After you invoke deploy command, BentoML will perform few operations for SageMaker deployment.
 
@@ -38,8 +38,6 @@ BentoML will use docker to build an image with the snapshot archive and then pus
 
 BentoML will build a docker image from the snapshot and then push the image to AWS ECR. If you run `docker images` command in your terminal. You will see the built docker image.
 You can also expect to see the same image in your AWS ECR dashboard.
-
-![ScreenShot](./docker-image.png)
 
 ![ScreenShot](./aws-ecr.png)
 

@@ -304,8 +304,7 @@ def _create_sagemaker_endpoint_config(
 
     logger.info("Creating Sagemaker endpoint %s configuration", endpoint_config_name)
     create_config_response = sagemaker_client.create_endpoint_config(
-        EndpointConfigName=endpoint_config_name,
-        ProductionVariants=production_variants,
+        EndpointConfigName=endpoint_config_name, ProductionVariants=production_variants
     )
     logger.debug("AWS create endpoint config response: %s", create_config_response)
     return endpoint_config_name

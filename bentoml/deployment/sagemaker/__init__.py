@@ -107,7 +107,7 @@ def get_arn_role_from_current_aws_user():
             ):
                 arn = role["Arn"]
         if arn is None:
-            raise ValueError(
+            raise BentoMLDeploymentException(
                 "Can't find proper Arn role for Sagemaker, please create one and try "
                 "again"
             )
@@ -259,6 +259,58 @@ def init_sagemaker_project(sagemaker_project_dir, bento_path):
     return sagemaker_project_dir
 
 
+def _create_sagemaker_model(
+    sagemaker_client, bento_name, bento_version, ecr_image_path, api_name
+):
+    execution_role_arn = get_arn_role_from_current_aws_user()
+    model_name = create_sagemaker_model_name(bento_name, bento_version)
+
+    sagemaker_model_info = {
+        "ModelName": model_name,
+        "PrimaryContainer": {
+            "ContainerHostname": model_name,
+            "Image": ecr_image_path,
+            "Environment": {
+                "API_NAME": api_name,
+                "BENTO_SERVER_TIMEOUT": config().get('apiserver', 'default_timeout'),
+                "BENTO_SERVER_WORKERS": config().get(
+                    'apiserver', 'default_gunicorn_workers_count'
+                ),
+            },
+        },
+        "ExecutionRoleArn": execution_role_arn,
+    }
+
+    logger.info("Creating sagemaker model %s", model_name)
+    create_model_response = sagemaker_client.create_model(**sagemaker_model_info)
+    logger.debug("AWS create model response: %s", create_model_response)
+    return model_name
+
+
+def _create_sagemaker_endpoint_config(
+    sagemaker_client, model_name, bento_name, bento_version, sagemaker_config
+):
+    production_variants = [
+        {
+            "VariantName": generate_aws_compatible_string(bento_name),
+            "ModelName": model_name,
+            "InitialInstanceCount": sagemaker_config.instance_count,
+            "InstanceType": sagemaker_config.instance_type,
+        }
+    ]
+    endpoint_config_name = create_sagemaker_endpoint_config_name(
+        bento_name, bento_version
+    )
+
+    logger.info("Creating Sagemaker endpoint %s configuration", endpoint_config_name)
+    create_config_response = sagemaker_client.create_endpoint_config(
+        EndpointConfigName=endpoint_config_name,
+        ProductionVariants=production_variants,
+    )
+    logger.debug("AWS create endpoint config response: %s", create_config_response)
+    return endpoint_config_name
+
+
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, yatai_service, prev_deployment=None):
         try:
@@ -299,35 +351,14 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     sagemaker_project_dir,
                 )
 
-            execution_role_arn = get_arn_role_from_current_aws_user()
-            model_name = create_sagemaker_model_name(
-                deployment_spec.bento_name, deployment_spec.bento_version
-            )
-
-            sagemaker_model_info = {
-                "ModelName": model_name,
-                "PrimaryContainer": {
-                    "ContainerHostname": model_name,
-                    "Image": ecr_image_path,
-                    "Environment": {
-                        "API_NAME": sagemaker_config.api_name,
-                        "BENTO_SERVER_TIMEOUT": config().get(
-                            'apiserver', 'default_timeout'
-                        ),
-                        "BENTO_SERVER_WORKERS": config().get(
-                            'apiserver', 'default_gunicorn_workers_count'
-                        ),
-                    },
-                },
-                "ExecutionRoleArn": execution_role_arn,
-            }
-
-            logger.info("Creating sagemaker model %s", model_name)
             try:
-                create_model_response = sagemaker_client.create_model(
-                    **sagemaker_model_info
+                model_name = _create_sagemaker_model(
+                    sagemaker_client,
+                    deployment_spec.bento_name,
+                    deployment_spec.bento_version,
+                    ecr_image_path,
+                    sagemaker_config.api_name,
                 )
-                logger.debug("AWS create model response: %s", create_model_response)
             except ClientError as e:
                 status = _parse_aws_client_exception_or_raise(e)
                 status.error_message = (
@@ -336,30 +367,13 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 )
                 return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
-            production_variants = [
-                {
-                    "VariantName": generate_aws_compatible_string(
-                        deployment_spec.bento_name
-                    ),
-                    "ModelName": model_name,
-                    "InitialInstanceCount": sagemaker_config.instance_count,
-                    "InstanceType": sagemaker_config.instance_type,
-                }
-            ]
-            endpoint_config_name = create_sagemaker_endpoint_config_name(
-                deployment_spec.bento_name, deployment_spec.bento_version
-            )
-
-            logger.info(
-                "Creating Sagemaker endpoint %s configuration", endpoint_config_name
-            )
             try:
-                create_config_response = sagemaker_client.create_endpoint_config(
-                    EndpointConfigName=endpoint_config_name,
-                    ProductionVariants=production_variants,
-                )
-                logger.debug(
-                    "AWS create endpoint config response: %s", create_config_response
+                endpoint_config_name = _create_sagemaker_endpoint_config(
+                    sagemaker_client,
+                    model_name,
+                    deployment_spec.bento_name,
+                    deployment_spec.bento_version,
+                    sagemaker_config,
                 )
             except ClientError as e:
                 # create endpoint failed, will remove previously created model

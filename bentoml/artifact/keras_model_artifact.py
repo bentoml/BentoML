@@ -123,7 +123,7 @@ class KerasModelArtifact(BentoServiceArtifact):
             model = data
             custom_objects = self.custom_objects
 
-        if not isinstance(data, tf.keras.models.Model):
+        if not isinstance(model, tf.keras.models.Model):
             error_msg = (
                 "KerasModelArtifact#pack expects model argument to be type: "
                 "keras.engine.training.Model or "
@@ -133,7 +133,7 @@ class KerasModelArtifact(BentoServiceArtifact):
             try:
                 import keras
 
-                if not isinstance(data, keras.engine.network.Network):
+                if not isinstance(model, keras.engine.network.Network):
                     raise ValueError(error_msg)
                 else:
                     self._keras_module_name = keras.__name__

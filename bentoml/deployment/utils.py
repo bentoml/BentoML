@@ -27,7 +27,7 @@ from setuptools import sandbox
 
 from bentoml.exceptions import (
     BentoMLException,
-    BentoMLMissingDepdencyException,
+    BentoMLMissingDependencyException,
     BentoMLInvalidArgumentException,
 )
 
@@ -103,7 +103,7 @@ def ensure_docker_available_or_raise():
             'Error executing docker command: {}'.format(error.output)
         )
     except FileNotFoundError:
-        raise BentoMLMissingDepdencyException(
+        raise BentoMLMissingDependencyException(
             'Docker is required for this deployment. Please visit '
             'www.docker.come for instructions'
         )

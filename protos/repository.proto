@@ -18,6 +18,7 @@ message BentoUri {
 
   StorageType type = 1;
   string uri = 2;
+  string additional_fields = 3;
 }
 
 message BentoServiceMetadata {

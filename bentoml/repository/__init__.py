@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import json
 import shutil
 import boto3
 from six import add_metaclass
@@ -121,7 +122,7 @@ class _S3BentoRepository(BentoRepositoryBase):
 
         parse_result = urlparse(base_url)
         self.bucket = parse_result.netloc
-        self.base_path = parse_result.path
+        self.base_path = parse_result.path.lstrip('/')
 
         self.s3_client = boto3.client("s3")
 
@@ -135,7 +136,7 @@ class _S3BentoRepository(BentoRepositoryBase):
     def add(self, bento_name, bento_version):
         # Generate pre-signed s3 path for upload
 
-        object_name = self._get_object_name(bento_name, bento_version)
+        object_name = self._get_object_name(bento_name, bento_version) + '.tar.gz'
 
         try:
             response = self.s3_client.generate_presigned_post(
@@ -149,7 +150,12 @@ class _S3BentoRepository(BentoRepositoryBase):
             raise BentoMLRepositoryException(
                 "Not able to get pre-signed URL on S3. Error: {}".format(e)
             )
-        return response
+
+        return BentoUri(
+            type=self.uri_type,
+            uri=response['url'],
+            additional_fields=json.dumps(response['fields']),
+        )
 
     def get(self, bento_name, bento_version):
         # Return s3 path containing uploaded Bento files

@@ -16,7 +16,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
 import logging
 
 from bentoml.proto.deployment_pb2 import (
@@ -264,6 +263,7 @@ class YataiService(YataiServicer):
                 uri=new_bento_uri.uri,
                 uri_type=new_bento_uri.type,
             )
+
             return AddBentoResponse(status=Status.OK(), uri=new_bento_uri)
         except BentoMLException as e:
             logger.error("INTERNAL ERROR: %s", e)

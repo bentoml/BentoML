@@ -40,7 +40,7 @@ BENTOML_HOME = _get_bentoml_home()
 SERVERLESS_BIN_COMMAND = '{}/node_modules/.bin/serverless'.format(BENTOML_HOME)
 
 
-def check_nodejs_comptaible_version():
+def check_nodejs_compatible_version():
     if which('npm') is None:
         raise BentoMLMissingDependencyException(
             'NPM is not installed. Please visit www.nodejs.org for instructions'
@@ -66,7 +66,7 @@ def install_serverless_package():
     serverless framework, we will install a specific one just for BentoML.
     It will be installed in BentoML home directory.
     """
-    check_nodejs_comptaible_version()
+    check_nodejs_compatible_version()
     install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]
     try:
         subprocess.check_call(

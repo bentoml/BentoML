@@ -165,8 +165,6 @@ def create_push_docker_image_to_ecr(bento_name, bento_version, snapshot_path):
     except ecr_client.exceptions.RepositoryNotFoundException:
         ecr_client.create_repository(repositoryName=image_name)
 
-    # if docker_api.tag(image_name, ecr_tag) is False:
-    #     raise RuntimeError("Tag appeared to fail: " + ecr_tag)
     logger.info("Pushing image to AWS ECR at %s", ecr_tag)
     for line in docker_api.push(ecr_tag, stream=True, auth_config=auth_config_payload):
         process_docker_api_line(line)

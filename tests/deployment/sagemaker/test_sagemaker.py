@@ -11,7 +11,6 @@ from bentoml.deployment.sagemaker import (
     _parse_aws_client_exception_or_raise,
     _cleanup_sagemaker_model,
     _cleanup_sagemaker_endpoint_config,
-    init_sagemaker_project,
     get_arn_role_from_current_aws_user,
     SageMakerDeploymentOperator,
 )
@@ -125,7 +124,7 @@ else:
 @patch('os.chmod', autospec=True)
 @patch(
     'bentoml.deployment.sagemaker.create_push_docker_image_to_ecr',
-    new=lambda x, y, z: 'https://fake.aws.com'
+    new=lambda x, y, z: 'https://fake.aws.com',
 )
 def test_sagemaker_apply(
     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output

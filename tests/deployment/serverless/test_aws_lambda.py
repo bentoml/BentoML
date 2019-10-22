@@ -1,9 +1,14 @@
 import os
+
+from mock import MagicMock, patch, Mock
 from ruamel.yaml import YAML
 
 from bentoml.deployment.serverless.aws_lambda import (
     generate_aws_lambda_serverless_config,
-    generate_aws_lambda_handler_py)
+    generate_aws_lambda_handler_py,
+    AwsLambdaDeploymentOperator)
+from bentoml.proto.deployment_pb2 import Deployment
+from bentoml.proto.status_pb2 import Status
 
 
 def test_generate_aws_lambda_serverless_config(tmpdir):
@@ -28,11 +33,13 @@ def test_generate_aws_lambda_handler_py(tmpdir):
     bento_name = 'bento_name'
     api_names = ['predict', 'second_predict']
     generate_aws_lambda_handler_py(bento_name, api_names, tmpdir)
-    handler_path = os.path.join(tmpdir, 'handler.py')
-    with open(handler_path, 'r') as f:
-        handler_content = f.read()
 
-    assert 'from bento_name import load' in handler_content
-    assert 'def predict(event, context):' in handler_content
-    assert 'def second_predict(event, context):' in handler_content
+    import sys
+    sys.modules['bento_name'] = Mock()
+
+    sys.path.insert(1, str(tmpdir))
+    from handler import predict, second_predict
+
+    assert predict.__module__ == 'handler'
+
 

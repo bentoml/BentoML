@@ -60,20 +60,16 @@ def test_cleanup_sagemaker_model():
     stubber.add_client_error(
         method='delete_model', service_error_code='InvalidSignatureException'
     )
-    error_status = _cleanup_sagemaker_model(
-        client, 'test_name', 'test_version'
-    )
+    error_status = _cleanup_sagemaker_model(client, 'test_name', 'test_version')
     assert error_status.status_code == Status.UNAUTHENTICATED
 
     stubber.add_client_error(
         method='delete_model',
         service_error_code='RandomError',
-        service_message='random'
+        service_message='random',
     )
     with pytest.raises(ClientError) as error:
-        _cleanup_sagemaker_model(
-            client, 'test_name', 'test_version'
-        )
+        _cleanup_sagemaker_model(client, 'test_name', 'test_version')
     assert error.value.operation_name == 'DeleteModel'
     assert error.value.response['Error']['Code'] == 'RandomError'
 
@@ -102,12 +98,10 @@ def test_cleanup_sagemaker_endpoint_config():
     stubber.add_client_error(
         method='delete_endpoint_config',
         service_error_code='RandomError',
-        service_message='random'
+        service_message='random',
     )
     with pytest.raises(ClientError) as error:
-        _cleanup_sagemaker_endpoint_config(
-            client, 'test_name', 'test_version'
-        )
+        _cleanup_sagemaker_endpoint_config(client, 'test_name', 'test_version')
     assert error.value.operation_name == 'DeleteEndpointConfig'
     assert error.value.response['Error']['Code'] == 'RandomError'
 
@@ -126,6 +120,7 @@ def test_get_arn_from_aws_user():
     @patch('botocore.client.BaseClient._make_api_call', new=mock_role_path_call)
     def role_path():
         return get_arn_role_from_current_aws_user()
+
     assert role_path() == 'arn:aws:us-west-2:999'
 
     def mock_user_path_call(self, operation_name, kwarg):
@@ -139,13 +134,11 @@ def test_get_arn_from_aws_user():
                             "Statement": [
                                 {
                                     "Effect": "Allow",
-                                    "Principal": {
-                                        "Service": "sagemaker.amazonaws.com"
-                                    }
+                                    "Principal": {"Service": "sagemaker.amazonaws.com"},
                                 }
                             ]
                         },
-                        "Arn": "arn:aws:us-west-2:888"
+                        "Arn": "arn:aws:us-west-2:888",
                     }
                 ]
             }
@@ -157,6 +150,7 @@ def test_get_arn_from_aws_user():
     @patch('botocore.client.BaseClient._make_api_call', new=mock_user_path_call)
     def user_path():
         return get_arn_role_from_current_aws_user()
+
     assert user_path() == 'arn:aws:us-west-2:888'
 
 

@@ -19,6 +19,7 @@ from __future__ import print_function
 import json
 import logging
 import subprocess
+from sys import version_info
 
 from bentoml.exceptions import (
     BentoMLException,
@@ -53,13 +54,18 @@ def process_docker_api_line(payload):
 
 
 def ensure_docker_available_or_raise():
+    # for FileNotFoundError doesn't exist in py2.7. check_output raise OSError instead
+    not_found_error = FileNotFoundError
+    if version_info.major < 3:
+        not_found_error = OSError
+
     try:
         subprocess.check_output(['docker', 'info'])
     except subprocess.CalledProcessError as error:
         raise BentoMLException(
             'Error executing docker command: {}'.format(error.output)
         )
-    except FileNotFoundError:
+    except not_found_error:
         raise BentoMLMissingDependencyException(
             'Docker is required for this deployment. Please visit '
             'www.docker.come for instructions'

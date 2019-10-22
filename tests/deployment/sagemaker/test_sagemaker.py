@@ -1,3 +1,4 @@
+import pytest
 from mock import patch, MagicMock, mock_open
 from sys import version_info
 
@@ -45,7 +46,7 @@ def test_sagemaker_handle_client_errors():
     assert result.status_code == Status.UNAUTHENTICATED
 
 
-def test_cleanup_sagemaker_functions():
+def test_cleanup_sagemaker_model():
     client = boto3.client('sagemaker', 'us-west-2')
     stubber = Stubber(client)
     stubber.add_client_error(
@@ -56,11 +57,123 @@ def test_cleanup_sagemaker_functions():
     error_status = _cleanup_sagemaker_model(client, 'test_name', 'test_version')
     assert error_status.status_code == Status.NOT_FOUND
 
-    stubber.add_response('delete_endpoint_config', {})
-    _cleanup_sagemaker_endpoint_config(client, 'test-name', 'test-version')
+    stubber.add_client_error(
+        method='delete_model', service_error_code='InvalidSignatureException'
+    )
+    error_status = _cleanup_sagemaker_model(
+        client, 'test_name', 'test_version'
+    )
+    assert error_status.status_code == Status.UNAUTHENTICATED
+
+    stubber.add_client_error(
+        method='delete_model',
+        service_error_code='RandomError',
+        service_message='random'
+    )
+    with pytest.raises(ClientError) as error:
+        _cleanup_sagemaker_model(
+            client, 'test_name', 'test_version'
+        )
+    assert error.value.operation_name == 'DeleteModel'
+    assert error.value.response['Error']['Code'] == 'RandomError'
 
 
-orig = botocore.client.BaseClient._make_api_call
+def test_cleanup_sagemaker_endpoint_config():
+    client = boto3.client('sagemaker', 'us-west-2')
+    stubber = Stubber(client)
+    stubber.add_client_error(
+        method='delete_endpoint_config', service_error_code='ValidationException'
+    )
+    stubber.activate()
+
+    error_status = _cleanup_sagemaker_endpoint_config(
+        client, 'test_name', 'test_version'
+    )
+    assert error_status.status_code == Status.NOT_FOUND
+
+    stubber.add_client_error(
+        method='delete_endpoint_config', service_error_code='InvalidSignatureException'
+    )
+    error_status = _cleanup_sagemaker_endpoint_config(
+        client, 'test_name', 'test_version'
+    )
+    assert error_status.status_code == Status.UNAUTHENTICATED
+
+    stubber.add_client_error(
+        method='delete_endpoint_config',
+        service_error_code='RandomError',
+        service_message='random'
+    )
+    with pytest.raises(ClientError) as error:
+        _cleanup_sagemaker_endpoint_config(
+            client, 'test_name', 'test_version'
+        )
+    assert error.value.operation_name == 'DeleteEndpointConfig'
+    assert error.value.response['Error']['Code'] == 'RandomError'
+
+
+def test_get_arn_from_aws_user():
+    def mock_role_path_call(self, operation_name, kwarg):
+        if operation_name == 'GetCallerIdentity':
+            return {'Arn': 'something:something:role/random'}
+        elif operation_name == 'GetRole':
+            return {'Role': {'Arn': 'arn:aws:us-west-2:999'}}
+        else:
+            raise Exception(
+                'This test does not handle operation: {}'.format(operation_name)
+            )
+
+    @patch('botocore.client.BaseClient._make_api_call', new=mock_role_path_call)
+    def role_path():
+        return get_arn_role_from_current_aws_user()
+    assert role_path() == 'arn:aws:us-west-2:999'
+
+    def mock_user_path_call(self, operation_name, kwarg):
+        if operation_name == 'GetCallerIdentity':
+            return {'Arn': 'something:something:user/random'}
+        elif operation_name == 'ListRoles':
+            return {
+                "Roles": [
+                    {
+                        "AssumeRolePolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Principal": {
+                                        "Service": "sagemaker.amazonaws.com"
+                                    }
+                                }
+                            ]
+                        },
+                        "Arn": "arn:aws:us-west-2:888"
+                    }
+                ]
+            }
+        else:
+            raise Exception(
+                'This test does not handle operation: {}'.format(operation_name)
+            )
+
+    @patch('botocore.client.BaseClient._make_api_call', new=mock_user_path_call)
+    def user_path():
+        return get_arn_role_from_current_aws_user()
+    assert user_path() == 'arn:aws:us-west-2:888'
+
+
+def mock_get_bento():
+    bento_pb = Bento(name='bento_test_name', version='version1.1.1')
+    # BentoUri.StorageType.LOCAL
+    bento_pb.uri.type = 1
+    bento_pb.uri.uri = '/fake/path/to/bundle'
+    api = BentoServiceMetadata.BentoServiceApi(name='predict')
+    bento_pb.bento_service_metadata.apis.extend([api])
+    return GetBentoResponse(bento=bento_pb)
+
+
+if version_info.major >= 3:
+    mock_open_param_value = 'builtins.open'
+else:
+    mock_open_param_value = '__builtin__.open'
 
 
 def mock_aws_api_calls(self, operation_name, kwarg):
@@ -90,29 +203,7 @@ def mock_aws_api_calls(self, operation_name, kwarg):
         return {}
     elif operation_name == 'UpdateEndpoint':
         return {}
-    return orig(self, operation_name, kwarg)
-
-
-@patch('botocore.client.BaseClient._make_api_call', new=mock_aws_api_calls)
-def test_get_arn_from_aws_user():
-    arn_role = get_arn_role_from_current_aws_user()
-    assert arn_role == 'arn:aws:us-west-2:999888'
-
-
-def mock_get_bento():
-    bento_pb = Bento(name='bento_test_name', version='version1.1.1')
-    # BentoUri.StorageType.LOCAL
-    bento_pb.uri.type = 1
-    bento_pb.uri.uri = '/fake/path/to/bundle'
-    api = BentoServiceMetadata.BentoServiceApi(name='predict')
-    bento_pb.bento_service_metadata.apis.extend([api])
-    return GetBentoResponse(bento=bento_pb)
-
-
-if version_info.major >= 3:
-    mock_open_param_value = 'builtins.open'
-else:
-    mock_open_param_value = '__builtin__.open'
+    return botocore.client.BaseClient._make_api_call(self, operation_name, kwarg)
 
 
 @patch('subprocess.check_output', autospec=True)

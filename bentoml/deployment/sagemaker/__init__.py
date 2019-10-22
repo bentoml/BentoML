@@ -136,7 +136,7 @@ def create_push_docker_image_to_ecr(bento_name, bento_version, snapshot_path):
     """
     ecr_client = boto3.client("ecr")
     token = ecr_client.get_authorization_token()
-    logger.info("Getting docker login info from AWS")
+    logger.debug("Getting docker login info from AWS")
     username, password = (
         base64.b64decode(token["authorizationData"][0]["authorizationToken"])
         .decode("utf-8")
@@ -154,7 +154,7 @@ def create_push_docker_image_to_ecr(bento_name, bento_version, snapshot_path):
         )
     )
 
-    logger.info("Building docker image: %s", ecr_tag)
+    logger.debug("Building docker image: %s", ecr_tag)
     for line in docker_api.build(
         path=snapshot_path, dockerfile="Dockerfile-sagemaker", tag=ecr_tag
     ):
@@ -165,10 +165,10 @@ def create_push_docker_image_to_ecr(bento_name, bento_version, snapshot_path):
     except ecr_client.exceptions.RepositoryNotFoundException:
         ecr_client.create_repository(repositoryName=image_name)
 
-    logger.info("Pushing image to AWS ECR at %s", ecr_tag)
+    logger.debug("Pushing image to AWS ECR at %s", ecr_tag)
     for line in docker_api.push(ecr_tag, stream=True, auth_config=auth_config_payload):
         process_docker_api_line(line)
-    logger.info("Finished pushing image: %s", ecr_tag)
+    logger.debug("Finished pushing image: %s", ecr_tag)
     return ecr_tag
 
 
@@ -281,7 +281,7 @@ def _create_sagemaker_model(
         "ExecutionRoleArn": execution_role_arn,
     }
 
-    logger.info("Creating sagemaker model %s", model_name)
+    logger.debug("Creating sagemaker model %s", model_name)
     create_model_response = sagemaker_client.create_model(**sagemaker_model_info)
     logger.debug("AWS create model response: %s", create_model_response)
     return model_name
@@ -302,7 +302,7 @@ def _create_sagemaker_endpoint_config(
         bento_name, bento_version
     )
 
-    logger.info("Creating Sagemaker endpoint %s configuration", endpoint_config_name)
+    logger.debug("Creating Sagemaker endpoint %s configuration", endpoint_config_name)
     create_config_response = sagemaker_client.create_endpoint_config(
         EndpointConfigName=endpoint_config_name, ProductionVariants=production_variants
     )

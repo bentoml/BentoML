@@ -22,9 +22,9 @@ def test_generate_aws_lambda_serverless_config(tmpdir):
     region = 'us-west-test'
     namespace = 'namespace'
     generate_aws_lambda_serverless_config(
-        python_version, deployment_name, api_names, tmpdir, region, namespace
+        python_version, deployment_name, api_names, str(tmpdir), region, namespace
     )
-    config_path = os.path.join(tmpdir, 'serverless.yml')
+    config_path = os.path.join(str(tmpdir), 'serverless.yml')
     yaml = YAML()
     with open(config_path, 'rb') as f:
         yaml_data = yaml.load(f.read())
@@ -36,7 +36,7 @@ def test_generate_aws_lambda_serverless_config(tmpdir):
 def test_generate_aws_lambda_handler_py(tmpdir):
     bento_name = 'bento_name'
     api_names = ['predict', 'second_predict']
-    generate_aws_lambda_handler_py(bento_name, api_names, tmpdir)
+    generate_aws_lambda_handler_py(bento_name, api_names, str(tmpdir))
 
     import sys
 

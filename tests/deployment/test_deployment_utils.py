@@ -22,9 +22,7 @@ def test_ensure_docker_available_or_raise():
     setattr(
         subprocess,
         'check_output',
-        lambda *args, **kwargs: raise_(
-            CalledProcessError(2, 'fake_cmd')
-        ),
+        lambda *args, **kwargs: raise_(CalledProcessError(2, 'fake_cmd')),
     )
     with pytest.raises(BentoMLException) as error:
         ensure_docker_available_or_raise()

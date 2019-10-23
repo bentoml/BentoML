@@ -154,16 +154,6 @@ def test_get_arn_from_aws_user():
     assert user_path() == 'arn:aws:us-west-2:888'
 
 
-def mock_get_bento():
-    bento_pb = Bento(name='bento_test_name', version='version1.1.1')
-    # BentoUri.StorageType.LOCAL
-    bento_pb.uri.type = 1
-    bento_pb.uri.uri = '/fake/path/to/bundle'
-    api = BentoServiceMetadata.BentoServiceApi(name='predict')
-    bento_pb.bento_service_metadata.apis.extend([api])
-    return GetBentoResponse(bento=bento_pb)
-
-
 if version_info.major >= 3:
     mock_open_param_value = 'builtins.open'
 else:
@@ -214,6 +204,16 @@ def mock_aws_api_calls(self, operation_name, kwarg):
 def test_sagemaker_apply(
     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
 ):
+    def mock_get_bento(is_local=True):
+        bento_pb = Bento(name='bento_test_name', version='version1.1.1')
+        # BentoUri.StorageType.LOCAL
+        if is_local:
+            bento_pb.uri.type = 1
+        bento_pb.uri.uri = '/fake/path/to/bundle'
+        api = BentoServiceMetadata.BentoServiceApi(name='predict')
+        bento_pb.bento_service_metadata.apis.extend([api])
+        return GetBentoResponse(bento=bento_pb)
+
     test_deployment_pb = Deployment(
         name='test',
         namespace='test-namespace',
@@ -226,6 +226,13 @@ def test_sagemaker_apply(
 
     deployment_operator = SageMakerDeploymentOperator()
     fake_yatai_service = MagicMock()
+    fake_yatai_service.GetBento = lambda uri: mock_get_bento(False)
+    result_pb = deployment_operator.apply(test_deployment_pb, fake_yatai_service)
+    assert result_pb.status.status_code == Status.INTERNAL
+    assert result_pb.status.error_message.startswith(
+        'BentoML currently only support local repository'
+    )
+
     fake_yatai_service.GetBento = lambda uri: mock_get_bento()
     result_pb = deployment_operator.apply(test_deployment_pb, fake_yatai_service)
     assert result_pb.status.status_code == Status.OK

@@ -1,14 +1,18 @@
 import os
+from sys import version_info
 
-from mock import MagicMock, patch, Mock
+from mock import MagicMock, patch, Mock, mock_open
 from ruamel.yaml import YAML
 
 from bentoml.deployment.serverless.aws_lambda import (
     generate_aws_lambda_serverless_config,
     generate_aws_lambda_handler_py,
-    AwsLambdaDeploymentOperator)
+    AwsLambdaDeploymentOperator,
+)
 from bentoml.proto.deployment_pb2 import Deployment
+from bentoml.proto.repository_pb2 import Bento, BentoServiceMetadata, GetBentoResponse
 from bentoml.proto.status_pb2 import Status
+from bentoml.deployment.serverless import serverless_utils
 
 
 def test_generate_aws_lambda_serverless_config(tmpdir):
@@ -35,6 +39,7 @@ def test_generate_aws_lambda_handler_py(tmpdir):
     generate_aws_lambda_handler_py(bento_name, api_names, tmpdir)
 
     import sys
+
     sys.modules['bento_name'] = Mock()
 
     sys.path.insert(1, str(tmpdir))

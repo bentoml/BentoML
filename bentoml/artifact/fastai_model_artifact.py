@@ -25,7 +25,7 @@ from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 def _import_fastai_module():
     try:
-        import fastai
+        import fastai.basic_train
     except ImportError:
         raise ImportError(
             "fastai package is required to use " "bentoml.artifacts.FastaiModelArtifact"

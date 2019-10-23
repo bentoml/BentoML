@@ -1,3 +1,5 @@
+from sys import version_info
+
 import pytest
 
 from subprocess import CalledProcessError
@@ -12,8 +14,13 @@ def raise_(ex):
 
 
 def test_ensure_docker_available_or_raise():
+    if version_info.major < 3:
+        not_found_error = OSError
+    else:
+        not_found_error = FileNotFoundError
+
     setattr(
-        subprocess, 'check_output', lambda *args, **kwargs: raise_(FileNotFoundError())
+        subprocess, 'check_output', lambda *args, **kwargs: raise_(not_found_error())
     )
     with pytest.raises(BentoMLMissingDependencyException) as error:
         ensure_docker_available_or_raise()

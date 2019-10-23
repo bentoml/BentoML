@@ -55,9 +55,10 @@ def process_docker_api_line(payload):
 
 def ensure_docker_available_or_raise():
     # for FileNotFoundError doesn't exist in py2.7. check_output raise OSError instead
-    not_found_error = FileNotFoundError
     if version_info.major < 3:
         not_found_error = OSError
+    else:
+        not_found_error = FileNotFoundError
 
     try:
         subprocess.check_output(['docker', 'info'])

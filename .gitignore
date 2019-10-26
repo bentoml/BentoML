@@ -122,3 +122,6 @@ built-docs
 
 # MacOS X
 .DS_Store
+
+# sqlite
+storage.db

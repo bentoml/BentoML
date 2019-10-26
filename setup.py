@@ -81,12 +81,7 @@ dev_requires = [
     "grpcio-tools",
 ] + tests_require
 
-docs_requires = [
-    "sphinx",
-    "sphinx-click",
-    "sphinx_rtd_theme",
-    "sphinxcontrib-fulltoc",
-]
+docs_requires = ["sphinx", "sphinx-click", "sphinx_rtd_theme", "sphinxcontrib-fulltoc"]
 
 dev_all = install_requires + dev_requires + optional_requires + docs_requires
 
@@ -95,7 +90,6 @@ extras_require = {
     "dev": dev_requires,
     "api_server": api_server,
     "test": tests_require,
-
     "doc_builder": docs_requires + install_requires,  # required by readthedocs.io
 }
 

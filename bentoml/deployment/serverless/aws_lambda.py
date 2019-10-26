@@ -100,9 +100,7 @@ def generate_aws_lambda_serverless_config(
             "stage": stage,
             "name": 'aws',
             'runtime': runtime,
-            "apiGateway": {
-                "binaryMediaTypes": ['image/*']
-            }
+            "apiGateway": {"binaryMediaTypes": ['image/*']},
         },
         "functions": {
             api_name: {
@@ -128,7 +126,7 @@ def generate_aws_lambda_serverless_config(
                         serverless_project_dir
                     ),
                 ],
-            },
+            }
         },
     }
 

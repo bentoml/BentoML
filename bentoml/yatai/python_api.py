@@ -14,7 +14,14 @@
 
 # List of APIs for accessing remote or local yatai service via Python
 
+
+import io
+import json
 import logging
+import tarfile
+import requests
+import tempfile
+
 
 from bentoml.service import BentoService
 from bentoml.exceptions import BentoMLException
@@ -79,21 +86,63 @@ def upload_bento_service(bento_service, base_path=None, version=None):
         # Saving directory to path managed by LocalBentoRepository
         save_to_dir(bento_service, response.uri.uri)
 
-        upload_status = UploadStatus(status=UploadStatus.DONE)
-        upload_status.updated_at.GetCurrentTime()
-        update_bento_req = UpdateBentoRequest(
-            bento_name=bento_service.name,
-            bento_version=bento_service.version,
-            upload_status=upload_status,
-            service_metadata=bento_service._get_bento_service_metadata_pb(),
-        )
-        yatai.UpdateBento(update_bento_req)
+        update_bento_upload_progress(yatai, bento_service)
 
         # Return URI to saved bento in repository storage
         return response.uri.uri
+    elif response.uri.type == BentoUri.S3:
+        with tempfile.TemporaryDirectory() as tmpdir:
+
+            save_to_dir(bento_service, tmpdir)
+
+            fileobj = io.BytesIO()
+            with tarfile.open(mode="w:gz", fileobj=fileobj) as tar:
+                tar.add(tmpdir, arcname=bento_service.name)
+            fileobj.seek(0, 0)
+
+            files = {'file': ('dummy', fileobj)}
+            http_response = requests.post(
+                response.uri.uri,
+                data=json.loads(response.uri.additional_fields),
+                files=files,
+            )
+
+            if http_response.status_code != 204:
+                update_bento_upload_progress(yatai, bento_service, UploadStatus.ERROR)
+
+                raise BentoMLException(
+                    "Error saving Bento to S3 with status code {} and error detail "
+                    "is {}".format(http_response.status_code, http_response.text)
+                )
+
+            logger.info(
+                "Successfully saved Bento '%s:%s' to S3: %s",
+                bento_service.name,
+                bento_service.version,
+                response.uri.uri,
+            )
+
+            update_bento_upload_progress(yatai, bento_service)
+
+            return response.uri.uri
+
     else:
         raise BentoMLException(
             "Error saving Bento to target repository, URI type %s at %s not supported"
             % response.uri.type,
             response.uri.uri,
         )
+
+
+def update_bento_upload_progress(
+    yatai, bento_service, status=UploadStatus.DONE, progress=None
+):
+    upload_status = UploadStatus(status=status)
+    upload_status.updated_at.GetCurrentTime()
+    update_bento_req = UpdateBentoRequest(
+        bento_name=bento_service.name,
+        bento_version=bento_service.version,
+        upload_status=upload_status,
+        service_metadata=bento_service._get_bento_service_metadata_pb(),
+    )
+    yatai.UpdateBento(update_bento_req)

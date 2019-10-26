@@ -184,6 +184,7 @@ TEST_DEPLOYMENT_BENTO_VERSION = 'v1.1.0'
 TEST_BENTO_API_NAME = 'predict'
 TEST_DEPLOYMENT_INSTANCE_COUNT = 1
 TEST_DEPLOYMENT_INSTANCE_TYPE = 'm3-xlarge'
+TEST_DEPLOYMENT_BENTO_LOCAL_URI = '/fake/path/bento/bundle'
 
 
 def mock_aws_services_for_sagemaker(func):
@@ -234,21 +235,8 @@ def mock_sagemaker_deployment_wrapper(func):
     return mock_wrapper
 
 
-@mock_aws_services_for_sagemaker
-# @patch('botocore.client.BaseClient._make_api_call', new=mock_ecr_call)
-@patch('subprocess.check_output', autospec=True)
-@patch('docker.APIClient.build', autospec=True)
-@patch('docker.APIClient.push', autospec=True)
-# @patch(mock_open_param_value, mock_open(read_data='test'), create=True)
-@patch(
-    'bentoml.deployment.sagemaker.init_sagemaker_project',
-    new=lambda x, y: 'fake_project_dir',
-)
-@patch('shutil.copytree', autospec=True)
-@patch('os.chmod', autospec=True)
-def test_sagemaker_apply(
-    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
-):
+@mock_sagemaker_deployment_wrapper
+def test_sagemaker_apply():
     def mock_get_bento(is_local=True):
         bento_pb = Bento(
             name=TEST_DEPLOYMENT_BENTO_NAME, version=TEST_DEPLOYMENT_BENTO_VERSION
@@ -256,7 +244,7 @@ def test_sagemaker_apply(
         # BentoUri.StorageType.LOCAL
         if is_local:
             bento_pb.uri.type = 1
-        bento_pb.uri.uri = '/fake/path/to/bundle'
+        bento_pb.uri.uri = TEST_DEPLOYMENT_BENTO_LOCAL_URI
         api = BentoServiceMetadata.BentoServiceApi(name=TEST_BENTO_API_NAME)
         bento_pb.bento_service_metadata.apis.extend([api])
         return GetBentoResponse(bento=bento_pb)

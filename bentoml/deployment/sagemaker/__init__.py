@@ -206,14 +206,12 @@ def _parse_aws_client_exception_or_raise(e):
     error_log_message = 'AWS ClientError for {operation}: {code} - {message}'.format(
         operation=e.operation_name, code=error_code, message=error_message
     )
+    logger.error(error_log_message)
     if error_code == 'ValidationException':
-        logger.error(error_log_message)
-        return Status.NOT_FOUND(error_response.get('Message', 'Unknown'))
+        return Status.NOT_FOUND(error_log_message)
     elif error_code == 'InvalidSignatureException':
-        logger.error(error_log_message)
-        return Status.UNAUTHENTICATED(error_response.get('Message', 'Unknown'))
+        return Status.UNAUTHENTICATED(error_log_message)
     else:
-        logger.error(error_log_message)
         raise e
 
 
@@ -361,8 +359,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             except ClientError as e:
                 status = _parse_aws_client_exception_or_raise(e)
                 status.error_message = (
-                    'Failed to create model for SageMaker Deployment: %s',
-                    status.error_message,
+                    'Failed to create model for SageMaker'
+                    ' Deployment: {}'.format(status.error_message)
                 )
                 return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 

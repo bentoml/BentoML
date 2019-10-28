@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+
+import botocore
 import pytest
 from mock import patch, MagicMock, mock_open
 from sys import version_info
@@ -170,16 +173,10 @@ def test_get_arn_from_aws_user():
     assert user_path() == USER_PATH_ARN_RESULT
 
 
-if version_info.major >= 3:
-    mock_open_param_value = 'builtins.open'
-else:
-    mock_open_param_value = '__builtin__.open'
-
-
 TEST_AWS_REGION = 'us-west-2'
 TEST_DEPLOYMENT_NAME = 'my_deployment'
 TEST_DEPLOYMENT_NAMESPACE = 'my_company'
-TEST_DEPLOYMENT_BENTO_NAME = 'mybento'
+TEST_DEPLOYMENT_BENTO_NAME = 'my_bento'
 TEST_DEPLOYMENT_BENTO_VERSION = 'v1.1.0'
 TEST_BENTO_API_NAME = 'predict'
 TEST_DEPLOYMENT_INSTANCE_COUNT = 1
@@ -222,6 +219,11 @@ def mock_aws_services_for_sagemaker(func):
 
 
 def mock_sagemaker_deployment_wrapper(func):
+    if version_info.major >= 3:
+        mock_open_param_value = 'builtins.open'
+    else:
+        mock_open_param_value = '__builtin__.open'
+
     @mock_aws_services_for_sagemaker
     @patch('subprocess.check_output', autospec=True)
     @patch('docker.APIClient.build', autospec=True)
@@ -235,28 +237,31 @@ def mock_sagemaker_deployment_wrapper(func):
     return mock_wrapper
 
 
-@mock_sagemaker_deployment_wrapper
-def test_sagemaker_apply():
-    def mock_get_bento(is_local=True):
+def create_yatai_service(is_local_repo=True):
+    def mock_get_bento(is_local_repo=True):
         bento_pb = Bento(
             name=TEST_DEPLOYMENT_BENTO_NAME, version=TEST_DEPLOYMENT_BENTO_VERSION
         )
         # BentoUri.StorageType.LOCAL
-        if is_local:
+        if is_local_repo:
             bento_pb.uri.type = 1
-        bento_pb.uri.uri = TEST_DEPLOYMENT_BENTO_LOCAL_URI
+            bento_pb.uri.uri = TEST_DEPLOYMENT_BENTO_LOCAL_URI
         api = BentoServiceMetadata.BentoServiceApi(name=TEST_BENTO_API_NAME)
         bento_pb.bento_service_metadata.apis.extend([api])
         return GetBentoResponse(bento=bento_pb)
 
+    fake_yatai_service = MagicMock()
+    fake_yatai_service.GetBento = lambda pb_request: mock_get_bento(is_local_repo)
+
+    return fake_yatai_service
+
+
+def generate_sagemaker_deployment_pb():
     test_deployment_pb = Deployment(
-        name=TEST_DEPLOYMENT_NAME,
-        namespace=TEST_DEPLOYMENT_NAMESPACE,
-        spec=DeploymentSpec(
-            bento_name=TEST_DEPLOYMENT_BENTO_NAME,
-            bento_version=TEST_DEPLOYMENT_BENTO_VERSION,
-        ),
+        name=TEST_DEPLOYMENT_NAME, namespace=TEST_DEPLOYMENT_NAMESPACE
     )
+    test_deployment_pb.spec.bento_name = TEST_DEPLOYMENT_BENTO_NAME
+    test_deployment_pb.spec.bento_version = TEST_DEPLOYMENT_BENTO_VERSION
     test_deployment_pb.spec.sagemaker_operator_config.api_name = TEST_BENTO_API_NAME
     test_deployment_pb.spec.sagemaker_operator_config.region = TEST_AWS_REGION
     test_deployment_pb.spec.sagemaker_operator_config.instance_count = (
@@ -268,16 +273,74 @@ def test_sagemaker_apply():
     # DeploymentSpec.DeploymentOperator.AWS_SAGEMAKER
     test_deployment_pb.spec.operator = 2
 
+    return test_deployment_pb
+
+
+def raise_(ex):
+    raise ex
+
+
+@mock_sagemaker_deployment_wrapper
+def test_sagemaker_apply_fail_not_local_repo(
+    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+):
+    yatai_service = create_yatai_service(is_local_repo=False)
+    sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
-    fake_yatai_service = MagicMock()
-    fake_yatai_service.GetBento = lambda uri: mock_get_bento(is_local=False)
-    result_pb = deployment_operator.apply(test_deployment_pb, fake_yatai_service)
+    result_pb = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
     assert result_pb.status.status_code == Status.INTERNAL
     assert result_pb.status.error_message.startswith(
         'BentoML currently only support local repository'
     )
 
-    fake_yatai_service.GetBento = lambda uri: mock_get_bento()
-    result_pb = deployment_operator.apply(test_deployment_pb, fake_yatai_service)
+
+@mock_sagemaker_deployment_wrapper
+def test_sagemaker_apply_create_model_fail(
+    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+):
+    yatai_service = create_yatai_service()
+    sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
+    deployment_operator = SageMakerDeploymentOperator()
+
+    orig = botocore.client.BaseClient._make_api_call
+
+    def fail_create_model_random(self, operation_name, kwarg):
+        if operation_name == 'CreateModel':
+            raise ClientError({'Error': {'Code': 'Random'}}, 'CreateModel')
+        else:
+            return orig(self, operation_name, kwarg)
+
+    with pytest.raises(ClientError) as error:
+        with patch(
+            'botocore.client.BaseClient._make_api_call', new=fail_create_model_random
+        ):
+            deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
+    assert error.value.operation_name == 'CreateModel'
+    assert error.value.response['Error']['Code'] == 'Random'
+
+    def fail_create_model_validation(self, operation_name, kwarg):
+        if operation_name == 'CreateModel':
+            raise ClientError(
+                {'Error': {'Code': 'ValidationException', 'Message': 'failed message'}},
+                'CreateModel',
+            )
+        else:
+            return orig(self, operation_name, kwarg)
+
+    with patch(
+        'botocore.client.BaseClient._make_api_call', new=fail_create_model_validation
+    ):
+        result = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
+    assert result.status.status_code == Status.NOT_FOUND
+
+
+@mock_sagemaker_deployment_wrapper
+def test_sagemaker_apply_success(
+    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+):
+    yatai_service = create_yatai_service()
+    sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
+    deployment_operator = SageMakerDeploymentOperator()
+    result_pb = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
     assert result_pb.status.status_code == Status.OK
     assert result_pb.deployment.name == TEST_DEPLOYMENT_NAME

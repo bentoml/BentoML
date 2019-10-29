@@ -92,7 +92,9 @@ def upload_bento_service(bento_service, base_path=None, version=None):
         return response.uri.uri
     elif response.uri.type == BentoUri.S3:
         with tempfile.TemporaryDirectory() as tmpdir:
-
+            update_bento_upload_progress(
+                yatai, bento_service, UploadStatus.UPLOADING, 0
+            )
             save_to_dir(bento_service, tmpdir)
 
             fileobj = io.BytesIO()
@@ -100,7 +102,8 @@ def upload_bento_service(bento_service, base_path=None, version=None):
                 tar.add(tmpdir, arcname=bento_service.name)
             fileobj.seek(0, 0)
 
-            files = {'file': ('dummy', fileobj)}
+            files = {'file': ('dummy', fileobj)}  # dummy file name because file name
+            # has been generated when getting the pre-signed signature.
             http_response = requests.post(
                 response.uri.uri,
                 data=json.loads(response.uri.additional_fields),

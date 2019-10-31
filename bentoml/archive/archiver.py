@@ -90,6 +90,14 @@ def save_to_dir(bento_service, path, version=None):
     if not os.path.exists(path):
         raise BentoMLException("Directory '{}' not found".format(path))
 
+    for spec in bento_service._artifacts_spec:
+        if spec.name not in bento_service.artifacts:
+            logger.warning(
+                "Missing declared artifact '%s' for BentoService '%s'",
+                spec.name,
+                bento_service.name,
+            )
+
     module_base_path = os.path.join(path, bento_service.name)
     os.mkdir(module_base_path)
 

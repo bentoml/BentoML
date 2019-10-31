@@ -334,6 +334,7 @@ def test_sagemaker_apply_create_model_fail(
     assert result.status.status_code == Status.NOT_FOUND
 
 
+
 @mock_sagemaker_deployment_wrapper
 def test_sagemaker_apply_success(
     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output

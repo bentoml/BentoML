@@ -25,11 +25,3 @@ def test_ensure_docker_available_or_raise():
         with pytest.raises(BentoMLMissingDependencyException) as error:
             ensure_docker_available_or_raise()
         assert str(error.value).startswith('Docker is required')
-
-    with patch(
-        'subprocess.check_output',
-        new=lambda x: raise_(CalledProcessError(2, 'fake_cmd')),
-    ):
-        with pytest.raises(BentoMLMissingDependencyException) as error:
-            ensure_docker_available_or_raise()
-        assert str(error.value).startswith('Error executing docker command:')

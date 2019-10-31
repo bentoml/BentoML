@@ -246,17 +246,17 @@ def api_decorator(handler_cls, *args, **kwargs):
     return decorator
 
 
-def artifacts_decorator(artifact_specs):
+def artifacts_decorator(artifacts_spec):
     """Define artifact spec for BentoService
 
     Args:
-        artifact_specs (list(bentoml.artifact.BentoServiceArtifact)): A list of desired
+        artifacts_spec (list(bentoml.artifact.BentoServiceArtifact)): A list of desired
             artifacts for initializing this BentoService
         for initializing this BentoService being decorated
     """
 
     def decorator(bento_service_cls):
-        bento_service_cls._artifacts_spec = artifact_specs
+        bento_service_cls._artifacts_spec = artifacts_spec
         return bento_service_cls
 
     return decorator
@@ -531,7 +531,7 @@ class BentoService(BentoServiceBase):
 
         if cls._bento_archive_path is not None and cls._bento_archive_path != path:
             logger.warning(
-                "Loaded BentoArchive from '%s' can't be loaded again from a different"
+                "Loaded BentoArchive from '%s' being loaded again from a different"
                 "path %s",
                 cls._bento_archive_path,
                 path,

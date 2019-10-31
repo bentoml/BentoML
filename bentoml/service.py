@@ -30,8 +30,8 @@ from abc import abstractmethod, ABCMeta
 from bentoml.archive import save_to_dir
 from bentoml.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
-from bentoml.artifact import ArtifactCollection
-from bentoml.utils import isidentifier
+from bentoml.artifact import ArtifactCollection, BentoServiceArtifact
+from bentoml.utils import isidentifier, hybridmethod
 from bentoml.proto.repository_pb2 import BentoServiceMetadata
 
 logger = logging.getLogger(__name__)
@@ -310,7 +310,8 @@ def ver_decorator(major, minor):
     >>>  class MyMLService(BentoService):
     >>>     pass
     >>>
-    >>>  svc = MyMLService.pack(model="my ML model object")
+    >>>  svc = MyMLService()
+    >>>  svc.pack("model", trained_classifier)
     >>>  svc.set_version("2019-08.iteration20")
     >>>  svc.save('/path_to_archive')
     >>>  # The final produced BentoArchive version will be "1.4.2019-08.iteration20"
@@ -392,26 +393,26 @@ class BentoService(BentoServiceBase):
         self.name = self.__class__.name()
 
     def _init_artifacts(self, artifacts):
-        if len(self._artifacts_spec) > 0:
-            if artifacts is None:
-                if self._bento_archive_path:
-                    artifacts = ArtifactCollection.load(
-                        self._bento_archive_path, self.__class__._artifacts_spec
-                    )
-                else:
-                    raise BentoMLException(
-                        "Must provide required artifacts before instantiating a "
-                        "custom BentoService class"
-                    )
-
-            if isinstance(artifacts, ArtifactCollection):
-                self._artifacts = artifacts
-            else:
-                self._artifacts = ArtifactCollection()
-                for artifact in artifacts:
-                    self._artifacts[artifact.name] = artifact
-        else:
+        type_error_msg = (
+            "BentoService can only be initialized with list of BentoArtifacts, instead "
+            "got %s"
+        )
+        artifacts = artifacts or []
+        if not artifacts and self._bento_archive_path:
+            self._artifacts = ArtifactCollection.load(
+                self._bento_archive_path, self.__class__._artifacts_spec
+            )
+        elif isinstance(artifacts, ArtifactCollection):
+            self._artifacts = artifacts
+        elif isinstance(artifacts, list):
             self._artifacts = ArtifactCollection()
+            for artifact in artifacts:
+                assert isinstance(
+                    artifact, BentoServiceArtifact
+                ), type_error_msg % type(artifacts)
+                self._artifacts[artifact.name] = artifact
+        else:
+            raise BentoMLException(type_error_msg % type(artifacts))
 
     def _init_env(self, env=None):
         if env is None:
@@ -495,7 +496,7 @@ class BentoService(BentoServiceBase):
     def save_to_dir(self, path, version=None):
         return save_to_dir(self, path, version)
 
-    @classmethod
+    @hybridmethod
     def pack(cls, *args, **kwargs):
         if args and isinstance(args[0], ArtifactCollection):
             return cls(args[0])
@@ -508,6 +509,21 @@ class BentoService(BentoServiceBase):
                 artifacts.add(artifact_instance)
 
         return cls(artifacts)
+
+    @pack.instancemethod
+    def pack(self, name, *args, **kwargs):
+        if name in self.artifacts:
+            logger.warning(
+                "BentoService '%s'#pack overriding existing artifact '%s'",
+                self.name,
+                name,
+            )
+            del self.artifacts[name]
+
+        artifact_spec = next(spec for spec in self._artifacts_spec if spec.name == name)
+        artifact_instance = artifact_spec.pack(*args, **kwargs)
+        self.artifacts.add(artifact_instance)
+        return self
 
     @classmethod
     def load_from_dir(cls, path):

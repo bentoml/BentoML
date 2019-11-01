@@ -74,7 +74,6 @@ test_requires = (
 )
 
 dev_requires = [
-    "pylint",
     "flake8",
     "twine",
     "setuptools",

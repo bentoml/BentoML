@@ -127,9 +127,8 @@ class KerasModelArtifact(BentoServiceArtifact):
         if not isinstance(model, tf.keras.models.Model):
             error_msg = (
                 "KerasModelArtifact#pack expects model argument to be type: "
-                "keras.engine.training.Model or "
-                "tf.keras.engine.training.Model, instead got: "
-                "{}".format(type(model))
+                "keras.engine.network.Network, tf.keras.models.Model, or their "
+                "aliases, instead got type: {}".format(type(model))
             )
             try:
                 import keras

@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import os
 import importlib
+from functools import wraps
 
 from bentoml.utils import cloudpickle
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
@@ -224,12 +225,22 @@ class _KerasModelWrapper:
         self.graph = graph
         self.sess = sess
 
-    def predict(self, *args, **kwargs):
-        with self.graph.as_default():
-            with self.sess.as_default():
-                return self.keras_model.predict(*args, **kwargs)
+    def __getattr__(self, item):
+        attr = self.keras_model.__getattribute__(item)
 
-    def predict_classes(self, *args, **kwargs):
+        if callable(attr):
+
+            @wraps(attr)
+            def callable_attribute_wrapper(*args, **kwargs):
+                with self.graph.as_default():
+                    with self.sess.as_default():
+                        return attr(*args, **kwargs)
+
+            return callable_attribute_wrapper
+
+        return attr
+
+    def __call__(self, *args, **kwargs):
         with self.graph.as_default():
             with self.sess.as_default():
-                return self.keras_model.predict_classes(*args, **kwargs)
+                return object.__call__(self, *args, **kwargs)

@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import setuptools
 import versioneer
+
+PY3 = sys.version_info.major == 3
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -55,7 +58,7 @@ api_server = ["gunicorn", "prometheus_client"]
 
 optional_requires = api_server + imageio + pytorch + tensorflow + fastai + xgboost + h2o
 
-tests_require = (
+test_requires = (
     [
         "pytest>=4.1.0",
         "pytest-cov>=2.7.1",
@@ -71,15 +74,19 @@ tests_require = (
 )
 
 dev_requires = [
-    "pylint>=2.3.1",
+    "pylint",
     "flake8",
-    "tox-conda>=0.2.0",
     "twine",
-    "black",
     "setuptools",
     "gitpython>=2.0.2",
     "grpcio-tools",
-] + tests_require
+] + test_requires
+
+if PY3:
+    # Python3 only python dev tools
+    dev_requires += ["pylint>=2.3.1", "tox-conda>=0.2.0", "black"]
+else:
+    dev_requires += ["pylint"]
 
 docs_requires = ["sphinx", "sphinx-click", "sphinx_rtd_theme", "sphinxcontrib-fulltoc"]
 
@@ -89,7 +96,7 @@ extras_require = {
     "all": dev_all,
     "dev": dev_requires,
     "api_server": api_server,
-    "test": tests_require,
+    "test": test_requires,
     "doc_builder": docs_requires + install_requires,  # required by readthedocs.io
 }
 

@@ -31,7 +31,8 @@ from bentoml.archive import save_to_dir
 from bentoml.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection, BentoServiceArtifact
-from bentoml.utils import isidentifier, hybridmethod
+from bentoml.utils import isidentifier
+from bentoml.utils.hybirdmethod import hybridmethod
 from bentoml.proto.repository_pb2 import BentoServiceMetadata
 
 logger = logging.getLogger(__name__)
@@ -497,20 +498,6 @@ class BentoService(BentoServiceBase):
         return save_to_dir(self, path, version)
 
     @hybridmethod
-    def pack(cls, *args, **kwargs):
-        if args and isinstance(args[0], ArtifactCollection):
-            return cls(args[0])
-
-        artifacts = ArtifactCollection()
-
-        for artifact_spec in cls._artifacts_spec:
-            if artifact_spec.name in kwargs:
-                artifact_instance = artifact_spec.pack(kwargs[artifact_spec.name])
-                artifacts.add(artifact_instance)
-
-        return cls(artifacts)
-
-    @pack.instancemethod
     def pack(self, name, *args, **kwargs):
         if name in self.artifacts:
             logger.warning(
@@ -524,6 +511,20 @@ class BentoService(BentoServiceBase):
         artifact_instance = artifact_spec.pack(*args, **kwargs)
         self.artifacts.add(artifact_instance)
         return self
+
+    @pack.classmethod
+    def pack(cls, *args, **kwargs):
+        if args and isinstance(args[0], ArtifactCollection):
+            return cls(args[0])
+
+        artifacts = ArtifactCollection()
+
+        for artifact_spec in cls._artifacts_spec:
+            if artifact_spec.name in kwargs:
+                artifact_instance = artifact_spec.pack(kwargs[artifact_spec.name])
+                artifacts.add(artifact_instance)
+
+        return cls(artifacts)
 
     @classmethod
     def load_from_dir(cls, path):

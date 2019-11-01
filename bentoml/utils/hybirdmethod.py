@@ -13,22 +13,45 @@
 # limitations under the License.
 
 
-class hybridmethod:
-    def __init__(self, fclass, finstance=None, doc=None):
-        self.fclass = fclass
-        self.finstance = finstance
-        self.__doc__ = doc or fclass.__doc__
-        # support use on abstract base classes
-        self.__isabstractmethod__ = bool(getattr(fclass, '__isabstractmethod__', False))
+class hybridmethod(object):
+    """A decorator which allows definition of a Python object method with both
+    instance-level and class-level behavior.
 
-    def classmethod(self, fclass):
-        return type(self)(fclass, self.finstance, None)
+    """
 
-    def instancemethod(self, finstance):
-        return type(self)(self.fclass, finstance, self.__doc__)
+    def __init__(self, instance_function):
+        """Create a new :class:`.hybridmethod`.
 
-    def __get__(self, instance, cls):
-        if instance is None or self.finstance is None:
-            # either bound to the class, or no instance method available
-            return self.fclass.__get__(cls, None)
-        return self.finstance.__get__(instance, cls)
+       Usage is typically via decorator::
+
+           from bentoml.util.hybridmethod import hybridmethod
+
+           class SomeClass(object):
+               @hybridmethod
+               def func(self, x, y):
+                   return self._value + x + y
+
+               @func.classmethod
+               def value(cls, x, y):
+                   return cls._default_value + x + y
+       """
+        self._instance_function = instance_function
+        self._class_function = None
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            assert self._class_function is not None, "classmethod not defined"
+            return self._class_function.__get__(owner, type(owner))
+        else:
+            return self._instance_function.__get__(instance, owner)
+
+    def classmethod(self, class_function):
+        self._class_function = class_function
+        if not self._class_function.__doc__:
+            self._class_function.__doc__ = self._instance_function.__doc__
+        return self
+
+    def __call__(self, *args, **kwargs):
+        """Needed for this to work in python2.7
+        """
+        return self.__get__(self, type(self))(*args, **kwargs)

@@ -24,7 +24,7 @@ class MyTestBentoService(bentoml.BentoService):
         """
         return self.artifacts.model.predict(df)
 
-
+# pylint: disable=redefined-outer-name
 @pytest.fixture()
 def test_bento_service_class():
     MyTestBentoService._bento_archive_path = None

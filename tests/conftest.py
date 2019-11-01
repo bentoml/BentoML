@@ -75,7 +75,10 @@ def bento_service():
     """Create a new TestBentoService
     """
     test_model = TestModel()
-    return TestBentoService.pack(model=test_model)
+    TestBentoService._bento_archive_path = None
+    test_svc = TestBentoService()
+    test_svc.pack('model', test_model)
+    return test_svc
 
 
 @pytest.fixture()

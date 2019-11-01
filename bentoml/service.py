@@ -513,9 +513,9 @@ class BentoService(BentoServiceBase):
         return self
 
     @pack.classmethod
-    def pack(cls, *args, **kwargs):
+    def pack(cls, *args, **kwargs):  # pylint: disable=E0213
         if args and isinstance(args[0], ArtifactCollection):
-            return cls(args[0])
+            return cls(args[0])  # pylint: disable=E1102
 
         artifacts = ArtifactCollection()
 
@@ -524,7 +524,7 @@ class BentoService(BentoServiceBase):
                 artifact_instance = artifact_spec.pack(kwargs[artifact_spec.name])
                 artifacts.add(artifact_instance)
 
-        return cls(artifacts)
+        return cls(artifacts)  # pylint: disable=E1102
 
     @classmethod
     def load_from_dir(cls, path):

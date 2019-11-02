@@ -212,7 +212,6 @@ def mock_aws_services_for_sagemaker(func):
         iam_client.create_role(
             RoleName="moto", AssumeRolePolicyDocument=iam_role_policy
         )
-
         return func(*args, **kwargs)
 
     return mock_wrapper
@@ -295,6 +294,31 @@ def test_sagemaker_apply_fail_not_local_repo(
 
 
 @mock_sagemaker_deployment_wrapper
+def test_sagemaker_apply_success(
+    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+):
+    yatai_service = create_yatai_service()
+    sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
+    deployment_operator = SageMakerDeploymentOperator()
+    result_pb = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
+    assert result_pb.status.status_code == Status.OK
+    assert result_pb.deployment.name == TEST_DEPLOYMENT_NAME
+
+
+# @mock_sagemaker_deployment_wrapper
+# def test_sagemaker_apply_model_already_exists(
+#     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+# ):
+#     yatai_service = create_yatai_service()
+#     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
+#     deployment_operator = SageMakerDeploymentOperator()
+#     with pytest.raises(ValueError) as error:
+#         result_pb = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
+#     print(error.value)
+#     assert False
+
+
+@mock_sagemaker_deployment_wrapper
 def test_sagemaker_apply_create_model_fail(
     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
 ):
@@ -332,16 +356,61 @@ def test_sagemaker_apply_create_model_fail(
     ):
         result = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
     assert result.status.status_code == Status.NOT_FOUND
-
+    assert result.status.error_message.startswith(
+        'Failed to create model for SageMaker'
+    )
 
 
 @mock_sagemaker_deployment_wrapper
-def test_sagemaker_apply_success(
+def test_sagemaker_apply_delete_model_fail(
     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
 ):
+    orig = botocore.client.BaseClient._make_api_call
     yatai_service = create_yatai_service()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
-    result_pb = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
-    assert result_pb.status.status_code == Status.OK
-    assert result_pb.deployment.name == TEST_DEPLOYMENT_NAME
+
+    def fail_delete_model(self, operation_name, kwarg):
+        if operation_name == 'DeleteModel':
+            raise ClientError(
+                {'Error': {'Code': 'ValidationException', 'Message': 'failed message'}},
+                'DeleteModel',
+            )
+        elif operation_name == 'CreateEndpoint':
+            raise ClientError({}, 'CreateEndpoint')
+        else:
+            return orig(self, operation_name, kwarg)
+
+    with patch('botocore.client.BaseClient._make_api_call', new=fail_delete_model):
+        result = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
+    assert result.status.status_code == Status.NOT_FOUND
+    assert result.status.error_message.startswith(
+        'Failed to clean up model after unsuccessfully'
+    )
+
+
+@mock_sagemaker_deployment_wrapper
+def test_sagemaker_apply_duplicate_endpoint(
+    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+):
+    orig = botocore.client.BaseClient._make_api_call
+    yatai_service = create_yatai_service()
+    sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
+    deployment_operator = SageMakerDeploymentOperator()
+    success_result = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
+
+    endpoint_name = '{ns}-{name}'.format(
+        ns=TEST_DEPLOYMENT_NAMESPACE, name=TEST_DEPLOYMENT_BENTO_NAME
+    )
+    expect_value = 'Endpoint {} already exists'.format(endpoint_name.replace('_', '-'))
+
+    def mock_ok_return(self, op_name, kwargs):
+        if op_name == 'CreateModel' or op_name == 'CreateEndpointConfig':
+            return ''
+        else:
+            return orig(self, op_name, kwargs)
+
+    with patch('botocore.client.BaseClient._make_api_call', new=mock_ok_return):
+        with pytest.raises(ValueError) as error:
+            deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
+    assert str(error.value) == expect_value

@@ -443,9 +443,10 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 )
                 if cleanup_model_error:
                     cleanup_model_error.error_message = (
-                        'Failed to clean up model after unsuccessfully '
-                        'apply SageMaker deployment: %s',
-                        cleanup_model_error.error_message,
+                        'Failed to clean up model after unsuccessfully apply '
+                        'SageMaker deployment: {}'.format(
+                            cleanup_model_error.error_message
+                        )
                     )
                     return ApplyDeploymentResponse(
                         status=cleanup_model_error, deployment=deployment_pb
@@ -453,8 +454,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
                 status = _parse_aws_client_exception_or_raise(e)
                 status.error_message = (
-                    'Failed to apply SageMaker deployment: %s',
-                    status.error_message,
+                    'Failed to apply SageMaker '
+                    'deployment: {}'.format(status.error_message)
                 )
                 return ApplyDeploymentResponse(status=status, deployment=deployment_pb)
 
@@ -499,8 +500,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             )
             if delete_config_error:
                 delete_config_error.error_message = (
-                    'Failed to delete SageMaker endpoint config: %s',
-                    delete_config_error.error_message,
+                    'Failed to delete SageMaker '
+                    'endpoint config: {}'.format(delete_config_error.error_message)
                 )
                 return DeleteDeploymentResponse(status=delete_config_error)
 
@@ -511,8 +512,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             )
             if delete_model_error:
                 delete_model_error.error_message = (
-                    'Failed to delete SageMaker model: %s',
-                    delete_model_error.error_message,
+                    'Failed to delete SageMaker '
+                    'model: {}'.format(delete_model_error.error_message)
                 )
                 return DeleteDeploymentResponse(status=delete_model_error)
 
@@ -537,8 +538,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             except ClientError as e:
                 status = _parse_aws_client_exception_or_raise(e)
                 status.error_message = (
-                    'Failed to describe SageMaker deployment: %s',
-                    status.error_message,
+                    'Failed to describe SageMaker '
+                    'deployment: {}'.format(status.error_message)
                 )
                 return DescribeDeploymentResponse(status=status)
 

@@ -16,9 +16,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import io
 import os
 import sys
+import tarfile
 import logging
+import tempfile
+import requests
 
 
 from bentoml.utils import dump_to_yaml_str
@@ -30,6 +34,22 @@ from bentoml.proto.repository_pb2 import BentoServiceMetadata
 LOG = logging.getLogger(__name__)
 
 
+def download_remote_archive(func):
+    def wrapper(archive_path, **kwargs):
+        if archive_path.startswith('https://'):
+            r = requests.get(archive_path, stream=True)
+            with tarfile.open(mode="r:gz", fileobj=io.BytesIO(r.content)) as tar:
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    filename = tar.getmembers()[0].name
+                    tar.extractall(path=tmpdir)
+                    return func(os.path.join(tmpdir, filename), **kwargs)
+
+        return func(archive_path, **kwargs)
+
+    return wrapper
+
+
+@download_remote_archive
 def load_bentoml_config(archive_path):
     try:
         return BentoArchiveConfig.load(os.path.join(archive_path, "bentoml.yml"))
@@ -40,6 +60,7 @@ def load_bentoml_config(archive_path):
         )
 
 
+@download_remote_archive
 def load_bento_service_metadata(archive_path):
     config = load_bentoml_config(archive_path)
 
@@ -87,6 +108,7 @@ def load_bento_service_metadata(archive_path):
     return bento_service_metadata
 
 
+@download_remote_archive
 def load_bento_service_class(archive_path):
     """
     Load a BentoService class from saved archive in given path
@@ -153,6 +175,7 @@ def load_bento_service_class(archive_path):
     return model_service_class
 
 
+@download_remote_archive
 def load(archive_path):
     """Load bento service from local file path or s3 path
 
@@ -171,6 +194,7 @@ def load(archive_path):
     return svc
 
 
+@download_remote_archive
 def load_service_api(archive_path, api_name=None):
     bento_service = load(archive_path)
     return bento_service.get_service_api(api_name)

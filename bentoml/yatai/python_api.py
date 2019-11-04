@@ -17,14 +17,12 @@
 
 import io
 import json
-import boto3
 import logging
 import tarfile
 import requests
 import tempfile
 
 
-from bentoml import config
 from bentoml.service import BentoService
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.repository_pb2 import (

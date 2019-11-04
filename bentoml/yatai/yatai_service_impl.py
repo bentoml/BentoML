@@ -300,7 +300,10 @@ class YataiService(YataiServicer):
             bento_metadata_pb = self.bento_metadata_store.get(
                 request.bento_name, request.bento_version
             )
+
             if bento_metadata_pb:
+                uri = self.repo.get(bento_metadata_pb.name, bento_metadata_pb.version)
+                bento_metadata_pb.uri.uri = uri
                 return GetBentoResponse(status=Status.OK(), bento=bento_metadata_pb)
             else:
                 return GetBentoResponse(

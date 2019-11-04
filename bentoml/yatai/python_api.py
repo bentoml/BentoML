@@ -17,16 +17,19 @@
 
 import io
 import json
+import boto3
 import logging
 import tarfile
 import requests
 import tempfile
 
 
+from bentoml import config
 from bentoml.service import BentoService
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.repository_pb2 import (
     AddBentoRequest,
+    GetBentoRequest,
     BentoUri,
     UpdateBentoRequest,
     UploadStatus,
@@ -118,16 +121,26 @@ def upload_bento_service(bento_service, base_path=None, version=None):
                     "is {}".format(http_response.status_code, http_response.text)
                 )
 
+            update_bento_upload_progress(yatai, bento_service)
+
+            request = GetBentoRequest(
+                bento_name=bento_service.name, bento_version=bento_service.version
+            )
+
+            response = yatai.GetBento(request)
+            if response.status.status_code != Status.OK:
+                raise BentoMLException(
+                    "Error getting Bento with status code {} ".format(response.status)
+                )
+
             logger.info(
                 "Successfully saved Bento '%s:%s' to S3: %s",
                 bento_service.name,
                 bento_service.version,
-                response.uri.uri,
+                response.bento.uri.uri,
             )
 
-            update_bento_upload_progress(yatai, bento_service)
-
-            return response.uri.uri
+            return response.bento.uri.uri
 
     else:
         raise BentoMLException(

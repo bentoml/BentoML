@@ -190,7 +190,7 @@ def mock_aws_services_for_sagemaker(func):
     @mock_sts
     @moto_mock_sagemaker
     def mock_wrapper(*args, **kwargs):
-        ecr_client = boto3.client('ecr', region_name=TEST_AWS_REGION)
+        ecr_client = boto3.client('ecr', TEST_AWS_REGION)
         repo_name = TEST_DEPLOYMENT_BENTO_NAME + '-sagemaker'
         ecr_client.create_repository(repositoryName=repo_name)
 
@@ -208,7 +208,7 @@ def mock_aws_services_for_sagemaker(func):
             ]
         }
         """
-        iam_client = boto3.client('iam', region_name=TEST_AWS_REGION)
+        iam_client = boto3.client('iam', TEST_AWS_REGION)
         iam_client.create_role(
             RoleName="moto", AssumeRolePolicyDocument=iam_role_policy
         )

@@ -2,6 +2,7 @@ import os
 from sys import version_info
 
 from mock import MagicMock, patch, Mock, mock_open
+from moto import mock_cloudformation, mock_lambda, mock_s3, mock_apigateway
 from ruamel.yaml import YAML
 
 from bentoml.deployment.serverless.aws_lambda import (
@@ -96,6 +97,7 @@ def generate_fake_yatai_service(is_local=False):
         api = BentoServiceMetadata.BentoServiceApi(name='predict')
         bento_pb.bento_service_metadata.apis.extend([api])
         return GetBentoResponse(bento=bento_pb)
+
     fake_yatai_service = MagicMock()
     fake_yatai_service.GetBento = lambda uri: mock_get_bento(is_local)
     return fake_yatai_service
@@ -107,7 +109,7 @@ def generate_lambda_deployment_pb():
     test_deployment_pb.spec.bento_version = 'v1.0.0'
     # DeploymentSpec.DeploymentOperator.AWS_LAMBDA
     test_deployment_pb.spec.operator = 3
-    test_deployment_pb.spec.aws_lambda_operator_config.region = 'us-west-test'
+    test_deployment_pb.spec.aws_lambda_operator_config.region = 'us-west-2'
     test_deployment_pb.spec.aws_lambda_operator_config.api_name = 'predict'
 
     return test_deployment_pb
@@ -149,3 +151,44 @@ def test_aws_lambda_apply_success(
     result_pb = deployment_operator.apply(test_deployment_pb, fake_yatai_service)
     assert result_pb.status.status_code == Status.OK
     assert result_pb.deployment.name == 'test_aws_lambda'
+
+
+@mock_cloudformation
+def test_aws_lambda_describe_failed_no_formation():
+    fake_yatai_service = generate_fake_yatai_service(is_local=True)
+    test_deployment_pb = generate_lambda_deployment_pb()
+    deployment_operator = AwsLambdaDeploymentOperator()
+    result_pb = deployment_operator.describe(test_deployment_pb, fake_yatai_service)
+    assert result_pb.status.status_code == Status.INTERNAL
+    assert result_pb.status.error_message.startswith(
+        'An error occurred (ValidationError)'
+    )
+
+
+def test_aws_lambda_describe_success():
+    def mock_cf_response(self, op_name, kwarg):
+        if op_name == 'DescribeStacks':
+            return {
+                'Stacks': [
+                    {
+                        'Outputs': [
+                            {
+                                'OutputValue': 'https://fake.aws.amazon.com/',
+                                'OutputKey': 'ServiceEndpoint'
+                            }
+                        ]
+                    }
+                ]
+            }
+        else:
+            raise Exception('This test does not handle operation {}'.format(op_name))
+
+    @patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response)
+    def mock_describe(deployment_pb, yatai_service):
+        deployment_operator = AwsLambdaDeploymentOperator()
+        return deployment_operator.describe(deployment_pb, yatai_service)
+
+    fake_yatai_service = generate_fake_yatai_service(is_local=True)
+    test_deployment_pb = generate_lambda_deployment_pb()
+    result_pb = mock_describe(test_deployment_pb, fake_yatai_service)
+    assert result_pb.status.status_code == Status.OK

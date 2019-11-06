@@ -18,7 +18,7 @@ from bentoml.deployment.sagemaker import (
     get_arn_role_from_current_aws_user,
     SageMakerDeploymentOperator,
 )
-from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
+from bentoml.proto.deployment_pb2 import Deployment
 from bentoml.proto.repository_pb2 import Bento, BentoServiceMetadata, GetBentoResponse
 from bentoml.proto.status_pb2 import Status
 from tests.deployment.sagemaker.sagemaker_moto import moto_mock_sagemaker
@@ -397,7 +397,7 @@ def test_sagemaker_apply_duplicate_endpoint(
     yatai_service = create_yatai_service()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
-    success_result = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
+    deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
 
     endpoint_name = '{ns}-{name}'.format(
         ns=TEST_DEPLOYMENT_NAMESPACE, name=TEST_DEPLOYMENT_BENTO_NAME

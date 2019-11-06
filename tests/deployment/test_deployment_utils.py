@@ -2,13 +2,10 @@ from sys import version_info
 
 import pytest
 
-from subprocess import CalledProcessError
-import subprocess
-
 from mock import patch
 
 from bentoml.deployment.utils import ensure_docker_available_or_raise
-from bentoml.exceptions import BentoMLMissingDependencyException, BentoMLException
+from bentoml.exceptions import BentoMLMissingDependencyException
 
 
 def raise_(ex):

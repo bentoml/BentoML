@@ -117,7 +117,7 @@ def get_arn_role_from_current_aws_user():
         return role_response["Role"]["Arn"]
 
 
-def create_push_docker_image_to_ecr(bento_name, bento_version, snapshot_path):
+def create_push_docker_image_to_ecr(region, bento_name, bento_version, snapshot_path):
     """Create BentoService sagemaker image and push to AWS ECR
 
     Example: https://github.com/awslabs/amazon-sagemaker-examples/blob/\
@@ -127,6 +127,7 @@ def create_push_docker_image_to_ecr(bento_name, bento_version, snapshot_path):
     3. build tag and push docker image
 
     Args:
+        region(String)
         bento_name(String)
         bento_version(String)
         snapshot_path(Path)
@@ -134,7 +135,7 @@ def create_push_docker_image_to_ecr(bento_name, bento_version, snapshot_path):
     Returns:
         str: AWS ECR Tag
     """
-    ecr_client = boto3.client("ecr")
+    ecr_client = boto3.client("ecr", region)
     token = ecr_client.get_authorization_token()
     logger.debug("Getting docker login info from AWS")
     username, password = (
@@ -343,6 +344,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 )
                 init_sagemaker_project(sagemaker_project_dir, bento_path)
                 ecr_image_path = create_push_docker_image_to_ecr(
+                    sagemaker_config.region,
                     deployment_spec.bento_name,
                     deployment_spec.bento_version,
                     sagemaker_project_dir,

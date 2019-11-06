@@ -192,7 +192,10 @@ def mock_aws_services_for_sagemaker(func):
     def mock_wrapper(*args, **kwargs):
         ecr_client = boto3.client('ecr', TEST_AWS_REGION)
         repo_name = TEST_DEPLOYMENT_BENTO_NAME + '-sagemaker'
-        ecr_client.create_repository(repositoryName=repo_name)
+        try:
+            ecr_client.create_repository(repositoryName=repo_name)
+        except ecr_client.exceptions.RepositoryAlreadyExistsException:
+            print('Repository already exists')
 
         iam_role_policy = """
         {

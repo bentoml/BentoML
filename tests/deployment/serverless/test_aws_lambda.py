@@ -65,30 +65,28 @@ def mock_describe_cf(self, name):
     return
 
 
-if version_info.major >= 3:
-    mock_open_param_value = 'builtins.open'
-else:
-    mock_open_param_value = '__builtin__.open'
+def mock_aws_lambda_deployment_wrapper(func):
+    if version_info.major >= 3:
+        mock_open_param_value = 'builtins.open'
+    else:
+        mock_open_param_value = '__builtin__.open'
+
+    @patch('subprocess.check_output', autospec=True)
+    @patch('subprocess.check_call', autospec=True)
+    @patch.object(serverless_utils, 'check_nodejs_compatible_version', autospec=True)
+    @patch(mock_open_param_value, mock_open(), create=True)
+    @patch('shutil.copytree', autospec=True)
+    @patch('shutil.copy', autospec=True)
+    @patch.object(serverless_utils, 'init_serverless_project_dir', autospec=True)
+    @patch('subprocess.Popen')
+    @patch('botocore.client.BaseClient._make_api_call', new=mock_describe_cf)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
-@patch('subprocess.check_output', autospec=True)
-@patch('subprocess.check_call', autospec=True)
-@patch.object(serverless_utils, 'check_nodejs_compatible_version', autospec=True)
-@patch(mock_open_param_value, mock_open(), create=True)
-@patch('shutil.copytree', autospec=True)
-@patch('shutil.copy', autospec=True)
-@patch.object(serverless_utils, 'init_serverless_project_dir', autospec=True)
-@patch('subprocess.Popen')
-@patch('botocore.client.BaseClient._make_api_call', new=mock_describe_cf)
-def test_aws_lambda_apply(
-    mock_popen,
-    mock_init_serverless,
-    mock_copy,
-    mock_copytree,
-    mock_check_nodejs,
-    mock_checkcall,
-    mock_checkoutput,
-):
+def generate_fake_yatai_service(is_local=False):
     def mock_get_bento(is_local=True):
         bento_pb = Bento(name='bento_test_name', version='version1.1.1')
         # BentoUri.StorageType.LOCAL
@@ -98,7 +96,12 @@ def test_aws_lambda_apply(
         api = BentoServiceMetadata.BentoServiceApi(name='predict')
         bento_pb.bento_service_metadata.apis.extend([api])
         return GetBentoResponse(bento=bento_pb)
+    fake_yatai_service = MagicMock()
+    fake_yatai_service.GetBento = lambda uri: mock_get_bento(is_local)
+    return fake_yatai_service
 
+
+def generate_lambda_deployment_pb():
     test_deployment_pb = Deployment(name='test_aws_lambda', namespace='test-namespace')
     test_deployment_pb.spec.bento_name = 'bento_name'
     test_deployment_pb.spec.bento_version = 'v1.0.0'
@@ -107,16 +110,42 @@ def test_aws_lambda_apply(
     test_deployment_pb.spec.aws_lambda_operator_config.region = 'us-west-test'
     test_deployment_pb.spec.aws_lambda_operator_config.api_name = 'predict'
 
+    return test_deployment_pb
+
+
+@mock_aws_lambda_deployment_wrapper
+def test_aws_lambda_apply_failed_only_local_repo(
+    mock_popen,
+    mock_init_serverless,
+    mock_copy,
+    mock_copytree,
+    mock_check_nodejs,
+    mock_checkcall,
+    mock_checkoutput,
+):
+    test_deployment_pb = generate_lambda_deployment_pb()
+    fake_yatai_service = generate_fake_yatai_service()
     deployment_operator = AwsLambdaDeploymentOperator()
-    fake_yatai_service = MagicMock()
-    fake_yatai_service.GetBento = lambda uri: mock_get_bento(False)
     result_pb = deployment_operator.apply(test_deployment_pb, fake_yatai_service)
     assert result_pb.status.status_code == Status.INTERNAL
     assert result_pb.status.error_message.startswith(
         'BentoML currently only support local repository'
     )
 
-    fake_yatai_service.GetBento = lambda uri: mock_get_bento()
+
+@mock_aws_lambda_deployment_wrapper
+def test_aws_lambda_apply_success(
+    mock_popen,
+    mock_init_serverless,
+    mock_copy,
+    mock_copytree,
+    mock_check_nodejs,
+    mock_checkcall,
+    mock_checkoutput,
+):
+    test_deployment_pb = generate_lambda_deployment_pb()
+    fake_yatai_service = generate_fake_yatai_service(is_local=True)
+    deployment_operator = AwsLambdaDeploymentOperator()
     result_pb = deployment_operator.apply(test_deployment_pb, fake_yatai_service)
     assert result_pb.status.status_code == Status.OK
     assert result_pb.deployment.name == 'test_aws_lambda'

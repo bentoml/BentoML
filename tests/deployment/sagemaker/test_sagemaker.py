@@ -62,11 +62,8 @@ def test_get_arn_from_aws_user():
                 'This test does not handle operation: {}'.format(operation_name)
             )
 
-    @patch('botocore.client.BaseClient._make_api_call', new=mock_role_path_call)
-    def role_path():
-        return get_arn_role_from_current_aws_user()
-
-    assert role_path() == ROLE_PATH_ARN_RESULT
+    with patch('botocore.client.BaseClient._make_api_call', new=mock_role_path_call):
+        assert get_arn_role_from_current_aws_user() == ROLE_PATH_ARN_RESULT
 
     def mock_user_path_call(self, operation_name, kwarg):
         if operation_name == 'GetCallerIdentity':

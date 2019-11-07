@@ -40,6 +40,8 @@ SERVERLESS_BIN_COMMAND = '{}/node_modules/.bin/serverless'.format(BENTOML_HOME)
 
 
 def check_nodejs_compatible_version():
+    # We moved import which to inside this function, because it is easier to test with
+    # with mock
     from bentoml.utils.whichcraft import which
 
     if which('npm') is None:

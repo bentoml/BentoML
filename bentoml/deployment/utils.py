@@ -19,7 +19,6 @@ from __future__ import print_function
 import json
 import logging
 import subprocess
-from sys import version_info
 
 from bentoml.exceptions import (
     BentoMLException,
@@ -55,10 +54,12 @@ def process_docker_api_line(payload):
 
 def ensure_docker_available_or_raise():
     # for FileNotFoundError doesn't exist in py2.7. check_output raise OSError instead
-    if version_info.major < 3:
-        not_found_error = OSError
-    else:
+    import six
+
+    if six.PY3:
         not_found_error = FileNotFoundError
+    else:
+        not_found_error = OSError
 
     try:
         subprocess.check_output(['docker', 'info'])

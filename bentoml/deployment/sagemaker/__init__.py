@@ -74,13 +74,13 @@ def generate_aws_compatible_string(item):
     return re.sub(pattern, "-", item)
 
 
-def create_sagemaker_model_name(bento_name, bento_version):
+def _get_sagemaker_model_name(bento_name, bento_version):
     return generate_aws_compatible_string(
         "bentoml-{name}-{version}".format(name=bento_name, version=bento_version)
     )
 
 
-def create_sagemaker_endpoint_config_name(bento_name, bento_version):
+def _get_sagemaker_endpoint_config_name(bento_name, bento_version):
     return generate_aws_compatible_string(
         'bentoml-{name}-{version}-configuration'.format(
             name=bento_name, version=bento_version
@@ -213,11 +213,11 @@ def _parse_aws_client_exception_or_raise(e):
     elif error_code == 'InvalidSignatureException':
         return Status.UNAUTHENTICATED(error_log_message)
     else:
-        raise e
+        raise BentoMLException('Error interacting with AWS service {}'.format(str(e)))
 
 
 def _cleanup_sagemaker_model(client, name, version):
-    model_name = create_sagemaker_model_name(name, version)
+    model_name = _get_sagemaker_model_name(name, version)
     try:
         delete_model_response = client.delete_model(ModelName=model_name)
         logger.debug("AWS delete model response: %s", delete_model_response)
@@ -228,7 +228,7 @@ def _cleanup_sagemaker_model(client, name, version):
 
 
 def _cleanup_sagemaker_endpoint_config(client, name, version):
-    endpoint_config_name = create_sagemaker_endpoint_config_name(name, version)
+    endpoint_config_name = _get_sagemaker_endpoint_config_name(name, version)
     try:
         delete_endpoint_config_response = client.delete_endpoint_config(
             EndpointConfigName=endpoint_config_name
@@ -262,7 +262,7 @@ def _create_sagemaker_model(
     sagemaker_client, bento_name, bento_version, ecr_image_path, api_name
 ):
     execution_role_arn = get_arn_role_from_current_aws_user()
-    model_name = create_sagemaker_model_name(bento_name, bento_version)
+    model_name = _get_sagemaker_model_name(bento_name, bento_version)
 
     sagemaker_model_info = {
         "ModelName": model_name,
@@ -297,7 +297,7 @@ def _create_sagemaker_endpoint_config(
             "InstanceType": sagemaker_config.instance_type,
         }
     ]
-    endpoint_config_name = create_sagemaker_endpoint_config_name(
+    endpoint_config_name = _get_sagemaker_endpoint_config_name(
         bento_name, bento_version
     )
 

@@ -11,7 +11,8 @@ from bentoml.deployment.serverless.aws_lambda import (
     AwsLambdaDeploymentOperator,
 )
 from bentoml.proto.deployment_pb2 import Deployment
-from bentoml.proto.repository_pb2 import Bento, BentoServiceMetadata, GetBentoResponse
+from bentoml.proto.repository_pb2 import Bento, BentoServiceMetadata, GetBentoResponse, \
+    BentoUri
 from bentoml.proto.status_pb2 import Status
 from bentoml.deployment.serverless import serverless_utils
 
@@ -39,14 +40,28 @@ def test_generate_aws_lambda_handler_py(tmpdir):
     api_names = ['predict', 'second_predict']
     generate_aws_lambda_handler_py(bento_name, api_names, str(tmpdir))
 
+    def fake_predict(value):
+        return value
+
     import sys
 
-    sys.modules['bento_name'] = Mock()
+    class fake_bento(object):
+        def get_service_api(self, name):
+            if name == 'predict':
+                mock_api = Mock()
+                mock_api.handle_aws_lambda_event = fake_predict
+                return mock_api
+
+    mock_module = Mock()
+    mock_module.load = Mock(return_value=fake_bento())
+    sys.modules['bento_name'] = mock_module
 
     sys.path.insert(1, str(tmpdir))
-    from handler import predict, second_predict
+    from handler import predict
 
     assert predict.__module__ == 'handler'
+    assert predict(1, None) == 1
+    sys.path.remove(str(tmpdir))
 
 
 def mock_describe_cf(self, name):
@@ -87,19 +102,18 @@ def mock_aws_lambda_deployment_wrapper(func):
     return wrapper
 
 
-def generate_fake_yatai_service(is_local=False):
-    def mock_get_bento(is_local=True):
+def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
+    def mock_get_bento(repo_storage_type):
         bento_pb = Bento(name='bento_test_name', version='version1.1.1')
-        # BentoUri.StorageType.LOCAL
-        if is_local:
-            bento_pb.uri.type = 1
-        bento_pb.uri.uri = '/fake/path/to/bundle'
+        if repo_storage_type == BentoUri.LOCAL:
+            bento_pb.uri.uri = '/fake/path/to/bundle'
+        bento_pb.uri.type = repo_storage_type
         api = BentoServiceMetadata.BentoServiceApi(name='predict')
         bento_pb.bento_service_metadata.apis.extend([api])
         return GetBentoResponse(bento=bento_pb)
 
     fake_yatai_service = MagicMock()
-    fake_yatai_service.GetBento = lambda uri: mock_get_bento(is_local)
+    fake_yatai_service.GetBento = lambda uri: mock_get_bento(repo_storage_type)
     return fake_yatai_service
 
 
@@ -126,9 +140,9 @@ def test_aws_lambda_apply_failed_only_local_repo(
     mock_checkoutput,
 ):
     test_deployment_pb = generate_lambda_deployment_pb()
-    fake_yatai_service = generate_fake_yatai_service()
+    yatai_service_mock = create_yatai_service_mock(BentoUri.S3)
     deployment_operator = AwsLambdaDeploymentOperator()
-    result_pb = deployment_operator.apply(test_deployment_pb, fake_yatai_service)
+    result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock)
     assert result_pb.status.status_code == Status.INTERNAL
     assert result_pb.status.error_message.startswith(
         'BentoML currently only support local repository'
@@ -146,19 +160,19 @@ def test_aws_lambda_apply_success(
     mock_checkoutput,
 ):
     test_deployment_pb = generate_lambda_deployment_pb()
-    fake_yatai_service = generate_fake_yatai_service(is_local=True)
+    yatai_service_mock = create_yatai_service_mock()
     deployment_operator = AwsLambdaDeploymentOperator()
-    result_pb = deployment_operator.apply(test_deployment_pb, fake_yatai_service)
+    result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock)
     assert result_pb.status.status_code == Status.OK
     assert result_pb.deployment.name == 'test_aws_lambda'
 
 
 @mock_cloudformation
 def test_aws_lambda_describe_failed_no_formation():
-    fake_yatai_service = generate_fake_yatai_service(is_local=True)
+    yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     deployment_operator = AwsLambdaDeploymentOperator()
-    result_pb = deployment_operator.describe(test_deployment_pb, fake_yatai_service)
+    result_pb = deployment_operator.describe(test_deployment_pb, yatai_service_mock)
     assert result_pb.status.status_code == Status.INTERNAL
     assert result_pb.status.error_message.startswith(
         'An error occurred (ValidationError)'
@@ -174,7 +188,7 @@ def test_aws_lambda_describe_success():
                         'Outputs': [
                             {
                                 'OutputValue': 'https://fake.aws.amazon.com/',
-                                'OutputKey': 'ServiceEndpoint'
+                                'OutputKey': 'ServiceEndpoint',
                             }
                         ]
                     }
@@ -188,7 +202,7 @@ def test_aws_lambda_describe_success():
         deployment_operator = AwsLambdaDeploymentOperator()
         return deployment_operator.describe(deployment_pb, yatai_service)
 
-    fake_yatai_service = generate_fake_yatai_service(is_local=True)
+    yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
-    result_pb = mock_describe(test_deployment_pb, fake_yatai_service)
+    result_pb = mock_describe(test_deployment_pb, yatai_service_mock)
     assert result_pb.status.status_code == Status.OK

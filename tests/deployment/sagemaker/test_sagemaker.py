@@ -13,112 +13,34 @@ from moto import mock_ecr, mock_iam, mock_sts
 
 from bentoml.deployment.sagemaker import (
     _parse_aws_client_exception_or_raise,
-    _cleanup_sagemaker_model,
-    _cleanup_sagemaker_endpoint_config,
     get_arn_role_from_current_aws_user,
     SageMakerDeploymentOperator,
 )
-from bentoml.proto.deployment_pb2 import Deployment
-from bentoml.proto.repository_pb2 import Bento, BentoServiceMetadata, GetBentoResponse
+from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
+from bentoml.proto.repository_pb2 import Bento, BentoServiceMetadata, GetBentoResponse, \
+    BentoUri
 from bentoml.proto.status_pb2 import Status
 from tests.deployment.sagemaker.sagemaker_moto import moto_mock_sagemaker
 
 
-@pytest.fixture(scope='function')
-def sagemaker_client():
-    return boto3.client('sagemaker', 'us-west-2')
-
-
-def test_sagemaker_handle_client_errors(sagemaker_client):
-    sagemaker_client = boto3.client('sagemaker', 'us-west-2')
-    stubber = Stubber(sagemaker_client)
-
-    stubber.add_client_error(
-        method='create_endpoint', service_error_code='ValidationException'
+def test_sagemaker_handle_client_errors():
+    error = ClientError(
+        error_response={
+            'Error': {'Code': 'ValidationException', 'Message': 'error message'}
+        },
+        operation_name='failed_operation',
     )
-    stubber.activate()
-    result = None
-
-    with pytest.raises(ClientError) as error:
-        sagemaker_client.create_endpoint(
-            EndpointName='Test', EndpointConfigName='test-config'
-        )
-    result = _parse_aws_client_exception_or_raise(error.value)
-
+    result = _parse_aws_client_exception_or_raise(error)
     assert result.status_code == Status.NOT_FOUND
 
-    stubber.add_client_error('describe_endpoint', 'InvalidSignatureException')
-    stubber.activate()
-    result = None
-    with pytest.raises(ClientError) as e:
-        sagemaker_client.describe_endpoint(EndpointName='Test')
-    result = _parse_aws_client_exception_or_raise(e.value)
+    invalid_error = ClientError(
+        error_response={
+            'Error': {'Code': 'InvalidSignatureException', 'Message': 'error message'}
+        },
+        operation_name='DescribeEndpoint',
+    )
+    result = _parse_aws_client_exception_or_raise(invalid_error)
     assert result.status_code == Status.UNAUTHENTICATED
-
-
-def test_cleanup_sagemaker_model(sagemaker_client):
-    sagemaker_client = boto3.client('sagemaker', 'us-west-2')
-    stubber = Stubber(sagemaker_client)
-    stubber.add_client_error(
-        method='delete_model', service_error_code='ValidationException'
-    )
-    stubber.activate()
-
-    error_status = _cleanup_sagemaker_model(
-        sagemaker_client, 'test_name', 'test_version'
-    )
-    assert error_status.status_code == Status.NOT_FOUND
-
-    stubber.add_client_error(
-        method='delete_model', service_error_code='InvalidSignatureException'
-    )
-    error_status = _cleanup_sagemaker_model(
-        sagemaker_client, 'test_name', 'test_version'
-    )
-    assert error_status.status_code == Status.UNAUTHENTICATED
-
-    stubber.add_client_error(
-        method='delete_model',
-        service_error_code='RandomError',
-        service_message='random',
-    )
-    with pytest.raises(ClientError) as error:
-        _cleanup_sagemaker_model(sagemaker_client, 'test_name', 'test_version')
-    assert error.value.operation_name == 'DeleteModel'
-    assert error.value.response['Error']['Code'] == 'RandomError'
-
-
-def test_cleanup_sagemaker_endpoint_config(sagemaker_client):
-    stubber = Stubber(sagemaker_client)
-    stubber.add_client_error(
-        method='delete_endpoint_config', service_error_code='ValidationException'
-    )
-    stubber.activate()
-
-    error_status = _cleanup_sagemaker_endpoint_config(
-        sagemaker_client, 'test_name', 'test_version'
-    )
-    assert error_status.status_code == Status.NOT_FOUND
-
-    stubber.add_client_error(
-        method='delete_endpoint_config', service_error_code='InvalidSignatureException'
-    )
-    error_status = _cleanup_sagemaker_endpoint_config(
-        sagemaker_client, 'test_name', 'test_version'
-    )
-    assert error_status.status_code == Status.UNAUTHENTICATED
-
-    stubber.add_client_error(
-        method='delete_endpoint_config',
-        service_error_code='RandomError',
-        service_message='random',
-    )
-    with pytest.raises(ClientError) as error:
-        _cleanup_sagemaker_endpoint_config(
-            sagemaker_client, 'test_name', 'test_version'
-        )
-    assert error.value.operation_name == 'DeleteEndpointConfig'
-    assert error.value.response['Error']['Code'] == 'RandomError'
 
 
 ROLE_PATH_ARN_RESULT = 'arn:aws:us-west-2:999'
@@ -166,11 +88,8 @@ def test_get_arn_from_aws_user():
                 'This test does not handle operation: {}'.format(operation_name)
             )
 
-    @patch('botocore.client.BaseClient._make_api_call', new=mock_user_path_call)
-    def user_path():
-        return get_arn_role_from_current_aws_user()
-
-    assert user_path() == USER_PATH_ARN_RESULT
+    with patch('botocore.client.BaseClient._make_api_call', new=mock_user_path_call):
+        assert get_arn_role_from_current_aws_user() == USER_PATH_ARN_RESULT
 
 
 TEST_AWS_REGION = 'us-west-2'
@@ -239,21 +158,20 @@ def mock_sagemaker_deployment_wrapper(func):
     return mock_wrapper
 
 
-def create_yatai_service(is_local_repo=True):
-    def mock_get_bento(is_local_repo=True):
+def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
+    def mock_get_bento(repo_storage_type):
         bento_pb = Bento(
             name=TEST_DEPLOYMENT_BENTO_NAME, version=TEST_DEPLOYMENT_BENTO_VERSION
         )
-        # BentoUri.StorageType.LOCAL
-        if is_local_repo:
-            bento_pb.uri.type = 1
+        if repo_storage_type == BentoUri.LOCAL:
             bento_pb.uri.uri = TEST_DEPLOYMENT_BENTO_LOCAL_URI
+        bento_pb.uri.type = repo_storage_type
         api = BentoServiceMetadata.BentoServiceApi(name=TEST_BENTO_API_NAME)
         bento_pb.bento_service_metadata.apis.extend([api])
         return GetBentoResponse(bento=bento_pb)
 
     fake_yatai_service = MagicMock()
-    fake_yatai_service.GetBento = lambda pb_request: mock_get_bento(is_local_repo)
+    fake_yatai_service.GetBento = lambda pb_request: mock_get_bento(repo_storage_type)
 
     return fake_yatai_service
 
@@ -272,8 +190,7 @@ def generate_sagemaker_deployment_pb():
     test_deployment_pb.spec.sagemaker_operator_config.instance_type = (
         TEST_DEPLOYMENT_INSTANCE_TYPE
     )
-    # DeploymentSpec.DeploymentOperator.AWS_SAGEMAKER
-    test_deployment_pb.spec.operator = 2
+    test_deployment_pb.spec.operator = DeploymentSpec.AWS_SAGEMAKER
 
     return test_deployment_pb
 
@@ -286,7 +203,7 @@ def raise_(ex):
 def test_sagemaker_apply_fail_not_local_repo(
     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
 ):
-    yatai_service = create_yatai_service(is_local_repo=False)
+    yatai_service = create_yatai_service_mock(repo_storage_type=BentoUri.S3)
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
     result_pb = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
@@ -300,7 +217,7 @@ def test_sagemaker_apply_fail_not_local_repo(
 def test_sagemaker_apply_success(
     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
 ):
-    yatai_service = create_yatai_service()
+    yatai_service = create_yatai_service_mock()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
     result_pb = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
@@ -312,7 +229,7 @@ def test_sagemaker_apply_success(
 # def test_sagemaker_apply_model_already_exists(
 #     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
 # ):
-#     yatai_service = create_yatai_service()
+#     yatai_service = create_yatai_service_mock()
 #     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
 #     deployment_operator = SageMakerDeploymentOperator()
 #     with pytest.raises(ValueError) as error:
@@ -325,7 +242,7 @@ def test_sagemaker_apply_success(
 def test_sagemaker_apply_create_model_fail(
     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
 ):
-    yatai_service = create_yatai_service()
+    yatai_service = create_yatai_service_mock()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
 
@@ -369,7 +286,7 @@ def test_sagemaker_apply_delete_model_fail(
     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
 ):
     orig = botocore.client.BaseClient._make_api_call
-    yatai_service = create_yatai_service()
+    yatai_service = create_yatai_service_mock()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
 
@@ -397,7 +314,7 @@ def test_sagemaker_apply_duplicate_endpoint(
     mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
 ):
     orig = botocore.client.BaseClient._make_api_call
-    yatai_service = create_yatai_service()
+    yatai_service = create_yatai_service_mock()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
     deployment_operator.apply(sagemaker_deployment_pb, yatai_service)

@@ -70,6 +70,9 @@ def install_serverless_package():
     install_command = ['npm', 'install', 'serverless@{}'.format(SERVERLESS_VERSION)]
     try:
         subprocess.check_call(
+            ['npm', 'init', '--yes'], cwd=BENTOML_HOME, stdout=PIPE, stderr=PIPE
+        )
+        subprocess.check_call(
             install_command, cwd=BENTOML_HOME, stdout=PIPE, stderr=PIPE
         )
     except subprocess.CalledProcessError as error:

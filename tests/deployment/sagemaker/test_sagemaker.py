@@ -12,16 +12,20 @@ import boto3
 from moto import mock_ecr, mock_iam, mock_sts
 
 from bentoml.deployment.sagemaker import (
-    _parse_aws_client_exception_or_raise,
+    _parse_aws_client_exception,
     get_arn_role_from_current_aws_user,
     SageMakerDeploymentOperator,
 )
+from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
-from bentoml.proto.repository_pb2 import Bento, BentoServiceMetadata, GetBentoResponse, \
-    BentoUri
+from bentoml.proto.repository_pb2 import (
+    Bento,
+    BentoServiceMetadata,
+    GetBentoResponse,
+    BentoUri,
+)
 from bentoml.proto.status_pb2 import Status
 from tests.deployment.sagemaker.sagemaker_moto import moto_mock_sagemaker
-
 
 def test_sagemaker_handle_client_errors():
     error = ClientError(
@@ -30,7 +34,7 @@ def test_sagemaker_handle_client_errors():
         },
         operation_name='failed_operation',
     )
-    result = _parse_aws_client_exception_or_raise(error)
+    result = _parse_aws_client_exception(error)
     assert result.status_code == Status.NOT_FOUND
 
     invalid_error = ClientError(
@@ -39,7 +43,7 @@ def test_sagemaker_handle_client_errors():
         },
         operation_name='DescribeEndpoint',
     )
-    result = _parse_aws_client_exception_or_raise(invalid_error)
+    result = _parse_aws_client_exception(invalid_error)
     assert result.status_code == Status.UNAUTHENTICATED
 
 
@@ -140,7 +144,9 @@ def mock_aws_services_for_sagemaker(func):
 
 
 def mock_sagemaker_deployment_wrapper(func):
-    if version_info.major >= 3:
+    import six
+
+    if six.PY3:
         mock_open_param_value = 'builtins.open'
     else:
         mock_open_param_value = '__builtin__.open'
@@ -149,9 +155,7 @@ def mock_sagemaker_deployment_wrapper(func):
     @patch('subprocess.check_output', autospec=True)
     @patch('docker.APIClient.build', autospec=True)
     @patch('docker.APIClient.push', autospec=True)
-    @patch(mock_open_param_value, mock_open(read_data='test'), create=True)
-    @patch('shutil.copytree', autospec=True)
-    @patch('os.chmod', autospec=True)
+    @patch('bentoml.deployment.sagemaker.init_sagemaker_project', autospec=True)
     def mock_wrapper(*args, **kwargs):
         return func(*args, **kwargs)
 
@@ -201,7 +205,7 @@ def raise_(ex):
 
 @mock_sagemaker_deployment_wrapper
 def test_sagemaker_apply_fail_not_local_repo(
-    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+    mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
 ):
     yatai_service = create_yatai_service_mock(repo_storage_type=BentoUri.S3)
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
@@ -215,7 +219,7 @@ def test_sagemaker_apply_fail_not_local_repo(
 
 @mock_sagemaker_deployment_wrapper
 def test_sagemaker_apply_success(
-    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+    mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
 ):
     yatai_service = create_yatai_service_mock()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
@@ -240,7 +244,7 @@ def test_sagemaker_apply_success(
 
 @mock_sagemaker_deployment_wrapper
 def test_sagemaker_apply_create_model_fail(
-    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+    mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
 ):
     yatai_service = create_yatai_service_mock()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
@@ -254,13 +258,14 @@ def test_sagemaker_apply_create_model_fail(
         else:
             return orig(self, operation_name, kwarg)
 
-    with pytest.raises(ClientError) as error:
-        with patch(
-            'botocore.client.BaseClient._make_api_call', new=fail_create_model_random
-        ):
-            deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
-    assert error.value.operation_name == 'CreateModel'
-    assert error.value.response['Error']['Code'] == 'Random'
+    with patch(
+        'botocore.client.BaseClient._make_api_call', new=fail_create_model_random
+    ):
+        failed_result = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
+    assert failed_result.status.status_code == Status.INTERNAL
+    assert failed_result.status.error_message.startswith(
+        'Failed to create model for SageMaker Deployment'
+    )
 
     def fail_create_model_validation(self, operation_name, kwarg):
         if operation_name == 'CreateModel':
@@ -283,7 +288,7 @@ def test_sagemaker_apply_create_model_fail(
 
 @mock_sagemaker_deployment_wrapper
 def test_sagemaker_apply_delete_model_fail(
-    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+    mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
 ):
     orig = botocore.client.BaseClient._make_api_call
     yatai_service = create_yatai_service_mock()
@@ -311,7 +316,7 @@ def test_sagemaker_apply_delete_model_fail(
 
 @mock_sagemaker_deployment_wrapper
 def test_sagemaker_apply_duplicate_endpoint(
-    mock_chmod, mock_copytree, mock_docker_push, mock_docker_build, mock_check_output
+    mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
 ):
     orig = botocore.client.BaseClient._make_api_call
     yatai_service = create_yatai_service_mock()

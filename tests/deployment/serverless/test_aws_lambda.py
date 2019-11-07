@@ -11,8 +11,12 @@ from bentoml.deployment.serverless.aws_lambda import (
     AwsLambdaDeploymentOperator,
 )
 from bentoml.proto.deployment_pb2 import Deployment
-from bentoml.proto.repository_pb2 import Bento, BentoServiceMetadata, GetBentoResponse, \
-    BentoUri
+from bentoml.proto.repository_pb2 import (
+    Bento,
+    BentoServiceMetadata,
+    GetBentoResponse,
+    BentoUri,
+)
 from bentoml.proto.status_pb2 import Status
 from bentoml.deployment.serverless import serverless_utils
 

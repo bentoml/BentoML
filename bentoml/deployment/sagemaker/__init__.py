@@ -188,7 +188,7 @@ ENDPOINT_STATUS_TO_STATE = {
 }
 
 
-def _parse_aws_client_exception_or_raise(e):
+def _parse_aws_client_exception(e):
     """parse botocore.exceptions.ClientError into Bento StatusProto
 
     We handle two most common errors when deploying to Sagemaker.
@@ -213,7 +213,7 @@ def _parse_aws_client_exception_or_raise(e):
     elif error_code == 'InvalidSignatureException':
         return Status.UNAUTHENTICATED(error_log_message)
     else:
-        raise BentoMLException('Error interacting with AWS service {}'.format(str(e)))
+        return Status.INTERNAL('Error interacting with AWS service {}'.format(str(e)))
 
 
 def _cleanup_sagemaker_model(client, name, version):
@@ -222,7 +222,7 @@ def _cleanup_sagemaker_model(client, name, version):
         delete_model_response = client.delete_model(ModelName=model_name)
         logger.debug("AWS delete model response: %s", delete_model_response)
     except ClientError as e:
-        return _parse_aws_client_exception_or_raise(e)
+        return _parse_aws_client_exception(e)
 
     return
 
@@ -237,7 +237,7 @@ def _cleanup_sagemaker_endpoint_config(client, name, version):
             "AWS delete endpoint config response: %s", delete_endpoint_config_response
         )
     except ClientError as e:
-        return _parse_aws_client_exception_or_raise(e)
+        return _parse_aws_client_exception(e)
     return
 
 
@@ -359,7 +359,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     sagemaker_config.api_name,
                 )
             except ClientError as e:
-                status = _parse_aws_client_exception_or_raise(e)
+                status = _parse_aws_client_exception(e)
                 status.error_message = (
                     'Failed to create model for SageMaker'
                     ' Deployment: {}'.format(status.error_message)
@@ -391,7 +391,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                         status=cleanup_model_error, deployment=deployment_pb
                     )
 
-                status = _parse_aws_client_exception_or_raise(e)
+                status = _parse_aws_client_exception(e)
                 status.error_message = (
                     'Failed to create endpoint config for SageMaker deployment: %s',
                     status.error_message,
@@ -454,7 +454,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                         status=cleanup_model_error, deployment=deployment_pb
                     )
 
-                status = _parse_aws_client_exception_or_raise(e)
+                status = _parse_aws_client_exception(e)
                 status.error_message = (
                     'Failed to apply SageMaker '
                     'deployment: {}'.format(status.error_message)
@@ -489,7 +489,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     "AWS delete endpoint response: %s", delete_endpoint_response
                 )
             except ClientError as e:
-                status = _parse_aws_client_exception_or_raise(e)
+                status = _parse_aws_client_exception(e)
                 status.error_message = 'Failed to delete SageMaker endpoint: {}'.format(
                     status.error_message
                 )
@@ -538,7 +538,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     EndpointName=endpoint_name
                 )
             except ClientError as e:
-                status = _parse_aws_client_exception_or_raise(e)
+                status = _parse_aws_client_exception(e)
                 status.error_message = (
                     'Failed to describe SageMaker '
                     'deployment: {}'.format(status.error_message)

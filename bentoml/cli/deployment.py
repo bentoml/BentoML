@@ -33,25 +33,18 @@ from bentoml.cli.click_utils import (
     parse_bento_tag_callback,
     parse_yaml_file_callback,
 )
-from bentoml.yatai import get_yatai_service
-from bentoml.proto.deployment_pb2 import (
-    GetDeploymentRequest,
-    DescribeDeploymentRequest,
-    ListDeploymentsRequest,
-    DeploymentSpec,
-    DeploymentState,
-)
+from bentoml.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 from bentoml.proto.status_pb2 import Status
 from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
-from bentoml.deployment.store import ALL_NAMESPACE_TAG
-from bentoml import config
 from bentoml.cli.utils import Spinner
 from bentoml.yatai.python_api import (
     apply_deployment,
     create_deployment,
     delete_deployment,
+    get_deployment,
+    describe_deployment,
 )
 
 # pylint: disable=unused-variable
@@ -140,14 +133,11 @@ def _print_deployments_info(deployments, output_type):
 def get_state_after_await_action_complete(
     name, namespace, message, timeout_limit=600, wait_time=5
 ):
-    yatai_service = get_yatai_service()
     start_time = time.time()
 
     with Spinner(message):
         while (time.time() - start_time) < timeout_limit:
-            result = yatai_service.DescribeDeployment(
-                DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
-            )
+            result = describe_deployment(namespace, name)
             if result.state.state is DeploymentState.PENDING:
                 time.sleep(wait_time)
                 continue
@@ -314,9 +304,7 @@ def get_deployment_sub_command():
             else:
                 if wait:
                     result_state = get_state_after_await_action_complete(
-                        name=name,
-                        namespace=namespace,
-                        message='Creating deployment ',
+                        name=name, namespace=namespace, message='Creating deployment '
                     )
                     result.deployment.state.CopyFrom(result_state.state)
 
@@ -426,9 +414,7 @@ def get_deployment_sub_command():
     def get(name, output, namespace):
         track_cli('deploy-get')
 
-        result = get_yatai_service().GetDeployment(
-            GetDeploymentRequest(deployment_name=name, namespace=namespace)
-        )
+        result = get_deployment(namespace, name)
         if result.status.status_code != Status.OK:
             _echo(
                 'Failed to get deployment {name}. code: {error_code}, message: '
@@ -454,11 +440,8 @@ def get_deployment_sub_command():
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     def describe(name, output, namespace):
         track_cli('deploy-describe')
-        yatai_service = get_yatai_service()
 
-        result = yatai_service.DescribeDeployment(
-            DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
-        )
+        result = describe_deployment(namespace, name)
         if result.status.status_code != Status.OK:
             _echo(
                 'Failed to describe deployment {name}. code: {error_code}, message: '
@@ -470,10 +453,8 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
         else:
-            get_response = yatai_service.GetDeployment(
-                GetDeploymentRequest(deployment_name=name, namespace=namespace)
-            )
-            deployment_pb = get_response.deployment
+            get_result = get_deployment(namespace, name)
+            deployment_pb = get_result.deployment
             deployment_pb.state.CopyFrom(result.state)
             _print_deployment_info(deployment_pb, output)
 
@@ -507,11 +488,7 @@ def get_deployment_sub_command():
         track_cli('deploy-list')
 
         result = list_deployments(
-            limit,
-            filters,
-            parse_key_value_pairs(labels),
-            namespace,
-            all_namespaces
+            limit, filters, parse_key_value_pairs(labels), namespace, all_namespaces
         )
         if result.status.status_code != Status.OK:
             _echo(

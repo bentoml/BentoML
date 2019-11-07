@@ -33,7 +33,8 @@ from bentoml.proto.deployment_pb2 import (
     GetDeploymentRequest,
     DeploymentSpec,
     DeleteDeploymentRequest,
-    ListDeploymentsRequest)
+    ListDeploymentsRequest,
+)
 from bentoml.service import BentoService
 from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
 from bentoml.proto.repository_pb2 import (
@@ -247,20 +248,17 @@ def describe_deployment(namespace, name):
     from bentoml.yatai import get_yatai_service
 
     yatai_service = get_yatai_service()
-    result_pb = yatai_service.DescribeDeployment(
+    return yatai_service.DescribeDeployment(
         DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
     )
 
-    # NOT GOOD
-    if result_pb.status.status_code != Status.OK:
-        return result_pb
-    else:
-        get_pb = yatai_service.GetDeployment(
-            GetDeploymentRequest(deployment_name=name, namespace=namespace)
-        )
-        deployment_pb = get_pb.deployment
-        deployment_pb.state.CopyFrom(result_pb.state)
-        return deployment_pb
+
+def get_deployment(namespace, name):
+    from bentoml.yatai import get_yatai_service
+
+    return get_yatai_service().GetDeployment(
+        GetDeploymentRequest(deployment_name=name, namespace=namespace)
+    )
 
 
 def delete_deployment(deployment_name, namespace, force_delete):
@@ -288,9 +286,6 @@ def list_deployments(limit, filters, labels, namespace, all_namespaces):
 
     return get_yatai_service().ListDeployments(
         ListDeploymentsRequest(
-            limit=limit,
-            filter=filters,
-            labels=labels,
-            namespace=namespace,
+            limit=limit, filter=filters, labels=labels, namespace=namespace
         )
     )

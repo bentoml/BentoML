@@ -22,9 +22,20 @@ import tarfile
 import requests
 import tempfile
 
+from ruamel.yaml import YAML
 
+# TODO move this to yatai module
+from bentoml.cli.deployment_utils import deployment_yaml_to_pb
+from bentoml.deployment.store import ALL_NAMESPACE_TAG
+from bentoml.proto.deployment_pb2 import (
+    ApplyDeploymentRequest,
+    DescribeDeploymentRequest,
+    GetDeploymentRequest,
+    DeploymentSpec,
+    DeleteDeploymentRequest,
+    ListDeploymentsRequest)
 from bentoml.service import BentoService
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
 from bentoml.proto.repository_pb2 import (
     AddBentoRequest,
     BentoUri,
@@ -149,3 +160,137 @@ def update_bento_upload_progress(
         service_metadata=bento_service._get_bento_service_metadata_pb(),
     )
     yatai.UpdateBento(update_bento_req)
+
+
+def create_deployment(
+    deployment_name,
+    namespace,
+    bento_name,
+    bento_version,
+    operator,
+    operator_spec,
+    labels=None,
+    annotations=None,
+):
+    from bentoml.yatai import get_yatai_service
+
+    yaml = YAML()
+    deployment_dict = {
+        "name": deployment_name,
+        "namespace": namespace,
+        "labels": labels,
+        "annotations": annotations,
+        "spec": {
+            "bento_name": bento_name,
+            "bento_version": bento_version,
+            "operator": operator,
+        },
+    }
+    if operator == DeploymentSpec.AWS_SAGEMAKER:
+        deployment_dict['spec']['sagemakerOperatorConfig'] = operator_spec
+    elif operator == DeploymentSpec.AWS_LAMBDA:
+        deployment_dict['spec']['awsLambdaOperatorConfig'] = operator_spec
+    elif operator == DeploymentSpec.GCP_FCUNTION:
+        deployment_dict['spec']['gcpFunctionOperatorConfig'] = operator_spec
+    elif operator == DeploymentSpec.KUBERNETES:
+        deployment_dict['spec']['kubernetesOperatorConfig'] = operator_spec
+    else:
+        raise BentoMLDeploymentException(
+            'Custom deployment is not supported in the current version of BentoML'
+        )
+
+    deployment_yaml = yaml.load(str(deployment_dict))
+    print(deployment_yaml)
+
+    yatai_service = get_yatai_service()
+
+    # Make sure there is no active deployment with the same deployment name
+    get_deployment = yatai_service.GetDeployment(
+        GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
+    )
+    if get_deployment.status.status_code != Status.NOT_FOUND:
+        raise BentoMLDeploymentException(
+            'Deployment {name} already existed, please use update or apply command'
+            ' instead'.format(name=deployment_name)
+        )
+    return apply_deployment(deployment_yaml)
+
+
+def update_deployment(deployment_name, namespace):
+    from bentoml.yatai import get_yatai_service
+
+    yatai_service = get_yatai_service()
+
+    # Make sure there is deployment with the same deployment name
+    get_deployment = yatai_service.GetDeployment(
+        GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
+    )
+    if get_deployment.status.status_code == Status.NOT_FOUND:
+        raise BentoMLDeploymentException(
+            'Deployment {name} does not exist, please create deployment first'.format(
+                name=deployment_name
+            )
+        )
+
+
+def apply_deployment(deployment_yaml):
+    deployment_pb = deployment_yaml_to_pb(deployment_yaml)
+    from bentoml.yatai import get_yatai_service
+
+    yatai_service = get_yatai_service()
+    return yatai_service.ApplyDeployment(
+        ApplyDeploymentRequest(deployment=deployment_pb)
+    )
+
+
+def describe_deployment(namespace, name):
+    from bentoml.yatai import get_yatai_service
+
+    yatai_service = get_yatai_service()
+    result_pb = yatai_service.DescribeDeployment(
+        DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
+    )
+
+    # NOT GOOD
+    if result_pb.status.status_code != Status.OK:
+        return result_pb
+    else:
+        get_pb = yatai_service.GetDeployment(
+            GetDeploymentRequest(deployment_name=name, namespace=namespace)
+        )
+        deployment_pb = get_pb.deployment
+        deployment_pb.state.CopyFrom(result_pb.state)
+        return deployment_pb
+
+
+def delete_deployment(deployment_name, namespace, force_delete):
+    from bentoml.yatai import get_yatai_service
+
+    return get_yatai_service().DeleteDeployment(
+        DeleteDeploymentRequest(
+            deployment_name=deployment_name,
+            namespace=namespace,
+            force_delete=force_delete,
+        )
+    )
+
+
+def list_deployments(limit, filters, labels, namespace, all_namespaces):
+    from bentoml.yatai import get_yatai_service
+
+    if all_namespaces:
+        if namespace is not None:
+            logger.warning(
+                'Ignoring `namespace=%s` due to the --all-namespace flag presented',
+                namespace,
+            )
+        namespace = ALL_NAMESPACE_TAG
+
+    return get_yatai_service().ListDeployments(
+        ListDeploymentsRequest(
+            limit=limit,
+            filter=filters,
+            labels=labels,
+            namespace=namespace,
+        )
+    )

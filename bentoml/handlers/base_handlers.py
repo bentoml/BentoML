@@ -110,6 +110,6 @@ def get_output_str(result, output_format, output_orient="records"):
         elif isinstance(result, np.ndarray):
             return json.dumps(result.tolist())
         else:
-            return json.dumps(result)
+            return json.dumps(str(result))
     else:
         raise ValueError("Output format {} is not supported".format(output_format))

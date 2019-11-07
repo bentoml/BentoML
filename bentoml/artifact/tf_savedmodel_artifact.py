@@ -19,7 +19,6 @@ from __future__ import print_function
 import os
 import shutil
 import logging
-import botocore.exceptions
 
 from bentoml.utils import pathlib
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
@@ -44,24 +43,6 @@ def _load_tf_saved_model(path):
         return tf.saved_model.load(path)
     else:
         return tf.compat.v2.saved_model.load(path)
-
-
-# def _get_loaded_model_for_inference(loaded_model, sess=None, graph=None):
-#     try:
-#         import tensorflow as tf
-#
-#         TF2 = tf.__version__.startswith('2')
-#     except ImportError:
-#         raise ImportError("Tensorflow package is required to use TfSavedModelArtifact.")
-#
-#     if TF2:
-#         return loaded_model
-#     else:
-#         if sess is None or graph is None:
-#             raise BentoMLException("tf.Session not initialized for loading SavedModel")
-#
-#         with graph.as_default():
-#             with sess.as_default():
 
 
 class TensorflowSavedModelArtifact(BentoServiceArtifact):
@@ -105,22 +86,6 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     Args:
         name (string): name of the artifact
     """
-
-    def __init__(self, name):
-        super(TensorflowSavedModelArtifact, self).__init__(name)
-
-        try:
-            import tensorflow as tf
-        except ImportError:
-            raise ImportError(
-                "Tensorflow package is required to use TfSavedModelArtifact"
-            )
-
-        if not tf.executing_eagerly():
-            self.wrapper
-
-        self.graph = None
-        self.sess = None
 
     def _saved_model_path(self, base_path):
         return os.path.join(base_path, self.name + '_saved_model')
@@ -195,8 +160,9 @@ class _TensorflowSavedModelArtifactWrapper(BentoServiceArtifactWrapper):
         else:
             if self.options:
                 logger.warning(
-                    "Parameter 'options: {}' is ignored when using Tensorflow "
-                    "version 1".format(str(self.options))
+                    "Parameter 'options: %s' is ignored when using Tensorflow "
+                    "version 1",
+                    str(self.options),
                 )
 
             return tf.saved_model.save(

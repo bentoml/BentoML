@@ -2,6 +2,7 @@ import six
 import bentoml
 from bentoml.utils.usage_stats import _get_bento_service_event_properties
 
+
 def test_get_bento_service_event_properties(bento_service):
     properties = _get_bento_service_event_properties(bento_service)
 

@@ -256,6 +256,7 @@ def create_deployment(
         return ApplyDeploymentResponse(status=Status.INTERNAL(str(error)))
 
 
+# TODO update_deployment is not finished.  It will be working on along with cli command
 def update_deployment(deployment_name, namespace):
     from bentoml.yatai import get_yatai_service
 

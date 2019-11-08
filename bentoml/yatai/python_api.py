@@ -289,6 +289,7 @@ def apply_deployment(deployment_yaml):
 
 def describe_deployment(namespace, name):
     from bentoml.yatai import get_yatai_service
+
     yatai_service = get_yatai_service()
     return yatai_service.DescribeDeployment(
         DescribeDeploymentRequest(deployment_name=name, namespace=namespace)

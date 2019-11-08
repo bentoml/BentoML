@@ -37,7 +37,7 @@ from bentoml.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 from bentoml.proto import status_pb2
 from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
-from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
+from bentoml.exceptions import BentoMLException
 from bentoml.cli.utils import Spinner
 from bentoml.yatai.python_api import (
     apply_deployment,
@@ -45,7 +45,8 @@ from bentoml.yatai.python_api import (
     delete_deployment,
     get_deployment,
     describe_deployment,
-    list_deployments)
+    list_deployments,
+)
 
 # pylint: disable=unused-variable
 
@@ -292,7 +293,7 @@ def get_deployment_sub_command():
                 'Failed to create deployment {name}. {error_code}: '
                 '{error_message}'.format(
                     name=name,
-                    error_code=StatusProto.Code.Name(result.status.status_code),
+                    error_code=status_pb2.Status.Code.Name(result.status.status_code),
                     error_message=result.status.error_message,
                 ),
                 CLI_COLOR_ERROR,
@@ -304,9 +305,7 @@ def get_deployment_sub_command():
                 )
                 result.deployment.state.CopyFrom(result_state.state)
 
-            _echo(
-                'Successfully created deployment {}'.format(name), CLI_COLOR_SUCCESS
-            )
+            _echo('Successfully created deployment {}'.format(name), CLI_COLOR_SUCCESS)
             _print_deployment_info(result.deployment, output)
 
     @deployment.command(help='Apply model service deployment from yaml file')
@@ -334,7 +333,9 @@ def get_deployment_sub_command():
                     'Failed to apply deployment {name}. code: {error_code}, message: '
                     '{error_message}'.format(
                         name=deployment_yaml.get('name'),
-                        error_code=status_pb2.Status.Code.Name(result.status.status_code),
+                        error_code=status_pb2.Status.Code.Name(
+                            result.status.status_code
+                        ),
                         error_message=result.status.error_message,
                     ),
                     CLI_COLOR_ERROR,
@@ -481,7 +482,7 @@ def get_deployment_sub_command():
             filters=filters,
             labels=parse_key_value_pairs(labels),
             namespace=namespace,
-            is_all_namespaces=all_namespaces
+            is_all_namespaces=all_namespaces,
         )
         if result.status.status_code != status_pb2.Status.OK:
             _echo(

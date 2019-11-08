@@ -1,4 +1,4 @@
-import sys
+import six
 import pytest
 import tempfile
 
@@ -59,7 +59,7 @@ class TestBentoService(bentoml.BentoService):
     def predictJson(self, input_data):
         return self.artifacts.model.predictJson(input_data)
 
-    if sys.version_info >= (3, 6):
+    if six.PY3:
 
         @bentoml.api(FastaiImageHandler)
         def predictFastaiImage(self, input_data):

@@ -46,7 +46,10 @@ from bentoml.proto.repository_pb2 import (
 from bentoml.proto import status_pb2
 from bentoml.utils.usage_stats import track_save
 from bentoml.archive import save_to_dir
-from bentoml.yatai.deployment_utils import deployment_yaml_to_pb
+from bentoml.yatai.deployment_utils import (
+    deployment_yaml_string_to_pb,
+    deployment_dict_to_pb,
+)
 from bentoml.yatai.status import Status
 
 logger = logging.getLogger(__name__)
@@ -173,10 +176,23 @@ def create_deployment(
     operator_spec,
     labels=None,
     annotations=None,
+    yatai_service=None,
 ):
     from bentoml.yatai import get_yatai_service
 
     try:
+        if yatai_service is None:
+            yatai_service = get_yatai_service()
+        # Make sure there is no active deployment with the same deployment name
+        get_deployment_pb = yatai_service.GetDeployment(
+            GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
+        )
+        if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
+            raise BentoMLDeploymentException(
+                'Deployment {name} already existed, please use update or apply command'
+                ' instead'.format(name=deployment_name)
+            )
+
         yaml = YAML()
         deployment_dict = {
             "name": deployment_name,
@@ -237,19 +253,7 @@ def create_deployment(
             )
 
         deployment_yaml = yaml.load(str(deployment_dict))
-
-        yatai_service = get_yatai_service()
-
-        # Make sure there is no active deployment with the same deployment name
-        get_deployment_pb = yatai_service.GetDeployment(
-            GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
-        )
-        if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
-            raise BentoMLDeploymentException(
-                'Deployment {name} already existed, please use update or apply command'
-                ' instead'.format(name=deployment_name)
-            )
-        return apply_deployment(deployment_yaml)
+        return apply_deployment(deployment_yaml, yatai_service)
     except BentoMLDeploymentException as error:
         return ApplyDeploymentResponse(status=Status.ABORTED(str(error)))
     except BentoMLException as error:
@@ -257,10 +261,11 @@ def create_deployment(
 
 
 # TODO update_deployment is not finished.  It will be working on along with cli command
-def update_deployment(deployment_name, namespace):
+def update_deployment(deployment_name, namespace, yatai_service=None):
     from bentoml.yatai import get_yatai_service
 
-    yatai_service = get_yatai_service()
+    if yatai_service is None:
+        yatai_service = get_yatai_service()
 
     # Make sure there is deployment with the same deployment name
     get_deployment_pb = yatai_service.GetDeployment(
@@ -274,41 +279,59 @@ def update_deployment(deployment_name, namespace):
         )
 
 
-def apply_deployment(deployment_yaml):
+def apply_deployment(deployment_info, yatai_service=None):
     from bentoml.yatai import get_yatai_service
 
     try:
-        deployment_pb = deployment_yaml_to_pb(deployment_yaml)
+        if isinstance(deployment_info, dict):
+            deployment_pb = deployment_dict_to_pb(deployment_info)
+        elif isinstance(deployment_info, str):
+            deployment_pb = deployment_yaml_string_to_pb(deployment_info)
+        else:
+            raise BentoMLDeploymentException(
+                'Currently, we do not handle deployment info type {}'.format(
+                    str(type(deployment_info))
+                )
+            )
 
-        yatai_service = get_yatai_service()
+        if yatai_service is None:
+            yatai_service = get_yatai_service()
         return yatai_service.ApplyDeployment(
             ApplyDeploymentRequest(deployment=deployment_pb)
         )
+    except BentoMLDeploymentException as error:
+        return ApplyDeploymentResponse(status=Status.ABORTED(str(error)))
     except BentoMLException as error:
         return ApplyDeploymentResponse(status=Status.INTERNAL(str(error)))
 
 
-def describe_deployment(namespace, name):
+def describe_deployment(namespace, name, yatai_service=None):
     from bentoml.yatai import get_yatai_service
 
-    yatai_service = get_yatai_service()
+    if yatai_service is None:
+        yatai_service = get_yatai_service()
     return yatai_service.DescribeDeployment(
         DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
     )
 
 
-def get_deployment(namespace, name):
+def get_deployment(namespace, name, yatai_service=None):
     from bentoml.yatai import get_yatai_service
 
-    return get_yatai_service().GetDeployment(
+    if yatai_service is None:
+        yatai_service = get_yatai_service()
+    return yatai_service.GetDeployment(
         GetDeploymentRequest(deployment_name=name, namespace=namespace)
     )
 
 
-def delete_deployment(deployment_name, namespace, force_delete):
+def delete_deployment(deployment_name, namespace, force_delete, yatai_service=None):
     from bentoml.yatai import get_yatai_service
 
-    return get_yatai_service().DeleteDeployment(
+    if yatai_service is None:
+        yatai_service = get_yatai_service()
+
+    return yatai_service.DeleteDeployment(
         DeleteDeploymentRequest(
             deployment_name=deployment_name,
             namespace=namespace,
@@ -317,8 +340,13 @@ def delete_deployment(deployment_name, namespace, force_delete):
     )
 
 
-def list_deployments(limit, filters, labels, namespace, is_all_namespaces):
+def list_deployments(
+    limit, filters, labels, namespace, is_all_namespaces, yatai_service=None
+):
     from bentoml.yatai import get_yatai_service
+
+    if yatai_service is None:
+        yatai_service = get_yatai_service()
 
     if is_all_namespaces:
         if namespace is not None:
@@ -328,7 +356,7 @@ def list_deployments(limit, filters, labels, namespace, is_all_namespaces):
             )
         namespace = ALL_NAMESPACE_TAG
 
-    return get_yatai_service().ListDeployments(
+    return yatai_service.ListDeployments(
         ListDeploymentsRequest(
             limit=limit, filter=filters, labels=labels, namespace=namespace
         )

@@ -19,25 +19,26 @@ from __future__ import print_function
 
 import logging
 
+from ruamel.yaml import YAML
+
 from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
 from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
 
 logger = logging.getLogger(__name__)
 
 
-def deployment_yaml_to_pb(deployment_yaml):
+def deployment_dict_to_pb(deployment_dict):
     deployment_pb = Deployment()
+    if deployment_dict.get('name') is not None:
+        deployment_pb.name = deployment_dict.get('name')
+    if deployment_dict.get('namespace') is not None:
+        deployment_pb.namespace = deployment_dict.get('namespace')
+    if deployment_dict.get('labels') is not None:
+        deployment_pb.labels.update(deployment_dict.get('labels'))
+    if deployment_dict.get('annotations') is not None:
+        deployment_pb.annotations.update(deployment_dict.get('annotations'))
 
-    if deployment_yaml.get('name') is not None:
-        deployment_pb.name = deployment_yaml.get('name')
-    if deployment_yaml.get('namespace') is not None:
-        deployment_pb.namespace = deployment_yaml.get('namespace')
-    if deployment_yaml.get('labels') is not None:
-        deployment_pb.labels.update(dict(deployment_yaml.get('labels')))
-    if deployment_yaml.get('annotations') is not None:
-        deployment_pb.annotations.update(dict(deployment_yaml.get('annotations')))
-
-    spec_yaml = deployment_yaml.get('spec')
+    spec_yaml = deployment_dict.get('spec')
     platform = spec_yaml.get('operator')
     if platform is not None:
         deployment_pb.spec.operator = DeploymentSpec.DeploymentOperator.Value(
@@ -96,3 +97,9 @@ def deployment_yaml_to_pb(deployment_yaml):
         )
 
     return deployment_pb
+
+
+def deployment_yaml_string_to_pb(deployment_yaml_string):
+    yaml = YAML()
+    deployment_yaml = yaml.load(deployment_yaml_string)
+    return deployment_dict_to_pb(deployment_yaml)

@@ -47,6 +47,7 @@ from bentoml.yatai.python_api import (
     describe_deployment,
     list_deployments,
 )
+from bentoml.yatai import get_yatai_service
 
 # pylint: disable=unused-variable
 
@@ -132,13 +133,13 @@ def _print_deployments_info(deployments, output_type):
 
 
 def get_state_after_await_action_complete(
-    name, namespace, message, timeout_limit=600, wait_time=5
+    yatai_service, name, namespace, message, timeout_limit=600, wait_time=5
 ):
     start_time = time.time()
 
     with Spinner(message):
         while (time.time() - start_time) < timeout_limit:
-            result = describe_deployment(namespace, name)
+            result = describe_deployment(namespace, name, yatai_service)
             if result.state.state is DeploymentState.PENDING:
                 time.sleep(wait_time)
                 continue
@@ -277,6 +278,7 @@ def get_deployment_sub_command():
             'service_name': service_name,
             'service_type': service_type,
         }
+        yatai_service = get_yatai_service()
         result = create_deployment(
             name,
             namespace,
@@ -286,6 +288,7 @@ def get_deployment_sub_command():
             operator_spec,
             parse_key_value_pairs(labels),
             parse_key_value_pairs(annotations),
+            yatai_service,
         )
 
         if result.status.status_code != status_pb2.Status.OK:
@@ -301,7 +304,10 @@ def get_deployment_sub_command():
         else:
             if wait:
                 result_state = get_state_after_await_action_complete(
-                    name=name, namespace=namespace, message='Creating deployment '
+                    yatai_service=yatai_service,
+                    name=name,
+                    namespace=namespace,
+                    message='Creating deployment ',
                 )
                 result.deployment.state.CopyFrom(result_state.state)
 
@@ -327,7 +333,8 @@ def get_deployment_sub_command():
     def apply(deployment_yaml, output, wait):
         track_cli('deploy-apply', deployment_yaml.get('spec', {}).get('operator'))
         try:
-            result = apply_deployment(deployment_yaml)
+            yatai_service = get_yatai_service()
+            result = apply_deployment(deployment_yaml, yatai_service)
             if result.status.status_code != status_pb2.Status.OK:
                 _echo(
                     'Failed to apply deployment {name}. code: {error_code}, message: '
@@ -343,6 +350,7 @@ def get_deployment_sub_command():
             else:
                 if wait:
                     result_state = get_state_after_await_action_complete(
+                        yatai_service=yatai_service,
                         name=deployment_yaml.get('name'),
                         namespace=deployment_yaml.get('namespace'),
                         message='Applying deployment',
@@ -381,7 +389,8 @@ def get_deployment_sub_command():
     def delete(name, namespace, force):
         track_cli('deploy-delete')
 
-        result = delete_deployment(name, namespace, force)
+        yatai_service = get_yatai_service()
+        result = delete_deployment(name, namespace, force, yatai_service)
         if result.status.status_code == status_pb2.Status.OK:
             _echo(
                 'Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS
@@ -404,7 +413,8 @@ def get_deployment_sub_command():
     def get(name, output, namespace):
         track_cli('deploy-get')
 
-        result = get_deployment(namespace, name)
+        yatai_service = get_yatai_service()
+        result = get_deployment(namespace, name, yatai_service)
         if result.status.status_code != status_pb2.Status.OK:
             _echo(
                 'Failed to get deployment {name}. code: {error_code}, message: '
@@ -430,8 +440,9 @@ def get_deployment_sub_command():
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     def describe(name, output, namespace):
         track_cli('deploy-describe')
+        yatai_service = get_yatai_service()
 
-        result = describe_deployment(namespace, name)
+        result = describe_deployment(namespace, name, yatai_service)
         if result.status.status_code != status_pb2.Status.OK:
             _echo(
                 'Failed to describe deployment {name}. code: {error_code}, message: '
@@ -476,6 +487,7 @@ def get_deployment_sub_command():
     )
     def list_deployments_cli(output, limit, filters, labels, namespace, all_namespaces):
         track_cli('deploy-list')
+        yatai_service = get_yatai_service()
 
         result = list_deployments(
             limit=limit,
@@ -483,6 +495,7 @@ def get_deployment_sub_command():
             labels=parse_key_value_pairs(labels),
             namespace=namespace,
             is_all_namespaces=all_namespaces,
+            yatai_service=yatai_service,
         )
         if result.status.status_code != status_pb2.Status.OK:
             _echo(

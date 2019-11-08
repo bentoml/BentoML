@@ -49,42 +49,43 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     """
     Abstraction for saving/loading Tensorflow model in tf.saved_model format
 
-    Example usage:
-
-    ```python
-    import tensorflow as tf
-    class Adder(tf.Module):
-        @tf.function(input_signature=[tf.TensorSpec(shape=None, dtype=tf.float32)])
-        def add(self, x):
-            return x + x + 1.
-    to_export = Adder()
-
-    import bentoml
-    from bentoml.handlers import JsonHandler
-    from bentoml.artifact import TensorflowSavedModelArtifact
-
-    @bentoml.env(pip_dependencies=["tensorflow"])
-    @bentoml.artifacts([TensorflowSavedModelArtifact('model')])
-    class TfModelService(bentoml.BentoService):
-
-        @bentoml.api(JsonHandler)
-        def predict(self, json):
-            input_data = json['input']
-            prediction = self.artifacts.model.add(input_data)
-            return prediction.numpy()
-
-    svc = TfModelService()
-
-    # Option 1: pack directly with Tensorflow trackable object
-    svc.pack('model', to_export)
-
-    # Option 2: save to file path then pack
-    tf.saved_model.save(to_export, '/tmp/adder/1')
-    svc.pack('model', '/tmp/adder/1')
-    ```
-
     Args:
         name (string): name of the artifact
+
+    Raises:
+        ImportError: tensorflow package is required for TensorflowSavedModelArtifact
+
+    Example usage:
+
+    >>> import tensorflow as tf
+    >>> class Adder(tf.Module):
+    >>>     @tf.function(input_signature=[tf.TensorSpec(shape=None, dtype=tf.float32)])
+    >>>     def add(self, x):
+    >>>         return x + x + 1.
+    >>> to_export = Adder()
+    >>>
+    >>> import bentoml
+    >>> from bentoml.handlers import JsonHandler
+    >>> from bentoml.artifact import TensorflowSavedModelArtifact
+    >>>
+    >>> @bentoml.env(pip_dependencies=["tensorflow"])
+    >>> @bentoml.artifacts([TensorflowSavedModelArtifact('model')])
+    >>> class TfModelService(bentoml.BentoService):
+    >>>
+    >>>     @bentoml.api(JsonHandler)
+    >>>     def predict(self, json):
+    >>>         input_data = json['input']
+    >>>         prediction = self.artifacts.model.add(input_data)
+    >>>         return prediction.numpy()
+    >>>
+    >>> svc = TfModelService()
+    >>>
+    >>> # Option 1: pack directly with Tensorflow trackable object
+    >>> svc.pack('model', to_export)
+    >>>
+    >>> # Option 2: save to file path then pack
+    >>> tf.saved_model.save(to_export, '/tmp/adder/1')
+    >>> svc.pack('model', '/tmp/adder/1')
     """
 
     def _saved_model_path(self, base_path):

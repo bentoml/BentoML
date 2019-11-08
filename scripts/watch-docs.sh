@@ -15,7 +15,7 @@ python3 -m http.server --directory $GIT_ROOT/built-docs &
 echo "Open browser..."
 open -a "Google Chrome" http://0.0.0.0:8000/
 
-fswatch -o $GIT_ROOT/docs | while read; \
+fswatch -o $GIT_ROOT | while read; \
   do \
     echo "Change detected, rebuilding docs..."
     sphinx-build -E $GIT_ROOT/docs $GIT_ROOT/built-docs

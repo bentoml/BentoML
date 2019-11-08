@@ -45,7 +45,10 @@ class SklearnModelArtifact(BentoServiceArtifact):
 
     Args:
         name (str): Name for the artifact
-        pickle_extension (str): The extension format for pickled file.
+        pickle_extension (str): The extension format for pickled file
+
+    Raises:
+        ImportError: sklean package is required for SklearnModelArtifact
     """
 
     def __init__(self, name, pickle_extension=".pkl"):

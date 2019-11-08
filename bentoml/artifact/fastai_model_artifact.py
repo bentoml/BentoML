@@ -42,7 +42,8 @@ class FastaiModelArtifact(BentoServiceArtifact):
 
     Raises:
         ImportError: Require fastai package to use Fast ai model artifact
-        ValueError: Model is not instance of fast ai model
+        TypeError: invalid argument type, model being packed must be instance of
+            fastai.basic_train.Learner
     """
 
     def __init__(self, name):
@@ -59,7 +60,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
         fastai_module = _import_fastai_module()
 
         if not isinstance(model, fastai_module.basic_train.Learner):
-            raise ValueError(
+            raise TypeError(
                 "Expect `model` argument to be `fastai.basic_train.Learner` instance"
             )
 

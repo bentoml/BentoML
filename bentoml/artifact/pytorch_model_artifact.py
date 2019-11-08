@@ -25,6 +25,14 @@ from bentoml.utils import cloudpickle
 class PytorchModelArtifact(BentoServiceArtifact):
     """
     Abstraction for saving/loading objects with torch.save and torch.load
+
+    Args:
+        name (string): name of the artifact
+
+    Raises:
+        ImportError: torch package is required for PytorchModelArtifact
+        TypeError: invalid argument type, model being packed must be instance of
+            torch.nn.Module
     """
 
     def __init__(self, name, file_extension=".pt"):

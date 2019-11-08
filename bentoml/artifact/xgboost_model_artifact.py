@@ -30,6 +30,8 @@ class XgboostModelArtifact(BentoServiceArtifact):
 
     Raises:
         ImportError: xgboost package is required for using XgboostModelArtifact
+        TypeError: invalid argument type, model being packed must be instance of
+            xgboost.core.Booster
     """
 
     def __init__(self, name, model_extension=".model"):
@@ -63,7 +65,7 @@ class _XgboostModelArtifactWrapper(BentoServiceArtifactWrapper):
             raise ImportError("xgboost package is required to use XgboostModelArtifact")
 
         if not isinstance(model, xgb.core.Booster):
-            raise ValueError(
+            raise TypeError(
                 "Expect `model` argument to be a `xgboost.core.Booster` instance"
             )
 

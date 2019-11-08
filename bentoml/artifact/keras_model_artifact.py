@@ -33,6 +33,12 @@ class KerasModelArtifact(BentoServiceArtifact):
         custom_objects (dict): dictionary of Keras custom objects for model
         store_as_json_and_weights (bool): flag allowing storage of the Keras
             model as JSON and weights
+
+    Raises:
+        ImportError: keras or tensorflow.keras package is required for
+            KerasModelArtifact
+        TypeError:  invalid argument type, model being packed must be instance of
+            keras.engine.network.Network, tf.keras.models.Model, or their aliases
     """
 
     def __init__(
@@ -133,11 +139,11 @@ class KerasModelArtifact(BentoServiceArtifact):
                 import keras
 
                 if not isinstance(model, keras.engine.network.Network):
-                    raise ValueError(error_msg)
+                    raise TypeError(error_msg)
                 else:
                     self._keras_module_name = keras.__name__
             except ImportError:
-                raise ValueError(error_msg)
+                raise TypeError(error_msg)
 
         self.bind_keras_backend_session()
         model._make_predict_function()

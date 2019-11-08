@@ -17,6 +17,10 @@ FastaiModelArtifact
 +++++++++++++++++++
 .. autoclass:: bentoml.artifact.FastaiModelArtifact
 
+TensorflowSavedModelArtifact
+++++++++++++++++++++++++++++
+.. autoclass:: bentoml.artifact.TensorflowSavedModelArtifact
+
 XgboostModelArtifact
 ++++++++++++++++++++
 .. autoclass:: bentoml.artifact.XgboostModelArtifact

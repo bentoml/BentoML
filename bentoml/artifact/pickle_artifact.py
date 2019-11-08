@@ -30,7 +30,7 @@ class PickleArtifact(BentoServiceArtifact):
     Args:
         name (str): Name for the artifact
         pickle_module (module|str): The python module will be used for pickle
-            and unpickle artifact
+            and unpickle artifact, default pickle module in BentoML is `dill`
         pickle_extension (str): The extension format for pickled file.
     """
 

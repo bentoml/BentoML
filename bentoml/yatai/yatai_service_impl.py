@@ -104,9 +104,7 @@ class YataiService(YataiServicer):
                             'deploy to new target platform again'
                         )
                     )
-                request.deployment.state = DeploymentState(
-                    state=DeploymentState.PENDING
-                )
+                request.deployment.state.state = DeploymentState.PENDING
             else:
                 request.deployment.created_at.GetCurrentTime()
 

@@ -20,7 +20,7 @@ from __future__ import print_function
 import logging
 
 from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +43,17 @@ def deployment_yaml_to_pb(deployment_yaml):
         deployment_pb.spec.operator = DeploymentSpec.DeploymentOperator.Value(
             platform.replace('-', '_').upper()
         )
+    else:
+        raise BentoMLDeploymentException(
+            'operator is required field for BentoML deployment'
+        )
+
     if spec_yaml.get('bento_name'):
         deployment_pb.spec.bento_name = spec_yaml.get('bento_name')
     if spec_yaml.get('bento_version'):
         deployment_pb.spec.bento_version = spec_yaml.get('bento_version')
 
-    if platform == 'aws_sagemaker':
+    if deployment_pb.spec.operator == DeploymentSpec.AWS_SAGEMAKER:
         sagemaker_config = spec_yaml.get('sagemaker_operator_config')
         sagemaker_operator_config_pb = deployment_pb.spec.sagemaker_operator_config
         if sagemaker_config.get('api_name'):
@@ -63,17 +68,17 @@ def deployment_yaml_to_pb(deployment_yaml):
             sagemaker_operator_config_pb.instance_type = sagemaker_config.get(
                 'instance_type'
             )
-    elif platform == 'aws_lambda':
+    elif deployment_pb.spec.operator == DeploymentSpec.AWS_LAMBDA:
         lambda_config = spec_yaml.get('aws_lambda_operator_config')
         if lambda_config.get('region'):
             deployment_pb.spec.aws_lambda_config.region = lambda_config.get('region')
-    elif platform == 'gcp_function':
+    elif deployment_pb.spec.operator == DeploymentSpec.GCP_FUNCTION:
         gcp_config = spec_yaml.get('gcp_function_operator_config')
         if gcp_config.get('region'):
             deployment_pb.spec.gcp_function_operator_config.region = gcp_config.get(
                 'region'
             )
-    elif platform == 'kubernetes':
+    elif deployment_pb.spec.operator == DeploymentSpec.KUBERNETES:
         k8s_config = spec_yaml.get('kubernetes_operator_config')
         k8s_operator_config_pb = deployment_pb.spec.kubernetes_operator_config
 

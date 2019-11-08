@@ -34,7 +34,7 @@ from bentoml.cli.click_utils import (
     parse_yaml_file_callback,
 )
 from bentoml.proto.deployment_pb2 import DeploymentSpec, DeploymentState
-from bentoml.proto.status_pb2 import Status
+from bentoml.proto import status_pb2
 from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
@@ -45,7 +45,7 @@ from bentoml.yatai.python_api import (
     delete_deployment,
     get_deployment,
     describe_deployment,
-)
+    list_deployments)
 
 # pylint: disable=unused-variable
 
@@ -264,61 +264,50 @@ def get_deployment_sub_command():
     ):
         # converting platform parameter to DeploymentOperator name in proto
         # e.g. 'aws-lambda' to 'AWS_LAMBDA'
-        platform = platform.replace('-', '_').upper()
-        operator = DeploymentSpec.DeploymentOperator.Value(platform)
-
-        track_cli('deploy-create', platform)
+        track_cli('deploy-create', platform.replace('-', '_').upper())
         bento_name, bento_version = bento.split(':')
         operator_spec = {
             'region': region,
-            'instanceType': instance_type,
-            'instanceCount': instance_count,
-            'apiName': api_name,
-            'kubeNamespace': kube_namespace,
+            'instance_type': instance_type,
+            'instance_count': instance_count,
+            'api_name': api_name,
+            'kube_namespace': kube_namespace,
             'replicas': replicas,
-            'serviceName': service_name,
-            'serviceType': service_type,
+            'service_name': service_name,
+            'service_type': service_type,
         }
-        try:
-            result = create_deployment(
-                name,
-                namespace,
-                bento_name,
-                bento_version,
-                operator,
-                operator_spec,
-                parse_key_value_pairs(labels),
-                parse_key_value_pairs(annotations),
-            )
+        result = create_deployment(
+            name,
+            namespace,
+            bento_name,
+            bento_version,
+            platform,
+            operator_spec,
+            parse_key_value_pairs(labels),
+            parse_key_value_pairs(annotations),
+        )
 
-            if result.status.status_code != Status.OK:
-                _echo(
-                    'Failed to create deployment {name}. {error_code}: '
-                    '{error_message}'.format(
-                        name=name,
-                        error_code=Status.Code.Name(result.status.status_code),
-                        error_message=result.status.error_message,
-                    ),
-                    CLI_COLOR_ERROR,
-                )
-            else:
-                if wait:
-                    result_state = get_state_after_await_action_complete(
-                        name=name, namespace=namespace, message='Creating deployment '
-                    )
-                    result.deployment.state.CopyFrom(result_state.state)
-
-                _echo(
-                    'Successfully created deployment {}'.format(name), CLI_COLOR_SUCCESS
-                )
-                _print_deployment_info(result.deployment, output)
-        except BentoMLDeploymentException as error:
+        if result.status.status_code != status_pb2.Status.OK:
             _echo(
-                'Failed to create deployment {name}. {error_message}'.format(
-                    name=name, error_message=str(error)
+                'Failed to create deployment {name}. {error_code}: '
+                '{error_message}'.format(
+                    name=name,
+                    error_code=StatusProto.Code.Name(result.status.status_code),
+                    error_message=result.status.error_message,
                 ),
                 CLI_COLOR_ERROR,
             )
+        else:
+            if wait:
+                result_state = get_state_after_await_action_complete(
+                    name=name, namespace=namespace, message='Creating deployment '
+                )
+                result.deployment.state.CopyFrom(result_state.state)
+
+            _echo(
+                'Successfully created deployment {}'.format(name), CLI_COLOR_SUCCESS
+            )
+            _print_deployment_info(result.deployment, output)
 
     @deployment.command(help='Apply model service deployment from yaml file')
     @click.option(
@@ -340,12 +329,12 @@ def get_deployment_sub_command():
         track_cli('deploy-apply', deployment_yaml.get('spec', {}).get('operator'))
         try:
             result = apply_deployment(deployment_yaml)
-            if result.status.status_code != Status.OK:
+            if result.status.status_code != status_pb2.Status.OK:
                 _echo(
                     'Failed to apply deployment {name}. code: {error_code}, message: '
                     '{error_message}'.format(
                         name=deployment_yaml.get('name'),
-                        error_code=Status.Code.Name(result.status.status_code),
+                        error_code=status_pb2.Status.Code.Name(result.status.status_code),
                         error_message=result.status.error_message,
                     ),
                     CLI_COLOR_ERROR,
@@ -392,7 +381,7 @@ def get_deployment_sub_command():
         track_cli('deploy-delete')
 
         result = delete_deployment(name, namespace, force)
-        if result.status.status_code == Status.OK:
+        if result.status.status_code == status_pb2.Status.OK:
             _echo(
                 'Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS
             )
@@ -401,7 +390,7 @@ def get_deployment_sub_command():
                 'Failed to delete deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(
                     name=name,
-                    error_code=Status.Code.Name(result.status.status_code),
+                    error_code=status_pb2.Status.Code.Name(result.status.status_code),
                     error_message=result.status.error_message,
                 ),
                 CLI_COLOR_ERROR,
@@ -415,12 +404,12 @@ def get_deployment_sub_command():
         track_cli('deploy-get')
 
         result = get_deployment(namespace, name)
-        if result.status.status_code != Status.OK:
+        if result.status.status_code != status_pb2.Status.OK:
             _echo(
                 'Failed to get deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(
                     name=name,
-                    error_code=Status.Code.Name(result.status.status_code),
+                    error_code=status_pb2.Status.Code.Name(result.status.status_code),
                     error_message=result.status.error_message,
                 ),
                 CLI_COLOR_ERROR,
@@ -442,12 +431,12 @@ def get_deployment_sub_command():
         track_cli('deploy-describe')
 
         result = describe_deployment(namespace, name)
-        if result.status.status_code != Status.OK:
+        if result.status.status_code != status_pb2.Status.OK:
             _echo(
                 'Failed to describe deployment {name}. code: {error_code}, message: '
                 '{error_message}'.format(
                     name=name,
-                    error_code=Status.Code.Name(result.status.status_code),
+                    error_code=status_pb2.Status.Code.Name(result.status.status_code),
                     error_message=result.status.error_message,
                 ),
                 CLI_COLOR_ERROR,
@@ -484,17 +473,21 @@ def get_deployment_sub_command():
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_deployments(output, limit, filters, labels, namespace, all_namespaces):
+    def list_deployments_cli(output, limit, filters, labels, namespace, all_namespaces):
         track_cli('deploy-list')
 
         result = list_deployments(
-            limit, filters, parse_key_value_pairs(labels), namespace, all_namespaces
+            limit=limit,
+            filters=filters,
+            labels=parse_key_value_pairs(labels),
+            namespace=namespace,
+            is_all_namespaces=all_namespaces
         )
-        if result.status.status_code != Status.OK:
+        if result.status.status_code != status_pb2.Status.OK:
             _echo(
                 'Failed to list deployments. code: {error_code}, message: '
                 '{error_message}'.format(
-                    error_code=Status.Code.Name(result.status.status_code),
+                    error_code=status_pb2.Status.Code.Name(result.status.status_code),
                     error_message=result.status.error_message,
                 ),
                 CLI_COLOR_ERROR,

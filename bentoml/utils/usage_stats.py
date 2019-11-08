@@ -84,8 +84,14 @@ def _get_bento_service_event_properties(bento_service, properties=None):
     for api in bento_service.get_service_apis():
         handler_types.add(api.handler.__class__.__name__)
 
-    properties["handler_types"] = list(handler_types)
-    properties["artifact_types"] = list(artifact_types)
+    if handler_types:
+        properties["handler_types"] = list(handler_types)
+
+    if artifact_types:
+        properties["artifact_types"] = list(artifact_types)
+    else:
+        properties["artifact_types"] = ["NO_ARTIFACT"]
+
     properties["env"] = bento_service.env.to_dict()
     return properties
 

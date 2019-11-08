@@ -139,13 +139,6 @@ def mock_aws_services_for_sagemaker(func):
 
 
 def mock_sagemaker_deployment_wrapper(func):
-    import six
-
-    if six.PY3:
-        mock_open_param_value = 'builtins.open'
-    else:
-        mock_open_param_value = '__builtin__.open'
-
     @mock_aws_services_for_sagemaker
     @patch('subprocess.check_output', autospec=True)
     @patch('docker.APIClient.build', autospec=True)

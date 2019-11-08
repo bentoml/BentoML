@@ -67,6 +67,7 @@ test_requires = (
         "tox>=3.12.1",
         "coverage>=4.4",
         "codecov",
+        "moto",
     ]
     + imageio
     + cv2

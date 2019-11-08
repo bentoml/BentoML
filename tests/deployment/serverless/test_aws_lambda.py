@@ -2,7 +2,7 @@ import os
 from sys import version_info
 
 from mock import MagicMock, patch, Mock, mock_open
-from moto import mock_cloudformation, mock_lambda, mock_s3, mock_apigateway
+from moto import mock_cloudformation
 from ruamel.yaml import YAML
 
 from bentoml.deployment.serverless.aws_lambda import (
@@ -107,18 +107,17 @@ def mock_aws_lambda_deployment_wrapper(func):
 
 
 def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
-    def mock_get_bento(repo_storage_type):
-        bento_pb = Bento(name='bento_test_name', version='version1.1.1')
-        if repo_storage_type == BentoUri.LOCAL:
-            bento_pb.uri.uri = '/fake/path/to/bundle'
-        bento_pb.uri.type = repo_storage_type
-        api = BentoServiceMetadata.BentoServiceApi(name='predict')
-        bento_pb.bento_service_metadata.apis.extend([api])
-        return GetBentoResponse(bento=bento_pb)
+    bento_pb = Bento(name='bento_test_name', version='version1.1.1')
+    if repo_storage_type == BentoUri.LOCAL:
+        bento_pb.uri.uri = '/fake/path/to/bundle'
+    bento_pb.uri.type = repo_storage_type
+    api = BentoServiceMetadata.BentoServiceApi(name='predict')
+    bento_pb.bento_service_metadata.apis.extend([api])
+    get_bento_response = GetBentoResponse(bento=bento_pb)
 
-    fake_yatai_service = MagicMock()
-    fake_yatai_service.GetBento = lambda uri: mock_get_bento(repo_storage_type)
-    return fake_yatai_service
+    yatai_service_mock = MagicMock()
+    yatai_service_mock.GetBento.return_value = get_bento_response
+    return yatai_service_mock
 
 
 def generate_lambda_deployment_pb():
@@ -201,12 +200,9 @@ def test_aws_lambda_describe_success():
         else:
             raise Exception('This test does not handle operation {}'.format(op_name))
 
-    @patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response)
-    def mock_describe(deployment_pb, yatai_service):
-        deployment_operator = AwsLambdaDeploymentOperator()
-        return deployment_operator.describe(deployment_pb, yatai_service)
-
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
-    result_pb = mock_describe(test_deployment_pb, yatai_service_mock)
-    assert result_pb.status.status_code == Status.OK
+    with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
+        deployment_operator = AwsLambdaDeploymentOperator()
+        result_pb = deployment_operator.describe(test_deployment_pb, yatai_service_mock)
+        assert result_pb.status.status_code == Status.OK

@@ -2,11 +2,9 @@ from __future__ import absolute_import
 
 import botocore
 import pytest
-from mock import patch, MagicMock, mock_open
-from sys import version_info
+from mock import patch, MagicMock
 
 from botocore.exceptions import ClientError
-from botocore.stub import Stubber
 
 import boto3
 from moto import mock_ecr, mock_iam, mock_sts
@@ -16,7 +14,6 @@ from bentoml.deployment.sagemaker import (
     get_arn_role_from_current_aws_user,
     SageMakerDeploymentOperator,
 )
-from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
 from bentoml.proto.repository_pb2 import (
     Bento,
@@ -26,6 +23,7 @@ from bentoml.proto.repository_pb2 import (
 )
 from bentoml.proto.status_pb2 import Status
 from tests.deployment.sagemaker.sagemaker_moto import moto_mock_sagemaker
+
 
 def test_sagemaker_handle_client_errors():
     error = ClientError(
@@ -160,21 +158,20 @@ def mock_sagemaker_deployment_wrapper(func):
 
 
 def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
-    def mock_get_bento(repo_storage_type):
-        bento_pb = Bento(
-            name=TEST_DEPLOYMENT_BENTO_NAME, version=TEST_DEPLOYMENT_BENTO_VERSION
-        )
-        if repo_storage_type == BentoUri.LOCAL:
-            bento_pb.uri.uri = TEST_DEPLOYMENT_BENTO_LOCAL_URI
-        bento_pb.uri.type = repo_storage_type
-        api = BentoServiceMetadata.BentoServiceApi(name=TEST_BENTO_API_NAME)
-        bento_pb.bento_service_metadata.apis.extend([api])
-        return GetBentoResponse(bento=bento_pb)
+    bento_pb = Bento(
+        name=TEST_DEPLOYMENT_BENTO_NAME, version=TEST_DEPLOYMENT_BENTO_VERSION
+    )
+    if repo_storage_type == BentoUri.LOCAL:
+        bento_pb.uri.uri = TEST_DEPLOYMENT_BENTO_LOCAL_URI
+    bento_pb.uri.type = repo_storage_type
+    api = BentoServiceMetadata.BentoServiceApi(name=TEST_BENTO_API_NAME)
+    bento_pb.bento_service_metadata.apis.extend([api])
+    get_bento_response = GetBentoResponse(bento=bento_pb)
 
-    fake_yatai_service = MagicMock()
-    fake_yatai_service.GetBento = lambda pb_request: mock_get_bento(repo_storage_type)
+    yatai_service_mock = MagicMock()
+    yatai_service_mock.GetBento.return_value = get_bento_response
 
-    return fake_yatai_service
+    return yatai_service_mock
 
 
 def generate_sagemaker_deployment_pb():
@@ -258,7 +255,9 @@ def test_sagemaker_apply_create_model_fail(
     with patch(
         'botocore.client.BaseClient._make_api_call', new=fail_create_model_random
     ):
-        failed_result = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
+        failed_result = deployment_operator.apply(
+            sagemaker_deployment_pb, yatai_service
+        )
     assert failed_result.status.status_code == Status.INTERNAL
     assert failed_result.status.error_message.startswith(
         'Failed to create model for SageMaker Deployment'

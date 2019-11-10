@@ -16,15 +16,13 @@
 BentoML is a flexible framework that accelerates the workflow of
 __serving and deploying machine learning models__ in the cloud.
 
-It supports most popular machine learning frameworks and making it easy
-for your ML team to deliver cloud-native prediction services that DevOps
-and software engineers can easily work with.
-
-Check out our 5-mins [Quickstart Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+It supports most popular machine learning frameworks and makes it easy
+for ML teams to deliver cloud-native prediction services that DevOps
+and software engineers can easily work with. Check out our 5-mins [Quickstart Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
  using BentoML to turn a trained sklearn model into a containerized
  REST API server, and then deploy it to AWS Lambda.
 
-If you are using BentoML for production workloads or wants to contribute,
+If you plan to use BentoML for production workloads or wants to contribute,
 be sure to join our Slack channel and hear about our latest development updates:
 [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
@@ -51,7 +49,7 @@ class IrisClassifier(bentoml.BentoService):
 
     @bentoml.api(DataframeHandler) # defining prediction service endpoint and expected input format
     def predict(self, df):
-        # custom pre-processing logic and access to model in python
+        # Pre-processing logic and access to trained mdoel artifacts in API function
         return self.artifacts.model.predict(df)
 ```
 

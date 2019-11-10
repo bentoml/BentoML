@@ -22,7 +22,7 @@ that DevOps and software engineers can easily work with. Check out our
 using BentoML to turn a trained sklearn model into a containerized
 REST API server, and then deploy it to AWS Lambda.
 
-If you plan to use BentoML for production workloads or wants to contribute,
+If you plan to use BentoML for production workloads or want to contribute,
 be sure to join our Slack channel and hear about our latest development updates:
 [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 

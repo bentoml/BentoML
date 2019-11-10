@@ -46,6 +46,7 @@ from bentoml.proto.repository_pb2 import (
 from bentoml.proto import status_pb2
 from bentoml.utils.usage_stats import track_save
 from bentoml.archive import save_to_dir
+from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,
     deployment_dict_to_pb,
@@ -209,10 +210,6 @@ def create_deployment(
         operator = platform.replace('-', '_').upper()
         operator_value = DeploymentSpec.DeploymentOperator.Value(operator)
         if operator_value == DeploymentSpec.AWS_SAGEMAKER:
-            if not operator_spec['api_name']:
-                raise BentoMLDeploymentException(
-                    'API name is required for Sagemaker deployment'
-                )
             deployment_dict['spec']['sagemaker_operator_config'] = {
                 'region': operator_spec['region']
                 or config().get('aws', 'default_region'),
@@ -291,6 +288,16 @@ def apply_deployment(deployment_info, yatai_service=None):
             raise BentoMLDeploymentException(
                 'Currently, we do not handle deployment info type {}'.format(
                     str(type(deployment_info))
+                )
+            )
+
+        validation_errors = validate_deployment_pb_schema(deployment_pb)
+        if validation_errors:
+            return ApplyDeploymentResponse(
+                status=Status.ABORTED(
+                    'Failed to validate deployment. {errors}'.format(
+                        errors=validation_errors
+                    )
                 )
             )
 

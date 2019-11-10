@@ -13,14 +13,14 @@
 [Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Gallery](https://github.com/bentoml/gallery) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) | [License](https://github.com/bentoml/BentoML/blob/master/LICENSE) | [Blog](https://medium.com/bentoml)
 
 
-BentoML is a flexible framework that accelerates the workflow of
-__serving and deploying machine learning models__ in the cloud.
+BentoML accelerates the workflow of __serving and deploying machine learning models__ in the cloud for data scientists.
 
-It supports most popular machine learning frameworks and makes it easy
-for ML teams to deliver cloud-native prediction services that DevOps
-and software engineers can easily work with. Check out our 5-mins [Quickstart Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
- using BentoML to turn a trained sklearn model into a containerized
- REST API server, and then deploy it to AWS Lambda.
+It is a flexible framework supporting most popular machine learning frameworks
+and making it easy for machine learning teams to deliver cloud-native prediction services
+that DevOps and software engineers can easily work with. Check out our
+5-mins [Quickstart Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+using BentoML to turn a trained sklearn model into a containerized
+REST API server, and then deploy it to AWS Lambda.
 
 If you plan to use BentoML for production workloads or wants to contribute,
 be sure to join our Slack channel and hear about our latest development updates:

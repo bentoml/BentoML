@@ -61,8 +61,8 @@ def deployment_dict_to_pb(deployment_dict):
         if sagemaker_config.get('region'):
             sagemaker_operator_config_pb.region = sagemaker_config.get('region')
         if sagemaker_config.get('instance_count'):
-            sagemaker_operator_config_pb.instance_count = sagemaker_config.get(
-                'instance_count'
+            sagemaker_operator_config_pb.instance_count = int(
+                sagemaker_config.get('instance_count')
             )
         if sagemaker_config.get('instance_type'):
             sagemaker_operator_config_pb.instance_type = sagemaker_config.get(

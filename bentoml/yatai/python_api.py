@@ -194,7 +194,6 @@ def create_deployment(
                 ' instead'.format(name=deployment_name)
             )
 
-        yaml = YAML()
         deployment_dict = {
             "name": deployment_name,
             "namespace": namespace or config().get('deployment', 'default_namespace'),
@@ -210,23 +209,21 @@ def create_deployment(
         operator = platform.replace('-', '_').upper()
         operator_value = DeploymentSpec.DeploymentOperator.Value(operator)
         if operator_value == DeploymentSpec.AWS_SAGEMAKER:
+            print("DEFAULT REGION", config().get('aws', 'default_region'))
             deployment_dict['spec']['sagemaker_operator_config'] = {
-                'region': operator_spec.get(
-                    'region', config().get('aws', 'default_region')
-                ),
-                'instance_count': operator_spec.get(
-                    'instance_count', config().getint('sagemaker', 'instance_count')
-                ),
-                'instance_type': operator_spec.get(
-                    'instance_type', config().get('sagemaker', 'instance_type')
-                ),
+                'region': operator_spec.get('region')
+                or config().get('aws', 'default_region'),
+                'instance_count': operator_spec.get('instance_count')
+                or config().getint('sagemaker', 'instance_count'),
+                'instance_type': operator_spec.get('instance_type')
+                or config().get('sagemaker', 'instance_type'),
                 'api_name': operator_spec.get('api_name', ''),
             }
+            print('INSIDE SS', deployment_dict)
         elif operator_value == DeploymentSpec.AWS_LAMBDA:
             deployment_dict['spec']['aws_lambda_operator_config'] = {
-                'region': operator_spec.get(
-                    'region', config().get('aws', 'default_region')
-                )
+                'region': operator_spec.get('region')
+                or config().get('aws', 'default_region'),
             }
             if operator_spec.get('api_name'):
                 deployment_dict['spec']['aws_lambda_operator_config'][
@@ -234,9 +231,8 @@ def create_deployment(
                 ] = operator_spec['api_name']
         elif operator_value == DeploymentSpec.GCP_FCUNTION:
             deployment_dict['spec']['gcp_function_operatorConfig'] = {
-                'region': operator_spec.get(
-                    'region', config().get('google-cloud', 'default_region')
-                )
+                'region': operator_spec.get('region')
+                or config().get('google-cloud', 'default_region'),
             }
             if operator_spec.get('api_name'):
                 deployment_dict['spec']['gcp_function_operator_config'][
@@ -244,18 +240,17 @@ def create_deployment(
                 ] = operator_spec['api_name']
         elif operator_value == DeploymentSpec.KUBERNETES:
             deployment_dict['spec']['kubernetes_operator_config'] = {
-                'kube_namespace': operator_spec.get('kube_namespace'),
-                'replicas': operator_spec.getint('replicas'),
-                'service_name': operator_spec.get('service_name'),
-                'service_type': operator_spec.get('service_type'),
+                'kube_namespace': operator_spec.get('kube_namespace', ''),
+                'replicas': operator_spec.get('replicas', 0),
+                'service_name': operator_spec.get('service_name', ''),
+                'service_type': operator_spec.get('service_type', ''),
             }
         else:
             raise BentoMLDeploymentException(
                 'Custom deployment is not supported in the current version of BentoML'
             )
 
-        deployment_yaml = yaml.load(str(deployment_dict))
-        return apply_deployment(deployment_yaml, yatai_service)
+        return apply_deployment(deployment_dict, yatai_service)
     except BentoMLDeploymentException as error:
         return ApplyDeploymentResponse(status=Status.ABORTED(str(error)))
     except BentoMLException as error:
@@ -296,6 +291,7 @@ def apply_deployment(deployment_info, yatai_service=None):
                 )
             )
 
+        print('DDDD', deployment_pb)
         validation_errors = validate_deployment_pb_schema(deployment_pb)
         if validation_errors:
             return ApplyDeploymentResponse(

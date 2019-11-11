@@ -44,6 +44,8 @@ def deployment_dict_to_pb(deployment_dict):
         raise BentoMLDeploymentException('"spec" is required field for deployment')
     platform = spec_yaml.get('operator')
     if platform is not None:
+        # converting platform parameter to DeploymentOperator name in proto
+        # e.g. 'aws-lambda' to 'AWS_LAMBDA'
         deployment_pb.spec.operator = DeploymentSpec.DeploymentOperator.Value(
             platform.replace('-', '_').upper()
         )
@@ -74,11 +76,19 @@ def deployment_dict_to_pb(deployment_dict):
             deployment_pb.spec.aws_lambda_operator_config.region = lambda_config.get(
                 'region'
             )
+        if lambda_config.get('api_name'):
+            deployment_pb.spec.aws_lambda_operator_config.api_name = lambda_config.get(
+                'api_name'
+            )
     elif deployment_pb.spec.operator == DeploymentSpec.GCP_FUNCTION:
         gcp_config = spec_yaml.get('gcp_function_operator_config', {})
         if gcp_config.get('region'):
             deployment_pb.spec.gcp_function_operator_config.region = gcp_config.get(
                 'region'
+            )
+        if gcp_config.get('api_name'):
+            deployment_pb.spec.aws_lambda_operator_config.api_name = gcp_config.get(
+                'api_name'
             )
     elif deployment_pb.spec.operator == DeploymentSpec.KUBERNETES:
         k8s_config = spec_yaml.get('kubernetes_operator_config', {})

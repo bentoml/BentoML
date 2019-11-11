@@ -67,7 +67,7 @@ graft {service_name}/artifacts
 """
 
 BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE = """\
-FROM continuumio/miniconda3
+FROM continuumio/miniconda3:4.7.12
 
 ENTRYPOINT [ "/bin/bash", "-c" ]
 
@@ -102,7 +102,7 @@ CMD ["bentoml serve-gunicorn /bento"]
 """  # noqa: E501
 
 BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE = """\
-FROM continuumio/miniconda3
+FROM continuumio/miniconda3:4.7.12
 
 EXPOSE 8080
 

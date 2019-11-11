@@ -177,11 +177,12 @@ def create_deployment(
     annotations=None,
     yatai_service=None,
 ):
-    from bentoml.yatai import get_yatai_service
+    if yatai_service is None:
+        from bentoml.yatai import get_yatai_service
+
+        yatai_service = get_yatai_service()
 
     try:
-        if yatai_service is None:
-            yatai_service = get_yatai_service()
         # Make sure there is no active deployment with the same deployment name
         get_deployment_pb = yatai_service.GetDeployment(
             GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
@@ -207,21 +208,19 @@ def create_deployment(
         operator = platform.replace('-', '_').upper()
         operator_value = DeploymentSpec.DeploymentOperator.Value(operator)
         if operator_value == DeploymentSpec.AWS_SAGEMAKER:
-            print("DEFAULT REGION", config().get('aws', 'default_region'))
             deployment_dict['spec']['sagemaker_operator_config'] = {
                 'region': operator_spec.get('region')
                 or config().get('aws', 'default_region'),
                 'instance_count': operator_spec.get('instance_count')
-                or config().getint('sagemaker', 'instance_count'),
+                or config().getint('sagemaker', 'default_instance_count'),
                 'instance_type': operator_spec.get('instance_type')
-                or config().get('sagemaker', 'instance_type'),
+                or config().get('sagemaker', 'default_instance_type'),
                 'api_name': operator_spec.get('api_name', ''),
             }
-            print('INSIDE SS', deployment_dict)
         elif operator_value == DeploymentSpec.AWS_LAMBDA:
             deployment_dict['spec']['aws_lambda_operator_config'] = {
                 'region': operator_spec.get('region')
-                or config().get('aws', 'default_region'),
+                or config().get('aws', 'default_region')
             }
             if operator_spec.get('api_name'):
                 deployment_dict['spec']['aws_lambda_operator_config'][
@@ -230,7 +229,7 @@ def create_deployment(
         elif operator_value == DeploymentSpec.GCP_FCUNTION:
             deployment_dict['spec']['gcp_function_operatorConfig'] = {
                 'region': operator_spec.get('region')
-                or config().get('google-cloud', 'default_region'),
+                or config().get('google-cloud', 'default_region')
             }
             if operator_spec.get('api_name'):
                 deployment_dict['spec']['gcp_function_operator_config'][
@@ -257,25 +256,14 @@ def create_deployment(
 
 # TODO update_deployment is not finished.  It will be working on along with cli command
 def update_deployment(deployment_name, namespace, yatai_service=None):
-    from bentoml.yatai import get_yatai_service
-
-    if yatai_service is None:
-        yatai_service = get_yatai_service()
-
-    # Make sure there is deployment with the same deployment name
-    get_deployment_pb = yatai_service.GetDeployment(
-        GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
-    )
-    if get_deployment_pb.status.status_code == status_pb2.Status.NOT_FOUND:
-        raise BentoMLDeploymentException(
-            'Deployment {name} does not exist, please create deployment first'.format(
-                name=deployment_name
-            )
-        )
+    raise NotImplemented
 
 
 def apply_deployment(deployment_info, yatai_service=None):
-    from bentoml.yatai import get_yatai_service
+    if yatai_service is None:
+        from bentoml.yatai import get_yatai_service
+
+        yatai_service = get_yatai_service()
 
     try:
         if isinstance(deployment_info, dict):
@@ -289,7 +277,6 @@ def apply_deployment(deployment_info, yatai_service=None):
                 )
             )
 
-        print('DDDD', deployment_pb)
         validation_errors = validate_deployment_pb_schema(deployment_pb)
         if validation_errors:
             return ApplyDeploymentResponse(
@@ -300,8 +287,6 @@ def apply_deployment(deployment_info, yatai_service=None):
                 )
             )
 
-        if yatai_service is None:
-            yatai_service = get_yatai_service()
         return yatai_service.ApplyDeployment(
             ApplyDeploymentRequest(deployment=deployment_pb)
         )
@@ -312,9 +297,9 @@ def apply_deployment(deployment_info, yatai_service=None):
 
 
 def describe_deployment(namespace, name, yatai_service=None):
-    from bentoml.yatai import get_yatai_service
-
     if yatai_service is None:
+        from bentoml.yatai import get_yatai_service
+
         yatai_service = get_yatai_service()
     return yatai_service.DescribeDeployment(
         DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
@@ -322,19 +307,21 @@ def describe_deployment(namespace, name, yatai_service=None):
 
 
 def get_deployment(namespace, name, yatai_service=None):
-    from bentoml.yatai import get_yatai_service
-
     if yatai_service is None:
+        from bentoml.yatai import get_yatai_service
+
         yatai_service = get_yatai_service()
     return yatai_service.GetDeployment(
         GetDeploymentRequest(deployment_name=name, namespace=namespace)
     )
 
 
-def delete_deployment(deployment_name, namespace, force_delete, yatai_service=None):
-    from bentoml.yatai import get_yatai_service
-
+def delete_deployment(
+    deployment_name, namespace, force_delete=False, yatai_service=None
+):
     if yatai_service is None:
+        from bentoml.yatai import get_yatai_service
+
         yatai_service = get_yatai_service()
 
     return yatai_service.DeleteDeployment(
@@ -349,9 +336,9 @@ def delete_deployment(deployment_name, namespace, force_delete, yatai_service=No
 def list_deployments(
     limit, filters, labels, namespace, is_all_namespaces, yatai_service=None
 ):
-    from bentoml.yatai import get_yatai_service
-
     if yatai_service is None:
+        from bentoml.yatai import get_yatai_service
+
         yatai_service = get_yatai_service()
 
     if is_all_namespaces:

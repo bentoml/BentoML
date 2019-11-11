@@ -27,6 +27,7 @@ from bentoml.service import BentoService
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.repository_pb2 import (
     AddBentoRequest,
+    GetBentoRequest,
     BentoUri,
     UpdateBentoRequest,
     UploadStatus,
@@ -104,11 +105,9 @@ def upload_bento_service(bento_service, base_path=None, version=None):
 
             files = {'file': ('dummy', fileobj)}  # dummy file name because file name
             # has been generated when getting the pre-signed signature.
-            http_response = requests.post(
-                response.uri.uri,
-                data=json.loads(response.uri.additional_fields),
-                files=files,
-            )
+            data = json.loads(response.uri.additional_fields)
+            uri = data.pop('url')
+            http_response = requests.post(uri, data=data, files=files)
 
             if http_response.status_code != 204:
                 update_bento_upload_progress(yatai, bento_service, UploadStatus.ERROR)
@@ -118,14 +117,14 @@ def upload_bento_service(bento_service, base_path=None, version=None):
                     "is {}".format(http_response.status_code, http_response.text)
                 )
 
+            update_bento_upload_progress(yatai, bento_service)
+
             logger.info(
                 "Successfully saved Bento '%s:%s' to S3: %s",
                 bento_service.name,
                 bento_service.version,
                 response.uri.uri,
             )
-
-            update_bento_upload_progress(yatai, bento_service)
 
             return response.uri.uri
 

@@ -16,11 +16,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import io
 import os
 import sys
+import tarfile
 import logging
+import tempfile
+from contextlib import contextmanager
 
-
+import boto3
 from bentoml.utils import dump_to_yaml_str
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
 from bentoml.exceptions import BentoMLException
@@ -28,9 +32,33 @@ from bentoml.archive.config import BentoArchiveConfig
 from bentoml.proto.repository_pb2 import BentoServiceMetadata
 
 LOG = logging.getLogger(__name__)
+S3_PREFIX = "s3://"
+
+
+def is_remote_archive(archive_path):
+    return archive_path.startswith(S3_PREFIX)
+
+
+@contextmanager
+def resolve_remote_archive(archive_path):
+    bucket_name, object_name = archive_path[len(S3_PREFIX) :].split('/', maxsplit=1)
+
+    s3 = boto3.client('s3')
+    fileobj = io.BytesIO()
+    s3.download_fileobj(bucket_name, object_name, fileobj)
+    fileobj.seek(0, 0)
+
+    with tarfile.open(mode="r:gz", fileobj=fileobj) as tar:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = tar.getmembers()[0].name
+            tar.extractall(path=tmpdir)
+            yield os.path.join(tmpdir, filename)
 
 
 def load_bentoml_config(archive_path):
+    if is_remote_archive(archive_path):
+        with resolve_remote_archive(archive_path) as local_archive_path:
+            return load_bentoml_config(local_archive_path)
     try:
         return BentoArchiveConfig.load(os.path.join(archive_path, "bentoml.yml"))
     except FileNotFoundError:
@@ -41,6 +69,10 @@ def load_bentoml_config(archive_path):
 
 
 def load_bento_service_metadata(archive_path):
+    if is_remote_archive(archive_path):
+        with resolve_remote_archive(archive_path) as local_archive_path:
+            return load_bento_service_metadata(local_archive_path)
+
     config = load_bentoml_config(archive_path)
 
     bento_service_metadata = BentoServiceMetadata()
@@ -88,6 +120,10 @@ def load_bento_service_metadata(archive_path):
 
 
 def load_bento_service_class(archive_path):
+    if is_remote_archive(archive_path):
+        with resolve_remote_archive(archive_path) as local_archive_path:
+            return load_bento_service_class(local_archive_path)
+
     """
     Load a BentoService class from saved archive in given path
 
@@ -154,6 +190,10 @@ def load_bento_service_class(archive_path):
 
 
 def load(archive_path):
+    if is_remote_archive(archive_path):
+        with resolve_remote_archive(archive_path) as local_archive_path:
+            return load(local_archive_path)
+
     """Load bento service from local file path or s3 path
 
     Args:
@@ -172,5 +212,9 @@ def load(archive_path):
 
 
 def load_service_api(archive_path, api_name=None):
+    if is_remote_archive(archive_path):
+        with resolve_remote_archive(archive_path) as local_archive_path:
+            return load_service_api(local_archive_path, api_name)
+
     bento_service = load(archive_path)
     return bento_service.get_service_api(api_name)

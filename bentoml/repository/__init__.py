@@ -131,12 +131,12 @@ class _S3BentoRepository(BentoRepositoryBase):
         return config('yatai').getint('bento_uri_default_expiration')
 
     def _get_object_name(self, bento_name, bento_version):
-        return "/".join([self.base_path, bento_name, bento_version])
+        return "/".join([self.base_path, bento_name, bento_version]) + '.tar.gz'
 
     def add(self, bento_name, bento_version):
         # Generate pre-signed s3 path for upload
 
-        object_name = self._get_object_name(bento_name, bento_version) + '.tar.gz'
+        object_name = self._get_object_name(bento_name, bento_version)
 
         try:
             response = self.s3_client.generate_presigned_post(
@@ -151,10 +151,12 @@ class _S3BentoRepository(BentoRepositoryBase):
                 "Not able to get pre-signed URL on S3. Error: {}".format(e)
             )
 
+        additional_fields = response['fields']
+        additional_fields['url'] = response['url']
         return BentoUri(
             type=self.uri_type,
-            uri=response['url'],
-            additional_fields=json.dumps(response['fields']),
+            uri='s3://{}/{}'.format(self.bucket, object_name),
+            additional_fields=json.dumps(additional_fields),
         )
 
     def get(self, bento_name, bento_version):

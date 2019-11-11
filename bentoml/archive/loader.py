@@ -22,7 +22,6 @@ import sys
 import tarfile
 import logging
 import tempfile
-import requests
 from contextlib import contextmanager
 
 import boto3

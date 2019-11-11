@@ -302,10 +302,6 @@ class YataiService(YataiServicer):
             )
 
             if bento_metadata_pb:
-                # The URI may be expired after some time.
-                uri = self.repo.get(bento_metadata_pb.name, bento_metadata_pb.version)
-
-                bento_metadata_pb.uri.uri = uri
                 return GetBentoResponse(status=Status.OK(), bento=bento_metadata_pb)
             else:
                 return GetBentoResponse(

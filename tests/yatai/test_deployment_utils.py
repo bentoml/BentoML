@@ -6,10 +6,10 @@ from bentoml.yatai.deployment_utils import deployment_dict_to_pb
 
 
 def test_deployment_dict_to_pb():
-    failed_dict_no_operator = {'name': 'fake name', 'spec': {}}
+    failed_dict_no_operator = {'name': 'fake name'}
     with pytest.raises(BentoMLDeploymentException) as error:
         deployment_dict_to_pb(failed_dict_no_operator)
-    assert str(error.value).startswith('operator is required field')
+    assert str(error.value).startswith('"spec" is required field for deployment')
 
     failed_dict_custom_operator = {'name': 'fake', 'spec': {'operator': 'custom'}}
     with pytest.raises(BentoMLException) as error:

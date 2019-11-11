@@ -47,8 +47,8 @@ deployment_schema = {
             'sagemaker_operator_config': {
                 'type': 'dict',
                 'schema': {
+                    'api_name': {'type': 'string', 'required': True, 'minlength': 3},
                     'region': {'type': 'string'},
-                    'api_name': {'type': 'string', 'required': True},
                     'instance_type': {'type': 'string'},
                     'instance_count': {'type': 'integer', 'min': 1},
                 },
@@ -57,14 +57,14 @@ deployment_schema = {
                 'type': 'dict',
                 'schema': {
                     'region': {'type': 'string', 'required': True},
-                    'api_name': {'type': 'string'},
+                    'api_name': {'type': 'string', 'minlength': 3},
                 },
             },
             'gcp_function_operator_config': {
                 'type': 'dict',
                 'schema': {
                     'region': {'type': 'string', 'required': True},
-                    'api_name': {'type': 'string'},
+                    'api_name': {'type': 'string', 'minlength': 2},
                 },
             },
             'kubernetes_operator_config': {

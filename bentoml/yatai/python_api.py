@@ -211,38 +211,43 @@ def create_deployment(
         operator_value = DeploymentSpec.DeploymentOperator.Value(operator)
         if operator_value == DeploymentSpec.AWS_SAGEMAKER:
             deployment_dict['spec']['sagemaker_operator_config'] = {
-                'region': operator_spec['region']
-                or config().get('aws', 'default_region'),
-                'instance_count': operator_spec['instance_count']
-                or config().getint('sagemaker', 'instance_count'),
-                'instance_type': operator_spec['instance_type']
-                or config().get('sagemaker', 'instance_type'),
-                'api_name': operator_spec['api_name'],
+                'region': operator_spec.get(
+                    'region', config().get('aws', 'default_region')
+                ),
+                'instance_count': operator_spec.get(
+                    'instance_count', config().getint('sagemaker', 'instance_count')
+                ),
+                'instance_type': operator_spec.get(
+                    'instance_type', config().get('sagemaker', 'instance_type')
+                ),
+                'api_name': operator_spec.get('api_name', ''),
             }
         elif operator_value == DeploymentSpec.AWS_LAMBDA:
             deployment_dict['spec']['aws_lambda_operator_config'] = {
-                'region': operator_spec['region']
-                or config().get('aws', 'default_region')
+                'region': operator_spec.get(
+                    'region', config().get('aws', 'default_region')
+                )
             }
-            if operator_spec['api_name']:
+            if operator_spec.get('api_name'):
                 deployment_dict['spec']['aws_lambda_operator_config'][
                     'api_name'
                 ] = operator_spec['api_name']
         elif operator_value == DeploymentSpec.GCP_FCUNTION:
             deployment_dict['spec']['gcp_function_operatorConfig'] = {
-                'region': operator_spec['region']
-                or config().get('google-cloud', 'default_region')
+                'region': operator_spec.get(
+                    'region', config().get('google-cloud', 'default_region')
+                )
             }
-            if operator_spec['api_name']:
+            if operator_spec.get('api_name'):
                 deployment_dict['spec']['gcp_function_operator_config'][
                     'api_name'
                 ] = operator_spec['api_name']
         elif operator_value == DeploymentSpec.KUBERNETES:
             deployment_dict['spec']['kubernetes_operator_config'] = {
-                'kube_namespace': operator_spec['kube_namespace'],
-                'replicas': operator_spec['replicas'],
-                'service_name': operator_spec['service_name'],
-                'service_type': operator_spec['service_type'],
+                'kube_namespace': operator_spec.get('kube_namespace'),
+                'replicas': operator_spec.getint('replicas'),
+                'service_name': operator_spec.get('service_name'),
+                'service_type': operator_spec.get('service_type'),
             }
         else:
             raise BentoMLDeploymentException(

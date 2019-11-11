@@ -105,11 +105,9 @@ def upload_bento_service(bento_service, base_path=None, version=None):
 
             files = {'file': ('dummy', fileobj)}  # dummy file name because file name
             # has been generated when getting the pre-signed signature.
-            http_response = requests.post(
-                response.uri.uri,
-                data=json.loads(response.uri.additional_fields),
-                files=files,
-            )
+            data = json.loads(response.uri.additional_fields)
+            uri = data.pop('url')
+            http_response = requests.post(uri, data=data, files=files)
 
             if http_response.status_code != 204:
                 update_bento_upload_progress(yatai, bento_service, UploadStatus.ERROR)
@@ -121,24 +119,14 @@ def upload_bento_service(bento_service, base_path=None, version=None):
 
             update_bento_upload_progress(yatai, bento_service)
 
-            request = GetBentoRequest(
-                bento_name=bento_service.name, bento_version=bento_service.version
-            )
-
-            response = yatai.GetBento(request)
-            if response.status.status_code != Status.OK:
-                raise BentoMLException(
-                    "Error getting Bento with status code {} ".format(response.status)
-                )
-
             logger.info(
                 "Successfully saved Bento '%s:%s' to S3: %s",
                 bento_service.name,
                 bento_service.version,
-                response.bento.uri.uri,
+                response.uri.uri,
             )
 
-            return response.bento.uri.uri
+            return response.uri.uri
 
     else:
         raise BentoMLException(

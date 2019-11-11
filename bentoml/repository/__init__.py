@@ -151,10 +151,12 @@ class _S3BentoRepository(BentoRepositoryBase):
                 "Not able to get pre-signed URL on S3. Error: {}".format(e)
             )
 
+        additional_fields = response['fields']
+        additional_fields['url'] = response['url']
         return BentoUri(
             type=self.uri_type,
-            uri=response['url'],
-            additional_fields=json.dumps(response['fields']),
+            uri='s3://{}/{}'.format(self.bucket, object_name),
+            additional_fields=json.dumps(additional_fields),
         )
 
     def get(self, bento_name, bento_version):

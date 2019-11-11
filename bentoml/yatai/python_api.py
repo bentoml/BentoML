@@ -22,8 +22,6 @@ import tarfile
 import requests
 import tempfile
 
-from ruamel.yaml import YAML
-
 from bentoml import config
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.proto.deployment_pb2 import (

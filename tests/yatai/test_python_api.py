@@ -1,4 +1,4 @@
-from mock import patch, Mock
+from mock import Mock
 
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,

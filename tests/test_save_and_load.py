@@ -2,8 +2,8 @@ import os
 import uuid
 import mock
 import pytest
-from unittest.mock import patch
 
+from mock import patch
 
 import bentoml
 from bentoml.handlers import DataframeHandler

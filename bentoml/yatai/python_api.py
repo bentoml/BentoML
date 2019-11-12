@@ -380,8 +380,8 @@ def list_deployments(
     if is_all_namespaces:
         if namespace is not None:
             logger.warning(
-                'Ignoring `namespace={}` due to the --all-namespace '
-                'flag presented'.format(namespace)
+                'Ignoring `namespace=%s` due to the --all-namespace flag presented',
+                namespace,
             )
         namespace = ALL_NAMESPACE_TAG
 

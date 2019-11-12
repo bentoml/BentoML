@@ -81,7 +81,7 @@ class YataiService(YataiServicer):
             validation_errors = validate_deployment_pb_schema(request.deployment)
             if validation_errors:
                 return ApplyDeploymentResponse(
-                    status=Status.ABORTED(
+                    status=Status.INVALID_ARGUMENT(
                         'Failed to validate deployment. {errors}'.format(
                             errors=validation_errors
                         )
@@ -104,9 +104,7 @@ class YataiService(YataiServicer):
                             'deploy to new target platform again'
                         )
                     )
-                request.deployment.state = DeploymentState(
-                    state=DeploymentState.PENDING
-                )
+                request.deployment.state.state = DeploymentState.PENDING
             else:
                 request.deployment.created_at.GetCurrentTime()
 

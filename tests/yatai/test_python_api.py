@@ -29,7 +29,7 @@ def test_apply_deployment_invalid_deployment_dict():
     invalid_deployment_yaml = {'spec': {'operator': 'aws-sagemaker'}}
 
     invalid_result = apply_deployment(invalid_deployment_yaml, yatai_service_mock)
-    assert invalid_result.status.status_code == status_pb2.Status.ABORTED
+    assert invalid_result.status.status_code == status_pb2.Status.INVALID_ARGUMENT
 
 
 def test_apply_deployment_successful():
@@ -67,7 +67,7 @@ def test_create_deployment_failed_with_no_api_name():
         annotations={},
         yatai_service=yatai_service_mock,
     )
-    assert invalid_result.status.status_code == status_pb2.Status.ABORTED
+    assert invalid_result.status.status_code == status_pb2.Status.INVALID_ARGUMENT
 
 
 def test_create_deployment_successful():

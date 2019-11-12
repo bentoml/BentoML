@@ -45,9 +45,7 @@ def test_save_and_load_model(tmpdir, test_bento_service_class):
     saved_path = ms.save(str(tmpdir), version=version)
 
     expected_version = "2.10.{}".format(version)
-    assert saved_path == os.path.join(
-        str(tmpdir), "TestBentoService", expected_version
-    )
+    assert saved_path == os.path.join(str(tmpdir), "TestBentoService", expected_version)
     assert os.path.exists(saved_path)
 
     model_service = bentoml.load(saved_path)
@@ -84,9 +82,7 @@ def test_pack_on_bento_service_instance(tmpdir, test_bento_service_class):
     saved_path = ms.save(str(tmpdir))
 
     expected_version = "2.10.{}".format(version)
-    assert saved_path == os.path.join(
-        str(tmpdir), "TestBentoService", expected_version
-    )
+    assert saved_path == os.path.join(str(tmpdir), "TestBentoService", expected_version)
     assert os.path.exists(saved_path)
 
     model_service = bentoml.load(saved_path)

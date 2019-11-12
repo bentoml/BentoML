@@ -256,7 +256,7 @@ def create_deployment(
 
 # TODO update_deployment is not finished.  It will be working on along with cli command
 def update_deployment(deployment_name, namespace, yatai_service=None):
-    raise NotImplemented
+    raise NotImplementedError
 
 
 def apply_deployment(deployment_info, yatai_service=None):

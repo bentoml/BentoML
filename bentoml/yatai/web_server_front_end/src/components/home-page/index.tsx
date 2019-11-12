@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-const HomePage = () => (
+export const HomePage = () => (
   <div>
     <h1>Yatai Server</h1>
     <div>

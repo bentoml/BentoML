@@ -140,12 +140,12 @@ def get_state_after_await_action_complete(
     with Spinner(message):
         while (time.time() - start_time) < timeout_limit:
             result = describe_deployment(namespace, name, yatai_service)
-            if result.status.status_code == status_pb2.Status.OK:
-                if result.state.state is DeploymentState.PENDING:
-                    time.sleep(wait_time)
-                    continue
-                else:
-                    break
+            if (
+                result.status.status_code == status_pb2.Status.OK
+                and result.state.state is DeploymentState.PENDING
+            ):
+                time.sleep(wait_time)
+                continue
             else:
                 break
     return result

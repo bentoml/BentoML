@@ -14,7 +14,7 @@ def test_deployment_dict_to_pb():
     failed_dict_custom_operator = {'name': 'fake', 'spec': {'operator': 'custom'}}
     with pytest.raises(BentoMLException) as error:
         deployment_dict_to_pb(failed_dict_custom_operator)
-    assert str(error.value).startswith('Custom deployment is not supported')
+    assert str(error.value).startswith('Platform "custom" is not supported')
 
     deployment_dict = {
         'name': 'fake',

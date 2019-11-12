@@ -187,10 +187,18 @@ def create_deployment(
         get_deployment_pb = yatai_service.GetDeployment(
             GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
         )
-        if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
+        if get_deployment_pb.status.status_code == status_pb2.Status.OK:
             raise BentoMLDeploymentException(
                 'Deployment {name} already existed, please use update or apply command'
                 ' instead'.format(name=deployment_name)
+            )
+        if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
+            raise BentoMLDeploymentException(
+                'Failed to access deployment store. {error_code}:'
+                '{error_message}'.format(
+                    error_code=get_deployment_pb.status.status_code,
+                    error_message=get_deployment_pb.status.error_message
+                )
             )
 
         deployment_dict = {
@@ -206,7 +214,12 @@ def create_deployment(
         }
 
         operator = platform.replace('-', '_').upper()
-        operator_value = DeploymentSpec.DeploymentOperator.Value(operator)
+        try:
+            operator_value = DeploymentSpec.DeploymentOperator.Value(operator)
+        except ValueError:
+            return ApplyDeploymentResponse(
+                status=Status.INVALID_ARGUMENT('Invalid platform "{}"'.format(platform))
+            )
         if operator_value == DeploymentSpec.AWS_SAGEMAKER:
             deployment_dict['spec']['sagemaker_operator_config'] = {
                 'region': operator_spec.get('region')
@@ -244,12 +257,11 @@ def create_deployment(
             }
         else:
             raise BentoMLDeploymentException(
-                'Custom deployment is not supported in the current version of BentoML'
+                'Platform "{}" is not supported in the current version of '
+                'BentoML'.format(platform)
             )
 
         return apply_deployment(deployment_dict, yatai_service)
-    except BentoMLDeploymentException as error:
-        return ApplyDeploymentResponse(status=Status.ABORTED(str(error)))
     except BentoMLException as error:
         return ApplyDeploymentResponse(status=Status.INTERNAL(str(error)))
 
@@ -289,8 +301,6 @@ def apply_deployment(deployment_info, yatai_service=None):
         return yatai_service.ApplyDeployment(
             ApplyDeploymentRequest(deployment=deployment_pb)
         )
-    except BentoMLDeploymentException as error:
-        return ApplyDeploymentResponse(status=Status.ABORTED(str(error)))
     except BentoMLException as error:
         return ApplyDeploymentResponse(status=Status.INTERNAL(str(error)))
 

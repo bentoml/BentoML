@@ -104,7 +104,8 @@ def deployment_dict_to_pb(deployment_dict):
             k8s_operator_config_pb.service_type = k8s_config.get('service_type')
     else:
         raise BentoMLException(
-            'Custom deployment is not supported in the current version of BentoML'
+            'Platform "{}" is not supported in the current version of '
+            'BentoML'.format(platform)
         )
 
     return deployment_pb

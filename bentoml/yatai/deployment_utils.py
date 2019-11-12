@@ -39,10 +39,10 @@ def deployment_dict_to_pb(deployment_dict):
         deployment_pb.annotations.update(deployment_dict.get('annotations'))
 
     if deployment_dict.get('spec'):
-        spec_yaml = deployment_dict.get('spec')
+        spec_dict = deployment_dict.get('spec')
     else:
         raise BentoMLDeploymentException('"spec" is required field for deployment')
-    platform = spec_yaml.get('operator')
+    platform = spec_dict.get('operator')
     if platform is not None:
         # converting platform parameter to DeploymentOperator name in proto
         # e.g. 'aws-lambda' to 'AWS_LAMBDA'
@@ -50,13 +50,13 @@ def deployment_dict_to_pb(deployment_dict):
             platform.replace('-', '_').upper()
         )
 
-    if spec_yaml.get('bento_name'):
-        deployment_pb.spec.bento_name = spec_yaml.get('bento_name')
-    if spec_yaml.get('bento_version'):
-        deployment_pb.spec.bento_version = spec_yaml.get('bento_version')
+    if spec_dict.get('bento_name'):
+        deployment_pb.spec.bento_name = spec_dict.get('bento_name')
+    if spec_dict.get('bento_version'):
+        deployment_pb.spec.bento_version = spec_dict.get('bento_version')
 
     if deployment_pb.spec.operator == DeploymentSpec.AWS_SAGEMAKER:
-        sagemaker_config = spec_yaml.get('sagemaker_operator_config', {})
+        sagemaker_config = spec_dict.get('sagemaker_operator_config', {})
         sagemaker_operator_config_pb = deployment_pb.spec.sagemaker_operator_config
         if sagemaker_config.get('api_name'):
             sagemaker_operator_config_pb.api_name = sagemaker_config.get('api_name')
@@ -71,7 +71,7 @@ def deployment_dict_to_pb(deployment_dict):
                 'instance_type'
             )
     elif deployment_pb.spec.operator == DeploymentSpec.AWS_LAMBDA:
-        lambda_config = spec_yaml.get('aws_lambda_operator_config', {})
+        lambda_config = spec_dict.get('aws_lambda_operator_config', {})
         if lambda_config.get('region'):
             deployment_pb.spec.aws_lambda_operator_config.region = lambda_config.get(
                 'region'
@@ -81,7 +81,7 @@ def deployment_dict_to_pb(deployment_dict):
                 'api_name'
             )
     elif deployment_pb.spec.operator == DeploymentSpec.GCP_FUNCTION:
-        gcp_config = spec_yaml.get('gcp_function_operator_config', {})
+        gcp_config = spec_dict.get('gcp_function_operator_config', {})
         if gcp_config.get('region'):
             deployment_pb.spec.gcp_function_operator_config.region = gcp_config.get(
                 'region'
@@ -91,7 +91,7 @@ def deployment_dict_to_pb(deployment_dict):
                 'api_name'
             )
     elif deployment_pb.spec.operator == DeploymentSpec.KUBERNETES:
-        k8s_config = spec_yaml.get('kubernetes_operator_config', {})
+        k8s_config = spec_dict.get('kubernetes_operator_config', {})
         k8s_operator_config_pb = deployment_pb.spec.kubernetes_operator_config
 
         if k8s_config.get('kube_namespace'):

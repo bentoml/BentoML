@@ -272,15 +272,14 @@ def apply_deployment(deployment_info, yatai_service=None):
             deployment_pb = deployment_yaml_string_to_pb(deployment_info)
         else:
             raise BentoMLDeploymentException(
-                'Currently, we do not handle deployment info type {}'.format(
-                    str(type(deployment_info))
-                )
+                'Unexpected argument type, expect deployment info to be str in yaml '
+                'format or a dict, instead got: {}'.format(str(type(deployment_info)))
             )
 
         validation_errors = validate_deployment_pb_schema(deployment_pb)
         if validation_errors:
             return ApplyDeploymentResponse(
-                status=Status.ABORTED(
+                status=Status.INVALID_ARGUMENT(
                     'Failed to validate deployment. {errors}'.format(
                         errors=validation_errors
                     )
@@ -334,7 +333,12 @@ def delete_deployment(
 
 
 def list_deployments(
-    limit, filters, labels, namespace, is_all_namespaces, yatai_service=None
+    limit=None,
+    filters=None,
+    labels=None,
+    namespace=None,
+    is_all_namespaces=False,
+    yatai_service=None,
 ):
     if yatai_service is None:
         from bentoml.yatai import get_yatai_service

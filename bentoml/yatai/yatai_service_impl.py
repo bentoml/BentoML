@@ -81,7 +81,7 @@ class YataiService(YataiServicer):
             validation_errors = validate_deployment_pb_schema(request.deployment)
             if validation_errors:
                 return ApplyDeploymentResponse(
-                    status=Status.ABORTED(
+                    status=Status.INVALID_ARGUMENT(
                         'Failed to validate deployment. {errors}'.format(
                             errors=validation_errors
                         )

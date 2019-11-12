@@ -140,9 +140,12 @@ def get_state_after_await_action_complete(
     with Spinner(message):
         while (time.time() - start_time) < timeout_limit:
             result = describe_deployment(namespace, name, yatai_service)
-            if result.state.state is DeploymentState.PENDING:
-                time.sleep(wait_time)
-                continue
+            if result.status.status_code == status_pb2.Status.OK:
+                if result.state.state is DeploymentState.PENDING:
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    break
             else:
                 break
     return result
@@ -293,7 +296,7 @@ def get_deployment_sub_command():
 
         if result.status.status_code != status_pb2.Status.OK:
             _echo(
-                'Failed to create deployment {name}. {error_code}: '
+                'Failed to create deployment {name}. {error_code}:'
                 '{error_message}'.format(
                     name=name,
                     error_code=status_pb2.Status.Code.Name(result.status.status_code),
@@ -309,6 +312,18 @@ def get_deployment_sub_command():
                     namespace=namespace,
                     message='Creating deployment ',
                 )
+                if result_state.status.status_code != status_pb2.OK:
+                    _echo(
+                        'Created deployment {name}, failed to retrieve latest status.'
+                        ' {error_code}:{error_message}'.format(
+                            name=name,
+                            error_code=status_pb2.Status.Code.Name(
+                                result_state.status.status_code
+                            ),
+                            error_message=result_state.status.error_message,
+                        )
+                    )
+                    return
                 result.deployment.state.CopyFrom(result_state.state)
 
             _echo('Successfully created deployment {}'.format(name), CLI_COLOR_SUCCESS)
@@ -337,8 +352,8 @@ def get_deployment_sub_command():
             result = apply_deployment(deployment_yaml, yatai_service)
             if result.status.status_code != status_pb2.Status.OK:
                 _echo(
-                    'Failed to apply deployment {name}. code: {error_code}, message: '
-                    '{error_message}'.format(
+                    'Failed to apply deployment {name}. '
+                    '{error_code}:{error_message}'.format(
                         name=deployment_yaml.get('name'),
                         error_code=status_pb2.Status.Code.Name(
                             result.status.status_code
@@ -355,6 +370,18 @@ def get_deployment_sub_command():
                         namespace=deployment_yaml.get('namespace'),
                         message='Applying deployment',
                     )
+                    if result_state.status.status_code != status_pb2.OK:
+                        _echo(
+                            'Created deployment {name}, failed to retrieve latest'
+                            ' status. {error_code}:{error_message}'.format(
+                                name=deployment_yaml.get('name'),
+                                error_code=status_pb2.Status.Code.Name(
+                                    result_state.status.status_code
+                                ),
+                                error_message=result_state.status.error_message,
+                            )
+                        )
+                        return
                     result.deployment.state.CopyFrom(result_state.state)
 
                 _echo(
@@ -445,7 +472,7 @@ def get_deployment_sub_command():
         result = describe_deployment(namespace, name, yatai_service)
         if result.status.status_code != status_pb2.Status.OK:
             _echo(
-                'Failed to describe deployment {name}. code: {error_code}, message: '
+                'Failed to describe deployment {name}. {error_code}:'
                 '{error_message}'.format(
                     name=name,
                     error_code=status_pb2.Status.Code.Name(result.status.status_code),
@@ -455,6 +482,18 @@ def get_deployment_sub_command():
             )
         else:
             get_result = get_deployment(namespace, name)
+            if get_result.status.status_code != status_pb2.Status.OK:
+                _echo(
+                    'Failed to describe deployment {name}. {error_code}:'
+                    '{error_message}'.format(
+                        name=name,
+                        error_code=status_pb2.Status.Code.Name(
+                            result.status.status_code
+                        ),
+                        error_message=result.status.error_message,
+                    ),
+                    CLI_COLOR_ERROR,
+                )
             deployment_pb = get_result.deployment
             deployment_pb.state.CopyFrom(result.state)
             _print_deployment_info(deployment_pb, output)
@@ -499,8 +538,7 @@ def get_deployment_sub_command():
         )
         if result.status.status_code != status_pb2.Status.OK:
             _echo(
-                'Failed to list deployments. code: {error_code}, message: '
-                '{error_message}'.format(
+                'Failed to list deployments. {error_code}:{error_message}'.format(
                     error_code=status_pb2.Status.Code.Name(result.status.status_code),
                     error_message=result.status.error_message,
                 ),

@@ -114,8 +114,8 @@ def upload_bento_service(bento_service, base_path=None, version=None):
 
     if response.status.status_code != status_pb2.Status.OK:
         raise BentoMLException(
-            "Error adding bento to repository: {}:{}".format(
-                response.status.status_code, response.status.error_message
+            "Error adding BentoService bundle to repository: {}:{}".format(
+                Status.Name(response.status.status_code), response.status.error_message
             )
         )
 
@@ -149,8 +149,9 @@ def upload_bento_service(bento_service, base_path=None, version=None):
                 update_bento_upload_progress(yatai, bento_service, UploadStatus.ERROR)
 
                 raise BentoMLException(
-                    "Error saving Bento to S3 with status code {} and error detail "
-                    "is {}".format(http_response.status_code, http_response.text)
+                    "Error saving BentoService bundle to S3. {}: {} ".format(
+                        Status.Name(http_response.status_code), http_response.text
+                    )
                 )
 
             update_bento_upload_progress(yatai, bento_service)
@@ -209,14 +210,15 @@ def create_deployment(
         )
         if get_deployment_pb.status.status_code == status_pb2.Status.OK:
             raise BentoMLDeploymentException(
-                'Deployment {name} already existed, please use update or apply command'
-                ' instead'.format(name=deployment_name)
+                'Deployment "{name}" already existed, use Update or Apply for updating'
+                'existing deployment, or create the deployment with a different name or'
+                'under a different deployment namespace'.format(name=deployment_name)
             )
         if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
             raise BentoMLDeploymentException(
-                'Failed to access deployment store. {error_code}:'
+                'Failed accesing YataiService deployment store. {error_code}:'
                 '{error_message}'.format(
-                    error_code=get_deployment_pb.status.status_code,
+                    error_code=Status.Name(get_deployment_pb.status.status_code),
                     error_message=get_deployment_pb.status.error_message,
                 )
             )
@@ -312,7 +314,7 @@ def apply_deployment(deployment_info, yatai_service=None):
         if validation_errors:
             return ApplyDeploymentResponse(
                 status=Status.INVALID_ARGUMENT(
-                    'Failed to validate deployment. {errors}'.format(
+                    'Failed to validate deployment: {errors}'.format(
                         errors=validation_errors
                     )
                 )

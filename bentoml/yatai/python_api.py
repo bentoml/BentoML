@@ -86,6 +86,27 @@ def upload_bento_service(bento_service, base_path=None, version=None):
 
     yatai = get_yatai_service(repo_base_url=base_path)
 
+    get_bento_response = yatai.GetBento(
+        GetBentoRequest(
+            bento_name=bento_service.name, bento_version=bento_service.version
+        )
+    )
+    if get_bento_response.status.status_code == status_pb2.Status.OK:
+        raise BentoMLException(
+            "BentoService bundle {}:{} already registered in repository. Reset "
+            "BentoService version with BentoService#set_version or bypass BentoML's "
+            "model registry feature with BentoService#save_to_dir".format(
+                bento_service.name, bento_service.version
+            )
+        )
+    elif get_bento_response.status.status_code != status_pb2.Status.NOT_FOUND:
+        raise BentoMLDeploymentException(
+            'Failed accessing YataiService. {error_code}:'
+            '{error_message}'.format(
+                error_code=Status.Name(get_bento_response.status.status_code),
+                error_message=get_bento_response.status.error_message,
+            )
+        )
     request = AddBentoRequest(
         bento_name=bento_service.name, bento_version=bento_service.version
     )

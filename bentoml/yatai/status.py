@@ -21,6 +21,14 @@ from bentoml.proto.status_pb2 import Status as StatusProto
 
 class Status(object):
     @staticmethod
+    def Name(code):
+        return StatusProto.Code.Name(code)
+
+    @staticmethod
+    def Value(status_name):
+        return StatusProto.Code.Value(status_name)
+
+    @staticmethod
     def OK(message=None):
         return StatusProto(status_code=StatusProto.OK, error_message=message)
 

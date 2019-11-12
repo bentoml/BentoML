@@ -380,14 +380,17 @@ class BentoService(BentoServiceBase):
     # `bentoml.service_env.BentoServiceEnv`
     _env = {}
 
-    # This can only be set by BentoML library when loading from archive
-    _bento_service_version = None
+    # When loading BentoService from saved bundle, this will be set to the version of
+    # the saved BentoService bundle
+    _bento_service_bundle_version = None
 
     # See `ver_decorator` function above for more information
     _version_major = None
     _version_minor = None
 
     def __init__(self, artifacts=None, env=None):
+        self._bento_service_version = None
+
         self._init_artifacts(artifacts)
         self._config_service_apis()
         self._init_env(env)
@@ -467,6 +470,16 @@ class BentoService(BentoServiceBase):
             )
 
         _validate_version_str(version_str)
+
+        if self.__class__._bento_service_bundle_version is not None:
+            logger.warning(
+                "Overriding loaded BentoService(%s) version:%s to %s",
+                self.__class__._bento_archive_path,
+                self.__class__._bento_service_bundle_version,
+                version_str,
+            )
+            self.__class__._bento_service_bundle_version = None
+
         if (
             self._bento_service_version is not None
             and self._bento_service_version != version_str
@@ -495,6 +508,9 @@ class BentoService(BentoServiceBase):
 
     @property
     def version(self):
+        if self.__class__._bento_service_bundle_version is not None:
+            return self.__class__._bento_service_bundle_version
+
         if self._bento_service_version is None:
             self.set_version(self.versioneer())
 

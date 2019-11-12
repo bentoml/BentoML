@@ -16,7 +16,7 @@ class MyTestModel(object):
 
 @bentoml.ver(major=2, minor=10)
 @bentoml.artifacts([PickleArtifact("model")])
-class MyTestBentoService(bentoml.BentoService):
+class TestBentoService(bentoml.BentoService):
     @bentoml.api(DataframeHandler)
     def predict(self, df):
         """
@@ -28,8 +28,12 @@ class MyTestBentoService(bentoml.BentoService):
 # pylint: disable=redefined-outer-name
 @pytest.fixture()
 def test_bento_service_class():
-    MyTestBentoService._bento_archive_path = None
-    return MyTestBentoService
+    # When the TestBentoService got saved and loaded again in the test, the two class
+    # attribute below got set to the loaded BentoService class. Resetting it here so it
+    # does not effect other tests
+    TestBentoService._bento_archive_path = None
+    TestBentoService._bento_service_bundle_version = None
+    return TestBentoService
 
 
 def test_save_and_load_model(tmpdir, test_bento_service_class):
@@ -42,7 +46,7 @@ def test_save_and_load_model(tmpdir, test_bento_service_class):
 
     expected_version = "2.10.{}".format(version)
     assert saved_path == os.path.join(
-        str(tmpdir), "MyTestBentoService", expected_version
+        str(tmpdir), "TestBentoService", expected_version
     )
     assert os.path.exists(saved_path)
 
@@ -68,7 +72,7 @@ def test_pack_on_bento_service_instance(tmpdir, test_bento_service_class):
         log_mock.warning.assert_called_once_with(
             "Missing declared artifact '%s' for BentoService '%s'",
             'model',
-            'MyTestBentoService',
+            'TestBentoService',
         )
 
     ms.pack("model", test_model)
@@ -81,7 +85,7 @@ def test_pack_on_bento_service_instance(tmpdir, test_bento_service_class):
 
     expected_version = "2.10.{}".format(version)
     assert saved_path == os.path.join(
-        str(tmpdir), "MyTestBentoService", expected_version
+        str(tmpdir), "TestBentoService", expected_version
     )
     assert os.path.exists(saved_path)
 

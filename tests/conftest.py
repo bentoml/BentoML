@@ -75,7 +75,13 @@ def bento_service():
     """Create a new TestBentoService
     """
     test_model = TestModel()
+
+    # When the TestBentoService got saved and loaded again in the test, the two class
+    # attribute below got set to the loaded BentoService class. Resetting it here so it
+    # does not effect other tests
     TestBentoService._bento_archive_path = None
+    TestBentoService._bento_service_bundle_version = None
+
     test_svc = TestBentoService()
     test_svc.pack('model', test_model)
     return test_svc

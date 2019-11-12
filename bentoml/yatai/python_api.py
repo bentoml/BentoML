@@ -16,11 +16,12 @@
 
 
 import io
+import os
 import json
 import logging
 import tarfile
 import requests
-import tempfile
+import shutil
 
 from bentoml import config
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
@@ -33,7 +34,6 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsRequest,
     ApplyDeploymentResponse,
 )
-from bentoml.service import BentoService
 from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
 from bentoml.proto.repository_pb2 import (
     AddBentoRequest,
@@ -44,7 +44,8 @@ from bentoml.proto.repository_pb2 import (
 )
 from bentoml.proto import status_pb2
 from bentoml.utils.usage_stats import track_save
-from bentoml.archive import save_to_dir
+from bentoml.utils.tempdir import TempDirectory
+from bentoml.archive import save_to_dir, load_bento_service_metadata
 from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,
@@ -70,78 +71,103 @@ def upload_bento_service(bento_service, base_path=None, version=None):
     """
     track_save(bento_service)
 
-    if not isinstance(bento_service, BentoService):
-        raise BentoMLException(
-            "Only instance of custom BentoService class can be saved or uploaded"
-        )
+    with TempDirectory() as tmpdir:
+        save_to_dir(bento_service, tmpdir, version)
+        return _upload_bento_service(tmpdir, base_path)
 
-    if version is not None:
-        bento_service.set_version(version)
+
+def _upload_bento_service(saved_bento_path, base_path):
+    bento_service_metadata = load_bento_service_metadata(saved_bento_path)
+
+    from bentoml.yatai import get_yatai_service
 
     # if base_path is not None, default repository base path in config will be override
     if base_path is not None:
         logger.warning("Overriding default repository path to '%s'", base_path)
-
-    from bentoml.yatai import get_yatai_service
-
     yatai = get_yatai_service(repo_base_url=base_path)
 
+    get_bento_response = yatai.GetBento(
+        GetBentoRequest(
+            bento_name=bento_service_metadata.name,
+            bento_version=bento_service_metadata.version,
+        )
+    )
+    if get_bento_response.status.status_code == status_pb2.Status.OK:
+        raise BentoMLException(
+            "BentoService bundle {}:{} already registered in repository. Reset "
+            "BentoService version with BentoService#set_version or bypass BentoML's "
+            "model registry feature with BentoService#save_to_dir".format(
+                bento_service_metadata.name, bento_service_metadata.version
+            )
+        )
+    elif get_bento_response.status.status_code != status_pb2.Status.NOT_FOUND:
+        raise BentoMLException(
+            'Failed accessing YataiService. {error_code}:'
+            '{error_message}'.format(
+                error_code=Status.Name(get_bento_response.status.status_code),
+                error_message=get_bento_response.status.error_message,
+            )
+        )
     request = AddBentoRequest(
-        bento_name=bento_service.name, bento_version=bento_service.version
+        bento_name=bento_service_metadata.name,
+        bento_version=bento_service_metadata.version,
     )
     response = yatai.AddBento(request)
 
     if response.status.status_code != status_pb2.Status.OK:
         raise BentoMLException(
-            "Error adding bento to repository: {}:{}".format(
-                response.status.status_code, response.status.error_message
+            "Error adding BentoService bundle to repository: {}:{}".format(
+                Status.Name(response.status.status_code), response.status.error_message
             )
         )
 
     if response.uri.type == BentoUri.LOCAL:
-        # Saving directory to path managed by LocalBentoRepository
-        save_to_dir(bento_service, response.uri.uri)
+        if os.path.exists(response.uri.uri):
+            # due to copytree dst must not already exist
+            shutil.rmtree(response.uri.uri)
+        shutil.copytree(saved_bento_path, response.uri.uri)
 
-        update_bento_upload_progress(yatai, bento_service)
+        _update_bento_upload_progress(yatai, bento_service_metadata)
 
         # Return URI to saved bento in repository storage
         return response.uri.uri
     elif response.uri.type == BentoUri.S3:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            update_bento_upload_progress(
-                yatai, bento_service, UploadStatus.UPLOADING, 0
+        _update_bento_upload_progress(
+            yatai, bento_service_metadata, UploadStatus.UPLOADING, 0
+        )
+
+        fileobj = io.BytesIO()
+        with tarfile.open(mode="w:gz", fileobj=fileobj) as tar:
+            tar.add(saved_bento_path, arcname=bento_service_metadata.name)
+        fileobj.seek(0, 0)
+
+        files = {'file': ('dummy', fileobj)}  # dummy file name because file name
+        # has been generated when getting the pre-signed signature.
+        data = json.loads(response.uri.additional_fields)
+        uri = data.pop('url')
+        http_response = requests.post(uri, data=data, files=files)
+
+        if http_response.status_code != 204:
+            _update_bento_upload_progress(
+                yatai, bento_service_metadata, UploadStatus.ERROR
             )
-            save_to_dir(bento_service, tmpdir)
 
-            fileobj = io.BytesIO()
-            with tarfile.open(mode="w:gz", fileobj=fileobj) as tar:
-                tar.add(tmpdir, arcname=bento_service.name)
-            fileobj.seek(0, 0)
-
-            files = {'file': ('dummy', fileobj)}  # dummy file name because file name
-            # has been generated when getting the pre-signed signature.
-            data = json.loads(response.uri.additional_fields)
-            uri = data.pop('url')
-            http_response = requests.post(uri, data=data, files=files)
-
-            if http_response.status_code != 204:
-                update_bento_upload_progress(yatai, bento_service, UploadStatus.ERROR)
-
-                raise BentoMLException(
-                    "Error saving Bento to S3 with status code {} and error detail "
-                    "is {}".format(http_response.status_code, http_response.text)
+            raise BentoMLException(
+                "Error saving BentoService bundle to S3. {}: {} ".format(
+                    Status.Name(http_response.status_code), http_response.text
                 )
-
-            update_bento_upload_progress(yatai, bento_service)
-
-            logger.info(
-                "Successfully saved Bento '%s:%s' to S3: %s",
-                bento_service.name,
-                bento_service.version,
-                response.uri.uri,
             )
 
-            return response.uri.uri
+        _update_bento_upload_progress(yatai, bento_service_metadata)
+
+        logger.info(
+            "Successfully saved Bento '%s:%s' to S3 location: %s",
+            bento_service_metadata.name,
+            bento_service_metadata.version,
+            response.uri.uri,
+        )
+
+        return response.uri.uri
 
     else:
         raise BentoMLException(
@@ -151,16 +177,16 @@ def upload_bento_service(bento_service, base_path=None, version=None):
         )
 
 
-def update_bento_upload_progress(
-    yatai, bento_service, status=UploadStatus.DONE, progress=None
+def _update_bento_upload_progress(
+    yatai, bento_service_metadata, status=UploadStatus.DONE, percentage=None
 ):
-    upload_status = UploadStatus(status=status)
+    upload_status = UploadStatus(status=status, percentage=percentage)
     upload_status.updated_at.GetCurrentTime()
     update_bento_req = UpdateBentoRequest(
-        bento_name=bento_service.name,
-        bento_version=bento_service.version,
+        bento_name=bento_service_metadata.name,
+        bento_version=bento_service_metadata.version,
         upload_status=upload_status,
-        service_metadata=bento_service._get_bento_service_metadata_pb(),
+        service_metadata=bento_service_metadata,
     )
     yatai.UpdateBento(update_bento_req)
 
@@ -188,14 +214,15 @@ def create_deployment(
         )
         if get_deployment_pb.status.status_code == status_pb2.Status.OK:
             raise BentoMLDeploymentException(
-                'Deployment {name} already existed, please use update or apply command'
-                ' instead'.format(name=deployment_name)
+                'Deployment "{name}" already existed, use Update or Apply for updating'
+                'existing deployment, or create the deployment with a different name or'
+                'under a different deployment namespace'.format(name=deployment_name)
             )
         if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
             raise BentoMLDeploymentException(
-                'Failed to access deployment store. {error_code}:'
+                'Failed accesing YataiService deployment store. {error_code}:'
                 '{error_message}'.format(
-                    error_code=get_deployment_pb.status.status_code,
+                    error_code=Status.Name(get_deployment_pb.status.status_code),
                     error_message=get_deployment_pb.status.error_message,
                 )
             )
@@ -291,7 +318,7 @@ def apply_deployment(deployment_info, yatai_service=None):
         if validation_errors:
             return ApplyDeploymentResponse(
                 status=Status.INVALID_ARGUMENT(
-                    'Failed to validate deployment. {errors}'.format(
+                    'Failed to validate deployment: {errors}'.format(
                         errors=validation_errors
                     )
                 )
@@ -357,8 +384,8 @@ def list_deployments(
     if is_all_namespaces:
         if namespace is not None:
             logger.warning(
-                'Ignoring `namespace={}` due to the --all-namespace '
-                'flag presented'.format(namespace)
+                'Ignoring `namespace=%s` due to the --all-namespace flag presented',
+                namespace,
             )
         namespace = ALL_NAMESPACE_TAG
 

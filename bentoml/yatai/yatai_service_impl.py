@@ -254,6 +254,17 @@ class YataiService(YataiServicer):
     def AddBento(self, request, context=None):
         try:
             # TODO: validate request
+
+            bento_metadata_pb = self.bento_metadata_store.get(
+                request.bento_name, request.bento_version
+            )
+            if bento_metadata_pb:
+                error_message = "BentoService bundle: {}:{} already exist".format(
+                    request.bento_name, request.bento_version
+                )
+                logger.error(error_message)
+                return AddBentoResponse(status=Status.ABORTED(error_message))
+
             new_bento_uri = self.repo.add(request.bento_name, request.bento_version)
             self.bento_metadata_store.add(
                 bento_name=request.bento_name,

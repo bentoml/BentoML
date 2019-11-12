@@ -123,10 +123,6 @@ def load_bento_service_metadata(archive_path):
 
 
 def load_bento_service_class(archive_path):
-    if is_remote_archive(archive_path):
-        with resolve_remote_archive(archive_path) as local_archive_path:
-            return load_bento_service_class(local_archive_path)
-
     """
     Load a BentoService class from saved archive in given path
 
@@ -134,6 +130,10 @@ def load_bento_service_class(archive_path):
         #save_to_dir, or the path to pip installed BentoArchive directory
     :return: BentoService class
     """
+    if is_remote_archive(archive_path):
+        with resolve_remote_archive(archive_path) as local_archive_path:
+            return load_bento_service_class(local_archive_path)
+
     config = load_bentoml_config(archive_path)
     metadata = config["metadata"]
 
@@ -187,16 +187,12 @@ def load_bento_service_class(archive_path):
     # Set _bento_archive_path, which tells BentoService where to load its artifacts
     model_service_class._bento_archive_path = archive_path
     # Set cls._version, service instance can access it via svc.version
-    model_service_class._bento_service_version = metadata["service_version"]
+    model_service_class._bento_service_bundle_version = metadata["service_version"]
 
     return model_service_class
 
 
 def load(archive_path):
-    if is_remote_archive(archive_path):
-        with resolve_remote_archive(archive_path) as local_archive_path:
-            return load(local_archive_path)
-
     """Load bento service from local file path or s3 path
 
     Args:
@@ -206,6 +202,11 @@ def load(archive_path):
     Returns:
         bentoml.service.BentoService: The loaded bento service.
     """
+
+    if is_remote_archive(archive_path):
+        with resolve_remote_archive(archive_path) as local_archive_path:
+            return load(local_archive_path)
+
     track_load_start()
     svc_cls = load_bento_service_class(archive_path)
 

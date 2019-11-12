@@ -101,7 +101,7 @@ def _upload_bento_service(saved_bento_path, base_path):
             )
         )
     elif get_bento_response.status.status_code != status_pb2.Status.NOT_FOUND:
-        raise BentoMLDeploymentException(
+        raise BentoMLException(
             'Failed accessing YataiService. {error_code}:'
             '{error_message}'.format(
                 error_code=Status.Name(get_bento_response.status.status_code),

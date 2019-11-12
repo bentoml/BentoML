@@ -11,6 +11,7 @@ from bentoml.artifact import PickleArtifact
 from bentoml.archive import load_bento_service_metadata
 from bentoml.exceptions import BentoMLException
 
+
 class TestModel(object):
     def predict(self, input_data):
         return int(input_data) * 2

@@ -467,6 +467,17 @@ class BentoService(BentoServiceBase):
             )
 
         _validate_version_str(version_str)
+        if (
+            self._bento_service_version is not None
+            and self._bento_service_version != version_str
+        ):
+            logger.warning(
+                "Reseting BentoServive '%s' version from %s to %s",
+                self.name,
+                self._bento_service_version,
+                version_str,
+            )
+
         self._bento_service_version = version_str
         return self._bento_service_version
 

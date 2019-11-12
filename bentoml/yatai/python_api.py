@@ -196,7 +196,7 @@ def create_deployment(
                 'Failed to access deployment store. {error_code}:'
                 '{error_message}'.format(
                     error_code=get_deployment_pb.status.status_code,
-                    error_message=get_deployment_pb.status.error_message
+                    error_message=get_deployment_pb.status.error_message,
                 )
             )
 

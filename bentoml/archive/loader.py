@@ -23,25 +23,28 @@ import tarfile
 import logging
 import tempfile
 from contextlib import contextmanager
+from six.moves.urllib.parse import urlparse
 
 import boto3
 from bentoml.utils import dump_to_yaml_str
+from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
 from bentoml.exceptions import BentoMLException
 from bentoml.archive.config import BentoArchiveConfig
 from bentoml.proto.repository_pb2 import BentoServiceMetadata
 
 LOG = logging.getLogger(__name__)
-S3_PREFIX = "s3://"
 
 
 def is_remote_archive(archive_path):
-    return archive_path.startswith(S3_PREFIX)
+    return is_s3_url(archive_path)
 
 
 @contextmanager
 def resolve_remote_archive(archive_path):
-    bucket_name, object_name = archive_path[len(S3_PREFIX) :].split('/', maxsplit=1)
+    parsed_url = urlparse(archive_path)
+    bucket_name = parsed_url.netloc
+    object_name = parsed_url.path.lstrip('/')
 
     s3 = boto3.client('s3')
     fileobj = io.BytesIO()

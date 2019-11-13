@@ -16,9 +16,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.exceptions import BentoMLException
+
 from bentoml.handlers.base_handlers import BentoHandler
-from bentoml.clipper.clipper_utils import string_to_input_type
+
+
+HANDLER_TYPE_TO_INPUT_TYPE = {
+    "ClipperBytesHandler": "bytes",
+    "ClipperIntsHandler": "ints",
+    "ClipperFloatsHandler": "floats",
+    "ClipperDoublesHandler": "doubles",
+    "ClipperStringsHandler": "strings",
+}
 
 
 class ClipperHandler(BentoHandler):
@@ -26,14 +34,16 @@ class ClipperHandler(BentoHandler):
     A special handler designed to work with Clipper(http://clipper.ai/)
     """
 
-    def __init__(
-        self, input_type="doubles"
-    ):
-        self.input_type = string_to_input_type(input_type)
+    def handle_aws_lambda_event(self, event, func):
+        raise NotImplementedError(
+            "ClipperHandler is not supported in AWS Lambda Deployment"
+        )
 
-        if self.input_type < 0:
-            raise BentoMLException("Invalid Clipper input_type {}".format(input_type))
 
+class ClipperBytesHandler(ClipperHandler):
+    """
+    ClipperHandler that deals with input type Bytes
+    """
 
     def handle_request(self, request, func):
         raise NotImplementedError
@@ -41,7 +51,50 @@ class ClipperHandler(BentoHandler):
     def handle_cli(self, args, func):
         raise NotImplementedError
 
-    def handle_aws_lambda_event(self, event, func):
-        raise NotImplementedError(
-            "ClipperHandler is not supported in AWS Lambda Deployment"
-        )
+
+class ClipperFloatsHandler(ClipperHandler):
+    """
+    ClipperHandler that deals with input type Floats
+    """
+
+    def handle_request(self, request, func):
+        raise NotImplementedError
+
+    def handle_cli(self, args, func):
+        raise NotImplementedError
+
+
+class ClipperIntsHandler(ClipperHandler):
+    """
+    ClipperHandler that deals with input type Ints
+    """
+
+    def handle_request(self, request, func):
+        raise NotImplementedError
+
+    def handle_cli(self, args, func):
+        raise NotImplementedError
+
+
+class ClipperDoublesHandler(ClipperHandler):
+    """
+    ClipperHandler that deals with input type Doubles
+    """
+
+    def handle_request(self, request, func):
+        raise NotImplementedError
+
+    def handle_cli(self, args, func):
+        raise NotImplementedError
+
+
+class ClipperStringsHandler(ClipperHandler):
+    """
+    ClipperHandler that deals with input type String
+    """
+
+    def handle_request(self, request, func):
+        raise NotImplementedError
+
+    def handle_cli(self, args, func):
+        raise NotImplementedError

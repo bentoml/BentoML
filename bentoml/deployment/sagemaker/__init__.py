@@ -24,7 +24,6 @@ import re
 import json
 
 from six.moves.urllib.parse import urlparse
-
 import boto3
 import docker
 
@@ -56,6 +55,41 @@ from bentoml.proto.deployment_pb2 import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# This should be kept in sync with BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE
+BENTO_SERVICE_SAGEMAKER_DOCKERFILE = """\
+FROM continuumio/miniconda3:4.7.12
+
+EXPOSE 8080
+
+RUN set -x \\
+     && apt-get update \\
+     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential\\
+     && apt-get install -y nginx \\
+     && rm -rf /var/lib/apt/lists/*
+
+# update conda, pre-install BentoML base dependencies
+RUN conda update conda -y \\
+      && conda install pip numpy scipy \\
+      && pip install gunicorn six gevent
+
+# copy over model files
+COPY . /opt/program
+WORKDIR /opt/program
+
+# update conda base env
+RUN conda env update -n base -f /opt/program/environment.yml
+RUN pip install -r /opt/program/requirements.txt
+
+# Install additional pip dependencies inside bundled_pip_dependencies dir
+RUN if [ -f /bento/bentoml_init.sh ]; then /bin/bash -c /bento/bentoml_init.sh; fi
+
+# run user defined setup script
+RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
+
+ENV PATH="/opt/program:${PATH}"
+"""  # noqa: E501
 
 
 def strip_scheme(url):
@@ -244,6 +278,8 @@ def _cleanup_sagemaker_endpoint_config(client, name, version):
 def init_sagemaker_project(sagemaker_project_dir, bento_path):
     shutil.copytree(bento_path, sagemaker_project_dir)
 
+    with open(os.path.join(sagemaker_project_dir, 'Dockerfile-sagemaker'), "w") as f:
+        f.write(BENTO_SERVICE_SAGEMAKER_DOCKERFILE)
     with open(os.path.join(sagemaker_project_dir, "nginx.conf"), "w") as f:
         f.write(DEFAULT_NGINX_CONFIG)
     with open(os.path.join(sagemaker_project_dir, "wsgi.py"), "w") as f:

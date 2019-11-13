@@ -101,39 +101,6 @@ RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
 CMD ["bentoml serve-gunicorn /bento"]
 """  # noqa: E501
 
-BENTO_SERVICE_DOCKERFILE_SAGEMAKER_TEMPLATE = """\
-FROM continuumio/miniconda3:4.7.12
-
-EXPOSE 8080
-
-RUN set -x \\
-     && apt-get update \\
-     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential\\
-     && apt-get install -y nginx \\
-     && rm -rf /var/lib/apt/lists/*
-
-# update conda, pre-install BentoML base dependencies
-RUN conda update conda -y \\
-      && conda install pip numpy scipy \\
-      && pip install gunicorn six gevent
-
-# copy over model files
-COPY . /opt/program
-WORKDIR /opt/program
-
-# update conda base env
-RUN conda env update -n base -f /opt/program/environment.yml
-RUN pip install -r /opt/program/requirements.txt
-
-# Install additional pip dependencies inside bundled_pip_dependencies dir
-RUN if [ -f /bento/bentoml_init.sh ]; then /bin/bash -c /bento/bentoml_init.sh; fi
-
-# run user defined setup script
-RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
-
-ENV PATH="/opt/program:${PATH}"
-"""  # noqa: E501
-
 
 INIT_PY_TEMPLATE = """\
 import os

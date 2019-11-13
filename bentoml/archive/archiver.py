@@ -181,7 +181,7 @@ def save_to_dir(bento_service, path, version=None):
         add_local_bentoml_package_to_repo(path)
 
     logger.info(
-        "Successfully saved Bento '%s:%s' to path: %s",
+        "BentoService bundle '%s:%s' created at: %s",
         bento_service.name,
         bento_service.version,
         path,

@@ -42,7 +42,7 @@ import rpc # this is clipper's rpc.py module
 import os
 import sys
 
-from bentoml import load_service_api
+from bentoml.archive import load_service_api
 
 IMPORT_ERROR_RETURN_CODE = 3
 
@@ -99,8 +99,11 @@ WORKDIR /container
 # Install pip dependencies
 RUN pip install -r /container/bento/requirements.txt
 
+# Install additional pip dependencies inside bundled_pip_dependencies dir
+RUN if [ -f /container/bento/bentoml_init.sh ]; then cd /container/bento && /bin/bash -c /container/bento/bentoml_init.sh; fi
+
 # run user defined setup script
-RUN if [ -f /container/bento/setup.sh ]; then /bin/bash -c /container/bento/setup.sh; fi
+RUN if [ -f /container/bento/setup.sh ]; then cd /container/bento && /bin/bash -c /container/bento/setup.sh; fi
 
 ENV CLIPPER_MODEL_NAME={model_name}
 ENV CLIPPER_MODEL_VERSION={model_version}
@@ -154,7 +157,9 @@ def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=
     bento_service_metadata = load_bento_service_metadata(bundle_path)
 
     try:
-        api_metadata = next((api for api in bento_service_metadata.apis))
+        api_metadata = next(
+            (api for api in bento_service_metadata.apis if api.name == api_name)
+        )
     except StopIteration:
         raise BentoMLException(
             "Can't find API '{}' in BentoService bundle {}".format(
@@ -188,24 +193,26 @@ def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=
             f.write(docker_content)
 
         docker_api = docker.APIClient()
-        image_tag = "clipper-model-{}:{}".format(
+        clipper_model_docker_image_tag = "clipper-model-{}:{}".format(
             bento_service_metadata.name.lower(), bento_service_metadata.version
         )
-
         for line in docker_api.build(
-            path=tempdir, dockerfile="Dockerfile-clipper", tag=image_tag
+            path=tempdir,
+            dockerfile="Dockerfile-clipper",
+            tag=clipper_model_docker_image_tag,
         ):
             process_docker_api_line(line)
 
         logger.info(
-            "Successfully built docker image %s for Clipper deployment", image_tag
+            "Successfully built docker image %s for Clipper deployment",
+            clipper_model_docker_image_tag,
         )
 
     clipper_conn.deploy_model(
         name=model_name,
         version=model_version,
         input_type=input_type,
-        image=image_tag,
+        image=clipper_model_docker_image_tag,
         labels=labels,
     )
 

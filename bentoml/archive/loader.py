@@ -24,6 +24,7 @@ import logging
 import tempfile
 from contextlib import contextmanager
 from six.moves.urllib.parse import urlparse
+from six import PY3
 
 import boto3
 from bentoml.utils import dump_to_yaml_str
@@ -62,9 +63,15 @@ def load_bentoml_config(archive_path):
     if is_remote_archive(archive_path):
         with resolve_remote_archive(archive_path) as local_archive_path:
             return load_bentoml_config(local_archive_path)
+
+    if PY3:
+        not_found_error = FileNotFoundError
+    else:
+        not_found_error = OSError
+
     try:
         return BentoArchiveConfig.load(os.path.join(archive_path, "bentoml.yml"))
-    except FileNotFoundError:
+    except not_found_error:
         raise ValueError(
             "BentoML can't locate config file 'bentoml.yml'"
             " in archive path: {}".format(archive_path)

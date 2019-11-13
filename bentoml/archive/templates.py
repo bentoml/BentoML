@@ -138,6 +138,6 @@ BENTO_INIT_SH_TEMPLATE = """\
 
 for filename in ./bundled_pip_dependencies/*.tar.gz; do
     [ -e "$filename" ] || continue
-    pip install "$filename" --ignore-installed
+    pip install -U "$filename"
 done
 """

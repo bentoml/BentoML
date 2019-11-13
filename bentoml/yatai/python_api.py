@@ -129,6 +129,12 @@ def _upload_bento_service(saved_bento_path, base_path):
 
         _update_bento_upload_progress(yatai, bento_service_metadata)
 
+        logger.info(
+            "BentoService bundle '%s:%s' created at: %s",
+            bento_service_metadata.name,
+            bento_service_metadata.version,
+            response.uri.uri,
+        )
         # Return URI to saved bento in repository storage
         return response.uri.uri
     elif response.uri.type == BentoUri.S3:
@@ -161,7 +167,7 @@ def _upload_bento_service(saved_bento_path, base_path):
         _update_bento_upload_progress(yatai, bento_service_metadata)
 
         logger.info(
-            "Successfully saved Bento '%s:%s' to S3 location: %s",
+            "Successfully saved BentoService bundle '%s:%s' to S3: %s",
             bento_service_metadata.name,
             bento_service_metadata.version,
             response.uri.uri,

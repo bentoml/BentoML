@@ -111,21 +111,6 @@ class BentoServiceAPI(object):
     def handle_aws_lambda_event(self, event):
         return self.handler.handle_aws_lambda_event(event, self.func)
 
-    def handle_clipper_strings(self, inputs):
-        return self.handler.handle_clipper_strings(inputs, self.func)
-
-    def handle_clipper_bytes(self, inputs):
-        return self.handler.handle_clipper_bytes(inputs, self.func)
-
-    def handle_clipper_ints(self, inputs):
-        return self.handler.handle_clipper_ints(inputs, self.func)
-
-    def handle_clipper_doubles(self, inputs):
-        return self.handler.handle_clipper_doubles(inputs, self.func)
-
-    def handle_clipper_floats(self, inputs):
-        return self.handler.handle_clipper_floats(inputs, self.func)
-
 
 @add_metaclass(ABCMeta)
 class BentoServiceBase(object):

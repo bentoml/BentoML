@@ -108,6 +108,9 @@ class BentoServiceAPI(object):
     def handle_cli(self, args):
         return self.handler.handle_cli(args, self.func)
 
+    def handle_aws_lambda_event(self, event):
+        return self.handler.handle_aws_lambda_event(event, self.func)
+
 
 @add_metaclass(ABCMeta)
 class BentoServiceBase(object):

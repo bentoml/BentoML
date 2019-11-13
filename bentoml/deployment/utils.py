@@ -74,7 +74,7 @@ def ensure_docker_available_or_raise():
     except not_found_error:
         raise BentoMLMissingDependencyException(
             'Docker is required for this deployment. Please visit '
-            'www.docker.come for instructions'
+            'www.docker.com for instructions'
         )
 
 

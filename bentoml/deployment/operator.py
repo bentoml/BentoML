@@ -21,6 +21,7 @@ from abc import abstractmethod, ABCMeta
 
 from bentoml.proto.deployment_pb2 import DeploymentSpec
 from bentoml.exceptions import BentoMLDeploymentException
+from bentoml import config
 
 
 def get_deployment_operator(deployment_pb):
@@ -31,7 +32,12 @@ def get_deployment_operator(deployment_pb):
 
         return SageMakerDeploymentOperator()
     elif operator == DeploymentSpec.AWS_LAMBDA:
-        from bentoml.deployment.serverless.aws_lambda import AwsLambdaDeploymentOperator
+        if config().getboolean('experiment', 'aws_lambda'):
+            from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator
+        else:
+            from bentoml.deployment.serverless.aws_lambda import (
+                AwsLambdaDeploymentOperator,
+            )
 
         return AwsLambdaDeploymentOperator()
     elif operator == DeploymentSpec.GCP_FUNCTION:

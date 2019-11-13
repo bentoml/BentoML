@@ -41,7 +41,7 @@ __all__ = [
     "FastaiImageHandler",
     "ClipperBytesHandler",
     "ClipperDoublesHandler",
-    "ClipperFloatsHandler,",
-    "ClipperIntsHandler,",
-    "ClipperStringsHandle",
+    "ClipperFloatsHandler",
+    "ClipperIntsHandler",
+    "ClipperStringsHandler",
 ]

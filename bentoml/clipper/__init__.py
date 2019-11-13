@@ -46,29 +46,31 @@ from bentoml import load_service_api
 
 IMPORT_ERROR_RETURN_CODE = 3
 
-api = load_service_api('/container/bento', '{api_name}')
-
 
 class BentoServiceContainer(rpc.ModelContainerBase):
 
+    def __init__(self, bentoml_bundle_path, api_name):
+        bento_service_api = load_service_api(bentoml_bundle_path, api_name)
+        self.predict_func = bento_service_api._func
+
     def predict_ints(self, inputs):
-        preds = api.handle_request(inputs)
+        preds = self.predict_func(inputs)
         return [str(p) for p in preds]
 
     def predict_floats(self, inputs):
-        preds = api.handle_request(inputs)
+        preds = self.predict_func(inputs)
         return [str(p) for p in preds]
 
     def predict_doubles(self, inputs):
-        preds = api.handle_request(inputs)
+        preds = self.predict_func(inputs)
         return [str(p) for p in preds]
 
     def predict_bytes(self, inputs):
-        preds = api.handle_request(inputs)
+        preds = self.predict_func(inputs)
         return [str(p) for p in preds]
 
     def predict_strings(self, inputs):
-        preds = api.handle_request(inputs)
+        preds = self.predict_func(inputs)
         return [str(p) for p in preds]
 
 
@@ -77,7 +79,7 @@ if __name__ == "__main__":
     rpc_service = rpc.RPCService()
 
     try:
-        model = BentoServiceContainer()
+        model = BentoServiceContainer('/container/bento', '{api_name}')
         sys.stdout.flush()
         sys.stderr.flush()
     except ImportError:
@@ -110,7 +112,6 @@ CMD ["python", "/container/clipper_entry.py"]
 """  # noqa: E501
 
 
-
 def get_clipper_compatiable_string(item):
     """Generate clipper compatiable string. It must be a valid DNS-1123.
     It must consist of lower case alphanumeric characters, '-' or '.',
@@ -140,7 +141,8 @@ def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=
         tuple: Model name and model version that deployed to clipper
 
     """
-    ensure_docker_available_or_raise() # docker is required to build clipper model image
+    # docker is required to build clipper model image
+    ensure_docker_available_or_raise()
 
     if not clipper_conn.connected:
         raise BentoMLException(

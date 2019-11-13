@@ -31,8 +31,22 @@ HANDLER_TYPE_TO_INPUT_TYPE = {
 
 class ClipperHandler(BentoHandler):
     """
-    A special handler designed to work with Clipper(http://clipper.ai/)
+    A special handler that should only be used when deploying BentoService
+     with Clipper(http://clipper.ai/)
+
+    Clipper Handlers are not regular BentoHandler, they don't work with REST
+    API server nor BentoML CLI.
     """
+
+    def handle_request(self, request, func):
+        raise NotImplementedError(
+            "ClipperHandler does not support handling REST API prediction request"
+        )
+
+    def handle_cli(self, args, func):
+        raise NotImplementedError(
+            "ClipperHandler is not supported to be used with BentoML CLI"
+        )
 
     def handle_aws_lambda_event(self, event, func):
         raise NotImplementedError(
@@ -40,16 +54,11 @@ class ClipperHandler(BentoHandler):
         )
 
 
+# pylint: disable=abstract-method
 class ClipperBytesHandler(ClipperHandler):
     """
     ClipperHandler that deals with input type Bytes
     """
-
-    def handle_request(self, request, func):
-        raise NotImplementedError
-
-    def handle_cli(self, args, func):
-        raise NotImplementedError
 
 
 class ClipperFloatsHandler(ClipperHandler):
@@ -57,23 +66,11 @@ class ClipperFloatsHandler(ClipperHandler):
     ClipperHandler that deals with input type Floats
     """
 
-    def handle_request(self, request, func):
-        raise NotImplementedError
-
-    def handle_cli(self, args, func):
-        raise NotImplementedError
-
 
 class ClipperIntsHandler(ClipperHandler):
     """
     ClipperHandler that deals with input type Ints
     """
-
-    def handle_request(self, request, func):
-        raise NotImplementedError
-
-    def handle_cli(self, args, func):
-        raise NotImplementedError
 
 
 class ClipperDoublesHandler(ClipperHandler):
@@ -81,20 +78,8 @@ class ClipperDoublesHandler(ClipperHandler):
     ClipperHandler that deals with input type Doubles
     """
 
-    def handle_request(self, request, func):
-        raise NotImplementedError
-
-    def handle_cli(self, args, func):
-        raise NotImplementedError
-
 
 class ClipperStringsHandler(ClipperHandler):
     """
     ClipperHandler that deals with input type String
     """
-
-    def handle_request(self, request, func):
-        raise NotImplementedError
-
-    def handle_cli(self, args, func):
-        raise NotImplementedError

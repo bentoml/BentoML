@@ -90,14 +90,14 @@ if __name__ == "__main__":
 
 
 CLIPPER_DOCKERFILE = """\
-FROM clipper/python36-closure-container:0.4.1
+FROM {base_image}
 
 # copy over model files
 COPY . /container
 WORKDIR /container
 
 # Install pip dependencies
-RUN pip install -r /container/bento/requirements.txt
+RUN pip install --upgrade numpy && pip install -r /container/bento/requirements.txt
 
 # Install additional pip dependencies inside bundled_pip_dependencies dir
 RUN if [ -f /container/bento/bentoml_init.sh ]; then cd /container/bento && /bin/bash -c /container/bento/bentoml_init.sh; fi
@@ -186,8 +186,19 @@ def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=
         with open(os.path.join(tempdir, "clipper_entry.py"), "w") as f:
             f.write(entry_py_content)
 
+        if bento_service_metadata.env.python_version.startswith("3.6"):
+            base_image = "clipper/python36-closure-container:0.4.1"
+        elif bento_service_metadata.env.python_version.startswith("2.7"):
+            base_image = "clipper/python-closure-container:0.4.1"
+        else:
+            raise BentoMLException(
+                "Python version {} is not supported in Clipper".format(
+                    bento_service_metadata.env.python_version
+                )
+            )
+
         docker_content = CLIPPER_DOCKERFILE.format(
-            model_name=model_name, model_version=model_version
+            model_name=model_name, model_version=model_version, base_image=base_image
         )
         with open(os.path.join(tempdir, "Dockerfile-clipper"), "w") as f:
             f.write(docker_content)

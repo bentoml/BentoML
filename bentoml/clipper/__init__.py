@@ -27,7 +27,7 @@ from bentoml.configuration import _get_bentoml_home
 from bentoml.archive import load
 from bentoml.handlers import ImageHandler
 from bentoml.deployment.utils import process_docker_api_line
-from bentoml.deployment.clipper.templates import (
+from bentoml.clipper.templates import (
     DEFAULT_CLIPPER_ENTRY,
     DOCKERFILE_CLIPPER,
 )

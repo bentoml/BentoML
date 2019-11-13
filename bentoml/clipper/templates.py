@@ -30,6 +30,7 @@ IMPORT_ERROR_RETURN_CODE = 3
 
 api = load_service_api('/container/bento', '{api_name}')
 
+
 class BentoClipperContainer(rpc.ModelContainerBase):
     def __init__(self):
         self.input_type = '{input_type}'

@@ -39,7 +39,7 @@ def process_docker_api_line(payload):
             try:
                 line_payload = json.loads(line)
             except ValueError as e:
-                logger.error("Could not decipher payload from Docker API: " + e)
+                logger.warning("Could not decipher payload from Docker API: %s", str(e))
             if line_payload:
                 if "errorDetail" in line_payload:
                     error = line_payload["errorDetail"]

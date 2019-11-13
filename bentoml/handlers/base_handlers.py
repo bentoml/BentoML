@@ -65,41 +65,6 @@ class BentoHandler:
     def pip_dependencies(self):
         return []
 
-    def handle_clipper_strings(self, inputs, func):
-        """Handle incoming input data for clipper cluster.
-
-        :param inputs: Incoming inputs from clipper cluster, "strings" format.
-        """
-        raise NotImplementedError
-
-    def handle_clipper_bytes(self, inputs, func):
-        """Handle incoming input data for clipper cluster.
-
-        :param inputs: Incoming inputs from clipper cluster, "bytes" format.
-        """
-        raise NotImplementedError
-
-    def handle_clipper_ints(self, inputs, func):
-        """Handle incoming input data for clipper cluster.
-
-        :param inputs: Incoming inputs from clipper cluster, "integers" format,
-        """
-        raise NotImplementedError
-
-    def handle_clipper_doubles(self, inputs, func):
-        """Handle incoming input data for clipper cluster.
-
-        :param inputs: Incoming inputs from clipper cluster, "doubles" format,
-        """
-        raise NotImplementedError
-
-    def handle_clipper_floats(self, inputs, func):
-        """Handle incoming input data for clipper cluster.
-
-        :param inputs: Incoming inputs from clipper cluster, "floats" format,
-        """
-        raise NotImplementedError
-
 
 def get_output_str(result, output_format, output_orient="records"):
     if output_format == "str":

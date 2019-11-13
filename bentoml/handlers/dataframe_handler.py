@@ -20,7 +20,6 @@ import os
 import argparse
 
 import pandas as pd
-import numpy as np
 from flask import Response, make_response, jsonify
 
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
@@ -197,70 +196,3 @@ class DataframeHandler(BentoHandler):
             result, event["headers"].get("output", "json"), output_orient
         )
         return {"statusCode": 200, "body": result}
-
-    def handle_clipper_strings(self, inputs, func):
-        def transform_and_predict(input_string):
-            # Assuming input string is JSON format
-            try:
-                df = pd.read_json(
-                    input_string, orient=self.orient, typ=self.typ, dtype=False
-                )
-            except ValueError as e:
-                raise ValueError(
-                    "Unexpected input format, BentoML DataframeHandler expects json "
-                    "string as input: {}".format(e)
-                )
-            return func(df)
-
-        return list(map(transform_and_predict, inputs))
-
-    def handle_clipper_bytes(self, inputs, func):
-        raise RuntimeError(
-            "DataframeHandler doesn't support bytes input types \
-                for clipper deployment at the moment"
-        )
-
-    def handle_clipper_ints(self, inputs, func):
-        if self.typ == "frame":
-
-            def transform_and_predict(input_info):
-                nparray = np.asarray(input_info)
-                df = pd.DataFrame(nparray)
-                return func(df)
-
-            return list(map(transform_and_predict, inputs))
-        else:
-            raise RuntimeError(
-                "DataframeHandler doesn't support ints input types \
-                    for clipper deployment at the moment"
-            )
-
-    def handle_clipper_doubles(self, inputs, func):
-        if self.typ == "frame":
-
-            def transform_and_predict(input_info):
-                nparray = np.asarray(input_info)
-                df = pd.DataFrame(nparray)
-                return func(df)
-
-            return list(map(transform_and_predict, inputs))
-        else:
-            raise RuntimeError(
-                "DataframeHandler doesn't support doubles input types \
-                    for clipper deployment at the moment"
-            )
-
-    def handle_clipper_floats(self, inputs, func):
-        if self.typ == "frame":
-
-            def transform_and_predict(input_info):
-                nparray = np.asarray(input_info)
-                df = pd.DataFrame(nparray)
-                return func(df)
-
-            return list(map(transform_and_predict, inputs))
-        else:
-            raise RuntimeError(
-                "DataframeHandler doesn't support floats input types \
-                    for clipper deployment at the moment"
-            )

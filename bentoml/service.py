@@ -259,10 +259,7 @@ def env_decorator(**kwargs):
         pip_dependencies (str or list(str)): User defined python modules to install.
         conda_channels (list(str)): User defined conda channels
         conda_dependencies (list(str)): Defined dependencies to be installed with
-            conda environment.
-        conda_pip_dependencies (list(str)): Additional pip modules to be install
-            with conda
-
+            conda environment
     """
 
     def decorator(bento_service_cls):
@@ -337,7 +334,7 @@ class BentoService(BentoServiceBase):
     >>>
     >>>  @ver(major=1, minor=4)
     >>>  @artifacts([PickleArtifact('clf')])
-    >>>  @env(conda_dependencies: [ 'scikit-learn' ])
+    >>>  @env(pip_dependencies: [ 'scikit-learn' ])
     >>>  class MyMLService(BentoService):
     >>>
     >>>     @api(DataframeHandler)

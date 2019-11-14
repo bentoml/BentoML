@@ -61,10 +61,9 @@ class SavedBundleConfig(object):
 
         if conf["version"] != BENTOML_VERSION:
             msg = (
-                "BentoArchive version mismatch: loading archive bundled in version "
-                "{},  but loading from version {}".format(
-                    conf["version"], BENTOML_VERSION
-                )
+                "Saved BentoService bundle version mismatch: loading BentoServie "
+                "bundle create with BentoML version {},  but loading from BentoML "
+                "version {}".format(conf["version"], BENTOML_VERSION)
             )
 
             # If major version is different, then there could be incompatible API

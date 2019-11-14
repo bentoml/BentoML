@@ -42,7 +42,7 @@ import rpc # this is clipper's rpc.py module
 import os
 import sys
 
-from bentoml.archive import load_bento_service_api
+from bentoml.bundler import load_bento_service_api
 
 IMPORT_ERROR_RETURN_CODE = 3
 
@@ -134,7 +134,7 @@ def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=
 
     Args:
         clipper_conn(clipper_admin.ClipperConnection): Clipper connection instance
-        bundle_path(str): Path to the bentoml service archive.
+        bundle_path(str): Path to the saved BentomlService bundle.
         api_name(str): name of the api that will be used as prediction function for
             clipper cluster
         model_name(str): Model's name for clipper cluster

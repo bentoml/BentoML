@@ -34,18 +34,17 @@ class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
 
         >>> from bentoml.server.gunicorn_server import GunicornBentoServer
         >>>
-        >>> gunicorn_app = GunicornBentoServer(bento_archive_path, port=5000)
+        >>> gunicorn_app = GunicornBentoServer(saved_bundle_path, port=5000)
         >>> gunicorn_app.run()
 
-    :param app: a Flask app, flask.Flask.app
+    :param bundle_path: path to the saved BentoService bundle
     :param port: the port you want to run gunicorn server on
     :param workers: number of worker processes
+    :param timeout: request timeout config
     """
 
-    def __init__(
-        self, bento_archive_path, port=None, num_of_workers=None, timeout=None
-    ):
-        self.bento_archive_path = bento_archive_path
+    def __init__(self, bundle_path, port=None, num_of_workers=None, timeout=None):
+        self.bento_service_bundle_path = bundle_path
         self.port = port or config("apiserver").getint("default_port")
         self.num_of_workers = (
             num_of_workers
@@ -73,7 +72,7 @@ class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
             self.cfg.set(key.lower(), value)
 
     def load(self):
-        bento_service = load(self.bento_archive_path)
+        bento_service = load(self.bento_service_bundle_path)
         api_server = BentoAPIServer(bento_service, port=self.port)
         return api_server.app
 

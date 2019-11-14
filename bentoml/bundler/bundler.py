@@ -35,8 +35,8 @@ from bentoml.utils.usage_stats import track_save
 from bentoml.bundler.config import SavedBundleConfig
 
 
-DEFAULT_BENTO_ARCHIVE_DESCRIPTION = """\
-# BentoML(bentoml.ai) generated model archive
+DEFAULT_SAVED_BUNDLE_README = """\
+# This is a ML Service bundle created with BentoML
 """
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ def save_to_dir(bento_service, path, version=None):
     if bento_service.__class__.__doc__:
         model_description = bento_service.__class__.__doc__.strip()
     else:
-        model_description = DEFAULT_BENTO_ARCHIVE_DESCRIPTION
+        model_description = DEFAULT_SAVED_BUNDLE_README
     with open(os.path.join(path, "README.md"), "w") as f:
         f.write(model_description)
 
@@ -176,7 +176,7 @@ def save_to_dir(bento_service, path, version=None):
     config.write_to_path(module_base_path)
 
     # if bentoml package in editor mode(pip install -e), will include
-    # that bentoml package to bento archive
+    # that bentoml package to saved BentoService bundle
     if _is_bentoml_in_develop_mode():
         add_local_bentoml_package_to_repo(path)
 

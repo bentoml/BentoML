@@ -26,10 +26,10 @@ import subprocess
 
 from ruamel.yaml import YAML
 
-from bentoml.archive import (
+from bentoml.bundler import (
     load,
-    load_service_api,
-    load_bentoml_config,
+    load_bento_service_api,
+    load_saved_bundle_config,
     load_bento_service_metadata,
 )
 from bentoml.server import BentoAPIServer, get_docs
@@ -47,7 +47,7 @@ def escape_shell_params(param):
     return '{}={}'.format(k, v)
 
 
-def create_bento_service_cli(archive_path=None):
+def create_bento_service_cli(bundle_path=None):
     # pylint: disable=unused-variable
 
     @click.group(cls=BentoMLCommandGroup)
@@ -80,17 +80,17 @@ def create_bento_service_cli(archive_path=None):
         else:
             configure_logging()  # use default setting in local bentoml.cfg
 
-    # Example Usage: bentoml API_NAME /SAVED_ARCHIVE_PATH --input=INPUT
+    # Example Usage: bentoml {API_NAME} {BUNDLE_PATH} --input=...
     @bentoml_cli.command(
         default_command=True,
-        default_command_usage="API_NAME BENTO_ARCHIVE_PATH --input=INPUT",
+        default_command_usage="bentoml {API_NAME} {BUNDLE_PATH} --input=...",
         default_command_display_name="<API_NAME>",
         short_help="Run API function",
-        help="Run a API defined in saved BentoArchive with cli args as input",
+        help="Run a API defined in saved BentoService bundle from command line",
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
     @click.argument("api-name", type=click.STRING)
-    @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
+    @conditional_argument(bundle_path is None, "bundle-path", type=click.STRING)
     @click.option(
         '--with-conda',
         is_flag=True,
@@ -98,9 +98,9 @@ def create_bento_service_cli(archive_path=None):
         help="Run API server in a BentoML managed Conda environment",
     )
     @click.pass_context
-    def run(ctx, api_name, archive_path=archive_path, with_conda=False):
+    def run(ctx, api_name, bundle_path=bundle_path, with_conda=False):
         if with_conda:
-            config = load_bentoml_config(archive_path)
+            config = load_saved_bundle_config(bundle_path)
             metadata = config['metadata']
             env_name = metadata['service_name'] + '_' + metadata['service_version']
 
@@ -110,7 +110,7 @@ def create_bento_service_cli(archive_path=None):
             env_path = tmpf.name
             yaml.dump(config['env']['conda_env'], Path(env_path))
 
-            pip_req = os.path.join(archive_path, 'requirements.txt')
+            pip_req = os.path.join(bundle_path, 'requirements.txt')
 
             subprocess.call(
                 'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
@@ -121,10 +121,10 @@ def create_bento_service_cli(archive_path=None):
                 'conda activate {env_name} && '
                 '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
                 'dependencies."; }} &&'
-                'bentoml {api_name} {archive_path} {args}'.format(
+                'bentoml {api_name} {bundle_path} {args}'.format(
                     env_name=env_name,
                     env_file=env_path,
-                    archive_path=archive_path,
+                    bundle_path=bundle_path,
                     api_name=api_name,
                     args=' '.join(map(escape_shell_params, ctx.args)),
                     pip_req=pip_req,
@@ -135,43 +135,43 @@ def create_bento_service_cli(archive_path=None):
 
         track_cli('run')
 
-        api = load_service_api(archive_path, api_name)
+        api = load_bento_service_api(bundle_path, api_name)
         api.handle_cli(ctx.args)
 
-    # Example Usage: bentoml info /SAVED_ARCHIVE_PATH
+    # Example Usage: bentoml info {BUNDLE_PATH}
     @bentoml_cli.command(
-        help="List all APIs defined in the BentoService loaded from archive.",
+        help="List all APIs defined in the BentoService loaded from saved bundle",
         short_help="List APIs",
     )
-    @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
-    def info(archive_path=archive_path):
+    @conditional_argument(bundle_path is None, "bundle-path", type=click.STRING)
+    def info(bundle_path=bundle_path):
         """
-        List all APIs defined in the BentoService loaded from archive
+        List all APIs defined in the BentoService loaded from saved bundle
         """
         track_cli('info')
-        bento_service_metadata_pb = load_bento_service_metadata(archive_path)
+        bento_service_metadata_pb = load_bento_service_metadata(bundle_path)
         output = json.dumps(ProtoMessageToDict(bento_service_metadata_pb), indent=2)
         _echo(output)
 
-    # Example usage: bentoml open-api-spec /SAVED_ARCHIVE_PATH
+    # Example usage: bentoml open-api-spec {BUNDLE_PATH}
     @bentoml_cli.command(
         name="open-api-spec",
         help="Display API specification JSON in Open-API format",
         short_help="Display OpenAPI/Swagger JSON specs",
     )
-    @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
-    def open_api_spec(archive_path=archive_path):
+    @conditional_argument(bundle_path is None, "bundle-path", type=click.STRING)
+    def open_api_spec(bundle_path=bundle_path):
         track_cli('open-api-spec')
-        bento_service = load(archive_path)
+        bento_service = load(bundle_path)
 
         _echo(json.dumps(get_docs(bento_service), indent=2))
 
-    # Example Usage: bentoml serve ./SAVED_ARCHIVE_PATH --port=PORT
+    # Example Usage: bentoml serve {BUNDLE_PATH} --port={PORT}
     @bentoml_cli.command(
-        help="Start REST API server hosting BentoService loaded from archive",
+        help="Start REST API server hosting BentoService loaded from saved bundle",
         short_help="Start local rest server",
     )
-    @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
+    @conditional_argument(bundle_path is None, "bundle-path", type=click.STRING)
     @click.option(
         "--port",
         type=click.INT,
@@ -184,12 +184,12 @@ def create_bento_service_cli(archive_path=None):
         default=False,
         help="Run API server in a BentoML managed Conda environment",
     )
-    def serve(port, archive_path=archive_path, with_conda=False):
+    def serve(port, bundle_path=bundle_path, with_conda=False):
         if with_conda:
-            config = load_bentoml_config(archive_path)
+            config = load_saved_bundle_config(bundle_path)
             metadata = config['metadata']
             env_name = metadata['service_name'] + '_' + metadata['service_version']
-            pip_req = os.path.join(archive_path, 'requirements.txt')
+            pip_req = os.path.join(bundle_path, 'requirements.txt')
 
             subprocess.call(
                 'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
@@ -200,10 +200,10 @@ def create_bento_service_cli(archive_path=None):
                 'conda activate {env_name} && '
                 '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
                 'dependencies."; }} &&'
-                'bentoml serve {archive_path} --port {port}'.format(
+                'bentoml serve {bundle_path} --port {port}'.format(
                     env_name=env_name,
-                    env_file=os.path.join(archive_path, 'environment.yml'),
-                    archive_path=archive_path,
+                    env_file=os.path.join(bundle_path, 'environment.yml'),
+                    bundle_path=bundle_path,
                     port=port,
                     pip_req=pip_req,
                 ),
@@ -213,17 +213,17 @@ def create_bento_service_cli(archive_path=None):
 
         track_cli('serve')
 
-        bento_service = load(archive_path)
+        bento_service = load(bundle_path)
         server = BentoAPIServer(bento_service, port=port)
         server.start()
 
     # Example Usage:
-    # bentoml serve-gunicorn ./SAVED_ARCHIVE_PATH --port=PORT --workers=WORKERS
+    # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
     @bentoml_cli.command(
-        help="Start REST API gunicorn server hosting BentoService loaded from archive",
+        help="Start REST API server from saved BentoService bundle with gunicorn",
         short_help="Start local gunicorn server",
     )
-    @conditional_argument(archive_path is None, "archive-path", type=click.STRING)
+    @conditional_argument(bundle_path is None, "bundle-path", type=click.STRING)
     @click.option("-p", "--port", type=click.INT, default=None)
     @click.option(
         "-w",
@@ -240,13 +240,13 @@ def create_bento_service_cli(archive_path=None):
         help="Run API server in a BentoML managed Conda environment",
     )
     def serve_gunicorn(
-        port, workers, timeout, archive_path=archive_path, with_conda=False
+        port, workers, timeout, bundle_path=bundle_path, with_conda=False
     ):
         if with_conda:
-            config = load_bentoml_config(archive_path)
+            config = load_saved_bundle_config(bundle_path)
             metadata = config['metadata']
             env_name = metadata['service_name'] + '_' + metadata['service_version']
-            pip_req = os.path.join(archive_path, 'requirements.txt')
+            pip_req = os.path.join(bundle_path, 'requirements.txt')
 
             subprocess.call(
                 'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
@@ -257,11 +257,11 @@ def create_bento_service_cli(archive_path=None):
                 'conda activate {env_name} && '
                 '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
                 'dependencies."; }} &&'
-                'bentoml serve_gunicorn {archive_path} -p {port} -w {workers} '
+                'bentoml serve_gunicorn {bundle_path} -p {port} -w {workers} '
                 '--timeout {timeout}'.format(
                     env_name=env_name,
-                    env_file=os.path.join(archive_path, 'environment.yml'),
-                    archive_path=archive_path,
+                    env_file=os.path.join(bundle_path, 'environment.yml'),
+                    bundle_path=bundle_path,
                     port=port,
                     workers=workers,
                     timeout=timeout,
@@ -275,7 +275,7 @@ def create_bento_service_cli(archive_path=None):
 
         from bentoml.server.gunicorn_server import GunicornBentoServer
 
-        gunicorn_app = GunicornBentoServer(archive_path, port, workers, timeout)
+        gunicorn_app = GunicornBentoServer(bundle_path, port, workers, timeout)
         gunicorn_app.run()
 
     # pylint: enable=unused-variable
@@ -285,8 +285,8 @@ def create_bento_service_cli(archive_path=None):
 def create_bentoml_cli():
     _cli = create_bento_service_cli()
 
-    # Commands created here aren't mean to be used from generated service archive. They
-    # are used as part of BentoML cli commands only.
+    # Commands created here aren't mean to be used from generated BentoService CLI when
+    # installed as PyPI package. The are only used as part of BentoML cli command.
 
     deployment_sub_command = get_deployment_sub_command()
     config_sub_command = get_configuration_sub_command()

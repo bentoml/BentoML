@@ -77,10 +77,10 @@ class _LocalBentoRepository(BentoRepositoryBase):
         self.uri_type = BentoUri.LOCAL
 
     def add(self, bento_name, bento_version):
-        # Full path containing saved BentoArchive, it the base path with service name
-        # and service version as prefix. e.g.:
-        # with base_path = '/tmp/my_bento_archive/', the saved bento will resolve in
-        # the directory: '/tmp/my_bento_archive/service_name/version/'
+        # Full path containing saved BentoService bundle, it the base path with service
+        # name and service version as prefix. e.g.:
+        # with base_path = '/tmp/my_bento_repo/', the saved bento will resolve in
+        # the directory: '/tmp/my_bento_repo/service_name/version/'
         target_dir = os.path.join(self.base_path, bento_name, bento_version)
 
         # Ensure parent directory exist
@@ -91,7 +91,8 @@ class _LocalBentoRepository(BentoRepositoryBase):
         # Raise if target bento version already exist in storage
         if os.path.exists(target_dir):
             raise BentoMLRepositoryException(
-                "Existing Bento {name}:{version} found in archive: {target_dir}".format(
+                "Existing BentoService bundle {name}:{version} found in repository: "
+                "{target_dir}".format(
                     name=bento_name, version=bento_version, target_dir=target_dir
                 )
             )

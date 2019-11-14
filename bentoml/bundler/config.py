@@ -33,10 +33,10 @@ metadata:
     created_at: {created_at}
 """
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
-class BentoArchiveConfig(object):
+class SavedBundleConfig(object):
     def __init__(self, kind="BentoService"):
         self.kind = kind
         self._yaml = YAML()
@@ -61,10 +61,9 @@ class BentoArchiveConfig(object):
 
         if conf["version"] != BENTOML_VERSION:
             msg = (
-                "BentoArchive version mismatch: loading archive bundled in version "
-                "{},  but loading from version {}".format(
-                    conf["version"], BENTOML_VERSION
-                )
+                "Saved BentoService bundle version mismatch: loading BentoServie "
+                "bundle create with BentoML version {},  but loading from BentoML "
+                "version {}".format(conf["version"], BENTOML_VERSION)
             )
 
             # If major version is different, then there could be incompatible API
@@ -73,9 +72,9 @@ class BentoArchiveConfig(object):
                 if not BENTOML_VERSION.startswith('0+untagged'):
                     raise ValueError(msg)
                 else:
-                    LOG.warning(msg)
+                    logger.warning(msg)
             else:  # Otherwise just show a warning.
-                LOG.warning(msg)
+                logger.warning(msg)
 
         return conf
 

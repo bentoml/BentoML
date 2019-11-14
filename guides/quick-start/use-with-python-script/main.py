@@ -10,7 +10,7 @@ from bentoml.artifact import PickleArtifact
 from bentoml.handlers import JsonHandler
 
 @artifacts([PickleArtifact('clf')])
-@env(conda_dependencies=["scikit-learn"])
+@env(pip_dependencies=["scikit-learn"])
 @ver(major=1, minor=0)
 class IrisClassifier(BentoService):
     """

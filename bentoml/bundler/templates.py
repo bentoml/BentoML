@@ -17,7 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 
-BENTO_MODEL_SETUP_PY_TEMPLATE = """\
+BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE = """\
 import os
 import pip
 import logging
@@ -107,7 +107,7 @@ import os
 import sys
 import logging
 
-from bentoml import archive
+from bentoml import bundler
 from bentoml.cli import create_bento_service_cli
 from bentoml.utils.log import configure_logging
 
@@ -120,13 +120,13 @@ __VERSION__ = "{pypi_package_version}"
 
 __module_path = os.path.abspath(os.path.dirname(__file__))
 
-{service_name} = archive.load_bento_service_class(__module_path)
+{service_name} = bundler.load_bento_service_class(__module_path)
 
 cli=create_bento_service_cli(__module_path)
 
 
 def load():
-    return archive.load(__module_path)
+    return bundler.load(__module_path)
 
 
 __all__ = ['__version__', '{service_name}', 'load']

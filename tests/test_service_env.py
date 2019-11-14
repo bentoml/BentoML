@@ -50,7 +50,7 @@ def test_pip_dependencies_env():
     assert 'torch' in service_with_list.env._pip_dependencies
 
 
-def test_pip_dependencies_with_archive(tmpdir):
+def test_service_env_pip_dependencies(tmpdir):
     @bentoml.env(pip_dependencies=['numpy', 'pandas', 'torch'])
     class ServiceWithList(bentoml.BentoService):
         @bentoml.api(DataframeHandler)

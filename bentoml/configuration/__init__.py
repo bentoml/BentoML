@@ -66,7 +66,7 @@ BENTOML_HOME = DEFAULT_BENTOML_HOME
 
 # This is used as default for config('core', 'bentoml_deploy_version') - which is used
 # for getting the BentoML PyPI version string or the URL to a BentoML sdist, indicating
-# the BentoML module to be used when loading and using a saved BentoService archive.
+# the BentoML module to be used when loading and using a saved BentoService bundle.
 # This is useful when using customized BentoML fork/branch or when working with
 # development branches of BentoML
 BENTOML_VERSION = __version__
@@ -170,10 +170,10 @@ def get_bentoml_deploy_version():
     if bentoml_deploy_version != __version__:
         logger.warning(
             "BentoML local changes detected - Local BentoML repository including all "
-            "code changes will be bundled together with the BentoService archive. "
+            "code changes will be bundled together with the BentoService bundle. "
             "When used with docker, the base docker image will be default to same "
             "version as last PyPI release at version: %s. You can also force bentoml "
-            "to use a specific version for deploying your BentoService archive, "
+            "to use a specific version for deploying your BentoService bundle, "
             "by setting the config 'core/bentoml_deploy_version' to a pinned version "
             "or your custom BentoML on github, e.g.:"
             "'bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{"

@@ -35,7 +35,7 @@ def _find_bentoml_module_location():
     return module_location
 
 
-def add_local_bentoml_package_to_repo(archive_path):
+def add_local_bentoml_package_to_repo(bundle_path):
     module_location = _find_bentoml_module_location()
     bentoml_setup_py = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
 
@@ -53,8 +53,8 @@ def add_local_bentoml_package_to_repo(archive_path):
         bentoml_setup_py, ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name]
     )
 
-    # copy the generated targz to archive directory and remove it from
+    # copy the generated targz to saved bundle directory and remove it from
     # bentoml module directory
-    dest_dir = os.path.join(archive_path, 'bundled_pip_dependencies')
+    dest_dir = os.path.join(bundle_path, 'bundled_pip_dependencies')
     shutil.copytree(source_dir, dest_dir)
     shutil.rmtree(source_dir)

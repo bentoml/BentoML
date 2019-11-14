@@ -16,20 +16,20 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.archive.archiver import save_to_dir
-from bentoml.archive.loader import (
+from bentoml.bundler.bundler import save_to_dir
+from bentoml.bundler.loader import (
     load,
-    load_bentoml_config,
+    load_saved_bundle_config,
     load_bento_service_metadata,
     load_bento_service_class,
-    load_service_api,
+    load_bento_service_api,
 )
 
 __all__ = [
     "save_to_dir",
     "load",
-    "load_bentoml_config",
+    "load_saved_bundle_config",
     "load_bento_service_metadata",
     "load_bento_service_class",
-    "load_service_api",
+    "load_bento_service_api",
 ]

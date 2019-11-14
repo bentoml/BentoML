@@ -18,14 +18,14 @@ def generate_test_input_file():
     return file_path
 
 
-def test_run_command_with_input_file(bento_archive_path):
+def test_run_command_with_input_file(bento_bundle_path):
     input_path = generate_test_input_file()
     runner = CliRunner()
 
     cli = create_bento_service_cli()
     run_cmd = cli.commands["<API_NAME>"]
     result = runner.invoke(
-        run_cmd, ["predict", bento_archive_path, "--input", input_path, "-o", "json"]
+        run_cmd, ["predict", bento_bundle_path, "--input", input_path, "-o", "json"]
     )
 
     assert result.exit_code == 0

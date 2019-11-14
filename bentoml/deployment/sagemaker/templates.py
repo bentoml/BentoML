@@ -60,7 +60,7 @@ http {
 DEFAULT_WSGI_PY = """\
 import os
 
-from bentoml.archive import load
+from bentoml.bundler import load
 from bentoml.server.bento_sagemaker_server import BentoSagemakerServer
 
 api_name = os.environ.get('API_NAME', None)

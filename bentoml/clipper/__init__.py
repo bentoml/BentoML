@@ -24,7 +24,7 @@ import logging
 import docker
 
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.archive import load_bento_service_metadata
+from bentoml.bundler import load_bento_service_metadata
 from bentoml.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
@@ -42,7 +42,7 @@ import rpc # this is clipper's rpc.py module
 import os
 import sys
 
-from bentoml.archive import load_service_api
+from bentoml.bundler import load_bento_service_api
 
 IMPORT_ERROR_RETURN_CODE = 3
 
@@ -50,7 +50,7 @@ IMPORT_ERROR_RETURN_CODE = 3
 class BentoServiceContainer(rpc.ModelContainerBase):
 
     def __init__(self, bentoml_bundle_path, api_name):
-        bento_service_api = load_service_api(bentoml_bundle_path, api_name)
+        bento_service_api = load_bento_service_api(bentoml_bundle_path, api_name)
         self.predict_func = bento_service_api._func
 
     def predict_ints(self, inputs):
@@ -134,7 +134,7 @@ def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=
 
     Args:
         clipper_conn(clipper_admin.ClipperConnection): Clipper connection instance
-        bundle_path(str): Path to the bentoml service archive.
+        bundle_path(str): Path to the saved BentomlService bundle.
         api_name(str): name of the api that will be used as prediction function for
             clipper cluster
         model_name(str): Model's name for clipper cluster

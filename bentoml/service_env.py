@@ -77,15 +77,6 @@ class CondaEnv(object):
     def add_conda_dependencies(self, extra_conda_dependencies):
         self._conda_env["dependencies"] += extra_conda_dependencies
 
-    def add_pip_dependencies(self, extra_pip_dependencies):
-        for dep in self._conda_env["dependencies"]:
-            if isinstance(dep, dict) and "pip" in dep:
-                # there is already a pip list in conda_env, append extra deps
-                dep["pip"] += extra_pip_dependencies
-                return self
-
-        self._conda_env["dependencies"] += [{"pip": extra_pip_dependencies}]
-
     def add_channels(self, channels):
         self._conda_env["channels"] += channels
 
@@ -143,11 +134,6 @@ class BentoServiceEnv(object):
         if not isinstance(conda_dependencies, list):
             conda_dependencies = [conda_dependencies]
         self._conda_env.add_conda_dependencies(conda_dependencies)
-
-    def add_conda_pip_dependencies(self, pip_dependencies):
-        if not isinstance(pip_dependencies, list):
-            pip_dependencies = [pip_dependencies]
-        self._conda_env.add_pip_dependencies(pip_dependencies)
 
     def add_handler_dependencies(self, handler_dependencies):
         if not isinstance(handler_dependencies, list):
@@ -209,9 +195,6 @@ class BentoServiceEnv(object):
 
         if "conda_dependencies" in env_dict:
             env.add_conda_dependencies(env_dict["conda_dependencies"])
-
-        if "conda_pip_dependencies" in env_dict:
-            env.add_conda_pip_dependencies(env_dict["conda_pip_dependencies"])
 
         return env
 

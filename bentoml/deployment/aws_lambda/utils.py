@@ -74,7 +74,20 @@ def ensure_sam_available_or_raise():
 
 def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, '.aws-sam/build/{}'.format(api_name))
-    subprocess.check_output(['rm', '-rf', './{*.egg-info,*.dist-info}'])
+    subprocess.check_output(['rm', '-rf', './{*.egg-info,*.dist-info}'], cwd=build_dir)
+    subprocess.check_output(
+        ['find' '.', '-type', 'd', '-name', '"tests', '-exec', 'rm', '-rf', '{}'],
+        cwd=build_dir,
+    )
+    subprocess.check_output(
+        ['find', '.', '-name', '"*.so', '|', 'xargs', 'strip'], cwd=build_dir
+    )
+    # Pytorch related
+    subprocess.check_output(
+        ['rm', '-rf', './{caff2,wheel,pkg_resources,pip,pipenv,setuptools}'],
+        cwd=build_dir,
+    )
+    subprocess.check_output(['rm', './torch/lib/libtorch.so'], cwd=build_dir)
 
 
 def call_sam_command(command, project_dir):
@@ -85,12 +98,6 @@ def call_sam_command(command, project_dir):
         stdout = proc.stdout.read().decode('utf-8')
         logger.debug('SAM cmd output: %s', stdout)
     return stdout
-
-
-def lambda_build(project_dir, api_names):
-    call_sam_command(['build', '-u'], project_dir)
-    for api_name in api_names:
-        cleanup_build_files(project_dir, api_name)
 
 
 def lambda_package(project_dir, s3_bucket_name):
@@ -171,9 +178,6 @@ def init_sam_project(sam_project_path, bento_archive_path, bento_name, api_names
             requirement_file.seek(0)
             requirement_file.writelines(required_modules)
 
-    lambda_build()
-    cleanup_build_files()
-
     # Copy bento_service_model
     model_path = os.path.join(bento_archive_path, bento_name)
     shutil.copytree(model_path, os.path.join(sam_project_path, bento_name))
@@ -189,6 +193,9 @@ def init_sam_project(sam_project_path, bento_archive_path, bento_name, api_names
             f.write(api_content)
 
     # generate unzip_requirements.py
-    with open(os.path.join(sam_project_path, 'unzip_requirements.py'), 'w') as f:
-        f.write(UNZIP_REQUIREMENTS_PY)
+    # with open(os.path.join(sam_project_path, 'unzip_requirements.py'), 'w') as f:
+    #     f.write(UNZIP_REQUIREMENTS_PY)
 
+    call_sam_command(['build', '-u'], sam_project_path)
+    for api_name in api_names:
+        cleanup_build_files(sam_project_path, api_name)

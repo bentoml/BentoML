@@ -18,16 +18,15 @@ from __future__ import print_function
 
 import os
 
+from packaging import version
 from ruamel.yaml import YAML
 
 from bentoml.deployment.aws_lambda.utils import (
     ensure_sam_available_or_raise,
     upload_artifacts_to_s3,
     init_sam_project,
-    lambda_build,
     lambda_deploy,
     lambda_package,
-    generate_framework_layers,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
@@ -47,16 +46,20 @@ from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
 
 
-def generate_function_resource(api_name, artifact_bucket_name):
+def generate_function_resource(
+    deployment_name, api_name, artifact_bucket_name, memory_size, timeout
+):
     return {
         'Type': 'AWS::Serverless::Function',
         'Properties': {
             'Runtime': 'python3.7',
-            'CodeUri': '',
+            'CodeUri': deployment_name + '/',
             'Handler': 'app.{}'.format(api_name),
-            'FunctionName': api_name,
-            'Timeout': 60,
-            'MemorySize': 3008,
+            'FunctionName': '{deployment}-{api}'.format(
+                deployment=deployment_name, api=api_name
+            ),
+            'Timeout': timeout,
+            'MemorySize': memory_size,
             'Events': {
                 'Api': {
                     'Type': 'Api',
@@ -68,13 +71,21 @@ def generate_function_resource(api_name, artifact_bucket_name):
     }
 
 
-def generate_aws_lambda_template_config(project_dir, api_names, s3_bucket_name):
+def generate_aws_lambda_template_config(
+    project_dir,
+    deployment_name,
+    api_names,
+    s3_bucket_name,
+    python_runtime,
+    memory_size,
+    timeout,
+):
     template_file_path = os.path.join(project_dir, 'template.yaml')
     yaml = YAML()
     sam_config = {
         'AWSTemplateFormatVersion': '2010-09-09',
         'Transform': 'AWS::Serverless-2016-10-31',
-        'Globals': {'Function': {'Timeout': 180, 'Runtime': 'python3.7'}},
+        'Globals': {'Function': {'Timeout': timeout, 'Runtime': python_runtime}},
         'Resources': {},
         # Output section from cloud formation
         'Outputs': {
@@ -87,7 +98,11 @@ def generate_aws_lambda_template_config(project_dir, api_names, s3_bucket_name):
     }
     for api_name in api_names:
         sam_config['Resources'][api_name] = generate_function_resource(
-            api_name, s3_bucket_name
+            deployment_name,
+            api_name,
+            s3_bucket_name,
+            memory_size=memory_size,
+            timeout=timeout,
         )
 
     yaml.dump(sam_config, Path(template_file_path))
@@ -115,6 +130,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 bento_archive_path = bento_pb.bento.uri.uri
             bento_service_metadata = bento_pb.bento.bento_service_metadata
 
+            python_runtime = 'python3.7'
+            if version.parse(bento_service_metadata.env.python_version) < version.parse(
+                '3.0.0'
+            ):
+                python_runtime = 'python2.7'
+
             api_names = (
                 [aws_config.api_name]
                 if aws_config.api_name
@@ -136,7 +157,13 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             )
             with TempDirectory() as lambda_project_dir:
                 generate_aws_lambda_template_config(
-                    lambda_project_dir, api_names, artifact_bucket_name
+                    lambda_project_dir,
+                    deployment_pb.name,
+                    api_names,
+                    artifact_bucket_name,
+                    python_runtime=python_runtime,
+                    memory_size=aws_config.memory_size,
+                    timeout=aws_config.timeout,
                 )
                 init_sam_project(
                     lambda_project_dir,

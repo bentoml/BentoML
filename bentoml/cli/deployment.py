@@ -233,6 +233,19 @@ def get_deployment_sub_command():
     @click.option(
         '--replicas',
         help='Number of replicas. Option applicable to platform: Kubernetes',
+        type=click.INT,
+    )
+    @click.option(
+        '--memory-size',
+        help='Memory size for lambda function. '
+        'Option applicable to platform: aws-lambda',
+        type=click.INT,
+    )
+    @click.option(
+        '--timeout',
+        help='function timeout for lambda function. '
+        'Option applicable to platform: aws-lambda',
+        type=click.INT,
     )
     @click.option(
         '--service-name',
@@ -265,6 +278,8 @@ def get_deployment_sub_command():
         replicas,
         service_name,
         service_type,
+        memory_size,
+        timeout,
         wait,
     ):
         # converting platform parameter to DeploymentOperator name in proto
@@ -280,6 +295,8 @@ def get_deployment_sub_command():
             'replicas': replicas,
             'service_name': service_name,
             'service_type': service_type,
+            'memory_size': memory_size,
+            'timeout': timeout,
         }
         yatai_service = get_yatai_service()
         result = create_deployment(

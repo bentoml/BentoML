@@ -26,7 +26,7 @@ import subprocess
 
 from ruamel.yaml import YAML
 
-from bentoml.archive import (
+from bentoml.bundler import (
     load,
     load_bento_service_api,
     load_saved_bundle_config,

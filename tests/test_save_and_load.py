@@ -8,7 +8,7 @@ from mock import patch
 import bentoml
 from bentoml.handlers import DataframeHandler
 from bentoml.artifact import PickleArtifact
-from bentoml.archive import load_bento_service_metadata
+from bentoml.bundler import load_bento_service_metadata
 from bentoml.exceptions import BentoMLException
 
 

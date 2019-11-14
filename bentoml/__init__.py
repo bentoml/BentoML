@@ -28,7 +28,7 @@ from bentoml.utils.log import configure_logging
 # Configuring logging properly before loading other modules
 configure_logging()
 
-from bentoml.archive import load, save_to_dir
+from bentoml.bundler import load, save_to_dir
 from bentoml.service import (
     BentoService,
     api_decorator as api,

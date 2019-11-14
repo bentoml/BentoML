@@ -20,7 +20,7 @@ from six import iteritems
 from gunicorn.app.base import BaseApplication
 
 from bentoml import config
-from bentoml.archive import load
+from bentoml.bundler import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.utils import get_bento_recommend_gunicorn_worker_count
 from bentoml.utils.usage_stats import track_server

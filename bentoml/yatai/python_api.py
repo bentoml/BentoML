@@ -45,7 +45,7 @@ from bentoml.proto.repository_pb2 import (
 from bentoml.proto import status_pb2
 from bentoml.utils.usage_stats import track_save
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.archive import save_to_dir, load_bento_service_metadata
+from bentoml.bundler import save_to_dir, load_bento_service_metadata
 from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,

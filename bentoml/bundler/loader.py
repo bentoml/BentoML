@@ -31,18 +31,18 @@ from bentoml.utils import dump_to_yaml_str
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
 from bentoml.exceptions import BentoMLException
-from bentoml.archive.config import SavedBundleConfig
+from bentoml.bundler.config import SavedBundleConfig
 from bentoml.proto.repository_pb2 import BentoServiceMetadata
 
 logger = logging.getLogger(__name__)
 
 
-def is_remote_archive(bundle_path):
+def _is_remote_path(bundle_path):
     return is_s3_url(bundle_path)
 
 
 @contextmanager
-def resolve_remote_archive(bundle_path):
+def _resolve_remote_bundle_path(bundle_path):
     parsed_url = urlparse(bundle_path)
     bucket_name = parsed_url.netloc
     object_name = parsed_url.path.lstrip('/')
@@ -60,8 +60,8 @@ def resolve_remote_archive(bundle_path):
 
 
 def load_saved_bundle_config(bundle_path):
-    if is_remote_archive(bundle_path):
-        with resolve_remote_archive(bundle_path) as local_bundle_path:
+    if _is_remote_path(bundle_path):
+        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
             return load_saved_bundle_config(local_bundle_path)
 
     if PY3:
@@ -72,15 +72,15 @@ def load_saved_bundle_config(bundle_path):
     try:
         return SavedBundleConfig.load(os.path.join(bundle_path, "bentoml.yml"))
     except not_found_error:
-        raise ValueError(
+        raise BentoMLException(
             "BentoML can't locate config file 'bentoml.yml'"
-            " in archive path: {}".format(bundle_path)
+            " in saved bundle in path: {}".format(bundle_path)
         )
 
 
 def load_bento_service_metadata(bundle_path):
-    if is_remote_archive(bundle_path):
-        with resolve_remote_archive(bundle_path) as local_bundle_path:
+    if _is_remote_path(bundle_path):
+        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
             return load_bento_service_metadata(local_bundle_path)
 
     config = load_saved_bundle_config(bundle_path)
@@ -131,14 +131,14 @@ def load_bento_service_metadata(bundle_path):
 
 def load_bento_service_class(bundle_path):
     """
-    Load a BentoService class from saved archive in given path
+    Load a BentoService class from saved bundle in given path
 
     :param bundle_path: A path to Bento files generated from BentoService#save,
-        #save_to_dir, or the path to pip installed BentoArchive directory
+        #save_to_dir, or the path to pip installed BentoService directory
     :return: BentoService class
     """
-    if is_remote_archive(bundle_path):
-        with resolve_remote_archive(bundle_path) as local_bundle_path:
+    if _is_remote_path(bundle_path):
+        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
             return load_bento_service_class(local_bundle_path)
 
     config = load_saved_bundle_config(bundle_path)
@@ -154,7 +154,7 @@ def load_bento_service_class(bundle_path):
 
     if not os.path.isfile(module_file_path):
         raise BentoMLException(
-            "Can not locate module_file {} in archive {}".format(
+            "Can not locate module_file {} in saved bundle {}".format(
                 metadata["module_file"], bundle_path
             )
         )
@@ -203,15 +203,15 @@ def load(bundle_path):
     """Load bento service from local file path or s3 path
 
     Args:
-        bundle_path (str): The path that contains archived bento service.
-            It could be local file path or aws s3 path
+        bundle_path (str): The path that contains saved BentoService bundle,
+            supporting both local file path and s3 path
 
     Returns:
-        bentoml.service.BentoService: The loaded bento service.
+        bentoml.service.BentoService: a loaded BentoService instance
     """
 
-    if is_remote_archive(bundle_path):
-        with resolve_remote_archive(bundle_path) as local_bundle_path:
+    if _is_remote_path(bundle_path):
+        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
             return load(local_bundle_path)
 
     track_load_start()
@@ -224,8 +224,8 @@ def load(bundle_path):
 
 
 def load_bento_service_api(bundle_path, api_name=None):
-    if is_remote_archive(bundle_path):
-        with resolve_remote_archive(bundle_path) as local_bundle_path:
+    if _is_remote_path(bundle_path):
+        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
             return load_bento_service_api(local_bundle_path, api_name)
 
     bento_service = load(bundle_path)

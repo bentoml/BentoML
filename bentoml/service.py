@@ -27,7 +27,7 @@ from datetime import datetime
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
-from bentoml.archive import save_to_dir
+from bentoml.bundler import save_to_dir
 from bentoml.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection, BentoServiceArtifact
@@ -537,11 +537,11 @@ class BentoService(BentoServiceBase):
 
     @classmethod
     def load_from_dir(cls, path):
-        from bentoml.archive import load_saved_bundle_config
+        from bentoml.bundler import load_saved_bundle_config
 
         if cls._bento_bundle_path is not None and cls._bento_bundle_path != path:
             logger.warning(
-                "BentoService bundle {} loaded from '%s' being loaded again from a "
+                "BentoService bundle %s loaded from '%s' being loaded again from a "
                 "different path %s",
                 cls.name,
                 cls._bento_bundle_path,

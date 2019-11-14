@@ -33,7 +33,7 @@ metadata:
     created_at: {created_at}
 """
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class SavedBundleConfig(object):
@@ -73,9 +73,9 @@ class SavedBundleConfig(object):
                 if not BENTOML_VERSION.startswith('0+untagged'):
                     raise ValueError(msg)
                 else:
-                    LOG.warning(msg)
+                    logger.warning(msg)
             else:  # Otherwise just show a warning.
-                LOG.warning(msg)
+                logger.warning(msg)
 
         return conf
 

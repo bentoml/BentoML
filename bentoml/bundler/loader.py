@@ -27,12 +27,11 @@ from six.moves.urllib.parse import urlparse
 from six import PY3
 
 import boto3
-from bentoml.utils import dump_to_yaml_str
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
 from bentoml.exceptions import BentoMLException
 from bentoml.bundler.config import SavedBundleConfig
-from bentoml.proto.repository_pb2 import BentoServiceMetadata
+
 
 logger = logging.getLogger(__name__)
 
@@ -79,54 +78,7 @@ def load_saved_bundle_config(bundle_path):
 
 
 def load_bento_service_metadata(bundle_path):
-    if _is_remote_path(bundle_path):
-        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
-            return load_bento_service_metadata(local_bundle_path)
-
-    config = load_saved_bundle_config(bundle_path)
-
-    bento_service_metadata = BentoServiceMetadata()
-    bento_service_metadata.name = config["metadata"]["service_name"]
-    bento_service_metadata.version = config["metadata"]["service_version"]
-    bento_service_metadata.created_at.FromDatetime(config["metadata"]["created_at"])
-
-    if "env" in config:
-        if "setup_sh" in config["env"]:
-            bento_service_metadata.env.setup_sh = config["env"]["setup_sh"]
-
-        if "conda_env" in config["env"]:
-            bento_service_metadata.env.conda_env = dump_to_yaml_str(
-                config["env"]["conda_env"]
-            )
-
-        if "pip_dependencies" in config["env"]:
-            bento_service_metadata.env.pip_dependencies = "\n".join(
-                config["env"]["pip_dependencies"]
-            )
-        if "python_version" in config["env"]:
-            bento_service_metadata.env.python_version = config["env"]["python_version"]
-
-    if "apis" in config:
-        for api_config in config["apis"]:
-            api_metadata = BentoServiceMetadata.BentoServiceApi()
-            if "name" in api_config:
-                api_metadata.name = api_config["name"]
-            if "handler_type" in api_config:
-                api_metadata.handler_type = api_config["handler_type"]
-            if "docs" in api_config:
-                api_metadata.docs = api_config["docs"]
-            bento_service_metadata.apis.extend([api_metadata])
-
-    if "artifacts" in config:
-        for artifact_config in config["artifacts"]:
-            artifact_metadata = BentoServiceMetadata.BentoArtifact()
-            if "name" in artifact_config:
-                artifact_metadata.name = artifact_config["name"]
-            if "artifact_type" in artifact_config:
-                artifact_metadata.artifact_type = artifact_config["artifact_type"]
-            bento_service_metadata.artifacts.extend([artifact_metadata])
-
-    return bento_service_metadata
+    return load_saved_bundle_config(bundle_path).get_bento_service_metadata_pb()
 
 
 def load_bento_service_class(bundle_path):

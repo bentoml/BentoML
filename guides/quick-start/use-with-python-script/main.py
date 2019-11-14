@@ -1,13 +1,10 @@
-import os
-import sys
 from sklearn import svm
 from sklearn import datasets
 
-# Use local bentoml code
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from bentoml import BentoService, load, api, env, artifacts, ver
 from bentoml.artifact import PickleArtifact
 from bentoml.handlers import JsonHandler
+
 
 @artifacts([PickleArtifact('clf')])
 @env(pip_dependencies=["scikit-learn"])
@@ -21,6 +18,7 @@ class IrisClassifier(BentoService):
     def predict(self, parsed_json):
         return self.artifacts.clf.predict(parsed_json)
 
+
 if __name__ == "__main__":
     clf = svm.SVC(gamma='scale')
     iris = datasets.load_iris()
@@ -30,10 +28,10 @@ if __name__ == "__main__":
     iris_clf_service = IrisClassifier.pack(clf=clf)
     print("iris_clf_service.predict = {}".format(iris_clf_service.predict(X[0:1])))
 
-    print("Saving model as bento archive...")
-    saved_path = iris_clf_service.save("/tmp/bento")
-    print("BentoML model archive saved to path: {}".format(saved_path))
+    print("Saving BentoService file bundle...")
+    saved_path = iris_clf_service.save()
+    print("BenteService bundle created at path: {}".format(saved_path))
 
-    bento_service = load(saved_path)
+    loaded_bento_service = load(saved_path)
     print(X[0:1])
-    print("Loaded BentoService #predict output: {}".format(bento_service.predict(X[0:1])))
+    print("Loaded BentoService #predict output: {}".format(loaded_bento_service.predict(X[0:1])))

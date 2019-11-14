@@ -36,7 +36,7 @@ metadata:
 LOG = logging.getLogger(__name__)
 
 
-class BentoArchiveConfig(object):
+class SavedBundleConfig(object):
     def __init__(self, kind="BentoService"):
         self.kind = kind
         self._yaml = YAML()

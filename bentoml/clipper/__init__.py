@@ -42,7 +42,7 @@ import rpc # this is clipper's rpc.py module
 import os
 import sys
 
-from bentoml.archive import load_service_api
+from bentoml.archive import load_bento_service_api
 
 IMPORT_ERROR_RETURN_CODE = 3
 
@@ -50,7 +50,7 @@ IMPORT_ERROR_RETURN_CODE = 3
 class BentoServiceContainer(rpc.ModelContainerBase):
 
     def __init__(self, bentoml_bundle_path, api_name):
-        bento_service_api = load_service_api(bentoml_bundle_path, api_name)
+        bento_service_api = load_bento_service_api(bentoml_bundle_path, api_name)
         self.predict_func = bento_service_api._func
 
     def predict_ints(self, inputs):

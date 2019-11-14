@@ -32,7 +32,7 @@ from bentoml.archive.templates import (
 from bentoml.archive.utils import add_local_bentoml_package_to_repo
 from bentoml.utils import _is_bentoml_in_develop_mode
 from bentoml.utils.usage_stats import track_save
-from bentoml.archive.config import BentoArchiveConfig
+from bentoml.archive.config import SavedBundleConfig
 
 
 DEFAULT_BENTO_ARCHIVE_DESCRIPTION = """\
@@ -157,7 +157,7 @@ def save_to_dir(bento_service, path, version=None):
     os.chmod(bentoml_init_script_file, st.st_mode | stat.S_IEXEC)
 
     # write bentoml.yml
-    config = BentoArchiveConfig()
+    config = SavedBundleConfig()
     config["metadata"].update(
         {
             "service_name": bento_service.name,

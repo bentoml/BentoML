@@ -62,7 +62,7 @@ def _get_artifacts_list(bento_service):
 
 
 class SavedBundleConfig(object):
-    def __init__(self, bento_service, kind="BentoService"):
+    def __init__(self, bento_service=None, kind="BentoService"):
         self.kind = kind
         self._yaml = YAML()
         self._yaml.default_flow_style = False
@@ -73,15 +73,17 @@ class SavedBundleConfig(object):
                 created_at=str(datetime.utcnow()),
             )
         )
-        self.config["metadata"].update(
-            {
-                "service_name": bento_service.name,
-                "service_version": bento_service.version,
-            }
-        )
-        self.config["env"] = bento_service.env.to_dict()
-        self.config['apis'] = _get_apis_list(bento_service)
-        self.config['artifacts'] = _get_artifacts_list(bento_service)
+
+        if bento_service is not None:
+            self.config["metadata"].update(
+                {
+                    "service_name": bento_service.name,
+                    "service_version": bento_service.version,
+                }
+            )
+            self.config["env"] = bento_service.env.to_dict()
+            self.config['apis'] = _get_apis_list(bento_service)
+            self.config['artifacts'] = _get_artifacts_list(bento_service)
 
     def write_to_path(self, path, filename="bentoml.yml"):
         return self._yaml.dump(self.config, Path(os.path.join(path, filename)))

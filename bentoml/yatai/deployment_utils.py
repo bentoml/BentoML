@@ -80,6 +80,14 @@ def deployment_dict_to_pb(deployment_dict):
             deployment_pb.spec.aws_lambda_operator_config.api_name = lambda_config.get(
                 'api_name'
             )
+        if lambda_config.get('memory_size'):
+            deployment_pb.spec.aws_lambda_operator_config.memory_size = lambda_config.get(
+                'memory_size'
+            )
+        if lambda_config.get('timeout'):
+            deployment_pb.spec.aws_lambda_operator_config.timeout = lambda_config.get(
+                'timeout'
+            )
     elif deployment_pb.spec.operator == DeploymentSpec.GCP_FUNCTION:
         gcp_config = spec_dict.get('gcp_function_operator_config', {})
         if gcp_config.get('region'):

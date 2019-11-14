@@ -42,7 +42,9 @@ from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     Deployment,
     DeploymentState,
-    DescribeDeploymentResponse)
+    DescribeDeploymentResponse,
+    DeleteDeploymentResponse,
+)
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
@@ -162,7 +164,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 bento_archive_path,
                 deployment_spec.bento_name,
             )
-            with TempDirectory() as lambda_project_dir:
+            with TempDirectory(cleanup=False) as lambda_project_dir:
                 generate_aws_lambda_template_config(
                     lambda_project_dir,
                     deployment_pb.name,
@@ -179,11 +181,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     deployment_spec.bento_name,
                     api_names,
                 )
-                lambda_package(lambda_project_dir, lambda_s3_bucket)
-                lambda_deploy(
-                    lambda_project_dir,
-                    stack_name=deployment_pb.namespace + '-' + deployment_pb.name,
-                )
+                print(lambda_project_dir)
+                # lambda_package(lambda_project_dir, lambda_s3_bucket)
+                # lambda_deploy(
+                #     lambda_project_dir,
+                #     stack_name=deployment_pb.namespace + '-' + deployment_pb.name,
+                # )
 
             res_deployment_pb = Deployment(state=DeploymentState())
             res_deployment_pb.CopyFrom(deployment_pb)
@@ -197,7 +200,35 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             return ApplyDeploymentResponse(status=exception_to_return_status(error))
 
     def delete(self, deployment_pb, yatai_service):
-        pass
+        try:
+            state = self.describe(deployment_pb, yatai_service).state
+            if state.state != DeploymentState.RUNNING:
+                message = (
+                    'Failed to delete, no active deployment {name}. '
+                    'The current state is {state}'.format(
+                        name=deployment_pb.name,
+                        state=DeploymentState.State.Name(state.state),
+                    )
+                )
+                return DeleteDeploymentResponse(status=Status.ABORTED(message))
+
+            deployment_spec = deployment_pb.spec
+            aws_config = deployment_spec.aws_lambda_operator_config
+
+            s3_client = boto3.client('s3', aws_config.region)
+            cf_client = boto3.client('cloudformation', aws_config.region)
+            stack_name = deployment_pb.namespace + '-' + deployment_pb.name
+            lambda_s3_bucket = '{name}-{bento_name}-{bento_version}'.format(
+                name=deployment_pb.name,
+                bento_name=deployment_spec.bento_name,
+                bento_version=deployment_spec.bento_version,
+            )
+            delete_s3_result = s3_client.delete_bucket(Bucket=lambda_s3_bucket)
+            delete_cf_result = cf_client.delete_stack(StackName=stack_name)
+            return DeleteDeploymentResponse(status=Status.OK())
+
+        except BentoMLException as error:
+            return DeleteDeploymentResponse(status=exception_to_return_status(error))
 
     def describe(self, deployment_pb, yatai_service):
         try:
@@ -251,4 +282,3 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             return DescribeDeploymentResponse(status=Status.OK(), state=state)
         except BentoMLException as error:
             return DescribeDeploymentResponse(status=exception_to_return_status(error))
-

@@ -271,6 +271,14 @@ def create_deployment(
                 deployment_dict['spec']['aws_lambda_operator_config'][
                     'api_name'
                 ] = operator_spec['api_name']
+            if operator_spec.get('memory_size'):
+                deployment_dict['spec']['aws_lambda_operator_config'][
+                    'memory_size'
+                ] = operator_spec['memory_size']
+            if operator_spec.get('timeout'):
+                deployment_dict['spec']['aws_lambda_operator_config'][
+                    'memory_size'
+                ] = operator_spec['timeout']
         elif operator_value == DeploymentSpec.GCP_FCUNTION:
             deployment_dict['spec']['gcp_function_operatorConfig'] = {
                 'region': operator_spec.get('region')

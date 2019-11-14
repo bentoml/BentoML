@@ -137,7 +137,9 @@ def upload_artifacts_to_s3(region, bucket_name, bento_archive_path, bento_name):
         raise BentoMLException(str(error))
 
 
-def init_sam_project(sam_project_path, bento_archive_path, deployment_name, bento_name, api_names):
+def init_sam_project(
+    sam_project_path, bento_archive_path, deployment_name, bento_name, api_names
+):
     function_path = os.path.join(sam_project_path, deployment_name)
     # Copy requirements.txt
     requirement_txt_path = os.path.join(bento_archive_path, 'requirements.txt')

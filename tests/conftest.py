@@ -79,7 +79,7 @@ def bento_service():
     # When the TestBentoService got saved and loaded again in the test, the two class
     # attribute below got set to the loaded BentoService class. Resetting it here so it
     # does not effect other tests
-    TestBentoService._bento_archive_path = None
+    TestBentoService._bento_bundle_path = None
     TestBentoService._bento_service_bundle_version = None
 
     test_svc = TestBentoService()
@@ -88,7 +88,7 @@ def bento_service():
 
 
 @pytest.fixture()
-def bento_archive_path(bento_service, tmpdir):  # pylint:disable=redefined-outer-name
+def bento_bundle_path(bento_service, tmpdir):  # pylint:disable=redefined-outer-name
     """Create a new TestBentoService, saved it to tmpdir, and return full saved_path
     """
     saved_path = bento_service.save(str(tmpdir))

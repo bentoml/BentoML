@@ -34,7 +34,7 @@ def test_bento_service_class():
     # When the TestBentoService got saved and loaded again in the test, the two class
     # attribute below got set to the loaded BentoService class. Resetting it here so it
     # does not effect other tests
-    TestBentoService._bento_archive_path = None
+    TestBentoService._bento_bundle_path = None
     TestBentoService._bento_service_bundle_version = None
     return TestBentoService
 
@@ -68,7 +68,7 @@ def test_pack_on_bento_service_instance(tmpdir, test_bento_service_class):
     test_model = TestModel()
     svc = test_bento_service_class()
 
-    with mock.patch('bentoml.archive.archiver.logger') as log_mock:
+    with mock.patch('bentoml.bundler.bundler.logger') as log_mock:
         svc.save()
         log_mock.warning.assert_called_once_with(
             "Missing declared artifact '%s' for BentoService '%s'",

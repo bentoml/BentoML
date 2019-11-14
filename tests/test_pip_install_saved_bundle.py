@@ -5,14 +5,14 @@ import json
 import pandas as pd
 
 
-def test_pip_install_bento_archive(bento_archive_path, tmpdir):
+def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     import subprocess
 
     install_path = str(tmpdir.mkdir("pip_local"))
     bentoml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
     output = subprocess.check_output(
-        ["pip", "install", "-U", "--target={}".format(install_path), bento_archive_path]
+        ["pip", "install", "-U", "--target={}".format(install_path), bento_bundle_path]
     ).decode()
     assert "Successfully installed TestBentoService" in output
 

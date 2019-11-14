@@ -46,29 +46,6 @@ to create this bundle, and save a new BentoService bundle.
 logger = logging.getLogger(__name__)
 
 
-def _get_apis_list(bento_service):
-    result = []
-    for api in bento_service.get_service_apis():
-        result.append(
-            {
-                "name": api.name,
-                "handler_type": api.handler.__class__.__name__,
-                "docs": api.doc,
-            }
-        )
-    return result
-
-
-def _get_artifacts_list(bento_service):
-    result = []
-    for artifact_name in bento_service.artifacts:
-        artifact_spec = bento_service.artifacts[artifact_name].spec
-        result.append(
-            {'name': artifact_name, 'artifact_type': artifact_spec.__class__.__name__}
-        )
-    return result
-
-
 def save_to_dir(bento_service, path, version=None):
     """Save given BentoService along with all its artifacts, source code and
     dependencies to target file path, assuming path exist and empty. If target path
@@ -164,18 +141,8 @@ def save_to_dir(bento_service, path, version=None):
     os.chmod(bentoml_init_script_file, st.st_mode | stat.S_IEXEC)
 
     # write bentoml.yml
-    config = SavedBundleConfig()
-    config["metadata"].update(
-        {
-            "service_name": bento_service.name,
-            "service_version": bento_service.version,
-            "module_name": module_name,
-            "module_file": module_file,
-        }
-    )
-    config["env"] = bento_service.env.to_dict()
-    config['apis'] = _get_apis_list(bento_service)
-    config['artifacts'] = _get_artifacts_list(bento_service)
+    config = SavedBundleConfig(bento_service)
+    config["metadata"].update({"module_name": module_name, "module_file": module_file})
 
     config.write_to_path(path)
     # Also write bentoml.yml to module base path to make it accessible

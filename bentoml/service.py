@@ -28,6 +28,7 @@ from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
 from bentoml.bundler import save_to_dir
+from bentoml.bundler.config import SavedBundleConfig
 from bentoml.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection, BentoServiceArtifact
@@ -332,18 +333,20 @@ class BentoService(BentoServiceBase):
 
     >>>  from bentoml import BentoService, env, api, artifacts, ver
     >>>  from bentoml.handlers import DataframeHandler
+    >>>  from bentoml.artifact import SklearnModelArtifact
     >>>
     >>>  @ver(major=1, minor=4)
-    >>>  @artifacts([PickleArtifact('clf')])
-    >>>  @env(pip_dependencies: [ 'scikit-learn' ])
+    >>>  @artifacts([SklearnModelArtifact('clf')])
+    >>>  @env(pip_dependencies=["scikit-learn"])
     >>>  class MyMLService(BentoService):
     >>>
     >>>     @api(DataframeHandler)
     >>>     def predict(self, df):
     >>>         return self.artifacts.clf.predict(df)
     >>>
-    >>>  bento_service = MyMLService.pack(clf=my_trained_clf_object)
-    >>>  bentoml.save_to_dir(bento_service, './export')
+    >>>  bento_service = MyMLService()
+    >>>  bento_service.pack('clf', trained_classifier_model)
+    >>>  bento_service.save_to_dir('/bentoml_bundles')
     """
 
     # User may use @name to override this if they don't want the generated model
@@ -576,30 +579,4 @@ class BentoService(BentoServiceBase):
         return svc
 
     def _get_bento_service_metadata_pb(self):
-        bento_service_metadata = BentoServiceMetadata()
-
-        bento_service_metadata.name = self.name
-        bento_service_metadata.version = self.version
-        bento_service_metadata.created_at.GetCurrentTime()
-
-        if self.env._setup_sh is not None:
-            bento_service_metadata.env.setup_sh = self.env._setup_sh
-
-        bento_service_metadata.env.conda_env = self.env._conda_env.to_yaml_str()
-        bento_service_metadata.env.pip_dependencies = "\n".join(
-            self.env._pip_dependencies
-        )
-        bento_service_metadata.env.python_version = self.env._python_version
-
-        for api in self.get_service_apis():
-            api_metadata = bento_service_metadata.apis.add()
-            api_metadata.name = api.name
-            api_metadata.handler_type = api.handler.__class__.__name__
-            api_metadata.docs = api.doc
-
-        for artifact_spec in self._artifacts_spec:
-            artifact_metadata = bento_service_metadata.artifacts.add()
-            artifact_metadata.name = artifact_spec.name
-            artifact_metadata.artifact_type = artifact_spec.__class__.__name__
-
-        return bento_service_metadata
+        return SavedBundleConfig(self).get_bento_service_metadata_pb()

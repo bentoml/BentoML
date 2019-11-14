@@ -24,7 +24,9 @@ from ruamel.yaml import YAML
 
 from bentoml import __version__ as BENTOML_VERSION
 from bentoml.configuration import get_bentoml_deploy_version
-from bentoml.utils import Path
+from bentoml.utils import Path, dump_to_yaml_str
+from bentoml.proto.repository_pb2 import BentoServiceMetadata
+
 
 BENTOML_CONFIG_YAML_TEPMLATE = """\
 version: {bentoml_version}
@@ -36,8 +38,31 @@ metadata:
 logger = logging.getLogger(__name__)
 
 
+def _get_apis_list(bento_service):
+    result = []
+    for api in bento_service.get_service_apis():
+        result.append(
+            {
+                "name": api.name,
+                "handler_type": api.handler.__class__.__name__,
+                "docs": api.doc,
+            }
+        )
+    return result
+
+
+def _get_artifacts_list(bento_service):
+    result = []
+    for artifact_name in bento_service.artifacts:
+        artifact_spec = bento_service.artifacts[artifact_name].spec
+        result.append(
+            {'name': artifact_name, 'artifact_type': artifact_spec.__class__.__name__}
+        )
+    return result
+
+
 class SavedBundleConfig(object):
-    def __init__(self, kind="BentoService"):
+    def __init__(self, bento_service, kind="BentoService"):
         self.kind = kind
         self._yaml = YAML()
         self._yaml.default_flow_style = False
@@ -48,6 +73,15 @@ class SavedBundleConfig(object):
                 created_at=str(datetime.utcnow()),
             )
         )
+        self.config["metadata"].update(
+            {
+                "service_name": bento_service.name,
+                "service_version": bento_service.version,
+            }
+        )
+        self.config["env"] = bento_service.env.to_dict()
+        self.config['apis'] = _get_apis_list(bento_service)
+        self.config['artifacts'] = _get_artifacts_list(bento_service)
 
     def write_to_path(self, path, filename="bentoml.yml"):
         return self._yaml.dump(self.config, Path(os.path.join(path, filename)))
@@ -77,6 +111,54 @@ class SavedBundleConfig(object):
                 logger.warning(msg)
 
         return conf
+
+    def get_bento_service_metadata_pb(self):
+        bento_service_metadata = BentoServiceMetadata()
+        bento_service_metadata.name = self.config["metadata"]["service_name"]
+        bento_service_metadata.version = self.config["metadata"]["service_version"]
+        bento_service_metadata.created_at.FromDatetime(
+            self.config["metadata"]["created_at"]
+        )
+
+        if "env" in self.config:
+            if "setup_sh" in self.config["env"]:
+                bento_service_metadata.env.setup_sh = self.config["env"]["setup_sh"]
+
+            if "conda_env" in self.config["env"]:
+                bento_service_metadata.env.conda_env = dump_to_yaml_str(
+                    self.config["env"]["conda_env"]
+                )
+
+            if "pip_dependencies" in self.config["env"]:
+                bento_service_metadata.env.pip_dependencies = "\n".join(
+                    self.config["env"]["pip_dependencies"]
+                )
+            if "python_version" in self.config["env"]:
+                bento_service_metadata.env.python_version = self.config["env"][
+                    "python_version"
+                ]
+
+        if "apis" in self.config:
+            for api_config in self.config["apis"]:
+                api_metadata = BentoServiceMetadata.BentoServiceApi()
+                if "name" in api_config:
+                    api_metadata.name = api_config["name"]
+                if "handler_type" in api_config:
+                    api_metadata.handler_type = api_config["handler_type"]
+                if "docs" in api_config:
+                    api_metadata.docs = api_config["docs"]
+                bento_service_metadata.apis.extend([api_metadata])
+
+        if "artifacts" in self.config:
+            for artifact_config in self.config["artifacts"]:
+                artifact_metadata = BentoServiceMetadata.BentoArtifact()
+                if "name" in artifact_config:
+                    artifact_metadata.name = artifact_config["name"]
+                if "artifact_type" in artifact_config:
+                    artifact_metadata.artifact_type = artifact_config["artifact_type"]
+                bento_service_metadata.artifacts.extend([artifact_metadata])
+
+        return bento_service_metadata
 
     def __getitem__(self, item):
         return self.config[item]

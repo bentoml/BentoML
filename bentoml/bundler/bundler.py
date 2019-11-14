@@ -23,7 +23,7 @@ import logging
 from bentoml.exceptions import BentoMLException
 from bentoml.bundler.py_module_utils import copy_used_py_modules
 from bentoml.bundler.templates import (
-    BENTO_MODEL_SETUP_PY_TEMPLATE,
+    BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
     BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE,
     INIT_PY_TEMPLATE,
@@ -36,7 +36,11 @@ from bentoml.bundler.config import SavedBundleConfig
 
 
 DEFAULT_SAVED_BUNDLE_README = """\
-# This is a ML Service bundle created with BentoML
+# Generated BentoService bundle - {}:{}
+
+This is a ML Service bundle created with BentoML, it is not recommended to edit
+code or files contained in this directory. Instead, edit the code that uses BentoML
+to create this bundle, and save a new BentoService bundle.
 """
 
 logger = logging.getLogger(__name__)
@@ -100,13 +104,16 @@ def save_to_dir(bento_service, path, version=None):
     module_base_path = os.path.join(path, bento_service.name)
     os.mkdir(module_base_path)
 
-    # write README.md with user model's docstring
+    # write README.md with custom BentoService's docstring if presented
+    saved_bundle_readme = DEFAULT_SAVED_BUNDLE_README.format(
+        bento_service.name, bento_service.version
+    )
     if bento_service.__class__.__doc__:
-        model_description = bento_service.__class__.__doc__.strip()
-    else:
-        model_description = DEFAULT_SAVED_BUNDLE_README
+        saved_bundle_readme += "\n"
+        saved_bundle_readme += bento_service.__class__.__doc__.strip()
+
     with open(os.path.join(path, "README.md"), "w") as f:
-        f.write(model_description)
+        f.write(saved_bundle_readme)
 
     # save all model artifacts to 'base_path/name/artifacts/' directory
     if bento_service.artifacts:
@@ -132,11 +139,11 @@ def save_to_dir(bento_service, path, version=None):
             )
         )
 
-    # write setup.py, make exported model pip installable
-    setup_py_content = BENTO_MODEL_SETUP_PY_TEMPLATE.format(
+    # write setup.py, this make saved BentoService bundle pip installable
+    setup_py_content = BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE.format(
         name=bento_service.name,
         pypi_package_version=bento_service.version,
-        long_description=model_description,
+        long_description=saved_bundle_readme,
     )
     with open(os.path.join(path, "setup.py"), "w") as f:
         f.write(setup_py_content)

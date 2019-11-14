@@ -17,7 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 
-BENTO_MODEL_SETUP_PY_TEMPLATE = """\
+BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE = """\
 import os
 import pip
 import logging

@@ -16,8 +16,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
 import os
+import subprocess
 
+import boto3
 from packaging import version
 from ruamel.yaml import YAML
 
@@ -39,7 +42,7 @@ from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     Deployment,
     DeploymentState,
-)
+    DescribeDeploymentResponse)
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.utils import Path
 from bentoml.utils.tempdir import TempDirectory
@@ -106,6 +109,10 @@ def generate_aws_lambda_template_config(
         )
 
     yaml.dump(sam_config, Path(template_file_path))
+    try:
+        subprocess.check_output(['sam', 'validate'], cwd=project_dir)
+    except Exception as error:
+        raise BentoMLException(str(error))
 
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
@@ -144,14 +151,14 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             ensure_deploy_api_name_exists_in_bento(
                 [api.name for api in bento_service_metadata.apis], api_names
             )
-            artifact_bucket_name = '{name}-{bento_name}-{bento_version}'.format(
+            lambda_s3_bucket = '{name}-{bento_name}-{bento_version}'.format(
                 name=deployment_pb.name,
                 bento_name=deployment_spec.bento_name,
                 bento_version=deployment_spec.bento_version,
             )
             upload_artifacts_to_s3(
                 aws_config.region,
-                artifact_bucket_name,
+                lambda_s3_bucket,
                 bento_archive_path,
                 deployment_spec.bento_name,
             )
@@ -160,7 +167,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     lambda_project_dir,
                     deployment_pb.name,
                     api_names,
-                    artifact_bucket_name,
+                    lambda_s3_bucket,
                     python_runtime=python_runtime,
                     memory_size=aws_config.memory_size,
                     timeout=aws_config.timeout,
@@ -168,10 +175,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 init_sam_project(
                     lambda_project_dir,
                     bento_archive_path,
+                    deployment_pb.name,
                     deployment_spec.bento_name,
                     api_names,
                 )
-                lambda_package(lambda_project_dir, 's3_location')
+                lambda_package(lambda_project_dir, lambda_s3_bucket)
                 lambda_deploy(
                     lambda_project_dir,
                     stack_name=deployment_pb.namespace + '-' + deployment_pb.name,
@@ -188,8 +196,59 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         except BentoMLException as error:
             return ApplyDeploymentResponse(status=exception_to_return_status(error))
 
-    def describe(self, deployment_pb, yatai_service):
-        pass
-
     def delete(self, deployment_pb, yatai_service):
         pass
+
+    def describe(self, deployment_pb, yatai_service):
+        try:
+            deployment_spec = deployment_pb.spec
+            aws_config = deployment_spec.aws_lambda_operator_config
+            info_json = {'endpoints': []}
+
+            bento_pb = yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
+            )
+            bento_service_metadata = bento_pb.bento.bento_service_metadata
+            api_names = (
+                [aws_config.api_name]
+                if aws_config.api_name
+                else [api.name for api in bento_service_metadata.apis]
+            )
+
+            try:
+                cf_client = boto3.client('cloudformation', aws_config.region)
+                cloud_formation_stack_result = cf_client.describe_stacks(
+                    StackName='{name}-{ns}'.format(
+                        ns=deployment_pb.namespace, name=deployment_pb.name
+                    )
+                )
+                outputs = cloud_formation_stack_result.get('Stacks')[0]['Outputs']
+            except Exception as error:
+                state = DeploymentState(
+                    state=DeploymentState.ERROR, error_message=str(error)
+                )
+                state.timestamp.GetCurrentTime()
+                return DescribeDeploymentResponse(
+                    status=Status.INTERNAL(str(error)), state=state
+                )
+
+            base_url = ''
+            for output in outputs:
+                if output['OutputKey'] == 'EndpointUrl':
+                    base_url = output['OutputValue']
+                    break
+            if base_url:
+                info_json['endpoints'] = [
+                    base_url + '/' + api_name for api_name in api_names
+                ]
+            state = DeploymentState(
+                state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
+            )
+            state.timestamp.GetCurrentTime()
+            return DescribeDeploymentResponse(status=Status.OK(), state=state)
+        except BentoMLException as error:
+            return DescribeDeploymentResponse(status=exception_to_return_status(error))
+

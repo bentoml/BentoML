@@ -25,31 +25,29 @@ import boto3
 
 from bentoml.exceptions import BentoMLException, BentoMLMissingDependencyException
 
-UNZIP_REQUIREMENTS_PY = """\
-import os
-import shutil
-import sys
-import zipfile
-
-
-pkgdir = '/tmp/sls-py-req'
-
-sys.path.append(pkgdir)
-
-if not os.path.exists(pkgdir):
-    tempdir = '/tmp/_temp-sls-py-req'
-    if os.path.exists(tempdir):
-        shutil.rmtree(tempdir)
-
-    default_layer_root = '/opt'
-    lambda_root = os.getcwd() if os.environ.get('IS_LOCAL') == 'true' else default_layer_root
-    zip_requirements = os.path.join(lambda_root, '.requirements.zip')
-
-    zipfile.ZipFile(zip_requirements, 'r').extractall(tempdir)
-    os.rename(tempdir, pkgdir)  # Atomic
-"""
 
 logger = logging.getLogger(__name__)
+
+
+AWS_HANDLER_PY_TEMPLATE_HEADER = """\
+import os
+
+# Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
+os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
+
+from {bento_name} import load
+
+bento_service = load()
+
+"""
+
+AWS_FUNCTION_TEMPLATE = """\
+def {api_name}(event, context):
+    api = bento_service.get_service_api('{api_name}')
+
+    return api.handle_aws_lambda_event(event)
+
+"""
 
 
 def ensure_sam_available_or_raise():
@@ -101,12 +99,15 @@ def call_sam_command(command, project_dir):
 
 
 def lambda_package(project_dir, s3_bucket_name):
+    prefix_path = 'lambda-function'
     call_sam_command(
         [
             'package',
             '--force-upload',
             '--s3-bucket',
             s3_bucket_name,
+            '--s3-prefix',
+            prefix_path,
             '--template-file',
             'template.yaml',
         ],
@@ -136,23 +137,20 @@ def upload_artifacts_to_s3(region, bucket_name, bento_archive_path, bento_name):
         raise BentoMLException(str(error))
 
 
-def create_dependency_layer(sam_project_path, s3_bucket_name):
-    pass
-
-
-def init_sam_project(sam_project_path, bento_archive_path, bento_name, api_names):
+def init_sam_project(sam_project_path, bento_archive_path, deployment_name, bento_name, api_names):
+    function_path = os.path.join(sam_project_path, deployment_name)
     # Copy requirements.txt
     requirement_txt_path = os.path.join(bento_archive_path, 'requirements.txt')
-    shutil.copy(requirement_txt_path, sam_project_path)
+    shutil.copy(requirement_txt_path, function_path)
 
     # Copy bundled pip dependencies
     bundled_dep_path = os.path.join(bento_archive_path, 'bundled_pip_dependencies')
     if os.path.isdir(bundled_dep_path):
         shutil.copytree(
-            bundled_dep_path, os.path.join(sam_project_path, 'bundled_pip_dependencies')
+            bundled_dep_path, os.path.join(function_path, 'bundled_pip_dependencies')
         )
         bundled_files = os.listdir(
-            os.path.join(sam_project_path, 'bundled_pip_dependencies')
+            os.path.join(function_path, 'bundled_pip_dependencies')
         )
         has_bentoml_bundle = False
         for index, bundled_file_name in enumerate(bundled_files):
@@ -165,36 +163,31 @@ def init_sam_project(sam_project_path, bento_archive_path, bento_name, api_names
                 has_bentoml_bundle = True
 
         with open(
-            os.path.join(sam_project_path, 'requirements.txt'), 'r+'
+            os.path.join(function_path, 'requirements.txt'), 'r+'
         ) as requirement_file:
             required_modules = requirement_file.readlines()
             if has_bentoml_bundle:
-                # Assuming bentoml is always the first one in
-                # requirements.txt. We are removing it
+                # Assuming bentoml is always the first one in requirements.txt.
+                # We are removing it
                 required_modules = required_modules[1:]
             required_modules = required_modules + bundled_files
-            # Write from beginning of the file, instead of appending to
-            # the end.
+            # Write from beginning of the file, instead of appending to the end.
             requirement_file.seek(0)
             requirement_file.writelines(required_modules)
 
     # Copy bento_service_model
     model_path = os.path.join(bento_archive_path, bento_name)
-    shutil.copytree(model_path, os.path.join(sam_project_path, bento_name))
+    shutil.copytree(model_path, os.path.join(function_path, bento_name))
 
-    # remove the artifacts dir. Artifacts will be upload to S3
-    shutil.rmtree(os.path.join(sam_project_path, bento_name, 'artifacts'))
+    # remove the artifacts dir. Artifacts already uploaded to s3
+    shutil.rmtree(os.path.join(function_path, bento_name, 'artifacts'))
 
     # generate app.py
-    with open(os.path.join(sam_project_path, 'app.py'), 'w') as f:
-        f.write('')
+    with open(os.path.join(function_path, 'app.py'), 'w') as f:
+        f.write(AWS_HANDLER_PY_TEMPLATE_HEADER.format(bento_name=bento_name))
         for api_name in api_names:
-            api_content = ''
+            api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api_name)
             f.write(api_content)
-
-    # generate unzip_requirements.py
-    # with open(os.path.join(sam_project_path, 'unzip_requirements.py'), 'w') as f:
-    #     f.write(UNZIP_REQUIREMENTS_PY)
 
     call_sam_command(['build', '-u'], sam_project_path)
     for api_name in api_names:

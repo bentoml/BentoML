@@ -4,32 +4,8 @@ import bentoml
 from bentoml.handlers import DataframeHandler
 
 
-def test_requirement_txt_env(tmpdir):
-    req_txt_file = tmpdir.join("requirements.txt")
-    with open(str(req_txt_file), 'wb') as f:
-        f.write(b"numpy\npandas\ntorch")
-
-    @bentoml.env(requirements_txt=str(req_txt_file))
-    class ServiceWithFile(bentoml.BentoService):
-        @bentoml.api(DataframeHandler)
-        def predict(self, df):
-            return df
-
-    service_with_file = ServiceWithFile()
-    assert 'numpy' in service_with_file.env._pip_dependencies
-    assert 'pandas' in service_with_file.env._pip_dependencies
-    assert 'torch' in service_with_file.env._pip_dependencies
-
-    saved_path = service_with_file.save('/tmp')
-    with open(os.path.join(saved_path, 'requirements.txt'), 'rb') as f:
-        content = f.read().decode('utf-8')
-        assert 'numpy' in content
-        assert 'pandas' in content
-        assert 'torch' in content
-
-
 def test_pip_dependencies_env():
-    @bentoml.env(pip_dependencies="numpy")
+    @bentoml.env(pip_dependencies=["numpy"])
     class ServiceWithString(bentoml.BentoService):
         @bentoml.api(DataframeHandler)
         def predict(self, df):

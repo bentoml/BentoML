@@ -18,7 +18,7 @@ from __future__ import print_function
 
 import os
 
-ARTIFACTS_SUBPATH = "artifacts"
+ARTIFACTS_DIR_NAME = "artifacts"
 
 
 class BentoServiceArtifact(object):
@@ -116,21 +116,7 @@ class ArtifactCollection(dict):
         """
         bulk operation for saving all artifacts in self.values() to `dst` path
         """
-        save_path = os.path.join(dst, ARTIFACTS_SUBPATH)
+        save_path = os.path.join(dst, ARTIFACTS_DIR_NAME)
         os.mkdir(save_path)
         for artifact in self.values():
             artifact.save(save_path)
-
-    @classmethod
-    def load(cls, path, artifacts_spec):
-        """bulk operation for loading all artifacts from path based on a list of
-        BentoServiceArtifact
-        """
-        load_path = os.path.join(path, ARTIFACTS_SUBPATH)
-        artifacts = cls()
-
-        for artifact_spec in artifacts_spec:
-            artifact_instance = artifact_spec.load(load_path)
-            artifacts.add(artifact_instance)
-
-        return artifacts

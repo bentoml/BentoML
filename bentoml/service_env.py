@@ -34,8 +34,6 @@ channels:
 dependencies:
   - python={python_version}
   - pip
-  - pip:
-    - bentoml[api_server]=={bentoml_version}
 """
 
 CONDA_ENV_DEFAULT_NAME = "bentoml-custom-conda-env"
@@ -48,24 +46,12 @@ class CondaEnv(object):
     generated from `conda env export` command.
     """
 
-    def __init__(
-        self,
-        name=CONDA_ENV_DEFAULT_NAME,
-        python_version=PYTHON_VERSION,
-        bentoml_version=None,
-    ):
+    def __init__(self, name, python_version):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
 
-        if bentoml_version is None:
-            bentoml_version = get_bentoml_deploy_version()
-
         self._conda_env = self._yaml.load(
-            CONDA_ENV_BASE_YAML.format(
-                name=name,
-                python_version=python_version,
-                bentoml_version=bentoml_version,
-            )
+            CONDA_ENV_BASE_YAML.format(name=name, python_version=python_version)
         )
 
     def set_name(self, name):
@@ -80,25 +66,9 @@ class CondaEnv(object):
     def add_channels(self, channels):
         self._conda_env["channels"] += channels
 
-    def to_yaml_str(self):
-        string_io = StringIO()
-        self._yaml.dump(self._conda_env, string_io)
-        return string_io.getvalue()
-
     def write_to_yaml_file(self, filepath):
         output_yaml = Path(filepath)
         self._yaml.dump(self._conda_env, output_yaml)
-
-    @classmethod
-    def from_yaml(cls, yaml_str):
-        new_conda_env = cls()
-        new_conda_env._conda_env = new_conda_env._yaml.load(yaml_str)
-        return new_conda_env
-
-    @classmethod
-    def from_current_conda_env(cls):
-        # TODO: implement me!
-        pass
 
 
 class BentoServiceEnv(object):
@@ -111,13 +81,31 @@ class BentoServiceEnv(object):
     setup_sh - for customizing the environment with user defined bash script
     """
 
-    def __init__(self):
-        bentoml_deploy_version = get_bentoml_deploy_version()
-        self._conda_env = CondaEnv(bentoml_version=bentoml_deploy_version)
-        self._pip_dependencies = ["bentoml=={}".format(bentoml_deploy_version)]
+    def __init__(
+        self,
+        bento_service_name,
+        setup_sh=None,
+        pip_dependencies=None,
+        conda_channels=None,
+        conda_dependencies=None,
+    ):
         self._python_version = PYTHON_VERSION
 
-        self._setup_sh = None
+        self._conda_env = CondaEnv(
+            "bentoml-" + bento_service_name, self._python_version
+        )
+
+        bentoml_deploy_version = get_bentoml_deploy_version()
+        self._pip_dependencies = ["bentoml=={}".format(bentoml_deploy_version)]
+        if pip_dependencies:
+            self._pip_dependencies += pip_dependencies
+
+        self._setup_sh = setup_sh
+
+        if conda_channels:
+            self.add_conda_channels(conda_channels)
+        if conda_dependencies:
+            self.add_conda_dependencies(conda_dependencies)
 
     def get_conda_env_name(self):
         return self._conda_env.get_name()
@@ -176,27 +164,6 @@ class BentoServiceEnv(object):
             setup_sh_file = os.path.join(path, "setup.sh")
             with open(setup_sh_file, "wb") as f:
                 f.write(self._setup_sh)
-
-    @classmethod
-    def from_dict(cls, env_dict):
-        env = cls()
-
-        if "setup_sh" in env_dict:
-            env.set_setup_sh(env_dict["setup_sh"])
-
-        if "requirements_txt" in env_dict:
-            env.set_requirements_txt(env_dict["requirements_txt"])
-
-        if "pip_dependencies" in env_dict:
-            env.add_pip_dependencies(env_dict["pip_dependencies"])
-
-        if "conda_channels" in env_dict:
-            env.add_conda_channels(env_dict["conda_channels"])
-
-        if "conda_dependencies" in env_dict:
-            env.add_conda_dependencies(env_dict["conda_dependencies"])
-
-        return env
 
     def to_dict(self):
         env_dict = dict()

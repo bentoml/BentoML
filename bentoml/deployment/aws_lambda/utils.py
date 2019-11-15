@@ -20,6 +20,7 @@ import os
 import shutil
 import subprocess
 import logging
+import re
 
 import boto3
 from botocore.exceptions import ClientError
@@ -75,23 +76,31 @@ def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, '.aws-sam/build/{}'.format(api_name))
     logger.debug('Cleaning up for dir {}'.format(build_dir))
     try:
-        subprocess.check_output(
-            ['rm', '-rf', './{*.egg-info,*.dist-info}'], cwd=build_dir
-        )
-        # subprocess.check_output(
-        #     ['find' '.', '-type', 'd', '-name', '"tests', '-exec', 'rm', '-rf', '{}'],
-        #     cwd=build_dir,
-        # )
-        # subprocess.check_output(
-        #     ['find', '.', '-name', '"*.so', '|', 'xargs', 'strip'], cwd=build_dir
-        # )
-        # Pytorch related
-        subprocess.check_output(
-            ['rm', '-rf', './{caff2,wheel,pkg_resources,pip,pipenv,setuptools}'],
-            cwd=build_dir,
-        )
-        subprocess.check_output(['rm', './torch/lib/libtorch.so'], cwd=build_dir)
-    except Exception:
+        for root, dirs, files in os.walk(build_dir):
+            if 'tests' in dirs:
+                os.rmdir(os.path.join(root, 'tests'))
+            if ['examples'] in dirs:
+                os.rmdir(os.path.join(root, 'examples'))
+            if ['setuptools'] in dirs:
+                os.rmdir(os.path.join(root, 'setuptools'))
+
+            for file in filter(lambda x: re.match('.*\.dist-info$', x), files):
+                os.remove(os.path.join(root, file))
+
+            for file in filter(lambda x: re.match('.*\.egg-info$', x), files):
+                os.remove(os.path.join(root, file))
+
+            for file in filter(lambda x: re.match('.*\.so$', x), files):
+                os.remove(os.path.join(root, file))
+
+            if 'caff2' in files:
+                os.remove(os.path.join(root, 'caff2'))
+            if 'wheel' in files:
+                os.remove(os.path.join(root, 'wheel'))
+            if 'pip' in files:
+                os.remove(os.path.join(root, 'pip'))
+    except Exception as e:
+        logger.error(str(e))
         return
 
 

@@ -27,14 +27,14 @@ from datetime import datetime
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
+from bentoml.artifact.artifact import ARTIFACTS_DIR_NAME
 from bentoml.bundler import save_to_dir
 from bentoml.bundler.config import SavedBundleConfig
-from bentoml.exceptions import BentoMLException
 from bentoml.service_env import BentoServiceEnv
-from bentoml.artifact import ArtifactCollection, BentoServiceArtifact
+from bentoml.artifact import ArtifactCollection
 from bentoml.utils import isidentifier
 from bentoml.utils.hybirdmethod import hybridmethod
-from bentoml.proto.repository_pb2 import BentoServiceMetadata
+
 
 logger = logging.getLogger(__name__)
 
@@ -208,7 +208,7 @@ def api_decorator(handler_cls, *args, **kwargs):
 
     """
 
-    DEFAULT_API_DOC = "BentoML generated API endpoint"
+    DEFAULT_API_DOC = "BentoService API"
 
     def decorator(func):
         api_name = kwargs.pop("api_name", func.__name__)
@@ -233,38 +233,43 @@ def api_decorator(handler_cls, *args, **kwargs):
     return decorator
 
 
-def artifacts_decorator(artifacts_spec):
-    """Define artifact spec for BentoService
+def artifacts_decorator(artifacts):
+    """Define artifacts required to be bundled with a BentoService
 
     Args:
-        artifacts_spec (list(bentoml.artifact.BentoServiceArtifact)): A list of desired
-            artifacts for initializing this BentoService
-        for initializing this BentoService being decorated
+        artifacts (list(bentoml.artifact.BentoServiceArtifact)): A list of desired
+            artifacts required by this BentoService
     """
 
     def decorator(bento_service_cls):
-        bento_service_cls._artifacts_spec = artifacts_spec
+        bento_service_cls._artifacts = artifacts
         return bento_service_cls
 
     return decorator
 
 
-def env_decorator(**kwargs):
-    """Define environment spec for BentoService
+def env_decorator(
+    setup_sh=None, pip_dependencies=None, conda_channels=None, conda_dependencies=None
+):
+    """Define environment and dependencies required for the BentoService being created
 
     Args:
-        setup_sh (str): User defined shell script to run before running BentoService.
-            It could be local file path or the shell script content.
-        requirements_text (str): User defined requirement text to install before
-            running BentoService.
-        pip_dependencies (str or list(str)): User defined python modules to install.
-        conda_channels (list(str)): User defined conda channels
-        conda_dependencies (list(str)): Defined dependencies to be installed with
-            conda environment
+        setup_sh (str): bash script for initializing docker environment before loading
+            the BentoService for inferencing
+        pip_dependencies (list(str)): List of python PyPI package dependencies
+        conda_channels (list(str)): List of conda channels required for conda
+            dependencies
+        conda_dependencies (list(str)): List of conda dependencies required
     """
 
     def decorator(bento_service_cls):
-        bento_service_cls._env = BentoServiceEnv.from_dict(kwargs)
+        bento_service_cls._env = BentoServiceEnv(
+            bento_service_name=bento_service_cls.name(),
+            setup_sh=setup_sh,
+            pip_dependencies=pip_dependencies,
+            conda_channels=conda_channels,
+            conda_dependencies=conda_dependencies,
+        )
         return bento_service_cls
 
     return decorator
@@ -356,15 +361,14 @@ class BentoService(BentoServiceBase):
     # For BentoService loaded from saved bundle, this will be set to the path of bundle.
     # When user install BentoService bundle as a PyPI package, this will be set to the
     # installed site-package location of current python environment
-    _bento_bundle_path = None
+    _bento_service_bundle_path = None
 
-    # list of artifact spec describing required artifacts for this BentoService
-    _artifacts_spec = []
-    _artifacts = None
+    # list of artifacts required by this BentoService
+    _artifacts = []
 
     # Describe the desired environment for this BentoService using
     # `bentoml.service_env.BentoServiceEnv`
-    _env = {}
+    _env = None
 
     # When loading BentoService from saved bundle, this will be set to the version of
     # the saved BentoService bundle
@@ -374,52 +378,27 @@ class BentoService(BentoServiceBase):
     _version_major = None
     _version_minor = None
 
-    def __init__(self, artifacts=None, env=None):
-        self._bento_service_version = None
-
-        self._init_artifacts(artifacts)
-        self._config_service_apis()
-        self._init_env(env)
+    def __init__(self):
+        self._bento_service_version = self.__class__._bento_service_bundle_version
+        self._packed_artifacts = ArtifactCollection()
         self.name = self.__class__.name()
 
-    def _init_artifacts(self, artifacts):
-        type_error_msg = (
-            "BentoService can only be initialized with list of BentoArtifacts, instead "
-            "got %s"
-        )
-        artifacts = artifacts or []
-        if not artifacts and self._bento_bundle_path:
-            self._artifacts = ArtifactCollection.load(
-                self._bento_bundle_path, self.__class__._artifacts_spec
-            )
-        elif isinstance(artifacts, ArtifactCollection):
-            self._artifacts = artifacts
-        elif isinstance(artifacts, list):
-            self._artifacts = ArtifactCollection()
-            for artifact in artifacts:
-                assert isinstance(
-                    artifact, BentoServiceArtifact
-                ), type_error_msg % type(artifacts)
-                self._artifacts[artifact.name] = artifact
-        else:
-            raise BentoMLException(type_error_msg % type(artifacts))
+        if self._bento_service_bundle_path:
+            # load artifacts from saved BentoService bundle
+            self._load_artifacts(self._bento_service_bundle_path)
 
-    def _init_env(self, env=None):
-        if env is None:
-            # By default use BentoServiceEnv defined on class via @env decorator
-            env = self.__class__._env
+        self._config_service_apis()
+        self._init_env()
 
-        if isinstance(env, dict):
-            self._env = BentoServiceEnv.from_dict(env)
-        else:
-            self._env = env
+    def _init_env(self):
+        self._env = self.__class__._env or BentoServiceEnv(self.name)
 
         for api in self._service_apis:
             self._env.add_handler_dependencies(api.handler.pip_dependencies)
 
     @property
     def artifacts(self):
-        return self._artifacts
+        return self._packed_artifacts
 
     @property
     def env(self):
@@ -460,7 +439,7 @@ class BentoService(BentoServiceBase):
         if self.__class__._bento_service_bundle_version is not None:
             logger.warning(
                 "Overriding loaded BentoService(%s) version:%s to %s",
-                self.__class__._bento_bundle_path,
+                self.__class__._bento_service_bundle_path,
                 self.__class__._bento_service_bundle_version,
                 version_str,
             )
@@ -519,64 +498,40 @@ class BentoService(BentoServiceBase):
             )
             del self.artifacts[name]
 
-        artifact_spec = next(spec for spec in self._artifacts_spec if spec.name == name)
-        artifact_instance = artifact_spec.pack(*args, **kwargs)
-        self.artifacts.add(artifact_instance)
+        artifact = next(
+            artifact for artifact in self._artifacts if artifact.name == name
+        )
+        packed_artifact = artifact.pack(*args, **kwargs)
+        self._packed_artifacts.add(packed_artifact)
         return self
 
     @pack.classmethod
     def pack(cls, *args, **kwargs):  # pylint: disable=E0213
         if args and isinstance(args[0], ArtifactCollection):
-            return cls(args[0])  # pylint: disable=E1102
+            bento_svc = cls()  # pylint: disable=not-callable
+            bento_svc._packed_artifacts = args[0]
+            return bento_svc
 
-        artifacts = ArtifactCollection()
+        bento_svc = cls()  # pylint: disable=not-callable
+        for artifact in bento_svc._artifacts:
+            if artifact.name in kwargs:
+                packed_artifact = artifact.pack(kwargs[artifact.name])
+                bento_svc.artifacts.add(packed_artifact)
 
-        for artifact_spec in cls._artifacts_spec:
-            if artifact_spec.name in kwargs:
-                artifact_instance = artifact_spec.pack(kwargs[artifact_spec.name])
-                artifacts.add(artifact_instance)
+        return bento_svc
 
-        return cls(artifacts)  # pylint: disable=E1102
-
-    @classmethod
-    def load_from_dir(cls, path):
-        from bentoml.bundler import load_saved_bundle_config
-
-        if cls._bento_bundle_path is not None and cls._bento_bundle_path != path:
-            logger.warning(
-                "BentoService bundle %s loaded from '%s' being loaded again from a "
-                "different path %s",
-                cls.name,
-                cls._bento_bundle_path,
-                path,
-            )
-
-        artifacts_path = path
-
+    def _load_artifacts(self, path):
         # For pip installed BentoService, artifacts directory is located at
         # 'package_path/artifacts/', but for loading from bundle directory, it is
         # in 'path/{service_name}/artifacts/'
-        if not os.path.isdir(os.path.join(path, "artifacts")):
-            artifacts_path = os.path.join(path, cls.name())
+        if not os.path.isdir(os.path.join(path, ARTIFACTS_DIR_NAME)):
+            artifacts_path = os.path.join(path, self.name, ARTIFACTS_DIR_NAME)
+        else:
+            artifacts_path = os.path.join(path, ARTIFACTS_DIR_NAME)
 
-        bentoml_config = load_saved_bundle_config(path)
-        if bentoml_config["metadata"]["service_name"] != cls.name():
-            raise BentoMLException(
-                "BentoService name {} does not match {} from saved BentoService bundle "
-                "in path: {}".format(
-                    cls.name(), bentoml_config["metadata"]["service_name"], path
-                )
-            )
+        for artifact in self._artifacts:
+            packed_artifact = artifact.load(artifacts_path)
+            self._packed_artifacts.add(packed_artifact)
 
-        if bentoml_config["kind"] != "BentoService":
-            raise BentoMLException(
-                "SavedBundle of type '{}' can not be loaded as type "
-                "BentoService".format(bentoml_config["kind"])
-            )
-
-        artifacts = ArtifactCollection.load(artifacts_path, cls._artifacts_spec)
-        svc = cls(artifacts)
-        return svc
-
-    def _get_bento_service_metadata_pb(self):
+    def get_bento_service_metadata_pb(self):
         return SavedBundleConfig(self).get_bento_service_metadata_pb()

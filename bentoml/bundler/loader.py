@@ -143,8 +143,8 @@ def load_bento_service_class(bundle_path):
     sys.path.remove(bundle_path)
 
     model_service_class = module.__getattribute__(metadata["service_name"])
-    # Set _bento_bundle_path, which tells BentoService where to load its artifacts
-    model_service_class._bento_bundle_path = bundle_path
+    # Set _bento_service_bundle_path, where BentoService will load its artifacts
+    model_service_class._bento_service_bundle_path = bundle_path
     # Set cls._version, service instance can access it via svc.version
     model_service_class._bento_service_bundle_version = metadata["service_version"]
 
@@ -169,7 +169,7 @@ def load(bundle_path):
     track_load_start()
 
     svc_cls = load_bento_service_class(bundle_path)
-    svc = svc_cls.load_from_dir(bundle_path)
+    svc = svc_cls()
 
     track_load_finish(svc)
     return svc

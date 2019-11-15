@@ -34,7 +34,7 @@ def test_bento_service_class():
     # When the TestBentoService got saved and loaded again in the test, the two class
     # attribute below got set to the loaded BentoService class. Resetting it here so it
     # does not effect other tests
-    TestBentoService._bento_bundle_path = None
+    TestBentoService._bento_service_bundle_path = None
     TestBentoService._bento_service_bundle_version = None
     return TestBentoService
 

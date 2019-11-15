@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import json
 import logging
+import re
 import subprocess
 
 from bentoml.exceptions import (
@@ -95,3 +96,13 @@ def exception_to_return_status(error):
         return Status.INVALID_ARGUMENT(str(error))
     else:
         return Status.INTERNAL(str(error))
+
+
+def generate_aws_compatible_string(item):
+    pattern = re.compile("[^a-zA-Z0-9-]|_")
+    name = re.sub(pattern, "-", item)
+    if len(name) > 63:
+        raise BentoMLException(
+            'AWS string {} exceeds maximum length of 63'.format(name)
+        )
+    return name

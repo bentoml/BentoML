@@ -36,6 +36,7 @@ from bentoml.deployment.utils import (
     ensure_docker_available_or_raise,
     exception_to_return_status,
     ensure_deploy_api_name_exists_in_bento,
+    generate_aws_compatible_string,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.yatai.status import Status
@@ -101,16 +102,6 @@ def strip_scheme(url):
     parsed = urlparse(url)
     scheme = "%s://" % parsed.scheme
     return parsed.geturl().replace(scheme, "", 1)
-
-
-def generate_aws_compatible_string(item):
-    pattern = re.compile("[^a-zA-Z0-9-]|_")
-    name = re.sub(pattern, "-", item)
-    if len(name) > 63:
-        raise BentoMLException(
-            'AWS string {} exceeds Sagemaker maximum length of 63'.format(name)
-        )
-    return name
 
 
 def get_arn_role_from_current_aws_user():

@@ -22,6 +22,7 @@ import subprocess
 import logging
 
 import boto3
+from botocore.exceptions import ClientError
 
 from bentoml.exceptions import BentoMLException, BentoMLMissingDependencyException
 
@@ -72,20 +73,26 @@ def ensure_sam_available_or_raise():
 
 def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, '.aws-sam/build/{}'.format(api_name))
-    subprocess.check_output(['rm', '-rf', './{*.egg-info,*.dist-info}'], cwd=build_dir)
-    subprocess.check_output(
-        ['find' '.', '-type', 'd', '-name', '"tests', '-exec', 'rm', '-rf', '{}'],
-        cwd=build_dir,
-    )
-    subprocess.check_output(
-        ['find', '.', '-name', '"*.so', '|', 'xargs', 'strip'], cwd=build_dir
-    )
-    # Pytorch related
-    subprocess.check_output(
-        ['rm', '-rf', './{caff2,wheel,pkg_resources,pip,pipenv,setuptools}'],
-        cwd=build_dir,
-    )
-    subprocess.check_output(['rm', './torch/lib/libtorch.so'], cwd=build_dir)
+    logger.debug('Cleaning up for dir {}'.format(build_dir))
+    try:
+        subprocess.check_output(
+            ['rm', '-rf', './{*.egg-info,*.dist-info}'], cwd=build_dir
+        )
+        # subprocess.check_output(
+        #     ['find' '.', '-type', 'd', '-name', '"tests', '-exec', 'rm', '-rf', '{}'],
+        #     cwd=build_dir,
+        # )
+        # subprocess.check_output(
+        #     ['find', '.', '-name', '"*.so', '|', 'xargs', 'strip'], cwd=build_dir
+        # )
+        # Pytorch related
+        subprocess.check_output(
+            ['rm', '-rf', './{caff2,wheel,pkg_resources,pip,pipenv,setuptools}'],
+            cwd=build_dir,
+        )
+        subprocess.check_output(['rm', './torch/lib/libtorch.so'], cwd=build_dir)
+    except Exception:
+        return
 
 
 def call_sam_command(command, project_dir):
@@ -94,7 +101,9 @@ def call_sam_command(command, project_dir):
         command, cwd=project_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
         stdout = proc.stdout.read().decode('utf-8')
-        logger.debug('SAM cmd output: %s', stdout)
+        logger.debug(
+            'SAM cmd {command} output: {output}'.format(command=command, output=stdout)
+        )
     return stdout
 
 
@@ -110,6 +119,8 @@ def lambda_package(project_dir, s3_bucket_name):
             prefix_path,
             '--template-file',
             'template.yaml',
+            '--output-template-file',
+            'packaged.yaml'
         ],
         project_dir,
     )
@@ -117,22 +128,48 @@ def lambda_package(project_dir, s3_bucket_name):
 
 def lambda_deploy(project_dir, stack_name):
     call_sam_command(
-        ['deploy', '--template-file', 'template.yaml', '--stack-name', stack_name],
+        ['deploy', '--template-file', 'packaged.yaml', '--stack-name', stack_name],
         project_dir,
     )
 
 
-def upload_artifacts_to_s3(region, bucket_name, bento_archive_path, bento_name):
+def create_s3_bucket_if_not_exists(bucket_name, region):
+    s3_client = boto3.client('s3', region)
+    try:
+        s3_client.get_bucket_acl(Bucket=bucket_name)
+    except ClientError as error:
+        if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
+            logger.debug(
+                'S3 bucket {} does not exist. Creating it now'.format(bucket_name)
+            )
+            s3_client.create_bucket(
+                Bucket=bucket_name,
+                CreateBucketConfiguration={'LocationConstraint': region},
+            )
+        else:
+            raise error
+
+
+def upload_artifacts_to_s3(
+    region, bucket_name, bento_archive_path, bento_name, bento_version
+):
     artifacts_path = os.path.join(bento_archive_path, bento_name, 'artifacts')
     s3_client = boto3.client('s3', region)
 
+    s3_prefix = 'artifacts/{}'.format(bento_version)
     try:
         for file_name in os.listdir(artifacts_path):
-            s3_client.upload_file(
-                os.path.join(artifacts_path, file_name),
-                bucket_name,
-                '/artifacts/{}'.format(file_name),
-            )
+            if file_name != '__init__.py':
+                logger.debug(
+                    'Uploading {name} to s3 {location}'.format(
+                        name=file_name, location=bucket_name + '/' + s3_prefix
+                    )
+                )
+                s3_client.upload_file(
+                    os.path.join(artifacts_path, file_name),
+                    bucket_name,
+                    '{prefix}/{name}'.format(prefix=s3_prefix, name=file_name),
+                )
     except Exception as error:
         raise BentoMLException(str(error))
 
@@ -141,11 +178,14 @@ def init_sam_project(
     sam_project_path, bento_archive_path, deployment_name, bento_name, api_names
 ):
     function_path = os.path.join(sam_project_path, deployment_name)
+    os.mkdir(function_path)
     # Copy requirements.txt
+    logger.debug('Coping requirements.txt')
     requirement_txt_path = os.path.join(bento_archive_path, 'requirements.txt')
     shutil.copy(requirement_txt_path, function_path)
 
     # Copy bundled pip dependencies
+    logger.debug('Coping bundled_dependencies')
     bundled_dep_path = os.path.join(bento_archive_path, 'bundled_pip_dependencies')
     if os.path.isdir(bundled_dep_path):
         shutil.copytree(
@@ -164,6 +204,7 @@ def init_sam_project(
             if bundled_file_name.startswith('BentoML-'):
                 has_bentoml_bundle = True
 
+        logger.debug('Updating requirements.txt')
         with open(
             os.path.join(function_path, 'requirements.txt'), 'r+'
         ) as requirement_file:
@@ -178,19 +219,28 @@ def init_sam_project(
             requirement_file.writelines(required_modules)
 
     # Copy bento_service_model
+    logger.debug('Coping model directory')
     model_path = os.path.join(bento_archive_path, bento_name)
     shutil.copytree(model_path, os.path.join(function_path, bento_name))
 
     # remove the artifacts dir. Artifacts already uploaded to s3
+    logger.debug('Removing artifacts directory')
     shutil.rmtree(os.path.join(function_path, bento_name, 'artifacts'))
 
     # generate app.py
+    logger.debug('Creating app.py for lambda function')
+    # Create __init__.py without any content
+    open(os.path.join(function_path, '__init__.py'), 'w').close()
     with open(os.path.join(function_path, 'app.py'), 'w') as f:
         f.write(AWS_HANDLER_PY_TEMPLATE_HEADER.format(bento_name=bento_name))
         for api_name in api_names:
             api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api_name)
             f.write(api_content)
 
-    call_sam_command(['build', '-u'], sam_project_path)
+    logger.info('Building lambda project')
+    build_result = call_sam_command(['build', '-u'], sam_project_path)
+    if 'Build Failed' in build_result:
+        raise BentoMLException('Build Lambda project failed')
+    logger.debug('Removing unnecessary files to free up space')
     for api_name in api_names:
         cleanup_build_files(sam_project_path, api_name)

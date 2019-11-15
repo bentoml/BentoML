@@ -59,7 +59,7 @@ deployment_schema = {
                     'region': {'type': 'string', 'required': True},
                     'api_name': {'type': 'string', 'minlength': 3},
                     'memory_size': {'type': 'integer', 'awsLambdaMemory': True},
-                    'timeout': {'type': 'integer', 'min': 3, 'max': 900},
+                    'timeout': {'type': 'integer', 'min': 1, 'max': 900},
                 },
             },
             'gcp_function_operator_config': {
@@ -89,6 +89,7 @@ deployment_schema = {
         },
     },
 }
+
 
 class YataiDeploymentValidator(Validator):
     def _validate_awsLambdaMemory(self, awsLambdaMemory, field, value):

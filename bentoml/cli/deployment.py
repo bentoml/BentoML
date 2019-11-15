@@ -388,7 +388,7 @@ def get_deployment_sub_command():
                         namespace=deployment_yaml.get('namespace'),
                         message='Applying deployment',
                     )
-                    if result_state.status.status_code != status_pb2.OK:
+                    if result_state.status.status_code != status_pb2.Status.OK:
                         _echo(
                             'Created deployment {name}, failed to retrieve latest'
                             ' status. {error_code}:{error_message}'.format(

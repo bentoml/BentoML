@@ -79,10 +79,10 @@ def cleanup_build_files(project_dir, api_name):
         for root, dirs, files in os.walk(build_dir):
             if 'tests' in dirs:
                 os.rmdir(os.path.join(root, 'tests'))
-            if ['examples'] in dirs:
+            if 'examples' in dirs:
                 os.rmdir(os.path.join(root, 'examples'))
-            if ['setuptools'] in dirs:
-                os.rmdir(os.path.join(root, 'setuptools'))
+            if '__pycache__' in dirs:
+                os.rmdir(os.path.join(root, '__pycache__'))
 
             for file in filter(lambda x: re.match('.*\.dist-info$', x), files):
                 os.remove(os.path.join(root, file))
@@ -91,6 +91,9 @@ def cleanup_build_files(project_dir, api_name):
                 os.remove(os.path.join(root, file))
 
             for file in filter(lambda x: re.match('.*\.so$', x), files):
+                os.remove(os.path.join(root, file))
+
+            for file in filter(lambda x: re.match('.*\.pyc$', x), files):
                 os.remove(os.path.join(root, file))
 
             if 'caff2' in files:
@@ -129,7 +132,7 @@ def lambda_package(project_dir, s3_bucket_name):
             '--template-file',
             'template.yaml',
             '--output-template-file',
-            'packaged.yaml'
+            'packaged.yaml',
         ],
         project_dir,
     )
@@ -137,7 +140,18 @@ def lambda_package(project_dir, s3_bucket_name):
 
 def lambda_deploy(project_dir, stack_name):
     call_sam_command(
-        ['deploy', '--template-file', 'packaged.yaml', '--stack-name', stack_name],
+        [
+            'deploy',
+            '--template-file',
+            'packaged.yaml',
+            '--stack-name',
+            stack_name,
+            # This option is not in help listing. without it, cloud formation will
+            # result in review_in_progress
+            # https://github.com/awslabs/serverless-application-model/issues/51
+            '--capabilities',
+            'CAPABILITY_IAM'
+        ],
         project_dir,
     )
 
@@ -146,6 +160,7 @@ def create_s3_bucket_if_not_exists(bucket_name, region):
     s3_client = boto3.client('s3', region)
     try:
         s3_client.get_bucket_acl(Bucket=bucket_name)
+        logger.debug('Use existing s3 bucket')
     except ClientError as error:
         if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
             logger.debug(

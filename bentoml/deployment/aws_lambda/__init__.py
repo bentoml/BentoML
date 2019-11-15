@@ -100,14 +100,6 @@ def generate_aws_lambda_template_config(
         'Transform': 'AWS::Serverless-2016-10-31',
         'Globals': {'Function': {'Timeout': timeout, 'Runtime': py_runtime}},
         'Resources': {},
-        # Output section from cloud formation
-        'Outputs': {
-            'EndpointUrl': {
-                'Value': '!Sub "https://${ServerlessRestApi}.'
-                'execute-api.${AWS::Region}}.amazonaws.com/Prod"',
-                'Description': 'Url for endpoint',
-            }
-        },
     }
     for api_name in api_names:
         sam_config['Resources'][api_name] = generate_function_resource(
@@ -174,8 +166,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 [api.name for api in bento_service_metadata.apis], api_names
             )
             lambda_s3_bucket = generate_aws_compatible_string(
-                '{name}-{bento_name}'.format(
-                    name=deployment_pb.name, bento_name=deployment_spec.bento_name
+                '{namespace}-{name}-{bento_name}'.format(
+                    name=deployment_pb.name,
+                    bento_name=deployment_spec.bento_name,
+                    namespace=deployment_pb.namespace,
                 )
             ).lower()
             logger.info('Create S3 bucket {} if not exists'.format(lambda_s3_bucket))
@@ -235,6 +229,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
     def delete(self, deployment_pb, yatai_service):
         try:
+            logger.info('Deleting AWS Lambda deployment')
             state = self.describe(deployment_pb, yatai_service).state
             if state.state != DeploymentState.RUNNING:
                 message = (
@@ -249,16 +244,22 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             aws_config = deployment_spec.aws_lambda_operator_config
 
-            s3_client = boto3.client('s3', aws_config.region)
+            s3 = boto3.resource('s3')
             cf_client = boto3.client('cloudformation', aws_config.region)
             stack_name = deployment_pb.namespace + '-' + deployment_pb.name
-            lambda_s3_bucket = '{name}-{bento_name}-{bento_version}'.format(
-                name=deployment_pb.name,
-                bento_name=deployment_spec.bento_name,
-                bento_version=deployment_spec.bento_version,
-            )
-            delete_s3_result = s3_client.delete_bucket(Bucket=lambda_s3_bucket)
-            delete_cf_result = cf_client.delete_stack(StackName=stack_name)
+            lambda_s3_bucket = generate_aws_compatible_string(
+                '{namespace}-{name}-{bento_name}'.format(
+                    name=deployment_pb.name,
+                    bento_name=deployment_spec.bento_name,
+                    namespace=deployment_pb.namespace,
+                )
+            ).lower()
+            logger.debug('Deleting S3 bucket')
+            lambda_bucket = s3.Bucket(lambda_s3_bucket)
+            lambda_bucket.objects.all().delete()
+            lambda_bucket.delete()
+            logger.debug('Deleting Lambda function and related resources')
+            cf_client.delete_stack(StackName=stack_name)
             return DeleteDeploymentResponse(status=Status.OK())
 
         except BentoMLException as error:
@@ -290,7 +291,13 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         ns=deployment_pb.namespace, name=deployment_pb.name
                     )
                 )
-                outputs = cloud_formation_stack_result.get('Stacks')[0]['Outputs']
+                stack_result = cloud_formation_stack_result.get('Stacks')[0]
+                if stack_result['StackStatus'] == 'REVIEW_IN_PROGRESS':
+                    state = DeploymentState(state=DeploymentState.PENDING)
+                    state.timestamp.GetCurrentTime()
+                    return DescribeDeploymentResponse(status=Status.OK(), state=state)
+                else:
+                    outputs = stack_result['Outputs']
             except Exception as error:
                 state = DeploymentState(
                     state=DeploymentState.ERROR, error_message=str(error)

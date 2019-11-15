@@ -277,7 +277,7 @@ def create_deployment(
                 ] = operator_spec['memory_size']
             if operator_spec.get('timeout'):
                 deployment_dict['spec']['aws_lambda_operator_config'][
-                    'memory_size'
+                    'timeout'
                 ] = operator_spec['timeout']
         elif operator_value == DeploymentSpec.GCP_FCUNTION:
             deployment_dict['spec']['gcp_function_operatorConfig'] = {

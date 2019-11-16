@@ -78,22 +78,25 @@ def cleanup_build_files(project_dir, api_name):
     try:
         for root, dirs, files in os.walk(build_dir):
             if 'tests' in dirs:
-                os.rmdir(os.path.join(root, 'tests'))
+                shutil.rmtree(os.path.join(root, 'tests'))
             if 'examples' in dirs:
-                os.rmdir(os.path.join(root, 'examples'))
+                shutil.rmtree(os.path.join(root, 'examples'))
             if '__pycache__' in dirs:
-                os.rmdir(os.path.join(root, '__pycache__'))
+                shutil.rmtree(os.path.join(root, '__pycache__'))
 
-            for file in filter(lambda x: re.match('.*\.dist-info$', x), files):
+            for dir_name in filter(lambda x: re.match('^.*\\.dist-info$', x), dirs):
+                shutil.rmtree(os.path.join(root, dir_name))
+
+            for file in filter(lambda x: re.match('^.*\\.egg-info$', x), files):
+                logger.debug('removing file ' + file)
                 os.remove(os.path.join(root, file))
 
-            for file in filter(lambda x: re.match('.*\.egg-info$', x), files):
+            for file in filter(lambda x: re.match('^.*\\.so$', x), files):
+                logger.debug('removing file ' + file)
                 os.remove(os.path.join(root, file))
 
-            for file in filter(lambda x: re.match('.*\.so$', x), files):
-                os.remove(os.path.join(root, file))
-
-            for file in filter(lambda x: re.match('.*\.pyc$', x), files):
+            for file in filter(lambda x: re.match('^.*\\.pyc$', x), files):
+                logger.debug('removing file ' + file)
                 os.remove(os.path.join(root, file))
 
             if 'caff2' in files:
@@ -102,6 +105,8 @@ def cleanup_build_files(project_dir, api_name):
                 os.remove(os.path.join(root, 'wheel'))
             if 'pip' in files:
                 os.remove(os.path.join(root, 'pip'))
+            if 'libtorch.so' in files:
+                os.remove(os.path.join(root, 'libtorch.so'))
     except Exception as e:
         logger.error(str(e))
         return

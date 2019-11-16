@@ -18,7 +18,6 @@ from __future__ import print_function
 
 import json
 import os
-import subprocess
 import logging
 
 import boto3
@@ -112,8 +111,19 @@ def generate_aws_lambda_template_config(
         )
 
     yaml.dump(sam_config, Path(template_file_path))
+
+    # We add Outputs section separately, because the value should not have 'around !Sub
+    with open(os.path.join(project_dir, 'template.yaml'), 'a') as f:
+        f.write("""\
+Outputs:
+    EndpointUrl:
+        Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+        Description: URL for endpoint
+""")
     try:
-        call_sam_command(['validate'], project_dir)
+        validation_result = call_sam_command(['validate'], project_dir)
+        if 'invalid SAM Template' in validation_result:
+            raise BentoMLException('"template.yaml" is invalided')
     except Exception as error:
         raise BentoMLException(str(error))
 
@@ -292,12 +302,18 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     )
                 )
                 stack_result = cloud_formation_stack_result.get('Stacks')[0]
+                print(stack_result)
                 if stack_result['StackStatus'] == 'REVIEW_IN_PROGRESS':
                     state = DeploymentState(state=DeploymentState.PENDING)
                     state.timestamp.GetCurrentTime()
                     return DescribeDeploymentResponse(status=Status.OK(), state=state)
                 else:
-                    outputs = stack_result['Outputs']
+                    if stack_result.get('Outputs'):
+                        outputs = stack_result['Outputs']
+                    else:
+                        return DescribeDeploymentResponse(
+                            status=Status.ABORTED('"Outputs" field is not present')
+                        )
             except Exception as error:
                 state = DeploymentState(
                     state=DeploymentState.ERROR, error_message=str(error)

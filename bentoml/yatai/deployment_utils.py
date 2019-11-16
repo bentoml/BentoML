@@ -71,21 +71,21 @@ def deployment_dict_to_pb(deployment_dict):
                 'instance_type'
             )
     elif deployment_pb.spec.operator == DeploymentSpec.AWS_LAMBDA:
-        lambda_config = spec_dict.get('aws_lambda_operator_config', {})
-        if lambda_config.get('region'):
-            deployment_pb.spec.aws_lambda_operator_config.region = lambda_config.get(
+        lambda_conf = spec_dict.get('aws_lambda_operator_config', {})
+        if lambda_conf.get('region'):
+            deployment_pb.spec.aws_lambda_operator_config.region = lambda_conf.get(
                 'region'
             )
-        if lambda_config.get('api_name'):
-            deployment_pb.spec.aws_lambda_operator_config.api_name = lambda_config.get(
+        if lambda_conf.get('api_name'):
+            deployment_pb.spec.aws_lambda_operator_config.api_name = lambda_conf.get(
                 'api_name'
             )
-        if lambda_config.get('memory_size'):
-            deployment_pb.spec.aws_lambda_operator_config.memory_size = lambda_config.get(
+        if lambda_conf.get('memory_size'):
+            deployment_pb.spec.aws_lambda_operator_config.memory_size = lambda_conf.get(
                 'memory_size'
             )
-        if lambda_config.get('timeout'):
-            deployment_pb.spec.aws_lambda_operator_config.timeout = lambda_config.get(
+        if lambda_conf.get('timeout'):
+            deployment_pb.spec.aws_lambda_operator_config.timeout = lambda_conf.get(
                 'timeout'
             )
     elif deployment_pb.spec.operator == DeploymentSpec.GCP_FUNCTION:

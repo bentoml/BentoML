@@ -143,7 +143,7 @@ def test_aws_lambda_apply_failed_only_local_repo(
     mock_checkoutput,
 ):
     test_deployment_pb = generate_lambda_deployment_pb()
-    yatai_service_mock = create_yatai_service_mock(BentoUri.S3)
+    yatai_service_mock = create_yatai_service_mock(BentoUri.UNSET)
     deployment_operator = AwsLambdaDeploymentOperator()
     result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock)
     assert result_pb.status.status_code == Status.INTERNAL

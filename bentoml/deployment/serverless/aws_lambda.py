@@ -156,8 +156,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             )
             if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
                 raise BentoMLException(
-                    'BentoML currently not support {} repository, {}'.format(
-                        bento_pb.bento.uri.type, bento_pb.bento.uri
+                    'BentoML currently not support {} repository'.format(
+                        bento_pb.bento.uri.type
                     )
                 )
 

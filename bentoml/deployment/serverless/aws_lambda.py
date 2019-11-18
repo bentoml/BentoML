@@ -25,6 +25,7 @@ from packaging import version
 from ruamel.yaml import YAML
 import boto3
 
+from bentoml.bundler import loader
 from bentoml.exceptions import BentoMLException
 from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
@@ -146,7 +147,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         try:
             ensure_docker_available_or_raise()
             deployment_spec = deployment_pb.spec
-            aws_config = deployment_spec.aws_lambda_operator_config
 
             bento_pb = yatai_service.GetBento(
                 GetBentoRequest(
@@ -154,68 +154,80 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     bento_version=deployment_spec.bento_version,
                 )
             )
-            if bento_pb.bento.uri.type != BentoUri.LOCAL:
+            if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
                 raise BentoMLException(
-                    'BentoML currently only support local repository'
+                    'BentoML currently not support {} repository'.format(
+                        bento_pb.bento.uri.type
+                    )
                 )
-            else:
-                bento_path = bento_pb.bento.uri.uri
-            bento_service_metadata = bento_pb.bento.bento_service_metadata
 
-            template = 'aws-python3'
-            if version.parse(bento_service_metadata.env.python_version) < version.parse(
-                '3.0.0'
-            ):
-                template = 'aws-python'
-
-            api_names = (
-                [aws_config.api_name]
-                if aws_config.api_name
-                else [api.name for api in bento_service_metadata.apis]
-            )
-            ensure_deploy_api_name_exists_in_bento(
-                [api.name for api in bento_service_metadata.apis], api_names
+            return self._apply(
+                deployment_pb, bento_pb, yatai_service, bento_pb.bento.uri.uri
             )
 
-            with TempDirectory() as serverless_project_dir:
-                init_serverless_project_dir(
-                    serverless_project_dir,
-                    bento_path,
-                    deployment_pb.name,
-                    deployment_spec.bento_name,
-                    template,
-                )
-                generate_aws_lambda_handler_py(
-                    deployment_spec.bento_name, api_names, serverless_project_dir
-                )
-                generate_aws_lambda_serverless_config(
-                    bento_service_metadata.env.python_version,
-                    deployment_pb.name,
-                    api_names,
-                    serverless_project_dir,
-                    aws_config.region,
-                    # BentoML deployment namespace is mapping to serverless `stage`
-                    # concept
-                    stage=deployment_pb.namespace,
-                )
-                logger.info(
-                    'Installing additional packages: serverless-python-requirements'
-                )
-                install_serverless_plugin(
-                    "serverless-python-requirements", serverless_project_dir
-                )
-                logger.info('Deploying to AWS Lambda')
-                call_serverless_command(["deploy"], serverless_project_dir)
-
-            res_deployment_pb = Deployment(state=DeploymentState())
-            res_deployment_pb.CopyFrom(deployment_pb)
-            state = self.describe(res_deployment_pb, yatai_service).state
-            res_deployment_pb.state.CopyFrom(state)
-            return ApplyDeploymentResponse(
-                status=Status.OK(), deployment=res_deployment_pb
-            )
         except BentoMLException as error:
             return ApplyDeploymentResponse(status=exception_to_return_status(error))
+
+    def _apply(self, deployment_pb, bento_pb, yatai_service, bento_path):
+        if loader._is_remote_path(bento_path):
+            with loader._resolve_remote_bundle_path(bento_path) as local_path:
+                return self._apply(deployment_pb, bento_pb, yatai_service, local_path)
+
+        deployment_spec = deployment_pb.spec
+        aws_config = deployment_spec.aws_lambda_operator_config
+
+        bento_service_metadata = bento_pb.bento.bento_service_metadata
+
+        template = 'aws-python3'
+        if version.parse(bento_service_metadata.env.python_version) < version.parse(
+            '3.0.0'
+        ):
+            template = 'aws-python'
+
+        api_names = (
+            [aws_config.api_name]
+            if aws_config.api_name
+            else [api.name for api in bento_service_metadata.apis]
+        )
+        ensure_deploy_api_name_exists_in_bento(
+            [api.name for api in bento_service_metadata.apis], api_names
+        )
+
+        with TempDirectory() as serverless_project_dir:
+            init_serverless_project_dir(
+                serverless_project_dir,
+                bento_path,
+                deployment_pb.name,
+                deployment_spec.bento_name,
+                template,
+            )
+            generate_aws_lambda_handler_py(
+                deployment_spec.bento_name, api_names, serverless_project_dir
+            )
+            generate_aws_lambda_serverless_config(
+                bento_service_metadata.env.python_version,
+                deployment_pb.name,
+                api_names,
+                serverless_project_dir,
+                aws_config.region,
+                # BentoML deployment namespace is mapping to serverless `stage`
+                # concept
+                stage=deployment_pb.namespace,
+            )
+            logger.info(
+                'Installing additional packages: serverless-python-requirements'
+            )
+            install_serverless_plugin(
+                "serverless-python-requirements", serverless_project_dir
+            )
+            logger.info('Deploying to AWS Lambda')
+            call_serverless_command(["deploy"], serverless_project_dir)
+
+        res_deployment_pb = Deployment(state=DeploymentState())
+        res_deployment_pb.CopyFrom(deployment_pb)
+        state = self.describe(res_deployment_pb, yatai_service).state
+        res_deployment_pb.state.CopyFrom(state)
+        return ApplyDeploymentResponse(status=Status.OK(), deployment=res_deployment_pb)
 
     def delete(self, deployment_pb, yatai_service=None):
         try:

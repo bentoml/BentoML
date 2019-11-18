@@ -60,6 +60,8 @@ deployment_schema = {
                     'api_name': {'type': 'string', 'minlength': 3},
                     'memory_size': {'type': 'integer', 'awsLambdaMemory': True},
                     'timeout': {'type': 'integer', 'min': 1, 'max': 900},
+                    's3_path': {'type': 'string', 'required': True},
+                    's3_region': {'type': 'string', 'minlength': 3},
                 },
             },
             'gcp_function_operator_config': {

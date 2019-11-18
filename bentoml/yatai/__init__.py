@@ -19,11 +19,8 @@ from __future__ import print_function
 
 import logging
 
-import grpc
 
 from bentoml import config
-from bentoml.yatai.yatai_service_impl import YataiService
-from bentoml.proto.yatai_service_pb2_grpc import YataiStub
 from bentoml.yatai.python_api import upload_bento_service
 
 logger = logging.getLogger(__name__)
@@ -33,6 +30,9 @@ def get_yatai_service(
     channel_address=None, db_url=None, repo_base_url=None, default_namespace=None
 ):
     if channel_address is not None:
+        import grpc
+        from bentoml.proto.yatai_service_pb2_grpc import YataiStub
+
         if db_url is not None:
             logger.warning(
                 "Config 'db_url' is ignored in favor of remote YataiService at `%s`",
@@ -57,6 +57,8 @@ def get_yatai_service(
         channel = grpc.insecure_channel(channel_address)
         return YataiStub(channel)
     else:
+        from bentoml.yatai.yatai_service_impl import YataiService
+
         logger.debug("Using BentoML with local Yatai server")
 
         default_namespace = default_namespace or config().get(

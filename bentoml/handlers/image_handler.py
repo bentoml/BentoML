@@ -44,7 +44,7 @@ def verify_image_format_or_raise(file_name, accept_format_list):
     """
     if accept_format_list:
         _, extension = os.path.splitext(file_name)
-        if extension not in accept_format_list:
+        if extension.lower() not in accept_format_list:
             raise ValueError(
                 "Input file not in supported format list: {}".format(accept_format_list)
             )

@@ -31,17 +31,17 @@ from bentoml.exceptions import BentoMLException, BentoMLMissingDependencyExcepti
 logger = logging.getLogger(__name__)
 
 
-AWS_HANDLER_PY_TEMPLATE_HEADER = """\
+AWS_LAMBDA_APP_PY_TEMPLATE_HEADER = """\
 import os
 import boto3
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
-
 from bentoml.bundler import load_bento_service_class
 
-artifacts_path = '/tmp/bentoml/'
-file_dir = os.path.join(artifacts_path, 'artifacts')
+file_dir = os.path.join('/tmp/bentoml/', 'artifacts')
+os.mkdir(file_dir)
+
 # Download artifacts from s3 to '/tmp/bentoml/artifacts' dir
 s3_client = boto3.client('s3')
 s3_bucket = '{s3_bucket}'
@@ -54,19 +54,20 @@ try:
     for content in list_content_result['Contents']:
         file_name = content['Key'].split('/')[-1]
         file_path = os.path.join(file_dir, file_name)
-        s3_client.download(
-            Bucket=s3_bucket, 
-            Key=content['Key'], 
-            Filename=file_path
-        )
+        if not os.path.isfile(file_path):
+            s3_client.download_file(s3_bucket, content['Key'], file_path)
+        else:
+            print('File {{}} already exists'.format(file_path))
 except Exception as e:
-    print(e)
-    print('Error getting object from bucket {s3_bucket}')
-    raise error
+    print('Error getting object from bucket {s3_bucket}, {{}}'.format(e))
+    raise e
 
-bento_service_cls = load_bento_service_class()
-bento_service = bento_service_cls(bundle_path='./{bento_name}')
-service._load_artifacts(artifacts_path)
+bento_service_cls = load_bento_service_class(bundle_path='./{bento_name}')
+# Set _bento_service_bundle_path to None, so it won't automatically load artifacts when
+# we init an instance
+bento_service_cls._bento_service_bundle_path = None
+bento_service = bento_service_cls()
+bento_service._load_artifacts('/tmp/bentoml')
 
 """
 
@@ -315,7 +316,7 @@ def init_sam_project(
     open(os.path.join(function_path, '__init__.py'), 'w').close()
     with open(os.path.join(function_path, 'app.py'), 'w') as f:
         f.write(
-            AWS_HANDLER_PY_TEMPLATE_HEADER.format(
+            AWS_LAMBDA_APP_PY_TEMPLATE_HEADER.format(
                 bento_name=bento_name,
                 s3_bucket=s3_bucket,
                 artifacts_prefix=artifacts_prefix,

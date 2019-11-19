@@ -222,7 +222,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 bento_archive_path,
                 deployment_spec.bento_name,
             )
-            with TempDirectory(cleanup=False) as lambda_project_dir:
+            with TempDirectory() as lambda_project_dir:
                 logger.debug('Generating template.yaml for lambda project')
                 generate_aws_lambda_template_config(
                     lambda_project_dir,

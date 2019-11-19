@@ -19,7 +19,7 @@ from __future__ import print_function
 import json
 import os
 import logging
-from urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError

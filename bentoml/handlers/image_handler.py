@@ -128,29 +128,37 @@ class ImageHandler(BentoHandler):
             response object
         """
         if request.method != "POST":
-            return Response(response="Only accept POST request", status=400)
+            return Response(
+                response="BentoML#ImageHandler only accept POST request", status=400
+            )
 
-        input_files = [request.files.get(filename) for filename in self.input_names]
-        if len(input_files) == 1 and input_files[0] is None:
+        input_files = [
+            request.files.get(form_input_name)
+            for form_input_name in self.input_names
+            if form_input_name in request.files
+        ]
+        if input_files:
+            file_names = [secure_filename(file.filename) for file in input_files]
+            try:
+                for file_name in file_names:
+                    verify_image_format_or_raise(file_name, self.accept_image_formats)
+            except ValueError as e:
+                return Response(response=str(e), status=400)
+            input_streams = [BytesIO(input_file.read()) for input_file in input_files]
+        else:
             data = request.get_data()
             if data:
                 input_streams = (data,)
             else:
-                raise ValueError(
-                    "BentoML#ImageHandler unexpected HTTP request: %s" % request
+                return Response(
+                    "BentoML#ImageHandler unexpected HTTP request format", status=400
                 )
-        else:
-            file_names = [secure_filename(file.filename) for file in input_files]
-            for file_name in file_names:
-                verify_image_format_or_raise(file_name, self.accept_image_formats)
-            input_streams = [BytesIO(input_file.read()) for input_file in input_files]
 
         input_data = tuple(
             self.imread(input_stream, pilmode=self.pilmode)
             for input_stream in input_streams
         )
         result = func(*input_data)
-
         result = get_output_str(result, request.headers.get("output", "json"))
         return Response(response=result, status=200, mimetype="application/json")
 

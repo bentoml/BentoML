@@ -48,7 +48,7 @@ s3_bucket = '{s3_bucket}'
 artifacts_prefix = '{artifacts_prefix}'
 try:
     list_content_result = s3_client.list_objects(
-        Bucket=s3_bucket, 
+        Bucket=s3_bucket,
         Prefix=artifacts_prefix
     )
     for content in list_content_result['Contents']:
@@ -251,6 +251,22 @@ def upload_artifacts_to_s3(
         raise BentoMLException(str(error))
 
 
+def generate_aws_lambda_app_py(
+    function_path, s3_bucket, artifacts_prefix, bento_name, api_names
+):
+    with open(os.path.join(function_path, 'app.py'), 'w') as f:
+        f.write(
+            AWS_LAMBDA_APP_PY_TEMPLATE_HEADER.format(
+                bento_name=bento_name,
+                s3_bucket=s3_bucket,
+                artifacts_prefix=artifacts_prefix,
+            )
+        )
+        for api_name in api_names:
+            api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api_name)
+            f.write(api_content)
+
+
 def init_sam_project(
     sam_project_path,
     bento_archive_path,
@@ -310,21 +326,12 @@ def init_sam_project(
     logger.debug('Removing artifacts directory')
     shutil.rmtree(os.path.join(function_path, bento_name, 'artifacts'))
 
-    # generate app.py
-    logger.debug('Creating app.py for lambda function')
-    # Create __init__.py without any content
+    # Create empty __init__.py
     open(os.path.join(function_path, '__init__.py'), 'w').close()
-    with open(os.path.join(function_path, 'app.py'), 'w') as f:
-        f.write(
-            AWS_LAMBDA_APP_PY_TEMPLATE_HEADER.format(
-                bento_name=bento_name,
-                s3_bucket=s3_bucket,
-                artifacts_prefix=artifacts_prefix,
-            )
-        )
-        for api_name in api_names:
-            api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api_name)
-            f.write(api_content)
+    logger.debug('Creating app.py for lambda function')
+    generate_aws_lambda_app_py(
+        function_path, s3_bucket, artifacts_prefix, bento_name, api_names
+    )
 
     logger.info('Building lambda project')
     build_result = call_sam_command(['build', '--use-container'], sam_project_path)

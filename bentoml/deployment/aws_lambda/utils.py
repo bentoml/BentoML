@@ -37,9 +37,12 @@ import os
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 
+from bentoml.bundler import load_bento_service_class
 from {bento_name} import load
 
-bento_service = load()
+bento_service_cls = load_bento_service_class()
+bento_service = bento_service_cls()
+service._load_artifacts('path')
 
 """
 
@@ -78,34 +81,38 @@ def cleanup_build_files(project_dir, api_name):
     try:
         for root, dirs, files in os.walk(build_dir):
             if 'tests' in dirs:
+                logger.debug('removing dir: ' + os.path.join(root, 'tests'))
                 shutil.rmtree(os.path.join(root, 'tests'))
             if 'examples' in dirs:
+                logger.debug('removing dir: ' + os.path.join(root, 'examples'))
                 shutil.rmtree(os.path.join(root, 'examples'))
             if '__pycache__' in dirs:
+                logger.debug('removing dir: ' + os.path.join(root, '__pycache__'))
                 shutil.rmtree(os.path.join(root, '__pycache__'))
 
             for dir_name in filter(lambda x: re.match('^.*\\.dist-info$', x), dirs):
+                logger.debug('removing dir ' + dir_name)
                 shutil.rmtree(os.path.join(root, dir_name))
 
             for file in filter(lambda x: re.match('^.*\\.egg-info$', x), files):
-                logger.debug('removing file ' + file)
-                os.remove(os.path.join(root, file))
-
-            for file in filter(lambda x: re.match('^.*\\.so$', x), files):
-                logger.debug('removing file ' + file)
+                logger.debug('removing file: ' + os.path.join(root, file))
                 os.remove(os.path.join(root, file))
 
             for file in filter(lambda x: re.match('^.*\\.pyc$', x), files):
-                logger.debug('removing file ' + file)
+                logger.debug('removing file: ' + os.path.join(root, file))
                 os.remove(os.path.join(root, file))
 
             if 'caff2' in files:
+                logger.debug('removing file: ' + os.path.join(root, 'caff2'))
                 os.remove(os.path.join(root, 'caff2'))
             if 'wheel' in files:
+                logger.debug('removing file: ' + os.path.join(root, 'wheel'))
                 os.remove(os.path.join(root, 'wheel'))
             if 'pip' in files:
+                logger.debug('removing file: ' + os.path.join(root, 'pip'))
                 os.remove(os.path.join(root, 'pip'))
             if 'libtorch.so' in files:
+                logger.debug('removing file: ' + os.path.join(root, 'libtorch.so'))
                 os.remove(os.path.join(root, 'libtorch.so'))
     except Exception as e:
         logger.error(str(e))
@@ -124,8 +131,9 @@ def call_sam_command(command, project_dir):
     return stdout
 
 
-def lambda_package(project_dir, s3_bucket_name):
-    prefix_path = 'lambda-function'
+def lambda_package(project_dir, s3_bucket_name, deployment_prefix):
+    prefix_path = os.path.join(deployment_prefix, 'lambda-functions')
+    build_dir = os.path.join(project_dir, '.aws-sam', 'build')
     call_sam_command(
         [
             'package',
@@ -139,11 +147,12 @@ def lambda_package(project_dir, s3_bucket_name):
             '--output-template-file',
             'packaged.yaml',
         ],
-        project_dir,
+        build_dir,
     )
 
 
 def lambda_deploy(project_dir, stack_name):
+    build_dir = os.path.join(project_dir, '.aws-sam', 'build')
     call_sam_command(
         [
             'deploy',
@@ -155,9 +164,9 @@ def lambda_deploy(project_dir, stack_name):
             # result in review_in_progress
             # https://github.com/awslabs/serverless-application-model/issues/51
             '--capabilities',
-            'CAPABILITY_IAM'
+            'CAPABILITY_IAM',
         ],
-        project_dir,
+        build_dir,
     )
 
 
@@ -179,13 +188,28 @@ def create_s3_bucket_if_not_exists(bucket_name, region):
             raise error
 
 
+def check_s3_bucket_exists_or_raise(bucket_name, region):
+    s3_client = boto3.client('s3', region)
+    try:
+        s3_client.get_bucket_acl(Bucket=bucket_name)
+    except ClientError as error:
+        if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
+            raise BentoMLException(
+                'S3 bucket {} does not exist. '
+                'Please create it and try again'.format(bucket_name)
+            )
+        else:
+            raise error
+
+    pass
+
+
 def upload_artifacts_to_s3(
-    region, bucket_name, bento_archive_path, bento_name, bento_version
+    region, bucket_name, path_prefix, bento_archive_path, bento_name, bento_version
 ):
     artifacts_path = os.path.join(bento_archive_path, bento_name, 'artifacts')
     s3_client = boto3.client('s3', region)
-
-    s3_prefix = 'artifacts/{}'.format(bento_version)
+    s3_prefix = os.path.join(path_prefix, 'artifacts', bento_version)
     try:
         for file_name in os.listdir(artifacts_path):
             if file_name != '__init__.py':
@@ -267,7 +291,7 @@ def init_sam_project(
             f.write(api_content)
 
     logger.info('Building lambda project')
-    build_result = call_sam_command(['build', '-u'], sam_project_path)
+    build_result = call_sam_command(['build', '--use-container'], sam_project_path)
     if 'Build Failed' in build_result:
         raise BentoMLException('Build Lambda project failed')
     logger.debug('Removing unnecessary files to free up space')

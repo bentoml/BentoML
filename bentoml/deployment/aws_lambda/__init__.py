@@ -19,6 +19,7 @@ from __future__ import print_function
 import json
 import os
 import logging
+from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError
@@ -31,8 +32,9 @@ from bentoml.deployment.aws_lambda.utils import (
     init_sam_project,
     lambda_deploy,
     lambda_package,
-    create_s3_bucket_if_not_exists,
+    create_s3_path_if_not_exists,
     call_sam_command,
+    check_s3_bucket_exists_or_raise,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
@@ -51,6 +53,7 @@ from bentoml.proto.deployment_pb2 import (
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.utils import Path
+from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
 
@@ -75,7 +78,7 @@ def generate_function_resource(
             'Events': {
                 'Api': {
                     'Type': 'Api',
-                    'Properties': {'Path': '/{}'.format(api_name), 'Method': 'get'},
+                    'Properties': {'Path': '/{}'.format(api_name), 'Method': 'post'},
                 }
             },
             'Policies': [{'S3ReadPolicy': {'BucketName': artifact_bucket_name}}],
@@ -97,7 +100,18 @@ def generate_aws_lambda_template_config(
     sam_config = {
         'AWSTemplateFormatVersion': '2010-09-09',
         'Transform': 'AWS::Serverless-2016-10-31',
-        'Globals': {'Function': {'Timeout': timeout, 'Runtime': py_runtime}},
+        'Globals': {
+            'Function': {'Timeout': timeout, 'Runtime': py_runtime},
+            'Api': {
+                'BinaryMediaTypes': ['image~1*'],
+                'Cors': {'AllowOrigin': "'*'"},
+                'Auth': {
+                    'ApiKeyRequired': False,
+                    'DefaultAuthorizer': 'NONE',
+                    'AddDefaultAuthorizerToCorsPreflight': False,
+                },
+            },
+        },
         'Resources': {},
     }
     for api_name in api_names:
@@ -114,12 +128,14 @@ def generate_aws_lambda_template_config(
 
     # We add Outputs section separately, because the value should not have 'around !Sub
     with open(os.path.join(project_dir, 'template.yaml'), 'a') as f:
-        f.write("""\
+        f.write(
+            """\
 Outputs:
     EndpointUrl:
         Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
         Description: URL for endpoint
-""")
+"""
+        )
     try:
         validation_result = call_sam_command(['validate'], project_dir)
         if 'invalid SAM Template' in validation_result:
@@ -175,19 +191,30 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             ensure_deploy_api_name_exists_in_bento(
                 [api.name for api in bento_service_metadata.apis], api_names
             )
-            lambda_s3_bucket = generate_aws_compatible_string(
-                '{namespace}-{name}-{bento_name}'.format(
-                    name=deployment_pb.name,
-                    bento_name=deployment_spec.bento_name,
-                    namespace=deployment_pb.namespace,
+            try:
+                is_s3_url(aws_config.s3_path)
+            except Exception:
+                raise BentoMLException(
+                    '{} is not recognizable s3 path'.format(aws_config.s3_path)
                 )
-            ).lower()
-            logger.info('Create S3 bucket {} if not exists'.format(lambda_s3_bucket))
-            create_s3_bucket_if_not_exists(lambda_s3_bucket, aws_config.region)
+
+            parsed_url = urlparse(aws_config.s3_path)
+            lambda_s3_bucket = parsed_url.netloc
+            deployment_path_prefix = os.path.join(
+                parsed_url.path,
+                'bentoml',
+                'deployments',
+                deployment_pb.namespace,
+                deployment_pb.name,
+            )
+
+            logger.debug('Check s3 path is available or not')
+            check_s3_bucket_exists_or_raise(lambda_s3_bucket, aws_config.s3_region)
             logger.info('Uploading artifacts to S3 bucket')
             upload_artifacts_to_s3(
                 aws_config.region,
                 lambda_s3_bucket,
+                deployment_path_prefix,
                 bento_archive_path,
                 deployment_spec.bento_name,
                 deployment_spec.bento_version,
@@ -216,7 +243,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         api_names,
                     )
                     logger.info('Packaging lambda project')
-                    lambda_package(lambda_project_dir, lambda_s3_bucket)
+                    lambda_package(
+                        lambda_project_dir,
+                        lambda_s3_bucket,
+                        deployment_path_prefix
+                    )
                     logger.info('Deploying lambda project')
                     lambda_deploy(
                         lambda_project_dir,
@@ -254,20 +285,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             aws_config = deployment_spec.aws_lambda_operator_config
 
-            s3 = boto3.resource('s3')
             cf_client = boto3.client('cloudformation', aws_config.region)
             stack_name = deployment_pb.namespace + '-' + deployment_pb.name
-            lambda_s3_bucket = generate_aws_compatible_string(
-                '{namespace}-{name}-{bento_name}'.format(
-                    name=deployment_pb.name,
-                    bento_name=deployment_spec.bento_name,
-                    namespace=deployment_pb.namespace,
-                )
-            ).lower()
-            logger.debug('Deleting S3 bucket')
-            lambda_bucket = s3.Bucket(lambda_s3_bucket)
-            lambda_bucket.objects.all().delete()
-            lambda_bucket.delete()
             logger.debug('Deleting Lambda function and related resources')
             cf_client.delete_stack(StackName=stack_name)
             return DeleteDeploymentResponse(status=Status.OK())

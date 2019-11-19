@@ -250,7 +250,7 @@ def get_deployment_sub_command():
     @click.option(
         '--s3-path',
         help='S3 path for storing AWS lambda deployment bundle'
-             'required applicable to platform: aws-lambda',
+        'required applicable to platform: aws-lambda',
     )
     @click.option(
         '--s3-region',

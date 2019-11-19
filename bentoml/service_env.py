@@ -20,7 +20,7 @@ import os
 from sys import version_info
 from ruamel.yaml import YAML
 
-from bentoml.utils import Path, StringIO
+from bentoml.utils import Path
 from bentoml.configuration import get_bentoml_deploy_version
 
 PYTHON_VERSION = "{major}.{minor}.{micro}".format(

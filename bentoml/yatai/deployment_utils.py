@@ -89,11 +89,11 @@ def deployment_dict_to_pb(deployment_dict):
                 'timeout'
             )
         if lambda_conf.get('s3_path'):
-            deployment_pb.spec.aws_lambda_operator_config.timeout = lambda_conf.get(
+            deployment_pb.spec.aws_lambda_operator_config.s3_path = lambda_conf.get(
                 's3_path'
             )
         if lambda_conf.get('s3_region'):
-            deployment_pb.spec.aws_lambda_operator_config.timeout = lambda_conf.get(
+            deployment_pb.spec.aws_lambda_operator_config.s3_region = lambda_conf.get(
                 's3_region'
             )
     elif deployment_pb.spec.operator == DeploymentSpec.GCP_FUNCTION:

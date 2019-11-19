@@ -33,16 +33,40 @@ logger = logging.getLogger(__name__)
 
 AWS_HANDLER_PY_TEMPLATE_HEADER = """\
 import os
+import boto3
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 
 from bentoml.bundler import load_bento_service_class
-from {bento_name} import load
+
+artifacts_path = '/tmp/bentoml/'
+file_dir = os.path.join(artifacts_path, 'artifacts')
+# Download artifacts from s3 to '/tmp/bentoml/artifacts' dir
+s3_client = boto3.client('s3')
+s3_bucket = '{s3_bucket}'
+artifacts_prefix = '{artifacts_prefix}'
+try:
+    list_content_result = s3_client.list_objects(
+        Bucket=s3_bucket, 
+        Prefix=artifacts_prefix
+    )
+    for content in list_content_result['Contents']:
+        file_name = content['Key'].split('/')[-1]
+        file_path = os.path.join(file_dir, file_name)
+        s3_client.download(
+            Bucket=s3_bucket, 
+            Key=content['Key'], 
+            Filename=file_path
+        )
+except Exception as e:
+    print(e)
+    print('Error getting object from bucket {s3_bucket}')
+    raise error
 
 bento_service_cls = load_bento_service_class()
-bento_service = bento_service_cls()
-service._load_artifacts('path')
+bento_service = bento_service_cls(bundle_path='./{bento_name}')
+service._load_artifacts(artifacts_path)
 
 """
 
@@ -205,30 +229,35 @@ def check_s3_bucket_exists_or_raise(bucket_name, region):
 
 
 def upload_artifacts_to_s3(
-    region, bucket_name, path_prefix, bento_archive_path, bento_name, bento_version
+    region, bucket_name, path_prefix, bento_archive_path, bento_name
 ):
     artifacts_path = os.path.join(bento_archive_path, bento_name, 'artifacts')
     s3_client = boto3.client('s3', region)
-    s3_prefix = os.path.join(path_prefix, 'artifacts', bento_version)
     try:
         for file_name in os.listdir(artifacts_path):
             if file_name != '__init__.py':
                 logger.debug(
                     'Uploading {name} to s3 {location}'.format(
-                        name=file_name, location=bucket_name + '/' + s3_prefix
+                        name=file_name, location=bucket_name + '/' + path_prefix
                     )
                 )
                 s3_client.upload_file(
                     os.path.join(artifacts_path, file_name),
                     bucket_name,
-                    '{prefix}/{name}'.format(prefix=s3_prefix, name=file_name),
+                    '{prefix}/{name}'.format(prefix=path_prefix, name=file_name),
                 )
     except Exception as error:
         raise BentoMLException(str(error))
 
 
 def init_sam_project(
-    sam_project_path, bento_archive_path, deployment_name, bento_name, api_names
+    sam_project_path,
+    bento_archive_path,
+    deployment_name,
+    bento_name,
+    api_names,
+    s3_bucket,
+    artifacts_prefix,
 ):
     function_path = os.path.join(sam_project_path, deployment_name)
     os.mkdir(function_path)
@@ -285,7 +314,13 @@ def init_sam_project(
     # Create __init__.py without any content
     open(os.path.join(function_path, '__init__.py'), 'w').close()
     with open(os.path.join(function_path, 'app.py'), 'w') as f:
-        f.write(AWS_HANDLER_PY_TEMPLATE_HEADER.format(bento_name=bento_name))
+        f.write(
+            AWS_HANDLER_PY_TEMPLATE_HEADER.format(
+                bento_name=bento_name,
+                s3_bucket=s3_bucket,
+                artifacts_prefix=artifacts_prefix,
+            )
+        )
         for api_name in api_names:
             api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api_name)
             f.write(api_content)

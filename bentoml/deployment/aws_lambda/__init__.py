@@ -32,7 +32,6 @@ from bentoml.deployment.aws_lambda.utils import (
     init_sam_project,
     lambda_deploy,
     lambda_package,
-    create_s3_path_if_not_exists,
     call_sam_command,
     check_s3_bucket_exists_or_raise,
 )
@@ -41,7 +40,6 @@ from bentoml.deployment.utils import (
     exception_to_return_status,
     ensure_deploy_api_name_exists_in_bento,
     ensure_docker_available_or_raise,
-    generate_aws_compatible_string,
 )
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import (
@@ -201,7 +199,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             parsed_url = urlparse(aws_config.s3_path)
             lambda_s3_bucket = parsed_url.netloc
             deployment_path_prefix = os.path.join(
-                parsed_url.path,
+                parsed_url.path[1:],
                 'bentoml',
                 'deployments',
                 deployment_pb.namespace,
@@ -211,13 +209,18 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             logger.debug('Check s3 path is available or not')
             check_s3_bucket_exists_or_raise(lambda_s3_bucket, aws_config.s3_region)
             logger.info('Uploading artifacts to S3 bucket')
+            artifacts_prefix = os.path.join(
+                deployment_path_prefix,
+                'artifacts',
+                deployment_spec.bento_name,
+                deployment_spec.bento_version,
+            )
             upload_artifacts_to_s3(
                 aws_config.region,
                 lambda_s3_bucket,
-                deployment_path_prefix,
+                artifacts_prefix,
                 bento_archive_path,
                 deployment_spec.bento_name,
-                deployment_spec.bento_version,
             )
             with TempDirectory(cleanup=False) as lambda_project_dir:
                 logger.debug('Generating template.yaml for lambda project')
@@ -241,12 +244,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         deployment_pb.name,
                         deployment_spec.bento_name,
                         api_names,
+                        s3_bucket=lambda_s3_bucket,
+                        artifacts_prefix=artifacts_prefix,
                     )
                     logger.info('Packaging lambda project')
                     lambda_package(
-                        lambda_project_dir,
-                        lambda_s3_bucket,
-                        deployment_path_prefix
+                        lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
                     )
                     logger.info('Deploying lambda project')
                     lambda_deploy(
@@ -321,8 +324,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     )
                 )
                 stack_result = cloud_formation_stack_result.get('Stacks')[0]
-                print(stack_result)
-                if stack_result['StackStatus'] == 'REVIEW_IN_PROGRESS':
+                if stack_result['StackStatus'] != 'CREATE_COMPLETE':
                     state = DeploymentState(state=DeploymentState.PENDING)
                     state.timestamp.GetCurrentTime()
                     return DescribeDeploymentResponse(status=Status.OK(), state=state)

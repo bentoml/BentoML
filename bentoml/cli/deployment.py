@@ -416,34 +416,37 @@ def get_deployment_sub_command():
         'ignore errors when deleting cloud resources',
     )
     def delete(name, namespace, force):
-        track_cli('deploy-delete')
-
         yatai_service = get_yatai_service()
         get_deployment_result = get_deployment(namespace, name, yatai_service)
         if get_deployment_result.status.status_code != status_pb2.Status.OK:
             _echo(
-                'Failed to get deployment {} for delete. {}:{}'.format(
+                'Failed to get deployment {} for deletion. {}:{}'.format(
                     name,
                     status_pb2.Status.Code.Name(
                         get_deployment_result.status.status_code
                     ),
                     get_deployment_result.status.error_message,
                 ),
-                CLI_COLOR_ERROR
+                CLI_COLOR_ERROR,
             )
             return
+        platform = DeploymentSpec.DeploymentOperator.Name(
+            get_deployment_result.deployment.spec.operator
+        )
+        track_cli_deployment('deploy-delete', platform)
         result = delete_deployment(name, namespace, force, yatai_service)
         if result.status.status_code == status_pb2.Status.OK:
-            platform = DeploymentSpec.DeploymentOperator.Name(
-                result.deployment.spec.operator
-            )
-            stopped_time = datetime.utcnow()
-            up_time_in_seconds = (
-                stopped_time - result.deployment.created_at.ToDatetime()
-            ).total_seconds()
-            track_cli_deployment(
-                'deploy-delete-success', platform, {'uptime': int(up_time_in_seconds)}
-            )
+            if get_deployment_result.deployment.created_at:
+                stopped_time = datetime.utcnow()
+                up_time_in_seconds = (
+                    stopped_time
+                    - get_deployment_result.deployment.created_at.ToDatetime()
+                ).total_seconds()
+                track_cli_deployment(
+                    'deploy-delete-success',
+                    platform,
+                    {'uptime': int(up_time_in_seconds)},
+                )
             _echo(
                 'Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS
             )

@@ -2,7 +2,7 @@ import os
 
 import boto3
 from mock import MagicMock, patch, Mock
-from moto import mock_s3
+from moto import mock_s3, mock_cloudformation
 from ruamel.yaml import YAML
 
 from bentoml.deployment.aws_lambda import (
@@ -119,16 +119,15 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
     py_runtime = 'python3.7'
     memory_size = 3008
     timeout = 6
-    with patch('bentoml.deployment.aws_lambda.utils.call_sam_command'):
-        generate_aws_lambda_template_config(
-            str(tmpdir),
-            deployment_name,
-            api_names,
-            s3_bucket_name,
-            py_runtime,
-            memory_size,
-            timeout,
-        )
+    generate_aws_lambda_template_config(
+        str(tmpdir),
+        deployment_name,
+        api_names,
+        s3_bucket_name,
+        py_runtime,
+        memory_size,
+        timeout,
+    )
     template_path = os.path.join(str(tmpdir), 'template.yaml')
     yaml = YAML()
     with open(template_path, 'rb') as f:
@@ -138,10 +137,7 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
 
 
 def mock_lambda_related_operations(func):
-    @patch('bentoml.deployment.aws_lambda.utils.call_sam_command')
-    @patch('bentoml.deployment.aws_lambda.utils.upload_artifacts_to_s3')
-    @patch('bentoml.deployment.aws_lambda.utils.ensure_sam_available_or_raise')
-    @patch('bentoml.deployment.utils.ensure_docker_available_or_raise')
+    @patch('subprocess.check_output', autospec=True)
     @mock_s3
     def mock_wrapper(*args, **kwargs):
         conn = boto3.client('s3', region_name='us-west-2')
@@ -152,14 +148,39 @@ def mock_lambda_related_operations(func):
 
 
 @mock_lambda_related_operations
-def test_aws_lambda_apply(
-    mock_ensuredocker, mock_ensuresame, mock_upload, mock_callsam
+def test_aws_lambda_apply_fails_no_artifacts_directory(
+    mock_checkoutput
 ):
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     deployment_operator = AwsLambdaDeploymentOperator()
     result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
-    assert True
+    assert result_pb.status.status_code == Status.INTERNAL
+
+
+def mock_cf(self, op_name, kwargs):
+    if op_name == 'DescribeStacks':
+        return {}
+    else:
+        raise Exception('Operation {} is not mocked in this test'.format(op_name))
+
+
+# @patch('botocore.client.BaseClient._make_api_call', new=mock_cf)
+# @mock_lambda_related_operations
+# @patch('shutil.rmtree', autospec=True)
+# @patch('shutil.copytree', autospec=True)
+# @patch('shutil.copy', autospec=True)
+# @patch('os.listdir')
+# @patch('subprocess.Popen')
+# def test_aws_lambda_apply(
+#     mock_popen, mock_checkoutput, mock_listdir, mock_copy, mock_copytree, mock_rmtree
+# ):
+#     yatai_service_mock = create_yatai_service_mock()
+#     test_deployment_pb = generate_lambda_deployment_pb()
+#     deployment_operator = AwsLambdaDeploymentOperator()
+#     result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
+#     print(result_pb)
+#     assert False
 
 
 def test_aws_lambda_describe_still_in_progress():

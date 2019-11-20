@@ -22,7 +22,6 @@ import logging
 from six.moves.urllib.parse import urlparse
 
 import boto3
-from botocore.exceptions import ClientError
 from packaging import version
 from ruamel.yaml import YAML
 
@@ -222,6 +221,14 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     memory_size=aws_config.memory_size,
                     timeout=aws_config.timeout,
                 )
+                try:
+                    validation_result = call_sam_command(
+                        ['validate'], lambda_project_dir
+                    )
+                    if 'invalid SAM Template' in validation_result:
+                        raise BentoMLException('"template.yaml" is invalided')
+                except Exception as error:
+                    raise BentoMLException(str(error))
                 logger.debug('Lambda project directory: {}'.format(lambda_project_dir))
                 logger.info('initializing lambda project')
                 init_sam_project(

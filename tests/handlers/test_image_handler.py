@@ -92,6 +92,7 @@ def test_image_handler_http_request_multipart_form(img_file):
     assert response.status_code == 200
     assert "[10, 10, 3]" in str(response.response)
 
+
 def test_image_handler_http_request_single_image_different_name(img_file):
     test_image_handler = ImageHandler(input_names=("my_image",))
     request = mock.MagicMock(spec=flask.Request)

@@ -14,23 +14,14 @@ from bentoml import config
 
 
 class TestModel(object):
-    def predict(self, df):
-        df["age"] = df["age"].add(5)
-        return df
+    def predict_dataframe(self, df):
+        return df["col1"].sum()
 
-    def predictImage(self, input_data):
+    def predict_image(self, input_data):
         assert input_data is not None
-        return [10, 24]
+        return input_data.shape
 
-    def predictJson(self, input_data):
-        assert input_data is not None
-        return {"ok": True}
-
-    def predictTF(self, input_data):
-        assert input_data is not None
-        return {"ok": True}
-
-    def predictTorch(self, input_data):
+    def predict_json(self, input_data):
         assert input_data is not None
         return {"ok": True}
 
@@ -41,32 +32,32 @@ class TestBentoService(bentoml.BentoService):
     """My RestServiceTestModel packaging with BentoML
     """
 
-    @bentoml.api(DataframeHandler, input_dtypes={"age": "int"})
-    def predict(self, df):
-        """predict expects dataframe as input
+    @bentoml.api(DataframeHandler, input_dtypes={"col1": "int"})
+    def predict_dataframe(self, df):
+        """predict_dataframe expects dataframe as input
         """
-        return self.artifacts.model.predict(df)
+        return self.artifacts.model.predict_dataframe(df)
 
     @bentoml.api(ImageHandler)
-    def predictImage(self, input_data):
-        return self.artifacts.model.predictImage(input_data)
+    def predict_image(self, image):
+        return self.artifacts.model.predict_image(image)
 
     @bentoml.api(ImageHandler, input_names=('original', 'compared'))
-    def predictImages(self, original, compared):
+    def predict_images(self, original, compared):
         return original[0, 0] == compared[0, 0]
 
     @bentoml.api(JsonHandler)
-    def predictJson(self, input_data):
-        return self.artifacts.model.predictJson(input_data)
+    def predict_json(self, input_data):
+        return self.artifacts.model.predict_json(input_data)
 
     if six.PY3:
 
         @bentoml.api(FastaiImageHandler)
-        def predictFastaiImage(self, input_data):
-            return self.artifacts.model.predictImage(input_data)
+        def predict_fastai_image(self, input_data):
+            return self.artifacts.model.predict_image(input_data)
 
         @bentoml.api(FastaiImageHandler, input_names=('original', 'compared'))
-        def predictFastaiImages(self, original, compared):
+        def predict_fastai_images(self, original, compared):
             return all(original.data[0, 0] == compared.data[0, 0])
 
 

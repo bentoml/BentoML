@@ -17,11 +17,11 @@ def test_fastai_image_handler(capsys, tmpdir):
 
         ms = ImageHandlerModelForFastai()
 
-        import cv2
+        import imageio
         import numpy as np
 
         img_file = tmpdir.join("img.png")
-        cv2.imwrite(str(img_file), np.zeros((10, 10)))
+        imageio.imwrite(str(img_file), np.zeros((10, 10)))
         api = ms.get_service_apis()[0]
         test_args = ["--input={}".format(img_file)]
         api.handle_cli(test_args)

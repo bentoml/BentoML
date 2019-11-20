@@ -32,7 +32,7 @@ def get_deployment_operator(deployment_pb):
 
         return SageMakerDeploymentOperator()
     elif operator == DeploymentSpec.AWS_LAMBDA:
-        if config().getboolean('experiment', 'aws_lambda'):
+        if config().getboolean('experiment', 'aws_lambda_v2'):
             from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator
         else:
             from bentoml.deployment.serverless.aws_lambda import (

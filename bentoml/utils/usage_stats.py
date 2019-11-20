@@ -53,13 +53,14 @@ if _is_pypi_release():
 
 def _send_amplitude_event(event_type, event_properties):
     """Send event to amplitude
-    https://developers.amplitude.com/?java#keys-for-the-event-argument
+    https://developers.amplitude.com/?objc--ios#http-api-v2-request-format
     """
     event = [
         {
             "event_type": event_type,
             "user_id": SESSION_ID,
             "event_properties": event_properties,
+            "ip": "$remote",
         }
     ]
     event_data = {"api_key": API_KEY, "event": json.dumps(event)}
@@ -124,10 +125,12 @@ def track_load_finish(bento_service):
     return track("load", properties)
 
 
-def track_cli(command, deploy_platform=None):
+def track_cli(command, deploy_platform=None, extra_properties=None):
     properties = {}
     if deploy_platform is not None:
         properties['platform'] = deploy_platform
+    if extra_properties is not None:
+        properties.update(extra_properties)
     return track('cli-' + command, properties)
 
 

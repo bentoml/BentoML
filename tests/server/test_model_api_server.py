@@ -9,7 +9,10 @@ from bentoml.server import BentoAPIServer
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
-def test_api_function_route(bento_service):
+def test_api_function_route(bento_service, tmpdir):
+    import imageio
+    import numpy as np
+
     rest_server = BentoAPIServer(bento_service)
     test_client = rest_server.app.test_client()
 
@@ -37,7 +40,10 @@ def test_api_function_route(bento_service):
     assert 15 == response_data[0]["age"]
 
     # Test Image handlers.
-    with open(os.path.join(CUR_PATH, "white-plane-sky.jpg"), "rb") as f:
+    img_file = tmpdir.join("test_img.png")
+    imageio.imwrite(str(img_file), np.zeros((10, 10)))
+
+    with open(str(img_file), "rb") as f:
         img = f.read()
 
     response = test_client.post("/predictImage", data=img, content_type="image/png")

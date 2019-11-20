@@ -326,6 +326,7 @@ def get_deployment_sub_command():
                     return
                 result.deployment.state.CopyFrom(result_state.state)
 
+            track_cli('deploy-create-success', platform.replace('-', '_').upper())
             _echo('Successfully created deployment {}'.format(name), CLI_COLOR_SUCCESS)
             _print_deployment_info(result.deployment, output)
 
@@ -384,6 +385,10 @@ def get_deployment_sub_command():
                         return
                     result.deployment.state.CopyFrom(result_state.state)
 
+                track_cli(
+                    'deploy-apply-success',
+                    deployment_yaml.get('spec', {}).get('operator'),
+                )
                 _echo(
                     'Successfully applied spec to deployment {}'.format(
                         deployment_yaml.get('name')

@@ -5,7 +5,7 @@
 [![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://bentoml.readthedocs.io/en/latest/?badge=latest)
 [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
-> From a model in jupyter notebook to production API service in 5 minutes
+> From ML model to production API endpoint with a few lines of code
 
 
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
@@ -13,18 +13,14 @@
 [Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Gallery](https://github.com/bentoml/gallery) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) | [License](https://github.com/bentoml/BentoML/blob/master/LICENSE) | [Blog](https://medium.com/bentoml)
 
 
-BentoML accelerates the workflow of __serving and deploying machine learning models__ in the cloud for data scientists.
+BentoML makes it easy to __serve and deploy machine learning models__ in the coud.
 
-It is a flexible framework supporting most popular machine learning frameworks
-and making it easy for machine learning teams to deliver cloud-native prediction services
-that DevOps and software engineers can easily work with. Check out our
-5-mins [Quickstart Notebook](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
-using BentoML to turn a trained sklearn model into a containerized
-REST API server, and then deploy it to AWS Lambda.
+It is an open source framework for machine learning teams to build cloud-native prediction API
+services that are ready for production. BentoML supports most popular ML training frameworks
+and common deployment platforms including major cloud providers and docker/kubernetes.
 
-If you plan to use BentoML for production workloads or want to contribute,
-be sure to join our Slack channel and hear about our latest development updates:
-[![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+👉 [Join BentoML Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+ to hear about the latest development updates.
 
 ---
 
@@ -97,7 +93,13 @@ curl -i \
   http://localhost:5000/predict
 ```
 
-The saved BentoService bundle can also be loaded directly from command line for inferencing:
+Saved BentoService bundle is also structured to work as a docker build context, which can be
+used to build a docker image for deployment:
+```bash
+docker build -t my_api_server {saved_path}
+```
+
+The saved BentoService bundle can also be loaded directly from command line:
 ```bash
 bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
 
@@ -105,25 +107,19 @@ bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
 bentoml predict {saved_path} --input='./iris_test_data.csv'
 ```
 
-BentoService bundle is pip-installable and can be directly distributed as a PyPI package:
+The saved bundle is pip-installable and can be directly distributed as a PyPI package:
 ```bash
 pip install {saved_path}
 ```
 ```python
-# Your bentoML model class name will become packaged name
+# Your BentoService class name will become packaged name
 import IrisClassifier
 
 installed_svc = IrisClassifier.load()
 installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
 ```
 
-BentoService bundle is also structured to work as a docker build context, which can be used to
-build a docker image containing the REST API model server:
-```bash
-docker build -t my_api_server {saved_path}
-```
-
-To learn more, try out the Getting Started with Bentoml notebook: [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a trained sklearn model into a containerized REST API server, and then deploy it to AWS Lambda: [Download](https://github.com/parano/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
 
 
 ## Examples
@@ -231,7 +227,7 @@ bentoml config set usage_tracking=false
 ## Contributing
 
 Have questions or feedback? Post a [new github issue](https://github.com/bentoml/BentoML/issues/new/choose)
-or join our Slack channel: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+or discuss in our Slack channel: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
 Want to help build BentoML? Check out our
 [contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md) and the

@@ -60,7 +60,7 @@ def _send_amplitude_event(event_type, event_properties):
             "event_type": event_type,
             "user_id": SESSION_ID,
             "event_properties": event_properties,
-            "ip": "$remote"
+            "ip": "$remote",
         }
     ]
     event_data = {"api_key": API_KEY, "event": json.dumps(event)}
@@ -125,17 +125,12 @@ def track_load_finish(bento_service):
     return track("load", properties)
 
 
-def track_cli(command, deploy_platform=None):
+def track_cli(command, deploy_platform=None, extra_properties=None):
     properties = {}
     if deploy_platform is not None:
         properties['platform'] = deploy_platform
-    return track('cli-' + command, properties)
-
-
-def track_cli_deployment(command, deploy_platform, additional_info=None):
-    properties = {'platform': deploy_platform}
-    if additional_info is not None:
-        properties.update(additional_info)
+    if extra_properties is not None:
+        properties.update(extra_properties)
     return track('cli-' + command, properties)
 
 

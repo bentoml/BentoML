@@ -244,6 +244,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     stack_name=deployment_pb.namespace + '-' + deployment_pb.name,
                 )
 
+            logger.info('Finish deployed lambda project, fetching latest status')
             res_deployment_pb = Deployment(state=DeploymentState())
             res_deployment_pb.CopyFrom(deployment_pb)
             state = self.describe(res_deployment_pb, yatai_service).state
@@ -317,7 +318,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         outputs = stack_result['Outputs']
                     else:
                         return DescribeDeploymentResponse(
-                            status=Status.ABORTED('"Outputs" field is not present')
+                            status=Status.ABORTED('"Outputs" field is not present'),
+                            state=DeploymentState(
+                                state=DeploymentState.ERROR,
+                                error_message='"Outputs" field is not present',
+                            ),
                         )
             except Exception as error:
                 state = DeploymentState(

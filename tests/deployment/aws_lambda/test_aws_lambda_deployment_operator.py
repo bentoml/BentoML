@@ -10,15 +10,19 @@ from bentoml.deployment.aws_lambda import (
     generate_aws_lambda_template_config,
 )
 from bentoml.deployment.aws_lambda.utils import generate_aws_lambda_app_py
-from bentoml.proto.deployment_pb2 import Deployment, DeploymentState
+from bentoml.proto.deployment_pb2 import (
+    Deployment,
+    DeploymentState,
+    DescribeDeploymentResponse,
+)
 from bentoml.proto.repository_pb2 import (
     Bento,
     BentoUri,
     BentoServiceMetadata,
     GetBentoResponse,
 )
-from bentoml.proto.status_pb2 import Status
-
+from bentoml.proto import status_pb2
+from bentoml.yatai.status import Status
 
 fake_s3_bucket_name = 'fake_deployment_bucket'
 fake_s3_prefix = 'prefix'
@@ -153,32 +157,28 @@ def test_aws_lambda_apply_fails_no_artifacts_directory(mock_checkoutput):
     test_deployment_pb = generate_lambda_deployment_pb()
     deployment_operator = AwsLambdaDeploymentOperator()
     result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
-    assert result_pb.status.status_code == Status.INTERNAL
+    assert result_pb.status.status_code == status_pb2.Status.INTERNAL
 
 
-def mock_cf(self, op_name, kwargs):
-    if op_name == 'DescribeStacks':
-        return {}
-    else:
-        raise Exception('Operation {} is not mocked in this test'.format(op_name))
-
-
-# @patch('botocore.client.BaseClient._make_api_call', new=mock_cf)
-# @mock_lambda_related_operations
-# @patch('shutil.rmtree', autospec=True)
-# @patch('shutil.copytree', autospec=True)
-# @patch('shutil.copy', autospec=True)
-# @patch('os.listdir')
-# @patch('subprocess.Popen')
-# def test_aws_lambda_apply(
-#     mock_popen, mock_checkoutput, mock_listdir, mock_copy, mock_copytree, mock_rmtree
-# ):
-#     yatai_service_mock = create_yatai_service_mock()
-#     test_deployment_pb = generate_lambda_deployment_pb()
-#     deployment_operator = AwsLambdaDeploymentOperator()
-#     result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
-#     print(result_pb)
-#     assert False
+@mock_lambda_related_operations
+@patch('shutil.rmtree', autospec=True)
+@patch('shutil.copytree', autospec=True)
+@patch('shutil.copy', autospec=True)
+@patch('os.listdir')
+@patch('subprocess.Popen')
+def test_aws_lambda_apply_success(
+    mock_popen, mock_checkoutput, mock_listdir, mock_copy, mock_copytree, mock_rmtree
+):
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_lambda_deployment_pb()
+    deployment_operator = AwsLambdaDeploymentOperator()
+    deployment_operator.describe = MagicMock()
+    deployment_operator.describe.return_value = DescribeDeploymentResponse(
+        state=DeploymentState(state=DeploymentState.RUNNING), status=Status.OK()
+    )
+    result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
+    assert result_pb.status.status_code == status_pb2.Status.OK
+    assert result_pb.deployment.state.state == DeploymentState.RUNNING
 
 
 def test_aws_lambda_describe_still_in_progress():
@@ -193,7 +193,7 @@ def test_aws_lambda_describe_still_in_progress():
     with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
         deployment_operator = AwsLambdaDeploymentOperator()
         result_pb = deployment_operator.describe(test_deployment_pb, yatai_service_mock)
-        assert result_pb.status.status_code == Status.OK
+        assert result_pb.status.status_code == status_pb2.Status.OK
         assert result_pb.state.state == DeploymentState.PENDING
 
 
@@ -222,5 +222,5 @@ def test_aws_lambda_describe_success():
     with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
         deployment_operator = AwsLambdaDeploymentOperator()
         result_pb = deployment_operator.describe(test_deployment_pb, yatai_service_mock)
-        assert result_pb.status.status_code == Status.OK
+        assert result_pb.status.status_code == status_pb2.Status.OK
         assert result_pb.state.state == DeploymentState.RUNNING

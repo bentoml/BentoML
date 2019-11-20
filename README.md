@@ -119,9 +119,7 @@ installed_svc = IrisClassifier.load()
 installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
 ```
 
-To learn more, try out our 5-mins
- [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb) 
-using BentoML to turn a trained sklearn model into a containerized REST API server, and then deploy it to AWS Lambda.
+To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a trained sklearn model into a containerized REST API server, and then deploy it to AWS Lambda: [Download](https://github.com/parano/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
 
 
 ## Examples

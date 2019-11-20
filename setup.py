@@ -48,7 +48,6 @@ install_requires = [
 ]
 
 imageio = ["imageio>=2.5.0"]
-cv2 = ["opencv-python"]
 pytorch = ["torch", "torchvision"]
 fastai = ["fastai", "matplotlib"]
 tensorflow = ["tensorflow"]
@@ -70,7 +69,6 @@ test_requires = (
         "moto",
     ]
     + imageio
-    + cv2
     + fastai
 )
 

@@ -132,7 +132,7 @@ class ImageHandler(BentoHandler):
                 response="BentoML#ImageHandler only accept POST request", status=405
             )
 
-        if len(self.input_names) == 1:
+        if len(self.input_names) == 1 and len(request.files) == 1:
             # Ignore multipart form input name when ImageHandler is intended to accept
             # only one image file at a time
             input_files = request.files.values()

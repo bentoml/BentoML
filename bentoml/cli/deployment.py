@@ -443,7 +443,7 @@ def get_deployment_sub_command():
                         - get_deployment_result.deployment.created_at.ToDatetime()
                     ).total_seconds()
                 )
-            track_cli_deployment('deploy-delete-success', platform, extra_properties)
+            track_cli('deploy-delete-success', platform, extra_properties)
             _echo(
                 'Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS
             )

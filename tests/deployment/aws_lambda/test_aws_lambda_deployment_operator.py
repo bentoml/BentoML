@@ -1,13 +1,14 @@
 import os
 
 import boto3
-import botocore
-from mock import MagicMock, patch, Mock, mock_open
-from moto import mock_cloudformation, mock_s3
+from mock import MagicMock, patch, Mock
+from moto import mock_s3
 from ruamel.yaml import YAML
 
-from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator, \
-    generate_aws_lambda_template_config
+from bentoml.deployment.aws_lambda import (
+    AwsLambdaDeploymentOperator,
+    generate_aws_lambda_template_config,
+)
 from bentoml.deployment.aws_lambda.utils import generate_aws_lambda_app_py
 from bentoml.proto.deployment_pb2 import Deployment, DeploymentState
 from bentoml.proto.repository_pb2 import (
@@ -118,15 +119,16 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
     py_runtime = 'python3.7'
     memory_size = 3008
     timeout = 6
-    generate_aws_lambda_template_config(
-        str(tmpdir),
-        deployment_name,
-        api_names,
-        s3_bucket_name,
-        py_runtime,
-        memory_size,
-        timeout
-    )
+    with patch('bentoml.deployment.aws_lambda.utils.call_sam_command'):
+        generate_aws_lambda_template_config(
+            str(tmpdir),
+            deployment_name,
+            api_names,
+            s3_bucket_name,
+            py_runtime,
+            memory_size,
+            timeout,
+        )
     template_path = os.path.join(str(tmpdir), 'template.yaml')
     yaml = YAML()
     with open(template_path, 'rb') as f:
@@ -150,7 +152,9 @@ def mock_lambda_related_operations(func):
 
 
 @mock_lambda_related_operations
-def test_aws_lambda_apply(mock_ensuredocker, mock_ensuresame, mock_upload, mock_callsam):
+def test_aws_lambda_apply(
+    mock_ensuredocker, mock_ensuresame, mock_upload, mock_callsam
+):
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     deployment_operator = AwsLambdaDeploymentOperator()

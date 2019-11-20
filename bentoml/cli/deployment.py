@@ -246,7 +246,7 @@ def get_deployment_sub_command():
         help='function timeout for lambda function. '
         'Option applicable to platform: aws-lambda',
         type=click.INT,
-        default=6
+        default=6,
     )
     @click.option(
         '--s3-path',

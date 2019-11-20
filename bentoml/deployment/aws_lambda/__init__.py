@@ -222,9 +222,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     memory_size=aws_config.memory_size,
                     timeout=aws_config.timeout,
                 )
-                logger.debug(
-                    'Lambda project directory: {}'.format(lambda_project_dir)
-                )
+                logger.debug('Lambda project directory: {}'.format(lambda_project_dir))
                 logger.info('initializing lambda project')
                 init_sam_project(
                     lambda_project_dir,

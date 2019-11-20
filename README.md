@@ -13,15 +13,14 @@
 [Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Gallery](https://github.com/bentoml/gallery) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) | [License](https://github.com/bentoml/BentoML/blob/master/LICENSE) | [Blog](https://medium.com/bentoml)
 
 
-BentoML accelerates the workflow of __serving and deploying machine learning models__ in the cloud.
+BentoML makes it easy to __serve and deploy machine learning models__ in the coud.
 
-It is a flexible framework supporting most popular machine learning frameworks
-and making it easy for machine learning teams to deliver cloud-native prediction services
-that DevOps and software engineers can easily work with.
+It is an open source framework for machine learning teams to build cloud-native prediction API
+services that are ready for production. BentoML supports most popular ML training frameworks
+and common deployment platforms including major cloud providers and docker/kubernetes.
 
-Join our Slack community 
 [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
-to hear about our latest development updates.
+<- Join our Slack community to hear about latest development updates.
 
 ---
 

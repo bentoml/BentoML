@@ -1,7 +1,9 @@
 import os
 
+import boto3
+import botocore
 from mock import MagicMock, patch, Mock, mock_open
-from moto import mock_cloudformation
+from moto import mock_cloudformation, mock_s3
 from ruamel.yaml import YAML
 
 from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator
@@ -48,8 +50,8 @@ def test_generate_aws_lambda_app_py(tmpdir):
     api_names = ['predict', 'second_predict']
     generate_aws_lambda_app_py(
         str(tmpdir),
-        s3_bucket='fake_bucket',
-        artifacts_prefix='fake_artifacts_prefix',
+        s3_bucket='fake_deployment_bucket',
+        artifacts_prefix='fake_prefix',
         bento_name=bento_name,
         api_names=api_names,
     )
@@ -71,35 +73,25 @@ def test_generate_aws_lambda_app_py(tmpdir):
 
     sys.path.insert(1, str(tmpdir))
 
-    def mock_aws_calls(self, op_name, kwargs):
-        if op_name == 'ListObjects':
-            return {'Contents': [{'Key': 'some/s3/key'}]}
-        elif op_name == 'DownloadFile':
-            return True
-        else:
-            raise Exception(
-                'Operation {} does not support in this mock'.format(op_name)
+    def mock_lambda_app(func):
+        @mock_s3
+        @patch(
+            'bentoml.deployment.aws_lambda.utils.download_artifacts_for_lambda_function'
+        )
+        @patch('bentoml.bundler.load_bento_service_class', return_value=fake_bento)
+        def mock_wrapper(*args, **kwargs):
+            conn = boto3.client('s3', region_name='us-west-2')
+            conn.create_bucket(Bucket='fake_deployment_bucket')
+            fake_artifact_key = 'fake_prefix/model.pkl'
+            conn.put_object(
+                Bucket='fake_deployment_bucket', Key=fake_artifact_key, Body='fakebody'
             )
+            return func(*args, **kwargs)
 
-    os = MagicMock()
-    os.path.isfile.return_value = True
-    # os.path.join.return_value = 'fake/path'
-    os.mkdir = MagicMock()
+        return mock_wrapper
 
-    import six
-    if six.PY3:
-        mock_open_param_value = 'builtins.open'
-    else:
-        mock_open_param_value = '__builtin__.open'
-
-    @patch('os.path.isfile', os.path.isfile)
-    #@patch('os.path.join', os.path.join)
-    @patch(mock_open_param_value, mock_open(), create=True)
-    @patch('os.mkdir', os.mkdir)
-    @patch('botocore.client.BaseClient._make_api_call', new=mock_aws_calls)
-    @patch('bentoml.bundler.load_bento_service_class', return_value=fake_bento)
-    def return_predict_func(mock_load_class):
-        mock_load_class.return_value = fake_bento
+    @mock_lambda_app
+    def return_predict_func(mock_load_service, mock_download_artifacts):
         from app import predict
 
         return predict
@@ -144,7 +136,8 @@ def test_aws_lambda_describe_success():
                         'Outputs': [
                             {
                                 'OutputKey': 'EndpointUrl',
-                                'OutputValue': 'https://somefakelink.amazonaws.com/prod/predict',
+                                'OutputValue': 'https://somefakelink.amazonaws.com'
+                                '/prod/predict',
                             }
                         ],
                     }
@@ -160,3 +153,16 @@ def test_aws_lambda_describe_success():
         result_pb = deployment_operator.describe(test_deployment_pb, yatai_service_mock)
         assert result_pb.status.status_code == Status.OK
         assert result_pb.state.state == DeploymentState.RUNNING
+
+
+def download_artifacts_from_s3(artifacts_saved_dir, s3_bucket, artifacts_prefix):
+    """ Download artifacts from s3 bucket to given directory
+    Args:
+        artifacts_saved_dir: String
+        s3_bucket: String
+        artifacts_prefix: String
+
+    Returns:
+        None
+    """
+    pass

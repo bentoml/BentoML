@@ -33,34 +33,17 @@ logger = logging.getLogger(__name__)
 
 AWS_LAMBDA_APP_PY_TEMPLATE_HEADER = """\
 import os
-import boto3
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
+from bentoml.deployment.aws_lambda.utils import download_artifacts_for_lambda_function
 from bentoml.bundler import load_bento_service_class
 
-file_dir = os.path.join('/tmp/bentoml/', 'artifacts')
-os.mkdir(file_dir)
-
-# Download artifacts from s3 to '/tmp/bentoml/artifacts' dir
-s3_client = boto3.client('s3')
+tmp_artifacts_dir = '/tmp/bentoml'
 s3_bucket = '{s3_bucket}'
 artifacts_prefix = '{artifacts_prefix}'
-try:
-    list_content_result = s3_client.list_objects(
-        Bucket=s3_bucket,
-        Prefix=artifacts_prefix
-    )
-    for content in list_content_result['Contents']:
-        file_name = content['Key'].split('/')[-1]
-        file_path = os.path.join(file_dir, file_name)
-        if not os.path.isfile(file_path):
-            s3_client.download_file(s3_bucket, content['Key'], file_path)
-        else:
-            print('File {{}} already exists'.format(file_path))
-except Exception as e:
-    print('Error getting object from bucket {s3_bucket}, {{}}'.format(e))
-    raise e
+
+download_artifacts_for_lambda_function(tmp_artifacts_dir, s3_bucket, artifacts_prefix)
 
 bento_service_cls = load_bento_service_class(bundle_path='./{bento_name}')
 # Set _bento_service_bundle_path to None, so it won't automatically load artifacts when
@@ -340,3 +323,36 @@ def init_sam_project(
     logger.debug('Removing unnecessary files to free up space')
     for api_name in api_names:
         cleanup_build_files(sam_project_path, api_name)
+
+
+def download_artifacts_for_lambda_function(
+    artifacts_parent_dir, s3_bucket, artifacts_prefix
+):
+    """ Download artifacts from s3 bucket to given directory.
+    Args:
+        artifacts_parent_dir: String
+        s3_bucket: String
+        artifacts_prefix: String
+
+    Returns: None
+    """
+    # _load_artifacts take a directory with a subdir 'artifacts' exists
+    file_dir = os.path.join(artifacts_parent_dir, 'artifacts')
+    if not os.path.isdir(file_dir):
+        os.mkdir(file_dir)
+
+    s3_client = boto3.client('s3')
+    try:
+        list_content_result = s3_client.list_objects(
+            Bucket=s3_bucket, Prefix=artifacts_prefix
+        )
+        for content in list_content_result['Contents']:
+            file_name = content['Key'].split('/')[-1]
+            file_path = os.path.join(file_dir, file_name)
+            if not os.path.isfile(file_path):
+                s3_client.download_file(s3_bucket, content['Key'], file_path)
+            else:
+                print('File {} already exists'.format(file_path))
+    except Exception as e:
+        print('Error getting object from bucket {}, {}'.format(s3_bucket, e))
+        raise e

@@ -194,14 +194,12 @@ def raise_(ex):
 def test_sagemaker_apply_fail_not_local_repo(
     mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
 ):
-    yatai_service = create_yatai_service_mock(repo_storage_type=BentoUri.S3)
+    yatai_service = create_yatai_service_mock(repo_storage_type=BentoUri.UNSET)
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
     result_pb = deployment_operator.apply(sagemaker_deployment_pb, yatai_service)
     assert result_pb.status.status_code == Status.INTERNAL
-    assert result_pb.status.error_message.startswith(
-        'BentoML currently only support local repository'
-    )
+    assert result_pb.status.error_message.startswith('BentoML currently not support')
 
 
 @mock_sagemaker_deployment_wrapper

@@ -2,7 +2,7 @@ import os
 
 import boto3
 from mock import MagicMock, patch, Mock
-from moto import mock_s3, mock_cloudformation
+from moto import mock_s3
 from ruamel.yaml import YAML
 
 from bentoml.deployment.aws_lambda import (
@@ -148,9 +148,7 @@ def mock_lambda_related_operations(func):
 
 
 @mock_lambda_related_operations
-def test_aws_lambda_apply_fails_no_artifacts_directory(
-    mock_checkoutput
-):
+def test_aws_lambda_apply_fails_no_artifacts_directory(mock_checkoutput):
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     deployment_operator = AwsLambdaDeploymentOperator()

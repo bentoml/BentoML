@@ -133,12 +133,6 @@ Outputs:
         Description: URL for endpoint
 """
         )
-    try:
-        validation_result = call_sam_command(['validate'], project_dir)
-        if 'invalid SAM Template' in validation_result:
-            raise BentoMLException('"template.yaml" is invalided')
-    except Exception as error:
-        raise BentoMLException(str(error))
 
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):

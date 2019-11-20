@@ -142,17 +142,6 @@ Outputs:
         raise BentoMLException(str(error))
 
 
-def _cleanup_s3_bucket(bucket_name, region):
-    s3_client = boto3.client('s3', region)
-    try:
-        s3_client.delete_bucket(Bucket=bucket_name)
-    except ClientError as e:
-        if e.response and e.response['Error']['Code'] == 'NoSuchBucket':
-            return
-        else:
-            raise e
-
-
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def apply(self, deployment_pb, yatai_service, prev_deployment):
         try:
@@ -233,32 +222,28 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     memory_size=aws_config.memory_size,
                     timeout=aws_config.timeout,
                 )
-                try:
-                    logger.debug(
-                        'Lambda project directory: {}'.format(lambda_project_dir)
-                    )
-                    logger.info('initializing lambda project')
-                    init_sam_project(
-                        lambda_project_dir,
-                        bento_archive_path,
-                        deployment_pb.name,
-                        deployment_spec.bento_name,
-                        api_names,
-                        s3_bucket=lambda_s3_bucket,
-                        artifacts_prefix=artifacts_prefix,
-                    )
-                    logger.info('Packaging lambda project')
-                    lambda_package(
-                        lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
-                    )
-                    logger.info('Deploying lambda project')
-                    lambda_deploy(
-                        lambda_project_dir,
-                        stack_name=deployment_pb.namespace + '-' + deployment_pb.name,
-                    )
-                except BentoMLException as e:
-                    _cleanup_s3_bucket(lambda_s3_bucket, aws_config.region)
-                    raise e
+                logger.debug(
+                    'Lambda project directory: {}'.format(lambda_project_dir)
+                )
+                logger.info('initializing lambda project')
+                init_sam_project(
+                    lambda_project_dir,
+                    bento_archive_path,
+                    deployment_pb.name,
+                    deployment_spec.bento_name,
+                    api_names,
+                    s3_bucket=lambda_s3_bucket,
+                    artifacts_prefix=artifacts_prefix,
+                )
+                logger.info('Packaging lambda project')
+                lambda_package(
+                    lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
+                )
+                logger.info('Deploying lambda project')
+                lambda_deploy(
+                    lambda_project_dir,
+                    stack_name=deployment_pb.namespace + '-' + deployment_pb.name,
+                )
 
             res_deployment_pb = Deployment(state=DeploymentState())
             res_deployment_pb.CopyFrom(deployment_pb)

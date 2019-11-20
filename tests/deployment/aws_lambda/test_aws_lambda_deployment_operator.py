@@ -6,7 +6,8 @@ from mock import MagicMock, patch, Mock, mock_open
 from moto import mock_cloudformation, mock_s3
 from ruamel.yaml import YAML
 
-from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator
+from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator, \
+    generate_aws_lambda_template_config
 from bentoml.deployment.aws_lambda.utils import generate_aws_lambda_app_py
 from bentoml.proto.deployment_pb2 import Deployment, DeploymentState
 from bentoml.proto.repository_pb2 import (
@@ -16,6 +17,11 @@ from bentoml.proto.repository_pb2 import (
     GetBentoResponse,
 )
 from bentoml.proto.status_pb2 import Status
+
+
+fake_s3_bucket_name = 'fake_deployment_bucket'
+fake_s3_prefix = 'prefix'
+fake_s3_path = 's3://{}/{}'.format(fake_s3_bucket_name, fake_s3_prefix)
 
 
 def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
@@ -40,7 +46,10 @@ def generate_lambda_deployment_pb():
     test_deployment_pb.spec.operator = 3
     test_deployment_pb.spec.aws_lambda_operator_config.region = 'us-west-2'
     test_deployment_pb.spec.aws_lambda_operator_config.api_name = 'predict'
-    test_deployment_pb.spec.aws_lambda_operator_config.s3_path = 's3://fake_bucket/path'
+    test_deployment_pb.spec.aws_lambda_operator_config.s3_path = fake_s3_path
+    test_deployment_pb.spec.aws_lambda_operator_config.s3_region = 'us-west-2'
+    test_deployment_pb.spec.aws_lambda_operator_config.memory_size = 3008
+    test_deployment_pb.spec.aws_lambda_operator_config.timeout = 6
 
     return test_deployment_pb
 
@@ -50,8 +59,8 @@ def test_generate_aws_lambda_app_py(tmpdir):
     api_names = ['predict', 'second_predict']
     generate_aws_lambda_app_py(
         str(tmpdir),
-        s3_bucket='fake_deployment_bucket',
-        artifacts_prefix='fake_prefix',
+        s3_bucket=fake_s3_bucket_name,
+        artifacts_prefix='fake_artifact_prefix',
         bento_name=bento_name,
         api_names=api_names,
     )
@@ -81,10 +90,10 @@ def test_generate_aws_lambda_app_py(tmpdir):
         @patch('bentoml.bundler.load_bento_service_class', return_value=fake_bento)
         def mock_wrapper(*args, **kwargs):
             conn = boto3.client('s3', region_name='us-west-2')
-            conn.create_bucket(Bucket='fake_deployment_bucket')
-            fake_artifact_key = 'fake_prefix/model.pkl'
+            conn.create_bucket(Bucket=fake_s3_bucket_name)
+            fake_artifact_key = 'fake_artifact_prefix/model.pkl'
             conn.put_object(
-                Bucket='fake_deployment_bucket', Key=fake_artifact_key, Body='fakebody'
+                Bucket=fake_s3_bucket_name, Key=fake_artifact_key, Body='fakebody'
             )
             return func(*args, **kwargs)
 
@@ -102,11 +111,50 @@ def test_generate_aws_lambda_app_py(tmpdir):
     sys.path.remove(str(tmpdir))
 
 
-def test_generate_aws_lambda_template_yaml():
-    assert True
+def test_generate_aws_lambda_template_yaml(tmpdir):
+    deployment_name = 'deployment_name'
+    api_names = ['predict', 'classify']
+    s3_bucket_name = 'fake_bucket'
+    py_runtime = 'python3.7'
+    memory_size = 3008
+    timeout = 6
+    generate_aws_lambda_template_config(
+        str(tmpdir),
+        deployment_name,
+        api_names,
+        s3_bucket_name,
+        py_runtime,
+        memory_size,
+        timeout
+    )
+    template_path = os.path.join(str(tmpdir), 'template.yaml')
+    yaml = YAML()
+    with open(template_path, 'rb') as f:
+        yaml_data = yaml.load(f.read())
+    assert yaml_data['Resources']['predict']['Properties']['Runtime'] == py_runtime
+    assert yaml_data['Resources']['classify']['Properties']['Handler'] == 'app.classify'
 
 
-def test_aws_lambda_apply():
+def mock_lambda_related_operations(func):
+    @patch('bentoml.deployment.aws_lambda.utils.call_sam_command')
+    @patch('bentoml.deployment.aws_lambda.utils.upload_artifacts_to_s3')
+    @patch('bentoml.deployment.aws_lambda.utils.ensure_sam_available_or_raise')
+    @patch('bentoml.deployment.utils.ensure_docker_available_or_raise')
+    @mock_s3
+    def mock_wrapper(*args, **kwargs):
+        conn = boto3.client('s3', region_name='us-west-2')
+        conn.create_bucket(Bucket=fake_s3_bucket_name)
+        return func(*args, **kwargs)
+
+    return mock_wrapper()
+
+
+@mock_lambda_related_operations
+def test_aws_lambda_apply(mock_ensuredocker, mock_ensuresame, mock_upload, mock_callsam):
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_lambda_deployment_pb()
+    deployment_operator = AwsLambdaDeploymentOperator()
+    result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
     assert True
 
 
@@ -153,16 +201,3 @@ def test_aws_lambda_describe_success():
         result_pb = deployment_operator.describe(test_deployment_pb, yatai_service_mock)
         assert result_pb.status.status_code == Status.OK
         assert result_pb.state.state == DeploymentState.RUNNING
-
-
-def download_artifacts_from_s3(artifacts_saved_dir, s3_bucket, artifacts_prefix):
-    """ Download artifacts from s3 bucket to given directory
-    Args:
-        artifacts_saved_dir: String
-        s3_bucket: String
-        artifacts_prefix: String
-
-    Returns:
-        None
-    """
-    pass

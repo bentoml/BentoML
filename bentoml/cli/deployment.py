@@ -36,7 +36,7 @@ from bentoml.cli.click_utils import (
 from bentoml.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 from bentoml.proto import status_pb2
 from bentoml.utils import pb_to_yaml
-from bentoml.utils.usage_stats import track_cli
+from bentoml.utils.usage_stats import track_cli, track_cli_deployment
 from bentoml.exceptions import BentoMLException
 from bentoml.cli.utils import Spinner
 from bentoml.yatai.python_api import (
@@ -269,7 +269,7 @@ def get_deployment_sub_command():
     ):
         # converting platform parameter to DeploymentOperator name in proto
         # e.g. 'aws-lambda' to 'AWS_LAMBDA'
-        track_cli('deploy-create', platform.replace('-', '_').upper())
+        track_cli_deployment('deploy-create', platform.replace('-', '_').upper())
         bento_name, bento_version = bento.split(':')
         operator_spec = {
             'region': region,
@@ -346,7 +346,9 @@ def get_deployment_sub_command():
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def apply(deployment_yaml, output, wait):
-        track_cli('deploy-apply', deployment_yaml.get('spec', {}).get('operator'))
+        track_cli_deployment(
+            'deploy-apply', deployment_yaml.get('spec', {}).get('operator')
+        )
         try:
             yatai_service = get_yatai_service()
             result = apply_deployment(deployment_yaml, yatai_service)
@@ -417,8 +419,31 @@ def get_deployment_sub_command():
         track_cli('deploy-delete')
 
         yatai_service = get_yatai_service()
+        get_deployment_result = get_deployment(namespace, name, yatai_service)
+        if get_deployment_result.status.status_code != status_pb2.Status.OK:
+            _echo(
+                'Failed to get deployment {} for delete. {}:{}'.format(
+                    name,
+                    status_pb2.Status.Code.Name(
+                        get_deployment_result.status.status_code
+                    ),
+                    get_deployment_result.status.error_message,
+                ),
+                CLI_COLOR_ERROR
+            )
+            return
         result = delete_deployment(name, namespace, force, yatai_service)
         if result.status.status_code == status_pb2.Status.OK:
+            platform = DeploymentSpec.DeploymentOperator.Name(
+                result.deployment.spec.operator
+            )
+            stopped_time = datetime.utcnow()
+            up_time_in_seconds = (
+                stopped_time - result.deployment.created_at.ToDatetime()
+            ).total_seconds()
+            track_cli_deployment(
+                'deploy-delete-success', platform, {'uptime': int(up_time_in_seconds)}
+            )
             _echo(
                 'Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS
             )

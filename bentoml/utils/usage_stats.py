@@ -131,6 +131,13 @@ def track_cli(command, deploy_platform=None):
     return track('cli-' + command, properties)
 
 
+def track_cli_deployment(command, deploy_platform, additional_info=None):
+    properties = {'platform': deploy_platform}
+    if additional_info is not None:
+        properties.update(additional_info)
+    return track('cli-' + command, properties)
+
+
 def track_server(server_type, extra_properties=None):
     properties = extra_properties or {}
 

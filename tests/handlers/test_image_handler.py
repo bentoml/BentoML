@@ -37,7 +37,7 @@ def test_image_handler_aws_lambda_event(img_file):
         try:
             image_bytes_encoded = base64.encodebytes(content)
         except AttributeError:
-            image_bytes_encoded = base64.encodestring(str(content))
+            image_bytes_encoded = base64.encodestring(str(img_file))
 
     aws_lambda_event = {
         "body": image_bytes_encoded,
@@ -49,7 +49,7 @@ def test_image_handler_aws_lambda_event(img_file):
     assert aws_result["body"] == "[10, 10, 3]"
 
 
-def test_image_handler_http_request_wrong_request_method(img_file):
+def test_image_handler_http_request_wrong_request_method():
     test_image_handler = ImageHandler()
     request = mock.MagicMock(spec=flask.Request)
     request.method = "GET"
@@ -65,7 +65,7 @@ def test_image_handler_http_request_post_binary(img_file):
     request.method = "POST"
     request.files = {}
     request.headers = {}
-    request.get_data.return_value = open(img_file, 'rb')
+    request.get_data.return_value = open(str(img_file), 'rb')
 
     response = test_image_handler.handle_request(request, predict)
 
@@ -78,7 +78,7 @@ def test_image_handler_http_request_multipart_form(img_file):
     request = mock.MagicMock(spec=flask.Request)
     file_attr = {
         'filename': 'test_img.png',
-        'read.return_value': open(img_file, 'rb').read(),
+        'read.return_value': open(str(img_file), 'rb').read(),
     }
     file = mock.Mock(**file_attr)
 
@@ -93,7 +93,7 @@ def test_image_handler_http_request_multipart_form(img_file):
     assert "[10, 10, 3]" in str(response.response)
 
 
-def test_image_handler_http_request_malformatted_input_missing_image_file(img_file):
+def test_image_handler_http_request_malformatted_input_missing_image_file():
     test_image_handler = ImageHandler(input_names=("my_image",))
     request = mock.MagicMock(spec=flask.Request)
 
@@ -108,7 +108,7 @@ def test_image_handler_http_request_malformatted_input_missing_image_file(img_fi
     assert "unexpected HTTP request format" in str(response.response)
 
 
-def test_image_handler_http_request_malformatted_input_wrong_input_name(img_file):
+def test_image_handler_http_request_malformatted_input_wrong_input_name():
     test_image_handler = ImageHandler(input_names=("my_image",))
     request = mock.MagicMock(spec=flask.Request)
 

@@ -1,6 +1,5 @@
 import os
 import tempfile
-import json
 from click.testing import CliRunner
 
 from bentoml.cli import create_bento_service_cli
@@ -14,7 +13,7 @@ def generate_test_input_file():
     file_path = os.path.join(tempdir, random_id + ".json")
 
     with open(file_path, "w") as f:
-        f.write('[{"age": 1}, {"age": 2}]')
+        f.write('[{"col1": 1}, {"col1": 2}]')
     return file_path
 
 
@@ -25,9 +24,9 @@ def test_run_command_with_input_file(bento_bundle_path):
     cli = create_bento_service_cli()
     run_cmd = cli.commands["<API_NAME>"]
     result = runner.invoke(
-        run_cmd, ["predict", bento_bundle_path, "--input", input_path, "-o", "json"]
+        run_cmd,
+        ["predict_dataframe", bento_bundle_path, "--input", input_path, "-o", "json"],
     )
 
     assert result.exit_code == 0
-    result_json = json.loads(result.output)
-    assert result_json[0]["age"] == 6
+    assert result.output == "3"

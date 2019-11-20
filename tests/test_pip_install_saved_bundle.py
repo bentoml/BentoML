@@ -21,8 +21,8 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     sys.path.remove(install_path)
 
     svc = TestBentoService.load()
-    df = svc.predict(pd.DataFrame(pd.DataFrame([1], columns=["age"])))
-    assert df["age"].values[0] == 6
+    res = svc.predict_dataframe(pd.DataFrame(pd.DataFrame([1], columns=["col1"])))
+    assert res == 1
 
     # pip install should place cli entry script under target/bin directory
     cli_bin_path = os.path.join(install_path, "bin/TestBentoService")
@@ -38,7 +38,7 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     output = json.loads(output)
     assert output["name"] == "TestBentoService"
     assert output["version"] == svc.version
-    assert "predict" in map(lambda x: x["name"], output["apis"])
+    assert "predict_dataframe" in map(lambda x: x["name"], output["apis"])
 
     output = subprocess.check_output(
         [cli_bin_path, "--quiet", "open-api-spec"], env=env

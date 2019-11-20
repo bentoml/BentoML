@@ -29,15 +29,12 @@ def test_api_function_route(bento_service, tmpdir):
     response = test_client.get("/docs.json")
     assert 200 == response.status_code
 
-    assert "predict" in index_list
-    data = [{"age": 10}]
-
+    assert "predict_dataframe" in index_list
+    data = [{"col1": 10}, {"col1": 20}]
     response = test_client.post(
-        "/predict", data=json.dumps(data), content_type="application/json"
+        "/predict_dataframe", data=json.dumps(data), content_type="application/json"
     )
-
-    response_data = json.loads(response.data)
-    assert 15 == response_data[0]["age"]
+    assert response.data == "30"
 
     # Test Image handlers.
     img_file = tmpdir.join("test_img.png")
@@ -46,11 +43,14 @@ def test_api_function_route(bento_service, tmpdir):
     with open(str(img_file), "rb") as f:
         img = f.read()
 
-    response = test_client.post("/predictImage", data=img, content_type="image/png")
+    response = test_client.post(
+        "/predict_image", data={'image': (BytesIO(img), 'test_img.png')}
+    )
     assert 200 == response.status_code
+    assert "[10, 10, 3]" in str(response.data)
 
     response = test_client.post(
-        "/predictImages",
+        "/predict_images",
         data={
             'original': (BytesIO(img), 'original.jpg'),
             'compared': (BytesIO(img), 'compared.jpg'),
@@ -62,12 +62,12 @@ def test_api_function_route(bento_service, tmpdir):
     if sys.version_info >= (3, 6):
         # fast ai is required 3.6 or higher.
         response = test_client.post(
-            "/predictFastaiImage", data=img, content_type="image/png"
+            "/predict_fastai_image", data=img, content_type="image/png"
         )
         assert 200 == response.status_code
 
         response = test_client.post(
-            "/predictFastaiImages",
+            "/predict_fastai_images",
             data={
                 'original': (BytesIO(img), 'original.jpg'),
                 'compared': (BytesIO(img), 'compared.jpg'),

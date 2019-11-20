@@ -2,6 +2,7 @@ import os
 import tempfile
 from click.testing import CliRunner
 
+from six import PY3
 from bentoml.cli import create_bento_service_cli
 
 
@@ -29,4 +30,7 @@ def test_run_command_with_input_file(bento_bundle_path):
     )
 
     assert result.exit_code == 0
-    assert result.output == "3"
+    if PY3:
+        assert result.output.strip() == '"3"'
+    else:
+        assert result.output.decode().strip() == "3"

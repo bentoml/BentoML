@@ -25,8 +25,7 @@ import re
 import boto3
 from botocore.exceptions import ClientError
 
-from bentoml.exceptions import BentoMLException, BentoMLMissingDependencyException
-
+from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +80,9 @@ def cleanup_build_files(project_dir, api_name):
             if 'tests' in dirs:
                 logger.debug('removing dir: ' + os.path.join(root, 'tests'))
                 shutil.rmtree(os.path.join(root, 'tests'))
+            if 'test' in dirs:
+                logger.debug('removing dir: ' + os.path.join(root, 'test'))
+                shutil.rmtree(os.path.join(root, 'test'))
             if 'examples' in dirs:
                 logger.debug('removing dir: ' + os.path.join(root, 'examples'))
                 shutil.rmtree(os.path.join(root, 'examples'))
@@ -269,7 +271,7 @@ def generate_aws_lambda_app_py(
 
 def init_sam_project(
     sam_project_path,
-    bento_archive_path,
+    bento_service_bundle_path,
     deployment_name,
     bento_name,
     api_names,
@@ -280,12 +282,14 @@ def init_sam_project(
     os.mkdir(function_path)
     # Copy requirements.txt
     logger.debug('Coping requirements.txt')
-    requirement_txt_path = os.path.join(bento_archive_path, 'requirements.txt')
+    requirement_txt_path = os.path.join(bento_service_bundle_path, 'requirements.txt')
     shutil.copy(requirement_txt_path, function_path)
 
     # Copy bundled pip dependencies
     logger.debug('Coping bundled_dependencies')
-    bundled_dep_path = os.path.join(bento_archive_path, 'bundled_pip_dependencies')
+    bundled_dep_path = os.path.join(
+        bento_service_bundle_path, 'bundled_pip_dependencies'
+    )
     if os.path.isdir(bundled_dep_path):
         shutil.copytree(
             bundled_dep_path, os.path.join(function_path, 'bundled_pip_dependencies')
@@ -319,7 +323,7 @@ def init_sam_project(
 
     # Copy bento_service_model
     logger.debug('Coping model directory')
-    model_path = os.path.join(bento_archive_path, bento_name)
+    model_path = os.path.join(bento_service_bundle_path, bento_name)
     shutil.copytree(model_path, os.path.join(function_path, bento_name))
 
     # remove the artifacts dir. Artifacts already uploaded to s3

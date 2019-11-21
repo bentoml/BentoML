@@ -230,8 +230,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 bento_path,
                 deployment_spec.bento_name,
             )
-            with TempDirectory(cleanup=False) as lambda_project_dir:
-                logger.debug('Generating cloudformation template.yaml for lambda project at %s', lambda_project_dir)
+            with TempDirectory() as lambda_project_dir:
+                logger.debug(
+                    'Generating cloudformation template.yaml for lambda project at %s',
+                    lambda_project_dir,
+                )
                 template_file_path = _create_aws_lambda_cloudformation_template_file(
                     lambda_project_dir,
                     deployment_pb.name,

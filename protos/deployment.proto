@@ -41,11 +41,6 @@ message DeploymentSpec {
     string api_name = 2;
     int32 memory_size = 3;
     int32 timeout = 4;
-    // s3_path and s3_region are used for storing artifacts and packaged lambda
-    // functions.  When s3_region is missing, we will fall back on region.  s3_path is
-    // in format of s3://{bucket_name}/prefix_path/if_any
-    string s3_path = 5;
-    string s3_region = 6;
   }
 
   message GcpFunctionOperatorConfig {

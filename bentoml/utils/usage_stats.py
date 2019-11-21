@@ -26,9 +26,11 @@ import atexit
 
 import uuid
 import requests
+from ruamel.yaml import YAML
 
-from bentoml.utils import _is_pypi_release
+from bentoml.utils import _is_pypi_release, ProtoMessageToDict
 from bentoml import config
+from bentoml.bundler import load_bento_service_metadata
 from bentoml import __version__ as BENTOML_VERSION
 
 
@@ -73,17 +75,33 @@ def _send_amplitude_event(event_type, event_properties):
 
 
 def _get_bento_service_event_properties(bento_service, properties=None):
+    bento_service_metadata = bento_service.get_bento_service_metadata_pb()
+    return _bento_service_metadata_to_event_properties(
+        bento_service_metadata, properties
+    )
+
+
+def _get_bento_service_event_properties_from_bundle_path(bundle_path, properties=None):
+    bento_service_metadata = load_bento_service_metadata(bundle_path)
+    return _bento_service_metadata_to_event_properties(
+        bento_service_metadata, properties
+    )
+
+
+def _bento_service_metadata_to_event_properties(
+    bento_service_metadata, properties=None
+):
     if properties is None:
         properties = {}
 
     artifact_types = set()
     handler_types = set()
 
-    for artifact in bento_service._artifacts:
-        artifact_types.add(artifact.__class__.__name__)
+    for artifact in bento_service_metadata.artifacts:
+        artifact_types.add(artifact.artifact_type)
 
-    for api in bento_service.get_service_apis():
-        handler_types.add(api.handler.__class__.__name__)
+    for api in bento_service_metadata.apis:
+        handler_types.add(api.handler_type)
 
     if handler_types:
         properties["handler_types"] = list(handler_types)
@@ -93,7 +111,11 @@ def _get_bento_service_event_properties(bento_service, properties=None):
     else:
         properties["artifact_types"] = ["NO_ARTIFACT"]
 
-    properties["env"] = bento_service.env.to_dict()
+    env_dict = ProtoMessageToDict(bento_service_metadata.env)
+    if 'conda_env' in env_dict:
+        env_dict['conda_env'] = YAML().load(env_dict['conda_env'])
+    properties['env'] = env_dict
+
     return properties
 
 
@@ -103,6 +125,12 @@ def track(event_type, event_properties=None):
 
     if event_properties is None:
         event_properties = {}
+
+    if 'bento_service_bundle_path' in event_properties:
+        _get_bento_service_event_properties_from_bundle_path(
+            event_properties['bento_service_bundle_path'], event_properties
+        )
+        del event_properties['bento_service_bundle_path']
 
     event_properties['py_version'] = PY_VERSION
     event_properties["bento_version"] = BENTOML_VERSION

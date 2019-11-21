@@ -7,7 +7,6 @@ def test_get_bento_service_event_properties(bento_service):
     properties = _get_bento_service_event_properties(bento_service)
 
     assert 'PickleArtifact' in properties["artifact_types"]
-
     assert 'DataframeHandler' in properties["handler_types"]
     assert 'ImageHandler' in properties["handler_types"]
     assert 'JsonHandler' in properties["handler_types"]
@@ -19,6 +18,7 @@ def test_get_bento_service_event_properties(bento_service):
         assert len(properties["handler_types"]) == 3
 
     assert properties["env"] is not None
+    assert properties["env"]["conda_env"]["channels"] == ["defaults"]
 
 
 def test_get_bento_service_event_properties_with_no_artifact():

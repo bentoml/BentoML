@@ -139,10 +139,14 @@ def _cleanup_s3_bucket(bucket_name, region):
     s3_client = boto3.client('s3', region)
     s3 = boto3.resource('s3')
     try:
+        logger.debug('Removing all objects inside bucket %s', bucket_name)
         s3.Bucket(bucket_name).objects.all().delete()
+        logger.debug('Deleting bucket %s', bucket_name)
         s3_client.delete_bucket(Bucket=bucket_name)
     except ClientError as e:
         if e.response and e.response['Error']['Code'] == 'NoSuchBucket':
+            # If there is no bucket, we just let it silently fail, dont have to do
+            # any thing
             return
         else:
             raise e
@@ -212,7 +216,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
             logger.debug('Check s3 path is available or not')
             create_s3_bucket_if_not_exists(lambda_s3_bucket, aws_config.region)
-            logger.info('Uploading artifacts to S3 bucket')
+            logger.debug('Uploading artifacts to S3 bucket')
             artifacts_prefix = os.path.join(
                 deployment_path_prefix,
                 'artifacts',
@@ -227,7 +231,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_name,
             )
             with TempDirectory(cleanup=False) as lambda_project_dir:
-                logger.debug('Generating template.yaml for lambda project')
+                logger.debug('Generating cloudformation template.yaml for lambda project at %s', lambda_project_dir)
                 template_file_path = _create_aws_lambda_cloudformation_template_file(
                     lambda_project_dir,
                     deployment_pb.name,
@@ -239,7 +243,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
                 validate_lambda_template(template_file_path)
                 logger.debug('Lambda project directory: {}'.format(lambda_project_dir))
-                logger.info('initializing lambda project')
+                logger.debug('initializing lambda project')
                 init_sam_project(
                     lambda_project_dir,
                     bento_path,
@@ -277,7 +281,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
     def delete(self, deployment_pb, yatai_service):
         try:
-            logger.info('Deleting AWS Lambda deployment')
+            logger.debug('Deleting AWS Lambda deployment')
             state = self.describe(deployment_pb, yatai_service).state
             if state.state != DeploymentState.RUNNING:
                 message = (

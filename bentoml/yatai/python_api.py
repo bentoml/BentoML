@@ -279,13 +279,6 @@ def create_deployment(
                 deployment_dict['spec']['aws_lambda_operator_config'][
                     'timeout'
                 ] = operator_spec['timeout']
-            if operator_spec.get('s3_path'):
-                deployment_dict['spec']['aws_lambda_operator_config'][
-                    's3_path'
-                ] = operator_spec['s3_path']
-            deployment_dict['spec']['aws_lambda_operator_config'][
-                's3_region'
-            ] = operator_spec.get('s3_region') or config().get('aws', 'default_region')
         elif operator_value == DeploymentSpec.GCP_FCUNTION:
             deployment_dict['spec']['gcp_function_operatorConfig'] = {
                 'region': operator_spec.get('region')

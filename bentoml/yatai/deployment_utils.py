@@ -77,8 +77,6 @@ def deployment_dict_to_pb(deployment_dict):
             'api_name',
             'memory_size',
             'timeout',
-            's3_path',
-            's3_region',
         ]:
             if lambda_conf.get(field):
                 deployment_pb.spec.aws_lambda_operator_config.__setattr__(

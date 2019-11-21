@@ -31,6 +31,7 @@ from bentoml.deployment.utils import (
 )
 from bentoml.handlers.clipper_handler import HANDLER_TYPE_TO_INPUT_TYPE
 from bentoml.exceptions import BentoMLException
+from bentoml.utils.usage_stats import track
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +145,8 @@ def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=
         tuple: Model name and model version that deployed to clipper
 
     """
+    track("clipper-deploy", {'bento_service_bundle_path': bundle_path})
+
     # docker is required to build clipper model image
     ensure_docker_available_or_raise()
 
@@ -227,4 +230,5 @@ def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=
         labels=labels,
     )
 
+    track("clipper-deploy-success", {'bento_service_bundle_path': bundle_path})
     return model_name, model_version

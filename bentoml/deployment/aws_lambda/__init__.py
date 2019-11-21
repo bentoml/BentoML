@@ -22,7 +22,6 @@ import logging
 import uuid
 
 from botocore.exceptions import ClientError
-from six.moves.urllib.parse import urlparse
 
 import boto3
 from ruamel.yaml import YAML
@@ -37,7 +36,8 @@ from bentoml.deployment.aws_lambda.utils import (
     call_sam_command,
     check_s3_bucket_exists_or_raise,
     validate_lambda_template,
-    create_s3_bucket_if_not_exists)
+    create_s3_bucket_if_not_exists,
+)
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
     exception_to_return_status,
@@ -127,7 +127,8 @@ def _create_aws_lambda_cloudformation_template_file(
     # We add Outputs section separately, because the value should not
     # have "'" around !Sub
     with open(template_file_path, 'a') as f:
-        f.write("""\
+        f.write(
+            """\
   EndpointUrl:
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
     Description: URL for endpoint

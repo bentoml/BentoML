@@ -65,7 +65,7 @@ def {api_name}(event, context):
 
 def ensure_sam_available_or_raise():
     try:
-        import samcli
+        import samcli  # noqa
     except ImportError:
         raise ImportError(
             'aws-sam-cli package is required. Install '

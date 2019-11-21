@@ -176,6 +176,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 raise BentoMLException(
                     'Python 2 is not supported for Lambda Deployment'
                 )
+            python_runtime = 'python{}.{}'.format(py_major, py_minor)
 
             api_names = (
                 [aws_config.api_name]

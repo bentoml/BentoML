@@ -64,22 +64,12 @@ def {api_name}(event, context):
 
 
 def ensure_sam_available_or_raise():
-    # for FileNotFoundError doesn't exist in py2.7. check_output raise OSError instead
-    import six
-
-    if six.PY3:
-        not_found_error = FileNotFoundError
-    else:
-        not_found_error = OSError
-
     try:
-        subprocess.check_output(['sam', '--version'])
-    except subprocess.CalledProcessError as error:
-        raise BentoMLException('Error executing sam command: {}'.format(error.output))
-    except not_found_error:
-        raise BentoMLMissingDependencyException(
-            'SAM is required for AWS Lambda deployment. '
-            'Install with \`pip install --user aws-sam-cli`'
+        import samcli
+    except ImportError:
+        raise ImportError(
+            'aws-sam-cli package is required. Install '
+            'with `pip install --user aws-sam-cli`'
         )
 
 
@@ -139,31 +129,10 @@ def call_sam_command(command, project_dir):
     return stdout
 
 
-def lambda_build(project_dir):
-    try:
-        from samcli.commands.build.command import do_cli
-    except ImportError:
-        raise ImportError(
-            'aws-sam-cli package is required. Install '
-            'with `pip install --user aws-sam-cli`'
-        )
-    do_cli(
-        build_dir='',
-        template='',
-        base_dir='',
-        use_container=True,
-        clean=True,
-        mode=None,
-        docker_network='',
-        manifest_path='',
-        skip_pull_image='',
-        parameter_overrides=''
-    )
-
-
 def lambda_package(project_dir, s3_bucket_name, deployment_prefix):
     prefix_path = os.path.join(deployment_prefix, 'lambda-functions')
     build_dir = os.path.join(project_dir, '.aws-sam', 'build')
+
     call_sam_command(
         [
             'package',
@@ -368,7 +337,6 @@ def init_sam_project(
     build_result = call_sam_command(['build', '--use-container'], sam_project_path)
     if 'Build Failed' in build_result:
         raise BentoMLException('Build Lambda project failed')
-    lambda_build(sam_project_path)
     logger.debug('Removing unnecessary files to free up space')
     for api_name in api_names:
         cleanup_build_files(sam_project_path, api_name)

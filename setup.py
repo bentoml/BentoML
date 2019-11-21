@@ -54,8 +54,11 @@ tensorflow = ["tensorflow"]
 xgboost = ["xgboost"]
 h2o = ["h2o"]
 api_server = ["gunicorn", "prometheus_client"]
+aws_sam_cli = ["aws-sam-cli"]
 
-optional_requires = api_server + imageio + pytorch + tensorflow + fastai + xgboost + h2o
+optional_requires = (
+    api_server + imageio + pytorch + tensorflow + fastai + xgboost + h2o + aws_sam_cli
+)
 
 test_requires = (
     [
@@ -70,6 +73,7 @@ test_requires = (
     ]
     + imageio
     + fastai
+    + aws_sam_cli
 )
 
 dev_requires = [

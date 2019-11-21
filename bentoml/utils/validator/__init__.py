@@ -58,7 +58,7 @@ deployment_schema = {
                 'schema': {
                     'region': {'type': 'string', 'required': True},
                     'api_name': {'type': 'string', 'minlength': 3},
-                    'memory_size': {'type': 'integer', 'awsLambdaMemory': True},
+                    'memory_size': {'type': 'integer', 'aws_lambda_memory': True},
                     'timeout': {'type': 'integer', 'min': 1, 'max': 900},
                     's3_path': {'type': 'string', 'required': True},
                     's3_region': {'type': 'string', 'minlength': 3},
@@ -94,13 +94,13 @@ deployment_schema = {
 
 
 class YataiDeploymentValidator(Validator):
-    def _validate_awsLambdaMemory(self, awsLambdaMemory, field, value):
+    def _validate_aws_lambda_memory(self, aws_lambda_memory, field, value):
         """ Test the memory size restriction for AWS Lambda.
 
         The rule's arguments are validated against this schema:
         {'type': 'integer'}
         """
-        if awsLambdaMemory:
+        if aws_lambda_memory:
             if value > 3008 or value < 128:
                 self._error(
                     field,

@@ -240,6 +240,7 @@ def get_deployment_sub_command():
         help='Memory size for lambda function. '
         'Option applicable to platform: aws-lambda',
         type=click.INT,
+        default=1024,
     )
     @click.option(
         '--timeout',

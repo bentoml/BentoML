@@ -7,7 +7,7 @@ from ruamel.yaml import YAML
 
 from bentoml.deployment.aws_lambda import (
     AwsLambdaDeploymentOperator,
-    generate_aws_lambda_template_config,
+    _create_aws_lambda_cloudformation_template_file,
 )
 from bentoml.deployment.aws_lambda.utils import generate_aws_lambda_app_py
 from bentoml.proto.deployment_pb2 import (
@@ -123,7 +123,7 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
     py_runtime = 'python3.7'
     memory_size = 3008
     timeout = 6
-    generate_aws_lambda_template_config(
+    _create_aws_lambda_cloudformation_template_file(
         str(tmpdir),
         deployment_name,
         api_names,

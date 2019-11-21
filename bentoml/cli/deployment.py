@@ -250,15 +250,6 @@ def get_deployment_sub_command():
         default=6,
     )
     @click.option(
-        '--s3-path',
-        help='S3 path for storing AWS lambda deployment bundle'
-        'required applicable to platform: aws-lambda',
-    )
-    @click.option(
-        '--s3-region',
-        help='Region for S3 bucket, option applicable to platform: aws-lambda',
-    )
-    @click.option(
         '--service-name',
         help='Name for service. Option applicable to platform: Kubernetes',
     )
@@ -291,8 +282,6 @@ def get_deployment_sub_command():
         service_type,
         memory_size,
         timeout,
-        s3_path,
-        s3_region,
         wait,
     ):
         # converting platform parameter to DeploymentOperator name in proto
@@ -310,8 +299,6 @@ def get_deployment_sub_command():
             'service_type': service_type,
             'memory_size': memory_size,
             'timeout': timeout,
-            's3_path': s3_path,
-            's3_region': s3_region,
         }
         yatai_service = get_yatai_service()
         result = create_deployment(

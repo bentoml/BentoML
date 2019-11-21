@@ -24,9 +24,9 @@ from bentoml.proto.repository_pb2 import (
 from bentoml.proto import status_pb2
 from bentoml.yatai.status import Status
 
-fake_s3_bucket_name = 'fake_deployment_bucket'
-fake_s3_prefix = 'prefix'
-fake_s3_path = 's3://{}/{}'.format(fake_s3_bucket_name, fake_s3_prefix)
+mock_s3_bucket_name = 'fake_deployment_bucket'
+mock_s3_prefix = 'prefix'
+mock_s3_path = 's3://{}/{}'.format(mock_s3_bucket_name, mock_s3_prefix)
 
 
 def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
@@ -51,8 +51,6 @@ def generate_lambda_deployment_pb():
     test_deployment_pb.spec.operator = 3
     test_deployment_pb.spec.aws_lambda_operator_config.region = 'us-west-2'
     test_deployment_pb.spec.aws_lambda_operator_config.api_name = 'predict'
-    test_deployment_pb.spec.aws_lambda_operator_config.s3_path = fake_s3_path
-    test_deployment_pb.spec.aws_lambda_operator_config.s3_region = 'us-west-2'
     test_deployment_pb.spec.aws_lambda_operator_config.memory_size = 3008
     test_deployment_pb.spec.aws_lambda_operator_config.timeout = 6
 
@@ -64,7 +62,7 @@ def test_generate_aws_lambda_app_py(tmpdir):
     api_names = ['predict', 'second_predict']
     generate_aws_lambda_app_py(
         str(tmpdir),
-        s3_bucket=fake_s3_bucket_name,
+        s3_bucket=mock_s3_bucket_name,
         artifacts_prefix='fake_artifact_prefix',
         bento_name=bento_name,
         api_names=api_names,
@@ -95,10 +93,10 @@ def test_generate_aws_lambda_app_py(tmpdir):
         @patch('bentoml.bundler.load_bento_service_class', return_value=fake_bento)
         def mock_wrapper(*args, **kwargs):
             conn = boto3.client('s3', region_name='us-west-2')
-            conn.create_bucket(Bucket=fake_s3_bucket_name)
+            conn.create_bucket(Bucket=mock_s3_bucket_name)
             fake_artifact_key = 'fake_artifact_prefix/model.pkl'
             conn.put_object(
-                Bucket=fake_s3_bucket_name, Key=fake_artifact_key, Body='fakebody'
+                Bucket=mock_s3_bucket_name, Key=fake_artifact_key, Body='fakebody'
             )
             return func(*args, **kwargs)
 
@@ -145,7 +143,7 @@ def mock_lambda_related_operations(func):
     @mock_s3
     def mock_wrapper(*args, **kwargs):
         conn = boto3.client('s3', region_name='us-west-2')
-        conn.create_bucket(Bucket=fake_s3_bucket_name)
+        conn.create_bucket(Bucket=mock_s3_bucket_name)
         return func(*args, **kwargs)
 
     return mock_wrapper()

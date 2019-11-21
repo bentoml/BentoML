@@ -25,7 +25,8 @@ import re
 import boto3
 from botocore.exceptions import ClientError
 
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
+from bentoml.utils.whichcraft import which
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,8 @@ def ensure_sam_available_or_raise():
 def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, '.aws-sam/build/{}'.format(api_name))
     logger.debug('Cleaning up unused files in SAM built directory {}'.format(build_dir))
+    if which('du'):
+        logger.debug(subprocess.check_output(['du', '-sch'], cwd=build_dir))
     try:
         for root, dirs, files in os.walk(build_dir):
             if 'tests' in dirs:
@@ -192,9 +195,11 @@ def validate_lambda_template(template_file):
     try:
         validator.is_valid()
     except InvalidSamDocumentException as e:
-        raise BentoMLException()
+        raise BentoMLDeploymentException('Invalid SAM Template for AWS Lambda.')
     except NoCredentialsError as e:
-        raise BentoMLException()
+        raise BentoMLDeploymentException(
+            'AWS Credential are required, please configure your credentials.'
+        )
 
 
 def create_s3_bucket_if_not_exists(bucket_name, region):

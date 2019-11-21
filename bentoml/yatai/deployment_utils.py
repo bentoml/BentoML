@@ -72,12 +72,7 @@ def deployment_dict_to_pb(deployment_dict):
             )
     elif deployment_pb.spec.operator == DeploymentSpec.AWS_LAMBDA:
         lambda_conf = spec_dict.get('aws_lambda_operator_config', {})
-        for field in [
-            'region',
-            'api_name',
-            'memory_size',
-            'timeout',
-        ]:
+        for field in ['region', 'api_name', 'memory_size', 'timeout']:
             if lambda_conf.get(field):
                 deployment_pb.spec.aws_lambda_operator_config.__setattr__(
                     field, lambda_conf.get(field)

@@ -128,7 +128,6 @@ def generate_lambda_deployment_pb():
     test_deployment_pb.spec.operator = 3
     test_deployment_pb.spec.aws_lambda_operator_config.region = 'us-west-2'
     test_deployment_pb.spec.aws_lambda_operator_config.api_name = 'predict'
-    test_deployment_pb.spec.aws_lambda_operator_config.s3_path = 's3://fake_bucket'
 
     return test_deployment_pb
 

@@ -19,6 +19,9 @@ from __future__ import print_function
 import json
 import os
 import logging
+import uuid
+
+from botocore.exceptions import ClientError
 from six.moves.urllib.parse import urlparse
 
 import boto3
@@ -34,12 +37,13 @@ from bentoml.deployment.aws_lambda.utils import (
     call_sam_command,
     check_s3_bucket_exists_or_raise,
     validate_lambda_template,
-)
+    create_s3_bucket_if_not_exists)
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
     exception_to_return_status,
     ensure_deploy_api_name_exists_in_bento,
     ensure_docker_available_or_raise,
+    generate_aws_compatible_string,
 )
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import (
@@ -86,12 +90,12 @@ def _create_aws_lambda_cloudformation_template_file(
             },
         },
         'Resources': {},
-        # 'Outputs': {
-        #     'EndpintUrl': {
-        #         'Description': 'URL for endpoint',
-        #         'Value': 'Fn::Sub: "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"'
-        #     }
-        # },
+        'Outputs': {
+            'S3Bucket': {
+                'Value': s3_bucket_name,
+                'Description': 'S3 Bucket for saving artifacts and lambda bundle',
+            }
+        },
     }
     for api_name in api_names:
         sam_config['Resources'][api_name] = {
@@ -120,18 +124,29 @@ def _create_aws_lambda_cloudformation_template_file(
 
     yaml.dump(sam_config, Path(template_file_path))
 
-    # We add Outputs section separately, because the value should not have 'around !Sub
-
-    with open(os.path.join(project_dir, 'template.yaml'), 'a') as f:
-        f.write(
-            """\
-Outputs:
-    EndpointUrl:
-        Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
-        Description: URL for endpoint
+    # We add Outputs section separately, because the value should not
+    # have "'" around !Sub
+    with open(template_file_path, 'a') as f:
+        f.write("""\
+  EndpointUrl:
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+    Description: URL for endpoint
 """
         )
     return template_file_path
+
+
+def _cleanup_s3_bucket(bucket_name, region):
+    s3_client = boto3.client('s3', region)
+    s3 = boto3.resource('s3')
+    try:
+        s3.Bucket(bucket_name).objects.all().delete()
+        s3_client.delete_bucket(Bucket=bucket_name)
+    except ClientError as e:
+        if e.response and e.response['Error']['Code'] == 'NoSuchBucket':
+            return
+        else:
+            raise e
 
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
@@ -171,7 +186,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             bento_service_metadata = bento_pb.bento.bento_service_metadata
 
             py_major, py_minor, _ = bento_service_metadata.env.python_version.split('.')
-            print(py_major, py_minor)
             if py_major != '3':
                 raise BentoMLException(
                     'Python 2 is not supported for Lambda Deployment'
@@ -186,25 +200,18 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             ensure_deploy_api_name_exists_in_bento(
                 [api.name for api in bento_service_metadata.apis], api_names
             )
-            try:
-                is_s3_url(aws_config.s3_path)
-            except Exception:
-                raise BentoMLException(
-                    '{} is not recognizable s3 path'.format(aws_config.s3_path)
-                )
 
-            parsed_url = urlparse(aws_config.s3_path)
-            lambda_s3_bucket = parsed_url.netloc
+            lambda_s3_bucket = generate_aws_compatible_string(
+                'bentoml-deployment-{name}-{random_string}'.format(
+                    name=deployment_pb.name, random_string=uuid.uuid4().hex[:6].lower()
+                )
+            )
             deployment_path_prefix = os.path.join(
-                parsed_url.path[1:],
-                'bentoml',
-                'deployments',
-                deployment_pb.namespace,
-                deployment_pb.name,
+                deployment_pb.namespace, deployment_pb.name
             )
 
             logger.debug('Check s3 path is available or not')
-            check_s3_bucket_exists_or_raise(lambda_s3_bucket, aws_config.s3_region)
+            create_s3_bucket_if_not_exists(lambda_s3_bucket, aws_config.region)
             logger.info('Uploading artifacts to S3 bucket')
             artifacts_prefix = os.path.join(
                 deployment_path_prefix,
@@ -247,10 +254,14 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
                 )
                 logger.info('Deploying lambda project')
-                lambda_deploy(
-                    lambda_project_dir,
-                    stack_name=deployment_pb.namespace + '-' + deployment_pb.name,
-                )
+                try:
+                    lambda_deploy(
+                        lambda_project_dir,
+                        stack_name=deployment_pb.namespace + '-' + deployment_pb.name,
+                    )
+                except Exception as e:
+                    _cleanup_s3_bucket(lambda_s3_bucket, aws_config.region)
+                    return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
 
             logger.info('Finish deployed lambda project, fetching latest status')
             res_deployment_pb = Deployment(state=DeploymentState())
@@ -283,6 +294,20 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
             cf_client = boto3.client('cloudformation', aws_config.region)
             stack_name = deployment_pb.namespace + '-' + deployment_pb.name
+            cloud_formation_stack_result = cf_client.describe_stacks(
+                StackName='{ns}-{name}'.format(
+                    ns=deployment_pb.namespace, name=deployment_pb.name
+                )
+            )
+            stack_result = cloud_formation_stack_result.get('Stacks')[0]
+            outputs = stack_result['Outputs']
+            bucket_name = ''
+            for output in outputs:
+                if output['OutputKey'] == 'S3Bucket':
+                    bucket_name = output['OutputValue']
+            if bucket_name:
+                _cleanup_s3_bucket(bucket_name, aws_config.region)
+
             logger.debug('Deleting Lambda function and related resources')
             cf_client.delete_stack(StackName=stack_name)
             return DeleteDeploymentResponse(status=Status.OK())
@@ -342,14 +367,18 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
 
             base_url = ''
+            s3_bucket = ''
             for output in outputs:
                 if output['OutputKey'] == 'EndpointUrl':
                     base_url = output['OutputValue']
-                    break
+                if output['OutputKey'] == 'S3Bucket':
+                    s3_bucket = output['OutputValue']
             if base_url:
                 info_json['endpoints'] = [
                     base_url + '/' + api_name for api_name in api_names
                 ]
+            if s3_bucket:
+                info_json['s3_bucket'] = s3_bucket
             state = DeploymentState(
                 state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
             )

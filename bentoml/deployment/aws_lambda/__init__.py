@@ -34,16 +34,15 @@ from bentoml.deployment.aws_lambda.utils import (
     lambda_deploy,
     lambda_package,
     call_sam_command,
-    check_s3_bucket_exists_or_raise,
     validate_lambda_template,
     create_s3_bucket_if_not_exists,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
     exception_to_return_status,
-    ensure_deploy_api_name_exists_in_bento,
     ensure_docker_available_or_raise,
     generate_aws_compatible_string,
+    raise_if_api_names_not_found_in_bento_service_metadata,
 )
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import (
@@ -55,7 +54,6 @@ from bentoml.proto.deployment_pb2 import (
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.utils import Path
-from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
 
@@ -198,8 +196,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 if aws_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
-            ensure_deploy_api_name_exists_in_bento(
-                [api.name for api in bento_service_metadata.apis], api_names
+
+            raise_if_api_names_not_found_in_bento_service_metadata(
+                bento_service_metadata, api_names
             )
 
             lambda_s3_bucket = generate_aws_compatible_string(

@@ -79,12 +79,14 @@ def ensure_docker_available_or_raise():
         )
 
 
-def ensure_deploy_api_name_exists_in_bento(all_api_names, deployed_api_names):
-    if not set(deployed_api_names).issubset(all_api_names):
+def raise_if_api_names_not_found_in_bento_service_metadata(metadata, api_names):
+    all_api_names = [api.name for api in metadata.apis]
+
+    if not set(api_names).issubset(all_api_names):
         raise BentoMLInvalidArgumentException(
-            "Expect api names {deployed_api_names} to be "
+            "Expect api names {api_names} to be "
             "subset of {all_api_names}".format(
-                deployed_api_names=deployed_api_names, all_api_names=all_api_names
+                api_names=api_names, all_api_names=all_api_names
             )
         )
 

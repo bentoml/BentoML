@@ -60,31 +60,6 @@ from bentoml.yatai.status import Status
 logger = logging.getLogger(__name__)
 
 
-def generate_function_resource(
-    deployment_name, api_name, artifact_bucket_name, py_runtime, memory_size, timeout
-):
-    return {
-        'Type': 'AWS::Serverless::Function',
-        'Properties': {
-            'Runtime': py_runtime,
-            'CodeUri': deployment_name + '/',
-            'Handler': 'app.{}'.format(api_name),
-            'FunctionName': '{deployment}-{api}'.format(
-                deployment=deployment_name, api=api_name
-            ),
-            'Timeout': timeout,
-            'MemorySize': memory_size,
-            'Events': {
-                'Api': {
-                    'Type': 'Api',
-                    'Properties': {'Path': '/{}'.format(api_name), 'Method': 'post'},
-                }
-            },
-            'Policies': [{'S3ReadPolicy': {'BucketName': artifact_bucket_name}}],
-        },
-    }
-
-
 def _create_aws_lambda_cloudformation_template_file(
     project_dir,
     deployment_name,
@@ -198,10 +173,19 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
             # TODO
             python_runtime = 'python3.7'
-            if version.parse(bento_service_metadata.env.python_version) < version.parse(
-                '3.0.0'
+            bento_service_py_version = version.parse(
+                bento_service_metadata.env.python_version
+            )
+            if bento_service_py_version < version.parse('3.0.0'):
+                raise BentoMLException(
+                    'Python 2 is not supported for Lambda Deployment'
+                )
+            elif (
+                version.parse('3.6.0')
+                < bento_service_py_version
+                < version.parse('3.7.0')
             ):
-                python_runtime = 'python2.7'
+                python_runtime = 'python3.6'
 
             api_names = (
                 [aws_config.api_name]

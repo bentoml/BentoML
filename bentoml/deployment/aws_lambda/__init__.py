@@ -85,7 +85,7 @@ def generate_function_resource(
     }
 
 
-def generate_aws_lambda_template_config(
+def _create_aws_lambda_cloudformation_template_file(
     project_dir,
     deployment_name,
     api_names,
@@ -120,14 +120,29 @@ def generate_aws_lambda_template_config(
         # },
     }
     for api_name in api_names:
-        sam_config['Resources'][api_name] = generate_function_resource(
-            deployment_name,
-            api_name,
-            s3_bucket_name,
-            py_runtime,
-            memory_size=memory_size,
-            timeout=timeout,
-        )
+        sam_config['Resources'][api_name] = {
+            'Type': 'AWS::Serverless::Function',
+            'Properties': {
+                'Runtime': py_runtime,
+                'CodeUri': deployment_name + '/',
+                'Handler': 'app.{}'.format(api_name),
+                'FunctionName': '{deployment}-{api}'.format(
+                    deployment=deployment_name, api=api_name
+                ),
+                'Timeout': timeout,
+                'MemorySize': memory_size,
+                'Events': {
+                    'Api': {
+                        'Type': 'Api',
+                        'Properties': {
+                            'Path': '/{}'.format(api_name),
+                            'Method': 'post',
+                        },
+                    }
+                },
+                'Policies': [{'S3ReadPolicy': {'BucketName': s3_bucket_name}}],
+            },
+        }
 
     yaml.dump(sam_config, Path(template_file_path))
 
@@ -231,7 +246,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             )
             with TempDirectory() as lambda_project_dir:
                 logger.debug('Generating template.yaml for lambda project')
-                template_file_path = generate_aws_lambda_template_config(
+                template_file_path = _create_aws_lambda_cloudformation_template_file(
                     lambda_project_dir,
                     deployment_pb.name,
                     api_names,

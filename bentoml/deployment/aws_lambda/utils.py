@@ -78,14 +78,14 @@ def ensure_sam_available_or_raise():
         raise BentoMLException('Error executing sam command: {}'.format(error.output))
     except not_found_error:
         raise BentoMLMissingDependencyException(
-            'SAM is required for AWS Lambda deployment. Please visit '
-            'https://aws.amazon.com/serverless/sam for instructions'
+            'SAM is required for AWS Lambda deployment. '
+            'Install with \`pip install --user aws-sam-cli`'
         )
 
 
 def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, '.aws-sam/build/{}'.format(api_name))
-    logger.debug('Cleaning up for dir {}'.format(build_dir))
+    logger.debug('Cleaning up unused files in SAM built directory {}'.format(build_dir))
     try:
         for root, dirs, files in os.walk(build_dir):
             if 'tests' in dirs:
@@ -139,6 +139,28 @@ def call_sam_command(command, project_dir):
     return stdout
 
 
+def lambda_build(project_dir):
+    try:
+        from samcli.commands.build.command import do_cli
+    except ImportError:
+        raise ImportError(
+            'aws-sam-cli package is required. Install '
+            'with `pip install --user aws-sam-cli`'
+        )
+    do_cli(
+        build_dir='',
+        template='',
+        base_dir='',
+        use_container=True,
+        clean=True,
+        mode=None,
+        docker_network='',
+        manifest_path='',
+        skip_pull_image='',
+        parameter_overrides=''
+    )
+
+
 def lambda_package(project_dir, s3_bucket_name, deployment_prefix):
     prefix_path = os.path.join(deployment_prefix, 'lambda-functions')
     build_dir = os.path.join(project_dir, '.aws-sam', 'build')
@@ -160,22 +182,48 @@ def lambda_package(project_dir, s3_bucket_name, deployment_prefix):
 
 
 def lambda_deploy(project_dir, stack_name):
-    build_dir = os.path.join(project_dir, '.aws-sam', 'build')
-    call_sam_command(
-        [
-            'deploy',
-            '--template-file',
-            'packaged.yaml',
-            '--stack-name',
-            stack_name,
-            # This option is not in help listing. without it, cloud formation will
-            # result in review_in_progress
-            # https://github.com/awslabs/serverless-application-model/issues/51
-            '--capabilities',
-            'CAPABILITY_IAM',
-        ],
-        build_dir,
+    template_file = os.path.join(project_dir, '.aws-sam', 'build', 'packaged.yaml')
+    try:
+        from samcli.lib.samlib.cloudformation_command import execute_command
+    except ImportError:
+        raise ImportError(
+            'aws-sam-cli package is required. Install '
+            'with `pip install --user aws-sam-cli`'
+        )
+
+    execute_command(
+        "deploy",
+        ["--stack-name", stack_name, "--capabilities", "CAPABILITY_IAM"],
+        template_file=template_file,
     )
+
+
+def validate_lambda_template(template_file):
+    try:
+        from samtranslator.translator.managed_policy_translator import (
+            ManagedPolicyLoader,
+        )
+        from botocore.exceptions import NoCredentialsError
+        from samcli.commands.validate.lib.exceptions import InvalidSamDocumentException
+        from samcli.commands.validate.lib.sam_template_validator import (
+            SamTemplateValidator,
+        )
+        from samcli.commands.validate.validate import _read_sam_file
+    except ImportError:
+        raise ImportError(
+            'aws-sam-cli package is required. Install '
+            'with `pip install --user aws-sam-cli`'
+        )
+
+    sam_template = _read_sam_file(template_file)
+    iam_client = boto3.client("iam")
+    validator = SamTemplateValidator(sam_template, ManagedPolicyLoader(iam_client))
+    try:
+        validator.is_valid()
+    except InvalidSamDocumentException as e:
+        raise BentoMLException()
+    except NoCredentialsError as e:
+        raise BentoMLException()
 
 
 def create_s3_bucket_if_not_exists(bucket_name, region):
@@ -212,10 +260,10 @@ def check_s3_bucket_exists_or_raise(bucket_name, region):
     pass
 
 
-def upload_artifacts_to_s3(
-    region, bucket_name, path_prefix, bento_archive_path, bento_name
+def upload_bento_service_artifacts_to_s3(
+    region, bucket_name, path_prefix, bento_service_bundle_path, bento_name
 ):
-    artifacts_path = os.path.join(bento_archive_path, bento_name, 'artifacts')
+    artifacts_path = os.path.join(bento_service_bundle_path, bento_name, 'artifacts')
     s3_client = boto3.client('s3', region)
     try:
         for file_name in os.listdir(artifacts_path):
@@ -320,6 +368,7 @@ def init_sam_project(
     build_result = call_sam_command(['build', '--use-container'], sam_project_path)
     if 'Build Failed' in build_result:
         raise BentoMLException('Build Lambda project failed')
+    lambda_build(sam_project_path)
     logger.debug('Removing unnecessary files to free up space')
     for api_name in api_names:
         cleanup_build_files(sam_project_path, api_name)

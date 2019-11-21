@@ -25,14 +25,16 @@ import boto3
 from packaging import version
 from ruamel.yaml import YAML
 
+from bentoml.bundler import loader
 from bentoml.deployment.aws_lambda.utils import (
     ensure_sam_available_or_raise,
-    upload_artifacts_to_s3,
+    upload_bento_service_artifacts_to_s3,
     init_sam_project,
     lambda_deploy,
     lambda_package,
     call_sam_command,
     check_s3_bucket_exists_or_raise,
+    validate_lambda_template,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
@@ -110,6 +112,12 @@ def generate_aws_lambda_template_config(
             },
         },
         'Resources': {},
+        # 'Outputs': {
+        #     'EndpintUrl': {
+        #         'Description': 'URL for endpoint',
+        #         'Value': 'Fn::Sub: "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"'
+        #     }
+        # },
     }
     for api_name in api_names:
         sam_config['Resources'][api_name] = generate_function_resource(
@@ -124,6 +132,7 @@ def generate_aws_lambda_template_config(
     yaml.dump(sam_config, Path(template_file_path))
 
     # We add Outputs section separately, because the value should not have 'around !Sub
+
     with open(os.path.join(project_dir, 'template.yaml'), 'a') as f:
         f.write(
             """\
@@ -133,9 +142,35 @@ Outputs:
         Description: URL for endpoint
 """
         )
+    return template_file_path
 
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
+    def apply_old(self, deployment_pb, yatai_service, prev_deployment):
+        try:
+            ensure_sam_available_or_raise()
+            ensure_docker_available_or_raise()
+            deployment_spec = deployment_pb.spec
+
+            bento_pb = yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
+            )
+            if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
+                raise BentoMLException(
+                    'BentoML currently not support {} repository'.format(
+                        bento_pb.bento.uri.type
+                    )
+                )
+
+            return self._apply(
+                deployment_pb, bento_pb, yatai_service, bento_pb.bento.uri.uri
+            )
+        except BentoMLException as error:
+            return ApplyDeploymentResponse(status=exception_to_return_status(error))
+
     def apply(self, deployment_pb, yatai_service, prev_deployment):
         try:
             ensure_sam_available_or_raise()
@@ -149,9 +184,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     bento_version=deployment_spec.bento_version,
                 )
             )
-            if bento_pb.bento.uri.type != BentoUri.LOCAL:
+            if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
                 raise BentoMLException(
-                    'BentoML currently only support local repository'
+                    'BentoML currently not support {} repository'.format(
+                        bento_pb.bento.uri.type
+                    )
                 )
             else:
                 bento_archive_path = bento_pb.bento.uri.uri
@@ -197,11 +234,114 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_name,
                 deployment_spec.bento_version,
             )
-            upload_artifacts_to_s3(
+            upload_bento_service_artifacts_to_s3(
                 aws_config.region,
                 lambda_s3_bucket,
                 artifacts_prefix,
                 bento_archive_path,
+                deployment_spec.bento_name,
+            )
+            with TempDirectory() as lambda_project_dir:
+                logger.debug('Generating template.yaml for lambda project')
+                template_file_path = generate_aws_lambda_template_config(
+                    lambda_project_dir,
+                    deployment_pb.name,
+                    api_names,
+                    lambda_s3_bucket,
+                    py_runtime=python_runtime,
+                    memory_size=aws_config.memory_size,
+                    timeout=aws_config.timeout,
+                )
+                validate_lambda_template(template_file_path)
+                logger.debug('Lambda project directory: {}'.format(lambda_project_dir))
+                logger.info('initializing lambda project')
+                init_sam_project(
+                    lambda_project_dir,
+                    bento_archive_path,
+                    deployment_pb.name,
+                    deployment_spec.bento_name,
+                    api_names,
+                    s3_bucket=lambda_s3_bucket,
+                    artifacts_prefix=artifacts_prefix,
+                )
+                logger.info('Packaging lambda project')
+                lambda_package(
+                    lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
+                )
+                logger.info('Deploying lambda project')
+                lambda_deploy(
+                    lambda_project_dir,
+                    stack_name=deployment_pb.namespace + '-' + deployment_pb.name,
+                )
+
+            logger.info('Finish deployed lambda project, fetching latest status')
+            res_deployment_pb = Deployment(state=DeploymentState())
+            res_deployment_pb.CopyFrom(deployment_pb)
+            state = self.describe(res_deployment_pb, yatai_service).state
+            res_deployment_pb.state.CopyFrom(state)
+            return ApplyDeploymentResponse(
+                status=Status.OK(), deployment=res_deployment_pb
+            )
+
+        except BentoMLException as error:
+            return ApplyDeploymentResponse(status=exception_to_return_status(error))
+
+    def _apply(self, deployment_pb, bento_pb, yatai_service, bento_path):
+        if loader._is_remote_path(bento_path):
+            with loader._resolve_remote_bundle_path(bento_path) as local_path:
+                return self._apply(deployment_pb, bento_pb, yatai_service, local_path)
+
+        try:
+            deployment_spec = deployment_pb.spec
+            aws_config = deployment_spec.aws_lambda_operator_config
+            bento_service_metadata = bento_pb.bento.bento_service_metadata
+
+            # TODO
+            python_runtime = 'python3.7'
+            if version.parse(bento_service_metadata.env.python_version) < version.parse(
+                '3.0.0'
+            ):
+                python_runtime = 'python2.7'
+
+            api_names = (
+                [aws_config.api_name]
+                if aws_config.api_name
+                else [api.name for api in bento_service_metadata.apis]
+            )
+            ensure_deploy_api_name_exists_in_bento(
+                [api.name for api in bento_service_metadata.apis], api_names
+            )
+            try:
+                is_s3_url(aws_config.s3_path)
+            except Exception:
+                raise BentoMLException(
+                    '{} is not recognizable s3 path'.format(aws_config.s3_path)
+                )
+
+            parsed_url = urlparse(aws_config.s3_path)
+            lambda_s3_bucket = parsed_url.netloc
+            deployment_path_prefix = os.path.join(
+                parsed_url.path[1:],
+                'bentoml',
+                'deployments',
+                deployment_pb.namespace,
+                deployment_pb.name,
+            )
+
+            logger.debug('Check s3 path is available or not')
+            check_s3_bucket_exists_or_raise(lambda_s3_bucket, aws_config.s3_region)
+            logger.info('Uploading artifacts to S3 bucket')
+            artifacts_prefix = os.path.join(
+                deployment_path_prefix,
+                'artifacts',
+                deployment_spec.bento_name,
+                deployment_spec.bento_version,
+            )
+            upload_bento_service_artifacts_to_s3(
+                aws_config.region,
+                lambda_s3_bucket,
+                artifacts_prefix,
+                bento_path,
                 deployment_spec.bento_name,
             )
             with TempDirectory() as lambda_project_dir:
@@ -215,6 +355,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     memory_size=aws_config.memory_size,
                     timeout=aws_config.timeout,
                 )
+                lambda_template_validate(os.path.join)
                 try:
                     validation_result = call_sam_command(
                         ['validate'], lambda_project_dir
@@ -227,7 +368,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 logger.info('initializing lambda project')
                 init_sam_project(
                     lambda_project_dir,
-                    bento_archive_path,
+                    bento_path,
                     deployment_pb.name,
                     deployment_spec.bento_name,
                     api_names,

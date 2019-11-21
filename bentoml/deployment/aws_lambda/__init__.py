@@ -22,7 +22,6 @@ import logging
 from six.moves.urllib.parse import urlparse
 
 import boto3
-from packaging import version
 from ruamel.yaml import YAML
 
 from bentoml.bundler import loader
@@ -171,21 +170,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             aws_config = deployment_spec.aws_lambda_operator_config
             bento_service_metadata = bento_pb.bento.bento_service_metadata
 
-            # TODO
-            python_runtime = 'python3.7'
-            bento_service_py_version = version.parse(
-                bento_service_metadata.env.python_version
-            )
-            if bento_service_py_version < version.parse('3.0.0'):
+            py_major, py_minor, _ = bento_service_metadata.env.python_version.split('.')
+            print(py_major, py_minor)
+            if py_major != '3':
                 raise BentoMLException(
                     'Python 2 is not supported for Lambda Deployment'
                 )
-            elif (
-                version.parse('3.6.0')
-                < bento_service_py_version
-                < version.parse('3.7.0')
-            ):
-                python_runtime = 'python3.6'
 
             api_names = (
                 [aws_config.api_name]
@@ -228,7 +218,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 bento_path,
                 deployment_spec.bento_name,
             )
-            with TempDirectory() as lambda_project_dir:
+            with TempDirectory(cleanup=False) as lambda_project_dir:
                 logger.debug('Generating template.yaml for lambda project')
                 template_file_path = _create_aws_lambda_cloudformation_template_file(
                     lambda_project_dir,
@@ -240,14 +230,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     timeout=aws_config.timeout,
                 )
                 validate_lambda_template(template_file_path)
-                try:
-                    validation_result = call_sam_command(
-                        ['validate'], lambda_project_dir
-                    )
-                    if 'invalid SAM Template' in validation_result:
-                        raise BentoMLException('"template.yaml" is invalided')
-                except Exception as error:
-                    raise BentoMLException(str(error))
                 logger.debug('Lambda project directory: {}'.format(lambda_project_dir))
                 logger.info('initializing lambda project')
                 init_sam_project(

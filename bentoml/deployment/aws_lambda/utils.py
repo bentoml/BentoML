@@ -209,9 +209,7 @@ def create_s3_bucket_if_not_exists(bucket_name, region):
         logger.debug('Use existing s3 bucket')
     except ClientError as error:
         if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
-            logger.debug(
-                'S3 bucket {} does not exist. Creating it now'.format(bucket_name)
-            )
+            logger.debug('Creating s3 bucket: {}'.format(bucket_name))
             s3_client.create_bucket(
                 Bucket=bucket_name,
                 CreateBucketConfiguration={'LocationConstraint': region},

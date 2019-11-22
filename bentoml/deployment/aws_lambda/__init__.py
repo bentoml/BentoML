@@ -173,12 +173,18 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
 
             return self._apply(
-                deployment_pb, bento_pb, yatai_service, bento_pb.bento.uri.uri
+                deployment_pb,
+                bento_pb,
+                yatai_service,
+                bento_pb.bento.uri.uri,
+                prev_deployment,
             )
         except BentoMLException as error:
             return ApplyDeploymentResponse(status=exception_to_return_status(error))
 
-    def _apply(self, deployment_pb, bento_pb, yatai_service, bento_path):
+    def _apply(
+        self, deployment_pb, bento_pb, yatai_service, bento_path, prev_deployment
+    ):
         if loader._is_remote_path(bento_path):
             with loader._resolve_remote_bundle_path(bento_path) as local_path:
                 return self._apply(deployment_pb, bento_pb, yatai_service, local_path)
@@ -205,11 +211,17 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 bento_service_metadata, api_names
             )
 
-            lambda_s3_bucket = generate_aws_compatible_string(
-                'bentoml-deployment-{name}-{random_string}'.format(
-                    name=deployment_pb.name, random_string=uuid.uuid4().hex[:6].lower()
+            if prev_deployment:
+                info_json = json.loads(prev_deployment.state.info_json)
+                lambda_s3_bucket = info_json['s3_bucket']
+            else:
+                lambda_s3_bucket = generate_aws_compatible_string(
+                    'btml-{namespace}-{name}-{random_string}'.format(
+                        namespace=deployment_pb.namespace,
+                        name=deployment_pb.name,
+                        random_string=uuid.uuid4().hex[:6].lower(),
+                    )
                 )
-            )
             deployment_path_prefix = os.path.join(
                 deployment_pb.namespace, deployment_pb.name
             )
@@ -349,11 +361,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     )
                 )
                 stack_result = cloud_formation_stack_result.get('Stacks')[0]
-                if stack_result['StackStatus'] != 'CREATE_COMPLETE':
-                    state = DeploymentState(state=DeploymentState.PENDING)
-                    state.timestamp.GetCurrentTime()
-                    return DescribeDeploymentResponse(status=Status.OK(), state=state)
-                else:
+                if (
+                    stack_result['StackStatus'] == 'CREATE_COMPLETE'
+                    or stack_result['StackStatus'] == 'UPDATE_COMPLETE'
+                ):
                     if stack_result.get('Outputs'):
                         outputs = stack_result['Outputs']
                     else:
@@ -364,6 +375,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                                 error_message='"Outputs" field is not present',
                             ),
                         )
+                else:
+                    state = DeploymentState(state=DeploymentState.PENDING)
+                    state.timestamp.GetCurrentTime()
+                    return DescribeDeploymentResponse(status=Status.OK(), state=state)
             except Exception as error:
                 state = DeploymentState(
                     state=DeploymentState.ERROR, error_message=str(error)

@@ -36,6 +36,7 @@ def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
     bento_pb.uri.type = repo_storage_type
     api = BentoServiceMetadata.BentoServiceApi(name='predict')
     bento_pb.bento_service_metadata.apis.extend([api])
+    bento_pb.bento_service_metadata.env.python_version = '3.7.0'
     get_bento_response = GetBentoResponse(bento=bento_pb)
 
     yatai_service_mock = MagicMock()

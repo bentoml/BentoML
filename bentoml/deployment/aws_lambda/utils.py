@@ -218,23 +218,19 @@ def create_s3_bucket_if_not_exists(bucket_name, region):
             raise error
 
 
-def check_s3_bucket_exists_or_raise(bucket_name, region):
+def is_s3_bucket_exist(bucket_name, region):
     s3_client = boto3.client('s3', region)
     try:
         s3_client.get_bucket_acl(Bucket=bucket_name)
+        return True
     except ClientError as error:
         if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
-            raise BentoMLException(
-                'S3 bucket {} does not exist. '
-                'Please create it and try again'.format(bucket_name)
-            )
+            return False
         else:
             raise error
 
-    pass
 
-
-def upload_bento_service_artifacts_to_s3(
+def upload_directory_to_s3(
     region, bucket_name, path_prefix, bento_service_bundle_path, bento_name
 ):
     artifacts_path = os.path.join(bento_service_bundle_path, bento_name, 'artifacts')

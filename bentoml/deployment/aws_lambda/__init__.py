@@ -29,7 +29,7 @@ from ruamel.yaml import YAML
 from bentoml.bundler import loader
 from bentoml.deployment.aws_lambda.utils import (
     ensure_sam_available_or_raise,
-    upload_bento_service_artifacts_to_s3,
+    upload_directory_to_s3,
     init_sam_project,
     lambda_deploy,
     lambda_package,
@@ -222,12 +222,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         random_string=uuid.uuid4().hex[:6].lower(),
                     )
                 )
+                create_s3_bucket_if_not_exists(lambda_s3_bucket, aws_config.region)
             deployment_path_prefix = os.path.join(
                 deployment_pb.namespace, deployment_pb.name
             )
 
-            logger.debug('Check s3 path is available or not')
-            create_s3_bucket_if_not_exists(lambda_s3_bucket, aws_config.region)
             logger.debug('Uploading artifacts to S3 bucket')
             artifacts_prefix = os.path.join(
                 deployment_path_prefix,
@@ -235,13 +234,14 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_name,
                 deployment_spec.bento_version,
             )
-            upload_bento_service_artifacts_to_s3(
-                aws_config.region,
-                lambda_s3_bucket,
-                artifacts_prefix,
-                bento_path,
-                deployment_spec.bento_name,
-            )
+            if 'artifacts':
+                upload_directory_to_s3(
+                    aws_config.region,
+                    lambda_s3_bucket,
+                    artifacts_prefix,
+                    bento_path,
+                    deployment_spec.bento_name,
+                )
             with TempDirectory() as lambda_project_dir:
                 logger.debug(
                     'Generating cloudformation template.yaml for lambda project at %s',

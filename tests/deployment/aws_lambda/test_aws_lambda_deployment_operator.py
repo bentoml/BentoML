@@ -69,7 +69,7 @@ def test_generate_aws_lambda_app_py(tmpdir):
         api_names=api_names,
     )
 
-    def fake_predict(value):
+    def test_predict(value):
         return value
 
     class fake_bento(object):
@@ -79,7 +79,7 @@ def test_generate_aws_lambda_app_py(tmpdir):
         def get_service_api(self, name):
             if name == 'predict':
                 mock_api = Mock()
-                mock_api.handle_aws_lambda_event = fake_predict
+                mock_api.handle_aws_lambda_event = test_predict
                 return mock_api
 
     import sys

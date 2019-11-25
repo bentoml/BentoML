@@ -24,7 +24,6 @@ import re
 
 import boto3
 
-from bentoml.deployment.aws_lambda.templates import AWS_LAMBDA_APP_PY_TEMPLATE
 from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
 from bentoml.utils.whichcraft import which
 
@@ -225,8 +224,9 @@ def init_sam_project(
     logger.debug('Creating python files for lambda function')
     # Create empty __init__.py
     open(os.path.join(function_path, '__init__.py'), 'w').close()
-    with open(os.path.join(function_path, 'app.py'), 'w') as f:
-        f.write(AWS_LAMBDA_APP_PY_TEMPLATE)
+
+    app_py_path = os.path.join(os.path.dirname(__file__), 'lambda_app.py')
+    shutil.copy('/'.join(app_py_path), os.path.join(function_path, 'app.py'))
 
     logger.info('Building lambda project')
     build_result = call_sam_command(['build', '--use-container'], sam_project_path)

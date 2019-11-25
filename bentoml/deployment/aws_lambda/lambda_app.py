@@ -17,7 +17,6 @@ from __future__ import division
 from __future__ import print_function
 
 
-AWS_LAMBDA_APP_PY_TEMPLATE = """\
 import os
 import sys
 
@@ -31,21 +30,27 @@ s3_bucket = os.environ.get('S3_BUCKET')
 artifacts_prefix = os.environ.get('ARTIFACTS_PREFIX')
 tmp_artifacts_dir = '/tmp/bentoml'
 
-download_artifacts_for_lambda_function(tmp_artifacts_dir, s3_bucket, artifacts_prefix)
-
 bento_service_cls = load_bento_service_class(bundle_path='./{}'.format(bento_name))
+
 # Set _bento_service_bundle_path to None, so it won't automatically load artifacts when
 # we init an instance
 bento_service_cls._bento_service_bundle_path = None
 bento_service = bento_service_cls()
-bento_service._load_artifacts('/tmp/bentoml')
+
+service_metadata = bento_service.get_bento_service_metadata_pb()
+if service_metadata.artifacts:
+    download_artifacts_for_lambda_function(
+        tmp_artifacts_dir, s3_bucket, artifacts_prefix
+    )
+    bento_service._load_artifacts('/tmp/bentoml')
 
 this_module = sys.modules[__name__]
 api_name = os.environ.get("BENTOML_API_NAME")
+
 
 def api_func(event, context):
     api = bento_service.get_service_api(api_name)
     return api.handle_aws_lambda_event(event)
 
+
 setattr(this_module, api_name, api_func)
-"""

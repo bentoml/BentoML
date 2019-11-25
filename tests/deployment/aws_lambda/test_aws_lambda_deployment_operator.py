@@ -9,7 +9,6 @@ from bentoml.deployment.aws_lambda import (
     AwsLambdaDeploymentOperator,
     _create_aws_lambda_cloudformation_template_file,
 )
-from bentoml.deployment.aws_lambda.templates import AWS_LAMBDA_APP_PY_TEMPLATE
 from bentoml.proto.deployment_pb2 import (
     Deployment,
     DeploymentState,
@@ -58,10 +57,7 @@ def generate_lambda_deployment_pb():
     return test_deployment_pb
 
 
-def test_generate_aws_lambda_app_py(tmpdir, monkeypatch):
-    with open(os.path.join(tmpdir, 'app.py'), 'w') as f:
-        f.write(AWS_LAMBDA_APP_PY_TEMPLATE)
-
+def test_generate_aws_lambda_app_py(monkeypatch):
     def test_predict(value):
         return value
 
@@ -75,22 +71,20 @@ def test_generate_aws_lambda_app_py(tmpdir, monkeypatch):
                 mock_api.handle_aws_lambda_event = test_predict
                 return mock_api
 
+        def get_bento_service_metadata_pb(self):
+            result = MagicMock
+            result.artifacts = []
+            return result
+
     monkeypatch.setenv('BENTO_SERVICE_NAME', 'Mock_bento_service')
     monkeypatch.setenv('S3_BUCKET', 'Mock_s3_bucket')
     monkeypatch.setenv('ARTIFACTS_PREFIX', 'mock_artifacts_prefix')
     monkeypatch.setenv('BENTOML_API_NAME', 'predict')
 
-    import sys
-
-    sys.path.insert(1, str(tmpdir))
-
     def mock_lambda_app(func):
         @mock_s3
         @patch(
             'bentoml.deployment.aws_lambda.utils.download_artifacts_for_lambda_function'
-        )
-        @patch(
-            'bentoml.bundler.load_bento_service_class', return_value=Mock_bento_service
         )
         def mock_wrapper(*args, **kwargs):
             conn = boto3.client('s3', region_name='us-west-2')
@@ -104,15 +98,14 @@ def test_generate_aws_lambda_app_py(tmpdir, monkeypatch):
         return mock_wrapper
 
     @mock_lambda_app
+    @patch('bentoml.bundler.load_bento_service_class', return_value=Mock_bento_service)
     def return_predict_func(mock_load_service, mock_download_artifacts):
-        from app import predict
+        from bentoml.deployment.aws_lambda.lambda_app import predict
 
         return predict
 
     predict = return_predict_func()
-    assert predict.__module__ == 'app'
     assert predict(1, None) == 1
-    sys.path.remove(str(tmpdir))
 
 
 def test_generate_aws_lambda_template_yaml(tmpdir):
@@ -124,12 +117,14 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
     timeout = 6
     _create_aws_lambda_cloudformation_template_file(
         str(tmpdir),
-        deployment_name,
-        api_names,
-        s3_bucket_name,
-        py_runtime,
-        memory_size,
-        timeout,
+        deployment_name=deployment_name,
+        api_names=api_names,
+        bento_service_name='mock_bento_service_name',
+        artifacts_prefix='mock_artifacts_prefix',
+        s3_bucket_name=s3_bucket_name,
+        py_runtime=py_runtime,
+        memory_size=memory_size,
+        timeout=timeout,
     )
     template_path = os.path.join(str(tmpdir), 'template.yaml')
     yaml = YAML()

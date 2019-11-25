@@ -29,7 +29,6 @@ install_requires = [
     "six",
     "click>=7.0",
     "pandas",
-    "dill",
     "prometheus_client",
     "python-json-logger",
     "boto3",

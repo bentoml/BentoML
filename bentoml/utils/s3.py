@@ -27,6 +27,7 @@ from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
+
 def is_s3_url(url):
     """
     Check if url is an s3, s3n, or s3a url
@@ -38,14 +39,12 @@ def is_s3_url(url):
 
 
 def upload_directory_to_s3(
-    upload_directory_path, region, bucket_name, s3_path_prefix='',
+    upload_directory_path, region, bucket_name, s3_path_prefix=''
 ):
     s3_client = boto3.client('s3', region)
     try:
-        for root, dirs, file_names in os.walk(upload_directory_path):
-            relative_path_to_upload_dir = os.path.relpath(
-                root, upload_directory_path
-            )
+        for root, _, file_names in os.walk(upload_directory_path):
+            relative_path_to_upload_dir = os.path.relpath(root, upload_directory_path)
             if relative_path_to_upload_dir == '.':
                 relative_path_to_upload_dir = ''
             for file_name in file_names:
@@ -57,11 +56,7 @@ def upload_directory_to_s3(
                         name=file_name, location=bucket_name + '/' + key
                     )
                 )
-                s3_client.upload_file(
-                    os.path.join(root, file_name),
-                    bucket_name,
-                    key,
-                )
+                s3_client.upload_file(os.path.join(root, file_name), bucket_name, key)
     except Exception as error:
         raise BentoMLException(str(error))
 

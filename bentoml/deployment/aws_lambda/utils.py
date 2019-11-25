@@ -23,45 +23,12 @@ import logging
 import re
 
 import boto3
-from botocore.exceptions import ClientError
 
+from bentoml.deployment.aws_lambda.templates import AWS_LAMBDA_APP_PY_TEMPLATE
 from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
 from bentoml.utils.whichcraft import which
 
 logger = logging.getLogger(__name__)
-
-
-AWS_LAMBDA_APP_PY_TEMPLATE_HEADER = """\
-import os
-
-# Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
-os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
-from bentoml.deployment.aws_lambda.utils import download_artifacts_for_lambda_function
-from bentoml.bundler import load_bento_service_class
-
-bento_name = os.environ.get('BENTO_SERVICE_NAME')
-s3_bucket = os.environ.get('S3_BUCKET')
-artifacts_prefix = os.environe.get('ARTIFACTS_PREFIX')
-tmp_artifacts_dir = '/tmp/bentoml'
-
-download_artifacts_for_lambda_function(tmp_artifacts_dir, s3_bucket, artifacts_prefix)
-
-bento_service_cls = load_bento_service_class(bundle_path='./{}'.format(bento_name))
-# Set _bento_service_bundle_path to None, so it won't automatically load artifacts when
-# we init an instance
-bento_service_cls._bento_service_bundle_path = None
-bento_service = bento_service_cls()
-bento_service._load_artifacts('/tmp/bentoml')
-
-this_module = sys.modules[__name__]
-api_name = os.environ.get("BENTOML_API_NAME")
-
-def api_func(event, context):
-    api = bento_service.get_service_api(api_name)
-    return api.handle_aws_lambda_event(event)
-
-setattr(this_module, 'BENTOML_API_NAME', api_func)
-"""
 
 
 def ensure_sam_available_or_raise():
@@ -115,9 +82,6 @@ def cleanup_build_files(project_dir, api_name):
             if 'pip' in files:
                 logger.debug('removing file: ' + os.path.join(root, 'pip'))
                 os.remove(os.path.join(root, 'pip'))
-            if 'libtorch.so' in files:
-                logger.debug('removing file: ' + os.path.join(root, 'libtorch.so'))
-                os.remove(os.path.join(root, 'libtorch.so'))
     except Exception as e:
         logger.error(str(e))
         return
@@ -203,30 +167,8 @@ def validate_lambda_template(template_file):
         )
 
 
-def generate_aws_lambda_app_py(
-    function_path, s3_bucket, artifacts_prefix, bento_name, api_names
-):
-    with open(os.path.join(function_path, 'app.py'), 'w') as f:
-        f.write(
-            AWS_LAMBDA_APP_PY_TEMPLATE_HEADER.format(
-                bento_name=bento_name,
-                s3_bucket=s3_bucket,
-                artifacts_prefix=artifacts_prefix,
-            )
-        )
-        for api_name in api_names:
-            api_content = AWS_FUNCTION_TEMPLATE.format(api_name=api_name)
-            f.write(api_content)
-
-
 def init_sam_project(
-    sam_project_path,
-    bento_service_bundle_path,
-    deployment_name,
-    bento_name,
-    api_names,
-    s3_bucket,
-    artifacts_prefix,
+    sam_project_path, bento_service_bundle_path, deployment_name, bento_name, api_names
 ):
     function_path = os.path.join(sam_project_path, deployment_name)
     os.mkdir(function_path)
@@ -280,12 +222,11 @@ def init_sam_project(
     logger.debug('Removing artifacts directory')
     shutil.rmtree(os.path.join(function_path, bento_name, 'artifacts'))
 
+    logger.debug('Creating python files for lambda function')
     # Create empty __init__.py
     open(os.path.join(function_path, '__init__.py'), 'w').close()
-    logger.debug('Creating app.py for lambda function')
-    generate_aws_lambda_app_py(
-        function_path, s3_bucket, artifacts_prefix, bento_name, api_names
-    )
+    with open(os.path.join(function_path, 'app.py'), 'w') as f:
+        f.write(AWS_LAMBDA_APP_PY_TEMPLATE)
 
     logger.info('Building lambda project')
     build_result = call_sam_command(['build', '--use-container'], sam_project_path)

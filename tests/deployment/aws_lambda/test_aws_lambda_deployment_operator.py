@@ -9,7 +9,7 @@ from bentoml.deployment.aws_lambda import (
     AwsLambdaDeploymentOperator,
     _create_aws_lambda_cloudformation_template_file,
 )
-from bentoml.deployment.aws_lambda.utils import generate_aws_lambda_app_py
+from bentoml.deployment.aws_lambda.templates import AWS_LAMBDA_APP_PY_TEMPLATE
 from bentoml.proto.deployment_pb2 import (
     Deployment,
     DeploymentState,
@@ -58,21 +58,14 @@ def generate_lambda_deployment_pb():
     return test_deployment_pb
 
 
-def test_generate_aws_lambda_app_py(tmpdir):
-    bento_name = 'bento_name'
-    api_names = ['predict', 'second_predict']
-    generate_aws_lambda_app_py(
-        str(tmpdir),
-        s3_bucket=mock_s3_bucket_name,
-        artifacts_prefix='fake_artifact_prefix',
-        bento_name=bento_name,
-        api_names=api_names,
-    )
+def test_generate_aws_lambda_app_py(tmpdir, monkeypatch):
+    with open(os.path.join(tmpdir, 'app.py'), 'w') as f:
+        f.write(AWS_LAMBDA_APP_PY_TEMPLATE)
 
     def test_predict(value):
         return value
 
-    class fake_bento(object):
+    class Mock_bento_service(object):
         def _load_artifacts(self, path):
             return
 
@@ -81,6 +74,11 @@ def test_generate_aws_lambda_app_py(tmpdir):
                 mock_api = Mock()
                 mock_api.handle_aws_lambda_event = test_predict
                 return mock_api
+
+    monkeypatch.setenv('BENTO_SERVICE_NAME', 'Mock_bento_service')
+    monkeypatch.setenv('S3_BUCKET', 'Mock_s3_bucket')
+    monkeypatch.setenv('ARTIFACTS_PREFIX', 'mock_artifacts_prefix')
+    monkeypatch.setenv('BENTOML_API_NAME', 'predict')
 
     import sys
 
@@ -91,13 +89,15 @@ def test_generate_aws_lambda_app_py(tmpdir):
         @patch(
             'bentoml.deployment.aws_lambda.utils.download_artifacts_for_lambda_function'
         )
-        @patch('bentoml.bundler.load_bento_service_class', return_value=fake_bento)
+        @patch(
+            'bentoml.bundler.load_bento_service_class', return_value=Mock_bento_service
+        )
         def mock_wrapper(*args, **kwargs):
             conn = boto3.client('s3', region_name='us-west-2')
             conn.create_bucket(Bucket=mock_s3_bucket_name)
-            fake_artifact_key = 'fake_artifact_prefix/model.pkl'
+            fake_artifact_key = 'mock_artifact_prefix/model.pkl'
             conn.put_object(
-                Bucket=mock_s3_bucket_name, Key=fake_artifact_key, Body='fakebody'
+                Bucket=mock_s3_bucket_name, Key=fake_artifact_key, Body='mock_body'
             )
             return func(*args, **kwargs)
 
@@ -151,15 +151,6 @@ def mock_lambda_related_operations(func):
 
 
 @mock_lambda_related_operations
-def test_aws_lambda_apply_fails_no_artifacts_directory(mock_checkoutput):
-    yatai_service_mock = create_yatai_service_mock()
-    test_deployment_pb = generate_lambda_deployment_pb()
-    deployment_operator = AwsLambdaDeploymentOperator()
-    result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
-    assert result_pb.status.status_code == status_pb2.Status.INTERNAL
-
-
-@mock_lambda_related_operations
 @patch('shutil.rmtree', autospec=True)
 @patch('shutil.copytree', autospec=True)
 @patch('shutil.copy', autospec=True)
@@ -167,18 +158,11 @@ def test_aws_lambda_apply_fails_no_artifacts_directory(mock_checkoutput):
 @patch('subprocess.Popen')
 @patch(
     'bentoml.deployment.aws_lambda.validate_lambda_template',
-    MagicMock(return_value=None)
+    MagicMock(return_value=None),
 )
-@patch(
-    'bentoml.deployment.aws_lambda.lambda_deploy', MagicMock(return_value=None)
-)
+@patch('bentoml.deployment.aws_lambda.lambda_deploy', MagicMock(return_value=None))
 def test_aws_lambda_apply_success(
-    mock_popen,
-    mock_checkoutput,
-    mock_listdir,
-    mock_copy,
-    mock_copytree,
-    mock_rmtree,
+    mock_popen, mock_checkoutput, mock_listdir, mock_copy, mock_copytree, mock_rmtree
 ):
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()

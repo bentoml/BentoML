@@ -32,7 +32,6 @@ from bentoml.deployment.aws_lambda.utils import (
     init_sam_project,
     lambda_deploy,
     lambda_package,
-    call_sam_command,
     validate_lambda_template,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
@@ -64,6 +63,8 @@ def _create_aws_lambda_cloudformation_template_file(
     project_dir,
     deployment_name,
     api_names,
+    bento_service_name,
+    artifacts_prefix,
     s3_bucket_name,
     py_runtime,
     memory_size,
@@ -119,11 +120,11 @@ def _create_aws_lambda_cloudformation_template_file(
                 'Environment': {
                     'Variables': {
                         'S3_BUCKET': s3_bucket_name,
-                        'BENTO_SERVICE_NAME': '',
-                        'ARTIFACTS_PREFIX': '',
+                        'BENTO_SERVICE_NAME': bento_service_name,
+                        'ARTIFACTS_PREFIX': artifacts_prefix,
                         'BENTOML_API_NAME': api_name,
                     }
-                }
+                },
             },
         }
 
@@ -194,7 +195,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     ):
         if loader._is_remote_path(bento_path):
             with loader._resolve_remote_bundle_path(bento_path) as local_path:
-                return self._apply(deployment_pb, bento_pb, yatai_service, local_path)
+                return self._apply(
+                    deployment_pb, bento_pb, yatai_service, local_path, prev_deployment
+                )
 
         try:
             deployment_spec = deployment_pb.spec
@@ -242,6 +245,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_version,
             )
             if bento_service_metadata.artifacts:
+                logger.debug(
+                    'This lambda deployment requires uploading artifacts to s3'
+                )
                 upload_dir_path = os.path.join(
                     bento_path, deployment_spec.bento_name, 'artifacts'
                 )
@@ -249,7 +255,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     upload_dir_path,
                     aws_config.region,
                     lambda_s3_bucket,
-                    artifacts_prefix
+                    artifacts_prefix,
                 )
             with TempDirectory() as lambda_project_dir:
                 logger.debug(
@@ -257,10 +263,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     lambda_project_dir,
                 )
                 template_file_path = _create_aws_lambda_cloudformation_template_file(
-                    lambda_project_dir,
-                    deployment_pb.name,
-                    api_names,
-                    lambda_s3_bucket,
+                    project_dir=lambda_project_dir,
+                    deployment_name=deployment_pb.name,
+                    api_names=api_names,
+                    bento_service_name=deployment_spec.bento_name,
+                    artifacts_prefix=artifacts_prefix,
+                    s3_bucket_name=lambda_s3_bucket,
                     py_runtime=python_runtime,
                     memory_size=aws_config.memory_size,
                     timeout=aws_config.timeout,
@@ -274,8 +282,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     deployment_pb.name,
                     deployment_spec.bento_name,
                     api_names,
-                    s3_bucket=lambda_s3_bucket,
-                    artifacts_prefix=artifacts_prefix,
                 )
                 logger.info('Packaging lambda project')
                 lambda_package(

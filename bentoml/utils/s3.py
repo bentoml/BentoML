@@ -16,8 +16,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+import logging
+
+import boto3
+from botocore.exceptions import ClientError
 from six.moves.urllib.parse import urlparse
 
+from bentoml.exceptions import BentoMLException
+
+logger = logging.getLogger(__name__)
 
 def is_s3_url(url):
     """
@@ -27,3 +35,60 @@ def is_s3_url(url):
         return urlparse(url).scheme in ["s3", "s3n", "s3a"]
     except Exception:  # pylint:disable=broad-except
         return False
+
+
+def upload_directory_to_s3(
+    upload_directory_path, region, bucket_name, s3_path_prefix='',
+):
+    s3_client = boto3.client('s3', region)
+    try:
+        for root, dirs, file_names in os.walk(upload_directory_path):
+            relative_path_to_upload_dir = os.path.relpath(
+                root, upload_directory_path
+            )
+            if relative_path_to_upload_dir == '.':
+                relative_path_to_upload_dir = ''
+            for file_name in file_names:
+                key = os.path.join(
+                    s3_path_prefix, relative_path_to_upload_dir, file_name
+                )
+                logger.debug(
+                    'Uploading {name} to s3 {location}'.format(
+                        name=file_name, location=bucket_name + '/' + key
+                    )
+                )
+                s3_client.upload_file(
+                    os.path.join(root, file_name),
+                    bucket_name,
+                    key,
+                )
+    except Exception as error:
+        raise BentoMLException(str(error))
+
+
+def create_s3_bucket_if_not_exists(bucket_name, region):
+    s3_client = boto3.client('s3', region)
+    try:
+        s3_client.get_bucket_acl(Bucket=bucket_name)
+        logger.debug('Use existing s3 bucket')
+    except ClientError as error:
+        if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
+            logger.debug('Creating s3 bucket: {}'.format(bucket_name))
+            s3_client.create_bucket(
+                Bucket=bucket_name,
+                CreateBucketConfiguration={'LocationConstraint': region},
+            )
+        else:
+            raise error
+
+
+def is_s3_bucket_exist(bucket_name, region):
+    s3_client = boto3.client('s3', region)
+    try:
+        s3_client.get_bucket_acl(Bucket=bucket_name)
+        return True
+    except ClientError as error:
+        if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
+            return False
+        else:
+            raise error

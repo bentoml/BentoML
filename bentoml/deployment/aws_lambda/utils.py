@@ -39,27 +39,28 @@ os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 from bentoml.deployment.aws_lambda.utils import download_artifacts_for_lambda_function
 from bentoml.bundler import load_bento_service_class
 
+bento_name = os.environ.get('BENTO_SERVICE_NAME')
+s3_bucket = os.environ.get('S3_BUCKET')
+artifacts_prefix = os.environe.get('ARTIFACTS_PREFIX')
 tmp_artifacts_dir = '/tmp/bentoml'
-s3_bucket = '{s3_bucket}'
-artifacts_prefix = '{artifacts_prefix}'
 
 download_artifacts_for_lambda_function(tmp_artifacts_dir, s3_bucket, artifacts_prefix)
 
-bento_service_cls = load_bento_service_class(bundle_path='./{bento_name}')
+bento_service_cls = load_bento_service_class(bundle_path='./{}'.format(bento_name))
 # Set _bento_service_bundle_path to None, so it won't automatically load artifacts when
 # we init an instance
 bento_service_cls._bento_service_bundle_path = None
 bento_service = bento_service_cls()
 bento_service._load_artifacts('/tmp/bentoml')
 
-"""
+this_module = sys.modules[__name__]
+api_name = os.environ.get("BENTOML_API_NAME")
 
-AWS_FUNCTION_TEMPLATE = """\
-def {api_name}(event, context):
-    api = bento_service.get_service_api('{api_name}')
-
+def api_func(event, context):
+    api = bento_service.get_service_api(api_name)
     return api.handle_aws_lambda_event(event)
 
+setattr(this_module, 'BENTOML_API_NAME', api_func)
 """
 
 
@@ -200,56 +201,6 @@ def validate_lambda_template(template_file):
         raise BentoMLDeploymentException(
             'AWS Credential are required, please configure your credentials.'
         )
-
-
-def create_s3_bucket_if_not_exists(bucket_name, region):
-    s3_client = boto3.client('s3', region)
-    try:
-        s3_client.get_bucket_acl(Bucket=bucket_name)
-        logger.debug('Use existing s3 bucket')
-    except ClientError as error:
-        if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
-            logger.debug('Creating s3 bucket: {}'.format(bucket_name))
-            s3_client.create_bucket(
-                Bucket=bucket_name,
-                CreateBucketConfiguration={'LocationConstraint': region},
-            )
-        else:
-            raise error
-
-
-def is_s3_bucket_exist(bucket_name, region):
-    s3_client = boto3.client('s3', region)
-    try:
-        s3_client.get_bucket_acl(Bucket=bucket_name)
-        return True
-    except ClientError as error:
-        if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
-            return False
-        else:
-            raise error
-
-
-def upload_directory_to_s3(
-    region, bucket_name, path_prefix, bento_service_bundle_path, bento_name
-):
-    artifacts_path = os.path.join(bento_service_bundle_path, bento_name, 'artifacts')
-    s3_client = boto3.client('s3', region)
-    try:
-        for file_name in os.listdir(artifacts_path):
-            if file_name != '__init__.py':
-                logger.debug(
-                    'Uploading {name} to s3 {location}'.format(
-                        name=file_name, location=bucket_name + '/' + path_prefix
-                    )
-                )
-                s3_client.upload_file(
-                    os.path.join(artifacts_path, file_name),
-                    bucket_name,
-                    '{prefix}/{name}'.format(prefix=path_prefix, name=file_name),
-                )
-    except Exception as error:
-        raise BentoMLException(str(error))
 
 
 def generate_aws_lambda_app_py(

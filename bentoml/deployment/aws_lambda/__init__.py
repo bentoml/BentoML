@@ -29,13 +29,11 @@ from ruamel.yaml import YAML
 from bentoml.bundler import loader
 from bentoml.deployment.aws_lambda.utils import (
     ensure_sam_available_or_raise,
-    upload_directory_to_s3,
     init_sam_project,
     lambda_deploy,
     lambda_package,
     call_sam_command,
     validate_lambda_template,
-    create_s3_bucket_if_not_exists,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
@@ -54,6 +52,7 @@ from bentoml.proto.deployment_pb2 import (
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.utils import Path
+from bentoml.utils.s3 import create_s3_bucket_if_not_exists, upload_directory_to_s3
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
 
@@ -117,6 +116,14 @@ def _create_aws_lambda_cloudformation_template_file(
                     }
                 },
                 'Policies': [{'S3ReadPolicy': {'BucketName': s3_bucket_name}}],
+                'Environment': {
+                    'Variables': {
+                        'S3_BUCKET': s3_bucket_name,
+                        'BENTO_SERVICE_NAME': '',
+                        'ARTIFACTS_PREFIX': '',
+                        'BENTOML_API_NAME': api_name,
+                    }
+                }
             },
         }
 
@@ -234,13 +241,15 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec.bento_name,
                 deployment_spec.bento_version,
             )
-            if 'artifacts':
+            if bento_service_metadata.artifacts:
+                upload_dir_path = os.path.join(
+                    bento_path, deployment_spec.bento_name, 'artifacts'
+                )
                 upload_directory_to_s3(
+                    upload_dir_path,
                     aws_config.region,
                     lambda_s3_bucket,
-                    artifacts_prefix,
-                    bento_path,
-                    deployment_spec.bento_name,
+                    artifacts_prefix
                 )
             with TempDirectory() as lambda_project_dir:
                 logger.debug(

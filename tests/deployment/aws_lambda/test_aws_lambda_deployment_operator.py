@@ -71,21 +71,16 @@ def test_generate_aws_lambda_app_py(monkeypatch):
                 mock_api.handle_aws_lambda_event = test_predict
                 return mock_api
 
-        def get_bento_service_metadata_pb(self):
-            result = MagicMock
-            result.artifacts = []
-            return result
+        _artifacts = []
 
-    monkeypatch.setenv('BENTO_SERVICE_NAME', 'Mock_bento_service')
-    monkeypatch.setenv('S3_BUCKET', 'Mock_s3_bucket')
-    monkeypatch.setenv('ARTIFACTS_PREFIX', 'mock_artifacts_prefix')
+    monkeypatch.setenv('BENTOML_BENTO_SERVICE_NAME', 'Mock_bento_service')
+    monkeypatch.setenv('BENTOML_S3_BUCKET', 'Mock_s3_bucket')
+    monkeypatch.setenv('BENTOML_ARTIFACTS_PREFIX', 'mock_artifacts_prefix')
     monkeypatch.setenv('BENTOML_API_NAME', 'predict')
 
     def mock_lambda_app(func):
         @mock_s3
-        @patch(
-            'bentoml.deployment.aws_lambda.utils.download_artifacts_for_lambda_function'
-        )
+        @patch('bentoml.utils.s3.download_directory_from_s3')
         def mock_wrapper(*args, **kwargs):
             conn = boto3.client('s3', region_name='us-west-2')
             conn.create_bucket(Bucket=mock_s3_bucket_name)

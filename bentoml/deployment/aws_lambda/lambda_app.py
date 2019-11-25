@@ -22,13 +22,15 @@ import sys
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
-from bentoml.deployment.aws_lambda.utils import download_artifacts_for_lambda_function
+
+from bentoml.utils.s3 import download_directory_from_s3
 from bentoml.bundler import load_bento_service_class
 
-bento_name = os.environ.get('BENTO_SERVICE_NAME')
-s3_bucket = os.environ.get('S3_BUCKET')
-artifacts_prefix = os.environ.get('ARTIFACTS_PREFIX')
-tmp_artifacts_dir = '/tmp/bentoml'
+bento_name = os.environ.get('BENTOML_BENTO_SERVICE_NAME')
+s3_bucket = os.environ.get('BENTOML_S3_BUCKET')
+artifacts_prefix = os.environ.get('BENTOML_ARTIFACTS_PREFIX')
+api_name = os.environ.get("BENTOML_API_NAME")
+
 
 bento_service_cls = load_bento_service_class(bundle_path='./{}'.format(bento_name))
 
@@ -37,15 +39,17 @@ bento_service_cls = load_bento_service_class(bundle_path='./{}'.format(bento_nam
 bento_service_cls._bento_service_bundle_path = None
 bento_service = bento_service_cls()
 
-service_metadata = bento_service.get_bento_service_metadata_pb()
-if service_metadata.artifacts:
-    download_artifacts_for_lambda_function(
-        tmp_artifacts_dir, s3_bucket, artifacts_prefix
-    )
+# If the artifacts is not an empty list in the service, we will download them from the
+# s3 bucket.
+if bento_service._artifacts:
+    # _load_artifacts take a directory with a subdir 'artifacts' exists
+    tmp_artifacts_dir = '/tmp/bentoml/artifacts'
+    os.mkdir(tmp_artifacts_dir)
+
+    download_directory_from_s3(tmp_artifacts_dir, s3_bucket, artifacts_prefix)
     bento_service._load_artifacts('/tmp/bentoml')
 
 this_module = sys.modules[__name__]
-api_name = os.environ.get("BENTOML_API_NAME")
 
 
 def api_func(event, context):

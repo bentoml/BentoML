@@ -119,9 +119,9 @@ def _create_aws_lambda_cloudformation_template_file(
                 'Policies': [{'S3ReadPolicy': {'BucketName': s3_bucket_name}}],
                 'Environment': {
                     'Variables': {
-                        'S3_BUCKET': s3_bucket_name,
-                        'BENTO_SERVICE_NAME': bento_service_name,
-                        'ARTIFACTS_PREFIX': artifacts_prefix,
+                        'BENTOML_BENTO_SERVICE_NAME': bento_service_name,
+                        'BENTOML_S3_BUCKET': s3_bucket_name,
+                        'BENTOML_ARTIFACTS_PREFIX': artifacts_prefix,
                         'BENTOML_API_NAME': api_name,
                     }
                 },

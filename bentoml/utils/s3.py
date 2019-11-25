@@ -87,3 +87,29 @@ def is_s3_bucket_exist(bucket_name, region):
             return False
         else:
             raise error
+
+
+def download_directory_from_s3(download_dest_directory, s3_bucket, artifacts_prefix):
+    """ Download directory from s3 bucket to given directory.
+    Args:
+        download_dest_directory: String
+        s3_bucket: String
+        artifacts_prefix: String
+
+    Returns: None
+    """
+    s3_client = boto3.client('s3')
+    try:
+        list_content_result = s3_client.list_objects(
+            Bucket=s3_bucket, Prefix=artifacts_prefix
+        )
+        for content in list_content_result['Contents']:
+            file_name = content['Key'].split('/')[-1]
+            file_path = os.path.join(download_dest_directory, file_name)
+            if not os.path.isfile(file_path):
+                s3_client.download_file(s3_bucket, content['Key'], file_path)
+            else:
+                print('File {} already exists'.format(file_path))
+    except Exception as e:
+        print('Error getting object from bucket {}, {}'.format(s3_bucket, e))
+        raise e

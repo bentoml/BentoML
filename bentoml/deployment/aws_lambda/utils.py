@@ -25,7 +25,6 @@ import re
 import boto3
 
 from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
-from bentoml.utils.whichcraft import which
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +42,6 @@ def ensure_sam_available_or_raise():
 def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, '.aws-sam/build/{}'.format(api_name))
     logger.debug('Cleaning up unused files in SAM built directory {}'.format(build_dir))
-    if which('du'):
-        logger.debug(subprocess.check_output(['du', '-sch'], cwd=build_dir))
     try:
         for root, dirs, files in os.walk(build_dir):
             if 'tests' in dirs:
@@ -235,36 +232,3 @@ def init_sam_project(
     logger.debug('Removing unnecessary files to free up space')
     for api_name in api_names:
         cleanup_build_files(sam_project_path, api_name)
-
-
-def download_artifacts_for_lambda_function(
-    artifacts_parent_dir, s3_bucket, artifacts_prefix
-):
-    """ Download artifacts from s3 bucket to given directory.
-    Args:
-        artifacts_parent_dir: String
-        s3_bucket: String
-        artifacts_prefix: String
-
-    Returns: None
-    """
-    # _load_artifacts take a directory with a subdir 'artifacts' exists
-    file_dir = os.path.join(artifacts_parent_dir, 'artifacts')
-    if not os.path.isdir(file_dir):
-        os.mkdir(file_dir)
-
-    s3_client = boto3.client('s3')
-    try:
-        list_content_result = s3_client.list_objects(
-            Bucket=s3_bucket, Prefix=artifacts_prefix
-        )
-        for content in list_content_result['Contents']:
-            file_name = content['Key'].split('/')[-1]
-            file_path = os.path.join(file_dir, file_name)
-            if not os.path.isfile(file_path):
-                s3_client.download_file(s3_bucket, content['Key'], file_path)
-            else:
-                print('File {} already exists'.format(file_path))
-    except Exception as e:
-        print('Error getting object from bucket {}, {}'.format(s3_bucket, e))
-        raise e

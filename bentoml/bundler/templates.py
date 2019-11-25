@@ -18,26 +18,18 @@ from __future__ import print_function
 
 
 BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE = """\
-import os
-import pip
-import logging
-import pkg_resources
 import setuptools
-
-def _parse_requirements(file_path):
-    pip_ver = pkg_resources.get_distribution('pip').version
-    pip_version = list(map(int, pip_ver.split('.')[:2]))
-    if pip_version >= [6, 0]:
-        raw = pip.req.parse_requirements(file_path,
-                                         session=pip.download.PipSession())
-    else:
-        raw = pip.req.parse_requirements(file_path)
-    return [str(i.req) for i in raw]
+try:  # for pip >= 10
+    from pip._internal.req import parse_requirements
+    from pip._internal.download import PipSession
+except ImportError:  # for pip <= 9.0.3
+    from pip.req import parse_requirements
+    from pip.download import PipSession
 
 try:
-    install_reqs = _parse_requirements("requirements.txt")
+    raw = parse_requirements('requirements.txt', session=PipSession())
+    install_reqs =  [str(i.req) for i in raw]
 except Exception:
-    logging.warning('Fail load requirements file, so using default ones.')
     install_reqs = []
 
 setuptools.setup(

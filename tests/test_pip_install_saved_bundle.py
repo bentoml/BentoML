@@ -4,6 +4,8 @@ import json
 
 import pandas as pd
 
+from bentoml.configuration import get_bentoml_deploy_version
+
 
 def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     import subprocess
@@ -11,12 +13,19 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     install_path = str(tmpdir.mkdir("pip_local"))
     bentoml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-    output = subprocess.check_output(
+    stdout = subprocess.check_output(
         ["pip", "install", "-U", "--target={}".format(install_path), bento_bundle_path]
-    ).decode()
-    assert "Successfully installed TestBentoService" in output
+    ).decode('utf-8')
 
-    sys.path.append(install_path)
+    assert "Processing {}".format(bento_bundle_path) in stdout
+    assert "Collecting bentoml=={}".format(get_bentoml_deploy_version()) in stdout
+    assert "Successfully built TestBentoService" in stdout
+
+    # ensure BentoML is installed as dependency
+    assert os.path.isfile(os.path.join(install_path, "bin/bentoml"))
+    assert os.path.isdir(os.path.join(install_path, "bentoml"))
+
+    sys.path.insert(0, install_path)
     TestBentoService = __import__("TestBentoService")
     sys.path.remove(install_path)
 
@@ -25,7 +34,8 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     assert res == 1
 
     # pip install should place cli entry script under target/bin directory
-    cli_bin_path = os.path.join(install_path, "bin/TestBentoService")
+    cli_bin_path = os.path.join(install_path, "bin", "TestBentoService")
+    assert os.path.isfile(cli_bin_path)
 
     # add install_path and local bentoml module to PYTHONPATH to make them
     # available in subprocess call

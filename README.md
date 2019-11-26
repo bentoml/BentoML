@@ -119,7 +119,12 @@ installed_svc = IrisClassifier.load()
 installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
 ```
 
-To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a trained sklearn model into a containerized REST API server, and then deploy it to AWS Lambda: [Download](https://github.com/parano/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+Deploy the saved BentoService to cloud services such as AWS Lambda with the `bentoml `command:
+```
+bentoml deployment create my_iris_classifier --bento IrisClassifier:{VERSION} --platform=aws-lambda
+```
+
+To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a trained sklearn model into a containerized REST API server, and then deploy it to AWS Lambda: [Download](https://github.com/master/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
 
 
 ## Examples

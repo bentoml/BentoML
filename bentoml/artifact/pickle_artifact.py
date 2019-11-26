@@ -18,9 +18,9 @@ from __future__ import print_function
 
 import os
 
-import dill
 from six import string_types
 
+from bentoml.utils import cloudpickle
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 
@@ -30,11 +30,12 @@ class PickleArtifact(BentoServiceArtifact):
     Args:
         name (str): Name for the artifact
         pickle_module (module|str): The python module will be used for pickle
-            and unpickle artifact, default pickle module in BentoML is `dill`
+            and unpickle artifact, default pickle module in BentoML's fork of
+            `cloudpickle`, which is identical to the Apache Spark fork
         pickle_extension (str): The extension format for pickled file.
     """
 
-    def __init__(self, name, pickle_module=dill, pickle_extension=".pkl"):
+    def __init__(self, name, pickle_module=cloudpickle, pickle_extension=".pkl"):
         super(PickleArtifact, self).__init__(name)
 
         self._pickle_extension = pickle_extension

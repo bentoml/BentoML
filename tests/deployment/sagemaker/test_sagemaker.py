@@ -50,7 +50,9 @@ USER_PATH_ARN_RESULT = 'arn:aws:us-west-2:888'
 
 
 def test_get_arn_from_aws_user():
-    def mock_role_path_call(self, operation_name, kwarg):  # pylint: disable=unused-argument
+    def mock_role_path_call(
+        self, operation_name, kwarg
+    ):  # pylint: disable=unused-argument
         if operation_name == 'GetCallerIdentity':
             return {'Arn': 'something:something:role/random'}
         elif operation_name == 'GetRole':
@@ -63,7 +65,9 @@ def test_get_arn_from_aws_user():
     with patch('botocore.client.BaseClient._make_api_call', new=mock_role_path_call):
         assert get_arn_role_from_current_aws_user() == ROLE_PATH_ARN_RESULT
 
-    def mock_user_path_call(self, operation_name, kwarg):  # pylint: disable=unused-argument
+    def mock_user_path_call(
+        self, operation_name, kwarg
+    ):  # pylint: disable=unused-argument
         if operation_name == 'GetCallerIdentity':
             return {'Arn': 'something:something:user/random'}
         elif operation_name == 'ListRoles':

@@ -52,23 +52,25 @@ def upload_directory_to_s3(
                     s3_path_prefix, relative_path_to_upload_dir, file_name
                 )
                 logger.debug(
-                    'Uploading {name} to s3 {location}'.format(
-                        name=file_name, location=bucket_name + '/' + key
-                    )
+                    'Uploading %s to s3 %s', file_name, bucket_name + '/' + key
                 )
                 s3_client.upload_file(os.path.join(root, file_name), bucket_name, key)
-    except Exception as error:
-        raise BentoMLException(str(error))
+    except ClientError as error:
+        raise BentoMLException(
+            "Failed to upload directory to s3 bucket {}, error: {}".format(
+                bucket_name, str(error)
+            )
+        )
 
 
 def create_s3_bucket_if_not_exists(bucket_name, region):
     s3_client = boto3.client('s3', region)
     try:
         s3_client.get_bucket_acl(Bucket=bucket_name)
-        logger.debug('Use existing s3 bucket')
+        logger.debug("Found bucket %s in region %s already exist", bucket_name, region)
     except ClientError as error:
         if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
-            logger.debug('Creating s3 bucket: {}'.format(bucket_name))
+            logger.debug('Creating s3 bucket: %s in region %s', bucket_name, region)
             s3_client.create_bucket(
                 Bucket=bucket_name,
                 CreateBucketConfiguration={'LocationConstraint': region},
@@ -89,19 +91,19 @@ def is_s3_bucket_exist(bucket_name, region):
             raise error
 
 
-def download_directory_from_s3(download_dest_directory, s3_bucket, artifacts_prefix):
+def download_directory_from_s3(download_dest_directory, s3_bucket, path_prefix):
     """ Download directory from s3 bucket to given directory.
     Args:
         download_dest_directory: String
         s3_bucket: String
-        artifacts_prefix: String
+        path_prefix: String
 
     Returns: None
     """
     s3_client = boto3.client('s3')
     try:
         list_content_result = s3_client.list_objects(
-            Bucket=s3_bucket, Prefix=artifacts_prefix
+            Bucket=s3_bucket, Prefix=path_prefix
         )
         for content in list_content_result['Contents']:
             file_name = content['Key'].split('/')[-1]
@@ -109,7 +111,7 @@ def download_directory_from_s3(download_dest_directory, s3_bucket, artifacts_pre
             if not os.path.isfile(file_path):
                 s3_client.download_file(s3_bucket, content['Key'], file_path)
             else:
-                print('File {} already exists'.format(file_path))
-    except Exception as e:
-        print('Error getting object from bucket {}, {}'.format(s3_bucket, e))
+                logger.error('File %s already exists', file_path)
+    except ClientError as e:
+        logger.error('Error getting object from bucket %s, %s', s3_bucket, e)
         raise e

@@ -136,7 +136,8 @@ def _create_aws_lambda_cloudformation_template_file(
         f.write(
             """\
   EndpointUrl:
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.\
+amazonaws.com/Prod"
     Description: URL for endpoint
 """
         )
@@ -201,7 +202,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
         try:
             deployment_spec = deployment_pb.spec
-            aws_config = deployment_spec.aws_lambda_operator_config
+            lambda_deployment_config = deployment_spec.aws_lambda_operator_config
             bento_service_metadata = bento_pb.bento.bento_service_metadata
 
             py_major, py_minor, _ = bento_service_metadata.env.python_version.split('.')
@@ -212,8 +213,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             python_runtime = 'python{}.{}'.format(py_major, py_minor)
 
             api_names = (
-                [aws_config.api_name]
-                if aws_config.api_name
+                [lambda_deployment_config.api_name]
+                if lambda_deployment_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
 
@@ -232,19 +233,21 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         random_string=uuid.uuid4().hex[:6].lower(),
                     )
                 )
-                create_s3_bucket_if_not_exists(lambda_s3_bucket, aws_config.region)
+                create_s3_bucket_if_not_exists(
+                    lambda_s3_bucket, lambda_deployment_config.region
+                )
             deployment_path_prefix = os.path.join(
                 deployment_pb.namespace, deployment_pb.name
             )
-
-            logger.debug('Uploading artifacts to S3 bucket')
-            artifacts_prefix = os.path.join(
-                deployment_path_prefix,
-                'artifacts',
-                deployment_spec.bento_name,
-                deployment_spec.bento_version,
-            )
+            artifacts_prefix = ''
             if bento_service_metadata.artifacts:
+                logger.debug('Uploading artifacts to S3 bucket')
+                artifacts_prefix = os.path.join(
+                    deployment_path_prefix,
+                    'artifacts',
+                    deployment_spec.bento_name,
+                    deployment_spec.bento_version,
+                )
                 logger.debug(
                     'This lambda deployment requires uploading artifacts to s3'
                 )
@@ -253,7 +256,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
                 upload_directory_to_s3(
                     upload_dir_path,
-                    aws_config.region,
+                    lambda_deployment_config.region,
                     lambda_s3_bucket,
                     artifacts_prefix,
                 )
@@ -270,12 +273,14 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     artifacts_prefix=artifacts_prefix,
                     s3_bucket_name=lambda_s3_bucket,
                     py_runtime=python_runtime,
-                    memory_size=aws_config.memory_size,
-                    timeout=aws_config.timeout,
+                    memory_size=lambda_deployment_config.memory_size,
+                    timeout=lambda_deployment_config.timeout,
                 )
                 validate_lambda_template(template_file_path)
-                logger.debug('Lambda project directory: {}'.format(lambda_project_dir))
-                logger.debug('initializing lambda project')
+                logger.debug(
+                    'Initializing lambda project in directory: %s ...',
+                    lambda_project_dir,
+                )
                 init_sam_project(
                     lambda_project_dir,
                     bento_path,
@@ -283,18 +288,23 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     deployment_spec.bento_name,
                     api_names,
                 )
-                logger.info('Packaging lambda project')
+                logger.info(
+                    'Packaging AWS Lambda project at %s ...', lambda_project_dir
+                )
                 lambda_package(
                     lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
                 )
                 logger.info('Deploying lambda project')
                 try:
-                    lambda_deploy(
-                        lambda_project_dir,
-                        stack_name=deployment_pb.namespace + '-' + deployment_pb.name,
+                    stack_name = generate_aws_compatible_string(
+                        deployment_pb.namespace + '-' + deployment_pb.name
                     )
-                except Exception as e:
-                    _cleanup_s3_bucket(lambda_s3_bucket, aws_config.region)
+                    lambda_deploy(lambda_project_dir, stack_name=stack_name)
+                except BentoMLException as e:
+                    if not prev_deployment:
+                        _cleanup_s3_bucket(
+                            lambda_s3_bucket, lambda_deployment_config.region
+                        )
                     return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
 
             logger.info('Finish deployed lambda project, fetching latest status')
@@ -312,37 +322,34 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def delete(self, deployment_pb, yatai_service):
         try:
             logger.debug('Deleting AWS Lambda deployment')
-            state = self.describe(deployment_pb, yatai_service).state
-            if state.state != DeploymentState.RUNNING:
+            describe_state_result = self.describe(deployment_pb, yatai_service).state
+            if describe_state_result.state != DeploymentState.RUNNING:
                 message = (
                     'Failed to delete, no active deployment {name}. '
                     'The current state is {state}'.format(
                         name=deployment_pb.name,
-                        state=DeploymentState.State.Name(state.state),
+                        state=DeploymentState.State.Name(describe_state_result.state),
                     )
                 )
                 return DeleteDeploymentResponse(status=Status.ABORTED(message))
 
             deployment_spec = deployment_pb.spec
-            aws_config = deployment_spec.aws_lambda_operator_config
+            lambda_deployment_config = deployment_spec.aws_lambda_operator_config
 
-            cf_client = boto3.client('cloudformation', aws_config.region)
-            stack_name = deployment_pb.namespace + '-' + deployment_pb.name
-            cloud_formation_stack_result = cf_client.describe_stacks(
-                StackName='{ns}-{name}'.format(
-                    ns=deployment_pb.namespace, name=deployment_pb.name
-                )
+            cf_client = boto3.client('cloudformation', lambda_deployment_config.region)
+            stack_name = generate_aws_compatible_string(
+                deployment_pb.namespace + '-' + deployment_pb.name
             )
-            stack_result = cloud_formation_stack_result.get('Stacks')[0]
-            outputs = stack_result['Outputs']
-            bucket_name = ''
-            for output in outputs:
-                if output['OutputKey'] == 'S3Bucket':
-                    bucket_name = output['OutputValue']
+            deployment_info_json = json.loads(describe_state_result.info_json)
+            bucket_name = deployment_info_json.get('s3_bucket')
             if bucket_name:
-                _cleanup_s3_bucket(bucket_name, aws_config.region)
+                _cleanup_s3_bucket(bucket_name, lambda_deployment_config.region)
 
-            logger.debug('Deleting Lambda function and related resources')
+            logger.debug(
+                'Deleting AWS CloudFormation: %s that includes Lambda function '
+                'and related resources',
+                stack_name,
+            )
             cf_client.delete_stack(StackName=stack_name)
             return DeleteDeploymentResponse(status=Status.OK())
 
@@ -352,8 +359,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def describe(self, deployment_pb, yatai_service):
         try:
             deployment_spec = deployment_pb.spec
-            aws_config = deployment_spec.aws_lambda_operator_config
-            info_json = {'endpoints': []}
+            lambda_deployment_config = deployment_spec.aws_lambda_operator_config
 
             bento_pb = yatai_service.GetBento(
                 GetBentoRequest(
@@ -363,13 +369,15 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             )
             bento_service_metadata = bento_pb.bento.bento_service_metadata
             api_names = (
-                [aws_config.api_name]
-                if aws_config.api_name
+                [lambda_deployment_config.api_name]
+                if lambda_deployment_config.api_name
                 else [api.name for api in bento_service_metadata.apis]
             )
 
             try:
-                cf_client = boto3.client('cloudformation', aws_config.region)
+                cf_client = boto3.client(
+                    'cloudformation', lambda_deployment_config.region
+                )
                 cloud_formation_stack_result = cf_client.describe_stacks(
                     StackName='{ns}-{name}'.format(
                         ns=deployment_pb.namespace, name=deployment_pb.name
@@ -394,7 +402,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     state = DeploymentState(state=DeploymentState.PENDING)
                     state.timestamp.GetCurrentTime()
                     return DescribeDeploymentResponse(status=Status.OK(), state=state)
-            except Exception as error:
+            except Exception as error:  # pylint: disable=broad-except
                 state = DeploymentState(
                     state=DeploymentState.ERROR, error_message=str(error)
                 )
@@ -402,20 +410,16 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 return DescribeDeploymentResponse(
                     status=Status.INTERNAL(str(error)), state=state
                 )
+            outputs = {o['OutputKey']: o['OutputValue'] for o in outputs}
+            info_json = {}
 
-            base_url = ''
-            s3_bucket = ''
-            for output in outputs:
-                if output['OutputKey'] == 'EndpointUrl':
-                    base_url = output['OutputValue']
-                if output['OutputKey'] == 'S3Bucket':
-                    s3_bucket = output['OutputValue']
-            if base_url:
+            if 'EndpointUrl' in outputs:
                 info_json['endpoints'] = [
-                    base_url + '/' + api_name for api_name in api_names
+                    outputs['EndpointUrl'] + '/' + api_name for api_name in api_names
                 ]
-            if s3_bucket:
-                info_json['s3_bucket'] = s3_bucket
+            if 'S3Bucket' in outputs:
+                info_json['s3_bucket'] = outputs['S3Bucket']
+
             state = DeploymentState(
                 state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
             )

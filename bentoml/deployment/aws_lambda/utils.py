@@ -31,7 +31,10 @@ logger = logging.getLogger(__name__)
 
 def ensure_sam_available_or_raise():
     try:
+        # pylint: disable=unused-import
         import samcli  # noqa
+
+        # pylint: enable=unused-import
     except ImportError:
         raise ImportError(
             'aws-sam-cli package is required. Install '
@@ -41,44 +44,44 @@ def ensure_sam_available_or_raise():
 
 def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, '.aws-sam/build/{}'.format(api_name))
-    logger.debug('Cleaning up unused files in SAM built directory {}'.format(build_dir))
+    logger.debug('Cleaning up unused files in SAM built directory %s', build_dir)
     try:
         for root, dirs, files in os.walk(build_dir):
             if 'tests' in dirs:
-                logger.debug('removing dir: ' + os.path.join(root, 'tests'))
+                logger.debug('removing dir: %s', os.path.join(root, 'tests'))
                 shutil.rmtree(os.path.join(root, 'tests'))
             if 'test' in dirs:
-                logger.debug('removing dir: ' + os.path.join(root, 'test'))
+                logger.debug('removing dir: %s', os.path.join(root, 'test'))
                 shutil.rmtree(os.path.join(root, 'test'))
             if 'examples' in dirs:
-                logger.debug('removing dir: ' + os.path.join(root, 'examples'))
+                logger.debug('removing dir: %s', os.path.join(root, 'examples'))
                 shutil.rmtree(os.path.join(root, 'examples'))
             if '__pycache__' in dirs:
-                logger.debug('removing dir: ' + os.path.join(root, '__pycache__'))
+                logger.debug('removing dir: %s', os.path.join(root, '__pycache__'))
                 shutil.rmtree(os.path.join(root, '__pycache__'))
 
             for dir_name in filter(lambda x: re.match('^.*\\.dist-info$', x), dirs):
-                logger.debug('removing dir ' + dir_name)
+                logger.debug('removing dir: %s', dir_name)
                 shutil.rmtree(os.path.join(root, dir_name))
 
             for file in filter(lambda x: re.match('^.*\\.egg-info$', x), files):
-                logger.debug('removing file: ' + os.path.join(root, file))
+                logger.debug('removing file: %s', os.path.join(root, file))
                 os.remove(os.path.join(root, file))
 
             for file in filter(lambda x: re.match('^.*\\.pyc$', x), files):
-                logger.debug('removing file: ' + os.path.join(root, file))
+                logger.debug('removing file: %s', os.path.join(root, file))
                 os.remove(os.path.join(root, file))
 
             if 'caff2' in files:
-                logger.debug('removing file: ' + os.path.join(root, 'caff2'))
+                logger.debug('removing file: %s', os.path.join(root, 'caff2'))
                 os.remove(os.path.join(root, 'caff2'))
             if 'wheel' in files:
-                logger.debug('removing file: ' + os.path.join(root, 'wheel'))
+                logger.debug('removing file: %s', os.path.join(root, 'wheel'))
                 os.remove(os.path.join(root, 'wheel'))
             if 'pip' in files:
-                logger.debug('removing file: ' + os.path.join(root, 'pip'))
+                logger.debug('removing file: %s', os.path.join(root, 'pip'))
                 os.remove(os.path.join(root, 'pip'))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         logger.error(str(e))
         return
 
@@ -89,9 +92,7 @@ def call_sam_command(command, project_dir):
         command, cwd=project_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
         stdout = proc.stdout.read().decode('utf-8')
-        logger.debug(
-            'SAM cmd {command} output: {output}'.format(command=command, output=stdout)
-        )
+        logger.debug('SAM cmd %s output: %s', command, stdout)
     return stdout
 
 
@@ -155,9 +156,9 @@ def validate_lambda_template(template_file):
     validator = SamTemplateValidator(sam_template, ManagedPolicyLoader(iam_client))
     try:
         validator.is_valid()
-    except InvalidSamDocumentException as e:
+    except InvalidSamDocumentException:
         raise BentoMLDeploymentException('Invalid SAM Template for AWS Lambda.')
-    except NoCredentialsError as e:
+    except NoCredentialsError:
         raise BentoMLDeploymentException(
             'AWS Credential are required, please configure your credentials.'
         )

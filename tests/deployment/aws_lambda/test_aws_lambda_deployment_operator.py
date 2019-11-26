@@ -8,6 +8,7 @@ from ruamel.yaml import YAML
 from bentoml.deployment.aws_lambda import (
     AwsLambdaDeploymentOperator,
     _create_aws_lambda_cloudformation_template_file,
+    init_sam_project,
 )
 from bentoml.proto.deployment_pb2 import (
     Deployment,
@@ -57,7 +58,7 @@ def generate_lambda_deployment_pb():
     return test_deployment_pb
 
 
-def test_generate_aws_lambda_app_py(monkeypatch):
+def test_aws_lambda_app_py(monkeypatch):
     def test_predict(value):
         return value
 

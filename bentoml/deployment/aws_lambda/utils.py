@@ -31,10 +31,13 @@ logger = logging.getLogger(__name__)
 
 def ensure_sam_available_or_raise():
     try:
-        # pylint: disable=unused-import
-        import samcli  # noqa
+        import samcli
 
-        # pylint: enable=unused-import
+        if list(map(int, samcli.__version__.split('.'))) < [0, 33, 1]:
+            raise BentoMLException(
+                'aws-sam-cli package requires version 0.33.1 or '
+                'higher. Update the package with `pip install -U aws-sam-cli`'
+            )
     except ImportError:
         raise ImportError(
             'aws-sam-cli package is required. Install '
@@ -45,45 +48,41 @@ def ensure_sam_available_or_raise():
 def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, '.aws-sam/build/{}'.format(api_name))
     logger.debug('Cleaning up unused files in SAM built directory %s', build_dir)
-    try:
-        for root, dirs, files in os.walk(build_dir):
-            if 'tests' in dirs:
-                logger.debug('removing dir: %s', os.path.join(root, 'tests'))
-                shutil.rmtree(os.path.join(root, 'tests'))
-            if 'test' in dirs:
-                logger.debug('removing dir: %s', os.path.join(root, 'test'))
-                shutil.rmtree(os.path.join(root, 'test'))
-            if 'examples' in dirs:
-                logger.debug('removing dir: %s', os.path.join(root, 'examples'))
-                shutil.rmtree(os.path.join(root, 'examples'))
-            if '__pycache__' in dirs:
-                logger.debug('removing dir: %s', os.path.join(root, '__pycache__'))
-                shutil.rmtree(os.path.join(root, '__pycache__'))
+    for root, dirs, files in os.walk(build_dir):
+        if 'tests' in dirs:
+            logger.debug('removing dir: %s', os.path.join(root, 'tests'))
+            shutil.rmtree(os.path.join(root, 'tests'))
+        if 'test' in dirs:
+            logger.debug('removing dir: %s', os.path.join(root, 'test'))
+            shutil.rmtree(os.path.join(root, 'test'))
+        if 'examples' in dirs:
+            logger.debug('removing dir: %s', os.path.join(root, 'examples'))
+            shutil.rmtree(os.path.join(root, 'examples'))
+        if '__pycache__' in dirs:
+            logger.debug('removing dir: %s', os.path.join(root, '__pycache__'))
+            shutil.rmtree(os.path.join(root, '__pycache__'))
 
-            for dir_name in filter(lambda x: re.match('^.*\\.dist-info$', x), dirs):
-                logger.debug('removing dir: %s', dir_name)
-                shutil.rmtree(os.path.join(root, dir_name))
+        for dir_name in filter(lambda x: re.match('^.*\\.dist-info$', x), dirs):
+            logger.debug('removing dir: %s', dir_name)
+            shutil.rmtree(os.path.join(root, dir_name))
 
-            for file in filter(lambda x: re.match('^.*\\.egg-info$', x), files):
-                logger.debug('removing file: %s', os.path.join(root, file))
-                os.remove(os.path.join(root, file))
+        for file in filter(lambda x: re.match('^.*\\.egg-info$', x), files):
+            logger.debug('removing file: %s', os.path.join(root, file))
+            os.remove(os.path.join(root, file))
 
-            for file in filter(lambda x: re.match('^.*\\.pyc$', x), files):
-                logger.debug('removing file: %s', os.path.join(root, file))
-                os.remove(os.path.join(root, file))
+        for file in filter(lambda x: re.match('^.*\\.pyc$', x), files):
+            logger.debug('removing file: %s', os.path.join(root, file))
+            os.remove(os.path.join(root, file))
 
-            if 'caff2' in files:
-                logger.debug('removing file: %s', os.path.join(root, 'caff2'))
-                os.remove(os.path.join(root, 'caff2'))
-            if 'wheel' in files:
-                logger.debug('removing file: %s', os.path.join(root, 'wheel'))
-                os.remove(os.path.join(root, 'wheel'))
-            if 'pip' in files:
-                logger.debug('removing file: %s', os.path.join(root, 'pip'))
-                os.remove(os.path.join(root, 'pip'))
-    except Exception as e:  # pylint: disable=broad-except
-        logger.error(str(e))
-        return
+        if 'caff2' in files:
+            logger.debug('removing file: %s', os.path.join(root, 'caff2'))
+            os.remove(os.path.join(root, 'caff2'))
+        if 'wheel' in files:
+            logger.debug('removing file: %s', os.path.join(root, 'wheel'))
+            os.remove(os.path.join(root, 'wheel'))
+        if 'pip' in files:
+            logger.debug('removing file: %s', os.path.join(root, 'pip'))
+            os.remove(os.path.join(root, 'pip'))
 
 
 def call_sam_command(command, project_dir):
@@ -119,18 +118,17 @@ def lambda_package(project_dir, s3_bucket_name, deployment_prefix):
 
 def lambda_deploy(project_dir, stack_name):
     template_file = os.path.join(project_dir, '.aws-sam', 'build', 'packaged.yaml')
-    try:
-        from samcli.lib.samlib.cloudformation_command import execute_command
-    except ImportError:
-        raise ImportError(
-            'aws-sam-cli package is required. Install '
-            'with `pip install --user aws-sam-cli`'
-        )
-
-    execute_command(
-        "deploy",
-        ["--stack-name", stack_name, "--capabilities", "CAPABILITY_IAM"],
-        template_file=template_file,
+    call_sam_command(
+        [
+            'deploy',
+            '--stack-name',
+            stack_name,
+            '--capabilities',
+            'CAPABILITY_IAM',
+            '--template-file',
+            template_file,
+        ],
+        project_dir,
     )
 
 

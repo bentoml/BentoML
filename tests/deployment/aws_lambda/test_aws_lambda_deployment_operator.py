@@ -104,6 +104,33 @@ def test_aws_lambda_app_py(monkeypatch):
     assert predict(1, None) == 1
 
 
+@patch('shutil.rmtree', autospec=True)
+@patch('shutil.copytree', autospec=True)
+@patch('bentoml.deployment.aws_lambda.utils.cleanup_build_files')
+@patch('bentoml.deployment.aws_lambda.utils.call_sam_command')
+def test_init_sam_project(
+    mock_call_sam, mock_cleanup, mock_rmtree, mock_copytree, tmpdir
+):  # pylint: disable=unused-variables
+    mock_sam_project_path = os.path.join(tmpdir, 'mock_sam_project')
+    mock_bento_bundle_path = os.path.join(tmpdir, 'mock_bento_service')
+    mock_deployment_name = 'mock_deployment'
+    mock_bento_name = 'mock_bento_name'
+    mock_api_names = ['predict']
+    os.mkdir(mock_bento_bundle_path)
+    open(os.path.join(mock_bento_bundle_path, 'requirements.txt'), 'w').close()
+
+    init_sam_project(
+        str(mock_sam_project_path),
+        mock_bento_bundle_path,
+        mock_deployment_name,
+        mock_bento_name,
+        mock_api_names,
+    )
+    assert os.path.isfile(
+        os.path.join(mock_sam_project_path, mock_deployment_name, 'app.py')
+    )
+
+
 def test_generate_aws_lambda_template_yaml(tmpdir):
     deployment_name = 'deployment_name'
     api_names = ['predict', 'classify']

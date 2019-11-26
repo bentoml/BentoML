@@ -223,7 +223,7 @@ def init_sam_project(
     open(os.path.join(function_path, '__init__.py'), 'w').close()
 
     app_py_path = os.path.join(os.path.dirname(__file__), 'lambda_app.py')
-    shutil.copy('/'.join(app_py_path), os.path.join(function_path, 'app.py'))
+    shutil.copy(app_py_path, os.path.join(function_path, 'app.py'))
 
     logger.info('Building lambda project')
     build_result = call_sam_command(['build', '--use-container'], sam_project_path)

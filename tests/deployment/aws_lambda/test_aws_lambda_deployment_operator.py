@@ -57,7 +57,7 @@ def generate_lambda_deployment_pb():
     return test_deployment_pb
 
 
-def test_generate_aws_lambda_app_py(monkeypatch):
+def test_aws_lambda_app_py(monkeypatch):
     def test_predict(value):
         return value
 
@@ -101,6 +101,10 @@ def test_generate_aws_lambda_app_py(monkeypatch):
 
     predict = return_predict_func()
     assert predict(1, None) == 1
+
+
+def test_init_sam_project():
+    pass
 
 
 def test_generate_aws_lambda_template_yaml(tmpdir):

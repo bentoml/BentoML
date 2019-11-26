@@ -237,17 +237,19 @@ def get_deployment_sub_command():
     )
     @click.option(
         '--memory-size',
-        help='Memory size for lambda function. '
-        'Option applicable to platform: aws-lambda',
+        help="Maximum Memory Capacity for AWS Lambda function, you can set the memory "
+        "size in 64MB increments from 128MB to 3008MB. The default value "
+        "is 1024 MB.",
         type=click.INT,
         default=1024,
     )
     @click.option(
         '--timeout',
-        help='function timeout for lambda function. '
-        'Option applicable to platform: aws-lambda',
+        help="The amount of time that AWS Lambda allows a function to run before "
+        "stopping it. The default is 3 seconds. The maximum allowed value is "
+        "900 seconds",
         type=click.INT,
-        default=6,
+        default=3,
     )
     @click.option(
         '--service-name',

@@ -23,13 +23,13 @@ import sys
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 
-from bentoml.utils.s3 import download_directory_from_s3
-from bentoml.bundler import load_bento_service_class
+from bentoml.utils.s3 import download_directory_from_s3  # noqa
+from bentoml.bundler import load_bento_service_class  # noqa
 
-bento_name = os.environ.get('BENTOML_BENTO_SERVICE_NAME')
 s3_bucket = os.environ.get('BENTOML_S3_BUCKET')
 artifacts_prefix = os.environ.get('BENTOML_ARTIFACTS_PREFIX')
-api_name = os.environ.get("BENTOML_API_NAME")
+bento_name = os.environ['BENTOML_BENTO_SERVICE_NAME']
+api_name = os.environ["BENTOML_API_NAME"]
 
 
 bento_service_cls = load_bento_service_class(bundle_path='./{}'.format(bento_name))
@@ -52,7 +52,7 @@ if bento_service._artifacts:
 this_module = sys.modules[__name__]
 
 
-def api_func(event, context):
+def api_func(event, context):  # pylint: disable=unused-argument
     api = bento_service.get_service_api(api_name)
     return api.handle_aws_lambda_event(event)
 

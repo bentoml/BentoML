@@ -124,7 +124,7 @@ Deploy the saved BentoService to cloud services such as AWS Lambda with the `ben
 bentoml deployment create my-iris-classifier --bento IrisClassifier:{VERSION} --platform=aws-lambda
 ```
 
-To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a trained sklearn model into a containerized REST API server, and then deploy it to AWS Lambda: [Download](https://github.com/master/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a trained sklearn model into a containerized REST API server, and then deploy it to AWS Lambda: [Download](https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [nbviewer](https://nbviewer.jupyter.org/github/bentoml/bentoml/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
 
 
 ## Examples
@@ -157,6 +157,10 @@ To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a t
 
 * Titanic Survival Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb)
 * League of Legend win Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb)
+
+#### LightGBM
+
+* Titanic Survival Prediction -  [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb)
 
 
 #### H2O

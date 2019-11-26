@@ -58,6 +58,8 @@ deployment_schema = {
                 'schema': {
                     'region': {'type': 'string', 'required': True},
                     'api_name': {'type': 'string', 'minlength': 3},
+                    'memory_size': {'type': 'integer', 'aws_lambda_memory': True},
+                    'timeout': {'type': 'integer', 'min': 1, 'max': 900},
                 },
             },
             'gcp_function_operator_config': {
@@ -89,9 +91,31 @@ deployment_schema = {
 }
 
 
+class YataiDeploymentValidator(Validator):
+    def _validate_aws_lambda_memory(self, aws_lambda_memory, field, value):
+        """ Test the memory size restriction for AWS Lambda.
+
+        The rule's arguments are validated against this schema:
+        {'type': 'integer'}
+        """
+        if aws_lambda_memory:
+            if value > 3008 or value < 128:
+                self._error(
+                    field,
+                    'AWS Lambda memory must be between 128 MB to 3,008 MB, '
+                    'in 64 MB increments.',
+                )
+            if (value - 128) % 64 > 0:
+                self._error(
+                    field,
+                    'AWS Lambda memory must be between 128 MB to 3,008 MB, '
+                    'in 64 MB increments.',
+                )
+
+
 def validate_pb_schema(pb, schema):
     pb_dict = ProtoMessageToDict(pb)
-    v = Validator(schema)
+    v = YataiDeploymentValidator(schema)
     if v.validate(pb_dict):
         return None
     else:

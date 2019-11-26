@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import json
 import logging
+import re
 import subprocess
 
 from bentoml.exceptions import (
@@ -74,16 +75,18 @@ def ensure_docker_available_or_raise():
     except not_found_error:
         raise BentoMLMissingDependencyException(
             'Docker is required for this deployment. Please visit '
-            'www.docker.come for instructions'
+            'www.docker.com for instructions'
         )
 
 
-def ensure_deploy_api_name_exists_in_bento(all_api_names, deployed_api_names):
-    if not set(deployed_api_names).issubset(all_api_names):
+def raise_if_api_names_not_found_in_bento_service_metadata(metadata, api_names):
+    all_api_names = [api.name for api in metadata.apis]
+
+    if not set(api_names).issubset(all_api_names):
         raise BentoMLInvalidArgumentException(
-            "Expect api names {deployed_api_names} to be "
+            "Expect api names {api_names} to be "
             "subset of {all_api_names}".format(
-                deployed_api_names=deployed_api_names, all_api_names=all_api_names
+                api_names=api_names, all_api_names=all_api_names
             )
         )
 
@@ -95,3 +98,13 @@ def exception_to_return_status(error):
         return Status.INVALID_ARGUMENT(str(error))
     else:
         return Status.INTERNAL(str(error))
+
+
+def generate_aws_compatible_string(item):
+    pattern = re.compile("[^a-zA-Z0-9-]|_")
+    name = re.sub(pattern, "-", item)
+    if len(name) > 63:
+        raise BentoMLException(
+            'AWS string {} exceeds maximum length of 63'.format(name)
+        )
+    return name

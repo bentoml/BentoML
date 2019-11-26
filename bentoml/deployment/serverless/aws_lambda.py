@@ -42,7 +42,7 @@ from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.deployment.utils import (
     ensure_docker_available_or_raise,
     exception_to_return_status,
-    ensure_deploy_api_name_exists_in_bento,
+    raise_if_api_names_not_found_in_bento_service_metadata,
 )
 from bentoml.deployment.serverless.serverless_utils import (
     call_serverless_command,
@@ -189,8 +189,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             if aws_config.api_name
             else [api.name for api in bento_service_metadata.apis]
         )
-        ensure_deploy_api_name_exists_in_bento(
-            [api.name for api in bento_service_metadata.apis], api_names
+        raise_if_api_names_not_found_in_bento_service_metadata(
+            bento_service_metadata, api_names
         )
 
         with TempDirectory() as serverless_project_dir:

@@ -17,10 +17,15 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import logging
+
 import boto3
+from botocore.exceptions import ClientError
 from six.moves.urllib.parse import urlparse
 
-from bentoml.utils import Path
+from bentoml.exceptions import BentoMLException
+
+logger = logging.getLogger(__name__)
 
 
 def is_s3_url(url):
@@ -33,54 +38,78 @@ def is_s3_url(url):
         return False
 
 
-def upload_to_s3(s3_url, file_path):
-    """
-    Update files in the file_path to the s3 location
-    """
+def upload_directory_to_s3(
+    upload_directory_path, region, bucket_name, s3_path_prefix=''
+):
+    s3_client = boto3.client('s3', region)
+    try:
+        for root, _, file_names in os.walk(upload_directory_path):
+            relative_path_to_upload_dir = os.path.relpath(root, upload_directory_path)
+            if relative_path_to_upload_dir == '.':
+                relative_path_to_upload_dir = ''
+            for file_name in file_names:
+                key = os.path.join(
+                    s3_path_prefix, relative_path_to_upload_dir, file_name
+                )
+                logger.debug(
+                    'Uploading {name} to s3 {location}'.format(
+                        name=file_name, location=bucket_name + '/' + key
+                    )
+                )
+                s3_client.upload_file(os.path.join(root, file_name), bucket_name, key)
+    except Exception as error:
+        raise BentoMLException(str(error))
 
-    parse_result = urlparse(s3_url)
-    bucket = parse_result.netloc
-    base_path = parse_result.path
 
-    s3_client = boto3.client("s3")
-
-    for root, _, files in os.walk(file_path):
-        for file_name in files:
-            abs_file_path = os.path.join(root, file_name)
-            relative_file_path = abs_file_path[len(file_path) + 1 :]  # noqa: E203
-            s3_path = os.path.join(base_path, relative_file_path)
-            s3_client.upload_file(Filename=abs_file_path, Bucket=bucket, Key=s3_path)
-
-
-def download_from_s3(s3_url, file_path):
-    """
-    Download files from given s3_path and store in the given file path
-    """
-    parse_result = urlparse(s3_url)
-    bucket = parse_result.netloc
-    base_path = parse_result.path
-    if base_path.startswith('/'):
-        base_path = base_path[1:]
-
-    s3_client = boto3.client("s3")
-    list_object_result = s3_client.list_objects(Bucket=bucket, Prefix=base_path)
-    result_content = list_object_result["Contents"]
-    for content in result_content:
-        if len(base_path) == len(content["Key"]):
-            # single file
-            local_file_path = os.path.join(file_path, base_path.split('/')[-1])
-        else:
-            relative_file_path = content["Key"][len(base_path) + 1 :]  # noqa: E203
-            if not relative_file_path:
-                continue
-            elif relative_file_path.endswith('/'):
-                local_dir_path = os.path.join(file_path, relative_file_path)
-                Path(os.path.dirname(local_dir_path)).mkdir(parents=True, exist_ok=True)
-                continue
-            else:
-                local_file_path = os.path.join(file_path, relative_file_path)
-
-        if local_file_path:
-            s3_client.download_file(
-                Bucket=bucket, Key=content["Key"], Filename=local_file_path
+def create_s3_bucket_if_not_exists(bucket_name, region):
+    s3_client = boto3.client('s3', region)
+    try:
+        s3_client.get_bucket_acl(Bucket=bucket_name)
+        logger.debug('Use existing s3 bucket')
+    except ClientError as error:
+        if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
+            logger.debug('Creating s3 bucket: {}'.format(bucket_name))
+            s3_client.create_bucket(
+                Bucket=bucket_name,
+                CreateBucketConfiguration={'LocationConstraint': region},
             )
+        else:
+            raise error
+
+
+def is_s3_bucket_exist(bucket_name, region):
+    s3_client = boto3.client('s3', region)
+    try:
+        s3_client.get_bucket_acl(Bucket=bucket_name)
+        return True
+    except ClientError as error:
+        if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
+            return False
+        else:
+            raise error
+
+
+def download_directory_from_s3(download_dest_directory, s3_bucket, artifacts_prefix):
+    """ Download directory from s3 bucket to given directory.
+    Args:
+        download_dest_directory: String
+        s3_bucket: String
+        artifacts_prefix: String
+
+    Returns: None
+    """
+    s3_client = boto3.client('s3')
+    try:
+        list_content_result = s3_client.list_objects(
+            Bucket=s3_bucket, Prefix=artifacts_prefix
+        )
+        for content in list_content_result['Contents']:
+            file_name = content['Key'].split('/')[-1]
+            file_path = os.path.join(download_dest_directory, file_name)
+            if not os.path.isfile(file_path):
+                s3_client.download_file(s3_bucket, content['Key'], file_path)
+            else:
+                print('File {} already exists'.format(file_path))
+    except Exception as e:
+        print('Error getting object from bucket {}, {}'.format(s3_bucket, e))
+        raise e

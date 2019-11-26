@@ -20,7 +20,6 @@ import os
 import shutil
 import base64
 import logging
-import re
 import json
 
 from six.moves.urllib.parse import urlparse
@@ -35,7 +34,8 @@ from bentoml.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
     exception_to_return_status,
-    ensure_deploy_api_name_exists_in_bento,
+    generate_aws_compatible_string,
+    raise_if_api_names_not_found_in_bento_service_metadata,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.yatai.status import Status
@@ -101,16 +101,6 @@ def strip_scheme(url):
     parsed = urlparse(url)
     scheme = "%s://" % parsed.scheme
     return parsed.geturl().replace(scheme, "", 1)
-
-
-def generate_aws_compatible_string(item):
-    pattern = re.compile("[^a-zA-Z0-9-]|_")
-    name = re.sub(pattern, "-", item)
-    if len(name) > 63:
-        raise BentoMLException(
-            'AWS string {} exceeds Sagemaker maximum length of 63'.format(name)
-        )
-    return name
 
 
 def get_arn_role_from_current_aws_user():
@@ -385,9 +375,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         deployment_spec = deployment_pb.spec
         sagemaker_config = deployment_spec.sagemaker_operator_config
 
-        ensure_deploy_api_name_exists_in_bento(
-            [api.name for api in bento_pb.bento.bento_service_metadata.apis],
-            [sagemaker_config.api_name],
+        raise_if_api_names_not_found_in_bento_service_metadata(
+            bento_pb.bento.bento_service_metadata, [sagemaker_config.api_name]
         )
 
         sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)

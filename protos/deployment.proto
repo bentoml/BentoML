@@ -39,6 +39,8 @@ message DeploymentSpec {
   message AwsLambdaOperatorConfig {
     string region = 1;
     string api_name = 2;
+    int32 memory_size = 3;
+    int32 timeout = 4;
   }
 
   message GcpFunctionOperatorConfig {

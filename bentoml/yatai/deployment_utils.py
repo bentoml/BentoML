@@ -71,37 +71,27 @@ def deployment_dict_to_pb(deployment_dict):
                 'instance_type'
             )
     elif deployment_pb.spec.operator == DeploymentSpec.AWS_LAMBDA:
-        lambda_config = spec_dict.get('aws_lambda_operator_config', {})
-        if lambda_config.get('region'):
-            deployment_pb.spec.aws_lambda_operator_config.region = lambda_config.get(
-                'region'
-            )
-        if lambda_config.get('api_name'):
-            deployment_pb.spec.aws_lambda_operator_config.api_name = lambda_config.get(
-                'api_name'
-            )
+        lambda_conf = spec_dict.get('aws_lambda_operator_config', {})
+        for field in ['region', 'api_name', 'memory_size', 'timeout']:
+            if lambda_conf.get(field):
+                deployment_pb.spec.aws_lambda_operator_config.__setattr__(
+                    field, lambda_conf.get(field)
+                )
     elif deployment_pb.spec.operator == DeploymentSpec.GCP_FUNCTION:
         gcp_config = spec_dict.get('gcp_function_operator_config', {})
-        if gcp_config.get('region'):
-            deployment_pb.spec.gcp_function_operator_config.region = gcp_config.get(
-                'region'
-            )
-        if gcp_config.get('api_name'):
-            deployment_pb.spec.aws_lambda_operator_config.api_name = gcp_config.get(
-                'api_name'
-            )
+        for field in ['region', 'api_name']:
+            if gcp_config.get(field):
+                deployment_pb.spec.gcp_function_operator_config.__setattr__(
+                    field, gcp_config.get(field)
+                )
     elif deployment_pb.spec.operator == DeploymentSpec.KUBERNETES:
         k8s_config = spec_dict.get('kubernetes_operator_config', {})
-        k8s_operator_config_pb = deployment_pb.spec.kubernetes_operator_config
 
-        if k8s_config.get('kube_namespace'):
-            k8s_operator_config_pb.kube_namespace = k8s_config.get('kube_namespace')
-        if k8s_config.get('replicas'):
-            k8s_operator_config_pb.replicas = k8s_config.get('replicas')
-        if k8s_config.get('service_name'):
-            k8s_operator_config_pb.service_name = k8s_config.get('service_name')
-        if k8s_config.get('service_type'):
-            k8s_operator_config_pb.service_type = k8s_config.get('service_type')
+        for field in ['kube_namespace', 'replicas', 'service_name', 'service_type']:
+            if k8s_config.get(field):
+                deployment_pb.spec.kubernetes_operator_config.__setattr__(
+                    field, k8s_config.get(field)
+                )
     else:
         raise BentoMLException(
             'Platform "{}" is not supported in the current version of '

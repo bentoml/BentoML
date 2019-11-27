@@ -161,10 +161,11 @@ class BentoMetadataStore(object):
                     .filter_by(name=bento_name, version=bento_version)
                     .one()
                 )
-                if not bento_obj.deleted:
+                if bento_obj.deleted:
                     raise BentoMLRepositoryException(
-                        "Bento %s:%s has already been deleted" % bento_name,
-                        bento_version,
+                        "Bento {}:{} has already been deleted".format(
+                            bento_name, bento_version
+                        )
                     )
                 bento_obj.deleted = True
             except NoResultFound:

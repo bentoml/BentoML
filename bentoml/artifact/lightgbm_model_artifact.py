@@ -50,7 +50,8 @@ class LightGBMModelArtifact(BentoServiceArtifact):
             import lightgbm as lgb
         except ImportError:
             raise ImportError(
-                "lightgbm package is required to use LightGBMModelArtifact")
+                "lightgbm package is required to use LightGBMModelArtifact"
+            )
         bst = lgb.Booster(model_file=self._model_file_path(path))
 
         return self.pack(bst)
@@ -65,7 +66,8 @@ class _LightGBMModelArtifactWrapper(BentoServiceArtifactWrapper):
             import lightgbm as lgb
         except ImportError:
             raise ImportError(
-                "lightgbm package is required to use LightGBMModelArtifact")
+                "lightgbm package is required to use LightGBMModelArtifact"
+            )
 
         if not isinstance(model, lgb.Booster):
             raise TypeError(
@@ -79,4 +81,3 @@ class _LightGBMModelArtifactWrapper(BentoServiceArtifactWrapper):
 
     def get(self):
         return self._model
-

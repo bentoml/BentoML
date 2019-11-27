@@ -104,6 +104,38 @@ def test_aws_lambda_app_py(monkeypatch):
     assert predict(1, None) == 1
 
 
+@patch('shutil.rmtree', MagicMock())
+@patch('shutil.copytree', MagicMock())
+@patch('bentoml.deployment.aws_lambda.utils.cleanup_build_files', MagicMock())
+@patch('bentoml.deployment.aws_lambda.utils.call_sam_command', MagicMock())
+def test_init_sam_project(tmpdir):
+    mock_sam_project_path = os.path.join(tmpdir, 'mock_sam_project')
+    mock_bento_bundle_path = os.path.join(tmpdir, 'mock_bento_service')
+    mock_deployment_name = 'mock_deployment'
+    mock_bento_name = 'mock_bento_name'
+    mock_api_names = ['predict']
+    os.mkdir(mock_sam_project_path)
+    os.mkdir(mock_bento_bundle_path)
+    open(os.path.join(mock_bento_bundle_path, 'requirements.txt'), 'w').close()
+
+    init_sam_project(
+        mock_sam_project_path,
+        mock_bento_bundle_path,
+        mock_deployment_name,
+        mock_bento_name,
+        mock_api_names,
+    )
+    assert os.path.isfile(
+        os.path.join(mock_sam_project_path, mock_deployment_name, 'app.py')
+    )
+    assert os.path.isfile(
+        os.path.join(mock_sam_project_path, mock_deployment_name, 'requirements.txt')
+    )
+    assert os.path.isfile(
+        os.path.join(mock_sam_project_path, mock_deployment_name, '__init__.py')
+    )
+
+
 def test_generate_aws_lambda_template_yaml(tmpdir):
     deployment_name = 'deployment_name'
     api_names = ['predict', 'classify']
@@ -131,7 +163,7 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
 
 
 def mock_lambda_related_operations(func):
-    @patch('subprocess.check_output', autospec=True)
+    @patch('subprocess.check_output', MagicMock())
     @mock_s3
     def mock_wrapper(*args, **kwargs):
         conn = boto3.client('s3', region_name='us-west-2')
@@ -142,19 +174,17 @@ def mock_lambda_related_operations(func):
 
 
 @mock_lambda_related_operations
-@patch('shutil.rmtree', autospec=True)
-@patch('shutil.copytree', autospec=True)
-@patch('shutil.copy', autospec=True)
-@patch('os.listdir')
-@patch('subprocess.Popen')
+@patch('shutil.rmtree', MagicMock())
+@patch('shutil.copytree', MagicMock())
+@patch('shutil.copy', MagicMock())
+@patch('os.listdir', MagicMock())
+@patch('subprocess.Popen', MagicMock())
 @patch(
     'bentoml.deployment.aws_lambda.validate_lambda_template',
     MagicMock(return_value=None),
 )
 @patch('bentoml.deployment.aws_lambda.lambda_deploy', MagicMock(return_value=None))
-def test_aws_lambda_apply_success(
-    mock_popen, mock_checkoutput, mock_listdir, mock_copy, mock_copytree, mock_rmtree
-):
+def test_aws_lambda_apply_success():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     deployment_operator = AwsLambdaDeploymentOperator()

@@ -51,7 +51,7 @@ def _load_tf_keras_saved_model(path):
 
         TF2 = tf.__version__.startswith('2')
     except ImportError:
-        raise ImportError("Tensorflow package is required "
+        raise ImportError("Tensorflow 2.0 or above is required "
                           "to use TfKerasSavedModelArtifact")
 
     if TF2:
@@ -132,6 +132,40 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
 
 
 class TensorflowKerasSavedModelArtifact(TensorflowSavedModelArtifact):
+    """
+    Abstraction for saving/loading Tensorflow.keras model in tf.saved_model format
+
+    Args:
+        name (string): name of the artifact
+
+    Raises:
+        ImportError: tensorflow 2.0 or above is required for TensorflowSavedModelArtifact
+
+    Example usage:
+
+    >>> import bentoml
+    >>> from bentoml.handlers import JsonHandler
+    >>> from bentoml.artifact import TensorflowKerasSavedModelArtifact
+    >>>
+    >>> @bentoml.env(pip_dependencies=["tensorflow"])
+    >>> @bentoml.artifacts([TensorflowKerasSavedModelArtifact('model')])
+    >>> class TfKerasModelService(bentoml.BentoService):
+    >>>
+    >>>     @bentoml.api(JsonHandler)
+    >>>     def predict(self, json):
+    >>>         input_data = json['input']
+    >>>         prediction = self.artifacts.model.add(input_data)
+    >>>         return prediction.numpy()
+    >>>
+    >>> svc = TfKerasModelService()
+    >>>
+    >>> # Option 1: pack directly with Tensorflow trackable object
+    >>> svc.pack('model', model)
+    >>>
+    >>> # Option 2: save to file path then pack
+    >>> tf.saved_model.save(model, '/tmp/adder/1')
+    >>> svc.pack('model', '/tmp/adder/1')
+    """
     def load(self, path):
         saved_model_path = self._saved_model_path(path)
         loaded_model = _load_tf_keras_saved_model(saved_model_path)

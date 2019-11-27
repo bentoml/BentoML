@@ -128,6 +128,12 @@ def test_init_sam_project(tmpdir):
     assert os.path.isfile(
         os.path.join(mock_sam_project_path, mock_deployment_name, 'app.py')
     )
+    assert os.path.isfile(
+        os.path.join(mock_sam_project_path, mock_deployment_name, 'requirements.txt')
+    )
+    assert os.path.isfile(
+        os.path.join(mock_sam_project_path, mock_deployment_name, '__init__.py')
+    )
 
 
 def test_generate_aws_lambda_template_yaml(tmpdir):

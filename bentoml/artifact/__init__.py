@@ -29,7 +29,10 @@ from bentoml.artifact.xgboost_model_artifact import XgboostModelArtifact
 from bentoml.artifact.h2o_model_artifact import H2oModelArtifact
 from bentoml.artifact.fastai_model_artifact import FastaiModelArtifact
 from bentoml.artifact.sklearn_model_artifact import SklearnModelArtifact
-from bentoml.artifact.tf_savedmodel_artifact import TensorflowSavedModelArtifact
+from bentoml.artifact.tf_savedmodel_artifact import (
+    TensorflowSavedModelArtifact,
+    TensorflowKerasSavedModelArtifact,
+)
 from bentoml.artifact.lightgbm_model_artifact import LightGBMModelArtifact
 
 __all__ = [
@@ -45,5 +48,6 @@ __all__ = [
     "FastaiModelArtifact",
     "SklearnModelArtifact",
     "TensorflowSavedModelArtifact",
+    "TensorflowKerasSavedModelArtifact",
     "LightGBMModelArtifact",
 ]

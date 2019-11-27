@@ -45,6 +45,22 @@ def _load_tf_saved_model(path):
         return tf.compat.v2.saved_model.load(path)
 
 
+def _load_tf_keras_saved_model(path):
+    try:
+        import tensorflow as tf
+
+        TF2 = tf.__version__.startswith('2')
+    except ImportError:
+        raise ImportError("Tensorflow package is required "
+                          "to use TfKerasSavedModelArtifact")
+
+    if TF2:
+        return tf.keras.models.load_model(path)
+    else:
+        raise ImportError("Tensorflow 2.0 or above is required "
+                          "to use TfKerasSavedModelArtifact")
+
+
 class TensorflowSavedModelArtifact(BentoServiceArtifact):
     """
     Abstraction for saving/loading Tensorflow model in tf.saved_model format
@@ -112,6 +128,13 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     def load(self, path):
         saved_model_path = self._saved_model_path(path)
         loaded_model = _load_tf_saved_model(saved_model_path)
+        return self.pack(loaded_model)
+
+
+class TensorflowKerasSavedModelArtifact(TensorflowSavedModelArtifact):
+    def load(self, path):
+        saved_model_path = self._saved_model_path(path)
+        loaded_model = _load_tf_keras_saved_model(saved_model_path)
         return self.pack(loaded_model)
 
 

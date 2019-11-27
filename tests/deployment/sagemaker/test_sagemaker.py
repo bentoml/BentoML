@@ -144,10 +144,10 @@ def mock_aws_services_for_sagemaker(func):
 
 def mock_sagemaker_deployment_wrapper(func):
     @mock_aws_services_for_sagemaker
-    @patch('subprocess.check_output', autospec=True)
-    @patch('docker.APIClient.build', autospec=True)
-    @patch('docker.APIClient.push', autospec=True)
-    @patch('bentoml.deployment.sagemaker.init_sagemaker_project', autospec=True)
+    @patch('subprocess.check_output', MagicMock())
+    @patch('docker.APIClient.build', MagicMock())
+    @patch('docker.APIClient.push', MagicMock())
+    @patch('bentoml.deployment.sagemaker.init_sagemaker_project', MagicMock())
     def mock_wrapper(*args, **kwargs):
         return func(*args, **kwargs)
 
@@ -195,9 +195,7 @@ def raise_(ex):
 
 
 @mock_sagemaker_deployment_wrapper
-def test_sagemaker_apply_fail_not_local_repo(
-    mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
-):  # pylint: disable=unused-argument
+def test_sagemaker_apply_fail_not_local_repo():
     yatai_service = create_yatai_service_mock(repo_storage_type=BentoUri.UNSET)
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
@@ -207,9 +205,7 @@ def test_sagemaker_apply_fail_not_local_repo(
 
 
 @mock_sagemaker_deployment_wrapper
-def test_sagemaker_apply_success(
-    mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
-):  # pylint: disable=unused-argument
+def test_sagemaker_apply_success():
     yatai_service = create_yatai_service_mock()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
@@ -232,9 +228,7 @@ def test_sagemaker_apply_success(
 
 
 @mock_sagemaker_deployment_wrapper
-def test_sagemaker_apply_create_model_fail(
-    mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
-):  # pylint: disable=unused-argument
+def test_sagemaker_apply_create_model_fail():
     yatai_service = create_yatai_service_mock()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
     deployment_operator = SageMakerDeploymentOperator()
@@ -278,9 +272,7 @@ def test_sagemaker_apply_create_model_fail(
 
 
 @mock_sagemaker_deployment_wrapper
-def test_sagemaker_apply_delete_model_fail(
-    mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
-):  # pylint: disable=unused-argument
+def test_sagemaker_apply_delete_model_fail():
     orig = botocore.client.BaseClient._make_api_call
     yatai_service = create_yatai_service_mock()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
@@ -306,9 +298,7 @@ def test_sagemaker_apply_delete_model_fail(
 
 
 @mock_sagemaker_deployment_wrapper
-def test_sagemaker_apply_duplicate_endpoint(
-    mock_init_project, mock_docker_push, mock_docker_build, mock_check_output
-):  # pylint: disable=unused-argument
+def test_sagemaker_apply_duplicate_endpoint():
     orig = botocore.client.BaseClient._make_api_call
     yatai_service = create_yatai_service_mock()
     sagemaker_deployment_pb = generate_sagemaker_deployment_pb()

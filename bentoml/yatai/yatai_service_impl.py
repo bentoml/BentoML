@@ -117,8 +117,32 @@ class YataiService(YataiServicer):
             # deploying to target platform
             response = operator.apply(request.deployment, self, previous_deployment)
 
-            # update deployment state
-            self.deployment_store.insert_or_update(response.deployment)
+            if response.status.status_code == status_pb2.Status.OK:
+                # update deployment state
+                if response and response.deployment:
+                    self.deployment_store.insert_or_update(response.deployment)
+                else:
+                    raise BentoMLException(
+                        "DeploymentOperator Internal Error: Invalid Response"
+                    )
+                logger.info(
+                    "ApplyDeployment (%s, namespace %s) succeeded",
+                    request.deployment.name,
+                    request.deployment.namespace,
+                )
+            else:
+                if not previous_deployment:
+                    # When failed to create the deployment, delete it from active
+                    # deployments records
+                    self.deployment_store.delete(
+                        request.deployment.name, request.deployment.namespace
+                    )
+                logger.debug(
+                    "ApplyDeployment (%s, namespace %s) failed: %s",
+                    request.deployment.name,
+                    request.deployment.namespace,
+                    response.status.error_message,
+                )
 
             return response
 
@@ -299,6 +323,7 @@ class YataiService(YataiServicer):
             self.bento_metadata_store.dangerously_delete(
                 request.bento_name, request.bento_version
             )
+            self.repo.dangerously_delete(request.bento_name, request.bento_version)
         except BentoMLException as e:
             logger.error("INTERNAL ERROR: %s", e)
             return DangerouslyDeleteBentoResponse(status=Status.INTERNAL(str(e)))

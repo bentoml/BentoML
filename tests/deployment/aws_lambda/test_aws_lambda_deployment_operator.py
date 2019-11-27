@@ -195,7 +195,7 @@ def test_aws_lambda_apply_success():
     result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
 
     assert result_pb.status.status_code == status_pb2.Status.OK
-    assert result_pb.deployment.state.state == DeploymentState.RUNNING
+    assert result_pb.deployment.state.state == DeploymentState.PENDING
 
 
 def test_aws_lambda_describe_still_in_progress():

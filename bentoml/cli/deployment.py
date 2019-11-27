@@ -303,17 +303,24 @@ def get_deployment_sub_command():
             'timeout': timeout,
         }
         yatai_service = get_yatai_service()
-        result = create_deployment(
-            name,
-            namespace,
-            bento_name,
-            bento_version,
-            platform,
-            operator_spec,
-            parse_key_value_pairs(labels),
-            parse_key_value_pairs(annotations),
-            yatai_service,
-        )
+        try:
+            result = create_deployment(
+                name,
+                namespace,
+                bento_name,
+                bento_version,
+                platform,
+                operator_spec,
+                parse_key_value_pairs(labels),
+                parse_key_value_pairs(annotations),
+                yatai_service,
+            )
+        except BentoMLException as e:
+            _echo(
+                'Failed to create deployment {}.: {}'.format(name, str(e)),
+                CLI_COLOR_ERROR,
+            )
+            return
 
         if result.status.status_code != status_pb2.Status.OK:
             _echo(

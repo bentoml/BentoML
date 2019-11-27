@@ -44,7 +44,6 @@ from bentoml.deployment.utils import (
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
-    Deployment,
     DeploymentState,
     DescribeDeploymentResponse,
     DeleteDeploymentResponse,
@@ -307,31 +306,19 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         )
                     return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
 
-            logger.info('Finish deployed lambda project, fetching latest status')
-            res_deployment_pb = Deployment(state=DeploymentState())
-            res_deployment_pb.CopyFrom(deployment_pb)
-            state = self.describe(res_deployment_pb, yatai_service).state
-            res_deployment_pb.state.CopyFrom(state)
-            return ApplyDeploymentResponse(
-                status=Status.OK(), deployment=res_deployment_pb
-            )
-
+            deployment_pb.state.state = DeploymentState.PENDING
+            return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
         except BentoMLException as error:
-            return ApplyDeploymentResponse(status=exception_to_return_status(error))
+            deployment_pb.state = DeploymentState(
+                state=DeploymentState.ERROR, error_message='Error: {}'.format(error)
+            )
+            return ApplyDeploymentResponse(
+                status=exception_to_return_status(error), deployment=deployment_pb
+            )
 
     def delete(self, deployment_pb, yatai_service):
         try:
             logger.debug('Deleting AWS Lambda deployment')
-            describe_state_result = self.describe(deployment_pb, yatai_service).state
-            if describe_state_result.state != DeploymentState.RUNNING:
-                message = (
-                    'Failed to delete, no active deployment {name}. '
-                    'The current state is {state}'.format(
-                        name=deployment_pb.name,
-                        state=DeploymentState.State.Name(describe_state_result.state),
-                    )
-                )
-                return DeleteDeploymentResponse(status=Status.ABORTED(message))
 
             deployment_spec = deployment_pb.spec
             lambda_deployment_config = deployment_spec.aws_lambda_operator_config
@@ -340,10 +327,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             stack_name = generate_aws_compatible_string(
                 deployment_pb.namespace + '-' + deployment_pb.name
             )
-            deployment_info_json = json.loads(describe_state_result.info_json)
-            bucket_name = deployment_info_json.get('s3_bucket')
-            if bucket_name:
-                _cleanup_s3_bucket(bucket_name, lambda_deployment_config.region)
+            if deployment_pb.state.info_json:
+                deployment_info_json = json.loads(deployment_pb.state.info_json)
+                bucket_name = deployment_info_json.get('s3_bucket')
+                if bucket_name:
+                    _cleanup_s3_bucket(bucket_name, lambda_deployment_config.region)
 
             logger.debug(
                 'Deleting AWS CloudFormation: %s that includes Lambda function '

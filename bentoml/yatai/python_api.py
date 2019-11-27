@@ -213,90 +213,98 @@ def create_deployment(
 
         yatai_service = get_yatai_service()
 
-    try:
-        # Make sure there is no active deployment with the same deployment name
-        get_deployment_pb = yatai_service.GetDeployment(
-            GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
+    # Make sure there is no active deployment with the same deployment name
+    get_deployment_pb = yatai_service.GetDeployment(
+        GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
+    )
+    if get_deployment_pb.status.status_code == status_pb2.Status.OK:
+        raise BentoMLDeploymentException(
+            'Deployment "{name}" already existed, use Update or Apply for updating '
+            'existing deployment, delete the deployment, or use a different deployment '
+            'name'.format(name=deployment_name)
         )
-        if get_deployment_pb.status.status_code == status_pb2.Status.OK:
-            raise BentoMLDeploymentException(
-                'Deployment "{name}" already existed, use Update or Apply for updating'
-                'existing deployment, or create the deployment with a different name or'
-                'under a different deployment namespace'.format(name=deployment_name)
+    if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
+        raise BentoMLDeploymentException(
+            'Failed accesing YataiService deployment store. {error_code}:'
+            '{error_message}'.format(
+                error_code=Status.Name(get_deployment_pb.status.status_code),
+                error_message=get_deployment_pb.status.error_message,
             )
-        if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
-            raise BentoMLDeploymentException(
-                'Failed accesing YataiService deployment store. {error_code}:'
-                '{error_message}'.format(
-                    error_code=Status.Name(get_deployment_pb.status.status_code),
-                    error_message=get_deployment_pb.status.error_message,
-                )
-            )
+        )
 
-        deployment_dict = {
-            "name": deployment_name,
-            "namespace": namespace or config().get('deployment', 'default_namespace'),
-            "labels": labels,
-            "annotations": annotations,
-            "spec": {
-                "bento_name": bento_name,
-                "bento_version": bento_version,
-                "operator": platform,
-            },
+    deployment_dict = {
+        "name": deployment_name,
+        "namespace": namespace or config().get('deployment', 'default_namespace'),
+        "labels": labels,
+        "annotations": annotations,
+        "spec": {
+            "bento_name": bento_name,
+            "bento_version": bento_version,
+            "operator": platform,
+        },
+    }
+
+    operator = platform.replace('-', '_').upper()
+    try:
+        operator_value = DeploymentSpec.DeploymentOperator.Value(operator)
+    except ValueError:
+        return ApplyDeploymentResponse(
+            status=Status.INVALID_ARGUMENT('Invalid platform "{}"'.format(platform))
+        )
+    if operator_value == DeploymentSpec.AWS_SAGEMAKER:
+        deployment_dict['spec']['sagemaker_operator_config'] = {
+            'region': operator_spec.get('region')
+            or config().get('aws', 'default_region'),
+            'instance_count': operator_spec.get('instance_count')
+            or config().getint('sagemaker', 'default_instance_count'),
+            'instance_type': operator_spec.get('instance_type')
+            or config().get('sagemaker', 'default_instance_type'),
+            'api_name': operator_spec.get('api_name', ''),
         }
+    elif operator_value == DeploymentSpec.AWS_LAMBDA:
+        deployment_dict['spec']['aws_lambda_operator_config'] = {
+            'region': operator_spec.get('region')
+            or config().get('aws', 'default_region')
+        }
+        for field in ['api_name', 'memory_size', 'timeout']:
+            if operator_spec.get(field):
+                deployment_dict['spec']['aws_lambda_operator_config'][
+                    field
+                ] = operator_spec[field]
+    elif operator_value == DeploymentSpec.GCP_FCUNTION:
+        deployment_dict['spec']['gcp_function_operatorConfig'] = {
+            'region': operator_spec.get('region')
+            or config().get('google-cloud', 'default_region')
+        }
+        if operator_spec.get('api_name'):
+            deployment_dict['spec']['gcp_function_operator_config'][
+                'api_name'
+            ] = operator_spec['api_name']
+    elif operator_value == DeploymentSpec.KUBERNETES:
+        deployment_dict['spec']['kubernetes_operator_config'] = {
+            'kube_namespace': operator_spec.get('kube_namespace', ''),
+            'replicas': operator_spec.get('replicas', 0),
+            'service_name': operator_spec.get('service_name', ''),
+            'service_type': operator_spec.get('service_type', ''),
+        }
+    else:
+        raise BentoMLDeploymentException(
+            'Platform "{}" is not supported in the current version of '
+            'BentoML'.format(platform)
+        )
 
-        operator = platform.replace('-', '_').upper()
-        try:
-            operator_value = DeploymentSpec.DeploymentOperator.Value(operator)
-        except ValueError:
-            return ApplyDeploymentResponse(
-                status=Status.INVALID_ARGUMENT('Invalid platform "{}"'.format(platform))
-            )
-        if operator_value == DeploymentSpec.AWS_SAGEMAKER:
-            deployment_dict['spec']['sagemaker_operator_config'] = {
-                'region': operator_spec.get('region')
-                or config().get('aws', 'default_region'),
-                'instance_count': operator_spec.get('instance_count')
-                or config().getint('sagemaker', 'default_instance_count'),
-                'instance_type': operator_spec.get('instance_type')
-                or config().get('sagemaker', 'default_instance_type'),
-                'api_name': operator_spec.get('api_name', ''),
-            }
-        elif operator_value == DeploymentSpec.AWS_LAMBDA:
-            deployment_dict['spec']['aws_lambda_operator_config'] = {
-                'region': operator_spec.get('region')
-                or config().get('aws', 'default_region')
-            }
-            for field in ['api_name', 'memory_size', 'timeout']:
-                if operator_spec.get(field):
-                    deployment_dict['spec']['aws_lambda_operator_config'][
-                        field
-                    ] = operator_spec[field]
-        elif operator_value == DeploymentSpec.GCP_FCUNTION:
-            deployment_dict['spec']['gcp_function_operatorConfig'] = {
-                'region': operator_spec.get('region')
-                or config().get('google-cloud', 'default_region')
-            }
-            if operator_spec.get('api_name'):
-                deployment_dict['spec']['gcp_function_operator_config'][
-                    'api_name'
-                ] = operator_spec['api_name']
-        elif operator_value == DeploymentSpec.KUBERNETES:
-            deployment_dict['spec']['kubernetes_operator_config'] = {
-                'kube_namespace': operator_spec.get('kube_namespace', ''),
-                'replicas': operator_spec.get('replicas', 0),
-                'service_name': operator_spec.get('service_name', ''),
-                'service_type': operator_spec.get('service_type', ''),
-            }
-        else:
-            raise BentoMLDeploymentException(
-                'Platform "{}" is not supported in the current version of '
-                'BentoML'.format(platform)
-            )
+    apply_response = apply_deployment(deployment_dict, yatai_service)
 
-        return apply_deployment(deployment_dict, yatai_service)
-    except BentoMLException as error:
-        return ApplyDeploymentResponse(status=Status.INTERNAL(str(error)))
+    if apply_response.status.status_code == status_pb2.Status.OK:
+        describe_response = describe_deployment(
+            deployment_name, namespace, yatai_service
+        )
+        if describe_response.status.status_code == status_pb2.Status.OK:
+            deployment_state = describe_response.state
+            apply_response.deployment.state.CopyFrom(deployment_state)
+            return apply_response
+
+    return apply_response
 
 
 # TODO update_deployment is not finished.  It will be working on along with cli command

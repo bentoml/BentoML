@@ -10,8 +10,6 @@ from sklearn import svm, datasets
 from bentoml import BentoService, load, api, env, artifacts
 from bentoml.artifact import PickleArtifact
 from bentoml.handlers import DataframeHandler
-from bentoml.proto.repository_pb2 import DangerouslyDeleteBentoRequest
-from bentoml.yatai import get_yatai_service
 
 
 logger = logging.getLogger('bentoml.test')
@@ -26,16 +24,15 @@ class IrisClassifier(BentoService):
 
 
 if __name__ == '__main__':
-    logger.info('E2E DEPLOYMENT TEST FOR LAMBDA:::: Training iris classifier')
+    logger.info('Training iris classifier')
     clf = svm.SVC(gamma='scale')
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
     clf.fit(X, y)
 
-    logger.info(
-        'E2E DEPLOYMENT TEST FOR LAMBDA:::: Bundling iris classifier with BentoML'
-    )
-    iris_clf_service = IrisClassifier.pack(clf=clf)
+    logger.info('Bundling iris classifier with BentoML')
+    iris_clf_service = IrisClassifier()
+    iris_clf_service.pack('clf', clf)
     saved_path = iris_clf_service.save()
 
     loaded_service = load(saved_path)
@@ -43,14 +40,14 @@ if __name__ == '__main__':
 
     deployment_failed = False
     logger.info(
-        'E2E DEPLOYMENT TEST FOR LAMBDA:::: Creating AWS Lambda test deployment '
-        'for iris classifier with BentoML CLI'
+        'Creating AWS Lambda test deployment for iris classifier with BentoML CLI'
     )
     bento_name = '{}:{}'.format(loaded_service.name, loaded_service.version)
-    random_hash = uuid.uuid4().hex[:6].upper()
+    random_hash = uuid.uuid4().hex[:6]
     deployment_name = 'tests-lambda-e2e-{}'.format(random_hash)
     create_deployment_command = [
         'bentoml',
+        '--verbose',
         'deploy',
         'create',
         deployment_name,
@@ -61,15 +58,12 @@ if __name__ == '__main__':
         '--region',
         'us-west-2',
     ]
-    logger.info(
-        'E2E DEPLOYMENT TEST FOR LAMBDA:::: Deploy '
-        'command: {}'.format(create_deployment_command)
-    )
+    logger.info('Deploy command: {}'.format(create_deployment_command))
     with subprocess.Popen(
         create_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
         create_deployment_stdout = proc.stdout.read().decode('utf-8')
-    logger.info('E2E DEPLOYMENT TEST FOR LAMBDA:::: Finish deploying to AWS Lambda')
+    logger.info('Finish deploying to AWS Lambda')
     logger.info(create_deployment_stdout)
     if create_deployment_stdout.startswith('Failed to create deployment'):
         deployment_failed = True
@@ -82,9 +76,7 @@ if __name__ == '__main__':
             )
 
     if not deployment_failed:
-        logger.info(
-            'E2E DEPLOYMENT TEST FOR LAMBDA:::: Test deployment with sample request'
-        )
+        logger.info('Test deployment with sample request')
         try:
             request_result = requests.post(
                 deployment_endpoint,
@@ -99,9 +91,7 @@ if __name__ == '__main__':
             logger.error(str(e))
             deployment_failed = True
 
-    logger.info(
-        'E2E DEPLOYMENT TEST FOR LAMBDA:::: Delete test deployment with BentoML CLI'
-    )
+    logger.info('Delete test deployment with BentoML CLI')
     delete_deployment_command = [
         'bentoml',
         'deploy',
@@ -109,30 +99,14 @@ if __name__ == '__main__':
         deployment_name,
         '--force',
     ]
-    logger.info(
-        'E2E DEPLOYMENT TEST FOR LAMBDA:::: Delete command: {}'.format(
-            delete_deployment_command
-        )
-    )
+    logger.info('Delete command: {}'.format(delete_deployment_command))
     with subprocess.Popen(
         delete_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
         delete_deployment_stdout = proc.stdout.read().decode('utf-8')
     logger.info(delete_deployment_stdout)
 
-    logger.info('E2E DEPLOYMENT TEST FOR LAMBDA:::: Cleaning up bento service')
-    yatai_service = get_yatai_service()
-    delete_request = DangerouslyDeleteBentoRequest(
-        bento_name=loaded_service.name, bento_version=loaded_service.version
-    )
-    yatai_service.DangerouslyDeleteBento(delete_request)
-    logger.info(
-        'E2E DEPLOYMENT TEST FOR LAMBDA:::: Delete bento bundle on '
-        'file system {}'.format(saved_path)
-    )
-    shutil.rmtree(saved_path)
-
-    logger.info('E2E DEPLOYMENT TEST FOR LAMBDA:::: Finished')
+    logger.info('Finished')
     if deployment_failed:
         logger.info('E2E deployment failed, fix the issues before releasing')
     else:

@@ -70,7 +70,7 @@ def ensure_docker_available_or_raise():
         subprocess.check_output(['docker', 'info'])
     except subprocess.CalledProcessError as error:
         raise BentoMLException(
-            'Error executing docker command: {}'.format(error.output)
+            'Error executing docker command: {}'.format(error.output.decode())
         )
     except not_found_error:
         raise BentoMLMissingDependencyException(

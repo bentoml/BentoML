@@ -33,10 +33,10 @@ def ensure_sam_available_or_raise():
     try:
         import samcli
 
-        if list(map(int, samcli.__version__.split('.'))) < [0, 33, 1]:
+        if samcli.__version__ != '0.33.1':
             raise BentoMLException(
-                'aws-sam-cli package requires version 0.33.1 or '
-                'higher. Update the package with `pip install -U aws-sam-cli`'
+                'aws-sam-cli package requires version 0.33.1 '
+                'Install the package with `pip install -U aws-sam-cli==0.33.1`'
             )
     except ImportError:
         raise ImportError(
@@ -172,12 +172,12 @@ def init_sam_project(
     requirement_txt_path = os.path.join(bento_service_bundle_path, 'requirements.txt')
     shutil.copy(requirement_txt_path, function_path)
 
-    # Copy bundled pip dependencies
-    logger.debug('Coping bundled_dependencies')
     bundled_dep_path = os.path.join(
         bento_service_bundle_path, 'bundled_pip_dependencies'
     )
     if os.path.isdir(bundled_dep_path):
+        # Copy bundled pip dependencies
+        logger.debug('Coping bundled_dependencies')
         shutil.copytree(
             bundled_dep_path, os.path.join(function_path, 'bundled_pip_dependencies')
         )

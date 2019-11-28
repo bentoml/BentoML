@@ -1,4 +1,3 @@
-import shutil
 import subprocess
 import logging
 import uuid

@@ -13,7 +13,6 @@ from bentoml.deployment.aws_lambda import (
 from bentoml.proto.deployment_pb2 import (
     Deployment,
     DeploymentState,
-    DescribeDeploymentResponse,
 )
 from bentoml.proto.repository_pb2 import (
     Bento,
@@ -22,9 +21,8 @@ from bentoml.proto.repository_pb2 import (
     GetBentoResponse,
 )
 from bentoml.proto import status_pb2
-from bentoml.yatai.status import Status
 
-mock_s3_bucket_name = 'fake_deployment_bucket'
+mock_s3_bucket_name = 'test_deployment_bucket'
 mock_s3_prefix = 'prefix'
 mock_s3_path = 's3://{}/{}'.format(mock_s3_bucket_name, mock_s3_prefix)
 
@@ -32,7 +30,7 @@ mock_s3_path = 's3://{}/{}'.format(mock_s3_bucket_name, mock_s3_prefix)
 def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
     bento_pb = Bento(name='bento_test_name', version='version1.1.1')
     if repo_storage_type == BentoUri.LOCAL:
-        bento_pb.uri.uri = '/fake/path/to/bundle'
+        bento_pb.uri.uri = '/tmp/path/to/bundle'
     bento_pb.uri.type = repo_storage_type
     api = BentoServiceMetadata.BentoServiceApi(name='predict')
     bento_pb.bento_service_metadata.apis.extend([api])
@@ -85,9 +83,9 @@ def test_aws_lambda_app_py(monkeypatch):
         def mock_wrapper(*args, **kwargs):
             conn = boto3.client('s3', region_name='us-west-2')
             conn.create_bucket(Bucket=mock_s3_bucket_name)
-            fake_artifact_key = 'mock_artifact_prefix/model.pkl'
+            mock_artifact_key = 'mock_artifact_prefix/model.pkl'
             conn.put_object(
-                Bucket=mock_s3_bucket_name, Key=fake_artifact_key, Body='mock_body'
+                Bucket=mock_s3_bucket_name, Key=mock_artifact_key, Body='mock_body'
             )
             return func(*args, **kwargs)
 
@@ -139,7 +137,7 @@ def test_init_sam_project(tmpdir):
 def test_generate_aws_lambda_template_yaml(tmpdir):
     deployment_name = 'deployment_name'
     api_names = ['predict', 'classify']
-    s3_bucket_name = 'fake_bucket'
+    s3_bucket_name = 'test_bucket'
     py_runtime = 'python3.7'
     memory_size = 3008
     timeout = 6
@@ -188,10 +186,7 @@ def test_aws_lambda_apply_success():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     deployment_operator = AwsLambdaDeploymentOperator()
-    deployment_operator.describe = MagicMock()
-    deployment_operator.describe.return_value = DescribeDeploymentResponse(
-        state=DeploymentState(state=DeploymentState.RUNNING), status=Status.OK()
-    )
+
     result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
 
     assert result_pb.status.status_code == status_pb2.Status.OK

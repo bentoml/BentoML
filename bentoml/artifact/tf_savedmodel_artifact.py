@@ -58,11 +58,22 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     Example usage:
 
     >>> import tensorflow as tf
+    >>>
+    >>> # Option 1: custom model with specific method call
     >>> class Adder(tf.Module):
     >>>     @tf.function(input_signature=[tf.TensorSpec(shape=None, dtype=tf.float32)])
     >>>     def add(self, x):
     >>>         return x + x + 1.
-    >>> to_export = Adder()
+    >>> model_to_save = Adder()
+    >>> # ... compiling, training, etc
+    >>>
+    >>> # Option 2: Sequential model (direct call only)
+    >>> model_to_save = tf.keras.Sequential([
+    >>>     tf.keras.layers.Flatten(input_shape=(28, 28)),
+    >>>     tf.keras.layers.Dense(128, activation='relu'),
+    >>>     tf.keras.layers.Dense(10, activation='softmax')
+    >>> ])
+    >>> # ... compiling, training, etc
     >>>
     >>> import bentoml
     >>> from bentoml.handlers import JsonHandler
@@ -76,15 +87,16 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     >>>     def predict(self, json):
     >>>         input_data = json['input']
     >>>         prediction = self.artifacts.model.add(input_data)
+    >>>         # prediction = self.artifacts.model(input_data)  # if Sequential mode
     >>>         return prediction.numpy()
     >>>
     >>> svc = TfModelService()
     >>>
     >>> # Option 1: pack directly with Tensorflow trackable object
-    >>> svc.pack('model', to_export)
+    >>> svc.pack('model', model_to_save)
     >>>
     >>> # Option 2: save to file path then pack
-    >>> tf.saved_model.save(to_export, '/tmp/adder/1')
+    >>> tf.saved_model.save(model_to_save, '/tmp/adder/1')
     >>> svc.pack('model', '/tmp/adder/1')
     """
 

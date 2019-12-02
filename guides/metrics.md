@@ -7,7 +7,7 @@
     - request count per http response code
 
 - Server info:
-    - CPU use
-    - Memory use
-    - Disk IO use
-    - Network use
+    - CPU usage
+    - Memory usage
+    - Disk IO usage
+    - Network usage

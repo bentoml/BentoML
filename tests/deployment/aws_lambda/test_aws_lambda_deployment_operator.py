@@ -91,7 +91,13 @@ def test_aws_lambda_app_py(monkeypatch):
 
     @mock_lambda_app
     @patch('bentoml.bundler.load_bento_service_class', return_value=Mock_bento_service)
-    def return_predict_func(mock_load_service, mock_download_artifacts):
+    @patch(
+        'bentoml.deployment.aws_lambda.utils.download_and_unzip_additional_packages',
+        return_value=None,
+    )
+    def return_predict_func(
+        mock_load_service, mock_download_artifacts, mock_download_requirements
+    ):
         from bentoml.deployment.aws_lambda.lambda_app import predict
 
         return predict

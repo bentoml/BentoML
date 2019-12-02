@@ -280,7 +280,7 @@ def reduce_lambda_function_under_limit(
 
     # For fastai packages, We zip up torch 61M, torchvision 30M, spacy 56M, scipy 65M,
     # matplotlib 19M. Total of 231M
-    fastai_packages = ['torch', 'torchyvision', 'spacy', 'scipy', 'matplotlib']
+    fastai_packages = ['torch', 'torchvision', 'spacy', 'scipy', 'matplotlib']
 
     for dir_name in os.listdir(build_directory):
         if dir_name in fastai_packages:
@@ -312,6 +312,9 @@ def download_and_unzip_additional_packages(
     s3_client = boto3.client('s3')
     s3_file_path = os.path.join(s3_prefix, 'requirements.tar')
     if not os.path.isfile(saved_file_path):
+        logger.debug(
+            'requirement.tar does not exist, downloading from {}'.format(s3_bucket)
+        )
         try:
             s3_client.download_file(s3_bucket, s3_file_path, saved_file_path)
         except ClientError as e:
@@ -321,6 +324,8 @@ def download_and_unzip_additional_packages(
                 )
             else:
                 raise
+    logger.debug('Extracting content from tar file')
     tar = tarfile.open(saved_file_path)
     tar.extractall(path=unzip_path)
+    logger.debug('Remove tar file')
     os.remove(saved_file_path)

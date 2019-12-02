@@ -18,31 +18,26 @@ from __future__ import print_function
 
 import os
 import sys
+import tarfile
+
+import boto3
+from botocore.exceptions import ClientError
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
+from bentoml.deployment.aws_lambda.utils import download_and_unzip_additional_packages
+
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 
-from bentoml.deployment.aws_lambda.utils import (
-    download_and_unzip_additional_packages,
-)  # noqa
 from bentoml.utils.s3 import download_directory_from_s3  # noqa
 from bentoml.bundler import load_bento_service_class  # noqa
 
 s3_bucket = os.environ.get('BENTOML_S3_BUCKET')
-deployment_prefix = os.environ.get('BENTOML_DEPLOYMENT_PREFIX')
+deployment_prefix = os.environ.get('BENTOML_DEPLOYMENT_PATH_PREFIX')
 artifacts_prefix = os.environ.get('BENTOML_ARTIFACTS_PREFIX')
 bento_name = os.environ['BENTOML_BENTO_SERVICE_NAME']
 api_name = os.environ["BENTOML_API_NAME"]
 
-
-bento_service_cls = load_bento_service_class(bundle_path='./{}'.format(bento_name))
-
-# Set _bento_service_bundle_path to None, so it won't automatically load artifacts when
-# we init an instance
-bento_service_cls._bento_service_bundle_path = None
-bento_service = bento_service_cls()
-
-additional_pkg_dir = '/tmp/py-req'
+additional_pkg_dir = '/tmp/requirements'
 sys.path.append(additional_pkg_dir)
 
 if not os.path.exists(additional_pkg_dir):
@@ -50,6 +45,13 @@ if not os.path.exists(additional_pkg_dir):
     download_and_unzip_additional_packages(
         s3_bucket, deployment_prefix, save_file_path, additional_pkg_dir
     )
+
+bento_service_cls = load_bento_service_class(bundle_path='./{}'.format(bento_name))
+
+# Set _bento_service_bundle_path to None, so it won't automatically load artifacts when
+# we init an instance
+bento_service_cls._bento_service_bundle_path = None
+bento_service = bento_service_cls()
 
 # If the artifacts is not an empty list in the service, we will download them from the
 # s3 bucket.

@@ -412,7 +412,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
                 stack_result = cloud_formation_stack_result.get('Stacks')[0]
                 success_status = ['CREATE_COMPLETE', 'UPDATE_COMPLETE']
-                # failed_status = ['ROLLBACK_COMPLETE', 'CREATE_FAILED', 'ROLLBACK_IN_PROGRESS']
+                # failed_status = [
+                #     'ROLLBACK_COMPLETE', 'CREATE_FAILED', 'ROLLBACK_IN_PROGRESS'
+                # ]
                 failed_status = ['CREATE_FAILED']
                 if stack_result['StackStatus'] in success_status:
                     if stack_result.get('Outputs'):

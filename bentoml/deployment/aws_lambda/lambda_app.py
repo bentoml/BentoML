@@ -18,16 +18,11 @@ from __future__ import print_function
 
 import os
 import sys
-import tarfile
-
-import boto3
-from botocore.exceptions import ClientError
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
-from bentoml.deployment.aws_lambda.utils import download_and_unzip_additional_packages
-
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 
+from bentoml.deployment.aws_lambda.utils import download_and_unzip_additional_packages
 from bentoml.utils.s3 import download_directory_from_s3  # noqa
 from bentoml.bundler import load_bento_service_class  # noqa
 

@@ -23,6 +23,7 @@ import time
 import logging
 from functools import partial
 from collections import OrderedDict
+from timeit import default_timer
 
 from flask import Flask, jsonify, Response, request
 from werkzeug.utils import secure_filename
@@ -190,8 +191,12 @@ def bento_service_api_wrapper(api, service_name, service_version):
     """
     Create api function for flask route
     """
-    summary_name = str(service_name) + "_" + str(api.name)
-    request_metric_time = Summary(summary_name, summary_name + " request latency")
+    request_metric_time = Summary(
+        api.name,
+        api.name + " request latency",
+        namespace=service_name,
+        labelnames=('endpoint', 'code'),
+    )
 
     def log_image(req, request_id):
         img_prefix = 'image/'
@@ -227,36 +232,42 @@ def bento_service_api_wrapper(api, service_name, service_version):
         return all_paths
 
     def wrapper():
-        with request_metric_time.time():
-            request_id = str(uuid.uuid4())
-            # Assume there is not a strong use case for idempotency check here.
-            # Will revise later if we find a case.
+        start_time = default_timer()
 
-            image_paths = []
-            if not config('logging').getboolean('disable_logging_image'):
-                image_paths = log_image(request, request_id)
+        request_id = str(uuid.uuid4())
+        # Assume there is not a strong use case for idempotency check here.
+        # Will revise later if we find a case.
 
-            response = api.handle_request(request)
+        image_paths = []
+        if not config('logging').getboolean('disable_logging_image'):
+            image_paths = log_image(request, request_id)
 
-            request_log = {
-                "request_id": request_id,
-                "service_name": service_name,
-                "service_version": service_version,
-                "api": api.name,
-                "request": _request_to_json(request),
-                "response_code": response.status_code,
-            }
+        response = api.handle_request(request)
 
-            if len(image_paths) > 0:
-                request_log['image_paths'] = image_paths
+        request_log = {
+            "request_id": request_id,
+            "service_name": service_name,
+            "service_version": service_version,
+            "api": api.name,
+            "request": _request_to_json(request),
+            "response_code": response.status_code,
+        }
 
-            if 200 <= response.status_code < 300:
-                request_log['response'] = response.response
+        if len(image_paths) > 0:
+            request_log['image_paths'] = image_paths
 
-            prediction_logger.info(request_log)
+        if 200 <= response.status_code < 300:
+            request_log['response'] = response.response
 
-            response.headers["request_id"] = request_id
-            return response
+        prediction_logger.info(request_log)
+
+        response.headers["request_id"] = request_id
+
+        request_metric_time.labels(
+            endpoint="/" + api.name, code=response.status_code
+        ).observe(default_timer() - start_time)
+
+        return response
 
     return wrapper
 

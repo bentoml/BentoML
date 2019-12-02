@@ -34,6 +34,8 @@ from bentoml.deployment.aws_lambda.utils import (
     lambda_deploy,
     lambda_package,
     validate_lambda_template,
+    is_build_function_size_under_lambda_limit,
+    reduce_lambda_function_under_limit,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
@@ -60,6 +62,7 @@ logger = logging.getLogger(__name__)
 def _create_aws_lambda_cloudformation_template_file(
     project_dir,
     deployment_name,
+    deployment_path_prefix,
     api_names,
     bento_service_name,
     artifacts_prefix,
@@ -118,6 +121,7 @@ def _create_aws_lambda_cloudformation_template_file(
                 'Environment': {
                     'Variables': {
                         'BENTOML_BENTO_SERVICE_NAME': bento_service_name,
+                        'BENTOML_DEPLOYMENT_PATH_PREFIX': deployment_path_prefix,
                         'BENTOML_S3_BUCKET': s3_bucket_name,
                         'BENTOML_ARTIFACTS_PREFIX': artifacts_prefix,
                         'BENTOML_API_NAME': api_name,
@@ -258,7 +262,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     lambda_s3_bucket,
                     artifacts_prefix,
                 )
-            with TempDirectory() as lambda_project_dir:
+            with TempDirectory(cleanup=False) as lambda_project_dir:
                 logger.debug(
                     'Generating cloudformation template.yaml for lambda project at %s',
                     lambda_project_dir,
@@ -266,6 +270,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 template_file_path = _create_aws_lambda_cloudformation_template_file(
                     project_dir=lambda_project_dir,
                     deployment_name=deployment_pb.name,
+                    deployment_path_prefix=deployment_path_prefix,
                     api_names=api_names,
                     bento_service_name=deployment_spec.bento_name,
                     artifacts_prefix=artifacts_prefix,
@@ -293,6 +298,28 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         api_names,
                         aws_region=lambda_deployment_config.region,
                     )
+                    for api_name in api_names:
+                        build_directory = os.path.join(
+                            lambda_project_dir, '.aws-sam', 'build', api_name
+                        )
+                        logger.debug(
+                            'Checking is function "{}" bundle under lambda size limit'.format(
+                                api_name
+                            )
+                        )
+                        if not is_build_function_size_under_lambda_limit(build_directory):
+                            logger.debug(
+                                'Function {} is over lambda size limit, attempting '
+                                'reduce it'.format(api_name)
+                            )
+                            reduce_lambda_function_under_limit(
+                                lambda_deployment_config.region,
+                                lambda_s3_bucket,
+                                deployment_path_prefix,
+                                build_directory,
+                                api_name,
+                                lambda_project_dir,
+                            )
                     logger.info(
                         'Packaging AWS Lambda project at %s ...', lambda_project_dir
                     )
@@ -384,10 +411,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     )
                 )
                 stack_result = cloud_formation_stack_result.get('Stacks')[0]
-                if (
-                    stack_result['StackStatus'] == 'CREATE_COMPLETE'
-                    or stack_result['StackStatus'] == 'UPDATE_COMPLETE'
-                ):
+                success_status = ['CREATE_COMPLETE', 'UPDATE_COMPLETE']
+                # failed_status = ['ROLLBACK_COMPLETE', 'CREATE_FAILED', 'ROLLBACK_IN_PROGRESS']
+                failed_status = ['CREATE_FAILED']
+                if stack_result['StackStatus'] in success_status:
                     if stack_result.get('Outputs'):
                         outputs = stack_result['Outputs']
                     else:
@@ -398,6 +425,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                                 error_message='"Outputs" field is not present',
                             ),
                         )
+                elif stack_result['StackStatus'] in failed_status:
+                    state = DeploymentState(state=DeploymentState.FAILED)
+                    state.timestamp.GetCurrentTime()
+                    return DescribeDeploymentResponse(status=Status.OK(), state=state)
                 else:
                     state = DeploymentState(state=DeploymentState.PENDING)
                     state.timestamp.GetCurrentTime()

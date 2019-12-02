@@ -145,6 +145,7 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
     _create_aws_lambda_cloudformation_template_file(
         str(tmpdir),
         deployment_name=deployment_name,
+        deployment_path_prefix='mock/deployment/path/prefix',
         api_names=api_names,
         bento_service_name='mock_bento_service_name',
         artifacts_prefix='mock_artifacts_prefix',

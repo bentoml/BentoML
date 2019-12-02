@@ -232,36 +232,41 @@ def bento_service_api_wrapper(api, service_name, service_version):
         return all_paths
 
     def wrapper():
+        def handle():
+            request_id = str(uuid.uuid4())
+            # Assume there is not a strong use case for idempotency check here.
+            # Will revise later if we find a case.
+
+            image_paths = []
+            if not config('logging').getboolean('disable_logging_image'):
+                image_paths = log_image(request, request_id)
+
+            response = api.handle_request(request)
+
+            request_log = {
+                "request_id": request_id,
+                "service_name": service_name,
+                "service_version": service_version,
+                "api": api.name,
+                "request": _request_to_json(request),
+                "response_code": response.status_code,
+            }
+
+            if len(image_paths) > 0:
+                request_log['image_paths'] = image_paths
+
+            if 200 <= response.status_code < 300:
+                request_log['response'] = response.response
+
+            prediction_logger.info(request_log)
+
+            response.headers["request_id"] = request_id
+
+            return response
+
         start_time = default_timer()
 
-        request_id = str(uuid.uuid4())
-        # Assume there is not a strong use case for idempotency check here.
-        # Will revise later if we find a case.
-
-        image_paths = []
-        if not config('logging').getboolean('disable_logging_image'):
-            image_paths = log_image(request, request_id)
-
-        response = api.handle_request(request)
-
-        request_log = {
-            "request_id": request_id,
-            "service_name": service_name,
-            "service_version": service_version,
-            "api": api.name,
-            "request": _request_to_json(request),
-            "response_code": response.status_code,
-        }
-
-        if len(image_paths) > 0:
-            request_log['image_paths'] = image_paths
-
-        if 200 <= response.status_code < 300:
-            request_log['response'] = response.response
-
-        prediction_logger.info(request_log)
-
-        response.headers["request_id"] = request_id
+        response = handle()
 
         request_metric_time.labels(
             endpoint="/" + api.name, code=response.status_code

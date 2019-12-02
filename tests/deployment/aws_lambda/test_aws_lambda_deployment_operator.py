@@ -10,10 +10,7 @@ from bentoml.deployment.aws_lambda import (
     _create_aws_lambda_cloudformation_template_file,
     init_sam_project,
 )
-from bentoml.proto.deployment_pb2 import (
-    Deployment,
-    DeploymentState,
-)
+from bentoml.proto.deployment_pb2 import Deployment, DeploymentState
 from bentoml.proto.repository_pb2 import (
     Bento,
     BentoUri,

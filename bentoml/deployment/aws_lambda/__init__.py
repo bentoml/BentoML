@@ -262,7 +262,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     lambda_s3_bucket,
                     artifacts_prefix,
                 )
-            with TempDirectory(cleanup=False) as lambda_project_dir:
+            with TempDirectory() as lambda_project_dir:
                 logger.debug(
                     'Generating cloudformation template.yaml for lambda project at %s',
                     lambda_project_dir,

@@ -38,7 +38,7 @@ sys.path.append(additional_pkg_dir)
 if not os.path.exists(additional_pkg_dir):
     save_file_path = '/tmp/requirements.tar'
     download_and_unzip_additional_packages(
-        s3_bucket, deployment_prefix, save_file_path, additional_pkg_dir
+        s3_bucket, deployment_prefix, save_file_path, '/tmp'
     )
 
 bento_service_cls = load_bento_service_class(bundle_path='./{}'.format(bento_name))

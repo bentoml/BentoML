@@ -45,9 +45,17 @@ def decode_b64_if_needed(value):
 class TensorflowTensorHandler(BentoHandler):
     """
     Tensor handlers for Tensorflow models
-    ref: 
+    Transform incoming tf tensor data from http request, cli or lambda event into tf tensor
+    The behaviour should be compatible with tensorflow serving REST predict API: 
         * https://www.tensorflow.org/tfx/serving/api_rest#predict_api
-        * https://github.com/tensorflow/serving/blob/91adea9716b57dd58427714427b944fbe9b3f89e/tensorflow_serving/model_servers/tensorflow_model_server_test.py#L425
+
+    Args:
+        dtype (tf.dtypes): The expected dtype of the input tensor
+        shape (tuple): The expected shape of the input tensor.
+            shapes like (None, 28, 28) are supported
+
+    Raises:
+        BentoMLException: BentoML currently doesn't support Content-Type
     """
 
     def __init__(self, spec=None):
@@ -82,18 +90,8 @@ class TensorflowTensorHandler(BentoHandler):
             }
         }
 
-    def handle_request(self, request, func):
-        print(func)
-        if request.content_type == "application/json":
-            parsed_json = json.loads(request.data.decode("utf-8"))
-        else:
-            return make_response(
-                jsonify(
-                    message="Request content-type must be 'application/json'"
-                    "for this BentoService API"
-                ),
-                400,
-            )
+    def _handle_raw_str(self, raw_str, output_format, func):
+        parsed_json = json.loads(raw_str)
         if parsed_json.get("instances") is not None:
             instances = parsed_json.get("instances")
             instances = decode_b64_if_needed(instances)
@@ -116,13 +114,26 @@ class TensorflowTensorHandler(BentoHandler):
             # column mode
             raise NotImplementedError
 
-        output_format = request.headers.get("output", "json")
         if output_format == "json":
             result_object = {"predictions": result}
             result_str = get_output_str(result_object, output_format)
         elif output_format == "str":
             result_str = get_output_str(result, output_format)
-        else:
+
+        return result_str
+
+    def handle_request(self, request, func):
+        """Handle http request that has jsonlized tensorflow tensor. It will convert it into a
+        tf tensor for the function to consume.
+
+        Args:
+            request: incoming request object.
+            func: function that will take ndarray as its arg.
+        Return:
+            response object
+        """
+        output_format = request.headers.get("output", "json")
+        if output_format not in {"json", "str"}:
             return make_response(
                 jsonify(
                     message="Request output must be 'json' or 'str'"
@@ -130,11 +141,38 @@ class TensorflowTensorHandler(BentoHandler):
                 ),
                 400,
             )
-
-        return Response(response=result_str, status=200, mimetype="application/json")
+        if request.content_type == "application/json":
+            input_str = request.data.decode("utf-8")
+            output_format = request.headers.get("output", "json")
+            result_str = self._handle_raw_str(input_str, output_format, func)
+            return Response(response=result_str, status=200, mimetype="application/json")
+        else:
+            return make_response(
+                jsonify(
+                    message="Request content-type must be 'application/json'"
+                    "for this BentoService API"
+                ),
+                400,
+            )
 
     def handle_cli(self, args, func):
-        raise NotImplementedError
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--input", required=True)
+        parser.add_argument(
+            "-o", "--output", default="str", choices=["str", "json"]
+        )
+        parsed_args = parser.parse_args(args)
+
+        result = self._handle_raw_str(parsed_args.input, parsed_args.output, func)
+        print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        raise NotImplementedError
+        if event["headers"].get("Content-Type", "") == "application/json":
+            result = self._handle_raw_str(event["body"], event["headers"].get("output", "json"), func)
+        else:
+            raise BentoMLException(
+                "BentoML currently doesn't support Content-Type: {content_type} for "
+                "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
+            )
+
+        return {"statusCode": 200, "body": result}

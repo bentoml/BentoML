@@ -91,7 +91,7 @@ def call_sam_command(command, project_dir):
         command, cwd=project_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     stdout, stderr = proc.communicate()
-    logger.debug('SAM cmd %s output: %s', command, stdout)
+    logger.debug('SAM cmd %s output: %s', command, stdout.decode('utf-8'))
     if proc.returncode == 1:
         error_message = stderr.decode('utf-8')
         if not error_message:

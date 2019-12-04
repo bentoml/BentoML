@@ -280,19 +280,33 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     'Initializing lambda project in directory: %s ...',
                     lambda_project_dir,
                 )
-                init_sam_project(
-                    lambda_project_dir,
-                    bento_path,
-                    deployment_pb.name,
-                    deployment_spec.bento_name,
-                    api_names,
-                )
+                try:
+                    init_sam_project(
+                        lambda_project_dir,
+                        bento_path,
+                        deployment_pb.name,
+                        deployment_spec.bento_name,
+                        api_names,
+                    )
+                except BentoMLException as e:
+                    if not prev_deployment:
+                        _cleanup_s3_bucket(
+                            lambda_s3_bucket, lambda_deployment_config.region
+                        )
+                    return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
                 logger.info(
                     'Packaging AWS Lambda project at %s ...', lambda_project_dir
                 )
-                lambda_package(
-                    lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
-                )
+                try:
+                    lambda_package(
+                        lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
+                    )
+                except BentoMLException as e:
+                    if not prev_deployment:
+                        _cleanup_s3_bucket(
+                            lambda_s3_bucket, lambda_deployment_config.region
+                        )
+                    return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
                 logger.info('Deploying lambda project')
                 try:
                     stack_name = generate_aws_compatible_string(

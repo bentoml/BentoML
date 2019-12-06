@@ -157,7 +157,7 @@ def validate_lambda_template(template_file, aws_region, sam_project_path):
         ['validate', '--template-file', template_file, '--region', aws_region],
         sam_project_path,
     )
-    if not 'is a valid SAM Template' in validate_result:
+    if 'is a valid SAM Template' not in validate_result:
         raise BentoMLException(
             'Failed to validate SAM template {}/{}'.format(
                 sam_project_path, template_file

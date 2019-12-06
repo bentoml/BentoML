@@ -93,13 +93,6 @@ def call_sam_command(command, project_dir):
     stdout, stderr = proc.communicate()
     logger.debug('SAM cmd %s output: %s', command, stdout.decode('utf-8'))
     return proc.returncode, stdout.decode('utf-8'), stderr.decode('utf-8')
-    # if proc.returncode == 1:
-    #     error_message = stderr.decode('utf-8')
-    #     if not error_message:
-    #         error_message = stdout.decode('utf-8')
-    #     raise BentoMLException(error_message)
-    # else:
-    #     return stdout.decode('utf-8')
 
 
 def lambda_package(project_dir, s3_bucket_name, deployment_prefix):

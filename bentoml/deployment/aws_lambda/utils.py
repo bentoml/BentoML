@@ -234,7 +234,7 @@ def init_sam_project(
     try:
         call_sam_command(['build', '--use-container'], sam_project_path)
     except BentoMLException as e:
-        raise BentoMLException('Build Lambda project failed: {}'.format(str(e)))
+        raise BentoMLException('Failed to build Lambda project: {}'.format(str(e)))
     logger.debug('Removing unnecessary files to free up space')
     for api_name in api_names:
         cleanup_build_files(sam_project_path, api_name)

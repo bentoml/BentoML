@@ -15,7 +15,7 @@ logger = logging.getLogger('bentoml.test')
 
 
 @artifacts([PickleArtifact('clf')])
-@env(pip_dependencies=['scikit-learn'])
+@env(pip_dependencies=['scikit-learn==0.20.3'])
 class IrisClassifier(BentoService):
     @api(DataframeHandler)
     def predict(self, df):
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     sample_data = X[0:1]
 
     logger.info(
-        'Result from sample data is: ', str(loaded_service.predict(sample_data))
+        'Result from sample data is: ', loaded_service.predict(sample_data)
     )
     deployment_failed = False
     logger.info(
@@ -85,10 +85,15 @@ if __name__ == '__main__':
                 data=json.dumps(sample_data.tolist()),
                 headers={'Content-Type': 'application/json'},
             )
-            logger.info('Test request result: ', request_result)
             if request_result.status_code != 200:
                 deployment_failed = True
             if request_result.content.decode('utf-8') != '[0]':
+                logger.info(
+                    'Test request failed. {}:{}'.format(
+                        request_result.status_code,
+                        request_result.content.decode('utf-8')
+                    )
+                )
                 deployment_failed = True
         except Exception as e:
             logger.error(str(e))

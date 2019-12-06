@@ -22,7 +22,7 @@ import subprocess
 import logging
 import re
 
-from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
+from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 

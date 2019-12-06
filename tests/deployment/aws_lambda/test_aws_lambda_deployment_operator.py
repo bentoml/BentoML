@@ -103,14 +103,15 @@ def test_aws_lambda_app_py(monkeypatch):
 @patch('shutil.rmtree', MagicMock())
 @patch('shutil.copytree', MagicMock())
 @patch('bentoml.deployment.aws_lambda.utils.cleanup_build_files', MagicMock())
-@patch('bentoml.deployment.aws_lambda.utils.call_sam_command', MagicMock())
-def test_init_sam_project(tmpdir):
+@patch('bentoml.deployment.aws_lambda.utils.call_sam_command', autospec=True)
+def test_init_sam_project(mock_call_sam, tmpdir):
     mock_sam_project_path = os.path.join(tmpdir, 'mock_sam_project')
     mock_bento_bundle_path = os.path.join(tmpdir, 'mock_bento_service')
     mock_deployment_name = 'mock_deployment'
     mock_bento_name = 'mock_bento_name'
     mock_api_names = ['predict']
     mock_region = 'us-west-2'
+    mock_call_sam.return_value = 0, 'stdout', 'stderr'
     os.mkdir(mock_sam_project_path)
     os.mkdir(mock_bento_bundle_path)
     open(os.path.join(mock_bento_bundle_path, 'requirements.txt'), 'w').close()
@@ -121,7 +122,7 @@ def test_init_sam_project(tmpdir):
         mock_deployment_name,
         mock_bento_name,
         mock_api_names,
-        mock_region
+        mock_region,
     )
     assert os.path.isfile(
         os.path.join(mock_sam_project_path, mock_deployment_name, 'app.py')

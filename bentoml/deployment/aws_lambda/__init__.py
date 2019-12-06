@@ -310,7 +310,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     lambda_deploy(
                         lambda_project_dir,
                         lambda_deployment_config.region,
-                        stack_name=stack_name
+                        stack_name=stack_name,
                     )
                 except BentoMLException as e:
                     if not prev_deployment:

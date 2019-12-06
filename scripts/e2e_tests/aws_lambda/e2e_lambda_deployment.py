@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import subprocess
 import logging
 import uuid
@@ -37,9 +39,7 @@ if __name__ == '__main__':
     loaded_service = load(saved_path)
     sample_data = X[0:1]
 
-    logger.info(
-        'Result from sample data is: ', loaded_service.predict(sample_data)
-    )
+    logger.info('Result from sample data is: ', loaded_service.predict(sample_data))
     deployment_failed = False
     logger.info(
         'Creating AWS Lambda test deployment for iris classifier with BentoML CLI'
@@ -91,7 +91,7 @@ if __name__ == '__main__':
                 logger.info(
                     'Test request failed. {}:{}'.format(
                         request_result.status_code,
-                        request_result.content.decode('utf-8')
+                        request_result.content.decode('utf-8'),
                     )
                 )
                 deployment_failed = True

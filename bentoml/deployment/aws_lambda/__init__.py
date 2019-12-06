@@ -288,27 +288,13 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         deployment_spec.bento_name,
                         api_names,
                     )
-                except BentoMLException as e:
-                    if not prev_deployment:
-                        _cleanup_s3_bucket(
-                            lambda_s3_bucket, lambda_deployment_config.region
-                        )
-                    return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
-                logger.info(
-                    'Packaging AWS Lambda project at %s ...', lambda_project_dir
-                )
-                try:
+                    logger.info(
+                        'Packaging AWS Lambda project at %s ...', lambda_project_dir
+                    )
                     lambda_package(
                         lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
                     )
-                except BentoMLException as e:
-                    if not prev_deployment:
-                        _cleanup_s3_bucket(
-                            lambda_s3_bucket, lambda_deployment_config.region
-                        )
-                    return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
-                logger.info('Deploying lambda project')
-                try:
+                    logger.info('Deploying lambda project')
                     stack_name = generate_aws_compatible_string(
                         deployment_pb.namespace + '-' + deployment_pb.name
                     )

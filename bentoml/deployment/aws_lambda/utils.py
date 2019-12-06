@@ -92,20 +92,21 @@ def call_sam_command(command, project_dir):
     )
     stdout, stderr = proc.communicate()
     logger.debug('SAM cmd %s output: %s', command, stdout.decode('utf-8'))
-    if proc.returncode == 1:
-        error_message = stderr.decode('utf-8')
-        if not error_message:
-            error_message = stdout.decode('utf-8')
-        raise BentoMLException(error_message)
-    else:
-        return stdout.decode('utf-8')
+    return proc.returncode, stdout.decode('utf-8'), stderr.decode('utf-8')
+    # if proc.returncode == 1:
+    #     error_message = stderr.decode('utf-8')
+    #     if not error_message:
+    #         error_message = stdout.decode('utf-8')
+    #     raise BentoMLException(error_message)
+    # else:
+    #     return stdout.decode('utf-8')
 
 
 def lambda_package(project_dir, s3_bucket_name, deployment_prefix):
     prefix_path = os.path.join(deployment_prefix, 'lambda-functions')
     build_dir = os.path.join(project_dir, '.aws-sam', 'build')
 
-    call_sam_command(
+    return_code, stdout, stderr = call_sam_command(
         [
             'package',
             '--force-upload',
@@ -120,11 +121,20 @@ def lambda_package(project_dir, s3_bucket_name, deployment_prefix):
         ],
         build_dir,
     )
+    if return_code != 0:
+        error_message = stderr
+        if not error_message:
+            error_message = stdout
+        raise BentoMLException(
+            'Failed to package lambda function. {}'.format(error_message)
+        )
+    else:
+        return stdout
 
 
 def lambda_deploy(project_dir, stack_name):
     template_file = os.path.join(project_dir, '.aws-sam', 'build', 'packaged.yaml')
-    call_sam_command(
+    return_code, stdout, stderr = call_sam_command(
         [
             'deploy',
             '--stack-name',
@@ -136,6 +146,15 @@ def lambda_deploy(project_dir, stack_name):
         ],
         project_dir,
     )
+    if return_code != 0:
+        error_message = stderr
+        if not error_message:
+            error_message = stdout
+        raise BentoMLException(
+            'Failed to deploy lambda function. {}'.format(error_message)
+        )
+    else:
+        return stdout
 
 
 def validate_lambda_template(template_file):
@@ -231,10 +250,16 @@ def init_sam_project(
     shutil.copy(app_py_path, os.path.join(function_path, 'app.py'))
 
     logger.info('Building lambda project')
-    try:
-        call_sam_command(['build', '--use-container'], sam_project_path)
-    except BentoMLException as e:
-        raise BentoMLException('Failed to build Lambda project: {}'.format(str(e)))
+    return_code, stdout, stderr = call_sam_command(
+        ['build', '--use-container'], sam_project_path
+    )
+    if return_code != 0:
+        error_message = stderr
+        if not error_message:
+            error_message = stdout
+        raise BentoMLException(
+            'Failed to build lambda function. {}'.format(error_message)
+        )
     logger.debug('Removing unnecessary files to free up space')
     for api_name in api_names:
         cleanup_build_files(sam_project_path, api_name)

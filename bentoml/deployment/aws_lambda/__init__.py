@@ -280,21 +280,21 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     'Initializing lambda project in directory: %s ...',
                     lambda_project_dir,
                 )
-                init_sam_project(
-                    lambda_project_dir,
-                    bento_path,
-                    deployment_pb.name,
-                    deployment_spec.bento_name,
-                    api_names,
-                )
-                logger.info(
-                    'Packaging AWS Lambda project at %s ...', lambda_project_dir
-                )
-                lambda_package(
-                    lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
-                )
-                logger.info('Deploying lambda project')
                 try:
+                    init_sam_project(
+                        lambda_project_dir,
+                        bento_path,
+                        deployment_pb.name,
+                        deployment_spec.bento_name,
+                        api_names,
+                    )
+                    logger.info(
+                        'Packaging AWS Lambda project at %s ...', lambda_project_dir
+                    )
+                    lambda_package(
+                        lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
+                    )
+                    logger.info('Deploying lambda project')
                     stack_name = generate_aws_compatible_string(
                         deployment_pb.namespace + '-' + deployment_pb.name
                     )

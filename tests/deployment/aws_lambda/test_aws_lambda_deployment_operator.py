@@ -110,6 +110,7 @@ def test_init_sam_project(tmpdir):
     mock_deployment_name = 'mock_deployment'
     mock_bento_name = 'mock_bento_name'
     mock_api_names = ['predict']
+    mock_region = 'us-west-2'
     os.mkdir(mock_sam_project_path)
     os.mkdir(mock_bento_bundle_path)
     open(os.path.join(mock_bento_bundle_path, 'requirements.txt'), 'w').close()
@@ -120,6 +121,7 @@ def test_init_sam_project(tmpdir):
         mock_deployment_name,
         mock_bento_name,
         mock_api_names,
+        mock_region
     )
     assert os.path.isfile(
         os.path.join(mock_sam_project_path, mock_deployment_name, 'app.py')

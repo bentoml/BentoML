@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import subprocess
 import logging
 import uuid
@@ -15,7 +17,7 @@ logger = logging.getLogger('bentoml.test')
 
 
 @artifacts([PickleArtifact('clf')])
-@env(pip_dependencies=['scikit-learn'])
+@env(pip_dependencies=['scikit-learn==0.20.3'])
 class IrisClassifier(BentoService):
     @api(DataframeHandler)
     def predict(self, df):

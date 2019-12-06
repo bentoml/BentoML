@@ -153,15 +153,16 @@ def lambda_deploy(project_dir, aws_region, stack_name):
 
 
 def validate_lambda_template(template_file, aws_region, sam_project_path):
-    validate_result = call_sam_command(
+    status_code, stdout, stderr = call_sam_command(
         ['validate', '--template-file', template_file, '--region', aws_region],
         sam_project_path,
     )
-    if 'is a valid SAM Template' not in validate_result:
+    if status_code != 0:
+        error_message = stderr
+        if not error_message:
+            error_message = stdout
         raise BentoMLException(
-            'Failed to validate SAM template {}/{}'.format(
-                sam_project_path, template_file
-            )
+            'Failed to validate lambda template. {}'.format(error_message)
         )
 
 

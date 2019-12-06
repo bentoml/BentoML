@@ -275,7 +275,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     memory_size=lambda_deployment_config.memory_size,
                     timeout=lambda_deployment_config.timeout,
                 )
-                validate_lambda_template(template_file_path)
+                logger.debug('Validating generated template.yaml')
+                validate_lambda_template(
+                    template_file_path,
+                    lambda_deployment_config.region,
+                    lambda_project_dir,
+                )
                 logger.debug(
                     'Initializing lambda project in directory: %s ...',
                     lambda_project_dir,
@@ -287,18 +292,26 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         deployment_pb.name,
                         deployment_spec.bento_name,
                         api_names,
+                        aws_region=lambda_deployment_config.region,
                     )
                     logger.info(
                         'Packaging AWS Lambda project at %s ...', lambda_project_dir
                     )
                     lambda_package(
-                        lambda_project_dir, lambda_s3_bucket, deployment_path_prefix
+                        lambda_project_dir,
+                        lambda_deployment_config.region,
+                        lambda_s3_bucket,
+                        deployment_path_prefix,
                     )
                     logger.info('Deploying lambda project')
                     stack_name = generate_aws_compatible_string(
                         deployment_pb.namespace + '-' + deployment_pb.name
                     )
-                    lambda_deploy(lambda_project_dir, stack_name=stack_name)
+                    lambda_deploy(
+                        lambda_project_dir,
+                        lambda_deployment_config.region,
+                        stack_name=stack_name
+                    )
                 except BentoMLException as e:
                     if not prev_deployment:
                         _cleanup_s3_bucket(

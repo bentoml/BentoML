@@ -22,8 +22,6 @@ import subprocess
 import logging
 import re
 
-import boto3
-
 from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
 
 logger = logging.getLogger(__name__)
@@ -95,7 +93,7 @@ def call_sam_command(command, project_dir):
     return proc.returncode, stdout.decode('utf-8'), stderr.decode('utf-8')
 
 
-def lambda_package(project_dir, s3_bucket_name, deployment_prefix):
+def lambda_package(project_dir, aws_region, s3_bucket_name, deployment_prefix):
     prefix_path = os.path.join(deployment_prefix, 'lambda-functions')
     build_dir = os.path.join(project_dir, '.aws-sam', 'build')
 
@@ -111,6 +109,8 @@ def lambda_package(project_dir, s3_bucket_name, deployment_prefix):
             'template.yaml',
             '--output-template-file',
             'packaged.yaml',
+            '--region',
+            aws_region,
         ],
         build_dir,
     )
@@ -125,7 +125,7 @@ def lambda_package(project_dir, s3_bucket_name, deployment_prefix):
         return stdout
 
 
-def lambda_deploy(project_dir, stack_name):
+def lambda_deploy(project_dir, aws_region, stack_name):
     template_file = os.path.join(project_dir, '.aws-sam', 'build', 'packaged.yaml')
     return_code, stdout, stderr = call_sam_command(
         [
@@ -136,6 +136,8 @@ def lambda_deploy(project_dir, stack_name):
             'CAPABILITY_IAM',
             '--template-file',
             template_file,
+            '--region',
+            aws_region,
         ],
         project_dir,
     )
@@ -150,38 +152,26 @@ def lambda_deploy(project_dir, stack_name):
         return stdout
 
 
-def validate_lambda_template(template_file):
-    try:
-        from samtranslator.translator.managed_policy_translator import (
-            ManagedPolicyLoader,
-        )
-        from botocore.exceptions import NoCredentialsError
-        from samcli.commands.validate.lib.exceptions import InvalidSamDocumentException
-        from samcli.commands.validate.lib.sam_template_validator import (
-            SamTemplateValidator,
-        )
-        from samcli.commands.validate.validate import _read_sam_file
-    except ImportError:
-        raise ImportError(
-            'aws-sam-cli package is required. Install '
-            'with `pip install --user aws-sam-cli`'
-        )
-
-    sam_template = _read_sam_file(template_file)
-    iam_client = boto3.client("iam")
-    validator = SamTemplateValidator(sam_template, ManagedPolicyLoader(iam_client))
-    try:
-        validator.is_valid()
-    except InvalidSamDocumentException:
-        raise BentoMLDeploymentException('Invalid SAM Template for AWS Lambda.')
-    except NoCredentialsError:
-        raise BentoMLDeploymentException(
-            'AWS Credential are required, please configure your credentials.'
+def validate_lambda_template(template_file, aws_region, sam_project_path):
+    validate_result = call_sam_command(
+        ['validate', '--template-file', template_file, '--region', aws_region],
+        sam_project_path,
+    )
+    if not 'is a valid SAM Template' in validate_result:
+        raise BentoMLException(
+            'Failed to validate SAM template {}/{}'.format(
+                sam_project_path, template_file
+            )
         )
 
 
 def init_sam_project(
-    sam_project_path, bento_service_bundle_path, deployment_name, bento_name, api_names
+    sam_project_path,
+    bento_service_bundle_path,
+    deployment_name,
+    bento_name,
+    api_names,
+    aws_region,
 ):
     function_path = os.path.join(sam_project_path, deployment_name)
     os.mkdir(function_path)
@@ -244,7 +234,7 @@ def init_sam_project(
 
     logger.info('Building lambda project')
     return_code, stdout, stderr = call_sam_command(
-        ['build', '--use-container'], sam_project_path
+        ['build', '--use-container', '--region', aws_region], sam_project_path
     )
     if return_code != 0:
         error_message = stderr

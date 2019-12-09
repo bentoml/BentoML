@@ -26,7 +26,7 @@ from collections import OrderedDict
 
 from flask import Flask, jsonify, Response, request
 from werkzeug.utils import secure_filename
-from prometheus_client import generate_latest, Summary
+from prometheus_client import generate_latest, Summary, Counter
 
 from bentoml import config
 from bentoml.utils.usage_stats import track_server
@@ -190,8 +190,19 @@ def bento_service_api_wrapper(api, service_name, service_version):
     """
     Create api function for flask route
     """
-    summary_name = str(service_name) + "_" + str(api.name)
-    request_metric_time = Summary(summary_name, summary_name + " request latency")
+    metric_name = '{}_{}'.format(service_name, api.name)
+    namespace = config('instrument').get('default_namespace')
+
+    request_duration = Summary(
+        name=metric_name + '_request_duration_seconds',
+        documentation=metric_name + " request duration in seconds",
+        namespace=namespace,
+    )
+    request_counter = Counter(
+        name=metric_name + "_counter",
+        documentation='request count by response http status code',
+        labelnames=['http_response_code'],
+    )
 
     def log_image(req, request_id):
         img_prefix = 'image/'
@@ -227,7 +238,7 @@ def bento_service_api_wrapper(api, service_name, service_version):
         return all_paths
 
     def wrapper():
-        with request_metric_time.time():
+        with request_duration.time():
             request_id = str(uuid.uuid4())
             # Assume there is not a strong use case for idempotency check here.
             # Will revise later if we find a case.
@@ -256,7 +267,13 @@ def bento_service_api_wrapper(api, service_name, service_version):
             prediction_logger.info(request_log)
 
             response.headers["request_id"] = request_id
+
+            # instrument request count by status_code
+            request_counter.labels(response.status_code).inc()
+
             return response
+
+        return response
 
     return wrapper
 

@@ -23,7 +23,6 @@ import time
 import logging
 from functools import partial
 from collections import OrderedDict
-from timeit import default_timer
 
 from flask import Flask, jsonify, Response, request
 from werkzeug.utils import secure_filename

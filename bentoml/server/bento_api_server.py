@@ -23,11 +23,10 @@ import time
 import logging
 from functools import partial
 from collections import OrderedDict
-from timeit import default_timer
 
 from flask import Flask, jsonify, Response, request
 from werkzeug.utils import secure_filename
-from prometheus_client import generate_latest, Summary
+from prometheus_client import generate_latest, Summary, Counter
 
 from bentoml import config
 from bentoml.utils.usage_stats import track_server
@@ -192,11 +191,17 @@ def bento_service_api_wrapper(api, service_name, service_version):
     Create api function for flask route
     """
     metric_name = '{}_{}'.format(service_name, api.name)
-    request_metric_time = Summary(
-        metric_name,
-        metric_name + " request latency",
-        namespace=config('instrument').get('default_namespace'),
-        labelnames=('code'),
+    namespace = config('instrument').get('default_namespace')
+
+    request_duration = Summary(
+        name=metric_name + '_request_duration_seconds',
+        documentation=metric_name + " request duration in seconds",
+        namespace=namespace,
+    )
+    request_counter = Counter(
+        name=metric_name + "_counter",
+        documentation='request count by response http status code',
+        labelnames=['http_response_code'],
     )
 
     def log_image(req, request_id):
@@ -233,7 +238,7 @@ def bento_service_api_wrapper(api, service_name, service_version):
         return all_paths
 
     def wrapper():
-        def handle():
+        with request_duration.time():
             request_id = str(uuid.uuid4())
             # Assume there is not a strong use case for idempotency check here.
             # Will revise later if we find a case.
@@ -263,15 +268,10 @@ def bento_service_api_wrapper(api, service_name, service_version):
 
             response.headers["request_id"] = request_id
 
+            # instrument request count by status_code
+            request_counter.labels(response.status_code).inc()
+
             return response
-
-        start_time = default_timer()
-
-        response = handle()
-
-        request_metric_time.labels(code=response.status_code).observe(
-            default_timer() - start_time
-        )
 
         return response
 

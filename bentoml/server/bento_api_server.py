@@ -196,7 +196,7 @@ def bento_service_api_wrapper(api, service_name, service_version):
         metric_name,
         metric_name + " request latency",
         namespace=config('instrument').get('default_namespace'),
-        labelnames=('endpoint', 'code'),
+        labelnames=('code'),
     )
 
     def log_image(req, request_id):
@@ -269,9 +269,9 @@ def bento_service_api_wrapper(api, service_name, service_version):
 
         response = handle()
 
-        request_metric_time.labels(
-            endpoint="/" + api.name, code=response.status_code
-        ).observe(default_timer() - start_time)
+        request_metric_time.labels(code=response.status_code).observe(
+            default_timer() - start_time
+        )
 
         return response
 

@@ -17,21 +17,14 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
 import shutil
+import sys
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
-
-
-def _import_fastai_module():
-    try:
-        import fastai.basic_train
-    except ImportError:
-        raise ImportError(
-            "fastai package is required to use " "bentoml.artifacts.FastaiModelArtifact"
-        )
-
-    return fastai
+from bentoml.artifact.fastai_model_artifact.fastai_model_for_serving import \
+    FastaiModelForServing
+from bentoml.artifact.fastai_model_artifact.utils import _import_torch_module
+from bentoml.utils import Path
 
 
 class FastaiModelArtifact(BentoServiceArtifact):
@@ -57,19 +50,20 @@ class FastaiModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self._file_name)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        fastai_module = _import_fastai_module()
-
-        if not isinstance(model, fastai_module.basic_train.Learner):
+        torch_module = _import_torch_module()
+        if not isinstance(model, torch_module.nn.Module):
             raise TypeError(
-                "Expect `model` argument to be `fastai.basic_train.Learner` instance"
+                "Expect `model` argument to be `torch.nn.Module` instance"
             )
+        serving_model = FastaiModelForServing(model)
 
-        return _FastaiModelArtifactWrapper(self, model)
+        return _FastaiModelArtifactWrapper(self, serving_model)
 
     def load(self, path):
-        fastai_module = _import_fastai_module()
-
-        model = fastai_module.basic_train.load_learner(path, self._file_name)
+        torch_module = _import_torch_module()
+        source = Path(os.path.join(path, self._file_name))
+        state = torch_module.load(source)
+        model = state.pop('model')
         return self.pack(model)
 
 

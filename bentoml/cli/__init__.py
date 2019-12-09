@@ -83,7 +83,7 @@ def create_bento_service_cli(bundle_path=None):
     # Example Usage: bentoml {API_NAME} {BUNDLE_PATH} --input=...
     @bentoml_cli.command(
         default_command=True,
-        default_command_usage="bentoml {API_NAME} {BUNDLE_PATH} --input=...",
+        default_command_usage="{API_NAME} {BUNDLE_PATH} --input=...",
         default_command_display_name="<API_NAME>",
         short_help="Run API function",
         help="Run a API defined in saved BentoService bundle from command line",

@@ -191,10 +191,11 @@ def bento_service_api_wrapper(api, service_name, service_version):
     """
     Create api function for flask route
     """
+    metric_name = '{}_{}'.format(service_name, api.name)
     request_metric_time = Summary(
-        api.name,
-        api.name + " request latency",
-        namespace=service_name,
+        metric_name,
+        metric_name + " request latency",
+        namespace=config('instrument').get('default_namespace'),
         labelnames=('endpoint', 'code'),
     )
 

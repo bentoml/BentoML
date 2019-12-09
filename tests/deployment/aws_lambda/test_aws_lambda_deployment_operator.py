@@ -71,12 +71,13 @@ def test_aws_lambda_app_py(monkeypatch):
 
     monkeypatch.setenv('BENTOML_BENTO_SERVICE_NAME', 'Mock_bento_service')
     monkeypatch.setenv('BENTOML_S3_BUCKET', 'Mock_s3_bucket')
+    monkeypatch.setenv('BENTOML_DEPLOYMENT_PATH_PREFIX', 'deployment/prefix')
     monkeypatch.setenv('BENTOML_ARTIFACTS_PREFIX', 'mock_artifacts_prefix')
     monkeypatch.setenv('BENTOML_API_NAME', 'predict')
 
     def mock_lambda_app(func):
         @mock_s3
-        @patch('bentoml.utils.s3.download_directory_from_s3')
+        @patch('bentoml.utils.s3.download_directory_from_s3', return_value=None)
         def mock_wrapper(*args, **kwargs):
             conn = boto3.client('s3', region_name='us-west-2')
             conn.create_bucket(Bucket=mock_s3_bucket_name)
@@ -173,7 +174,8 @@ def mock_lambda_related_operations(func):
 @patch('shutil.copytree', MagicMock())
 @patch('shutil.copy', MagicMock())
 @patch('os.listdir', MagicMock())
-@patch('subprocess.Popen', MagicMock())
+@patch('bentoml.deployment.aws_lambda.init_sam_project', MagicMock())
+@patch('bentoml.deployment.aws_lambda.lambda_package', MagicMock())
 @patch(
     'bentoml.deployment.aws_lambda.validate_lambda_template',
     MagicMock(return_value=None),

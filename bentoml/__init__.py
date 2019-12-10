@@ -36,7 +36,6 @@ from bentoml.service import (
     artifacts_decorator as artifacts,
     ver_decorator as ver,
 )
-from bentoml.server import metrics
 from bentoml.yatai.python_api import upload_bento_service
 
 
@@ -50,7 +49,6 @@ __all__ = [
     "config",
     "env",
     "ver",
-    "metrics",
     "BentoService",
     "load",
     "save",

@@ -17,7 +17,23 @@ from __future__ import division
 from __future__ import print_function
 
 import multiprocessing
+import logging
+
+from bentoml import config
+
+logger = logging.getLogger(__name__)
 
 
-def get_bento_recommend_gunicorn_worker_count():
-    return (multiprocessing.cpu_count() // 2) + 1
+def get_gunicorn_num_of_workers():
+    if config("apiserver").getint("default_gunicorn_workers_count") > 0:
+        num_of_workers = config("apiserver").getint("default_gunicorn_workers_count")
+        logger.info(
+            "get_gunicorn_num_of_workers: %d, loaded from config", num_of_workers
+        )
+    else:
+        num_of_workers = (multiprocessing.cpu_count() // 2) + 1
+        logger.info(
+            "get_gunicorn_num_of_workers: %d, calculated by cpu count", num_of_workers
+        )
+
+    return num_of_workers

@@ -26,7 +26,6 @@ from collections import OrderedDict
 
 from flask import Flask, jsonify, Response, request
 from werkzeug.utils import secure_filename
-from prometheus_client import generate_latest, Summary, Counter
 
 from bentoml import config
 from bentoml.utils.usage_stats import track_server
@@ -37,9 +36,9 @@ CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 prediction_logger = logging.getLogger("bentoml.prediction")
 feedback_logger = logging.getLogger("bentoml.feedback")
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-INDEX_HTML = '''
+INDEX_HTML = '''\
 <!DOCTYPE html>
 <head><link rel="stylesheet" type="text/css"
             href="/static/swagger-ui.css"></head>
@@ -64,24 +63,6 @@ def _request_to_json(req):
         return req.get_json()
 
     return {}
-
-
-def has_empty_params(rule):
-    """
-    return True if the rule has empty params
-    """
-    defaults = rule.defaults if rule.defaults is not None else ()
-    arguments = rule.arguments if rule.arguments is not None else ()
-    return len(defaults) < len(arguments)
-
-
-def index_view_func():
-    """
-    The index route for bento model server
-    """
-    return Response(
-        response=INDEX_HTML.format(url='/docs.json'), status=200, mimetype="text/html"
-    )
 
 
 def get_docs(bento_service):
@@ -147,70 +128,166 @@ def get_docs(bento_service):
     return docs
 
 
-def docs_view_func(bento_service):
-    docs = get_docs(bento_service)
-    return jsonify(docs)
-
-
-def healthz_view_func():
+class BentoAPIServer:
     """
-    Health check for bento model server.
-    Make sure it works with Kubernetes liveness probe
+    BentoAPIServer creates a REST API server based on APIs defined with a BentoService
+    via BentoService#get_service_apis call. Each BentoServiceAPI will become one
+    endpoint exposed on the REST server, and the RequestHandler defined on each
+    BentoServiceAPI object will be used to handle Request object before feeding the
+    request data into a Service API function
     """
-    return Response(response="\n", status=200, mimetype="application/json")
 
+    _DEFAULT_PORT = config("apiserver").getint("default_port")
 
-def metrics_view_func():
-    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+    def __init__(self, bento_service, port=_DEFAULT_PORT, app_name=None):
+        app_name = bento_service.name if app_name is None else app_name
 
+        self.port = port
+        self.bento_service = bento_service
 
-def feedback_view_func(bento_service):
-    """
-    User send feedback along with the request Id. It will be stored and
-    ready for further process.
-    """
-    if request.content_type != "application/json":
-        return Response(response="Incorrect content format, require JSON", status=400)
+        self.app = Flask(
+            app_name,
+            static_folder=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), 'static'
+            ),
+        )
+        self.setup_instruments()
+        self.setup_routes()
 
-    data = json.loads(request.data.decode("utf-8"))
-    if "request_id" not in data.keys():
-        return Response(response="Missing request id", status=400)
+    def start(self):
+        """
+        Start an REST server at the specific port on the instance or parameter.
+        """
+        track_server('flask')
 
-    if len(data.keys()) <= 1:
-        return Response(response="Missing feedback data", status=400)
+        self.app.run(port=self.port)
 
-    data["service_name"] = bento_service.name
-    data["service_version"] = bento_service.version
+    @staticmethod
+    def index_view_func():
+        """
+        The index route for BentoML API server
+        """
+        return Response(
+            response=INDEX_HTML.format(url='/docs.json'),
+            status=200,
+            mimetype="text/html",
+        )
 
-    feedback_logger.info(data)
-    return Response(response="success", status=200)
+    @staticmethod
+    def docs_view_func(bento_service):
+        docs = get_docs(bento_service)
+        return jsonify(docs)
 
+    @staticmethod
+    def healthz_view_func():
+        """
+        Health check for BentoML API server.
+        Make sure it works with Kubernetes liveness probe
+        """
+        return Response(response="\n", status=200, mimetype="application/json")
 
-def bento_service_api_wrapper(api, service_name, service_version):
-    """
-    Create api function for flask route
-    """
-    metric_name = '{}_{}'.format(service_name, api.name)
-    namespace = config('instrument').get('default_namespace')
+    def metrics_view_func(self):
+        from prometheus_client import generate_latest
 
-    request_duration = Summary(
-        name=metric_name + '_request_duration_seconds',
-        documentation=metric_name + " request duration in seconds",
-        namespace=namespace,
-    )
-    request_counter = Counter(
-        name=metric_name + "_counter",
-        documentation='request count by response http status code',
-        labelnames=['http_response_code'],
-    )
+        return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
+    @staticmethod
+    def feedback_view_func(bento_service):
+        """
+        User send feedback along with the request Id. It will be stored and
+        ready for further process.
+        """
+        if request.content_type != "application/json":
+            return Response(
+                response="Incorrect content format, require JSON", status=400
+            )
+
+        data = json.loads(request.data.decode("utf-8"))
+        if "request_id" not in data.keys():
+            return Response(response="Missing request id", status=400)
+
+        if len(data.keys()) <= 1:
+            return Response(response="Missing feedback data", status=400)
+
+        data["service_name"] = bento_service.name
+        data["service_version"] = bento_service.version
+
+        feedback_logger.info(data)
+        return Response(response="success", status=200)
+
+    def setup_routes(self):
+        """
+        Setup routes for bento model server, including:
+
+        /               Index Page
+        /healthz        Health check ping
+        /feedback       Submitting feedback
+        /metrics        Prometheus metrics endpoint
+
+        And user defined BentoServiceAPI list into flask routes, e.g.:
+        /classify
+        /predict
+        """
+
+        self.app.add_url_rule("/", "index", self.index_view_func)
+        self.app.add_url_rule(
+            "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
+        )
+        self.app.add_url_rule("/healthz", "healthz", self.healthz_view_func)
+
+        if config("apiserver").getboolean("enable_metrics"):
+            self.app.add_url_rule("/metrics", "metrics", self.metrics_view_func)
+
+        if config("apiserver").getboolean("enable_feedback"):
+            self.app.add_url_rule(
+                "/feedback",
+                "feedback",
+                partial(self.feedback_view_func, self.bento_service),
+                methods=["POST", "GET"],
+            )
+
+        self.setup_bento_service_api_routes()
+
+    def setup_bento_service_api_routes(self):
+        """
+        Setup a route for each BentoServiceAPI object defined in bento_service
+        """
+        for api in self.bento_service.get_service_apis():
+            route_function = self.bento_service_api_func_wrapper(api)
+            self.app.add_url_rule(
+                rule="/{}".format(api.name),
+                endpoint=api.name,
+                view_func=route_function,
+                methods=["POST", "GET"],
+            )
+
+    def setup_instruments(self):
+        from prometheus_client import Summary, Counter
+
+        service_name = self.bento_service.name
+        namespace = config('instrument').get('default_namespace')
+
+        self.request_duration = Summary(
+            name=service_name + '_request_duration_seconds',
+            documentation=service_name + " request duration in seconds",
+            namespace=namespace,
+            labelnames=['api_name', 'service_version'],
+        )
+        self.request_counter = Counter(
+            name=service_name + "_counter",
+            documentation='request count by response http status code',
+            namespace=namespace,
+            labelnames=['api_name', 'service_version', 'http_response_code'],
+        )
+
+    @staticmethod
     def log_image(req, request_id):
         img_prefix = 'image/'
         log_folder = config('logging').get('base_log_dir')
 
         all_paths = []
 
-        if req.content_type.startswith(img_prefix):
+        if req.content_type and req.content_type.startswith(img_prefix):
             filename = '{timestamp}-{request_id}.{ext}'.format(
                 timestamp=int(time.time()),
                 request_id=request_id,
@@ -237,125 +314,54 @@ def bento_service_api_wrapper(api, service_name, service_version):
 
         return all_paths
 
-    def wrapper():
-        with request_duration.time():
-            request_id = str(uuid.uuid4())
-            # Assume there is not a strong use case for idempotency check here.
-            # Will revise later if we find a case.
-
-            image_paths = []
-            if not config('logging').getboolean('disable_logging_image'):
-                image_paths = log_image(request, request_id)
-
-            response = api.handle_request(request)
-
-            request_log = {
-                "request_id": request_id,
-                "service_name": service_name,
-                "service_version": service_version,
-                "api": api.name,
-                "request": _request_to_json(request),
-                "response_code": response.status_code,
-            }
-
-            if len(image_paths) > 0:
-                request_log['image_paths'] = image_paths
-
-            if 200 <= response.status_code < 300:
-                request_log['response'] = response.response
-
-            prediction_logger.info(request_log)
-
-            response.headers["request_id"] = request_id
-
-            # instrument request count by status_code
-            request_counter.labels(response.status_code).inc()
-
-            return response
-
-        return response
-
-    return wrapper
-
-
-def setup_bento_service_api_route(app, bento_service, api):
-    """
-    Setup a route for one BentoServiceAPI object defined in bento_service
-    """
-    route_function = bento_service_api_wrapper(
-        api, bento_service.name, bento_service.version
-    )
-
-    app.add_url_rule(
-        rule="/{}".format(api.name),
-        endpoint=api.name,
-        view_func=route_function,
-        methods=["POST", "GET"],
-    )
-
-
-def setup_routes(app, bento_service):
-    """
-    Setup routes for bento model server, including:
-
-    /               Index Page
-    /healthz        Health check ping
-    /feedback       Submitting feedback
-    /metrics        Prometheus metrics endpoint
-
-    And user defined BentoServiceAPI list into flask routes, e.g.:
-    /classify
-    /predict
-    """
-
-    app.add_url_rule("/", "index", index_view_func)
-    app.add_url_rule("/docs.json", "docs", partial(docs_view_func, bento_service))
-    app.add_url_rule("/healthz", "healthz", healthz_view_func)
-
-    if config("apiserver").getboolean("enable_metrics"):
-        app.add_url_rule("/metrics", "metrics", metrics_view_func)
-
-    if config("apiserver").getboolean("enable_feedback"):
-        app.add_url_rule(
-            "/feedback",
-            "feedback",
-            partial(feedback_view_func, bento_service),
-            methods=["POST", "GET"],
-        )
-
-    for api in bento_service.get_service_apis():
-        setup_bento_service_api_route(app, bento_service, api)
-
-
-class BentoAPIServer:
-    """
-    BentoAPIServer creates a REST API server based on APIs defined with a BentoService
-    via BentoService#get_service_apis call. Each BentoServiceAPI will become one
-    endpoint exposed on the REST server, and the RequestHandler defined on each
-    BentoServiceAPI object will be used to handle Request object before feeding the
-    request data into a Service API function
-    """
-
-    _DEFAULT_PORT = config("apiserver").getint("default_port")
-
-    def __init__(self, bento_service, port=_DEFAULT_PORT, app_name=None):
-        app_name = bento_service.name if app_name is None else app_name
-
-        self.port = port
-        self.bento_service = bento_service
-
-        self.app = Flask(
-            app_name,
-            static_folder=os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), 'static'
-            ),
-        )
-        setup_routes(self.app, self.bento_service)
-
-    def start(self):
+    def bento_service_api_func_wrapper(self, api):
         """
-        Start an REST server at the specific port on the instance or parameter.
+        Create api function for flask route
         """
-        track_server('flask')
 
-        self.app.run(port=self.port)
+        def api_func_wrapper():
+            service_name = self.bento_service.name
+            service_version = self.bento_service.version
+
+            with self.request_duration.labels(
+                api_name=api.name, service_version=service_version
+            ).time():
+                request_id = str(uuid.uuid4())
+                # Assume there is not a strong use case for idempotency check here.
+                # Will revise later if we find a case.
+
+                image_paths = []
+                if not config('logging').getboolean('disable_logging_image'):
+                    image_paths = self.log_image(request, request_id)
+
+                response = api.handle_request(request)
+
+                request_log = {
+                    "request_id": request_id,
+                    "service_name": service_name,
+                    "service_version": service_version,
+                    "api": api.name,
+                    "request": _request_to_json(request),
+                    "response_code": response.status_code,
+                }
+
+                if len(image_paths) > 0:
+                    request_log['image_paths'] = image_paths
+
+                if 200 <= response.status_code < 300:
+                    request_log['response'] = response.response
+
+                prediction_logger.info(request_log)
+
+                response.headers["request_id"] = request_id
+
+                # instrument request count by status_code
+                self.request_counter.labels(
+                    api_name=api.name,
+                    service_version=service_version,
+                    http_response_code=response.status_code,
+                ).inc()
+
+                return response
+
+        return api_func_wrapper

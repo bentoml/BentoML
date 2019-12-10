@@ -60,6 +60,7 @@ def create_bento_service_cli(bundle_path=None):
     )
     @click.option(
         '--verbose',
+        '--debug',
         is_flag=True,
         default=False,
         help="Print verbose debugging information for BentoML developer",

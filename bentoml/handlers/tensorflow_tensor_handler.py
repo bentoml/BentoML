@@ -17,12 +17,17 @@ from __future__ import division
 from __future__ import print_function
 
 import json
+import base64
+import argparse
 import tensorflow as tf
+import numpy as np
 from flask import make_response, Response, jsonify
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
+from bentoml.exceptions import BentoMLException
 
 
 B64_KEY = 'b64'
+
 
 def decode_b64_if_needed(value):
     if isinstance(value, dict):
@@ -44,23 +49,18 @@ def decode_b64_if_needed(value):
 
 class TensorflowTensorHandler(BentoHandler):
     """
-    Tensor handlers for Tensorflow models
-    Transform incoming tf tensor data from http request, cli or lambda event into tf tensor
-    The behaviour should be compatible with tensorflow serving REST predict API: 
+    Tensor handlers for Tensorflow models.
+    Transform incoming tf tensor data from http request, cli or lambda event into
+    tf tensor.
+    The behaviour should be compatible with tensorflow serving REST predict API:
         * https://www.tensorflow.org/tfx/serving/api_rest#predict_api
 
     Args:
-        dtype (tf.dtypes): The expected dtype of the input tensor
-        shape (tuple): The expected shape of the input tensor.
-            shapes like (None, 28, 28) are supported
+        -
 
     Raises:
         BentoMLException: BentoML currently doesn't support Content-Type
     """
-
-    def __init__(self, spec=None):
-        self.spec = spec
-        #self.input_names = input_names
 
     @property
     def request_schema(self):
@@ -95,20 +95,12 @@ class TensorflowTensorHandler(BentoHandler):
         if parsed_json.get("instances") is not None:
             instances = parsed_json.get("instances")
             instances = decode_b64_if_needed(instances)
-
-            if self.spec is not None:
-                parsed_tensor = tf.constant(instances, self.spec.dtype)
-                # origin_shape_map = {parsed_tensor._id: parsed_tensor.shape}
-                if not self.spec.is_compatible_with(parsed_tensor):
-                    parsed_tensor = tf.reshape(parsed_tensor, tuple(i is None and -1 or i for i in self.spec.shape))
-                result = func(parsed_tensor)
-                # if result._id in origin_shape_map:
-                #     result = tf.reshape(result, origin_shape_map.get(result._id))
-                if isinstance(result, tf.Tensor):
-                    result = result.numpy().tolist()
-            else:
-                parsed_tensor = tf.constant(instances)
-                result = func(parsed_tensor)
+            parsed_tensor = tf.constant(instances)
+            result = func(parsed_tensor)
+            if isinstance(result, tf.Tensor):
+                result = result.numpy().tolist()
+            if isinstance(result, np.ndarray):
+                result = result.tolist()
 
         elif parsed_json.get("inputs"):
             # column mode
@@ -123,8 +115,8 @@ class TensorflowTensorHandler(BentoHandler):
         return result_str
 
     def handle_request(self, request, func):
-        """Handle http request that has jsonlized tensorflow tensor. It will convert it into a
-        tf tensor for the function to consume.
+        """Handle http request that has jsonlized tensorflow tensor. It will convert it
+        into a tf tensor for the function to consume.
 
         Args:
             request: incoming request object.
@@ -145,7 +137,8 @@ class TensorflowTensorHandler(BentoHandler):
             input_str = request.data.decode("utf-8")
             output_format = request.headers.get("output", "json")
             result_str = self._handle_raw_str(input_str, output_format, func)
-            return Response(response=result_str, status=200, mimetype="application/json")
+            return Response(
+                response=result_str, status=200, mimetype="application/json")
         else:
             return make_response(
                 jsonify(
@@ -168,7 +161,8 @@ class TensorflowTensorHandler(BentoHandler):
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "") == "application/json":
-            result = self._handle_raw_str(event["body"], event["headers"].get("output", "json"), func)
+            result = self._handle_raw_str(
+                event["body"], event["headers"].get("output", "json"), func)
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

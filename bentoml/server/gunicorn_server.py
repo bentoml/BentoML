@@ -16,17 +16,36 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import logging
 from six import iteritems
-from gunicorn.app.base import BaseApplication
+from gunicorn.app.base import Application
+from flask import Response
+from prometheus_client import (
+    generate_latest,
+    CollectorRegistry,
+    multiprocess,
+    CONTENT_TYPE_LATEST,
+)
+
 
 from bentoml import config
 from bentoml.bundler import load
 from bentoml.server import BentoAPIServer
-from bentoml.server.utils import get_bento_recommend_gunicorn_worker_count
 from bentoml.utils.usage_stats import track_server
 
+logger = logging.getLogger(__name__)
 
-class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
+
+class GunicornBentoAPIServer(BentoAPIServer):
+    @staticmethod
+    def metrics_view_func():
+        registry = CollectorRegistry()
+        multiprocess.MultiProcessCollector(registry)
+        data = generate_latest(registry)
+        return Response(data, mimetype=CONTENT_TYPE_LATEST)
+
+
+class GunicornBentoServer(Application):  # pylint: disable=abstract-method
     """
     A custom Gunicorn application.
 
@@ -45,22 +64,23 @@ class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
 
     def __init__(self, bundle_path, port=None, num_of_workers=None, timeout=None):
         self.bento_service_bundle_path = bundle_path
-        self.port = port or config("apiserver").getint("default_port")
-        self.num_of_workers = (
-            num_of_workers
-            or config("apiserver").getint("default_gunicorn_workers_count")
-            or get_bento_recommend_gunicorn_worker_count()
-        )
-        self.timeout = timeout or config("apiserver").getint("default_timeout")
 
+        self.port = port or config("apiserver").getint("default_port")
+        timeout = timeout or config("apiserver").getint("default_timeout")
         self.options = {
-            "workers": self.num_of_workers,
             "bind": "%s:%s" % ("0.0.0.0", self.port),
-            "timeout": self.timeout,
+            "timeout": timeout,
+            "loglevel": config("logging").get("LOGGING_LEVEL").upper(),
         }
+        if num_of_workers:
+            self.options['workers'] = num_of_workers
+
         super(GunicornBentoServer, self).__init__()
 
     def load_config(self):
+        self.load_config_from_file("python:bentoml.server.gunicorn_config")
+
+        # override config with self.options
         gunicorn_config = dict(
             [
                 (key, value)
@@ -73,9 +93,9 @@ class GunicornBentoServer(BaseApplication):  # pylint: disable=abstract-method
 
     def load(self):
         bento_service = load(self.bento_service_bundle_path)
-        api_server = BentoAPIServer(bento_service, port=self.port)
+        api_server = GunicornBentoAPIServer(bento_service, port=self.port)
         return api_server.app
 
     def run(self):
-        track_server('gunicorn', {"number_of_workers": self.num_of_workers})
+        track_server('gunicorn', {"number_of_workers": str(self.cfg.workers)})
         super(GunicornBentoServer, self).run()

@@ -37,7 +37,7 @@ CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 prediction_logger = logging.getLogger("bentoml.prediction")
 feedback_logger = logging.getLogger("bentoml.feedback")
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 INDEX_HTML = '''\
 <!DOCTYPE html>

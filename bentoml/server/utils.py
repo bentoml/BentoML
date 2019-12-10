@@ -27,12 +27,12 @@ logger = logging.getLogger(__name__)
 def get_gunicorn_num_of_workers():
     if config("apiserver").getint("default_gunicorn_workers_count") > 0:
         num_of_workers = config("apiserver").getint("default_gunicorn_workers_count")
-        logger.debug(
+        logger.info(
             "get_gunicorn_num_of_workers: %d, loaded from config", num_of_workers
         )
     else:
         num_of_workers = (multiprocessing.cpu_count() // 2) + 1
-        logger.debug(
+        logger.info(
             "get_gunicorn_num_of_workers: %d, calculated by cpu count", num_of_workers
         )
 

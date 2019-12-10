@@ -59,7 +59,8 @@ def create_bento_service_cli(bundle_path=None):
         help="Hide process logs and only print command results",
     )
     @click.option(
-        '--verbose/--debug',
+        '--verbose',
+        '--debug',
         is_flag=True,
         default=False,
         help="Print verbose debugging information for BentoML developer",

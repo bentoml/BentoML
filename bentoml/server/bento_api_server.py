@@ -26,7 +26,6 @@ from collections import OrderedDict
 
 from flask import Flask, jsonify, Response, request
 from werkzeug.utils import secure_filename
-from prometheus_client import generate_latest, Summary, Counter
 
 from bentoml import config
 from bentoml.utils.usage_stats import track_server
@@ -187,8 +186,9 @@ class BentoAPIServer:
         """
         return Response(response="\n", status=200, mimetype="application/json")
 
-    @staticmethod
-    def metrics_view_func():
+    def metrics_view_func(self):
+        from prometheus_client import generate_latest
+
         return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
     @staticmethod
@@ -262,6 +262,8 @@ class BentoAPIServer:
             )
 
     def setup_instruments(self):
+        from prometheus_client import Summary, Counter
+
         service_name = self.bento_service.name
         namespace = config('instrument').get('default_namespace')
 
@@ -285,7 +287,7 @@ class BentoAPIServer:
 
         all_paths = []
 
-        if req.content_type.startswith(img_prefix):
+        if req.content_type and req.content_type.startswith(img_prefix):
             filename = '{timestamp}-{request_id}.{ext}'.format(
                 timestamp=int(time.time()),
                 request_id=request_id,

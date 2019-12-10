@@ -28,7 +28,7 @@ def when_ready(server):
 def worker_int(worker):
     worker.log.debug("worker received INT or QUIT signal")
 
-    ## get traceback info
+    # get traceback info
     import threading
     import sys
     import traceback

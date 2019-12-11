@@ -5,6 +5,7 @@ import mock
 import flask
 import imageio
 import numpy as np
+from werkzeug.exceptions import BadRequest
 
 
 from bentoml.handlers import ImageHandler
@@ -47,16 +48,6 @@ def test_image_handler_aws_lambda_event(img_file):
     aws_result = test_image_handler.handle_aws_lambda_event(aws_lambda_event, predict)
     assert aws_result["statusCode"] == 200
     assert aws_result["body"] == "[10, 10, 3]"
-
-
-def test_image_handler_http_request_wrong_request_method():
-    test_image_handler = ImageHandler()
-    request = mock.MagicMock(spec=flask.Request)
-    request.method = "GET"
-
-    response = test_image_handler.handle_request(request, predict)
-    assert response.status_code == 405
-    assert "only accept POST request" in str(response.response)
 
 
 def test_image_handler_http_request_post_binary(img_file):
@@ -122,10 +113,10 @@ def test_image_handler_http_request_malformatted_input_missing_image_file():
     request.headers = {}
     request.get_data.return_value = None
 
-    response = test_image_handler.handle_request(request, predict)
+    with pytest.raises(BadRequest) as e:
+        test_image_handler.handle_request(request, predict)
 
-    assert response.status_code == 400
-    assert "unexpected HTTP request format" in str(response.response)
+    assert "unexpected HTTP request format" in str(e.value)
 
 
 def test_image_handler_http_request_malformatted_input_wrong_input_name():
@@ -137,7 +128,7 @@ def test_image_handler_http_request_malformatted_input_wrong_input_name():
     request.headers = {}
     request.get_data.return_value = None
 
-    response = test_image_handler.handle_request(request, predict)
+    with pytest.raises(BadRequest) as e:
+        test_image_handler.handle_request(request, predict)
 
-    assert response.status_code == 400
-    assert "unexpected HTTP request format" in str(response.response)
+    assert "unexpected HTTP request format" in str(e.value)

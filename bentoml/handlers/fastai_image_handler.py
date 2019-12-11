@@ -21,6 +21,7 @@ import argparse
 import base64
 from io import BytesIO
 
+from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
 from flask import Response
 import numpy as np
@@ -80,6 +81,8 @@ class FastaiImageHandler(BentoHandler):
         ImportError: fastai package is required to use FastaiImageHandler
     """
 
+    HTTP_METHODS = ["POST"]
+
     def __init__(
         self,
         input_names=("image",),
@@ -121,9 +124,6 @@ class FastaiImageHandler(BentoHandler):
         return ['imageio', 'fastai']
 
     def handle_request(self, request, func):
-        if request.method != "POST":
-            return Response(response="Only accept POST request", status=400)
-
         input_streams = []
         for filename in self.input_names:
             file = request.files.get(filename)
@@ -137,7 +137,7 @@ class FastaiImageHandler(BentoHandler):
             if data:
                 input_streams = (data,)
             else:
-                raise ValueError(
+                raise BadRequest(
                     "BentoML#ImageHandler unexpected HTTP request: %s" % request
                 )
 

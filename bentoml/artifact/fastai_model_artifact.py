@@ -17,7 +17,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
 import shutil
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
@@ -47,9 +46,6 @@ class FastaiModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
-        if sys.version_info.major < 3 or sys.version_info.minor < 6:
-            raise SystemError("fast ai requires python 3.6 version or higher")
-
         super(FastaiModelArtifact, self).__init__(name)
         self._file_name = name + '.pkl'
 

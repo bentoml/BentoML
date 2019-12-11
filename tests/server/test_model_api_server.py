@@ -61,19 +61,16 @@ def test_api_function_route(bento_service, tmpdir):
     )
     assert 200 == response.status_code
 
-    # Test Fastai Image Handlers.
-    if sys.version_info >= (3, 6):
-        # fast ai is required 3.6 or higher.
-        response = test_client.post(
-            "/predict_fastai_image", data=img, content_type="image/png"
-        )
-        assert 200 == response.status_code
+    response = test_client.post(
+        "/predict_fastai_image", data=img, content_type="image/png"
+    )
+    assert 200 == response.status_code
 
-        response = test_client.post(
-            "/predict_fastai_images",
-            data={
-                'original': (BytesIO(img), 'original.jpg'),
-                'compared': (BytesIO(img), 'compared.jpg'),
-            },
-        )
-        assert 200 == response.status_code
+    response = test_client.post(
+        "/predict_fastai_images",
+        data={
+            'original': (BytesIO(img), 'original.jpg'),
+            'compared': (BytesIO(img), 'compared.jpg'),
+        },
+    )
+    assert 200 == response.status_code

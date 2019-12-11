@@ -18,7 +18,6 @@ from __future__ import print_function
 
 import os
 import re
-import sys
 import inspect
 import logging
 import uuid
@@ -37,18 +36,6 @@ from bentoml.utils.hybirdmethod import hybridmethod
 
 
 logger = logging.getLogger(__name__)
-
-
-def _get_func_attr(func, attribute_name):
-    if sys.version_info.major < 3 and inspect.ismethod(func):
-        func = func.__func__
-    return getattr(func, attribute_name)
-
-
-def _set_func_attr(func, attribute_name, value):
-    if sys.version_info.major < 3 and inspect.ismethod(func):
-        func = func.__func__
-    return setattr(func, attribute_name, value)
 
 
 class BentoServiceAPI(object):
@@ -143,9 +130,9 @@ class BentoServiceBase(object):
             predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x),
         ):
             if hasattr(function, "_is_api"):
-                api_name = _get_func_attr(function, "_api_name")
-                api_doc = _get_func_attr(function, "_api_doc")
-                handler = _get_func_attr(function, "_handler")
+                api_name = getattr(function, "_api_name")
+                api_doc = getattr(function, "_api_doc")
+                handler = getattr(function, "_handler")
 
                 # Bind api method call with self(BentoService instance)
                 func = function.__get__(self)
@@ -218,15 +205,15 @@ def api_decorator(handler_cls, *args, **kwargs):
             *args, **kwargs
         )  # create handler instance and attach to api method
 
-        _set_func_attr(func, "_is_api", True)
-        _set_func_attr(func, "_handler", handler)
+        setattr(func, "_is_api", True)
+        setattr(func, "_handler", handler)
         if not isidentifier(api_name):
             raise ValueError(
                 "Invalid API name: '{}', a valid identifier must contains only letters,"
                 " numbers, underscores and not starting with a number.".format(api_name)
             )
-        _set_func_attr(func, "_api_name", api_name)
-        _set_func_attr(func, "_api_doc", api_doc)
+        setattr(func, "_api_name", api_name)
+        setattr(func, "_api_doc", api_doc)
 
         return func
 

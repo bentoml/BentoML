@@ -27,20 +27,15 @@ def test_custom_api_name():
 
 
 def test_fastai_image_handler_pip_dependencies():
-    if sys.version_info < (3, 6):
-        # fast ai is required 3.6 or higher.
-        assert True
-    else:
+    class TestFastAiImageService(bentoml.BentoService):
+        @bentoml.api(FastaiImageHandler)
+        def test(self, image):
+            return image
 
-        class TestFastAiImageService(bentoml.BentoService):
-            @bentoml.api(FastaiImageHandler)
-            def test(self, image):
-                return image
+    service = TestFastAiImageService()
 
-        service = TestFastAiImageService()
-
-        assert 'imageio' in service._env._pip_dependencies
-        assert 'fastai' in service._env._pip_dependencies
+    assert 'imageio' in service._env._pip_dependencies
+    assert 'fastai' in service._env._pip_dependencies
 
 
 def test_image_handler_pip_dependencies():

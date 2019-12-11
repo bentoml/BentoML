@@ -135,9 +135,7 @@ def load_bento_service_class(bundle_path):
         )
         # pylint:enable=deprecated-method
     else:
-        import imp
-
-        module = imp.load_source(module_name, module_file_path)
+        raise BentoMLException("BentoML requires Python 3.4 and above")
 
     # Remove bundle_path from sys.path to avoid import naming conflicts
     sys.path.remove(bundle_path)

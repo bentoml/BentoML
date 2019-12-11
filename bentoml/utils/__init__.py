@@ -19,6 +19,8 @@ from __future__ import print_function
 import re
 import os
 import importlib
+from io import StringIO
+
 
 from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 from google.protobuf.json_format import MessageToJson, MessageToDict
@@ -26,10 +28,6 @@ from ruamel.yaml import YAML
 
 from bentoml import __version__ as BENTOML_VERSION, _version as version_mod
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")

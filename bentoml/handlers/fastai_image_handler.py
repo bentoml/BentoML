@@ -80,6 +80,8 @@ class FastaiImageHandler(BentoHandler):
         ImportError: fastai package is required to use FastaiImageHandler
     """
 
+    HTTP_METHODS = ["POST"]
+
     def __init__(
         self,
         input_names=("image",),
@@ -121,9 +123,6 @@ class FastaiImageHandler(BentoHandler):
         return ['imageio', 'fastai']
 
     def handle_request(self, request, func):
-        if request.method != "POST":
-            return Response(response="Only accept POST request", status=400)
-
         input_streams = []
         for filename in self.input_names:
             file = request.files.get(filename)

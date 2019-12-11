@@ -259,7 +259,7 @@ class BentoAPIServer:
                 rule="/{}".format(api.name),
                 endpoint=api.name,
                 view_func=route_function,
-                methods=["POST", "GET"],
+                methods=api.handler.HTTP_METHODS,
             )
 
     def setup_instruments(self):

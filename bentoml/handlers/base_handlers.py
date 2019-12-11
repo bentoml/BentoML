@@ -27,6 +27,8 @@ class BentoHandler:
     the input to user's API function.
     """
 
+    HTTP_METHODS = ["POST", "GET"]
+
     def handle_request(self, request, func):
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API

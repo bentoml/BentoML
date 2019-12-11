@@ -86,6 +86,8 @@ class ImageHandler(BentoHandler):
         ImportError: imageio package is required to use ImageHandler
     """
 
+    HTTP_METHODS = ["POST"]
+
     def __init__(
         self, input_names=("image",), accept_image_formats=None, pilmode="RGB"
     ):
@@ -127,11 +129,6 @@ class ImageHandler(BentoHandler):
         Return:
             response object
         """
-        if request.method != "POST":
-            return Response(
-                response="BentoML#ImageHandler only accept POST request", status=405
-            )
-
         if len(self.input_names) == 1 and len(request.files) == 1:
             # Ignore multipart form input name when ImageHandler is intended to accept
             # only one image file at a time

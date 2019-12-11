@@ -21,6 +21,7 @@ import argparse
 import base64
 from io import BytesIO
 
+from werkzeug.exceptions import BadRequest, MethodNotAllowed
 from werkzeug.utils import secure_filename
 from flask import Response
 import numpy as np
@@ -122,7 +123,7 @@ class FastaiImageHandler(BentoHandler):
 
     def handle_request(self, request, func):
         if request.method != "POST":
-            return Response(response="Only accept POST request", status=400)
+            raise MethodNotAllowed("Only accept POST request")
 
         input_streams = []
         for filename in self.input_names:
@@ -137,7 +138,7 @@ class FastaiImageHandler(BentoHandler):
             if data:
                 input_streams = (data,)
             else:
-                raise ValueError(
+                raise BadRequest(
                     "BentoML#ImageHandler unexpected HTTP request: %s" % request
                 )
 

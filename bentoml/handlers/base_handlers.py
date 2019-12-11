@@ -21,6 +21,8 @@ import json
 import pandas as pd
 import numpy as np
 
+from werkzeug.exceptions import BadRequest
+
 
 class BentoHandler:
     """Handler in BentoML is the layer between a user API request and
@@ -81,4 +83,4 @@ def get_output_str(result, output_format, output_orient="records"):
                 # when result is not JSON serializable
                 return json.dumps(str(result))
     else:
-        raise ValueError("Output format {} is not supported".format(output_format))
+        raise BadRequest("Output format {} is not supported".format(output_format))

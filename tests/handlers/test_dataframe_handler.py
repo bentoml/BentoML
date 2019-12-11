@@ -87,7 +87,8 @@ def test_check_dataframe_column_contains():
         check_dataframe_column_contains(
             {"a": "int", "b": "int", "d": "int", "e": "int"}, df
         )
-    assert "Missing columns: e,d, required_column:{'b', 'c', 'a'}" in str(e.value)
+    assert "Missing columns:" in str(e.value)
+    assert "required_column:" in str(e.value)
 
 
 def test_dataframe_handle_request_csv():

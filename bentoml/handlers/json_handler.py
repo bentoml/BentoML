@@ -69,7 +69,10 @@ class JsonHandler(BentoHandler):
         if event["headers"]["Content-Type"] == "application/json":
             parsed_json = json.loads(event["body"])
         else:
-            raise BadRequest("Only accept json as content type")
+            raise BadRequest(
+                "Request content-type must be 'application/json' for this "
+                "BentoService API lambda endpoint"
+            )
 
         result = func(parsed_json)
         result = get_output_str(result, event["headers"].get("output", "json"))

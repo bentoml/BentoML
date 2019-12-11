@@ -1,3 +1,7 @@
+import pytest
+
+from werkzeug.exceptions import BadRequest
+
 from bentoml.handlers import JsonHandler
 
 
@@ -37,5 +41,7 @@ def test_json_handle_aws_lambda_event():
         "headers": {"Content-Type": "this_will_fail"},
         "body": test_content,
     }
-    error_response = handler.handle_aws_lambda_event(error_event_obj, test_func)
-    assert error_response["statusCode"] == 400
+    with pytest.raises(BadRequest) as e:
+        handler.handle_aws_lambda_event(error_event_obj, test_func)
+
+    assert "Request content-type must be 'application/json" in str(e.value)

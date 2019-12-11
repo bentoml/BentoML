@@ -16,7 +16,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
 from bentoml.proto.deployment_pb2 import DeploymentSpec
@@ -54,8 +53,10 @@ def get_deployment_operator(deployment_pb):
         raise BentoMLDeploymentException("DeployOperator must be set")
 
 
-@add_metaclass(ABCMeta)
 class DeploymentOperatorBase(object):
+
+    __metaclass__ = ABCMeta
+
     @abstractmethod
     def apply(self, deployment_pb, yatai_service, prev_deployment):
         """

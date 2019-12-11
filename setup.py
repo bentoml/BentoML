@@ -12,11 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import setuptools
 import versioneer
-
-PY3 = sys.version_info.major == 3
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -26,13 +23,11 @@ install_requires = [
     "numpy",
     "flask",
     "gunicorn",
-    "six",
     "click>=7.0",
     "pandas",
     "prometheus_client",
     "python-json-logger",
     "boto3",
-    "pathlib2",
     "requests",
     "packaging",
     "docker",
@@ -81,13 +76,11 @@ dev_requires = [
     "setuptools",
     "gitpython>=2.0.2",
     "grpcio-tools",
-] + test_requires
+    "pylint>=2.3.1",
+    "tox-conda>=0.2.0",
+    "black",
+]
 
-if PY3:
-    # Python3 only python dev tools
-    dev_requires += ["pylint>=2.3.1", "tox-conda>=0.2.0", "black"]
-else:
-    dev_requires += ["pylint"]
 
 docs_requires = ["sphinx", "sphinx-click", "sphinx_rtd_theme", "sphinxcontrib-fulltoc"]
 
@@ -105,9 +98,9 @@ setuptools.setup(
     name="BentoML",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    author="atalaya.io",
-    author_email="contact@atalaya.io",
-    description="A python framework for serving and operating machine learning models",
+    author="bentoml.org",
+    description="A platform for serving and deploying machine learning models in the "
+    "cloud",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=install_requires,
@@ -115,14 +108,14 @@ setuptools.setup(
     url="https://github.com/bentoml/BentoML",
     packages=setuptools.find_packages(exclude=["tests*"]),
     classifiers=[
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: CPython",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+    python_requires=">=3.4",
     entry_points={"console_scripts": ["bentoml=bentoml.cli:cli"]},
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",

@@ -22,12 +22,10 @@ import sys
 import inspect
 import importlib
 import logging
+from pathlib import Path
 from shutil import copyfile
 from modulefinder import ModuleFinder
 
-from six import string_types, iteritems
-
-from bentoml.utils import Path
 from bentoml.exceptions import BentoMLException
 
 
@@ -77,7 +75,7 @@ def copy_used_py_modules(target_module, destination):
     """
 
     # When target_module is a string, try import it
-    if isinstance(target_module, string_types):
+    if isinstance(target_module, str):
         try:
             target_module = importlib.import_module(target_module)
         except ImportError:
@@ -163,7 +161,7 @@ def copy_used_py_modules(target_module, destination):
     # local python code, all other dependencies must be defined with @env
     # decorator when creating a new BentoService class
     user_packages_and_modules = {}
-    for name, module in iteritems(finder.modules):
+    for name, module in finder.modules.items():
         if name == "bentoml" or name.startswith("bentoml."):
             pass
         elif hasattr(module, "__file__") and module.__file__ is not None:
@@ -188,7 +186,7 @@ def copy_used_py_modules(target_module, destination):
     user_packages_and_modules[target_module_name] = target_module
     logger.debug("Copying user local python dependecies: %s", user_packages_and_modules)
 
-    for module_name, module in iteritems(user_packages_and_modules):
+    for module_name, module in user_packages_and_modules.items():
         module_file = _get_module_src_file(module)
         relative_path = _get_module_relative_file_path(module_name, module_file)
         target_file = os.path.join(destination, relative_path)

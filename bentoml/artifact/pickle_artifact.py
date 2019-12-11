@@ -18,8 +18,6 @@ from __future__ import print_function
 
 import os
 
-from six import string_types
-
 from bentoml.utils import cloudpickle
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
@@ -40,7 +38,7 @@ class PickleArtifact(BentoServiceArtifact):
 
         self._pickle_extension = pickle_extension
 
-        if isinstance(pickle_module, string_types):
+        if isinstance(pickle_module, str):
             self._pickle = __import__(pickle_module)
         else:
             self._pickle = pickle_module

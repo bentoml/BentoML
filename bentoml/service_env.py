@@ -18,9 +18,10 @@ from __future__ import print_function
 
 import os
 from sys import version_info
+from pathlib import Path
+
 from ruamel.yaml import YAML
 
-from bentoml.utils import Path
 from bentoml.configuration import get_bentoml_deploy_version
 
 PYTHON_VERSION = "{major}.{minor}.{micro}".format(

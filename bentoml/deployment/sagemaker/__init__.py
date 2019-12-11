@@ -21,8 +21,8 @@ import shutil
 import base64
 import logging
 import json
+from urllib.parse import urlparse
 
-from six.moves.urllib.parse import urlparse
 import boto3
 import docker
 
@@ -72,7 +72,7 @@ RUN set -x \\
 # update conda, pre-install BentoML base dependencies
 RUN conda update conda -y \\
       && conda install pip numpy scipy \\
-      && pip install gunicorn six gevent
+      && pip install gunicorn gevent
 
 # copy over model files
 COPY . /opt/program

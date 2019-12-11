@@ -18,9 +18,10 @@ from __future__ import print_function
 
 import os
 import logging
+from pathlib import Path
 
 from bentoml import __version__
-from bentoml.utils import Path, _is_pypi_release
+from bentoml.utils import _is_pypi_release
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
 

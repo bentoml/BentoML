@@ -19,7 +19,6 @@ from __future__ import print_function
 import os
 import logging
 import shutil
-from six import iteritems
 from flask import Response
 from gunicorn.app.base import Application
 
@@ -103,11 +102,11 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         gunicorn_config = dict(
             [
                 (key, value)
-                for key, value in iteritems(self.options)
+                for key, value in self.options.items()
                 if key in self.cfg.settings and value is not None
             ]
         )
-        for key, value in iteritems(gunicorn_config):
+        for key, value in gunicorn_config.items():
             self.cfg.set(key.lower(), value)
 
     def load(self):

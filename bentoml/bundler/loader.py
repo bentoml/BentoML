@@ -23,8 +23,7 @@ import tarfile
 import logging
 import tempfile
 from contextlib import contextmanager
-from six.moves.urllib.parse import urlparse
-from six import PY3
+from urllib.parse import urlparse
 
 import boto3
 from bentoml.utils.s3 import is_s3_url
@@ -63,14 +62,9 @@ def load_saved_bundle_config(bundle_path):
         with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
             return load_saved_bundle_config(local_bundle_path)
 
-    if PY3:
-        not_found_error = FileNotFoundError
-    else:
-        not_found_error = OSError
-
     try:
         return SavedBundleConfig.load(os.path.join(bundle_path, "bentoml.yml"))
-    except not_found_error:
+    except FileNotFoundError:
         raise BentoMLException(
             "BentoML can't locate config file 'bentoml.yml'"
             " in saved bundle in path: {}".format(bundle_path)
@@ -135,9 +129,7 @@ def load_bento_service_class(bundle_path):
         )
         # pylint:enable=deprecated-method
     else:
-        import imp
-
-        module = imp.load_source(module_name, module_file_path)
+        raise BentoMLException("BentoML requires Python 3.4 and above")
 
     # Remove bundle_path from sys.path to avoid import naming conflicts
     sys.path.remove(bundle_path)

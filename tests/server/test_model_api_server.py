@@ -1,9 +1,7 @@
 import os
-import sys
 import json
 from io import BytesIO
 
-from six import PY3
 from bentoml.server import BentoAPIServer
 
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -34,10 +32,8 @@ def test_api_function_route(bento_service, tmpdir):
     response = test_client.post(
         "/predict_dataframe", data=json.dumps(data), content_type="application/json"
     )
-    if PY3:
-        assert response.data.decode().strip() == '"30"'
-    else:
-        assert response.data.decode().strip() == "30"
+    assert response.data.decode().strip() == '"30"'
+
 
     # Test Image handlers.
     img_file = tmpdir.join("test_img.png")

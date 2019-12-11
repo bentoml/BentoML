@@ -50,15 +50,13 @@ class TestBentoService(bentoml.BentoService):
     def predict_json(self, input_data):
         return self.artifacts.model.predict_json(input_data)
 
-    if six.PY3:
+    @bentoml.api(FastaiImageHandler)
+    def predict_fastai_image(self, input_data):
+        return self.artifacts.model.predict_image(input_data)
 
-        @bentoml.api(FastaiImageHandler)
-        def predict_fastai_image(self, input_data):
-            return self.artifacts.model.predict_image(input_data)
-
-        @bentoml.api(FastaiImageHandler, input_names=('original', 'compared'))
-        def predict_fastai_images(self, original, compared):
-            return all(original.data[0, 0] == compared.data[0, 0])
+    @bentoml.api(FastaiImageHandler, input_names=('original', 'compared'))
+    def predict_fastai_images(self, original, compared):
+        return all(original.data[0, 0] == compared.data[0, 0])
 
 
 @pytest.fixture()

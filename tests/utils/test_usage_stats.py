@@ -10,12 +10,8 @@ def test_get_bento_service_event_properties(bento_service):
     assert 'DataframeHandler' in properties["handler_types"]
     assert 'ImageHandler' in properties["handler_types"]
     assert 'JsonHandler' in properties["handler_types"]
-
-    if six.PY3:
-        assert 'FastaiImageHandler' in properties["handler_types"]
-        assert len(properties["handler_types"]) == 4
-    else:
-        assert len(properties["handler_types"]) == 3
+    assert 'FastaiImageHandler' in properties["handler_types"]
+    assert len(properties["handler_types"]) == 4
 
     assert properties["env"] is not None
     assert properties["env"]["conda_env"]["channels"] == ["defaults"]

@@ -341,6 +341,11 @@ class BentoAPIServer:
                 if not config('logging').getboolean('disable_logging_image'):
                     image_paths = self.log_image(request, request_id)
 
+                # _request_to_json parses request as JSON; in case errors, it raises
+                # a 400 exception. (consider 4xx before 5xx.)
+                request_for_log = _request_to_json(request)
+
+                # handle_request may raise 4xx or 5xx exception.
                 response = api.handle_request(request)
 
                 request_log = {
@@ -348,7 +353,7 @@ class BentoAPIServer:
                     "service_name": service_name,
                     "service_version": service_version,
                     "api": api.name,
-                    "request": _request_to_json(request),
+                    "request": request_for_log,
                     "response_code": response.status_code,
                 }
 

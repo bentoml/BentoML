@@ -303,24 +303,26 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                             lambda_project_dir, '.aws-sam', 'build', api_name
                         )
                         logger.debug(
-                            'Checking is function "{}" bundle under lambda size limit'.format(
-                                api_name
-                            )
+                            'Checking is function "%s" bundle under lambda size '
+                            'limit',
+                            api_name,
                         )
                         if not is_build_function_size_under_lambda_limit(
                             build_directory
                         ):
                             logger.debug(
-                                'Function {} is over lambda size limit, attempting '
-                                'reduce it'.format(api_name)
+                                'Function %s is over lambda size limit, attempting '
+                                'reduce it',
+                                api_name,
                             )
                             reduce_lambda_function_size(
-                                lambda_deployment_config.region,
-                                lambda_s3_bucket,
-                                deployment_path_prefix,
-                                build_directory,
-                                api_name,
-                                lambda_project_dir,
+                                region=lambda_deployment_config.region,
+                                s3_bucket=lambda_s3_bucket,
+                                s3_prefix=deployment_path_prefix,
+                                build_directory=build_directory,
+                                function_name=api_name,
+                                root_dir=lambda_project_dir,
+                                bento_service_name=deployment_spec.bento_name,
                             )
                     logger.info(
                         'Packaging AWS Lambda project at %s ...', lambda_project_dir

@@ -27,7 +27,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 
-from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
+from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
@@ -272,7 +272,7 @@ def _sum_total_directory_size(directory):
 
 def is_build_function_size_under_lambda_limit(build_directory):
     dir_size = _sum_total_directory_size(build_directory)
-    logger.debug('Directory {} size is {}'.format(build_directory, dir_size))
+    logger.debug('Directory %s size is %d', build_directory, dir_size)
     return False if dir_size > LAMBDA_LIMIT else True
 
 
@@ -291,9 +291,7 @@ def reduce_lambda_function_size(
     upload_dir_path = os.path.join(additional_requirements_path, 'requirements')
     s3_client = boto3.client('s3', region)
 
-    # what we going to do is continue to figure out each directory and file size.
-    # continue add them up to limit and then rest of them will go to additional
-    # requirements list
+    # list of modules that HAVE to be part of the function bundle
     lambda_function_required_bundled_list = [
         'botocore',
         'boto3',
@@ -307,10 +305,12 @@ def reduce_lambda_function_size(
         _sum_total_directory_size(os.path.join(build_directory, i))
         for i in lambda_function_required_bundled_list
     )
-    logger.debug('Basic function size is {} '.format(str(current_function_size)))
+    logger.debug('Basic function size is %d', current_function_size)
+    # Continue include modules until the function bundle size is at the limit. Rest of
+    # the modules will be tar and upload to s3 bucket
     for file_or_dir_name in os.listdir(build_directory):
         if file_or_dir_name in lambda_function_required_bundled_list:
-            logger.debug('{} is part of required bundle.'.format(file_or_dir_name))
+            logger.debug('%s is part of required bundle.', file_or_dir_name)
             continue
         else:
             function_size_limit = current_function_size + _sum_total_directory_size(
@@ -318,10 +318,10 @@ def reduce_lambda_function_size(
             )
             if function_size_limit >= LAMBDA_LIMIT:
                 logger.debug(
-                    'Lambda function size {} is over the limit. Moving item "{}" '
-                    'out of the bundle directory'.format(
-                        str(function_size_limit), file_or_dir_name
-                    )
+                    'Lambda function size %d is over the limit. Moving item "%s" '
+                    'out of the bundle directory',
+                    function_size_limit,
+                    file_or_dir_name,
                 )
                 package_path = os.path.join(build_directory, file_or_dir_name)
                 copy_dst_path = os.path.join(upload_dir_path, file_or_dir_name)
@@ -333,9 +333,9 @@ def reduce_lambda_function_size(
                     os.remove(package_path)
             else:
                 logger.debug(
-                    'Including {}. Current lambda function size is {}'.format(
-                        file_or_dir_name, str(function_size_limit)
-                    )
+                    'Including %s. Now the current lambda function size is %d',
+                    file_or_dir_name,
+                    function_size_limit,
                 )
                 current_function_size = function_size_limit
     logger.debug('zip up additional requirement packages')
@@ -343,11 +343,10 @@ def reduce_lambda_function_size(
     with tarfile.open(tar_file_path, 'w:gz') as tar:
         tar.add(upload_dir_path, arcname='requirements')
 
-    logger.debug('Uploading requirements.tar to {}/{}'.format(s3_bucket, s3_prefix))
+    logger.debug('Uploading requirements.tar to %s/%s', s3_bucket, s3_prefix)
     try:
         s3_client.upload_file(
             tar_file_path, s3_bucket, os.path.join(s3_prefix, 'requirements.tar')
         )
     except ClientError as e:
-        # TODO
         raise BentoMLException(str(e))

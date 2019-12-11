@@ -34,16 +34,12 @@ if not os.path.exists(additional_pkg_dir):
     s3_client = boto3.client('s3')
     s3_file_path = os.path.join(s3_prefix, 'requirements.tar')
     if not os.path.isfile(saved_file_path):
-        logger.debug(
-            'requirement.tar does not exist, downloading from {}'.format(s3_bucket)
-        )
+        logger.debug('requirement.tar does not exist, downloading from %s', s3_bucket)
         try:
             s3_client.download_file(s3_bucket, s3_file_path, saved_file_path)
         except ClientError as e:
             if e.response['Error']['Code'] == "404":
-                logger.error(
-                    'File {}/{} does not exists'.format(s3_bucket, s3_file_path)
-                )
+                logger.error('File %s/%s does not exists', s3_bucket, s3_file_path)
             else:
                 raise
     logger.debug('Extracting content from tar file')

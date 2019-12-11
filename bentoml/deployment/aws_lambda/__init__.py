@@ -307,7 +307,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                                 api_name
                             )
                         )
-                        if not is_build_function_size_under_lambda_limit(build_directory):
+                        if not is_build_function_size_under_lambda_limit(
+                            build_directory
+                        ):
                             logger.debug(
                                 'Function {} is over lambda size limit, attempting '
                                 'reduce it'.format(api_name)

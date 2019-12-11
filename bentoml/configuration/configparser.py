@@ -21,7 +21,7 @@ import logging
 from collections import OrderedDict
 from configparser import ConfigParser
 
-from bentoml.exceptions import BentoMLConfigException
+from bentoml.exceptions import ConfigException
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class BentoMLConfigParser(ConfigParser):
         if ConfigParser.has_option(self, section, key):
             return ConfigParser.get(self, section, key, **kwargs)
         else:
-            raise BentoMLConfigException(
+            raise ConfigException(
                 "section/key '{}/{}' not found in BentoML config".format(section, key)
             )
 

@@ -40,7 +40,7 @@ from bentoml.deployment.utils import (
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.yatai.status import Status
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.exceptions import BentoMLDeploymentException, BentoMLException
+from bentoml.exceptions import DeploymentException, BentoMLException
 from bentoml.deployment.sagemaker.templates import (
     DEFAULT_NGINX_CONFIG,
     DEFAULT_WSGI_PY,
@@ -122,7 +122,7 @@ def get_arn_role_from_current_aws_user():
             ):
                 arn = role["Arn"]
         if arn is None:
-            raise BentoMLDeploymentException(
+            raise DeploymentException(
                 "Can't find proper Arn role for Sagemaker, please create one and try "
                 "again"
             )
@@ -131,7 +131,7 @@ def get_arn_role_from_current_aws_user():
         role_response = iam_client.get_role(RoleName=type_role[1])
         return role_response["Role"]["Arn"]
 
-    raise BentoMLDeploymentException(
+    raise DeploymentException(
         "Not supported role type {}; sts arn is {}".format(type_role[0], sts_arn)
     )
 
@@ -337,7 +337,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
             if sagemaker_config is None:
-                raise BentoMLDeploymentException('Sagemaker configuration is missing.')
+                raise DeploymentException('Sagemaker configuration is missing.')
 
             bento_pb = yatai_service.GetBento(
                 GetBentoRequest(
@@ -507,7 +507,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
             if sagemaker_config is None:
-                raise BentoMLDeploymentException('Sagemaker configuration is missing.')
+                raise DeploymentException('Sagemaker configuration is missing.')
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
             endpoint_name = generate_aws_compatible_string(
@@ -560,7 +560,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
             if sagemaker_config is None:
-                raise BentoMLDeploymentException('Sagemaker configuration is missing.')
+                raise DeploymentException('Sagemaker configuration is missing.')
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
             endpoint_name = generate_aws_compatible_string(
                 deployment_pb.namespace + '-' + deployment_spec.bento_name

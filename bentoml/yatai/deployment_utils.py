@@ -22,7 +22,7 @@ import logging
 from ruamel.yaml import YAML
 
 from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
-from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
+from bentoml.exceptions import BentoMLException, DeploymentException
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def deployment_dict_to_pb(deployment_dict):
     if deployment_dict.get('spec'):
         spec_dict = deployment_dict.get('spec')
     else:
-        raise BentoMLDeploymentException('"spec" is required field for deployment')
+        raise DeploymentException('"spec" is required field for deployment')
     platform = spec_dict.get('operator')
     if platform is not None:
         # converting platform parameter to DeploymentOperator name in proto

@@ -24,7 +24,7 @@ from sqlalchemy import Column, String, Integer, DateTime, JSON, UniqueConstraint
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
-from bentoml.exceptions import BentoMLDeploymentException
+from bentoml.exceptions import DeploymentException
 from bentoml.db import Base, create_session
 from bentoml.proto import deployment_pb2
 from bentoml.utils import ProtoMessageToDict
@@ -142,7 +142,7 @@ class DeploymentStore(object):
                 )
                 return sess.delete(deployment)
             except NoResultFound:
-                raise BentoMLDeploymentException(
+                raise DeploymentException(
                     "Deployment '%s' in namespace: '%s' is not found" % name, namespace
                 )
 

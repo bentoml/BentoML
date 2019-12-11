@@ -17,34 +17,41 @@ from __future__ import division
 from __future__ import print_function
 
 
+from bentoml.proto.status_pb2 import Status as StatusProto
+
+
 class BentoMLException(Exception):
     """
     Base class for all BentoML's errors.
     Each custom exception should be derived from this class
     """
 
-    status_code = 500
+    status_code = StatusProto.INTERNAL
 
 
-class BentoMLArtifactLoadingException(BentoMLException):
+class ArtifactLoadingException(BentoMLException):
     pass
 
 
-class BentoMLConfigException(BentoMLException):
+class ConfigException(BentoMLException):
     pass
 
 
-class BentoMLDeploymentException(BentoMLException):
+class MissingDependencyException(BentoMLException):
     pass
 
 
-class BentoMLRepositoryException(BentoMLException):
+class InvalidArgumentException(BentoMLException):
+    status_code = StatusProto.INVALID_ARGUMENT
+
+
+class YataiServiceException(BentoMLException):
     pass
 
 
-class BentoMLMissingDependencyException(BentoMLException):
+class DeploymentException(YataiServiceException):
     pass
 
 
-class BentoMLInvalidArgumentException(BentoMLException):
+class RepositoryException(YataiServiceException):
     pass

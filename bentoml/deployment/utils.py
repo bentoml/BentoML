@@ -23,8 +23,8 @@ import subprocess
 
 from bentoml.exceptions import (
     BentoMLException,
-    BentoMLMissingDependencyException,
-    BentoMLInvalidArgumentException,
+    MissingDependencyException,
+    InvalidArgumentException,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ def ensure_docker_available_or_raise():
             'Error executing docker command: {}'.format(error.output.decode())
         )
     except FileNotFoundError:
-        raise BentoMLMissingDependencyException(
+        raise MissingDependencyException(
             'Docker is required for this deployment. Please visit '
             'www.docker.com for instructions'
         )
@@ -75,7 +75,7 @@ def raise_if_api_names_not_found_in_bento_service_metadata(metadata, api_names):
     all_api_names = [api.name for api in metadata.apis]
 
     if not set(api_names).issubset(all_api_names):
-        raise BentoMLInvalidArgumentException(
+        raise InvalidArgumentException(
             "Expect api names {api_names} to be "
             "subset of {all_api_names}".format(
                 api_names=api_names, all_api_names=all_api_names
@@ -86,7 +86,7 @@ def raise_if_api_names_not_found_in_bento_service_metadata(metadata, api_names):
 def exception_to_return_status(error):
     from bentoml.yatai.status import Status
 
-    if type(error) is BentoMLInvalidArgumentException:
+    if type(error) is InvalidArgumentException:
         return Status.INVALID_ARGUMENT(str(error))
     else:
         return Status.INTERNAL(str(error))

@@ -268,19 +268,19 @@ class BentoAPIServer:
         service_name = self.bento_service.name
         namespace = config('instrument').get('default_namespace')
 
-        self.prometheus_histogram = Histogram(
+        self.metrics_request_duration = Histogram(
             name=service_name + '_request_duration_seconds',
             documentation=service_name + " API HTTP request duration in seconds",
             namespace=namespace,
             labelnames=['api_name', 'service_version', 'http_response_code'],
         )
-        self.prometheus_counter = Counter(
+        self.metrics_request_total = Counter(
             name=service_name + "_request_total",
             documentation='Totoal number of HTTP requests',
             namespace=namespace,
             labelnames=['api_name', 'service_version', 'http_response_code'],
         )
-        self.prometheus_gauge = Gauge(
+        self.metrics_request_in_progress = Gauge(
             name=service_name + "_request_in_progress",
             documentation='Totoal number of HTTP requests in progress now',
             namespace=namespace,
@@ -331,7 +331,7 @@ class BentoAPIServer:
         service_version = self.bento_service.version
 
         def api_func_wrapper():
-            with self.prometheus_gauge.labels(
+            with self.metrics_request_in_progress.labels(
                 api_name=api.name, service_version=service_version
             ).track_inprogress():
 
@@ -364,14 +364,14 @@ class BentoAPIServer:
 
                 # instrument request duration
                 total_time = max(default_timer() - request_start_time, 0)
-                self.prometheus_histogram.labels(
+                self.metrics_request_duration.labels(
                     api_name=api.name,
                     service_version=service_version,
                     http_response_code=response.status_code,
                 ).observe(total_time)
 
                 # instrument request total count
-                self.prometheus_counter.labels(
+                self.metrics_request_total.labels(
                     api_name=api.name,
                     service_version=service_version,
                     http_response_code=response.status_code,

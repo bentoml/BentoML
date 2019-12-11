@@ -21,6 +21,7 @@ import uuid
 import json
 import time
 import logging
+from timeit import default_timer
 from functools import partial
 from collections import OrderedDict
 
@@ -262,22 +263,28 @@ class BentoAPIServer:
             )
 
     def setup_instruments(self):
-        from prometheus_client import Summary, Counter
+        from prometheus_client import Histogram, Counter, Gauge
 
         service_name = self.bento_service.name
         namespace = config('instrument').get('default_namespace')
 
-        self.request_duration = Summary(
+        self.metrics_request_duration = Histogram(
             name=service_name + '_request_duration_seconds',
-            documentation=service_name + " request duration in seconds",
-            namespace=namespace,
-            labelnames=['api_name', 'service_version'],
-        )
-        self.request_counter = Counter(
-            name=service_name + "_counter",
-            documentation='request count by response http status code',
+            documentation=service_name + " API HTTP request duration in seconds",
             namespace=namespace,
             labelnames=['api_name', 'service_version', 'http_response_code'],
+        )
+        self.metrics_request_total = Counter(
+            name=service_name + "_request_total",
+            documentation='Totoal number of HTTP requests',
+            namespace=namespace,
+            labelnames=['api_name', 'service_version', 'http_response_code'],
+        )
+        self.metrics_request_in_progress = Gauge(
+            name=service_name + "_request_in_progress",
+            documentation='Totoal number of HTTP requests in progress now',
+            namespace=namespace,
+            labelnames=['api_name', 'service_version'],
         )
 
     @staticmethod
@@ -316,19 +323,19 @@ class BentoAPIServer:
 
     def bento_service_api_func_wrapper(self, api):
         """
-        Create api function for flask route
+        Create api function for flask route, it wraps around user defined API
+        callback and BentoHandler class, and adds request logging and instrument metrics
         """
+        request_id = str(uuid.uuid4())
+        service_name = self.bento_service.name
+        service_version = self.bento_service.version
 
         def api_func_wrapper():
-            service_name = self.bento_service.name
-            service_version = self.bento_service.version
-
-            with self.request_duration.labels(
+            with self.metrics_request_in_progress.labels(
                 api_name=api.name, service_version=service_version
-            ).time():
-                request_id = str(uuid.uuid4())
-                # Assume there is not a strong use case for idempotency check here.
-                # Will revise later if we find a case.
+            ).track_inprogress():
+
+                request_start_time = default_timer()
 
                 image_paths = []
                 if not config('logging').getboolean('disable_logging_image'):
@@ -355,13 +362,21 @@ class BentoAPIServer:
 
                 response.headers["request_id"] = request_id
 
-                # instrument request count by status_code
-                self.request_counter.labels(
+                # instrument request duration
+                total_time = max(default_timer() - request_start_time, 0)
+                self.metrics_request_duration.labels(
+                    api_name=api.name,
+                    service_version=service_version,
+                    http_response_code=response.status_code,
+                ).observe(total_time)
+
+                # instrument request total count
+                self.metrics_request_total.labels(
                     api_name=api.name,
                     service_version=service_version,
                     http_response_code=response.status_code,
                 ).inc()
 
-                return response
+            return response
 
         return api_func_wrapper

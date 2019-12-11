@@ -23,6 +23,7 @@ import click
 import logging
 import tempfile
 import subprocess
+from pathlib import Path
 
 from ruamel.yaml import YAML
 
@@ -36,7 +37,7 @@ from bentoml.server import BentoAPIServer, get_docs
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
-from bentoml.utils import Path, ProtoMessageToDict
+from bentoml.utils import ProtoMessageToDict
 from bentoml.utils.log import configure_logging
 from bentoml.utils.usage_stats import track_cli
 

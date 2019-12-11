@@ -21,13 +21,13 @@ import logging
 import json
 
 from packaging import version
+from pathlib import Path
 
 from ruamel.yaml import YAML
 import boto3
 
 from bentoml.bundler import loader
 from bentoml.exceptions import BentoMLException
-from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status

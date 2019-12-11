@@ -19,8 +19,8 @@ from __future__ import print_function
 import os
 import shutil
 import logging
+import pathlib
 
-from bentoml.utils import pathlib
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 
 

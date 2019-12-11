@@ -32,7 +32,6 @@ install_requires = [
     "prometheus_client",
     "python-json-logger",
     "boto3",
-    "pathlib2",
     "requests",
     "packaging",
     "docker",

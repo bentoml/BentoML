@@ -27,13 +27,6 @@ from ruamel.yaml import YAML
 from bentoml import __version__ as BENTOML_VERSION, _version as version_mod
 
 try:
-    import pathlib
-except (ImportError, AttributeError):
-    import pathlib2 as pathlib
-Path = pathlib.Path
-
-
-try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO

@@ -20,6 +20,7 @@ import os
 import json
 import shutil
 import boto3
+from pathlib import Path
 from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 from six.moves.urllib.parse import urlparse
@@ -28,7 +29,6 @@ from six.moves.urllib.parse import urlparse
 from bentoml import config
 from bentoml.exceptions import BentoMLRepositoryException
 from bentoml.utils.s3 import is_s3_url
-from bentoml.utils import Path
 from bentoml.proto.repository_pb2 import BentoUri
 
 

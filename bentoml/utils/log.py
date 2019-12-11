@@ -19,9 +19,9 @@ from __future__ import print_function
 import os
 import sys
 import logging.config
+from pathlib import Path
 
 from bentoml import config
-from bentoml.utils import Path
 
 
 def get_logging_config_dict(logging_level, base_log_directory):

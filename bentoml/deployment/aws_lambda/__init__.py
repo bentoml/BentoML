@@ -20,6 +20,7 @@ import json
 import os
 import logging
 import uuid
+from pathlib import Path
 
 from botocore.exceptions import ClientError
 
@@ -49,7 +50,6 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentResponse,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
-from bentoml.utils import Path
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists, upload_directory_to_s3
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status

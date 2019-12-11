@@ -22,12 +22,12 @@ import sys
 import inspect
 import importlib
 import logging
+from pathlib import Path
 from shutil import copyfile
 from modulefinder import ModuleFinder
 
 from six import string_types, iteritems
 
-from bentoml.utils import Path
 from bentoml.exceptions import BentoMLException
 
 

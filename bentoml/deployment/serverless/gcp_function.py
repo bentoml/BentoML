@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import os
 import logging
+from pathlib import Path
 
 from ruamel.yaml import YAML
 
@@ -26,7 +27,6 @@ from bentoml.deployment.utils import (
     raise_if_api_names_not_found_in_bento_service_metadata,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
-from bentoml.utils import Path
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status

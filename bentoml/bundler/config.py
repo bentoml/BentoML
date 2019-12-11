@@ -19,12 +19,13 @@ from __future__ import print_function
 import os
 import logging
 from datetime import datetime
+from pathlib import Path
 
 from ruamel.yaml import YAML
 
 from bentoml import __version__ as BENTOML_VERSION
 from bentoml.configuration import get_bentoml_deploy_version
-from bentoml.utils import Path, dump_to_yaml_str
+from bentoml.utils import dump_to_yaml_str
 from bentoml.proto.repository_pb2 import BentoServiceMetadata
 
 

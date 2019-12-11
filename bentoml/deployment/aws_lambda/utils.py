@@ -32,7 +32,7 @@ from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
 logger = logging.getLogger(__name__)
 
 
-LAMBDA_LIMIT = 250000000
+LAMBDA_LIMIT = 262144000
 
 
 def ensure_sam_available_or_raise():
@@ -89,10 +89,6 @@ def cleanup_build_files(project_dir, api_name):
         if 'caff2' in files:
             logger.debug('removing file: %s', os.path.join(root, 'caff2'))
             os.remove(os.path.join(root, 'caff2'))
-        # libtorch.so is 1.2G
-        if 'libtorch.so' in files:
-            logger.debug('removing file: %s', os.path.join(root, 'libtorch.so'))
-            os.remove(os.path.join(root, 'libtorch.so'))
 
 
 def call_sam_command(command, project_dir):
@@ -244,6 +240,12 @@ def init_sam_project(
 
     app_py_path = os.path.join(os.path.dirname(__file__), 'lambda_app.py')
     shutil.copy(app_py_path, os.path.join(function_path, 'app.py'))
+    unzip_requirement_py_path = os.path.join(
+        os.path.dirname(__file__), 'unzip_requirements.py'
+    )
+    shutil.copy(
+        unzip_requirement_py_path, os.path.join(function_path, 'unzip_requirements.py')
+    )
 
     logger.info('Building lambda project')
     return_code, stdout, stderr = call_sam_command(
@@ -261,16 +263,27 @@ def init_sam_project(
         cleanup_build_files(sam_project_path, api_name)
 
 
-def is_build_function_size_under_lambda_limit(build_directory):
+def _sum_total_directory_size(directory):
     dir_size = sum(
-        f.stat().st_size for f in Path(build_directory).glob('**/*') if f.is_file()
+        f.stat().st_size for f in Path(directory).glob('**/*') if f.is_file()
     )
+    return dir_size
+
+
+def is_build_function_size_under_lambda_limit(build_directory):
+    dir_size = _sum_total_directory_size(build_directory)
     logger.debug('Directory {} size is {}'.format(build_directory, dir_size))
     return False if dir_size > LAMBDA_LIMIT else True
 
 
-def reduce_lambda_function_under_limit(
-    region, s3_bucket, s3_prefix, build_directory, function_name, root_dir
+def reduce_lambda_function_size(
+    region,
+    s3_bucket,
+    s3_prefix,
+    build_directory,
+    function_name,
+    root_dir,
+    bento_service_name,
 ):
     additional_requirements_path = os.path.join(
         root_dir, 'additional_requirements', function_name
@@ -278,19 +291,53 @@ def reduce_lambda_function_under_limit(
     upload_dir_path = os.path.join(additional_requirements_path, 'requirements')
     s3_client = boto3.client('s3', region)
 
-    # For fastai packages, We zip up torch 61M, torchvision 30M, spacy 56M, scipy 65M,
-    # matplotlib 19M. Total of 231M
-    fastai_packages = ['torch', 'torchvision', 'spacy', 'scipy', 'matplotlib']
-
-    for dir_name in os.listdir(build_directory):
-        if dir_name in fastai_packages:
-            logger.debug(
-                'remove large directory {} out of bundle directory'.format(dir_name)
+    # what we going to do is continue to figure out each directory and file size.
+    # continue add them up to limit and then rest of them will go to additional
+    # requirements list
+    lambda_function_required_bundled_list = [
+        'botocore',
+        'boto3',
+        'bentoml',
+        'app.py',
+        '__init__.py',
+        'unzip_requirements.py',
+        bento_service_name,
+    ]
+    current_function_size = sum(
+        _sum_total_directory_size(os.path.join(build_directory, i))
+        for i in lambda_function_required_bundled_list
+    )
+    logger.debug('Basic function size is {} '.format(str(current_function_size)))
+    for file_or_dir_name in os.listdir(build_directory):
+        if file_or_dir_name in lambda_function_required_bundled_list:
+            logger.debug('{} is part of required bundle.'.format(file_or_dir_name))
+            continue
+        else:
+            function_size_limit = current_function_size + _sum_total_directory_size(
+                os.path.join(build_directory, file_or_dir_name)
             )
-            package_path = os.path.join(build_directory, dir_name)
-            shutil.copytree(package_path, os.path.join(upload_dir_path, dir_name))
-            shutil.rmtree(package_path)
-
+            if function_size_limit >= LAMBDA_LIMIT:
+                logger.debug(
+                    'Lambda function size {} is over the limit. Moving item "{}" '
+                    'out of the bundle directory'.format(
+                        str(function_size_limit), file_or_dir_name
+                    )
+                )
+                package_path = os.path.join(build_directory, file_or_dir_name)
+                copy_dst_path = os.path.join(upload_dir_path, file_or_dir_name)
+                if os.path.isdir(package_path):
+                    shutil.copytree(package_path, copy_dst_path)
+                    shutil.rmtree(package_path)
+                else:
+                    shutil.copyfile(package_path, copy_dst_path)
+                    os.remove(package_path)
+            else:
+                logger.debug(
+                    'Including {}. Current lambda function size is {}'.format(
+                        file_or_dir_name, str(function_size_limit)
+                    )
+                )
+                current_function_size = function_size_limit
     logger.debug('zip up additional requirement packages')
     tar_file_path = os.path.join(additional_requirements_path, 'requirements.tar')
     with tarfile.open(tar_file_path, 'w:gz') as tar:
@@ -304,28 +351,3 @@ def reduce_lambda_function_under_limit(
     except ClientError as e:
         # TODO
         raise BentoMLException(str(e))
-
-
-def download_and_unzip_additional_packages(
-    s3_bucket, s3_prefix, saved_file_path, unzip_path
-):
-    s3_client = boto3.client('s3')
-    s3_file_path = os.path.join(s3_prefix, 'requirements.tar')
-    if not os.path.isfile(saved_file_path):
-        logger.debug(
-            'requirement.tar does not exist, downloading from {}'.format(s3_bucket)
-        )
-        try:
-            s3_client.download_file(s3_bucket, s3_file_path, saved_file_path)
-        except ClientError as e:
-            if e.response['Error']['Code'] == "404":
-                logger.error(
-                    'File {}/{} does not exists'.format(s3_bucket, s3_file_path)
-                )
-            else:
-                raise
-    logger.debug('Extracting content from tar file')
-    tar = tarfile.open(saved_file_path)
-    tar.extractall(path=unzip_path)
-    logger.debug('Remove tar file')
-    os.remove(saved_file_path)

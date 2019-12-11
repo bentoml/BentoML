@@ -35,7 +35,7 @@ from bentoml.deployment.aws_lambda.utils import (
     lambda_package,
     validate_lambda_template,
     is_build_function_size_under_lambda_limit,
-    reduce_lambda_function_under_limit,
+    reduce_lambda_function_size,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
@@ -312,7 +312,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                                 'Function {} is over lambda size limit, attempting '
                                 'reduce it'.format(api_name)
                             )
-                            reduce_lambda_function_under_limit(
+                            reduce_lambda_function_size(
                                 lambda_deployment_config.region,
                                 lambda_s3_bucket,
                                 deployment_path_prefix,

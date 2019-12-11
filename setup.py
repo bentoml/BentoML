@@ -23,7 +23,6 @@ install_requires = [
     "numpy",
     "flask",
     "gunicorn",
-    "six",
     "click>=7.0",
     "pandas",
     "prometheus_client",

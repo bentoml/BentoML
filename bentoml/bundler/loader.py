@@ -23,7 +23,7 @@ import tarfile
 import logging
 import tempfile
 from contextlib import contextmanager
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 import boto3
 from bentoml.utils.s3 import is_s3_url

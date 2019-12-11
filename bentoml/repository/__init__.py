@@ -21,10 +21,8 @@ import json
 import shutil
 import boto3
 from pathlib import Path
-from six import add_metaclass
 from abc import abstractmethod, ABCMeta
-from six.moves.urllib.parse import urlparse
-
+from urllib.parse import urlparse
 
 from bentoml import config
 from bentoml.exceptions import BentoMLRepositoryException
@@ -32,7 +30,6 @@ from bentoml.utils.s3 import is_s3_url
 from bentoml.proto.repository_pb2 import BentoUri
 
 
-@add_metaclass(ABCMeta)
 class BentoRepositoryBase(object):
     """
     BentoRepository is the interface for managing saved Bentos over file system or
@@ -42,6 +39,8 @@ class BentoRepositoryBase(object):
     easily load back to a Python session, installed as PyPI package, or run in Conda
     or docker environment with all dependencies configured automatically
     """
+
+    __metaclass__ = ABCMeta
 
     @abstractmethod
     def add(self, bento_name, bento_version):

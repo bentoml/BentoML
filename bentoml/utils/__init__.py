@@ -18,11 +18,10 @@ from __future__ import print_function
 
 import re
 import os
-import importlib
 from io import StringIO
+from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 
-from six.moves.urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 from google.protobuf.json_format import MessageToJson, MessageToDict
 from ruamel.yaml import YAML
 
@@ -83,15 +82,9 @@ def _is_pypi_release():
 # branches of BentoML library, it gets triggered when BentoML module is installed
 # via "pip install --editable ."
 def _is_bentoml_in_develop_mode():
-    try:
-        module_location, = importlib.util.find_spec(
-            'bentoml'
-        ).submodule_search_locations
-    except AttributeError:
-        # python 2.7 doesn't have importlib.util, will fall back to imp instead
-        import imp
+    import importlib
 
-        _, module_location, _ = imp.find_module('bentoml')
+    module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
 
     setup_py_path = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
     return not _is_pypi_release() and os.path.isfile(setup_py_path)

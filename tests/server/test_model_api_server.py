@@ -34,7 +34,6 @@ def test_api_function_route(bento_service, tmpdir):
     )
     assert response.data.decode().strip() == '"30"'
 
-
     # Test Image handlers.
     img_file = tmpdir.join("test_img.png")
     imageio.imwrite(str(img_file), np.zeros((10, 10)))

@@ -22,8 +22,6 @@ import inspect
 import logging
 import uuid
 from datetime import datetime
-
-from six import add_metaclass
 from abc import abstractmethod, ABCMeta
 
 from bentoml.artifact.artifact import ARTIFACTS_DIR_NAME
@@ -100,12 +98,13 @@ class BentoServiceAPI(object):
         return self.handler.handle_aws_lambda_event(event, self.func)
 
 
-@add_metaclass(ABCMeta)
 class BentoServiceBase(object):
     """
-    BentoServiceBase is the base abstraction that exposes a list of APIs
-    for BentoAPIServer and BentoCLI to execute
+    BentoServiceBase is an abstraction class that defines the interface for accesing a
+    list of BentoServiceAPI for BentoAPIServer and BentoCLI to execute on
     """
+
+    __metaclass__ = ABCMeta
 
     _service_apis = []
 

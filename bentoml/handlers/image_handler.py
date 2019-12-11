@@ -21,7 +21,6 @@ import argparse
 import base64
 from io import BytesIO
 
-from six import iteritems
 from werkzeug.utils import secure_filename
 from flask import Response
 
@@ -136,7 +135,7 @@ class ImageHandler(BentoHandler):
         if len(self.input_names) == 1 and len(request.files) == 1:
             # Ignore multipart form input name when ImageHandler is intended to accept
             # only one image file at a time
-            input_files = [file for _, file in iteritems(request.files)]
+            input_files = [file for _, file in request.files.items()]
         else:
             input_files = [
                 request.files.get(form_input_name)
@@ -190,16 +189,7 @@ class ImageHandler(BentoHandler):
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):
-            # decodebytes introduced at python3.1
-            try:
-                image = self.imread(
-                    base64.decodebytes(event["body"]), pilmode=self.pilmode
-                )
-            except AttributeError:
-                image = self.imread(
-                    base64.decodestring(event["body"]),  # pylint: disable=W1505
-                    pilmode=self.pilmode,
-                )
+            image = self.imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

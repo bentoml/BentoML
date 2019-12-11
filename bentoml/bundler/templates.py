@@ -73,7 +73,7 @@ RUN set -x \\
 # update conda, pre-install BentoML base dependencies
 RUN conda update conda -y \\
       && conda install pip numpy scipy \\
-      && pip install gunicorn six
+      && pip install gunicorn
 
 # copy over model files
 COPY . /bento

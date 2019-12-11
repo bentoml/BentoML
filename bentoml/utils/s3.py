@@ -18,10 +18,10 @@ from __future__ import print_function
 
 import os
 import logging
+from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError
-from six.moves.urllib.parse import urlparse
 
 from bentoml.exceptions import BentoMLException
 

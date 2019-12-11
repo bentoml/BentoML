@@ -23,15 +23,8 @@ from setuptools import sandbox
 
 
 def _find_bentoml_module_location():
-    try:
-        module_location, = importlib.util.find_spec(
-            'bentoml'
-        ).submodule_search_locations
-    except AttributeError:
-        # python 2.7 doesn't have importlib.util, will fall back to imp instead
-        import imp
+    module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
 
-        _, module_location, _ = imp.find_module('bentoml')
     return module_location
 
 

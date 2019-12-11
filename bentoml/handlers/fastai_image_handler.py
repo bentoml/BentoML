@@ -21,6 +21,7 @@ import argparse
 import base64
 from io import BytesIO
 
+from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
 from flask import Response
 import numpy as np
@@ -136,7 +137,7 @@ class FastaiImageHandler(BentoHandler):
             if data:
                 input_streams = (data,)
             else:
-                raise ValueError(
+                raise BadRequest(
                     "BentoML#ImageHandler unexpected HTTP request: %s" % request
                 )
 

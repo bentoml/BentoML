@@ -21,6 +21,7 @@ import argparse
 import base64
 from io import BytesIO
 
+from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
 from flask import Response
 
@@ -45,7 +46,7 @@ def verify_image_format_or_raise(file_name, accept_format_list):
     if accept_format_list:
         _, extension = os.path.splitext(file_name)
         if extension.lower() not in accept_format_list:
-            raise ValueError(
+            raise BadRequest(
                 "Input file not in supported format list: {}".format(accept_format_list)
             )
 
@@ -142,20 +143,15 @@ class ImageHandler(BentoHandler):
 
         if input_files:
             file_names = [secure_filename(file.filename) for file in input_files]
-            try:
-                for file_name in file_names:
-                    verify_image_format_or_raise(file_name, self.accept_image_formats)
-            except ValueError as e:
-                return Response(response=str(e), status=400)
+            for file_name in file_names:
+                verify_image_format_or_raise(file_name, self.accept_image_formats)
             input_streams = [BytesIO(input_file.read()) for input_file in input_files]
         else:
             data = request.get_data()
             if data:
                 input_streams = (data,)
             else:
-                return Response(
-                    "BentoML#ImageHandler unexpected HTTP request format", status=400
-                )
+                raise BadRequest("BentoML#ImageHandler unexpected HTTP request format")
 
         input_data = tuple(
             self.imread(input_stream, pilmode=self.pilmode)

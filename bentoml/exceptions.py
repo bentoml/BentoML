@@ -16,8 +16,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from werkzeug.exceptions import BadRequest
 
-from bentoml.proto.status_pb2 import Status as StatusProto
+from bentoml.proto import status_pb2
+
+
+_PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE = {
+    status_pb2.Status.INTERNAL: 500,  # Internal Server Error
+    status_pb2.Status.INVALID_ARGUMENT: 400,  # "Bad Request"
+    status_pb2.Status.NOT_FOUND: 404,  # Not Found
+    status_pb2.Status.DEADLINE_EXCEEDED: 408,  # Request Time out
+    status_pb2.Status.PERMISSION_DENIED: 401,  # Unauthorized
+    status_pb2.Status.UNAUTHENTICATED: 401,  # Unauthorized
+}
 
 
 class BentoMLException(Exception):
@@ -26,14 +37,30 @@ class BentoMLException(Exception):
     Each custom exception should be derived from this class
     """
 
-    status_code = StatusProto.INTERNAL
+    status_code = status_pb2.Status.INTERNAL
+
+    @property
+    def status_proto(self):
+        return status_pb2.Status(status_code=self.status_code, error_message=str(self))
+
+    @property
+    def http_status_code(self):
+        return _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE.get(self.status_code, 500)
+
+
+class Unauthenticated(BentoMLException):
+    status_code = status_pb2.Status.UNAUTHENTICATED
+
+
+class InvalidArgument(BentoMLException):
+    status_code = status_pb2.Status.INVALID_ARGUMENT
 
 
 class ArtifactLoadingException(BentoMLException):
     pass
 
 
-class ConfigException(BentoMLException):
+class BentoMLConfigException(BentoMLException):
     pass
 
 
@@ -41,17 +68,23 @@ class MissingDependencyException(BentoMLException):
     pass
 
 
-class InvalidArgumentException(BentoMLException):
-    status_code = StatusProto.INVALID_ARGUMENT
+class BadInput(InvalidArgument, BadRequest):
+    """Raise when BentoHandler receiving bad input request"""
+
+    pass
 
 
 class YataiServiceException(BentoMLException):
     pass
 
 
-class DeploymentException(YataiServiceException):
+class YataiServiceRpcAborted(YataiServiceException):
+    status_code = status_pb2.Status.ABORTED
+
+
+class YataiDeploymentException(YataiServiceException):
     pass
 
 
-class RepositoryException(YataiServiceException):
+class YataiRepositoryException(YataiServiceException):
     pass

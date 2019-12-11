@@ -40,7 +40,7 @@ from bentoml.proto.yatai_service_pb2 import (
 )
 from bentoml.deployment.operator import get_deployment_operator
 from bentoml.deployment.store import DeploymentStore
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, InvalidArgument, YataiServiceRpcAborted
 from bentoml.repository import BentoRepository
 from bentoml.repository.metadata_store import BentoMetadataStore
 from bentoml.db import init_db
@@ -80,11 +80,9 @@ class YataiService(YataiServicer):
 
             validation_errors = validate_deployment_pb_schema(request.deployment)
             if validation_errors:
-                return ApplyDeploymentResponse(
-                    status=Status.INVALID_ARGUMENT(
-                        'Failed to validate deployment. {errors}'.format(
-                            errors=validation_errors
-                        )
+                raise InvalidArgument(
+                    'Failed to validate deployment. {errors}'.format(
+                        errors=validation_errors
                     )
                 )
 
@@ -97,12 +95,10 @@ class YataiService(YataiServicer):
                     previous_deployment.spec.operator
                     != request.deployment.spec.operator
                 ):
-                    return ApplyDeploymentResponse(
-                        status=Status.ABORTED(
-                            'Can not change the target deploy platform of existing '
-                            'active deployment. Try delete existing deployment and '
-                            'deploy to new target platform again'
-                        )
+                    raise YataiServiceRpcAborted(
+                        'Can not change the target deploy platform of existing active '
+                        'deployment. Try delete existing deployment and deploy to new '
+                        'target platform again'
                     )
                 request.deployment.state.state = DeploymentState.PENDING
             else:
@@ -123,7 +119,8 @@ class YataiService(YataiServicer):
                     self.deployment_store.insert_or_update(response.deployment)
                 else:
                     raise BentoMLException(
-                        "DeploymentOperator Internal Error: Invalid Response"
+                        "DeploymentOperator Internal Error: failed to add or update "
+                        "deployment metadata to database"
                     )
                 logger.info(
                     "ApplyDeployment (%s, namespace %s) succeeded",
@@ -147,8 +144,8 @@ class YataiService(YataiServicer):
             return response
 
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
+            logger.error("RPC ERROR ApplyDeployment: %s", e)
+            return ApplyDeploymentResponse(status=e.status_proto)
 
     def DeleteDeployment(self, request, context=None):
         try:
@@ -201,8 +198,8 @@ class YataiService(YataiServicer):
                 )
 
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return DeleteDeploymentResponse(status=Status.INTERNAL(str(e)))
+            logger.error("RPC ERROR DeleteDeployment: %s", e)
+            return DeleteDeploymentResponse(status=e.status_proto)
 
     def GetDeployment(self, request, context=None):
         try:
@@ -223,8 +220,8 @@ class YataiService(YataiServicer):
                     )
                 )
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return GetDeploymentResponse(status=Status.INTERNAL(str(e)))
+            logger.error("RPC ERROR GetDeployment: %s", e)
+            return GetDeploymentResponse(status=e.status_proto)
 
     def DescribeDeployment(self, request, context=None):
         try:
@@ -254,8 +251,8 @@ class YataiService(YataiServicer):
                     )
                 )
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return DescribeDeploymentResponse(Status.INTERNAL(str(e)))
+            logger.error("RPC ERROR DescribeDeployment: %s", e)
+            return DeleteDeploymentResponse(status=e.status_proto)
 
     def ListDeployments(self, request, context=None):
         try:
@@ -272,8 +269,8 @@ class YataiService(YataiServicer):
                 status=Status.OK(), deployments=deployment_pb_list
             )
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return ListDeploymentsResponse(status=Status.INTERNAL(str(e)))
+            logger.error("RPC ERROR ListDeployments: %s", e)
+            return DeleteDeploymentResponse(status=e.status_proto)
 
     def AddBento(self, request, context=None):
         try:
@@ -299,8 +296,8 @@ class YataiService(YataiServicer):
 
             return AddBentoResponse(status=Status.OK(), uri=new_bento_uri)
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return AddBentoResponse(status=Status.INTERNAL(str(e)))
+            logger.error("RPC ERROR AddBento: %s", e)
+            return DeleteDeploymentResponse(status=e.status_proto)
 
     def UpdateBento(self, request, context=None):
         try:
@@ -313,9 +310,10 @@ class YataiService(YataiServicer):
                 self.bento_metadata_store.update_bento_service_metadata(
                     request.bento_name, request.bento_version, request.service_metadata
                 )
+            return UpdateBentoResponse(status=Status.OK())
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return UpdateBentoResponse(status=Status.INTERNAL(str(e)))
+            logger.error("RPC ERROR UpdateBento: %s", e)
+            return UpdateBentoResponse(status=e.status_proto)
 
     def DangerouslyDeleteBento(self, request, context=None):
         try:
@@ -324,9 +322,10 @@ class YataiService(YataiServicer):
                 request.bento_name, request.bento_version
             )
             self.repo.dangerously_delete(request.bento_name, request.bento_version)
+            return DangerouslyDeleteBentoResponse(status=Status.OK())
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return DangerouslyDeleteBentoResponse(status=Status.INTERNAL(str(e)))
+            logger.error("RPC ERROR DangerouslyDeleteBento: %s", e)
+            return DangerouslyDeleteBentoResponse(status=e.status_proto)
 
     def GetBento(self, request, context=None):
         try:
@@ -346,8 +345,8 @@ class YataiService(YataiServicer):
                     )
                 )
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return GetBentoResponse(status=Status.INTERNAL(str(e)))
+            logger.error("RPC ERROR GetBento: %s", e)
+            return GetBentoResponse(status=e.status_proto)
 
     def ListBento(self, request, context=None):
         try:
@@ -358,7 +357,7 @@ class YataiService(YataiServicer):
 
             return ListBentoResponse(status=Status.OK(), bentos=bento_metadata_pb_list)
         except BentoMLException as e:
-            logger.error("INTERNAL ERROR: %s", e)
-            return ListBentoResponse(status=Status.INTERNAL(str(e)))
+            logger.error("RPC ERROR ListBento: %s", e)
+            return ListBentoResponse(status=e.status_proto)
 
     # pylint: enable=unused-argument

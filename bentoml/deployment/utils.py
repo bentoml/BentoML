@@ -24,7 +24,7 @@ import subprocess
 from bentoml.exceptions import (
     BentoMLException,
     MissingDependencyException,
-    InvalidArgumentException,
+    InvalidArgument,
 )
 
 logger = logging.getLogger(__name__)
@@ -75,21 +75,12 @@ def raise_if_api_names_not_found_in_bento_service_metadata(metadata, api_names):
     all_api_names = [api.name for api in metadata.apis]
 
     if not set(api_names).issubset(all_api_names):
-        raise InvalidArgumentException(
+        raise InvalidArgument(
             "Expect api names {api_names} to be "
             "subset of {all_api_names}".format(
                 api_names=api_names, all_api_names=all_api_names
             )
         )
-
-
-def exception_to_return_status(error):
-    from bentoml.yatai.status import Status
-
-    if type(error) is InvalidArgumentException:
-        return Status.INVALID_ARGUMENT(str(error))
-    else:
-        return Status.INTERNAL(str(error))
 
 
 def generate_aws_compatible_string(item):

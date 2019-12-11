@@ -33,14 +33,13 @@ from bentoml.bundler import loader
 from bentoml.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
-    exception_to_return_status,
     generate_aws_compatible_string,
     raise_if_api_names_not_found_in_bento_service_metadata,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.yatai.status import Status
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.exceptions import DeploymentException, BentoMLException
+from bentoml.exceptions import YataiDeploymentException, BentoMLException
 from bentoml.deployment.sagemaker.templates import (
     DEFAULT_NGINX_CONFIG,
     DEFAULT_WSGI_PY,
@@ -122,7 +121,7 @@ def get_arn_role_from_current_aws_user():
             ):
                 arn = role["Arn"]
         if arn is None:
-            raise DeploymentException(
+            raise YataiDeploymentException(
                 "Can't find proper Arn role for Sagemaker, please create one and try "
                 "again"
             )
@@ -131,7 +130,7 @@ def get_arn_role_from_current_aws_user():
         role_response = iam_client.get_role(RoleName=type_role[1])
         return role_response["Role"]["Arn"]
 
-    raise DeploymentException(
+    raise YataiDeploymentException(
         "Not supported role type {}; sts arn is {}".format(type_role[0], sts_arn)
     )
 
@@ -337,7 +336,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
             if sagemaker_config is None:
-                raise DeploymentException('Sagemaker configuration is missing.')
+                raise YataiDeploymentException('Sagemaker configuration is missing.')
 
             bento_pb = yatai_service.GetBento(
                 GetBentoRequest(
@@ -361,7 +360,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             )
 
         except BentoMLException as error:
-            return ApplyDeploymentResponse(status=exception_to_return_status(error))
+            return ApplyDeploymentResponse(status=error.status_proto)
 
     def _apply(
         self, deployment_pb, bento_pb, yatai_service, bento_path, prev_deployment=None
@@ -507,7 +506,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
             if sagemaker_config is None:
-                raise DeploymentException('Sagemaker configuration is missing.')
+                raise YataiDeploymentException('Sagemaker configuration is missing.')
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
             endpoint_name = generate_aws_compatible_string(
@@ -553,14 +552,14 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
             return DeleteDeploymentResponse(status=Status.OK())
         except BentoMLException as error:
-            return DeleteDeploymentResponse(status=exception_to_return_status(error))
+            return DeleteDeploymentResponse(status=error.status_proto)
 
     def describe(self, deployment_pb, yatai_service=None):
         try:
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
             if sagemaker_config is None:
-                raise DeploymentException('Sagemaker configuration is missing.')
+                raise YataiDeploymentException('Sagemaker configuration is missing.')
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
             endpoint_name = generate_aws_compatible_string(
                 deployment_pb.namespace + '-' + deployment_spec.bento_name
@@ -592,4 +591,4 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 state=deployment_state, status=Status.OK()
             )
         except BentoMLException as error:
-            return DescribeDeploymentResponse(status=exception_to_return_status(error))
+            return DescribeDeploymentResponse(status=error.status_proto)

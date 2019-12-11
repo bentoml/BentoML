@@ -22,7 +22,7 @@ from pathlib import Path
 
 from bentoml import __version__
 from bentoml.utils import _is_pypi_release
-from bentoml.exceptions import ConfigException
+from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
 
 
@@ -96,7 +96,7 @@ def load_config():
     try:
         Path(BENTOML_HOME).mkdir(exist_ok=True)
     except OSError as err:
-        raise ConfigException(
+        raise BentoMLConfigException(
             "Error creating bentoml home directory '{}': {}".format(
                 BENTOML_HOME, err.strerror
             )

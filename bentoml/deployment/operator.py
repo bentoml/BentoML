@@ -19,7 +19,7 @@ from __future__ import print_function
 from abc import abstractmethod, ABCMeta
 
 from bentoml.proto.deployment_pb2 import DeploymentSpec
-from bentoml.exceptions import DeploymentException
+from bentoml.exceptions import YataiDeploymentException
 from bentoml import config
 
 
@@ -50,7 +50,7 @@ def get_deployment_operator(deployment_pb):
     elif operator == DeploymentSpec.CUSTOM:
         raise NotImplementedError("Custom deployment operator is not implemented")
     else:
-        raise DeploymentException("DeployOperator must be set")
+        raise YataiDeploymentException("DeployOperator must be set")
 
 
 class DeploymentOperatorBase(object):

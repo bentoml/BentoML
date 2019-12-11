@@ -33,7 +33,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
 from bentoml.utils import ProtoMessageToDict
-from bentoml.exceptions import RepositoryException
+from bentoml.exceptions import YataiRepositoryException
 from bentoml.db import Base, create_session
 from bentoml.proto.repository_pb2 import (
     UploadStatus,
@@ -132,7 +132,7 @@ class BentoMetadataStore(object):
                     bento_service_metadata_pb
                 )
             except NoResultFound:
-                raise RepositoryException(
+                raise YataiRepositoryException(
                     "Bento %s:%s is not found in repository" % bento_name, bento_version
                 )
 
@@ -149,7 +149,7 @@ class BentoMetadataStore(object):
                 # upload_status_pb.updated_at, update should be ignored
                 bento_obj.upload_status = ProtoMessageToDict(upload_status_pb)
             except NoResultFound:
-                raise RepositoryException(
+                raise YataiRepositoryException(
                     "Bento %s:%s is not found in repository" % bento_name, bento_version
                 )
 
@@ -162,14 +162,14 @@ class BentoMetadataStore(object):
                     .one()
                 )
                 if bento_obj.deleted:
-                    raise RepositoryException(
+                    raise YataiRepositoryException(
                         "Bento {}:{} has already been deleted".format(
                             bento_name, bento_version
                         )
                     )
                 bento_obj.deleted = True
             except NoResultFound:
-                raise RepositoryException(
+                raise YataiRepositoryException(
                     "Bento %s:%s is not found in repository" % bento_name, bento_version
                 )
 

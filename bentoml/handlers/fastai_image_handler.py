@@ -190,16 +190,9 @@ class FastaiImageHandler(BentoHandler):
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):
-            # decodebytes introduced at python3.1
-            try:
-                image_data = self.imread(
-                    base64.decodebytes(event["body"]), pilmode=self.pilmode
-                )
-            except AttributeError:
-                image_data = self.imread(
-                    base64.decodestring(event["body"]),  # pylint: disable=W1505
-                    pilmode=self.convert_mode,
-                )
+            image_data = self.imread(
+                base64.decodebytes(event["body"]), pilmode=self.pilmode
+            )
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

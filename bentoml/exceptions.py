@@ -16,6 +16,20 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from werkzeug.exceptions import BadRequest
+
+from bentoml.proto import status_pb2
+
+
+_PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE = {
+    status_pb2.Status.INTERNAL: 500,  # Internal Server Error
+    status_pb2.Status.INVALID_ARGUMENT: 400,  # "Bad Request"
+    status_pb2.Status.NOT_FOUND: 404,  # Not Found
+    status_pb2.Status.DEADLINE_EXCEEDED: 408,  # Request Time out
+    status_pb2.Status.PERMISSION_DENIED: 401,  # Unauthorized
+    status_pb2.Status.UNAUTHENTICATED: 401,  # Unauthorized
+}
+
 
 class BentoMLException(Exception):
     """
@@ -23,28 +37,69 @@ class BentoMLException(Exception):
     Each custom exception should be derived from this class
     """
 
-    status_code = 500
+    status_code = status_pb2.Status.INTERNAL
+
+    @property
+    def status_proto(self):
+        return status_pb2.Status(status_code=self.status_code, error_message=str(self))
+
+    @property
+    def http_status_code(self):
+        return _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE.get(self.status_code, 500)
 
 
-class BentoMLArtifactLoadingException(BentoMLException):
-    pass
+class Unauthenticated(BentoMLException):
+    """
+    Raise when a BentoML operation is not authenticated properly, either against 3rd
+    party cloud service such as AWS s3, Docker Hub, or Atalaya hosted BentoML service
+    """
+
+    status_code = status_pb2.Status.UNAUTHENTICATED
+
+
+class InvalidArgument(BentoMLException, BadRequest):
+    """
+    Raise when BentoML received unexpected/invalid arguments from CLI arguments, HTTP
+    Request, or python API function parameters
+    """
+
+    status_code = status_pb2.Status.INVALID_ARGUMENT
+
+
+class ArtifactLoadingException(BentoMLException):
+    """Raise when BentoService failed to load model artifacts from saved bundle"""
 
 
 class BentoMLConfigException(BentoMLException):
-    pass
+    """Raise when BentoML is misconfigured or when required configuration is missing"""
 
 
-class BentoMLDeploymentException(BentoMLException):
-    pass
+class MissingDependencyException(BentoMLException):
+    """
+    Raise when BentoML component failed to load required dependency - some BentoML
+    components has dependency that is optional to the library itself. For example,
+    when using SklearnModelArtifact, the scikit-learn module is required although
+    BentoML does not require scikit-learn to be a dependency when installed
+    """
 
 
-class BentoMLRepositoryException(BentoMLException):
-    pass
+class BadInput(InvalidArgument, BadRequest):
+    """Raise when BentoHandler receiving bad input request"""
 
 
-class BentoMLMissingDependencyException(BentoMLException):
-    pass
+class YataiServiceException(BentoMLException):
+    """Raise when YataiService encounters an error"""
 
 
-class BentoMLInvalidArgumentException(BentoMLException):
-    pass
+class YataiServiceRpcAborted(YataiServiceException):
+    """Raise when YataiService RPC operation aborted"""
+
+    status_code = status_pb2.Status.ABORTED
+
+
+class YataiDeploymentException(YataiServiceException):
+    """Raise when YataiService encounters an issue creating/managing deployments"""
+
+
+class YataiRepositoryException(YataiServiceException):
+    """Raise when YataiService encounters an issue managing BentoService repoistory"""

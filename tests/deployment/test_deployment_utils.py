@@ -5,7 +5,7 @@ import pytest
 from mock import patch
 
 from bentoml.deployment.utils import ensure_docker_available_or_raise
-from bentoml.exceptions import BentoMLMissingDependencyException
+from bentoml.exceptions import MissingDependencyException
 
 
 def raise_(ex):
@@ -19,6 +19,6 @@ def test_ensure_docker_available_or_raise():
         not_found_error = FileNotFoundError
 
     with patch('subprocess.check_output', new=lambda x: raise_(not_found_error())):
-        with pytest.raises(BentoMLMissingDependencyException) as error:
+        with pytest.raises(MissingDependencyException) as error:
             ensure_docker_available_or_raise()
         assert str(error.value).startswith('Docker is required')

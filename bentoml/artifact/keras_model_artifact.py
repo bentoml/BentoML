@@ -21,7 +21,7 @@ import importlib
 
 from bentoml.utils import cloudpickle
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
-from bentoml.exceptions import BentoMLArtifactLoadingException
+from bentoml.exceptions import ArtifactLoadingException
 
 
 class KerasModelArtifact(BentoServiceArtifact):
@@ -156,7 +156,7 @@ class KerasModelArtifact(BentoServiceArtifact):
                 try:
                     keras_module = importlib.import_module(keras_module_name)
                 except ImportError:
-                    raise BentoMLArtifactLoadingException(
+                    raise ArtifactLoadingException(
                         "Failed to import '{}' module when loading saved "
                         "KerasModelArtifact".format(keras_module_name)
                     )

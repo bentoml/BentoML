@@ -20,10 +20,9 @@ import os
 import json
 import argparse
 
-from werkzeug.exceptions import BadRequest
 from flask import Response
 
-
+from bentoml.exceptions import BadInput
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 
 
@@ -37,7 +36,7 @@ class JsonHandler(BentoHandler):
         if request.content_type == "application/json":
             parsed_json = json.loads(request.data.decode("utf-8"))
         else:
-            raise BadRequest(
+            raise BadInput(
                 "Request content-type must be 'application/json' for this "
                 "BentoService API"
             )
@@ -69,7 +68,7 @@ class JsonHandler(BentoHandler):
         if event["headers"]["Content-Type"] == "application/json":
             parsed_json = json.loads(event["body"])
         else:
-            raise BadRequest(
+            raise BadInput(
                 "Request content-type must be 'application/json' for this "
                 "BentoService API lambda endpoint"
             )

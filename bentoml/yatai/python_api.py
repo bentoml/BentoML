@@ -34,7 +34,7 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsRequest,
     ApplyDeploymentResponse,
 )
-from bentoml.exceptions import BentoMLException, BentoMLDeploymentException
+from bentoml.exceptions import BentoMLException, YataiDeploymentException
 from bentoml.proto.repository_pb2 import (
     AddBentoRequest,
     GetBentoRequest,
@@ -218,13 +218,13 @@ def create_deployment(
         GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
     )
     if get_deployment_pb.status.status_code == status_pb2.Status.OK:
-        raise BentoMLDeploymentException(
+        raise YataiDeploymentException(
             'Deployment "{name}" already existed, use Update or Apply for updating '
             'existing deployment, delete the deployment, or use a different deployment '
             'name'.format(name=deployment_name)
         )
     if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
-        raise BentoMLDeploymentException(
+        raise YataiDeploymentException(
             'Failed accesing YataiService deployment store. {error_code}:'
             '{error_message}'.format(
                 error_code=Status.Name(get_deployment_pb.status.status_code),
@@ -288,7 +288,7 @@ def create_deployment(
             'service_type': operator_spec.get('service_type', ''),
         }
     else:
-        raise BentoMLDeploymentException(
+        raise YataiDeploymentException(
             'Platform "{}" is not supported in the current version of '
             'BentoML'.format(platform)
         )
@@ -324,7 +324,7 @@ def apply_deployment(deployment_info, yatai_service=None):
         elif isinstance(deployment_info, str):
             deployment_pb = deployment_yaml_string_to_pb(deployment_info)
         else:
-            raise BentoMLDeploymentException(
+            raise YataiDeploymentException(
                 'Unexpected argument type, expect deployment info to be str in yaml '
                 'format or a dict, instead got: {}'.format(str(type(deployment_info)))
             )

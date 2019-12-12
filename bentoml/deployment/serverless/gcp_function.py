@@ -23,7 +23,6 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from bentoml.deployment.utils import (
-    exception_to_return_status,
     raise_if_api_names_not_found_in_bento_service_metadata,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
@@ -158,7 +157,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
                 status=Status.OK(), deployment=res_deployment_pb
             )
         except BentoMLException as error:
-            return ApplyDeploymentResponse(status=exception_to_return_status(error))
+            return ApplyDeploymentResponse(status=error.status_proto)
 
     def describe(self, deployment_pb, yatai_service=None):
         try:
@@ -201,7 +200,7 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
 
             return DescribeDeploymentResponse(status=Status.OK(), state=state)
         except BentoMLException as error:
-            return DescribeDeploymentResponse(status=exception_to_return_status(error))
+            return DescribeDeploymentResponse(status=error.status_proto)
 
     def delete(self, deployment_pb, yatai_service=None):
         try:
@@ -253,4 +252,4 @@ class GcpFunctionDeploymentOperator(DeploymentOperatorBase):
 
             return DeleteDeploymentResponse(status=status)
         except BentoMLException as error:
-            return DeleteDeploymentResponse(status=exception_to_return_status(error))
+            return DeleteDeploymentResponse(status=error.status_proto)

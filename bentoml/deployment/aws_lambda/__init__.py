@@ -37,7 +37,6 @@ from bentoml.deployment.aws_lambda.utils import (
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
-    exception_to_return_status,
     ensure_docker_available_or_raise,
     generate_aws_compatible_string,
     raise_if_api_names_not_found_in_bento_service_metadata,
@@ -188,7 +187,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 prev_deployment,
             )
         except BentoMLException as error:
-            return ApplyDeploymentResponse(status=exception_to_return_status(error))
+            return ApplyDeploymentResponse(status=error.status_proto)
 
     def _apply(
         self, deployment_pb, bento_pb, yatai_service, bento_path, prev_deployment
@@ -326,7 +325,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 state=DeploymentState.ERROR, error_message='Error: {}'.format(error)
             )
             return ApplyDeploymentResponse(
-                status=exception_to_return_status(error), deployment=deployment_pb
+                status=error.status_proto, deployment=deployment_pb
             )
 
     def delete(self, deployment_pb, yatai_service):
@@ -355,7 +354,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             return DeleteDeploymentResponse(status=Status.OK())
 
         except BentoMLException as error:
-            return DeleteDeploymentResponse(status=exception_to_return_status(error))
+            return DeleteDeploymentResponse(status=error.status_proto)
 
     def describe(self, deployment_pb, yatai_service):
         try:
@@ -427,4 +426,4 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             state.timestamp.GetCurrentTime()
             return DescribeDeploymentResponse(status=Status.OK(), state=state)
         except BentoMLException as error:
-            return DescribeDeploymentResponse(status=exception_to_return_status(error))
+            return DescribeDeploymentResponse(status=error.status_proto)

@@ -2,11 +2,9 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from werkzeug.exceptions import BadRequest
-
 from bentoml.handlers import DataframeHandler
 from bentoml.handlers.dataframe_handler import check_dataframe_column_contains
-
+from bentoml.exceptions import BadInput
 
 try:
     from unittest.mock import Mock
@@ -60,7 +58,7 @@ def test_dataframe_handle_aws_lambda_event():
     assert success_response["statusCode"] == 200
     assert success_response["body"] == '"john"'
 
-    with pytest.raises(BadRequest):
+    with pytest.raises(BadInput):
         error_event_obj = {
             "headers": {"Content-Type": "this_will_fail"},
             "body": test_content,
@@ -79,11 +77,11 @@ def test_check_dataframe_column_contains():
     check_dataframe_column_contains({"a": "int", "c": "int"}, df)
 
     # this should raise exception
-    with pytest.raises(BadRequest) as e:
+    with pytest.raises(BadInput) as e:
         check_dataframe_column_contains({"required_column_x": "int"}, df)
     assert "Missing columns: required_column_x" in str(e.value)
 
-    with pytest.raises(BadRequest) as e:
+    with pytest.raises(BadInput) as e:
         check_dataframe_column_contains(
             {"a": "int", "b": "int", "d": "int", "e": "int"}, df
         )

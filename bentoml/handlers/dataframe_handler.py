@@ -21,19 +21,19 @@ import argparse
 from io import StringIO
 
 import pandas as pd
-from werkzeug.exceptions import BadRequest
 from flask import Response
 
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 from bentoml.utils import is_url
 from bentoml.utils.s3 import is_s3_url
+from bentoml.exceptions import BadInput
 
 
 def check_dataframe_column_contains(required_column_names, df):
     df_columns = set(map(str, df.columns))
     for col in required_column_names:
         if col not in df_columns:
-            raise BadRequest(
+            raise BadInput(
                 "Missing columns: {}, required_column:{}".format(
                     ",".join(set(required_column_names) - df_columns), df_columns
                 )
@@ -117,7 +117,7 @@ class DataframeHandler(BentoHandler):
             csv_string = StringIO(request.data.decode('utf-8'))
             df = pd.read_csv(csv_string)
         else:
-            raise BadRequest(
+            raise BadInput(
                 "Request content-type not supported, only application/json and "
                 "text/csv are supported"
             )
@@ -151,7 +151,7 @@ class DataframeHandler(BentoHandler):
             elif cli_input.endswith(".json"):
                 df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
             else:
-                raise BadRequest(
+                raise BadInput(
                     "Input file format not supported, BentoML cli only accepts .json "
                     "and .csv file"
                 )
@@ -160,7 +160,7 @@ class DataframeHandler(BentoHandler):
             try:
                 df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
             except ValueError as e:
-                raise BadRequest(
+                raise BadInput(
                     "Unexpected input format, BentoML DataframeHandler expects json "
                     "string as input: {}".format(e)
                 )
@@ -181,7 +181,7 @@ class DataframeHandler(BentoHandler):
         elif event["headers"]["Content-Type"] == "text/csv":
             df = pd.read_csv(event["body"])
         else:
-            raise BadRequest(
+            raise BadInput(
                 "Request content-type not supported, only application/json and "
                 "text/csv are supported"
             )

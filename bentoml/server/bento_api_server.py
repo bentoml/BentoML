@@ -25,11 +25,12 @@ from timeit import default_timer
 from functools import partial
 from collections import OrderedDict
 
-from flask import Flask, jsonify, Response, request
+from flask import Flask, jsonify, Response, request, make_response
 from werkzeug.utils import secure_filename
 
 from bentoml import config
 from bentoml.utils.usage_stats import track_server
+from bentoml.exceptions import BentoMLException
 
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
@@ -346,7 +347,16 @@ class BentoAPIServer:
                 request_for_log = _request_to_json(request)
 
                 # handle_request may raise 4xx or 5xx exception.
-                response = api.handle_request(request)
+                try:
+                    response = api.handle_request(request)
+                except BentoMLException as e:
+                    response = make_response(
+                        jsonify(
+                            message="BentoService error handling API request: %s"
+                            % str(e)
+                        ),
+                        e.http_status_code,
+                    )
 
                 request_log = {
                     "request_id": request_id,

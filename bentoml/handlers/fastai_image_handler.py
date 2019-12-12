@@ -21,12 +21,11 @@ import argparse
 import base64
 from io import BytesIO
 
-from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
 from flask import Response
 import numpy as np
 
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BadInput
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 from bentoml.handlers.image_handler import (
     verify_image_format_or_raise,
@@ -137,7 +136,7 @@ class FastaiImageHandler(BentoHandler):
             if data:
                 input_streams = (data,)
             else:
-                raise BadRequest(
+                raise BadInput(
                     "BentoML#ImageHandler unexpected HTTP request: %s" % request
                 )
 
@@ -191,16 +190,9 @@ class FastaiImageHandler(BentoHandler):
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):
-            # decodebytes introduced at python3.1
-            try:
-                image_data = self.imread(
-                    base64.decodebytes(event["body"]), pilmode=self.pilmode
-                )
-            except AttributeError:
-                image_data = self.imread(
-                    base64.decodestring(event["body"]),  # pylint: disable=W1505
-                    pilmode=self.convert_mode,
-                )
+            image_data = self.imread(
+                base64.decodebytes(event["body"]), pilmode=self.pilmode
+            )
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

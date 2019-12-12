@@ -25,7 +25,7 @@ from abc import abstractmethod, ABCMeta
 from urllib.parse import urlparse
 
 from bentoml import config
-from bentoml.exceptions import BentoMLRepositoryException
+from bentoml.exceptions import YataiRepositoryException
 from bentoml.utils.s3 import is_s3_url
 from bentoml.proto.repository_pb2 import BentoUri
 
@@ -89,7 +89,7 @@ class _LocalBentoRepository(BentoRepositoryBase):
 
         # Raise if target bento version already exist in storage
         if os.path.exists(target_dir):
-            raise BentoMLRepositoryException(
+            raise YataiRepositoryException(
                 "Existing BentoService bundle {name}:{version} found in repository: "
                 "{target_dir}".format(
                     name=bento_name, version=bento_version, target_dir=target_dir
@@ -104,7 +104,7 @@ class _LocalBentoRepository(BentoRepositoryBase):
     def get(self, bento_name, bento_version):
         saved_path = os.path.join(self.base_path, bento_name, bento_version)
         if not os.path.exists(saved_path):
-            raise BentoMLRepositoryException(
+            raise YataiRepositoryException(
                 "Bento {}:{} not found in target repository".format(
                     bento_name, bento_version
                 )
@@ -147,7 +147,7 @@ class _S3BentoRepository(BentoRepositoryBase):
                 ExpiresIn=self._expiration,
             )
         except Exception as e:
-            raise BentoMLRepositoryException(
+            raise YataiRepositoryException(
                 "Not able to get pre-signed URL on S3. Error: {}".format(e)
             )
 
@@ -171,7 +171,7 @@ class _S3BentoRepository(BentoRepositoryBase):
                 ExpiresIn=self._expiration,
             )
         except Exception as e:
-            raise BentoMLRepositoryException(
+            raise YataiRepositoryException(
                 "Not able to get pre-signed URL on S3. Error: {}".format(e)
             )
         return response
@@ -186,7 +186,7 @@ class _S3BentoRepository(BentoRepositoryBase):
 
             DELETE_MARKER = 'DeleteMarker'  # whether object is successfully deleted.
         except Exception as e:
-            raise BentoMLRepositoryException(
+            raise YataiRepositoryException(
                 "Not able to delete object on S3. Error: {}".format(e)
             )
 

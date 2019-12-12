@@ -41,7 +41,6 @@ from bentoml.proto.deployment_pb2 import (
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.deployment.utils import (
     ensure_docker_available_or_raise,
-    exception_to_return_status,
     raise_if_api_names_not_found_in_bento_service_metadata,
 )
 from bentoml.deployment.serverless.serverless_utils import (
@@ -166,7 +165,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             )
 
         except BentoMLException as error:
-            return ApplyDeploymentResponse(status=exception_to_return_status(error))
+            return ApplyDeploymentResponse(status=error.status_proto)
 
     def _apply(self, deployment_pb, bento_pb, yatai_service, bento_path):
         if loader._is_remote_path(bento_path):
@@ -286,7 +285,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
             return DeleteDeploymentResponse(status=status)
         except BentoMLException as error:
-            return DeleteDeploymentResponse(status=exception_to_return_status(error))
+            return DeleteDeploymentResponse(status=error.status_proto)
 
     def describe(self, deployment_pb, yatai_service=None):
         try:
@@ -339,4 +338,4 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             state.timestamp.GetCurrentTime()
             return DescribeDeploymentResponse(status=Status.OK(), state=state)
         except BentoMLException as error:
-            return DescribeDeploymentResponse(status=exception_to_return_status(error))
+            return DescribeDeploymentResponse(status=error.status_proto)

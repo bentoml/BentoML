@@ -25,7 +25,7 @@ from werkzeug.utils import secure_filename
 from flask import Response
 import numpy as np
 
-from bentoml.exceptions import BentoMLException, BadInput
+from bentoml.exceptions import BadInput, MissingDependencyException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 from bentoml.handlers.image_handler import (
     verify_image_format_or_raise,
@@ -37,7 +37,9 @@ def _import_fastai_vision():
     try:
         from fastai import vision
     except ImportError:
-        raise ImportError("fastai.vision package is required to use FastaiImageHandler")
+        raise MissingDependencyException(
+            "fastai.vision package is required to use FastaiImageHandler"
+        )
 
     return vision
 
@@ -46,7 +48,9 @@ def _import_imageio_imread():
     try:
         from imageio import imread
     except ImportError:
-        raise ImportError("imageio package is required to use FastaiImageHandler")
+        raise MissingDependencyException(
+            "imageio package is required to use FastaiImageHandler"
+        )
 
     return imread
 
@@ -194,7 +198,7 @@ class FastaiImageHandler(BentoHandler):
                 base64.decodebytes(event["body"]), pilmode=self.pilmode
             )
         else:
-            raise BentoMLException(
+            raise BadInput(
                 "BentoML currently doesn't support Content-Type: {content_type} for "
                 "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
             )

@@ -19,6 +19,7 @@ from __future__ import print_function
 import os
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
 
 class XgboostModelArtifact(BentoServiceArtifact):
@@ -48,7 +49,9 @@ class XgboostModelArtifact(BentoServiceArtifact):
         try:
             import xgboost as xgb
         except ImportError:
-            raise ImportError("xgboost package is required to use XgboostModelArtifact")
+            raise MissingDependencyException(
+                "xgboost package is required to use XgboostModelArtifact"
+            )
         bst = xgb.Booster()
         bst.load_model(self._model_file_path(path))
 
@@ -62,10 +65,12 @@ class _XgboostModelArtifactWrapper(BentoServiceArtifactWrapper):
         try:
             import xgboost as xgb
         except ImportError:
-            raise ImportError("xgboost package is required to use XgboostModelArtifact")
+            raise MissingDependencyException(
+                "xgboost package is required to use XgboostModelArtifact"
+            )
 
         if not isinstance(model, xgb.core.Booster):
-            raise TypeError(
+            raise InvalidArgument(
                 "Expect `model` argument to be a `xgboost.core.Booster` instance"
             )
 

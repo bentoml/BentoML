@@ -19,6 +19,7 @@ from __future__ import print_function
 import os
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.exceptions import MissingDependencyException
 
 
 def _import_joblib_module():
@@ -34,7 +35,9 @@ def _import_joblib_module():
             pass
 
     if joblib is None:
-        raise ImportError("sklearn module is required to use SklearnModelArtifact")
+        raise MissingDependencyException(
+            "sklearn module is required to use SklearnModelArtifact"
+        )
 
     return joblib
 

@@ -22,7 +22,7 @@ import logging
 from ruamel.yaml import YAML
 
 from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
-from bentoml.exceptions import BentoMLException, YataiDeploymentException
+from bentoml.exceptions import InvalidArgument, YataiDeploymentException
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ def deployment_dict_to_pb(deployment_dict):
                     field, k8s_config.get(field)
                 )
     else:
-        raise BentoMLException(
+        raise InvalidArgument(
             'Platform "{}" is not supported in the current version of '
             'BentoML'.format(platform)
         )

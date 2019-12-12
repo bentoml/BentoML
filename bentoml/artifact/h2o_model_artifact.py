@@ -20,6 +20,7 @@ import os
 import shutil
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.exceptions import MissingDependencyException
 
 
 class H2oModelArtifact(BentoServiceArtifact):
@@ -42,7 +43,9 @@ class H2oModelArtifact(BentoServiceArtifact):
         try:
             import h2o
         except ImportError:
-            raise ImportError("h2o package is required to use H2oModelArtifact")
+            raise MissingDependencyException(
+                "h2o package is required to use H2oModelArtifact"
+            )
 
         h2o.init()
         model = h2o.load_model(self._model_file_path(path))
@@ -58,7 +61,9 @@ class _H2oModelArtifactWrapper(BentoServiceArtifactWrapper):
         try:
             import h2o
         except ImportError:
-            raise ImportError("h2o package is required to use H2oModelArtifact")
+            raise MissingDependencyException(
+                "h2o package is required to use H2oModelArtifact"
+            )
 
         h2o_saved_path = h2o.save_model(model=self._model, path=dst, force=True)
         shutil.move(h2o_saved_path, self.spec._model_file_path(dst))

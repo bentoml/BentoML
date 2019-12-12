@@ -22,7 +22,7 @@ import subprocess
 import logging
 import re
 
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def ensure_sam_available_or_raise():
                 'Install the package with `pip install -U aws-sam-cli==0.33.1`'
             )
     except ImportError:
-        raise ImportError(
+        raise MissingDependencyException(
             'aws-sam-cli package is required. Install '
             'with `pip install --user aws-sam-cli`'
         )

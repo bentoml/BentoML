@@ -21,7 +21,7 @@ import sys
 
 
 try:
-    import unzip_requirements   # noqa # pylint: disable=unused-import
+    import unzip_requirements  # noqa # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -36,22 +36,25 @@ artifacts_prefix = os.environ.get('BENTOML_ARTIFACTS_PREFIX')
 bento_name = os.environ['BENTOML_BENTO_SERVICE_NAME']
 api_name = os.environ["BENTOML_API_NAME"]
 
-bento_service_cls = load_bento_service_class(bundle_path='./{}'.format(bento_name))
+bento_bundle_path = os.path.join('./', bento_name)
+bento_service_cls = load_bento_service_class(bundle_path=bento_bundle_path)
 
 # Set _bento_service_bundle_path to None, so it won't automatically load artifacts when
 # we init an instance
 bento_service_cls._bento_service_bundle_path = None
 bento_service = bento_service_cls()
 
-# If the artifacts is not an empty list in the service, we will download them from the
-# s3 bucket.
 if bento_service._artifacts:
-    # _load_artifacts take a directory with a subdir 'artifacts' exists
-    tmp_artifacts_dir = '/tmp/bentoml/artifacts'
-    os.mkdir(tmp_artifacts_dir)
+    artifact_directory = bento_bundle_path
+    # If the artifacts dir does not exist, we will download them from the s3 bucket.
+    if not os.path.exists(os.path.join(bento_bundle_path, 'artifacts')):
+        # _load_artifacts take a directory with a subdir 'artifacts' exists
+        tmp_artifacts_dir = '/tmp/bentoml/artifacts'
+        os.mkdir(tmp_artifacts_dir)
 
-    download_directory_from_s3(tmp_artifacts_dir, s3_bucket, artifacts_prefix)
-    bento_service._load_artifacts('/tmp/bentoml')
+        download_directory_from_s3(tmp_artifacts_dir, s3_bucket, artifacts_prefix)
+        artifact_directory = '/tmp/bentoml'
+    bento_service._load_artifacts(artifact_directory)
 
 this_module = sys.modules[__name__]
 

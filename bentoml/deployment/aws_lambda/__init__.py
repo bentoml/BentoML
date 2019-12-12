@@ -36,6 +36,7 @@ from bentoml.deployment.aws_lambda.utils import (
     validate_lambda_template,
     is_build_function_size_under_lambda_limit,
     reduce_lambda_function_size,
+    is_build_function_size_over_max_lambda_size,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
@@ -51,7 +52,7 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentResponse,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
-from bentoml.utils.s3 import create_s3_bucket_if_not_exists, upload_directory_to_s3
+from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
 
@@ -250,18 +251,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     deployment_spec.bento_name,
                     deployment_spec.bento_version,
                 )
-                logger.debug(
-                    'This lambda deployment requires uploading artifacts to s3'
-                )
-                upload_dir_path = os.path.join(
-                    bento_path, deployment_spec.bento_name, 'artifacts'
-                )
-                upload_directory_to_s3(
-                    upload_dir_path,
-                    lambda_deployment_config.region,
-                    lambda_s3_bucket,
-                    artifacts_prefix,
-                )
             with TempDirectory() as lambda_project_dir:
                 logger.debug(
                     'Generating cloudformation template.yaml for lambda project at %s',
@@ -310,6 +299,13 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         if not is_build_function_size_under_lambda_limit(
                             build_directory
                         ):
+                            if is_build_function_size_over_max_lambda_size(
+                                build_directory
+                            ):
+                                raise BentoMLException(
+                                    'Build function size is over 700MB, max size '
+                                    'capable for AWS Lambda function'
+                                )
                             logger.debug(
                                 'Function %s is over lambda size limit, attempting '
                                 'reduce it',
@@ -318,11 +314,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                             reduce_lambda_function_size(
                                 region=lambda_deployment_config.region,
                                 s3_bucket=lambda_s3_bucket,
-                                s3_prefix=deployment_path_prefix,
+                                s3_requirement_prefix=deployment_path_prefix,
                                 build_directory=build_directory,
                                 function_name=api_name,
                                 root_dir=lambda_project_dir,
                                 bento_service_name=deployment_spec.bento_name,
+                                s3_artifacts_prefix=artifacts_prefix,
                             )
                     logger.info(
                         'Packaging AWS Lambda project at %s ...', lambda_project_dir

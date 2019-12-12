@@ -37,15 +37,18 @@ class BentoMLException(Exception):
     Each custom exception should be derived from this class
     """
 
-    status_code = status_pb2.Status.INTERNAL
+    proto_status_code = status_pb2.Status.INTERNAL
 
     @property
     def status_proto(self):
-        return status_pb2.Status(status_code=self.status_code, error_message=str(self))
+        return status_pb2.Status(
+            status_code=self.proto_status_code, error_message=str(self)
+        )
 
     @property
-    def http_status_code(self):
-        return _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE.get(self.status_code, 500)
+    def status_code(self):
+        """HTTP response status code"""
+        return _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE.get(self.proto_status_code, 500)
 
 
 class Unauthenticated(BentoMLException):
@@ -54,16 +57,16 @@ class Unauthenticated(BentoMLException):
     party cloud service such as AWS s3, Docker Hub, or Atalaya hosted BentoML service
     """
 
-    status_code = status_pb2.Status.UNAUTHENTICATED
+    proto_status_code = status_pb2.Status.UNAUTHENTICATED
 
 
-class InvalidArgument(BentoMLException, BadRequest):
+class InvalidArgument(BentoMLException):
     """
     Raise when BentoML received unexpected/invalid arguments from CLI arguments, HTTP
     Request, or python API function parameters
     """
 
-    status_code = status_pb2.Status.INVALID_ARGUMENT
+    proto_status_code = status_pb2.Status.INVALID_ARGUMENT
 
 
 class ArtifactLoadingException(BentoMLException):
@@ -83,7 +86,7 @@ class MissingDependencyException(BentoMLException):
     """
 
 
-class BadInput(InvalidArgument, BadRequest):
+class BadInput(InvalidArgument):
     """Raise when BentoHandler receiving bad input request"""
 
 
@@ -94,7 +97,7 @@ class YataiServiceException(BentoMLException):
 class YataiServiceRpcAborted(YataiServiceException):
     """Raise when YataiService RPC operation aborted"""
 
-    status_code = status_pb2.Status.ABORTED
+    proto_status_code = status_pb2.Status.ABORTED
 
 
 class YataiDeploymentException(YataiServiceException):

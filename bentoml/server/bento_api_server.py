@@ -355,7 +355,7 @@ class BentoAPIServer:
                             message="BentoService error handling API request: %s"
                             % str(e)
                         ),
-                        e.http_status_code,
+                        e.status_code,
                     )
 
                 request_log = {

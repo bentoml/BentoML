@@ -19,7 +19,6 @@ from __future__ import print_function
 import os
 import sys
 
-
 try:
     import unzip_requirements  # noqa # pylint: disable=unused-import
 except ImportError:
@@ -27,32 +26,19 @@ except ImportError:
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
+from bentoml import load  # noqa
 
-from bentoml.utils.s3 import download_directory_from_s3  # noqa
-from bentoml.bundler import load_bento_service_class  # noqa
-
-s3_bucket = os.environ.get('BENTOML_S3_BUCKET')
-deployment_prefix = os.environ.get('BENTOML_DEPLOYMENT_PATH_PREFIX')
 bento_name = os.environ['BENTOML_BENTO_SERVICE_NAME']
 api_name = os.environ["BENTOML_API_NAME"]
 
 bento_bundle_path = os.path.join('./', bento_name)
-bento_service_cls = load_bento_service_class(bundle_path=bento_bundle_path)
+if not os.path.exists(bento_bundle_path):
+    bento_bundle_path = os.path.join('/tmp/requirements', bento_name)
 
-# Set _bento_service_bundle_path to None, so it won't automatically load artifacts when
-# we init an instance
-bento_service_cls._bento_service_bundle_path = None
-bento_service = bento_service_cls()
+print('Bento bundle path is', bento_bundle_path)
+bento_service = load(bento_bundle_path)
 
-if bento_service._artifacts:
-    if os.path.exists(os.path.join(bento_bundle_path, 'artifacts')):
-        bento_service._load_artifacts(bento_bundle_path)
-    else:
-        artifact_dir = os.path.join(deployment_prefix, 'artifacts')
-        os.mkdir('/tmp/bentoml/artifacts')
-        download_directory_from_s3('/tmp/bentoml/artifacts', s3_bucket, artifact_dir)
-        bento_service._load_artifacts('/tmp/bentoml')
-
+print('Bento service loaded', bento_service)
 this_module = sys.modules[__name__]
 
 

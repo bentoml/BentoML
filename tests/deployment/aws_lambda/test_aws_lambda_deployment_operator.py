@@ -95,9 +95,7 @@ def test_aws_lambda_app_py(monkeypatch):
 
     @mock_lambda_app
     @patch('bentoml.bundler.load_bento_service_class', return_value=Mock_bento_service)
-    def return_predict_func(
-        mock_load_service, mock_download_artifacts
-    ):
+    def return_predict_func(mock_load_service, mock_download_artifacts):
         from bentoml.deployment.aws_lambda.lambda_app import predict
 
         return predict

@@ -28,7 +28,6 @@ import boto3
 from botocore.exceptions import ClientError
 
 from bentoml.exceptions import BentoMLException
-from bentoml.utils.s3 import upload_directory_to_s3
 
 logger = logging.getLogger(__name__)
 
@@ -264,33 +263,22 @@ def init_sam_project(
         cleanup_build_files(sam_project_path, api_name)
 
 
-def _sum_total_directory_size(directory):
-    dir_size = sum(
-        f.stat().st_size for f in Path(directory).glob('**/*') if f.is_file()
-    )
-    return dir_size
+def total_file_or_directory_size(file_or_dir):
+    if os.path.isdir(file_or_dir):
+        return sum(
+            f.stat().st_size for f in Path(file_or_dir).glob('**/*') if f.is_file()
+        )
+    else:
+        return Path(file_or_dir).stat().st_size
 
 
-def is_build_function_size_under_lambda_limit(build_directory):
-    dir_size = _sum_total_directory_size(build_directory)
-    logger.debug('Directory %s size is %d', build_directory, dir_size)
-    return dir_size <= LAMBDA_FUNCTION_LIMIT
-
-
-def is_build_function_size_over_max_lambda_size(build_directory):
-    dir_size = _sum_total_directory_size(build_directory)
-    return dir_size > LAMBDA_FUNCTION_MAX_LIMIT
-
-
-def reduce_lambda_build_directory_size(
+def reduce_bundle_size_and_upload_extra_resources_to_s3(
     build_directory,
     region,
     s3_bucket,
     deployment_prefix,
     function_name,
     lambda_project_dir,
-    bento_service_name,
-    s3_artifacts_prefix,
 ):
     additional_requirements_path = os.path.join(
         lambda_project_dir, 'additional_requirements', function_name
@@ -298,92 +286,48 @@ def reduce_lambda_build_directory_size(
     upload_dir_path = os.path.join(additional_requirements_path, 'requirements')
     s3_client = boto3.client('s3', region)
 
-    # list of modules that HAVE to be part of the function bundle
-    lambda_function_required_bundled_list = [
+    dir_name_to_size = dict(
+        (item, total_file_or_directory_size(os.path.join(build_directory, item)))
+        for item in os.listdir(build_directory)
+    )
+
+    required_bundle_list = [
         'botocore',
         'boto3',
         'bentoml',
         'app.py',
         '__init__.py',
         'unzip_requirements.py',
-        bento_service_name,
     ]
-    current_function_size = sum(
-        _sum_total_directory_size(os.path.join(build_directory, i))
-        for i in lambda_function_required_bundled_list
-    )
-    logger.debug('Basic function bundle size is %d', current_function_size)
-    if current_function_size > LAMBDA_FUNCTION_LIMIT:
-        # Current function bundle is still over the limit. If bento bundle has
-        # "artifacts" directory, we will move artifacts to s3 to reduce function bundle
-        # size. If there is no artifacts directory, we will use build-in boto3/botocore
-        # from lambda function, instead of bundle our own.
-        # We are making assumption of bento bundle is relatively small.
-        artifact_directory = os.path.join(
-            build_directory, bento_service_name, 'artifacts'
-        )
-        if os.path.exists(artifact_directory):
-            logger.debug(
-                'The function bundle is over limit. Moving artifacts to s3 bucket.'
-            )
-            upload_directory_to_s3(
-                upload_directory_path=artifact_directory,
-                region=region,
-                bucket_name=s3_bucket,
-                s3_path_prefix=s3_artifacts_prefix,
-            )
-            shutil.rmtree(artifact_directory)
-        else:
-            # we are just going to use the boto3/botocore from the lambda runtime,
-            # instead of packing our own
-            shutil.rmtree(os.path.join(build_directory, 'boto3'))
-            shutil.rmtree(os.path.join(build_directory, 'botocore'))
-            logger.debug(
-                'Remove "boto3" and "botocore" from function bundle, using Lambda '
-                'provide modules instead'
-            )
-        current_function_size = sum(
-            _sum_total_directory_size(os.path.join(build_directory, i))
-            for i in lambda_function_required_bundled_list
-        )
-        logger.debug('The new function bundle size is %d', current_function_size)
-
-    # Continue include modules until the function bundle size is at the limit. Rest of
-    # the modules will be tar and upload to s3 bucket
-    for file_or_dir_name in os.listdir(build_directory):
-        if file_or_dir_name in lambda_function_required_bundled_list:
-            logger.debug(
-                'Including "%s" it is part of required bundle.', file_or_dir_name
-            )
+    required_bundle_size = sum(dir_name_to_size[i] for i in required_bundle_list)
+    for name, size in sorted(
+        dir_name_to_size.items(), key=lambda i: i[1], reverse=True
+    ):
+        if name in required_bundle_list:
+            logger.debug('Including "%s" it is part of required bundle.', name)
             continue
         else:
-            function_size_limit = current_function_size + _sum_total_directory_size(
-                os.path.join(build_directory, file_or_dir_name)
-            )
-            if function_size_limit >= LAMBDA_FUNCTION_LIMIT:
+            new_bundle_size = required_bundle_size + size
+            if new_bundle_size >= LAMBDA_FUNCTION_LIMIT:
                 logger.debug(
                     'Lambda function size %d is over the limit. Moving item "%s" '
                     'out of the bundle directory',
-                    function_size_limit,
-                    file_or_dir_name,
+                    new_bundle_size,
+                    name,
                 )
-                package_path = os.path.join(build_directory, file_or_dir_name)
-                copy_dst_path = os.path.join(upload_dir_path, file_or_dir_name)
-                if os.path.isdir(package_path):
-                    shutil.copytree(package_path, copy_dst_path)
-                    shutil.rmtree(package_path)
-                else:
-                    shutil.copyfile(package_path, copy_dst_path)
-                    os.remove(package_path)
+                package_path = os.path.join(build_directory, name)
+                copy_dst_path = os.path.join(upload_dir_path, name)
+                shutil.move(package_path, copy_dst_path)
             else:
                 logger.debug(
                     'Including "%s" Now the current lambda function size is %d',
-                    file_or_dir_name,
-                    function_size_limit,
+                    name,
+                    new_bundle_size,
                 )
-                current_function_size = function_size_limit
-    logger.debug('Final Lambda function bundle size is %d', current_function_size)
-    additional_requirements_size = _sum_total_directory_size(
+                required_bundle_size = new_bundle_size
+
+    logger.debug('Final Lambda function bundle size is %d', required_bundle_size)
+    additional_requirements_size = total_file_or_directory_size(
         additional_requirements_path
     )
     logger.debug('Additional requirement size is %d', additional_requirements_size)
@@ -391,9 +335,7 @@ def reduce_lambda_build_directory_size(
     tar_file_path = os.path.join(additional_requirements_path, 'requirements.tar')
     with tarfile.open(tar_file_path, 'w:gz') as tar:
         tar.add(upload_dir_path, arcname='requirements')
-    logger.debug(
-        'Uploading requirements.tar to %s/%s', s3_bucket, deployment_prefix
-    )
+    logger.debug('Uploading requirements.tar to %s/%s', s3_bucket, deployment_prefix)
     try:
         s3_client.upload_file(
             tar_file_path,

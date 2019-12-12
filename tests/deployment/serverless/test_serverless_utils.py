@@ -9,6 +9,6 @@ from bentoml.exceptions import MissingDependencyException
 
 def test_check_nodejs_compatible_version():
     with pytest.raises(MissingDependencyException) as error:
-        with patch('bentoml.utils.whichcraft.which', return_value=None):
+        with patch('shutil.which', return_value=None):
             check_nodejs_compatible_version()
     assert str(error.value).startswith('NPM is not installed')

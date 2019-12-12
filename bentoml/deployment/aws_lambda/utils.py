@@ -32,9 +32,12 @@ from bentoml.utils.s3 import upload_directory_to_s3
 
 logger = logging.getLogger(__name__)
 
-
-LAMBDA_FUNCTION_LIMIT = 262144000
-LAMBDA_FUNCTION_MAX_LIMIT = 700000000
+# Maximum size for Lambda function bundle 250MB, leaving 1mb offset
+LAMBDA_FUNCTION_LIMIT = 249000000
+# Total disk size that user has access to.  Lambda function bundle + /tmp 512MB, leaving
+# 1mb offset
+LAMBDA_TEMPORARY_DIRECTORY_MAX_LIMIT = 511000000
+LAMBDA_FUNCTION_MAX_LIMIT = LAMBDA_FUNCTION_LIMIT + LAMBDA_TEMPORARY_DIRECTORY_MAX_LIMIT
 
 
 def ensure_sam_available_or_raise():

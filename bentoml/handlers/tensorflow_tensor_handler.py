@@ -34,43 +34,58 @@ class TensorflowTensorHandler(BentoHandler):
     Tensor handlers for Tensorflow models.
     Transform incoming tf tensor data from http request, cli or lambda event into
     tf tensor.
-    The behaviour should be compatible with tensorflow serving REST predict API:
+    The behaviour should be compatible with tensorflow serving REST API:
+        * https://www.tensorflow.org/tfx/serving/api_rest#classify_and_regress_api
         * https://www.tensorflow.org/tfx/serving/api_rest#predict_api
 
     Args:
-        -
+        * method: equivalence of serving API methods: (predict, classify, regress)
 
     Raises:
         BentoMLException: BentoML currently doesn't support Content-Type
     """
+    METHODS = (
+        PREDICT,
+        CLASSIFY,
+        REGRESS,
+    ) = (
+        "predict",
+        "classify",
+        "regress",
+    )
+
+    def __init__(self, method=PREDICT):
+        self.method = method
 
     @property
     def request_schema(self):
-
-        return {
-            "application/json": {
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "signature_name": {
-                            "type": "string",
-                            "default": None,
-                        },
-                        "instances": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
+        if self.method == self.PREDICT:
+            return {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "signature_name": {
+                                "type": "string",
+                                "default": None,
                             },
-                            "default": None,
+                            "instances": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                },
+                                "default": None,
+                            },
+                            "inputs": {
+                                "type": "object",
+                                "default": None,
+                            }
                         },
-                        "inputs": {
-                            "type": "object",
-                            "default": None,
-                        }
-                    },
+                    }
                 }
             }
-        }
+        else:
+            raise NotImplementedError(f"method {self.method} is not implemented")
 
     def _handle_raw_str(self, raw_str, output_format, func):
         import tensorflow as tf
@@ -83,8 +98,7 @@ class TensorflowTensorHandler(BentoHandler):
             result = decode_tf_if_needed(result)
 
         elif parsed_json.get("inputs"):
-            # column mode
-            raise NotImplementedError
+            raise NotImplementedError("column format 'inputs' is not implemented")
 
         if output_format == "json":
             result_object = {"predictions": result}

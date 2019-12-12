@@ -22,7 +22,7 @@ import logging
 import pathlib
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
-from bentoml.exceptions import MissingDependencyException, InvalidArgument
+from bentoml.exceptions import MissingDependencyException
 
 
 logger = logging.getLogger(__name__)

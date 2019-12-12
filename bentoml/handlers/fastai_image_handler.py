@@ -194,7 +194,7 @@ class FastaiImageHandler(BentoHandler):
                 base64.decodebytes(event["body"]), pilmode=self.pilmode
             )
         else:
-            raise BentoMLException(
+            raise BadInput(
                 "BentoML currently doesn't support Content-Type: {content_type} for "
                 "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
             )

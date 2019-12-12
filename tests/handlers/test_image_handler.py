@@ -5,9 +5,9 @@ import mock
 import flask
 import imageio
 import numpy as np
-from werkzeug.exceptions import BadRequest
 
 
+from bentoml.exceptions import BadInput
 from bentoml.handlers import ImageHandler
 
 
@@ -113,7 +113,7 @@ def test_image_handler_http_request_malformatted_input_missing_image_file():
     request.headers = {}
     request.get_data.return_value = None
 
-    with pytest.raises(BadRequest) as e:
+    with pytest.raises(BadInput) as e:
         test_image_handler.handle_request(request, predict)
 
     assert "unexpected HTTP request format" in str(e.value)
@@ -128,7 +128,7 @@ def test_image_handler_http_request_malformatted_input_wrong_input_name():
     request.headers = {}
     request.get_data.return_value = None
 
-    with pytest.raises(BadRequest) as e:
+    with pytest.raises(BadInput) as e:
         test_image_handler.handle_request(request, predict)
 
     assert "unexpected HTTP request format" in str(e.value)

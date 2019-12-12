@@ -21,7 +21,7 @@ import json
 import pandas as pd
 import numpy as np
 
-from werkzeug.exceptions import BadRequest
+from bentoml.exceptions import InvalidArgument
 
 
 class BentoHandler:
@@ -85,4 +85,4 @@ def get_output_str(result, output_format, output_orient="records"):
                 # when result is not JSON serializable
                 return json.dumps(str(result))
     else:
-        raise BadRequest("Output format {} is not supported".format(output_format))
+        raise InvalidArgument("Output format {} is not supported".format(output_format))

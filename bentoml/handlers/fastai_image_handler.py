@@ -21,12 +21,11 @@ import argparse
 import base64
 from io import BytesIO
 
-from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
 from flask import Response
 import numpy as np
 
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BadInput
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 from bentoml.handlers.image_handler import (
     verify_image_format_or_raise,
@@ -137,7 +136,7 @@ class FastaiImageHandler(BentoHandler):
             if data:
                 input_streams = (data,)
             else:
-                raise BadRequest(
+                raise BadInput(
                     "BentoML#ImageHandler unexpected HTTP request: %s" % request
                 )
 

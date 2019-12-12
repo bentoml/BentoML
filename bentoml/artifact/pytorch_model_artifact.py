@@ -20,6 +20,7 @@ import os
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 from bentoml.utils import cloudpickle
+from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
 
 class PytorchModelArtifact(BentoServiceArtifact):
@@ -49,12 +50,14 @@ class PytorchModelArtifact(BentoServiceArtifact):
         try:
             import torch
         except ImportError:
-            raise ImportError("torch package is required to use PytorchModelArtifact")
+            raise MissingDependencyException(
+                "torch package is required to use PytorchModelArtifact"
+            )
 
         model = cloudpickle.load(open(self._file_path(path), 'rb'))
 
         if not isinstance(model, torch.nn.Module):
-            raise TypeError(
+            raise InvalidArgument(
                 "Expecting PytorchModelArtifact loaded object type to be "
                 "'torch.nn.Module' but actually it is {}".format(type(model))
             )
@@ -69,10 +72,14 @@ class _PytorchModelArtifactWrapper(BentoServiceArtifactWrapper):
         try:
             import torch
         except ImportError:
-            raise ImportError("torch package is required to use PytorchModelArtifact")
+            raise MissingDependencyException(
+                "torch package is required to use PytorchModelArtifact"
+            )
 
         if not isinstance(model, torch.nn.Module):
-            raise TypeError("PytorchModelArtifact can only pack type 'torch.nn.Module'")
+            raise InvalidArgument(
+                "PytorchModelArtifact can only pack type 'torch.nn.Module'"
+            )
 
         self._model = model
 

@@ -22,6 +22,7 @@ import logging
 import pathlib
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,9 @@ def _load_tf_saved_model(path):
 
         TF2 = tf.__version__.startswith('2')
     except ImportError:
-        raise ImportError("Tensorflow package is required to use TfSavedModelArtifact")
+        raise MissingDependencyException(
+            "Tensorflow package is required to use TfSavedModelArtifact"
+        )
 
     if TF2:
         return tf.saved_model.load(path)
@@ -159,7 +162,7 @@ class _TensorflowSavedModelArtifactWrapper(BentoServiceArtifactWrapper):
 
             TF2 = tf.__version__.startswith('2')
         except ImportError:
-            raise ImportError(
+            raise MissingDependencyException(
                 "Tensorflow package is required to use TfSavedModelArtifact."
             )
 

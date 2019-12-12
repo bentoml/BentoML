@@ -21,7 +21,11 @@ import importlib
 
 from bentoml.utils import cloudpickle
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
-from bentoml.exceptions import ArtifactLoadingException
+from bentoml.exceptions import (
+    ArtifactLoadingException,
+    MissingDependencyException,
+    InvalidArgument,
+)
 
 
 class KerasModelArtifact(BentoServiceArtifact):
@@ -53,7 +57,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         try:
             import tensorflow as tf
         except ImportError:
-            raise ImportError(
+            raise MissingDependencyException(
                 "Tensorflow package is required to use KerasModelArtifact. BentoML "
                 "currently only support using Keras with Tensorflow backend."
             )
@@ -88,7 +92,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         try:
             import tensorflow as tf
         except ImportError:
-            raise ImportError(
+            raise MissingDependencyException(
                 "Tensorflow package is required to use KerasModelArtifact. BentoML "
                 "currently only support using Keras with Tensorflow backend."
             )
@@ -100,7 +104,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         try:
             import tensorflow as tf
         except ImportError:
-            raise ImportError(
+            raise MissingDependencyException(
                 "Tensorflow package is required to use KerasModelArtifact. BentoML "
                 "currently only support using Keras with Tensorflow backend."
             )
@@ -113,7 +117,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         try:
             import tensorflow as tf
         except ImportError:
-            raise ImportError(
+            raise MissingDependencyException(
                 "Tensorflow package is required to use KerasModelArtifact. BentoML "
                 "currently only support using Keras with Tensorflow backend."
             )
@@ -139,11 +143,11 @@ class KerasModelArtifact(BentoServiceArtifact):
                 import keras
 
                 if not isinstance(model, keras.engine.network.Network):
-                    raise TypeError(error_msg)
+                    raise InvalidArgument(error_msg)
                 else:
                     self._keras_module_name = keras.__name__
             except ImportError:
-                raise TypeError(error_msg)
+                raise InvalidArgument(error_msg)
 
         self.bind_keras_backend_session()
         model._make_predict_function()

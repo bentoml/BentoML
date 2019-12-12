@@ -19,6 +19,7 @@ from __future__ import print_function
 import os
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
 
 class LightGBMModelArtifact(BentoServiceArtifact):
@@ -49,7 +50,7 @@ class LightGBMModelArtifact(BentoServiceArtifact):
         try:
             import lightgbm as lgb
         except ImportError:
-            raise ImportError(
+            raise MissingDependencyException(
                 "lightgbm package is required to use LightGBMModelArtifact"
             )
         bst = lgb.Booster(model_file=self._model_file_path(path))
@@ -65,12 +66,12 @@ class _LightGBMModelArtifactWrapper(BentoServiceArtifactWrapper):
         try:
             import lightgbm as lgb
         except ImportError:
-            raise ImportError(
+            raise MissingDependencyException(
                 "lightgbm package is required to use LightGBMModelArtifact"
             )
 
         if not isinstance(model, lgb.Booster):
-            raise TypeError(
+            raise InvalidArgument(
                 "Expect `model` argument to be a `lightgbm.Booster` instance"
             )
 

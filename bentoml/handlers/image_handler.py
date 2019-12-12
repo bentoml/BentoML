@@ -25,7 +25,7 @@ from werkzeug.utils import secure_filename
 from flask import Response
 
 from bentoml import config
-from bentoml.exceptions import BentoMLException, BadInput
+from bentoml.exceptions import BadInput, MissingDependencyException
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 
 
@@ -33,7 +33,9 @@ def _import_imageio_imread():
     try:
         from imageio import imread
     except ImportError:
-        raise ImportError("imageio package is required to use ImageHandler")
+        raise MissingDependencyException(
+            "imageio package is required to use ImageHandler"
+        )
 
     return imread
 
@@ -183,7 +185,7 @@ class ImageHandler(BentoHandler):
         if event["headers"].get("Content-Type", "").startswith("images/"):
             image = self.imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
         else:
-            raise BentoMLException(
+            raise BadInput(
                 "BentoML currently doesn't support Content-Type: {content_type} for "
                 "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
             )

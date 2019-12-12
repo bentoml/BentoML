@@ -37,16 +37,16 @@ if not os.path.exists(additional_pkg_dir):
         logger.debug('requirement.tar does not exist, downloading from %s', s3_bucket)
         try:
             s3_client.download_file(s3_bucket, s3_file_path, saved_file_path)
+            logger.debug('Extracting content from tar file')
+            tar = tarfile.open(saved_file_path)
+            tar.extractall(path='/tmp')
+            logger.debug('Remove tar file')
+            tar.close()
+            os.remove(saved_file_path)
+            logger.debug('Appending /tmp/requirements to PYTHONPATH')
+            sys.path.append(additional_pkg_dir)
         except ClientError as e:
             if e.response['Error']['Code'] == "404":
                 logger.error('File %s/%s does not exists', s3_bucket, s3_file_path)
             else:
                 raise
-    logger.debug('Extracting content from tar file')
-    tar = tarfile.open(saved_file_path)
-    tar.extractall(path='/tmp')
-    logger.debug('Remove tar file')
-    tar.close()
-    os.remove(saved_file_path)
-    logger.debug('Appending /tmp/requirements to PYTHONPATH')
-    sys.path.append(additional_pkg_dir)

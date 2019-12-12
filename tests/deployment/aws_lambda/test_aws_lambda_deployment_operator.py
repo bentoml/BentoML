@@ -1,4 +1,5 @@
 import os
+import sys
 
 import boto3
 from mock import MagicMock, patch, Mock
@@ -89,14 +90,13 @@ def test_aws_lambda_app_py(monkeypatch):
 
         return mock_wrapper
 
+    mock_unzip_requirements = MagicMock()
+    sys.modules['unzip_requirements'] = mock_unzip_requirements
+
     @mock_lambda_app
     @patch('bentoml.bundler.load_bento_service_class', return_value=Mock_bento_service)
-    @patch(
-        'bentoml.deployment.aws_lambda.utils.download_and_unzip_additional_packages',
-        return_value=None,
-    )
     def return_predict_func(
-        mock_load_service, mock_download_artifacts, mock_download_requirements
+        mock_load_service, mock_download_artifacts
     ):
         from bentoml.deployment.aws_lambda.lambda_app import predict
 
@@ -104,6 +104,7 @@ def test_aws_lambda_app_py(monkeypatch):
 
     predict = return_predict_func()
     assert predict(1, None) == 1
+    sys.modules['unzip_requirements'] = None
 
 
 @patch('shutil.rmtree', MagicMock())

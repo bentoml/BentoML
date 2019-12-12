@@ -49,42 +49,57 @@ class BentoMLException(Exception):
 
 
 class Unauthenticated(BentoMLException):
+    """
+    Raise when a BentoML operation is not authenticated properly, either against 3rd
+    party cloud service such as AWS s3, Docker Hub, or Atalaya hosted BentoML service
+    """
+
     status_code = status_pb2.Status.UNAUTHENTICATED
 
 
-class InvalidArgument(BentoMLException):
+class InvalidArgument(BentoMLException, BadRequest):
+    """
+    Raise when BentoML received unexpected/invalid arguments from CLI arguments, HTTP
+    Request, or python API function parameters
+    """
+
     status_code = status_pb2.Status.INVALID_ARGUMENT
 
 
 class ArtifactLoadingException(BentoMLException):
-    pass
+    """Raise when BentoService failed to load model artifacts from saved bundle"""
 
 
 class BentoMLConfigException(BentoMLException):
-    pass
+    """Raise when BentoML is misconfigured or when required configuration is missing"""
 
 
 class MissingDependencyException(BentoMLException):
-    pass
+    """
+    Raise when BentoML component failed to load required dependency - some BentoML
+    components has dependency that is optional to the library itself. For example,
+    when using SklearnModelArtifact, the scikit-learn module is required although
+    BentoML does not require scikit-learn to be a dependency when installed
+    """
 
 
 class BadInput(InvalidArgument, BadRequest):
     """Raise when BentoHandler receiving bad input request"""
 
-    pass
-
 
 class YataiServiceException(BentoMLException):
-    pass
+    """Raise when YataiService encounters an error"""
 
 
 class YataiServiceRpcAborted(YataiServiceException):
+    """Raise when YataiService RPC operation aborted"""
+
     status_code = status_pb2.Status.ABORTED
 
 
 class YataiDeploymentException(YataiServiceException):
-    pass
+    """Raise when YataiService encounters an issue creating/managing deployments"""
 
 
 class YataiRepositoryException(YataiServiceException):
-    pass
+    """Raise when YataiService encounters an issue managing BentoService repoistory"""

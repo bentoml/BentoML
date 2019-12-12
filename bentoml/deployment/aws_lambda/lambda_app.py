@@ -32,7 +32,7 @@ from bentoml.utils.s3 import download_directory_from_s3  # noqa
 from bentoml.bundler import load_bento_service_class  # noqa
 
 s3_bucket = os.environ.get('BENTOML_S3_BUCKET')
-artifacts_prefix = os.environ.get('BENTOML_ARTIFACTS_PREFIX')
+deployment_prefix = os.environ.get('BENTOML_DEPLOYMENT_PATH_PREFIX')
 bento_name = os.environ['BENTOML_BENTO_SERVICE_NAME']
 api_name = os.environ["BENTOML_API_NAME"]
 
@@ -45,16 +45,13 @@ bento_service_cls._bento_service_bundle_path = None
 bento_service = bento_service_cls()
 
 if bento_service._artifacts:
-    artifact_directory = bento_bundle_path
-    # If the artifacts dir does not exist, we will download them from the s3 bucket.
-    if not os.path.exists(os.path.join(bento_bundle_path, 'artifacts')):
-        # _load_artifacts take a directory with a subdir 'artifacts' exists
-        tmp_artifacts_dir = '/tmp/bentoml/artifacts'
-        os.mkdir(tmp_artifacts_dir)
-
-        download_directory_from_s3(tmp_artifacts_dir, s3_bucket, artifacts_prefix)
-        artifact_directory = '/tmp/bentoml'
-    bento_service._load_artifacts(artifact_directory)
+    if os.path.exists(os.path.join(bento_bundle_path, 'artifacts')):
+        bento_service._load_artifacts(bento_bundle_path)
+    else:
+        artifact_dir = os.path.join(deployment_prefix, 'artifacts')
+        os.mkdir('/tmp/bentoml/artifacts')
+        download_directory_from_s3('/tmp/bentoml/artifacts', s3_bucket, artifact_dir)
+        bento_service._load_artifacts('/tmp/bentoml')
 
 this_module = sys.modules[__name__]
 

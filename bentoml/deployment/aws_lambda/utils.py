@@ -235,10 +235,6 @@ def init_sam_project(
     model_path = os.path.join(bento_service_bundle_path, bento_name)
     shutil.copytree(model_path, os.path.join(function_path, bento_name))
 
-    # remove the artifacts dir. Artifacts already uploaded to s3
-    # logger.debug('Removing artifacts directory')
-    # shutil.rmtree(os.path.join(function_path, bento_name, 'artifacts'))
-
     logger.debug('Creating python files for lambda function')
     # Create empty __init__.py
     open(os.path.join(function_path, '__init__.py'), 'w').close()
@@ -278,26 +274,26 @@ def _sum_total_directory_size(directory):
 def is_build_function_size_under_lambda_limit(build_directory):
     dir_size = _sum_total_directory_size(build_directory)
     logger.debug('Directory %s size is %d', build_directory, dir_size)
-    return False if dir_size > LAMBDA_FUNCTION_LIMIT else True
+    return dir_size <= LAMBDA_FUNCTION_LIMIT
 
 
 def is_build_function_size_over_max_lambda_size(build_directory):
     dir_size = _sum_total_directory_size(build_directory)
-    return True if dir_size > LAMBDA_FUNCTION_MAX_LIMIT else False
+    return dir_size > LAMBDA_FUNCTION_MAX_LIMIT
 
 
-def reduce_lambda_function_size(
+def reduce_lambda_build_directory_size(
+    build_directory,
     region,
     s3_bucket,
-    s3_requirement_prefix,
-    build_directory,
+    deployment_prefix,
     function_name,
-    root_dir,
+    lambda_project_dir,
     bento_service_name,
     s3_artifacts_prefix,
 ):
     additional_requirements_path = os.path.join(
-        root_dir, 'additional_requirements', function_name
+        lambda_project_dir, 'additional_requirements', function_name
     )
     upload_dir_path = os.path.join(additional_requirements_path, 'requirements')
     s3_client = boto3.client('s3', region)
@@ -318,13 +314,17 @@ def reduce_lambda_function_size(
     )
     logger.debug('Basic function bundle size is %d', current_function_size)
     if current_function_size > LAMBDA_FUNCTION_LIMIT:
+        # Current function bundle is still over the limit. If bento bundle has
+        # "artifacts" directory, we will move artifacts to s3 to reduce function bundle
+        # size. If there is no artifacts directory, we will use build-in boto3/botocore
+        # from lambda function, instead of bundle our own.
+        # We are making assumption of bento bundle is relatively small.
         artifact_directory = os.path.join(
             build_directory, bento_service_name, 'artifacts'
         )
         if os.path.exists(artifact_directory):
             logger.debug(
-                'The basic function bundle is over limit. '
-                'Moving artifacts to s3 bucket.'
+                'The function bundle is over limit. Moving artifacts to s3 bucket.'
             )
             upload_directory_to_s3(
                 upload_directory_path=artifact_directory,
@@ -382,19 +382,23 @@ def reduce_lambda_function_size(
                     function_size_limit,
                 )
                 current_function_size = function_size_limit
+    logger.debug('Final Lambda function bundle size is %d', current_function_size)
+    additional_requirements_size = _sum_total_directory_size(
+        additional_requirements_path
+    )
+    logger.debug('Additional requirement size is %d', additional_requirements_size)
     logger.debug('zip up additional requirement packages')
     tar_file_path = os.path.join(additional_requirements_path, 'requirements.tar')
     with tarfile.open(tar_file_path, 'w:gz') as tar:
         tar.add(upload_dir_path, arcname='requirements')
-
     logger.debug(
-        'Uploading requirements.tar to %s/%s', s3_bucket, s3_requirement_prefix
+        'Uploading requirements.tar to %s/%s', s3_bucket, deployment_prefix
     )
     try:
         s3_client.upload_file(
             tar_file_path,
             s3_bucket,
-            os.path.join(s3_requirement_prefix, 'requirements.tar'),
+            os.path.join(deployment_prefix, 'requirements.tar'),
         )
     except ClientError as e:
         raise BentoMLException(str(e))

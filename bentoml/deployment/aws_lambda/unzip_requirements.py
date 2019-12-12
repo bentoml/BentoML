@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import io
 import os
 import sys
 import tarfile
@@ -29,24 +29,20 @@ additional_pkg_dir = '/tmp/requirements'
 
 if not os.path.exists(additional_pkg_dir):
     logger.debug('Additional required modules are not present. Downloading from s3')
-    saved_file_path = '/tmp/requirements.tar'
+    s3_file_path = os.path.join(s3_prefix, 'requirements.tar')
 
     s3_client = boto3.client('s3')
-    s3_file_path = os.path.join(s3_prefix, 'requirements.tar')
-    if not os.path.isfile(saved_file_path):
-        logger.debug('requirement.tar does not exist, downloading from %s', s3_bucket)
-        try:
-            s3_client.download_file(s3_bucket, s3_file_path, saved_file_path)
-            logger.debug('Extracting content from tar file')
-            tar = tarfile.open(saved_file_path)
-            tar.extractall(path='/tmp')
-            logger.debug('Remove tar file')
-            tar.close()
-            os.remove(saved_file_path)
-            logger.debug('Appending /tmp/requirements to PYTHONPATH')
-            sys.path.append(additional_pkg_dir)
-        except ClientError as e:
-            if e.response['Error']['Code'] == "404":
-                logger.error('File %s/%s does not exists', s3_bucket, s3_file_path)
-            else:
-                raise
+    logger.debug('requirement.tar does not exist, downloading from %s', s3_bucket)
+    try:
+        obj = s3_client.get_object(Bucket=s3_bucket, Key=s3_file_path)
+        bytestream = io.BytesIO(obj['Body'].read())
+        logger.debug('Extracting required modules from tar file')
+        tar = tarfile.open(fileobj=bytestream, mode='r:*')
+        tar.extractall(path='/tmp')
+        logger.debug('Appending /tmp/requirements to PYTHONPATH')
+        sys.path.append(additional_pkg_dir)
+    except ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            logger.error('File %s/%s does not exists', s3_bucket, s3_file_path)
+        else:
+            raise

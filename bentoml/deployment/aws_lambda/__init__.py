@@ -35,7 +35,7 @@ from bentoml.deployment.aws_lambda.utils import (
     lambda_package,
     validate_lambda_template,
     is_build_function_size_under_lambda_limit,
-    reduce_lambda_function_size,
+    reduce_lambda_build_directory_size,
     is_build_function_size_over_max_lambda_size,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
@@ -66,7 +66,6 @@ def _create_aws_lambda_cloudformation_template_file(
     deployment_path_prefix,
     api_names,
     bento_service_name,
-    artifacts_prefix,
     s3_bucket_name,
     py_runtime,
     memory_size,
@@ -122,10 +121,9 @@ def _create_aws_lambda_cloudformation_template_file(
                 'Environment': {
                     'Variables': {
                         'BENTOML_BENTO_SERVICE_NAME': bento_service_name,
-                        'BENTOML_DEPLOYMENT_PATH_PREFIX': deployment_path_prefix,
-                        'BENTOML_S3_BUCKET': s3_bucket_name,
-                        'BENTOML_ARTIFACTS_PREFIX': artifacts_prefix,
                         'BENTOML_API_NAME': api_name,
+                        'BENTOML_S3_BUCKET': s3_bucket_name,
+                        'BENTOML_DEPLOYMENT_PATH_PREFIX': deployment_path_prefix,
                     }
                 },
             },
@@ -243,14 +241,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 deployment_pb.namespace, deployment_pb.name
             )
             artifacts_prefix = ''
-            if bento_service_metadata.artifacts:
-                logger.debug('Uploading artifacts to S3 bucket')
-                artifacts_prefix = os.path.join(
-                    deployment_path_prefix,
-                    'artifacts',
-                    deployment_spec.bento_name,
-                    deployment_spec.bento_version,
-                )
             with TempDirectory() as lambda_project_dir:
                 logger.debug(
                     'Generating cloudformation template.yaml for lambda project at %s',
@@ -262,7 +252,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     deployment_path_prefix=deployment_path_prefix,
                     api_names=api_names,
                     bento_service_name=deployment_spec.bento_name,
-                    artifacts_prefix=artifacts_prefix,
                     s3_bucket_name=lambda_s3_bucket,
                     py_runtime=python_runtime,
                     memory_size=lambda_deployment_config.memory_size,
@@ -311,15 +300,23 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                                 'reduce it',
                                 api_name,
                             )
-                            reduce_lambda_function_size(
+                            reduce_lambda_build_directory_size(
+                                build_directory=build_directory,
                                 region=lambda_deployment_config.region,
                                 s3_bucket=lambda_s3_bucket,
-                                s3_requirement_prefix=deployment_path_prefix,
-                                build_directory=build_directory,
+                                deployment_prefix=deployment_path_prefix,
                                 function_name=api_name,
-                                root_dir=lambda_project_dir,
+                                lambda_project_dir=lambda_project_dir,
                                 bento_service_name=deployment_spec.bento_name,
                                 s3_artifacts_prefix=artifacts_prefix,
+                            )
+                        else:
+                            logger.debug(
+                                'Function bundle is within Lambda limit, removing '
+                                'unzip_requirements.py file from function bundle'
+                            )
+                            os.remove(
+                                os.path.join(build_directory, 'unzip_requirements.py')
                             )
                     logger.info(
                         'Packaging AWS Lambda project at %s ...', lambda_project_dir

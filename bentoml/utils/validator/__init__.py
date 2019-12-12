@@ -105,7 +105,7 @@ class YataiDeploymentValidator(Validator):
                     'AWS Lambda memory must be between 128 MB to 3,008 MB, '
                     'in 64 MB increments.',
                 )
-            if (value - 128) % 64 > 0:
+            if value % 64 > 0:
                 self._error(
                     field,
                     'AWS Lambda memory must be between 128 MB to 3,008 MB, '

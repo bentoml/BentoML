@@ -92,7 +92,6 @@ def test_aws_lambda_app_py(monkeypatch):
         return mock_wrapper
 
     mock_unzip_requirements = MagicMock()
-    sys.modules['unzip_requirements'] = mock_unzip_requirements
 
     @mock_lambda_app
     @patch('bentoml.load', return_value=mock_bento_service)
@@ -103,7 +102,6 @@ def test_aws_lambda_app_py(monkeypatch):
 
     predict = return_predict_func()
     assert predict(1, None) == 1
-    sys.modules['unzip_requirements'] = None
 
 
 @patch('shutil.rmtree', MagicMock())

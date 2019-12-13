@@ -310,10 +310,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         else:
                             logger.debug(
                                 'Function bundle is within Lambda limit, removing '
-                                'unzip_requirements.py file from function bundle'
+                                'unzip_extra_resources.py file from function bundle'
                             )
                             os.remove(
-                                os.path.join(build_directory, 'unzip_requirements.py')
+                                os.path.join(build_directory, 'unzip_extra_resources.py')
                             )
                     logger.info(
                         'Packaging AWS Lambda project at %s ...', lambda_project_dir
@@ -407,10 +407,20 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
                 stack_result = cloud_formation_stack_result.get('Stacks')[0]
                 success_status = ['CREATE_COMPLETE', 'UPDATE_COMPLETE']
-                # failed_status = [
-                #     'ROLLBACK_COMPLETE', 'CREATE_FAILED', 'ROLLBACK_IN_PROGRESS'
-                # ]
-                failed_status = ['CREATE_FAILED']
+                # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/\
+                # using-cfn-describing-stacks.html
+                failed_status = [
+                    'CREATE_FAILED',
+                    # Ongoing creation of one or more stacks with an expected StackId
+                    # but without any templates or resources.
+                    'REVIEW_IN_PROGRESS',
+                    'ROLLBACK_FAILED',
+                    # This status exists only after a failed stack creation.
+                    'ROLLBACK_COMPLETE',
+                    # Ongoing removal of one or more stacks after a failed stack
+                    # creation or after an explicitly cancelled stack creation.
+                    'ROLLBACK_IN_PROGRESS',
+                ]
                 if stack_result['StackStatus'] in success_status:
                     if stack_result.get('Outputs'):
                         outputs = stack_result['Outputs']

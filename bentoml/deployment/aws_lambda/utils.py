@@ -241,10 +241,10 @@ def init_sam_project(
     app_py_path = os.path.join(os.path.dirname(__file__), 'lambda_app.py')
     shutil.copy(app_py_path, os.path.join(function_path, 'app.py'))
     unzip_requirement_py_path = os.path.join(
-        os.path.dirname(__file__), 'unzip_requirements.py'
+        os.path.dirname(__file__), 'unzip_extra_resources.py'
     )
     shutil.copy(
-        unzip_requirement_py_path, os.path.join(function_path, 'unzip_requirements.py')
+        unzip_requirement_py_path, os.path.join(function_path, 'unzip_extra_resources.py')
     )
 
     logger.info('Building lambda project')
@@ -297,7 +297,7 @@ def reduce_bundle_size_and_upload_extra_resources_to_s3(
         'bentoml',
         'app.py',
         '__init__.py',
-        'unzip_requirements.py',
+        'unzip_extra_resources.py',
     ]
     required_bundle_size = sum(dir_name_to_size[i] for i in required_bundle_list)
     for name, size in sorted(

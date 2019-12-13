@@ -57,7 +57,7 @@ def test_aws_lambda_app_py(monkeypatch):
     def test_predict(value):
         return value
 
-    class Mock_bento_service(object):
+    class Mock_bento_service_class(object):
         def _load_artifacts(self, path):
             return
 
@@ -68,6 +68,8 @@ def test_aws_lambda_app_py(monkeypatch):
                 return mock_api
 
         _artifacts = []
+
+    mock_bento_service = Mock_bento_service_class()
 
     monkeypatch.setenv('BENTOML_BENTO_SERVICE_NAME', 'Mock_bento_service')
     monkeypatch.setenv('BENTOML_S3_BUCKET', 'Mock_s3_bucket')
@@ -90,7 +92,7 @@ def test_aws_lambda_app_py(monkeypatch):
         return mock_wrapper
 
     @mock_lambda_app
-    @patch('bentoml.bundler.load_bento_service_class', return_value=Mock_bento_service)
+    @patch('bentoml.load', return_value=mock_bento_service)
     def return_predict_func(mock_load_service, mock_download_artifacts):
         from bentoml.deployment.aws_lambda.lambda_app import predict
 
@@ -145,9 +147,9 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
     _create_aws_lambda_cloudformation_template_file(
         str(tmpdir),
         deployment_name=deployment_name,
+        deployment_path_prefix='mock/deployment/path/prefix',
         api_names=api_names,
         bento_service_name='mock_bento_service_name',
-        artifacts_prefix='mock_artifacts_prefix',
         s3_bucket_name=s3_bucket_name,
         py_runtime=py_runtime,
         memory_size=memory_size,
@@ -184,7 +186,43 @@ def mock_lambda_related_operations(func):
     MagicMock(return_value=None),
 )
 @patch('bentoml.deployment.aws_lambda.lambda_deploy', MagicMock(return_value=None))
-def test_aws_lambda_apply_success():
+@patch(
+    'bentoml.deployment.aws_lambda.total_file_or_directory_size',
+    MagicMock(return_value=250),
+)
+@patch('os.remove', MagicMock())
+def test_aws_lambda_apply_under_bundle_size_limit_success():
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_lambda_deployment_pb()
+    deployment_operator = AwsLambdaDeploymentOperator()
+
+    result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
+
+    assert result_pb.status.status_code == status_pb2.Status.OK
+    assert result_pb.deployment.state.state == DeploymentState.PENDING
+
+
+@mock_lambda_related_operations
+@patch('shutil.rmtree', MagicMock())
+@patch('shutil.copytree', MagicMock())
+@patch('shutil.copy', MagicMock())
+@patch('os.listdir', MagicMock())
+@patch('bentoml.deployment.aws_lambda.init_sam_project', MagicMock())
+@patch('bentoml.deployment.aws_lambda.lambda_package', MagicMock())
+@patch(
+    'bentoml.deployment.aws_lambda.validate_lambda_template',
+    MagicMock(return_value=None),
+)
+@patch('bentoml.deployment.aws_lambda.lambda_deploy', MagicMock(return_value=None))
+@patch(
+    'bentoml.deployment.aws_lambda.total_file_or_directory_size',
+    MagicMock(return_value=249000001),
+)
+@patch(
+    'bentoml.deployment.aws_lambda.reduce_bundle_size_and_upload_extra_resources_to_s3',
+    MagicMock(),
+)
+def test_aws_lambda_apply_over_bundle_size_limit_success():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     deployment_operator = AwsLambdaDeploymentOperator()

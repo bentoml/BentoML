@@ -21,10 +21,22 @@ import shutil
 import subprocess
 import logging
 import re
+import tarfile
+from pathlib import Path
 
-from bentoml.exceptions import BentoMLException, MissingDependencyException
+import boto3
+from botocore.exceptions import ClientError
+
+from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
+
+# Maximum size for Lambda function bundle 250MB, leaving 1mb offset
+LAMBDA_FUNCTION_LIMIT = 249000000
+# Total disk size that user has access to.  Lambda function bundle + /tmp 512MB, leaving
+# 1mb offset
+LAMBDA_TEMPORARY_DIRECTORY_MAX_LIMIT = 511000000
+LAMBDA_FUNCTION_MAX_LIMIT = LAMBDA_FUNCTION_LIMIT + LAMBDA_TEMPORARY_DIRECTORY_MAX_LIMIT
 
 
 def ensure_sam_available_or_raise():
@@ -72,15 +84,15 @@ def cleanup_build_files(project_dir, api_name):
             logger.debug('removing file: %s', os.path.join(root, file))
             os.remove(os.path.join(root, file))
 
-        if 'caff2' in files:
-            logger.debug('removing file: %s', os.path.join(root, 'caff2'))
-            os.remove(os.path.join(root, 'caff2'))
         if 'wheel' in files:
             logger.debug('removing file: %s', os.path.join(root, 'wheel'))
             os.remove(os.path.join(root, 'wheel'))
         if 'pip' in files:
             logger.debug('removing file: %s', os.path.join(root, 'pip'))
             os.remove(os.path.join(root, 'pip'))
+        if 'caff2' in files:
+            logger.debug('removing file: %s', os.path.join(root, 'caff2'))
+            os.remove(os.path.join(root, 'caff2'))
 
 
 def call_sam_command(command, project_dir):
@@ -222,16 +234,19 @@ def init_sam_project(
     model_path = os.path.join(bento_service_bundle_path, bento_name)
     shutil.copytree(model_path, os.path.join(function_path, bento_name))
 
-    # remove the artifacts dir. Artifacts already uploaded to s3
-    logger.debug('Removing artifacts directory')
-    shutil.rmtree(os.path.join(function_path, bento_name, 'artifacts'))
-
     logger.debug('Creating python files for lambda function')
     # Create empty __init__.py
     open(os.path.join(function_path, '__init__.py'), 'w').close()
 
     app_py_path = os.path.join(os.path.dirname(__file__), 'lambda_app.py')
     shutil.copy(app_py_path, os.path.join(function_path, 'app.py'))
+    unzip_requirement_py_path = os.path.join(
+        os.path.dirname(__file__), 'download_extra_resources.py'
+    )
+    shutil.copy(
+        unzip_requirement_py_path,
+        os.path.join(function_path, 'download_extra_resources.py'),
+    )
 
     logger.info('Building lambda project')
     return_code, stdout, stderr = call_sam_command(
@@ -247,3 +262,84 @@ def init_sam_project(
     logger.debug('Removing unnecessary files to free up space')
     for api_name in api_names:
         cleanup_build_files(sam_project_path, api_name)
+
+
+def total_file_or_directory_size(file_or_dir):
+    if os.path.isdir(file_or_dir):
+        return sum(
+            f.stat().st_size for f in Path(file_or_dir).glob('**/*') if f.is_file()
+        )
+    else:
+        return Path(file_or_dir).stat().st_size
+
+
+def reduce_bundle_size_and_upload_extra_resources_to_s3(
+    build_directory,
+    region,
+    s3_bucket,
+    deployment_prefix,
+    function_name,
+    lambda_project_dir,
+):
+    additional_requirements_path = os.path.join(
+        lambda_project_dir, 'additional_requirements', function_name
+    )
+    upload_dir_path = os.path.join(additional_requirements_path, 'requirements')
+    os.makedirs(upload_dir_path, exist_ok=True)
+    s3_client = boto3.client('s3', region)
+
+    dir_name_to_size = dict(
+        (item, total_file_or_directory_size(os.path.join(build_directory, item)))
+        for item in os.listdir(build_directory)
+    )
+
+    required_bundle_list = [
+        'app.py',
+        '__init__.py',
+        'download_extra_resources.py',
+    ]
+    required_bundle_size = sum(dir_name_to_size[i] for i in required_bundle_list)
+    for name, size in sorted(
+        dir_name_to_size.items(), key=lambda i: i[1], reverse=True
+    ):
+        if name in required_bundle_list:
+            logger.debug('Including "%s" it is part of required bundle.', name)
+            continue
+        else:
+            new_bundle_size = required_bundle_size + size
+            if new_bundle_size >= LAMBDA_FUNCTION_LIMIT:
+                logger.debug(
+                    'Lambda function size %d is over the limit. Moving item "%s" '
+                    'out of the bundle directory',
+                    new_bundle_size,
+                    name,
+                )
+                package_path = os.path.join(build_directory, name)
+                copy_dst_path = os.path.join(upload_dir_path, name)
+                shutil.move(package_path, copy_dst_path)
+            else:
+                logger.debug(
+                    'Including "%s" Now the current lambda function size is %d',
+                    name,
+                    new_bundle_size,
+                )
+                required_bundle_size = new_bundle_size
+
+    logger.debug('Final Lambda function bundle size is %d', required_bundle_size)
+    additional_requirements_size = total_file_or_directory_size(
+        additional_requirements_path
+    )
+    logger.debug('Additional requirement size is %d', additional_requirements_size)
+    logger.debug('zip up additional requirement packages')
+    tar_file_path = os.path.join(additional_requirements_path, 'requirements.tar')
+    with tarfile.open(tar_file_path, 'w:gz') as tar:
+        tar.add(upload_dir_path, arcname='requirements')
+    logger.debug('Uploading requirements.tar to %s/%s', s3_bucket, deployment_prefix)
+    try:
+        s3_client.upload_file(
+            tar_file_path,
+            s3_bucket,
+            os.path.join(deployment_prefix, 'requirements.tar'),
+        )
+    except ClientError as e:
+        raise BentoMLException(str(e))

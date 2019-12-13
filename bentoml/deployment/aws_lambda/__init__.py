@@ -19,6 +19,7 @@ from __future__ import print_function
 import json
 import os
 import logging
+import shutil
 import uuid
 from pathlib import Path
 
@@ -34,6 +35,10 @@ from bentoml.deployment.aws_lambda.utils import (
     lambda_deploy,
     lambda_package,
     validate_lambda_template,
+    reduce_bundle_size_and_upload_extra_resources_to_s3,
+    total_file_or_directory_size,
+    LAMBDA_FUNCTION_LIMIT,
+    LAMBDA_FUNCTION_MAX_LIMIT,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
@@ -49,7 +54,7 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentResponse,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
-from bentoml.utils.s3 import create_s3_bucket_if_not_exists, upload_directory_to_s3
+from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
 
@@ -60,9 +65,9 @@ logger = logging.getLogger(__name__)
 def _create_aws_lambda_cloudformation_template_file(
     project_dir,
     deployment_name,
+    deployment_path_prefix,
     api_names,
     bento_service_name,
-    artifacts_prefix,
     s3_bucket_name,
     py_runtime,
     memory_size,
@@ -118,9 +123,9 @@ def _create_aws_lambda_cloudformation_template_file(
                 'Environment': {
                     'Variables': {
                         'BENTOML_BENTO_SERVICE_NAME': bento_service_name,
-                        'BENTOML_S3_BUCKET': s3_bucket_name,
-                        'BENTOML_ARTIFACTS_PREFIX': artifacts_prefix,
                         'BENTOML_API_NAME': api_name,
+                        'BENTOML_S3_BUCKET': s3_bucket_name,
+                        'BENTOML_DEPLOYMENT_PATH_PREFIX': deployment_path_prefix,
                     }
                 },
             },
@@ -237,27 +242,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             deployment_path_prefix = os.path.join(
                 deployment_pb.namespace, deployment_pb.name
             )
-            artifacts_prefix = ''
-            if bento_service_metadata.artifacts:
-                logger.debug('Uploading artifacts to S3 bucket')
-                artifacts_prefix = os.path.join(
-                    deployment_path_prefix,
-                    'artifacts',
-                    deployment_spec.bento_name,
-                    deployment_spec.bento_version,
-                )
-                logger.debug(
-                    'This lambda deployment requires uploading artifacts to s3'
-                )
-                upload_dir_path = os.path.join(
-                    bento_path, deployment_spec.bento_name, 'artifacts'
-                )
-                upload_directory_to_s3(
-                    upload_dir_path,
-                    lambda_deployment_config.region,
-                    lambda_s3_bucket,
-                    artifacts_prefix,
-                )
             with TempDirectory() as lambda_project_dir:
                 logger.debug(
                     'Generating cloudformation template.yaml for lambda project at %s',
@@ -266,9 +250,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 template_file_path = _create_aws_lambda_cloudformation_template_file(
                     project_dir=lambda_project_dir,
                     deployment_name=deployment_pb.name,
+                    deployment_path_prefix=deployment_path_prefix,
                     api_names=api_names,
                     bento_service_name=deployment_spec.bento_name,
-                    artifacts_prefix=artifacts_prefix,
                     s3_bucket_name=lambda_s3_bucket,
                     py_runtime=python_runtime,
                     memory_size=lambda_deployment_config.memory_size,
@@ -293,6 +277,58 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         api_names,
                         aws_region=lambda_deployment_config.region,
                     )
+                    for api_name in api_names:
+                        build_directory = os.path.join(
+                            lambda_project_dir, '.aws-sam', 'build', api_name
+                        )
+                        logger.debug(
+                            'Checking is function "%s" bundle under lambda size '
+                            'limit',
+                            api_name,
+                        )
+                        # Since we only use s3 get object in lambda function, and
+                        # lambda function pack their own boto3/botocore modules,
+                        # we will just delete those modules from function bundle
+                        # directory
+                        delete_list = ['boto3', 'botocore']
+                        for name in delete_list:
+                            logger.debug(
+                                'Remove module "%s" from build directory',
+                                name
+                            )
+                            shutil.rmtree(os.path.join(build_directory, name))
+                        total_build_dir_size = total_file_or_directory_size(
+                            build_directory
+                        )
+                        if total_build_dir_size > LAMBDA_FUNCTION_MAX_LIMIT:
+                            raise BentoMLException(
+                                'Build function size is over 700MB, max size '
+                                'capable for AWS Lambda function'
+                            )
+                        if total_build_dir_size >= LAMBDA_FUNCTION_LIMIT:
+                            logger.debug(
+                                'Function %s is over lambda size limit, attempting '
+                                'reduce it',
+                                api_name,
+                            )
+                            reduce_bundle_size_and_upload_extra_resources_to_s3(
+                                build_directory=build_directory,
+                                region=lambda_deployment_config.region,
+                                s3_bucket=lambda_s3_bucket,
+                                deployment_prefix=deployment_path_prefix,
+                                function_name=api_name,
+                                lambda_project_dir=lambda_project_dir,
+                            )
+                        else:
+                            logger.debug(
+                                'Function bundle is within Lambda limit, removing '
+                                'download_extra_resources.py file from function bundle'
+                            )
+                            os.remove(
+                                os.path.join(
+                                    build_directory, 'download_extra_resources.py'
+                                )
+                            )
                     logger.info(
                         'Packaging AWS Lambda project at %s ...', lambda_project_dir
                     )
@@ -384,10 +420,22 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     )
                 )
                 stack_result = cloud_formation_stack_result.get('Stacks')[0]
-                if (
-                    stack_result['StackStatus'] == 'CREATE_COMPLETE'
-                    or stack_result['StackStatus'] == 'UPDATE_COMPLETE'
-                ):
+                success_status = ['CREATE_COMPLETE', 'UPDATE_COMPLETE']
+                # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/\
+                # using-cfn-describing-stacks.html
+                failed_status = [
+                    'CREATE_FAILED',
+                    # Ongoing creation of one or more stacks with an expected StackId
+                    # but without any templates or resources.
+                    'REVIEW_IN_PROGRESS',
+                    'ROLLBACK_FAILED',
+                    # This status exists only after a failed stack creation.
+                    'ROLLBACK_COMPLETE',
+                    # Ongoing removal of one or more stacks after a failed stack
+                    # creation or after an explicitly cancelled stack creation.
+                    'ROLLBACK_IN_PROGRESS',
+                ]
+                if stack_result['StackStatus'] in success_status:
                     if stack_result.get('Outputs'):
                         outputs = stack_result['Outputs']
                     else:
@@ -398,6 +446,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                                 error_message='"Outputs" field is not present',
                             ),
                         )
+                elif stack_result['StackStatus'] in failed_status:
+                    state = DeploymentState(state=DeploymentState.FAILED)
+                    state.timestamp.GetCurrentTime()
+                    return DescribeDeploymentResponse(status=Status.OK(), state=state)
                 else:
                     state = DeploymentState(state=DeploymentState.PENDING)
                     state.timestamp.GetCurrentTime()

@@ -302,12 +302,17 @@ def ver_decorator(major, minor):
 
 def _validate_version_str(version_str):
     """
-    Validate that version str format:
-    * Consist of only ALPHA / DIGIT / "-" / "." / "_"
-    * Length between 1-128
+    Validate that version str format is either a simple version string that:
+        * Consist of only ALPHA / DIGIT / "-" / "." / "_"
+        * Length between 1-128
+    Or a valid semantic version https://github.com/semver/semver/blob/master/semver.md
     """
     regex = r"[A-Za-z0-9_.-]{1,128}\Z"
-    if re.match(regex, version_str) is None:
+    semver_regex = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa: E501
+    if (
+        re.match(regex, version_str) is None
+        and re.match(semver_regex, version_str) is None
+    ):
         raise InvalidArgument(
             'Invalid BentoService version: "{}", it can only consist'
             ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'

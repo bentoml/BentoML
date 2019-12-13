@@ -241,11 +241,11 @@ def init_sam_project(
     app_py_path = os.path.join(os.path.dirname(__file__), 'lambda_app.py')
     shutil.copy(app_py_path, os.path.join(function_path, 'app.py'))
     unzip_requirement_py_path = os.path.join(
-        os.path.dirname(__file__), 'unzip_extra_resources.py'
+        os.path.dirname(__file__), 'download_extra_resources.py'
     )
     shutil.copy(
         unzip_requirement_py_path,
-        os.path.join(function_path, 'unzip_extra_resources.py'),
+        os.path.join(function_path, 'download_extra_resources.py'),
     )
 
     logger.info('Building lambda project')
@@ -285,6 +285,7 @@ def reduce_bundle_size_and_upload_extra_resources_to_s3(
         lambda_project_dir, 'additional_requirements', function_name
     )
     upload_dir_path = os.path.join(additional_requirements_path, 'requirements')
+    os.makedirs(upload_dir_path, exist_ok=True)
     s3_client = boto3.client('s3', region)
 
     dir_name_to_size = dict(
@@ -293,12 +294,9 @@ def reduce_bundle_size_and_upload_extra_resources_to_s3(
     )
 
     required_bundle_list = [
-        'botocore',
-        'boto3',
-        'bentoml',
         'app.py',
         '__init__.py',
-        'unzip_extra_resources.py',
+        'download_extra_resources.py',
     ]
     required_bundle_size = sum(dir_name_to_size[i] for i in required_bundle_list)
     for name, size in sorted(

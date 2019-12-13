@@ -19,6 +19,7 @@ from __future__ import print_function
 import json
 import os
 import logging
+import shutil
 import uuid
 from pathlib import Path
 
@@ -285,6 +286,17 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                             'limit',
                             api_name,
                         )
+                        # Since we only use s3 get object in lambda function, and
+                        # lambda function pack their own boto3/botocore modules,
+                        # we will just delete those modules from function bundle
+                        # directory
+                        delete_list = ['boto3', 'botocore']
+                        for name in delete_list:
+                            logger.debug(
+                                'Remove module "%s" from build directory',
+                                name
+                            )
+                            shutil.rmtree(os.path.join(build_directory, name))
                         total_build_dir_size = total_file_or_directory_size(
                             build_directory
                         )
@@ -310,11 +322,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         else:
                             logger.debug(
                                 'Function bundle is within Lambda limit, removing '
-                                'unzip_extra_resources.py file from function bundle'
+                                'download_extra_resources.py file from function bundle'
                             )
                             os.remove(
                                 os.path.join(
-                                    build_directory, 'unzip_extra_resources.py'
+                                    build_directory, 'download_extra_resources.py'
                                 )
                             )
                     logger.info(

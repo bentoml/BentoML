@@ -27,6 +27,7 @@ from bentoml import __version__ as BENTOML_VERSION
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.utils import dump_to_yaml_str
 from bentoml.proto.repository_pb2 import BentoServiceMetadata
+from bentoml.exceptions import BentoMLConfigException
 
 
 BENTOML_CONFIG_YAML_TEPMLATE = """\
@@ -107,7 +108,7 @@ class SavedBundleConfig(object):
             # changes. Raise error in this case.
             if conf["version"].split(".")[0] != BENTOML_VERSION.split(".")[0]:
                 if not BENTOML_VERSION.startswith('0+untagged'):
-                    raise ValueError(msg)
+                    raise BentoMLConfigException(msg)
                 else:
                     logger.warning(msg)
             else:  # Otherwise just show a warning.

@@ -56,7 +56,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         name (string): name of the artifact
 
     Raises:
-        ImportError: tensorflow package is required for TensorflowSavedModelArtifact
+        MissingDependencyException: tensorflow package is required for TensorflowSavedModelArtifact
 
     Example usage:
 

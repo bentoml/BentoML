@@ -84,7 +84,7 @@ def _is_pypi_release():
 def _is_bentoml_in_develop_mode():
     import importlib
 
-    module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
+    (module_location,) = importlib.util.find_spec('bentoml').submodule_search_locations
 
     setup_py_path = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
     return not _is_pypi_release() and os.path.isfile(setup_py_path)

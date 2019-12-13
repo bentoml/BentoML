@@ -39,9 +39,9 @@ class KerasModelArtifact(BentoServiceArtifact):
             model as JSON and weights
 
     Raises:
-        ImportError: keras or tensorflow.keras package is required for
+        MissingDependencyException: keras or tensorflow.keras package is required for
             KerasModelArtifact
-        TypeError:  invalid argument type, model being packed must be instance of
+        InvalidArgument:  invalid argument type, model being packed must be instance of
             keras.engine.network.Network, tf.keras.models.Model, or their aliases
     """
 

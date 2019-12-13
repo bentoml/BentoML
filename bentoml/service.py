@@ -31,6 +31,7 @@ from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
 from bentoml.utils import isidentifier
 from bentoml.utils.hybirdmethod import hybridmethod
+from bentoml.exceptions import NotFound, InvalidArgument
 
 
 logger = logging.getLogger(__name__)
@@ -153,15 +154,13 @@ class BentoServiceBase(object):
             try:
                 return next((api for api in self._service_apis if api.name == api_name))
             except StopIteration:
-                raise ValueError(
+                raise NotFound(
                     "Can't find API '{}' in service '{}'".format(api_name, self.name)
                 )
         elif len(self._service_apis):
             return self._service_apis[0]
         else:
-            raise ValueError(
-                "Can't find default API for service '{}'".format(self.name)
-            )
+            raise NotFound("Can't find default API for service '{}'".format(self.name))
 
 
 def api_decorator(handler_cls, *args, **kwargs):
@@ -177,7 +176,7 @@ def api_decorator(handler_cls, *args, **kwargs):
             to what arguments are available for the particular handler
 
     Raises:
-        ValueError: API name must contains only letters
+        InvalidArgument: API name must contains only letters
 
     >>> from bentoml import BentoService, api
     >>> from bentoml.handlers import JsonHandler, DataframeHandler
@@ -207,7 +206,7 @@ def api_decorator(handler_cls, *args, **kwargs):
         setattr(func, "_is_api", True)
         setattr(func, "_handler", handler)
         if not isidentifier(api_name):
-            raise ValueError(
+            raise InvalidArgument(
                 "Invalid API name: '{}', a valid identifier must contains only letters,"
                 " numbers, underscores and not starting with a number.".format(api_name)
             )
@@ -309,7 +308,7 @@ def _validate_version_str(version_str):
     """
     regex = r"[A-Za-z0-9_.-]{1,128}\Z"
     if re.match(regex, version_str) is None:
-        raise ValueError(
+        raise InvalidArgument(
             'Invalid BentoService version: "{}", it can only consist'
             ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'
             "128 characthers".format(version_str)
@@ -394,7 +393,7 @@ class BentoService(BentoServiceBase):
     def name(cls):  # pylint:disable=method-hidden
         if cls._bento_service_name is not None:
             if not isidentifier(cls._bento_service_name):
-                raise ValueError(
+                raise InvalidArgument(
                     'BentoService#_bento_service_name must be valid python identifier'
                     'matching regex `(letter|"_")(letter|digit|"_")*`'
                 )

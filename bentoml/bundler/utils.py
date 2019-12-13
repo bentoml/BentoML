@@ -23,7 +23,7 @@ from setuptools import sandbox
 
 
 def _find_bentoml_module_location():
-    module_location, = importlib.util.find_spec('bentoml').submodule_search_locations
+    (module_location,) = importlib.util.find_spec('bentoml').submodule_search_locations
 
     return module_location
 

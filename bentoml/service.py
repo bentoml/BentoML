@@ -371,7 +371,6 @@ class BentoService(BentoServiceBase):
     def __init__(self):
         self._bento_service_version = self.__class__._bento_service_bundle_version
         self._packed_artifacts = ArtifactCollection()
-        self.name = self.__class__.name()
 
         if self._bento_service_bundle_path:
             # load artifacts from saved BentoService bundle
@@ -394,8 +393,13 @@ class BentoService(BentoServiceBase):
     def env(self):
         return self._env
 
-    @classmethod
-    def name(cls):  # pylint:disable=method-hidden
+    @hybridmethod
+    @property
+    def name(self):
+        return self.__class__.name()
+
+    @name.classmethod
+    def name(cls):
         if cls._bento_service_name is not None:
             if not isidentifier(cls._bento_service_name):
                 raise InvalidArgument(

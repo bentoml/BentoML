@@ -502,15 +502,19 @@ class BentoService(BentoServiceBase):
     @pack.classmethod
     def pack(cls, *args, **kwargs):  # pylint: disable=E0213
         if args and isinstance(args[0], ArtifactCollection):
-            bento_svc = cls()  # pylint: disable=not-callable
+            bento_svc = cls(*args[1:], **kwargs)  # pylint: disable=not-callable
             bento_svc._packed_artifacts = args[0]
             return bento_svc
 
-        bento_svc = cls()  # pylint: disable=not-callable
-        for artifact in bento_svc._artifacts:
+        packed_artifacts = []
+        for artifact in cls._artifacts:
             if artifact.name in kwargs:
-                packed_artifact = artifact.pack(kwargs[artifact.name])
-                bento_svc.artifacts.add(packed_artifact)
+                artifact_args = kwargs.pop(artifact.name)
+                packed_artifacts.append(artifact.pack(artifact_args))
+
+        bento_svc = cls(*args, **kwargs)  # pylint: disable=not-callable
+        for packed_artifact in packed_artifacts:
+            bento_svc.artifacts.add(packed_artifact)
 
         return bento_svc
 

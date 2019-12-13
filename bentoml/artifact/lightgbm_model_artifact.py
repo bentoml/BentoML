@@ -31,7 +31,8 @@ class LightGBMModelArtifact(BentoServiceArtifact):
         model_extension (string): Extension name for saved xgboost model
 
     Raises:
-        MissingDependencyException: lightgbm package is required for using LightGBMModelArtifact
+        MissingDependencyException: lightgbm package is required for using
+            LightGBMModelArtifact
         InvalidArgument: invalid argument type, model being packed must be instance of
             lightgbm.Booster
     """

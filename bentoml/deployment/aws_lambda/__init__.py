@@ -313,7 +313,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                                 'unzip_extra_resources.py file from function bundle'
                             )
                             os.remove(
-                                os.path.join(build_directory, 'unzip_extra_resources.py')
+                                os.path.join(
+                                    build_directory, 'unzip_extra_resources.py'
+                                )
                             )
                     logger.info(
                         'Packaging AWS Lambda project at %s ...', lambda_project_dir

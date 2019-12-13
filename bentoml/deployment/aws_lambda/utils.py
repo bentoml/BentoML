@@ -244,7 +244,8 @@ def init_sam_project(
         os.path.dirname(__file__), 'unzip_extra_resources.py'
     )
     shutil.copy(
-        unzip_requirement_py_path, os.path.join(function_path, 'unzip_extra_resources.py')
+        unzip_requirement_py_path,
+        os.path.join(function_path, 'unzip_extra_resources.py'),
     )
 
     logger.info('Building lambda project')

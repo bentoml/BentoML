@@ -1,5 +1,4 @@
 import os
-import sys
 
 import boto3
 from mock import MagicMock, patch, Mock
@@ -69,6 +68,7 @@ def test_aws_lambda_app_py(monkeypatch):
                 return mock_api
 
         _artifacts = []
+
     mock_bento_service = Mock_bento_service_class()
 
     monkeypatch.setenv('BENTOML_BENTO_SERVICE_NAME', 'Mock_bento_service')
@@ -90,8 +90,6 @@ def test_aws_lambda_app_py(monkeypatch):
             return func(*args, **kwargs)
 
         return mock_wrapper
-
-    mock_unzip_requirements = MagicMock()
 
     @mock_lambda_app
     @patch('bentoml.load', return_value=mock_bento_service)
@@ -190,7 +188,7 @@ def mock_lambda_related_operations(func):
 @patch('bentoml.deployment.aws_lambda.lambda_deploy', MagicMock(return_value=None))
 @patch(
     'bentoml.deployment.aws_lambda.total_file_or_directory_size',
-    MagicMock(return_value=250)
+    MagicMock(return_value=250),
 )
 @patch('os.remove', MagicMock())
 def test_aws_lambda_apply_under_bundle_size_limit_success():
@@ -218,11 +216,11 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 @patch('bentoml.deployment.aws_lambda.lambda_deploy', MagicMock(return_value=None))
 @patch(
     'bentoml.deployment.aws_lambda.total_file_or_directory_size',
-    MagicMock(return_value=249000001)
+    MagicMock(return_value=249000001),
 )
 @patch(
     'bentoml.deployment.aws_lambda.reduce_bundle_size_and_upload_extra_resources_to_s3',
-    MagicMock()
+    MagicMock(),
 )
 def test_aws_lambda_apply_over_bundle_size_limit_success():
     yatai_service_mock = create_yatai_service_mock()

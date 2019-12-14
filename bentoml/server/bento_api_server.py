@@ -291,13 +291,13 @@ class BentoAPIServer:
 
         def before_request():
             self.request_start_time = default_timer()
-            api_name = request.url_rule.endpoint
+            api_name = request.endpoint
             self.metrics_request_in_progress.labels(
                 api_name=api_name, service_version=self.bento_service.version
             ).inc()
 
         def after_request(response):
-            api_name = request.url_rule.endpoint
+            api_name = request.endpoint
 
             # instrument request duration
             total_time = max(default_timer() - self.request_start_time, 0)
@@ -321,8 +321,8 @@ class BentoAPIServer:
 
             return response
 
-        self.app.before_request_funcs = {None: [before_request]}
-        self.app.after_request_funcs = {None: [after_request]}
+        self.app.before_request(before_request)
+        self.app.after_request(after_request)
 
     @staticmethod
     def log_image(req, request_id):

@@ -27,7 +27,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 

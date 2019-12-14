@@ -293,8 +293,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         delete_list = ['boto3', 'botocore']
                         for name in delete_list:
                             logger.debug(
-                                'Remove module "%s" from build directory',
-                                name
+                                'Remove module "%s" from build directory', name
                             )
                             shutil.rmtree(os.path.join(build_directory, name))
                         total_build_dir_size = total_file_or_directory_size(

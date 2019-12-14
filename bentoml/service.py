@@ -28,7 +28,7 @@ from bentoml.artifact.artifact import ARTIFACTS_DIR_NAME
 from bentoml.bundler import save_to_dir
 from bentoml.bundler.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
-from bentoml.artifact import ArtifactCollection
+from bentoml.artifact import ArtifactCollection, BentoServiceArtifact
 from bentoml.utils import isidentifier
 from bentoml.utils.hybirdmethod import hybridmethod
 from bentoml.exceptions import NotFound, InvalidArgument
@@ -227,6 +227,22 @@ def artifacts_decorator(artifacts):
     """
 
     def decorator(bento_service_cls):
+        artifact_names = set()
+        for artifact in artifacts:
+            if not isinstance(artifact, BentoServiceArtifact):
+                raise InvalidArgument(
+                    "BentoService @artifacts decorator only accept list of type "
+                    "BentoServiceArtifact, instead got type: '%s'" % type(artifact)
+                )
+
+            if artifact.name in artifact_names:
+                raise InvalidArgument(
+                    "Duplicated artifact name `%s` detected. Each artifact within one"
+                    "BentoService must have an unique name" % artifact.name
+                )
+
+            artifact_names.add(artifact.name)
+
         bento_service_cls._artifacts = artifacts
         return bento_service_cls
 
@@ -396,10 +412,10 @@ class BentoService(BentoServiceBase):
     @hybridmethod
     @property
     def name(self):
-        return self.__class__.name()
+        return self.__class__.name()  # pylint: disable=no-value-for-parameter
 
     @name.classmethod
-    def name(cls):
+    def name(cls):  # pylint: disable=no-self-argument,invalid-overridden-method
         if cls._bento_service_name is not None:
             if not isidentifier(cls._bento_service_name):
                 raise InvalidArgument(
@@ -500,7 +516,7 @@ class BentoService(BentoServiceBase):
         return self
 
     @pack.classmethod
-    def pack(cls, *args, **kwargs):  # pylint: disable=E0213
+    def pack(cls, *args, **kwargs):  # pylint: disable=no-self-argument
         if args and isinstance(args[0], ArtifactCollection):
             bento_svc = cls(*args[1:], **kwargs)  # pylint: disable=not-callable
             bento_svc._packed_artifacts = args[0]

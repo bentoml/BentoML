@@ -24,15 +24,14 @@ import uuid
 from datetime import datetime
 from abc import abstractmethod, ABCMeta
 
-from bentoml.artifact.artifact import ARTIFACTS_DIR_NAME
 from bentoml.bundler import save_to_dir
 from bentoml.bundler.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
-from bentoml.artifact import ArtifactCollection, BentoServiceArtifact
 from bentoml.utils import isidentifier
 from bentoml.utils.hybirdmethod import hybridmethod
 from bentoml.exceptions import NotFound, InvalidArgument
 
+ARTIFACTS_DIR_NAME = "artifacts"
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +194,14 @@ def api_decorator(handler_cls, *args, **kwargs):
 
     DEFAULT_API_DOC = "BentoService API"
 
+    from bentoml.handlers.base_handlers import BentoHandler
+
+    if not (inspect.isclass(handler_cls) and issubclass(handler_cls, BentoHandler)):
+        raise InvalidArgument(
+            "BentoService @api decorator first parameter must "
+            "be class derived from bentoml.handlers.BentoHandler"
+        )
+
     def decorator(func):
         api_name = kwargs.pop("api_name", func.__name__)
         api_doc = kwargs.pop("api_doc", func.__doc__ or DEFAULT_API_DOC).strip()
@@ -225,6 +232,7 @@ def artifacts_decorator(artifacts):
         artifacts (list(bentoml.artifact.BentoServiceArtifact)): A list of desired
             artifacts required by this BentoService
     """
+    from bentoml.artifact import BentoServiceArtifact
 
     def decorator(bento_service_cls):
         artifact_names = set()
@@ -385,6 +393,8 @@ class BentoService(BentoServiceBase):
     _version_minor = None
 
     def __init__(self):
+        from bentoml.artifact import ArtifactCollection
+
         self._bento_service_version = self.__class__._bento_service_bundle_version
         self._packed_artifacts = ArtifactCollection()
 
@@ -517,6 +527,8 @@ class BentoService(BentoServiceBase):
 
     @pack.classmethod
     def pack(cls, *args, **kwargs):  # pylint: disable=no-self-argument
+        from bentoml.artifact import ArtifactCollection
+
         if args and isinstance(args[0], ArtifactCollection):
             bento_svc = cls(*args[1:], **kwargs)  # pylint: disable=not-callable
             bento_svc._packed_artifacts = args[0]

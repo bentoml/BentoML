@@ -380,8 +380,7 @@ class BentoAPIServer:
             try:
                 response = api.handle_request(request)
             except BentoMLException as e:
-                exc_type, exc_value, tb = sys.exc_info()
-                self.log_exception((exc_type, exc_value, tb))
+                self.log_exception(sys.exc_info())
 
                 if 400 <= e.status_code < 500 and e.status_code not in (401, 403):
                     response = make_response(
@@ -396,8 +395,7 @@ class BentoAPIServer:
             except:
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
-                exc_type, exc_value, tb = sys.exc_info()
-                self.log_exception((exc_type, exc_value, tb))
+                self.log_exception(sys.exc_info())
 
                 response = make_response('', 500)
 

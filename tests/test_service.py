@@ -1,6 +1,7 @@
 import pytest
 
 import bentoml
+from bentoml.artifact import PickleArtifact
 from bentoml.handlers import DataframeHandler, FastaiImageHandler, ImageHandler
 from bentoml.service import _validate_version_str
 from bentoml.exceptions import InvalidArgument
@@ -36,6 +37,26 @@ def test_fastai_image_handler_pip_dependencies():
 
     assert 'imageio' in service._env._pip_dependencies
     assert 'fastai' in service._env._pip_dependencies
+
+
+def test_invalid_artifact_type():
+    with pytest.raises(InvalidArgument) as e:
+
+        @bentoml.artifacts(["Not A Artifact"])
+        class TestBentoService(bentoml.BentoService):
+            pass
+
+    assert "only accept list of type BentoServiceArtifact" in str(e.value)
+
+
+def test_duplicated_artifact_name():
+    with pytest.raises(InvalidArgument) as e:
+
+        @bentoml.artifacts([PickleArtifact("model"), PickleArtifact("model")])
+        class TestBentoService(bentoml.BentoService):
+            pass
+
+    assert "Duplicated artifact name `model` detected" in str(e.value)
 
 
 def test_image_handler_pip_dependencies():

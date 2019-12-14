@@ -290,7 +290,10 @@ class BentoAPIServer:
 
         def before_request():
             self.request_start_time = default_timer()
-            self.metrics_request_in_progress.inc()
+            api_name = _request_ctx_stack.top.request.url_rule.endpoint
+            self.metrics_request_in_progress.labels(
+                api_name=api_name, service_version=self.bento_service.version
+            ).inc()
 
         def after_request(response):
             api_name = _request_ctx_stack.top.request.url_rule.endpoint
@@ -311,7 +314,9 @@ class BentoAPIServer:
             ).inc()
 
             # instrument request in progress
-            self.metrics_request_in_progress.dec()
+            self.metrics_request_in_progress.labels(
+                api_name=api_name, service_version=self.bento_service.version
+            ).inc()
 
             return response
 

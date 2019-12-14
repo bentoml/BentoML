@@ -61,6 +61,17 @@ def test_duplicated_artifact_name():
     assert "Duplicated artifact name `model` detected" in str(e.value)
 
 
+def test_invalid_api_handler():
+    with pytest.raises(InvalidArgument) as e:
+
+        class TestBentoService(bentoml.BentoService):  # pylint: disable=unused-variable
+            @bentoml.api("Not A BentoHandler")
+            def test(self):
+                pass
+
+    assert "must be class derived from bentoml.handlers.BentoHandler" in str(e.value)
+
+
 def test_image_handler_pip_dependencies():
     class TestImageService(bentoml.BentoService):
         @bentoml.api(ImageHandler)

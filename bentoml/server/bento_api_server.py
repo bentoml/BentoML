@@ -392,7 +392,7 @@ class BentoAPIServer:
                     )
                 else:
                     response = make_response('', e.status_code)
-            except:
+            except Exception:
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
                 self.log_exception(sys.exc_info())

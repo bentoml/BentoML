@@ -25,7 +25,7 @@ from timeit import default_timer
 from functools import partial
 from collections import OrderedDict
 
-from flask import Flask, jsonify, Response, request, make_response, _request_ctx_stack
+from flask import Flask, jsonify, Response, request, make_response
 from werkzeug.utils import secure_filename
 
 from bentoml import config
@@ -290,13 +290,13 @@ class BentoAPIServer:
 
         def before_request():
             self.request_start_time = default_timer()
-            api_name = _request_ctx_stack.top.request.url_rule.endpoint
+            api_name = request.url_rule.endpoint
             self.metrics_request_in_progress.labels(
                 api_name=api_name, service_version=self.bento_service.version
             ).inc()
 
         def after_request(response):
-            api_name = _request_ctx_stack.top.request.url_rule.endpoint
+            api_name = request.url_rule.endpoint
 
             # instrument request duration
             total_time = max(default_timer() - self.request_start_time, 0)

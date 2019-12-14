@@ -397,7 +397,11 @@ class BentoAPIServer:
                 # if users' model raises an error of division by zero.
                 self.log_exception(sys.exc_info())
 
-                response = make_response('', 500)
+                response = make_response(
+                    'An error has occurred in BentoML user code when handling this '
+                    'request, find the error details in server logs',
+                    500,
+                )
 
             request_log = {
                 "request_id": request_id,

@@ -3,6 +3,7 @@ import pytest
 import bentoml
 from bentoml.handlers import DataframeHandler, FastaiImageHandler, ImageHandler
 from bentoml.service import _validate_version_str
+from bentoml.exceptions import InvalidArgument
 
 
 def test_custom_api_name():
@@ -12,15 +13,15 @@ def test_custom_api_name():
     bentoml.api(DataframeHandler, api_name="_AValidName")(lambda x: x)
     bentoml.api(DataframeHandler, api_name="a_valid_name_123")(lambda x: x)
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(InvalidArgument) as e:
         bentoml.api(DataframeHandler, api_name="a invalid name")(lambda x: x)
     assert str(e.value).startswith("Invalid API name")
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(InvalidArgument) as e:
         bentoml.api(DataframeHandler, api_name="123_a_invalid_name")(lambda x: x)
     assert str(e.value).startswith("Invalid API name")
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(InvalidArgument) as e:
         bentoml.api(DataframeHandler, api_name="a-invalid-name")(lambda x: x)
     assert str(e.value).startswith("Invalid API name")
 
@@ -48,9 +49,21 @@ def test_image_handler_pip_dependencies():
 
 
 def test_validate_version_str_fails():
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidArgument):
         _validate_version_str("44&")
+
+    with pytest.raises(InvalidArgument):
+        _validate_version_str("44 123")
+
+    with pytest.raises(InvalidArgument):
+        _validate_version_str("")
 
 
 def test_validate_version_str_pass():
     _validate_version_str("abc_123")
+    _validate_version_str("1")
+    _validate_version_str("a_valid_version")
+    _validate_version_str("AValidVersion")
+    _validate_version_str("_AValidVersion")
+    _validate_version_str("1.3.4")
+    _validate_version_str("1.3.4-g375a71b")

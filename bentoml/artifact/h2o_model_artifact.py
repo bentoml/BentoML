@@ -30,7 +30,7 @@ class H2oModelArtifact(BentoServiceArtifact):
         name (str): Name for this h2o artifact..
 
     Raises:
-        ImportError: h2o package is required to use H2o model artifact
+        MissingDependencyException: h2o package is required to use H2o model artifact
     """
 
     def _model_file_path(self, base_path):

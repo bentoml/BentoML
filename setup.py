@@ -39,6 +39,9 @@ install_requires = [
     "tabulate",
     "humanfriendly",
     "alembic",
+    # python-dateutil required by pandas and boto3, this makes sure the version
+    # works for both
+    "python-dateutil>=2.1,<2.8.1",
 ]
 
 imageio = ["imageio>=2.5.0"]
@@ -110,7 +113,6 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: CPython",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",

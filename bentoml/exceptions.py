@@ -67,6 +67,18 @@ class InvalidArgument(BentoMLException):
     proto_status_code = status_pb2.Status.INVALID_ARGUMENT
 
 
+class BadInput(InvalidArgument):
+    """Raise when BentoHandler receiving bad input request"""
+
+
+class NotFound(BentoMLException):
+    """
+    Raise when specified resource or name not found
+    """
+
+    proto_status_code = status_pb2.Status.NOT_FOUND
+
+
 class ArtifactLoadingException(BentoMLException):
     """Raise when BentoService failed to load model artifacts from saved bundle"""
 
@@ -82,10 +94,6 @@ class MissingDependencyException(BentoMLException):
     when using SklearnModelArtifact, the scikit-learn module is required although
     BentoML does not require scikit-learn to be a dependency when installed
     """
-
-
-class BadInput(InvalidArgument):
-    """Raise when BentoHandler receiving bad input request"""
 
 
 class YataiServiceException(BentoMLException):

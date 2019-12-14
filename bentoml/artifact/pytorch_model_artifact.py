@@ -31,8 +31,8 @@ class PytorchModelArtifact(BentoServiceArtifact):
         name (string): name of the artifact
 
     Raises:
-        ImportError: torch package is required for PytorchModelArtifact
-        TypeError: invalid argument type, model being packed must be instance of
+        MissingDependencyException: torch package is required for PytorchModelArtifact
+        InvalidArgument: invalid argument type, model being packed must be instance of
             torch.nn.Module
     """
 

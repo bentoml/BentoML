@@ -18,6 +18,8 @@ from __future__ import print_function
 
 import os
 
+from bentoml.exceptions import InvalidArgument
+
 ARTIFACTS_DIR_NAME = "artifacts"
 
 
@@ -91,7 +93,7 @@ class ArtifactCollection(dict):
 
     def __setitem__(self, key, artifact):
         if key != artifact.spec.name:
-            raise ValueError(
+            raise InvalidArgument(
                 "Must use Artifact name as key, {} not equal to {}".format(
                     key, artifact.spec.name
                 )
@@ -104,7 +106,7 @@ class ArtifactCollection(dict):
 
     def add(self, artifact):
         if not isinstance(artifact, BentoServiceArtifactWrapper):
-            raise TypeError(
+            raise InvalidArgument(
                 "ArtifactCollection only accepts type BentoServiceArtifactWrapper,"
                 "Must call BentoServiceArtifact#pack or BentoServiceArtifact#load "
                 "before adding to an ArtifactCollection"

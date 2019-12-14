@@ -20,7 +20,7 @@ import os
 import shutil
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
-from bentoml.exceptions import MissingDependencyException
+from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
 
 def _import_fastai_module():
@@ -41,8 +41,8 @@ class FastaiModelArtifact(BentoServiceArtifact):
         name (str): Name for the fastai model
 
     Raises:
-        ImportError: Require fastai package to use Fast ai model artifact
-        TypeError: invalid argument type, model being packed must be instance of
+        MissingDependencyException: Require fastai package to use Fast ai model artifact
+        InvalidArgument: invalid argument type, model being packed must be instance of
             fastai.basic_train.Learner
     """
 
@@ -57,7 +57,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
         fastai_module = _import_fastai_module()
 
         if not isinstance(model, fastai_module.basic_train.Learner):
-            raise TypeError(
+            raise InvalidArgument(
                 "Expect `model` argument to be `fastai.basic_train.Learner` instance"
             )
 

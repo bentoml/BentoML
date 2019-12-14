@@ -31,6 +31,7 @@ from bentoml.service_env import BentoServiceEnv
 from bentoml.artifact import ArtifactCollection
 from bentoml.utils import isidentifier
 from bentoml.utils.hybirdmethod import hybridmethod
+from bentoml.exceptions import NotFound, InvalidArgument
 
 
 logger = logging.getLogger(__name__)
@@ -153,15 +154,13 @@ class BentoServiceBase(object):
             try:
                 return next((api for api in self._service_apis if api.name == api_name))
             except StopIteration:
-                raise ValueError(
+                raise NotFound(
                     "Can't find API '{}' in service '{}'".format(api_name, self.name)
                 )
         elif len(self._service_apis):
             return self._service_apis[0]
         else:
-            raise ValueError(
-                "Can't find default API for service '{}'".format(self.name)
-            )
+            raise NotFound("Can't find default API for service '{}'".format(self.name))
 
 
 def api_decorator(handler_cls, *args, **kwargs):
@@ -177,7 +176,7 @@ def api_decorator(handler_cls, *args, **kwargs):
             to what arguments are available for the particular handler
 
     Raises:
-        ValueError: API name must contains only letters
+        InvalidArgument: API name must contains only letters
 
     >>> from bentoml import BentoService, api
     >>> from bentoml.handlers import JsonHandler, DataframeHandler
@@ -207,7 +206,7 @@ def api_decorator(handler_cls, *args, **kwargs):
         setattr(func, "_is_api", True)
         setattr(func, "_handler", handler)
         if not isidentifier(api_name):
-            raise ValueError(
+            raise InvalidArgument(
                 "Invalid API name: '{}', a valid identifier must contains only letters,"
                 " numbers, underscores and not starting with a number.".format(api_name)
             )
@@ -303,13 +302,18 @@ def ver_decorator(major, minor):
 
 def _validate_version_str(version_str):
     """
-    Validate that version str format:
-    * Consist of only ALPHA / DIGIT / "-" / "." / "_"
-    * Length between 1-128
+    Validate that version str format is either a simple version string that:
+        * Consist of only ALPHA / DIGIT / "-" / "." / "_"
+        * Length between 1-128
+    Or a valid semantic version https://github.com/semver/semver/blob/master/semver.md
     """
     regex = r"[A-Za-z0-9_.-]{1,128}\Z"
-    if re.match(regex, version_str) is None:
-        raise ValueError(
+    semver_regex = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa: E501
+    if (
+        re.match(regex, version_str) is None
+        and re.match(semver_regex, version_str) is None
+    ):
+        raise InvalidArgument(
             'Invalid BentoService version: "{}", it can only consist'
             ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'
             "128 characthers".format(version_str)
@@ -367,7 +371,6 @@ class BentoService(BentoServiceBase):
     def __init__(self):
         self._bento_service_version = self.__class__._bento_service_bundle_version
         self._packed_artifacts = ArtifactCollection()
-        self.name = self.__class__.name()
 
         if self._bento_service_bundle_path:
             # load artifacts from saved BentoService bundle
@@ -390,11 +393,16 @@ class BentoService(BentoServiceBase):
     def env(self):
         return self._env
 
-    @classmethod
-    def name(cls):  # pylint:disable=method-hidden
+    @hybridmethod
+    @property
+    def name(self):
+        return self.__class__.name()
+
+    @name.classmethod
+    def name(cls):
         if cls._bento_service_name is not None:
             if not isidentifier(cls._bento_service_name):
-                raise ValueError(
+                raise InvalidArgument(
                     'BentoService#_bento_service_name must be valid python identifier'
                     'matching regex `(letter|"_")(letter|digit|"_")*`'
                 )
@@ -494,15 +502,19 @@ class BentoService(BentoServiceBase):
     @pack.classmethod
     def pack(cls, *args, **kwargs):  # pylint: disable=E0213
         if args and isinstance(args[0], ArtifactCollection):
-            bento_svc = cls()  # pylint: disable=not-callable
+            bento_svc = cls(*args[1:], **kwargs)  # pylint: disable=not-callable
             bento_svc._packed_artifacts = args[0]
             return bento_svc
 
-        bento_svc = cls()  # pylint: disable=not-callable
-        for artifact in bento_svc._artifacts:
+        packed_artifacts = []
+        for artifact in cls._artifacts:
             if artifact.name in kwargs:
-                packed_artifact = artifact.pack(kwargs[artifact.name])
-                bento_svc.artifacts.add(packed_artifact)
+                artifact_args = kwargs.pop(artifact.name)
+                packed_artifacts.append(artifact.pack(artifact_args))
+
+        bento_svc = cls(*args, **kwargs)  # pylint: disable=not-callable
+        for packed_artifact in packed_artifacts:
+            bento_svc.artifacts.add(packed_artifact)
 
         return bento_svc
 

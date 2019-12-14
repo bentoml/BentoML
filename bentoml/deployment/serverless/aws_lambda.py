@@ -25,7 +25,6 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 import boto3
-from botocore.exceptions import ClientError
 
 from bentoml.bundler import loader
 from bentoml.exceptions import BentoMLException
@@ -315,7 +314,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     )
                 )
                 outputs = cloud_formation_stack_result.get('Stacks')[0]['Outputs']
-            except ClientError as error:
+            except Exception as error:
                 state = DeploymentState(
                     state=DeploymentState.ERROR, error_message=str(error)
                 )

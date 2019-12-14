@@ -76,7 +76,7 @@ class _TensorflowFunctionWrapper:
         try:
             import tensorflow as tf
         except ImportError:
-            raise ImportError(
+            raise MissingDependencyException(
                 "Tensorflow package is required to use TfSavedModelArtifact")
 
         if _input.dtype != tensorspec.dtype:
@@ -95,7 +95,7 @@ class _TensorflowFunctionWrapper:
             # API above are also included in TensorFlow 1.14
             # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1598
         except ImportError:
-            raise ImportError(
+            raise MissingDependencyException(
                 "Tensorflow package is required to use TfSavedModelArtifact")
 
         for k in dir(loaded_model):

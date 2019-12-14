@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import uuid
 import json
 import time
@@ -379,7 +380,8 @@ class BentoAPIServer:
             try:
                 response = api.handle_request(request)
             except BentoMLException as e:
-                logger.error("BentoService error handling API request: {}".format(e))
+                exc_type, exc_value, tb = sys.exc_info()
+                self.log_exception((exc_type, exc_value, tb))
 
                 if 400 <= e.status_code < 500 and e.status_code not in (401, 403):
                     response = make_response(
@@ -391,10 +393,12 @@ class BentoAPIServer:
                     )
                 else:
                     response = make_response('', e.status_code)
-            except Exception as e:
+            except:
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
-                logger.error("BentoService error handling API request: {}".format(e))
+                exc_type, exc_value, tb = sys.exc_info()
+                self.log_exception((exc_type, exc_value, tb))
+
                 response = make_response('', 500)
 
             request_log = {
@@ -419,3 +423,13 @@ class BentoAPIServer:
             return response
 
         return api_func_wrapper
+
+    def log_exception(self, exc_info):
+        """Logs an exception.  This is called by :meth:`handle_exception`
+        if debugging is disabled and right before the handler is called.
+        The default implementation logs the exception as error on the
+        :attr:`logger`.
+        """
+        logger.error(
+            "Exception on %s [%s]" % (request.path, request.method), exc_info=exc_info
+        )

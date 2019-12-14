@@ -25,7 +25,7 @@ from timeit import default_timer
 from functools import partial
 from collections import OrderedDict
 
-from flask import Flask, jsonify, Response, request, make_response
+from flask import Flask, jsonify, Response, request, make_response, _request_ctx_stack
 from werkzeug.utils import secure_filename
 
 from bentoml import config
@@ -288,6 +288,36 @@ class BentoAPIServer:
             labelnames=['api_name', 'service_version'],
         )
 
+        def before_request():
+            self.request_start_time = default_timer()
+            self.metrics_request_in_progress.inc()
+
+        def after_request(response):
+            api_name = _request_ctx_stack.top.request.url_rule.endpoint
+
+            # instrument request duration
+            total_time = max(default_timer() - self.request_start_time, 0)
+            self.metrics_request_duration.labels(
+                api_name=api_name,
+                service_version=self.bento_service.version,
+                http_response_code=response.status_code,
+            ).observe(total_time)
+
+            # instrument request total count
+            self.metrics_request_total.labels(
+                api_name=api_name,
+                service_version=self.bento_service.version,
+                http_response_code=response.status_code,
+            ).inc()
+
+            # instrument request in progress
+            self.metrics_request_in_progress.dec()
+
+            return response
+
+        self.app.before_request_funcs = {None: [before_request]}
+        self.app.after_request_funcs = {None: [after_request]}
+
     @staticmethod
     def log_image(req, request_id):
         img_prefix = 'image/'
@@ -332,65 +362,52 @@ class BentoAPIServer:
         service_version = self.bento_service.version
 
         def api_func_wrapper():
-            with self.metrics_request_in_progress.labels(
-                api_name=api.name, service_version=service_version
-            ).track_inprogress():
+            image_paths = []
+            if not config('logging').getboolean('disable_logging_image'):
+                image_paths = self.log_image(request, request_id)
 
-                request_start_time = default_timer()
+            # _request_to_json parses request as JSON; in case errors, it raises
+            # a 400 exception. (consider 4xx before 5xx.)
+            request_for_log = _request_to_json(request)
 
-                image_paths = []
-                if not config('logging').getboolean('disable_logging_image'):
-                    image_paths = self.log_image(request, request_id)
+            # handle_request may raise 4xx or 5xx exception.
+            try:
+                response = api.handle_request(request)
+            except BentoMLException as e:
+                response = make_response(
+                    jsonify(
+                        message="BentoService error handling API request: %s" % str(e)
+                    ),
+                    e.status_code,
+                )
+            except Exception as e:
+                # For all unexpected error, return 500 by default. For example,
+                # if users' model raises an error of division by zero.
+                response = make_response(
+                    jsonify(
+                        message="BentoService error handling API request: %s" % str(e)
+                    ),
+                    500,
+                )
 
-                # _request_to_json parses request as JSON; in case errors, it raises
-                # a 400 exception. (consider 4xx before 5xx.)
-                request_for_log = _request_to_json(request)
+            request_log = {
+                "request_id": request_id,
+                "service_name": service_name,
+                "service_version": service_version,
+                "api": api.name,
+                "request": request_for_log,
+                "response_code": response.status_code,
+            }
 
-                # handle_request may raise 4xx or 5xx exception.
-                try:
-                    response = api.handle_request(request)
-                except BentoMLException as e:
-                    response = make_response(
-                        jsonify(
-                            message="BentoService error handling API request: %s"
-                            % str(e)
-                        ),
-                        e.status_code,
-                    )
+            if len(image_paths) > 0:
+                request_log['image_paths'] = image_paths
 
-                request_log = {
-                    "request_id": request_id,
-                    "service_name": service_name,
-                    "service_version": service_version,
-                    "api": api.name,
-                    "request": request_for_log,
-                    "response_code": response.status_code,
-                }
+            if 200 <= response.status_code < 300:
+                request_log['response'] = response.response
 
-                if len(image_paths) > 0:
-                    request_log['image_paths'] = image_paths
+            prediction_logger.info(request_log)
 
-                if 200 <= response.status_code < 300:
-                    request_log['response'] = response.response
-
-                prediction_logger.info(request_log)
-
-                response.headers["request_id"] = request_id
-
-                # instrument request duration
-                total_time = max(default_timer() - request_start_time, 0)
-                self.metrics_request_duration.labels(
-                    api_name=api.name,
-                    service_version=service_version,
-                    http_response_code=response.status_code,
-                ).observe(total_time)
-
-                # instrument request total count
-                self.metrics_request_total.labels(
-                    api_name=api.name,
-                    service_version=service_version,
-                    http_response_code=response.status_code,
-                ).inc()
+            response.headers["request_id"] = request_id
 
             return response
 

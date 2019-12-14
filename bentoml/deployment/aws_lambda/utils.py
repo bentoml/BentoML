@@ -293,11 +293,7 @@ def reduce_bundle_size_and_upload_extra_resources_to_s3(
         for item in os.listdir(build_directory)
     )
 
-    required_bundle_list = [
-        'app.py',
-        '__init__.py',
-        'download_extra_resources.py',
-    ]
+    required_bundle_list = ['app.py', '__init__.py', 'download_extra_resources.py']
     required_bundle_size = sum(dir_name_to_size[i] for i in required_bundle_list)
     for name, size in sorted(
         dir_name_to_size.items(), key=lambda i: i[1], reverse=True

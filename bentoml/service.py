@@ -412,10 +412,10 @@ class BentoService(BentoServiceBase):
     @hybridmethod
     @property
     def name(self):
-        return self.__class__.name()
+        return self.__class__.name()  # pylint: disable=no-value-for-parameter
 
     @name.classmethod
-    def name(cls):
+    def name(cls):  # pylint: disable=no-self-argument,invalid-overridden-method
         if cls._bento_service_name is not None:
             if not isidentifier(cls._bento_service_name):
                 raise InvalidArgument(
@@ -516,7 +516,7 @@ class BentoService(BentoServiceBase):
         return self
 
     @pack.classmethod
-    def pack(cls, *args, **kwargs):  # pylint: disable=E0213
+    def pack(cls, *args, **kwargs):  # pylint: disable=no-self-argument
         if args and isinstance(args[0], ArtifactCollection):
             bento_svc = cls(*args[1:], **kwargs)  # pylint: disable=not-callable
             bento_svc._packed_artifacts = args[0]

@@ -42,7 +42,7 @@ def test_fastai_image_handler_pip_dependencies():
 def test_invalid_artifact_type():
     with pytest.raises(InvalidArgument) as e:
 
-        @bentoml.artifacts(["Not A Artifact"])
+        @bentoml.artifacts(["Not A Artifact"])  # pylint: disable=unused-variable
         class TestBentoService(bentoml.BentoService):
             pass
 
@@ -52,7 +52,9 @@ def test_invalid_artifact_type():
 def test_duplicated_artifact_name():
     with pytest.raises(InvalidArgument) as e:
 
-        @bentoml.artifacts([PickleArtifact("model"), PickleArtifact("model")])
+        @bentoml.artifacts(  # pylint: disable=unused-variable
+            [PickleArtifact("model"), PickleArtifact("model")]
+        )
         class TestBentoService(bentoml.BentoService):
             pass
 

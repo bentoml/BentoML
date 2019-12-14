@@ -379,21 +379,23 @@ class BentoAPIServer:
             try:
                 response = api.handle_request(request)
             except BentoMLException as e:
-                response = make_response(
-                    jsonify(
-                        message="BentoService error handling API request: %s" % str(e)
-                    ),
-                    e.status_code,
-                )
+                logger.error("BentoService error handling API request: {}".format(e))
+
+                if 400 <= e.status_code < 500 and e.status_code not in (401, 403):
+                    response = make_response(
+                        jsonify(
+                            message="BentoService error handling API request: %s"
+                            % str(e)
+                        ),
+                        e.status_code,
+                    )
+                else:
+                    response = make_response('', e.status_code)
             except Exception as e:
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
-                response = make_response(
-                    jsonify(
-                        message="BentoService error handling API request: %s" % str(e)
-                    ),
-                    500,
-                )
+                logger.error("BentoService error handling API request: {}".format(e))
+                response = make_response('', 500)
 
             request_log = {
                 "request_id": request_id,

@@ -177,7 +177,7 @@ def get_deployment_sub_command():
         '-p',
         '--platform',
         type=click.Choice(
-            ['aws-lambda', 'gcp-function', 'aws-sagemaker', 'kubernetes', 'custom'],
+            ['aws-lambda', 'aws-sagemaker'],
             case_sensitive=False,
         ),
         required=True,
@@ -207,12 +207,12 @@ def get_deployment_sub_command():
     @click.option(
         '--region',
         help='Directly mapping to cloud provider region. Option applicable to platform:'
-        'AWS Lambda, AWS SageMaker, GCP Function',
+        'AWS Lambda, AWS SageMaker',
     )
     @click.option(
         '--instance-type',
         help='Type of instance will be used for inference. Option applicable to '
-        'platform: AWS SageMaker, AWS Lambda, GCP Function',
+        'platform: AWS SageMaker, AWS Lambda',
     )
     @click.option(
         '--instance-count',

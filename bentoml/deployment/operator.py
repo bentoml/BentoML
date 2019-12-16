@@ -20,7 +20,6 @@ from abc import abstractmethod, ABCMeta
 
 from bentoml.proto.deployment_pb2 import DeploymentSpec
 from bentoml.exceptions import YataiDeploymentException
-from bentoml import config
 
 
 def get_deployment_operator(deployment_pb):
@@ -31,20 +30,9 @@ def get_deployment_operator(deployment_pb):
 
         return SageMakerDeploymentOperator()
     elif operator == DeploymentSpec.AWS_LAMBDA:
-        if config().getboolean('experiment', 'aws_lambda_v2'):
-            from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator
-        else:
-            from bentoml.deployment.serverless.aws_lambda import (
-                AwsLambdaDeploymentOperator,
-            )
+        from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator
 
         return AwsLambdaDeploymentOperator()
-    elif operator == DeploymentSpec.GCP_FUNCTION:
-        from bentoml.deployment.serverless.gcp_function import (
-            GcpFunctionDeploymentOperator,
-        )
-
-        return GcpFunctionDeploymentOperator()
     elif operator == DeploymentSpec.KUBERNETES:
         raise NotImplementedError("Kubernetes deployment operator is not implemented")
     elif operator == DeploymentSpec.CUSTOM:

@@ -92,8 +92,6 @@ class _TensorflowFunctionWrapper:
         try:
             from tensorflow.python.util import tf_inspect
             from tensorflow.python.eager import def_function
-            # API above are also included in TensorFlow 1.14
-            # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1598
         except ImportError:
             raise MissingDependencyException(
                 "Tensorflow package is required to use TfSavedModelArtifact")
@@ -108,6 +106,7 @@ class _TensorflowFunctionWrapper:
 def _load_tf_saved_model(path):
     try:
         import tensorflow as tf
+        from tensorflow.python.training.tracking.tracking import AutoTrackable
 
         TF2 = tf.__version__.startswith('2')
     except ImportError:
@@ -118,7 +117,31 @@ def _load_tf_saved_model(path):
     if TF2:
         return tf.saved_model.load(path)
     else:
-        return tf.compat.v2.saved_model.load(path)
+        loaded = tf.compat.v2.saved_model.load(path)
+        if (isinstance(loaded, AutoTrackable)
+                and not hasattr(loaded, "__call__")):
+            logger.warning(
+                '''Importing SavedModels from TensorFlow 1.x.
+                `outputs = imported(inputs)` is not supported in bento service due to
+                tensorflow API.
+
+                Recommended usage:
+
+                ```python
+                from tensorflow.python.saved_model import signature_constants
+
+                imported = tf.saved_model.load(path_to_v1_saved_model)
+                wrapped_function = imported.signatures[
+                    signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
+                wrapped_function(tf.ones([]))
+                ```
+
+                See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for 
+                details.
+                '''
+        )
+        return loaded
+
 
 
 class TensorflowSavedModelArtifact(BentoServiceArtifact):

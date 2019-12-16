@@ -62,13 +62,6 @@ deployment_schema = {
                     'timeout': {'type': 'integer', 'min': 1, 'max': 900},
                 },
             },
-            'gcp_function_operator_config': {
-                'type': 'dict',
-                'schema': {
-                    'region': {'type': 'string', 'required': True},
-                    'api_name': {'type': 'string', 'minlength': 2},
-                },
-            },
             'kubernetes_operator_config': {
                 'type': 'dict',
                 'schema': {

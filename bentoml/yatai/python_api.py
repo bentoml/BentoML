@@ -271,15 +271,6 @@ def create_deployment(
                 deployment_dict['spec']['aws_lambda_operator_config'][
                     field
                 ] = operator_spec[field]
-    elif operator_value == DeploymentSpec.GCP_FCUNTION:
-        deployment_dict['spec']['gcp_function_operatorConfig'] = {
-            'region': operator_spec.get('region')
-            or config().get('google-cloud', 'default_region')
-        }
-        if operator_spec.get('api_name'):
-            deployment_dict['spec']['gcp_function_operator_config'][
-                'api_name'
-            ] = operator_spec['api_name']
     elif operator_value == DeploymentSpec.KUBERNETES:
         deployment_dict['spec']['kubernetes_operator_config'] = {
             'kube_namespace': operator_spec.get('kube_namespace', ''),

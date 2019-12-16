@@ -77,13 +77,6 @@ def deployment_dict_to_pb(deployment_dict):
                 deployment_pb.spec.aws_lambda_operator_config.__setattr__(
                     field, lambda_conf.get(field)
                 )
-    elif deployment_pb.spec.operator == DeploymentSpec.GCP_FUNCTION:
-        gcp_config = spec_dict.get('gcp_function_operator_config', {})
-        for field in ['region', 'api_name']:
-            if gcp_config.get(field):
-                deployment_pb.spec.gcp_function_operator_config.__setattr__(
-                    field, gcp_config.get(field)
-                )
     elif deployment_pb.spec.operator == DeploymentSpec.KUBERNETES:
         k8s_config = spec_dict.get('kubernetes_operator_config', {})
 

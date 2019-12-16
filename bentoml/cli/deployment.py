@@ -177,7 +177,7 @@ def get_deployment_sub_command():
         '-p',
         '--platform',
         type=click.Choice(
-            ['aws-lambda', 'aws-sagemaker', 'kubernetes', 'custom'],
+            ['aws-lambda', 'aws-sagemaker'],
             case_sensitive=False,
         ),
         required=True,

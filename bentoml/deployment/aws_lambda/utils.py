@@ -62,12 +62,6 @@ def cleanup_build_files(project_dir, api_name):
         if 'tests' in dirs:
             logger.debug('removing dir: %s', os.path.join(root, 'tests'))
             shutil.rmtree(os.path.join(root, 'tests'))
-        if 'test' in dirs:
-            logger.debug('removing dir: %s', os.path.join(root, 'test'))
-            shutil.rmtree(os.path.join(root, 'test'))
-        if 'examples' in dirs:
-            logger.debug('removing dir: %s', os.path.join(root, 'examples'))
-            shutil.rmtree(os.path.join(root, 'examples'))
         if '__pycache__' in dirs:
             logger.debug('removing dir: %s', os.path.join(root, '__pycache__'))
             shutil.rmtree(os.path.join(root, '__pycache__'))

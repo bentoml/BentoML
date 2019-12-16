@@ -20,9 +20,9 @@ import os
 import sys
 
 try:
-    import unzip_extra_resources
+    import download_extra_resources
 
-    unzip_extra_resources.download_extra_resources()
+    download_extra_resources.download_extra_resources()
 except ImportError:
     # When function doesn't have extra resources or dependencies, we will not include
     # unzip_extra_resources and that will result with ImportError.  We will let it fail

@@ -215,6 +215,21 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
             python_runtime = 'python{}.{}'.format(py_major, py_minor)
 
+            artifact_types = [
+                item.artifact_type for item in bento_service_metadata.artifacts
+            ]
+            if (
+                any(
+                    i in ['TensorflowSavedModelArtifact', 'KerasModelArtifact']
+                    for i in artifact_types
+                )
+                and py_minor != '6'
+            ):
+                raise BentoMLException(
+                    'For Tensorflow and Keras model, only python3.6 is '
+                    'supported for AWS Lambda deployment'
+                )
+
             api_names = (
                 [lambda_deployment_config.api_name]
                 if lambda_deployment_config.api_name
@@ -356,9 +371,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             deployment_pb.state.state = DeploymentState.PENDING
             return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
         except BentoMLException as error:
-            deployment_pb.state = DeploymentState(
-                state=DeploymentState.ERROR, error_message='Error: {}'.format(error)
-            )
+            deployment_pb.state.state = DeploymentState.ERROR
+            deployment_pb.state.error_message = 'Error: {}'.format(error)
             return ApplyDeploymentResponse(
                 status=error.status_proto, deployment=deployment_pb
             )

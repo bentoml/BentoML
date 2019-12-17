@@ -17,3 +17,10 @@ script:
 
 after_success:
   - codecov
+
+addons:
+  apt:
+    packages:
+    - sqlite3
+    sources:
+    - travis-ci/sqlite3

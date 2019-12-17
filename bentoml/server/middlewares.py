@@ -19,24 +19,24 @@ class InstrumentMiddleware:
             name=service_name + '_request_duration_seconds',
             documentation=service_name + " API HTTP request duration in seconds",
             namespace=namespace,
-            labelnames=['api_name', 'service_version', 'http_response_code'],
+            labelnames=['endpoint', 'service_version', 'http_response_code'],
         )
         self.metrics_request_total = Counter(
             name=service_name + "_request_total",
             documentation='Totoal number of HTTP requests',
             namespace=namespace,
-            labelnames=['api_name', 'service_version', 'http_response_code'],
+            labelnames=['endpoint', 'service_version', 'http_response_code'],
         )
         self.metrics_request_in_progress = Gauge(
             name=service_name + "_request_in_progress",
             documentation='Totoal number of HTTP requests in progress now',
             namespace=namespace,
-            labelnames=['api_name', 'service_version'],
+            labelnames=['endpoint', 'service_version'],
         )
 
     def __call__(self, environ, start_response):
         req = Request(environ)
-        api_name = req.path.lstrip('/')
+        endpoint = req.path
         start_time = default_timer()
 
         def start_response_wrapper(status, headers):
@@ -45,7 +45,7 @@ class InstrumentMiddleware:
 
             # instrument request total count
             self.metrics_request_total.labels(
-                api_name=api_name,
+                endpoint=endpoint,
                 service_version=self.bento_service.version,
                 http_response_code=status_code,
             ).inc()
@@ -53,7 +53,7 @@ class InstrumentMiddleware:
             # instrument request duration
             total_time = max(default_timer() - start_time, 0)
             self.metrics_request_duration.labels(
-                api_name=api_name,
+                endpoint=endpoint,
                 service_version=self.bento_service.version,
                 http_response_code=status_code,
             ).observe(total_time)
@@ -61,6 +61,6 @@ class InstrumentMiddleware:
             return ret
 
         with self.metrics_request_in_progress.labels(
-            api_name=api_name, service_version=self.bento_service.version
+            endpoint=endpoint, service_version=self.bento_service.version
         ).track_inprogress():
             return self.app(environ, start_response_wrapper)

@@ -24,6 +24,10 @@ jobs:
       - checkout
 
       # Download and cache dependencies
+      - run:
+          name: update pip
+          command: |
+            pip install --upgrade pip
 
       - run:
           name: install dependencies

@@ -70,7 +70,6 @@ test_requires = (
     ]
     + imageio
     + fastai
-    + aws_sam_cli
 )
 
 dev_requires = [

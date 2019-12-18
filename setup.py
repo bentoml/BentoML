@@ -64,7 +64,7 @@ test_requires = (
         "snapshottest>=0.5.0",
         "mock>=2.0.0",
         "tox>=3.12.1",
-        "coverage>=4.4",
+        "coverage==4.4",
         "codecov",
         "moto",
     ]

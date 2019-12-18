@@ -16,6 +16,9 @@ jobs:
       # - image: circleci/postgres:9.4
 
     working_directory: ~/project
+    branches:
+      only:
+        - pin-coverage-module-version
 
     steps:
       - checkout

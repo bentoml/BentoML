@@ -22,7 +22,6 @@ import uuid
 import json
 import time
 import logging
-from timeit import default_timer
 from functools import partial
 from collections import OrderedDict
 
@@ -32,6 +31,7 @@ from werkzeug.utils import secure_filename
 from bentoml import config
 from bentoml.utils.usage_stats import track_server
 from bentoml.exceptions import BentoMLException
+from .middlewares import InstrumentMiddleware
 
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
@@ -154,7 +154,10 @@ class BentoAPIServer:
                 os.path.dirname(os.path.abspath(__file__)), 'static'
             ),
         )
-        self.setup_instruments()
+
+        for middleware in (InstrumentMiddleware,):
+            self.app.wsgi_app = middleware(self.app.wsgi_app, self.bento_service)
+
         self.setup_routes()
 
     def start(self):
@@ -263,66 +266,6 @@ class BentoAPIServer:
                 view_func=route_function,
                 methods=api.handler.HTTP_METHODS,
             )
-
-    def setup_instruments(self):
-        from prometheus_client import Histogram, Counter, Gauge
-
-        service_name = self.bento_service.name
-        namespace = config('instrument').get('default_namespace')
-
-        self.metrics_request_duration = Histogram(
-            name=service_name + '_request_duration_seconds',
-            documentation=service_name + " API HTTP request duration in seconds",
-            namespace=namespace,
-            labelnames=['api_name', 'service_version', 'http_response_code'],
-        )
-        self.metrics_request_total = Counter(
-            name=service_name + "_request_total",
-            documentation='Totoal number of HTTP requests',
-            namespace=namespace,
-            labelnames=['api_name', 'service_version', 'http_response_code'],
-        )
-        self.metrics_request_in_progress = Gauge(
-            name=service_name + "_request_in_progress",
-            documentation='Totoal number of HTTP requests in progress now',
-            namespace=namespace,
-            labelnames=['api_name', 'service_version'],
-        )
-
-        def before_request():
-            self.request_start_time = default_timer()
-            api_name = request.endpoint
-            self.metrics_request_in_progress.labels(
-                api_name=api_name, service_version=self.bento_service.version
-            ).inc()
-
-        def after_request(response):
-            api_name = request.endpoint
-
-            # instrument request duration
-            total_time = max(default_timer() - self.request_start_time, 0)
-            self.metrics_request_duration.labels(
-                api_name=api_name,
-                service_version=self.bento_service.version,
-                http_response_code=response.status_code,
-            ).observe(total_time)
-
-            # instrument request total count
-            self.metrics_request_total.labels(
-                api_name=api_name,
-                service_version=self.bento_service.version,
-                http_response_code=response.status_code,
-            ).inc()
-
-            # instrument request in progress
-            self.metrics_request_in_progress.labels(
-                api_name=api_name, service_version=self.bento_service.version
-            ).inc()
-
-            return response
-
-        self.app.before_request(before_request)
-        self.app.after_request(after_request)
 
     @staticmethod
     def log_image(req, request_id):

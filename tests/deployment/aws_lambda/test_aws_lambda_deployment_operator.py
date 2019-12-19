@@ -58,6 +58,9 @@ def test_aws_lambda_app_py(monkeypatch):
         return value
 
     class Mock_bento_service_class(object):
+        name = "mock_bento_service"
+        version = "mock_bento_service_version"
+
         def _load_artifacts(self, path):
             return
 

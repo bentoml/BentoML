@@ -22,11 +22,13 @@ import sys
 try:
     import download_extra_resources
 
+    print("Downloading extra requirements and files from s3..")
     download_extra_resources.download_extra_resources()
+    print("Finished downloading extra requirements and files")
 except ImportError:
     # When function doesn't have extra resources or dependencies, we will not include
     # unzip_extra_resources and that will result with ImportError.  We will let it fail
-    # silently.
+    # silently
     pass
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions

@@ -29,6 +29,7 @@ def mock_tensorflow_module():
     sys.modules['tensorflow'] = MagicMock()
 
     import tensorflow as tf
+
     tf.__version__ = "2.0"
     tf.Tensor = tf.compat.v2.Tensor = MockTensor
     tf.constant = tf.compat.v2.constant = MockConstant
@@ -67,8 +68,11 @@ def test_tf_tensor_handle_request():
         request.data = json.dumps(input_data).encode('utf-8')
         result = handler.handle_request(request, lambda i: i)
         predictions = json.loads(result.get_data().decode('utf-8'))['predictions']
-        assert (input_data['instances'] == predictions
-                or math.isnan(input_data['instances']) and math.isnan(predictions))
+        assert (
+            input_data['instances'] == predictions
+            or math.isnan(input_data['instances'])
+            and math.isnan(predictions)
+        )
 
     # test str b64
     input_data = {"instances": {"b64": STR_B64}}

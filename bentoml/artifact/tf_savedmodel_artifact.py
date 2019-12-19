@@ -48,17 +48,15 @@ class _TensorflowFunctionWrapper:
         for k in kwargs:
             if k not in self._args_to_indices:
                 raise TypeError(f"Function got an unexpected keyword argument {k}")
-        signatures_by_kw = {
-            k: signatures[self._args_to_indices[k]]
-            for k in kwargs
-        }
+        signatures_by_kw = {k: signatures[self._args_to_indices[k]] for k in kwargs}
         # INFO:
         # how signature with kwargs works?
         # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
 
         transformed_args = tuple(
             self._transform_input_by_tensorspec(arg, signatures[i])
-            for i, arg in enumerate(args))
+            for i, arg in enumerate(args)
+        )
         transformed_kwargs = {
             k: self._transform_input_by_tensorspec(arg, signatures_by_kw[k])
             for k, arg in kwargs.items()
@@ -77,14 +75,16 @@ class _TensorflowFunctionWrapper:
             import tensorflow as tf
         except ImportError:
             raise MissingDependencyException(
-                "Tensorflow package is required to use TfSavedModelArtifact")
+                "Tensorflow package is required to use TfSavedModelArtifact"
+            )
 
         if _input.dtype != tensorspec.dtype:
             # may raise TypeError
             _input = tf.dtypes.cast(_input, tensorspec.dtype)
         if not tensorspec.is_compatible_with(_input):
-            _input = tf.reshape(_input, tuple(
-                i is None and -1 or i for i in tensorspec.shape))
+            _input = tf.reshape(
+                _input, tuple(i is None and -1 or i for i in tensorspec.shape)
+            )
         return _input
 
     @classmethod
@@ -94,7 +94,8 @@ class _TensorflowFunctionWrapper:
             from tensorflow.python.eager import def_function
         except ImportError:
             raise MissingDependencyException(
-                "Tensorflow package is required to use TfSavedModelArtifact")
+                "Tensorflow package is required to use TfSavedModelArtifact"
+            )
 
         for k in dir(loaded_model):
             v = getattr(loaded_model, k, None)
@@ -118,8 +119,7 @@ def _load_tf_saved_model(path):
         return tf.saved_model.load(path)
     else:
         loaded = tf.compat.v2.saved_model.load(path)
-        if (isinstance(loaded, AutoTrackable)
-                and not hasattr(loaded, "__call__")):
+        if isinstance(loaded, AutoTrackable) and not hasattr(loaded, "__call__"):
             logger.warning(
                 '''Importing SavedModels from TensorFlow 1.x.
                 `outputs = imported(inputs)` is not supported in bento service due to

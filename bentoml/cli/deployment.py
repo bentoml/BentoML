@@ -176,10 +176,7 @@ def get_deployment_sub_command():
     @click.option(
         '-p',
         '--platform',
-        type=click.Choice(
-            ['aws-lambda', 'aws-sagemaker'],
-            case_sensitive=False,
-        ),
+        type=click.Choice(['aws-lambda', 'aws-sagemaker'], case_sensitive=False),
         required=True,
         help='Which cloud platform to deploy this BentoService to',
     )

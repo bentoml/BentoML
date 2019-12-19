@@ -103,7 +103,7 @@ def call_sam_command(command, project_dir, region):
         cwd=project_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        env=copied_env
+        env=copied_env,
     )
     stdout, stderr = proc.communicate()
     logger.debug('SAM cmd %s output: %s', command, stdout.decode('utf-8'))
@@ -130,7 +130,7 @@ def lambda_package(project_dir, aws_region, s3_bucket_name, deployment_prefix):
             aws_region,
         ],
         project_dir=build_dir,
-        region=aws_region
+        region=aws_region,
     )
     if return_code != 0:
         error_message = stderr
@@ -158,7 +158,7 @@ def lambda_deploy(project_dir, aws_region, stack_name):
             aws_region,
         ],
         project_dir=project_dir,
-        region=aws_region
+        region=aws_region,
     )
     if return_code != 0:
         error_message = stderr
@@ -176,7 +176,7 @@ def validate_lambda_template(template_file, aws_region, sam_project_path):
     status_code, stdout, stderr = call_sam_command(
         ['validate', '--template-file', template_file, '--region', aws_region],
         project_dir=sam_project_path,
-        region=aws_region
+        region=aws_region,
     )
     if status_code != 0:
         error_message = stderr
@@ -261,7 +261,7 @@ def init_sam_project(
     return_code, stdout, stderr = call_sam_command(
         ['build', '--use-container', '--region', aws_region],
         project_dir=sam_project_path,
-        region=aws_region
+        region=aws_region,
     )
     if return_code != 0:
         error_message = stderr

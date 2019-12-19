@@ -3,6 +3,7 @@ TF_B64_KEY = 'b64'
 
 def tf_b64_2_bytes(obj):
     import base64
+
     if isinstance(obj, dict) and TF_B64_KEY in obj:
         return base64.b64decode(obj[TF_B64_KEY])
     else:
@@ -11,10 +12,9 @@ def tf_b64_2_bytes(obj):
 
 def bytes_2_tf_b64(obj):
     import base64
+
     if isinstance(obj, bytes):
-        return {
-            TF_B64_KEY: base64.b64encode(obj).decode('utf-8')
-        }
+        return {TF_B64_KEY: base64.b64encode(obj).decode('utf-8')}
     else:
         return obj
 

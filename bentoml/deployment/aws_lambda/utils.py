@@ -89,12 +89,12 @@ def cleanup_build_files(project_dir, api_name):
             os.remove(os.path.join(root, 'caff2'))
 
 
-# We are passing region as part of the param, due to sam cli is not currently using the
-# region that passed in each command.  Set the region param as AWS_DEFAULT_REGION for
-# the subprocess call
 def call_sam_command(command, project_dir, region):
     command = ['sam'] + command
 
+    # We are passing region as part of the param, due to sam cli is not currently
+    # using the region that passed in each command.  Set the region param as
+    # AWS_DEFAULT_REGION for the subprocess call
     copied_env = os.environ.copy()
     copied_env['AWS_DEFAULT_REGION'] = region
 
@@ -172,7 +172,6 @@ def lambda_deploy(project_dir, aws_region, stack_name):
 
 
 def validate_lambda_template(template_file, aws_region, sam_project_path):
-    print('validating template,', template_file, aws_region, sam_project_path)
     status_code, stdout, stderr = call_sam_command(
         ['validate', '--template-file', template_file, '--region', aws_region],
         project_dir=sam_project_path,

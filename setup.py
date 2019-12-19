@@ -65,6 +65,7 @@ test_requires = (
         "coverage>=4.4",
         "codecov",
         "moto",
+        "numpy",
     ]
     + imageio
     + aws_sam_cli

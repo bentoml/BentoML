@@ -223,7 +223,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     i in ['TensorflowSavedModelArtifact', 'KerasModelArtifact']
                     for i in artifact_types
                 )
-                and py_minor != '6'
+                and (py_major, py_minor) != ('3', '6')
             ):
                 raise BentoMLException(
                     'For Tensorflow and Keras model, only python3.6 is '

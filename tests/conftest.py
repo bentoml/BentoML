@@ -6,7 +6,7 @@ from bentoml.handlers import (
     DataframeHandler,
     ImageHandler,
     JsonHandler,
-    FastaiImageHandler,
+    # FastaiImageHandler,
 )
 from bentoml.artifact import PickleArtifact
 from bentoml import config

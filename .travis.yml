@@ -2,18 +2,10 @@ language: python
 
 dist: xenial
 
-cache: pip
-
 python:
   - 3.6
   - 3.7
 
-install:
-  - "pip install --upgrade pip"
-  - "pip install -e .[test]"
+install: pip install tox-travis
 
-script:
-  - pytest --cov=bentoml
-
-after_success:
-  - codecov
+script: tox

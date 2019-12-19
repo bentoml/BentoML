@@ -89,10 +89,21 @@ def cleanup_build_files(project_dir, api_name):
             os.remove(os.path.join(root, 'caff2'))
 
 
-def call_sam_command(command, project_dir):
+# We are passing region as part of the param, due to sam cli is not currently using the
+# region that passed in each command.  Set the region param as AWS_DEFAULT_REGION for
+# the subprocess call
+def call_sam_command(command, project_dir, region):
     command = ['sam'] + command
+
+    copied_env = os.environ.copy()
+    copied_env['AWS_DEFAULT_REGION'] = region
+
     proc = subprocess.Popen(
-        command, cwd=project_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        command,
+        cwd=project_dir,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=copied_env
     )
     stdout, stderr = proc.communicate()
     logger.debug('SAM cmd %s output: %s', command, stdout.decode('utf-8'))
@@ -118,7 +129,8 @@ def lambda_package(project_dir, aws_region, s3_bucket_name, deployment_prefix):
             '--region',
             aws_region,
         ],
-        build_dir,
+        project_dir=build_dir,
+        region=aws_region
     )
     if return_code != 0:
         error_message = stderr
@@ -145,7 +157,8 @@ def lambda_deploy(project_dir, aws_region, stack_name):
             '--region',
             aws_region,
         ],
-        project_dir,
+        project_dir=project_dir,
+        region=aws_region
     )
     if return_code != 0:
         error_message = stderr
@@ -159,9 +172,11 @@ def lambda_deploy(project_dir, aws_region, stack_name):
 
 
 def validate_lambda_template(template_file, aws_region, sam_project_path):
+    print('validating template,', template_file, aws_region, sam_project_path)
     status_code, stdout, stderr = call_sam_command(
         ['validate', '--template-file', template_file, '--region', aws_region],
-        sam_project_path,
+        project_dir=sam_project_path,
+        region=aws_region
     )
     if status_code != 0:
         error_message = stderr
@@ -244,7 +259,9 @@ def init_sam_project(
 
     logger.info('Building lambda project')
     return_code, stdout, stderr = call_sam_command(
-        ['build', '--use-container', '--region', aws_region], sam_project_path
+        ['build', '--use-container', '--region', aws_region],
+        project_dir=sam_project_path,
+        region=aws_region
     )
     if return_code != 0:
         error_message = stderr

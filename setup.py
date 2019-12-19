@@ -20,7 +20,7 @@ with open("README.md", "r") as f:
 
 install_requires = [
     "ruamel.yaml>=0.15.0",
-    "numpy",
+    "numpy==1.17.4",
     "flask",
     "gunicorn",
     "click>=7.0",

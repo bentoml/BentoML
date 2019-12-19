@@ -136,12 +136,11 @@ def _load_tf_saved_model(path):
                 wrapped_function(tf.ones([]))
                 ```
 
-                See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for 
+                See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
                 details.
                 '''
-        )
+            )
         return loaded
-
 
 
 class TensorflowSavedModelArtifact(BentoServiceArtifact):

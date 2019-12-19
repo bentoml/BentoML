@@ -14,25 +14,25 @@ def mock_tensorflow_module():
     class MockTensor:
         def __init__(self, _input):
             self.input = _input
-    
+
         def numpy(self):
             if isinstance(self.input, (list, tuple)):
                 return np.array(self.input, dtype=object)
             return self.input
-    
+
         def __eq__(self, dst):
             return self.input == dst.input
-        
+
     class MockConstant(MockTensor):
         pass
 
     sys.modules['tensorflow'] = MagicMock()
-    
+
     import tensorflow as tf
     tf.__version__ = "2.0"
     tf.Tensor = tf.compat.v2.Tensor = MockTensor
     tf.constant = tf.compat.v2.constant = MockConstant
-    
+
 
 mock_tensorflow_module()
 
@@ -69,7 +69,7 @@ def test_tf_tensor_handle_request():
         predictions = json.loads(result.get_data().decode('utf-8'))['predictions']
         assert (input_data['instances'] == predictions
                 or math.isnan(input_data['instances']) and math.isnan(predictions))
-    
+
     # test str b64
     input_data = {"instances": {"b64": STR_B64}}
     request.data = json.dumps(input_data).encode("utf8")
@@ -95,5 +95,6 @@ def test_tf_tensor_handle_request():
     result = handler.handle_request(request, lambda i: i)
     predictions = json.loads(result.get_data().decode('utf-8'))['predictions']
     assert [{"b64": BIN_B64}] == predictions
+
 
 test_tf_tensor_handle_request()

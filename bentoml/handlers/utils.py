@@ -1,5 +1,6 @@
 TF_B64_KEY = 'b64'
 
+
 def tf_b64_2_bytes(obj):
     import base64
     if isinstance(obj, dict) and TF_B64_KEY in obj:
@@ -20,7 +21,7 @@ def bytes_2_tf_b64(obj):
 
 def tf_tendor_2_serializable(obj):
     '''
-    To convert 
+    To convert
         tf.Tensor -> json serializable
         np.ndarray -> json serializable
         bytes -> {'b64': <b64_str>}
@@ -66,6 +67,7 @@ class NestedConverter:
     Generate a nested converter that supports object in list/tuple/dict
     from a single converter.
     '''
+
     def __init__(self, converter):
         self.converter = converter
 

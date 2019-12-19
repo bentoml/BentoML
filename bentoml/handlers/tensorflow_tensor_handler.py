@@ -20,7 +20,10 @@ import json
 import argparse
 from flask import Response
 from bentoml.handlers.utils import (
-    NestedConverter, tf_b64_2_bytes, tf_tendor_2_serializable)
+    NestedConverter,
+    tf_b64_2_bytes,
+    tf_tendor_2_serializable,
+)
 from bentoml.handlers.base_handlers import BentoHandler, get_output_str
 from bentoml.exceptions import BentoMLException, BadInput
 
@@ -44,15 +47,8 @@ class TensorflowTensorHandler(BentoHandler):
     Raises:
         BentoMLException: BentoML currently doesn't support Content-Type
     """
-    METHODS = (
-        PREDICT,
-        CLASSIFY,
-        REGRESS,
-    ) = (
-        "predict",
-        "classify",
-        "regress",
-    )
+
+    METHODS = (PREDICT, CLASSIFY, REGRESS) = ("predict", "classify", "regress")
 
     def __init__(self, method=PREDICT):
         self.method = method
@@ -65,21 +61,13 @@ class TensorflowTensorHandler(BentoHandler):
                     "schema": {
                         "type": "object",
                         "properties": {
-                            "signature_name": {
-                                "type": "string",
-                                "default": None,
-                            },
+                            "signature_name": {"type": "string", "default": None},
                             "instances": {
                                 "type": "array",
-                                "items": {
-                                    "type": "object",
-                                },
+                                "items": {"type": "object"},
                                 "default": None,
                             },
-                            "inputs": {
-                                "type": "object",
-                                "default": None,
-                            }
+                            "inputs": {"type": "object", "default": None},
                         },
                     }
                 }
@@ -89,6 +77,7 @@ class TensorflowTensorHandler(BentoHandler):
 
     def _handle_raw_str(self, raw_str, output_format, func):
         import tensorflow as tf
+
         parsed_json = json.loads(raw_str)
         if parsed_json.get("instances") is not None:
             instances = parsed_json.get("instances")
@@ -121,24 +110,25 @@ class TensorflowTensorHandler(BentoHandler):
         output_format = request.headers.get("output", "json")
         if output_format not in {"json", "str"}:
             raise BadInput(
-                "Request output must be 'json' or 'str' for this BentoService API")
+                "Request output must be 'json' or 'str' for this BentoService API"
+            )
         if request.content_type == "application/json":
             input_str = request.data.decode("utf-8")
             output_format = request.headers.get("output", "json")
             result_str = self._handle_raw_str(input_str, output_format, func)
             return Response(
-                response=result_str, status=200, mimetype="application/json")
+                response=result_str, status=200, mimetype="application/json"
+            )
         else:
             raise BadInput(
                 "Request content-type must be 'application/json'"
-                " for this BentoService API")
+                " for this BentoService API"
+            )
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True)
-        parser.add_argument(
-            "-o", "--output", default="str", choices=["str", "json"]
-        )
+        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
         parsed_args = parser.parse_args(args)
 
         result = self._handle_raw_str(parsed_args.input, parsed_args.output, func)
@@ -147,7 +137,8 @@ class TensorflowTensorHandler(BentoHandler):
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "") == "application/json":
             result = self._handle_raw_str(
-                event["body"], event["headers"].get("output", "json"), func)
+                event["body"], event["headers"].get("output", "json"), func
+            )
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

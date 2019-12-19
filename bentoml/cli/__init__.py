@@ -76,6 +76,9 @@ def create_bento_service_cli(bundle_path=None):
         ctx.quiet = quiet
 
         if verbose:
+            from bentoml import config
+
+            config().set('core', 'debug', 'true')
             configure_logging(logging.DEBUG)
         elif quiet:
             configure_logging(logging.ERROR)

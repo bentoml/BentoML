@@ -21,6 +21,10 @@ import logging
 import tempfile
 import shutil
 
+
+from bentoml import config
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +38,7 @@ class TempDirectory(object):
     """
 
     def __init__(self, cleanup=True, prefix="temp"):
+
         self._cleanup = cleanup
         self._prefix = prefix
         self.path = None
@@ -46,17 +51,21 @@ class TempDirectory(object):
         return self.path
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if config('core').getboolean('debug'):
+            logger.debug(f'BentoML in debug mode, keeping temp directory "{self.path}"')
+            return
+
         if self._cleanup:
             self.cleanup()
 
     def create(self):
         if self.path is not None:
-            logger.debug("Skipped temp direcotry creation: %s", self.path)
+            logger.debug(f"Skipped temp direcotry creation: {self.path}")
             return self.path
 
         tempdir = tempfile.mkdtemp(prefix="bentoml-{}-".format(self._prefix))
         self.path = os.path.realpath(tempdir)
-        logger.debug("Created temporary directory: %s", self.path)
+        logger.debug(f"Created temporary directory: {self.path}")
 
     def cleanup(self, ignore_errors=False):
         """

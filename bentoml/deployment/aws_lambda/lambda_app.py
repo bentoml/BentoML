@@ -48,7 +48,9 @@ print(f'BentoService API "{api_name}" loaded successfully')
 
 this_module = sys.modules[__name__]
 
+
 def api_func(event, context):  # pylint: disable=unused-argument
     return bento_service_api.handle_aws_lambda_event(event)
+
 
 setattr(this_module, api_name, api_func)

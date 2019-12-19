@@ -6,8 +6,8 @@ import uuid
 
 import requests
 import json
-
 from sklearn import svm, datasets
+
 from bentoml import BentoService, load, api, env, artifacts
 from bentoml.artifact import PickleArtifact
 from bentoml.handlers import DataframeHandler
@@ -17,7 +17,7 @@ logger = logging.getLogger('bentoml.test')
 
 
 @artifacts([PickleArtifact('clf')])
-@env(pip_dependencies=['scikit-learn==0.20.3'])
+@env(pip_dependencies=['scikit-learn'])
 class IrisClassifier(BentoService):
     @api(DataframeHandler)
     def predict(self, df):
@@ -25,13 +25,13 @@ class IrisClassifier(BentoService):
 
 
 if __name__ == '__main__':
-    logger.info('Training iris classifier')
+    logger.info('Training iris classifier with sklearn..')
     clf = svm.SVC(gamma='scale')
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
     clf.fit(X, y)
 
-    logger.info('Bundling iris classifier with BentoML')
+    logger.info('Creating iris classifier BentoService bundle..')
     iris_clf_service = IrisClassifier()
     iris_clf_service.pack('clf', clf)
     saved_path = iris_clf_service.save()
@@ -39,28 +39,27 @@ if __name__ == '__main__':
     loaded_service = load(saved_path)
     sample_data = X[0:1]
 
-    logger.info('Result from sample data is: ', loaded_service.predict(sample_data))
-    deployment_failed = False
     logger.info(
-        'Creating AWS Lambda test deployment for iris classifier with BentoML CLI'
+        'Result from sample data is: %s', str(loaded_service.predict(sample_data))
     )
-    bento_name = '{}:{}'.format(loaded_service.name, loaded_service.version)
+    deployment_failed = False
+    bento_name = f'{loaded_service.name}:{loaded_service.version}'
     random_hash = uuid.uuid4().hex[:6]
-    deployment_name = 'tests-lambda-e2e-{}'.format(random_hash)
+    deployment_name = f'tests-lambda-e2e-{random_hash}'
     create_deployment_command = [
         'bentoml',
         '--verbose',
         'deploy',
         'create',
         deployment_name,
-        '--bento',
+        '-b',
         bento_name,
         '--platform',
         'aws-lambda',
         '--region',
         'us-west-2',
     ]
-    logger.info('Deploy command: {}'.format(create_deployment_command))
+    logger.info(f'Running bentoml deploy command: {create_deployment_command}')
     with subprocess.Popen(
         create_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
@@ -107,7 +106,7 @@ if __name__ == '__main__':
         deployment_name,
         '--force',
     ]
-    logger.info('Delete command: {}'.format(delete_deployment_command))
+    logger.info(f'Delete command: {delete_deployment_command}')
     with subprocess.Popen(
         delete_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:

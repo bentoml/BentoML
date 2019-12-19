@@ -142,10 +142,12 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
     api_names = ['predict', 'classify']
     s3_bucket_name = 'test_bucket'
     py_runtime = 'python3.7'
+    namespace = 'test'
     memory_size = 3008
     timeout = 6
     _create_aws_lambda_cloudformation_template_file(
         str(tmpdir),
+        namespace=namespace,
         deployment_name=deployment_name,
         deployment_path_prefix='mock/deployment/path/prefix',
         api_names=api_names,

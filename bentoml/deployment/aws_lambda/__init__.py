@@ -64,6 +64,7 @@ logger = logging.getLogger(__name__)
 
 def _create_aws_lambda_cloudformation_template_file(
     project_dir,
+    namespace,
     deployment_name,
     deployment_path_prefix,
     api_names,
@@ -105,9 +106,7 @@ def _create_aws_lambda_cloudformation_template_file(
                 'Runtime': py_runtime,
                 'CodeUri': deployment_name + '/',
                 'Handler': 'app.{}'.format(api_name),
-                'FunctionName': '{deployment}-{api}'.format(
-                    deployment=deployment_name, api=api_name
-                ),
+                'FunctionName': f'{namespace}-{deployment_name}-{api_name}',
                 'Timeout': timeout,
                 'MemorySize': memory_size,
                 'Events': {
@@ -218,13 +217,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             artifact_types = [
                 item.artifact_type for item in bento_service_metadata.artifacts
             ]
-            if (
-                any(
-                    i in ['TensorflowSavedModelArtifact', 'KerasModelArtifact']
-                    for i in artifact_types
-                )
-                and (py_major, py_minor) != ('3', '6')
-            ):
+            if any(
+                i in ['TensorflowSavedModelArtifact', 'KerasModelArtifact']
+                for i in artifact_types
+            ) and (py_major, py_minor) != ('3', '6'):
                 raise BentoMLException(
                     'For Tensorflow and Keras model, only python3.6 is '
                     'supported for AWS Lambda deployment'
@@ -264,6 +260,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
                 template_file_path = _create_aws_lambda_cloudformation_template_file(
                     project_dir=lambda_project_dir,
+                    namespace=deployment_pb.namespace,
                     deployment_name=deployment_pb.name,
                     deployment_path_prefix=deployment_path_prefix,
                     api_names=api_names,

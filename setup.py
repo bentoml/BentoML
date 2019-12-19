@@ -61,26 +61,24 @@ test_requires = (
     [
         "pytest>=4.1.0",
         "pytest-cov>=2.7.1",
-        "snapshottest>=0.5.0",
         "mock>=2.0.0",
-        "tox>=3.12.1",
         "coverage>=4.4",
         "codecov",
         "moto",
     ]
     + imageio
-    + fastai
     + aws_sam_cli
 )
 
 dev_requires = [
+    "tox>=3.12.1",
+    "tox-conda>=0.2.0",
     "flake8",
     "twine",
     "setuptools",
     "gitpython>=2.0.2",
     "grpcio-tools",
     "pylint>=2.3.1",
-    "tox-conda>=0.2.0",
     "black",
 ]
 

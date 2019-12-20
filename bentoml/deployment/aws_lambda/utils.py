@@ -95,6 +95,7 @@ def call_sam_command(command, project_dir, region):
     # We are passing region as part of the param, due to sam cli is not currently
     # using the region that passed in each command.  Set the region param as
     # AWS_DEFAULT_REGION for the subprocess call
+    logger.debug('Setting envar "AWS_DEFAULT_REGION" to %s for subprocess call', region)
     copied_env = os.environ.copy()
     copied_env['AWS_DEFAULT_REGION'] = region
 
@@ -147,7 +148,9 @@ def lambda_deploy(project_dir, aws_region, stack_name):
     # if the stack name exists and the state is in rollback_complete or
     # other 'bad' state, we will delete the stack first, and then deploy
     # it
+    logger.debug('Ensure stack "%s" is ready to deploy', stack_name)
     ensure_is_ready_to_deploy_to_cloud_formation(stack_name, aws_region)
+    logger.debug('Stack "%s"is ready to deploy', stack_name)
 
     template_file = os.path.join(project_dir, '.aws-sam', 'build', 'packaged.yaml')
     return_code, stdout, stderr = call_sam_command(
@@ -375,15 +378,23 @@ FAILED_CLOUDFORMATION_STACK_STATUS = [
 def ensure_is_ready_to_deploy_to_cloud_formation(stack_name, region):
     try:
         cf_client = boto3.client('cloudformation', region)
+        logger.debug('Checking stack description')
         describe_formation_result = cf_client.describe_stacks(StackName=stack_name)
         result_stacks = describe_formation_result.get('Stacks')
         if len(result_stacks):
+            logger.debug('Stack "%s" exists', stack_name)
             stack_result = result_stacks[0]
             if stack_result['StackStatus'] in [
                 'ROLLBACK_COMPLETE',
                 'ROLLBACK_FAILED',
                 'ROLLBACK_IN_PROGRESS',
             ]:
+                logger.debug(
+                    'Stack "%s" is in a "bad" status(%s), deleting the stack '
+                    'before deployment',
+                    stack_name,
+                    stack_result['StackStatus']
+                )
                 cf_client.delete_stack(StackName=stack_name)
     except ClientError as e:
         raise BentoMLException(str(e))

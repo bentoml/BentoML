@@ -167,6 +167,7 @@ def get_deployment_sub_command():
     @click.option(
         '-b',
         '--bento',
+        '--bento-service-bundle',
         type=click.STRING,
         required=True,
         callback=parse_bento_tag_callback,

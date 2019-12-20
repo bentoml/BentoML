@@ -22,11 +22,13 @@ import sys
 try:
     import download_extra_resources
 
+    print("Downloading extra requirements and files from s3..")
     download_extra_resources.download_extra_resources()
+    print("Finished downloading extra requirements and files")
 except ImportError:
     # When function doesn't have extra resources or dependencies, we will not include
     # unzip_extra_resources and that will result with ImportError.  We will let it fail
-    # silently.
+    # silently
     pass
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
@@ -40,16 +42,17 @@ bento_bundle_path = os.path.join('./', bento_name)
 if not os.path.exists(bento_bundle_path):
     bento_bundle_path = os.path.join('/tmp/requirements', bento_name)
 
-print('Bento bundle path is', bento_bundle_path)
+print(f'Loading BentoService bundle from path: "{bento_bundle_path}"')
 bento_service = load(bento_bundle_path)
+print(f'BentoService "{bento_service.name}" loaded successfully')
+bento_service_api = bento_service.get_service_api(api_name)
+print(f'BentoService API "{api_name}" loaded successfully')
 
-print('Bento service loaded', bento_service)
 this_module = sys.modules[__name__]
 
 
 def api_func(event, context):  # pylint: disable=unused-argument
-    api = bento_service.get_service_api(api_name)
-    return api.handle_aws_lambda_event(event)
+    return bento_service_api.handle_aws_lambda_event(event)
 
 
 setattr(this_module, api_name, api_func)

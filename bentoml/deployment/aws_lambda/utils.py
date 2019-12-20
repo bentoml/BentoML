@@ -25,7 +25,7 @@ import tarfile
 from pathlib import Path
 
 import boto3
-from botocore.exceptions import ClientError, ValidationError
+from botocore.exceptions import ClientError
 
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 

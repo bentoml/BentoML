@@ -144,6 +144,11 @@ def lambda_package(project_dir, aws_region, s3_bucket_name, deployment_prefix):
 
 
 def lambda_deploy(project_dir, aws_region, stack_name):
+    # if the stack name exists and the state is in rollback_complete or
+    # other 'bad' state, we will delete the stack first, and then deploy
+    # it
+    ensure_is_ready_to_deploy_to_cloud_formation(stack_name, aws_region)
+
     template_file = os.path.join(project_dir, '.aws-sam', 'build', 'packaged.yaml')
     return_code, stdout, stderr = call_sam_command(
         [
@@ -365,5 +370,20 @@ FAILED_CLOUDFORMATION_STACK_STATUS = [
     # creation or after an explicitly cancelled stack creation.
     'ROLLBACK_IN_PROGRESS',
 ]
+
+
+def ensure_is_ready_to_deploy_to_cloud_formation(stack_name, region):
+    try:
+        cf_client = boto3.client('cloudformation', region)
+        describe_formation_result = cf_client.describe_stacks(StackName=stack_name)
+        result_stacks = describe_formation_result.get('Stacks')
+        if len(result_stacks):
+            stack_result = result_stacks[0]
+            if stack_result['StackStatus'] in [
+                'ROLLBACK_COMPLETE',
+                'ROLLBACK_FAILED',
+                'ROLLBACK_IN_PROGRESS',
+            ]:
+                cf_client.delete_stack(StackName=stack_name)
     except ClientError as e:
         raise BentoMLException(str(e))

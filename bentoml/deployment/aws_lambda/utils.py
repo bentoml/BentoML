@@ -397,6 +397,9 @@ def ensure_is_ready_to_deploy_to_cloud_formation(stack_name, region):
                 )
                 cf_client.delete_stack(StackName=stack_name)
     except ClientError as e:
+        # We are brutally parse and handle stack doesn't exist, since
+        # "AmazonCloudFormationException" currently is not implemented in boto3. Once
+        # the current error is implemented, we need to switch
         error_response = e.response.get('Error', {})
         error_code = error_response.get('Code')
         error_message = error_response.get('Message', 'Unknown')

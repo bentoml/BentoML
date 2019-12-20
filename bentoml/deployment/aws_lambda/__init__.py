@@ -39,6 +39,7 @@ from bentoml.deployment.aws_lambda.utils import (
     total_file_or_directory_size,
     LAMBDA_FUNCTION_LIMIT,
     LAMBDA_FUNCTION_MAX_LIMIT,
+    FAILED_CLOUDFORMATION_STACK_STATUS,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.deployment.utils import (
@@ -433,21 +434,9 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     )
                 )
                 stack_result = cloud_formation_stack_result.get('Stacks')[0]
-                success_status = ['CREATE_COMPLETE', 'UPDATE_COMPLETE']
                 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/\
                 # using-cfn-describing-stacks.html
-                failed_status = [
-                    'CREATE_FAILED',
-                    # Ongoing creation of one or more stacks with an expected StackId
-                    # but without any templates or resources.
-                    'REVIEW_IN_PROGRESS',
-                    'ROLLBACK_FAILED',
-                    # This status exists only after a failed stack creation.
-                    'ROLLBACK_COMPLETE',
-                    # Ongoing removal of one or more stacks after a failed stack
-                    # creation or after an explicitly cancelled stack creation.
-                    'ROLLBACK_IN_PROGRESS',
-                ]
+                success_status = ['CREATE_COMPLETE', 'UPDATE_COMPLETE']
                 if stack_result['StackStatus'] in success_status:
                     if stack_result.get('Outputs'):
                         outputs = stack_result['Outputs']
@@ -459,7 +448,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                                 error_message='"Outputs" field is not present',
                             ),
                         )
-                elif stack_result['StackStatus'] in failed_status:
+                elif stack_result['StackStatus'] in FAILED_CLOUDFORMATION_STACK_STATUS:
                     state = DeploymentState(state=DeploymentState.FAILED)
                     state.timestamp.GetCurrentTime()
                     return DescribeDeploymentResponse(status=Status.OK(), state=state)

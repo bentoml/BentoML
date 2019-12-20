@@ -3,6 +3,7 @@
 import subprocess
 import logging
 import uuid
+import sys
 
 import requests
 import json
@@ -25,27 +26,33 @@ class IrisClassifier(BentoService):
 
 
 if __name__ == '__main__':
-    logger.info('Training iris classifier with sklearn..')
-    clf = svm.SVC(gamma='scale')
-    iris = datasets.load_iris()
-    X, y = iris.data, iris.target
-    clf.fit(X, y)
-
-    logger.info('Creating iris classifier BentoService bundle..')
-    iris_clf_service = IrisClassifier()
-    iris_clf_service.pack('clf', clf)
-    saved_path = iris_clf_service.save()
-
-    loaded_service = load(saved_path)
-    sample_data = X[0:1]
-
-    logger.info(
-        'Result from sample data is: %s', str(loaded_service.predict(sample_data))
-    )
     deployment_failed = False
-    bento_name = f'{loaded_service.name}:{loaded_service.version}'
     random_hash = uuid.uuid4().hex[:6]
     deployment_name = f'tests-lambda-e2e-{random_hash}'
+
+    args = sys.argv
+    bento_name = None
+    if len(args) > 1:
+        bento_name = args[1]
+    if bento_name is None:
+        logger.info('Training iris classifier with sklearn..')
+        clf = svm.SVC(gamma='scale')
+        iris = datasets.load_iris()
+        X, y = iris.data, iris.target
+        clf.fit(X, y)
+
+        logger.info('Creating iris classifier BentoService bundle..')
+        iris_clf_service = IrisClassifier()
+        iris_clf_service.pack('clf', clf)
+        saved_path = iris_clf_service.save()
+
+        loaded_service = load(saved_path)
+        sample_data = X[0:1]
+
+        logger.info(
+            'Result from sample data is: %s', str(loaded_service.predict(sample_data))
+        )
+        bento_name = f'{loaded_service.name}:{loaded_service.version}'
     create_deployment_command = [
         'bentoml',
         '--verbose',

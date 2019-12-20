@@ -25,7 +25,7 @@ import tarfile
 from pathlib import Path
 
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, ValidationError
 
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
@@ -393,8 +393,14 @@ def ensure_is_ready_to_deploy_to_cloud_formation(stack_name, region):
                     'Stack "%s" is in a "bad" status(%s), deleting the stack '
                     'before deployment',
                     stack_name,
-                    stack_result['StackStatus']
+                    stack_result['StackStatus'],
                 )
                 cf_client.delete_stack(StackName=stack_name)
     except ClientError as e:
-        raise BentoMLException(str(e))
+        error_response = e.response.get('Error', {})
+        error_code = error_response.get('Code')
+        error_message = error_response.get('Message', 'Unknown')
+        if error_code == 'ValidationError' and 'does not exist' in error_message:
+            pass
+        else:
+            raise BentoMLException(str(e))

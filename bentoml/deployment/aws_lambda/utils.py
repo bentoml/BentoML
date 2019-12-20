@@ -393,8 +393,17 @@ def ensure_is_ready_to_deploy_to_cloud_formation(stack_name, region):
                     'Stack "%s" is in a "bad" status(%s), deleting the stack '
                     'before deployment',
                     stack_name,
-                    stack_result['StackStatus']
+                    stack_result['StackStatus'],
                 )
                 cf_client.delete_stack(StackName=stack_name)
     except ClientError as e:
-        raise BentoMLException(str(e))
+        # We are brutally parse and handle stack doesn't exist, since
+        # "AmazonCloudFormationException" currently is not implemented in boto3. Once
+        # the current error is implemented, we need to switch
+        error_response = e.response.get('Error', {})
+        error_code = error_response.get('Code')
+        error_message = error_response.get('Message', 'Unknown')
+        if error_code == 'ValidationError' and 'does not exist' in error_message:
+            pass
+        else:
+            raise BentoMLException(str(e))

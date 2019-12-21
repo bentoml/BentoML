@@ -45,6 +45,9 @@ class _TensorflowFunctionWrapper:
 
     def __call__(self, *args, **kwargs):
         signatures = self.origin_func.input_signature
+        if signatures is None:
+            return self.origin_func(*args, **kwargs)
+
         for k in kwargs:
             if k not in self._args_to_indices:
                 raise TypeError(f"Function got an unexpected keyword argument {k}")
@@ -61,7 +64,8 @@ class _TensorflowFunctionWrapper:
             k: self._transform_input_by_tensorspec(arg, signatures_by_kw[k])
             for k, arg in kwargs.items()
         }
-        return self.origin_func(*transformed_args, **transformed_kwargs)
+        return self.origin_func.get_concrete_function()(
+            *transformed_args, **transformed_kwargs)
 
     def __getattr__(self, k):
         return getattr(self.origin_func, k)
@@ -81,10 +85,6 @@ class _TensorflowFunctionWrapper:
         if _input.dtype != tensorspec.dtype:
             # may raise TypeError
             _input = tf.dtypes.cast(_input, tensorspec.dtype)
-        if not tensorspec.is_compatible_with(_input):
-            _input = tf.reshape(
-                _input, tuple(i is None and -1 or i for i in tensorspec.shape)
-            )
         return _input
 
     @classmethod

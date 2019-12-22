@@ -23,7 +23,7 @@ from bentoml.proto.deployment_pb2 import DeploymentSpec
 
 deployment_schema = {
     'name': {'type': 'string', 'required': True, 'minlength': 4},
-    'namespace': {'type': 'string', 'required': True, 'minlength': 4},
+    'namespace': {'type': 'string', 'required': True, 'minlength': 3},
     'labels': {'type': 'dict', 'allow_unknown': True},
     'annotations': {'type': 'dict', 'allow_unknown': True},
     'spec': {

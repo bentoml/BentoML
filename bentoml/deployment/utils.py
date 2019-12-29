@@ -83,11 +83,38 @@ def raise_if_api_names_not_found_in_bento_service_metadata(metadata, api_names):
         )
 
 
-def generate_aws_compatible_string(item):
-    pattern = re.compile("[^a-zA-Z0-9-]|_")
-    name = re.sub(pattern, "-", item)
-    if len(name) > 63:
+def generate_aws_compatible_string(*items, max_length=63):
+    """
+    Generate a AWS resource name that is composed from list of string items. This
+    function replaces all invalid characters in the given items into '-', and allow user
+    to specify the max_length for each part separately by passing the item and its max
+    length in a tuple, e.g.:
+
+    >> generate_aws_compatible_string("abc", "def")
+    >> 'abc-def'  # concatenate mupltiple parts
+
+    >> generate_aws_compatible_string("abc_def")
+    >> 'abc-def'  # replace invalid chars to '-'
+
+    >> generate_aws_compatible_string(("ab", 1), ("bcd", 2), max_length=4)
+    >> 'a-bc'  # trim based on max_length of each part
+    """
+    trimed_items = [
+        item[0][: item[1]] if type(item) == tuple else item for item in items
+    ]
+    items = [item[0] if type(item) == tuple else item for item in items]
+
+    for i in range(len(trimed_items)):
+        if len('-'.join(items)) <= max_length:
+            break
+        else:
+            items[i] = trimed_items[i]
+
+    name = '-'.join(items)
+    if len(name) > max_length:
         raise BentoMLException(
-            'AWS string {} exceeds maximum length of 63'.format(name)
+            'AWS resource name {} exceeds maximum length of {}'.format(name, max_length)
         )
+    invalid_chars = re.compile("[^a-zA-Z0-9-]|_")
+    name = re.sub(invalid_chars, "-", name)
     return name

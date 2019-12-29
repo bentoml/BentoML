@@ -199,9 +199,9 @@ def mock_lambda_related_operations(func):
 def test_aws_lambda_apply_under_bundle_size_limit_success():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
-    deployment_operator = AwsLambdaDeploymentOperator()
+    deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
 
-    result_pb = deployment_operator.add(test_deployment_pb, yatai_service_mock, None)
+    result_pb = deployment_operator.add(test_deployment_pb)
 
     assert result_pb.status.status_code == status_pb2.Status.OK
     assert result_pb.deployment.state.state == DeploymentState.PENDING
@@ -230,9 +230,9 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 def test_aws_lambda_apply_over_bundle_size_limit_success():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
-    deployment_operator = AwsLambdaDeploymentOperator()
+    deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
 
-    result_pb = deployment_operator.add(test_deployment_pb, yatai_service_mock, None)
+    result_pb = deployment_operator.add(test_deployment_pb)
 
     assert result_pb.status.status_code == status_pb2.Status.OK
     assert result_pb.deployment.state.state == DeploymentState.PENDING
@@ -248,8 +248,8 @@ def test_aws_lambda_describe_still_in_progress():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
-        deployment_operator = AwsLambdaDeploymentOperator()
-        result_pb = deployment_operator.describe(test_deployment_pb, yatai_service_mock)
+        deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
+        result_pb = deployment_operator.describe(test_deployment_pb)
         assert result_pb.status.status_code == status_pb2.Status.OK
         assert result_pb.state.state == DeploymentState.PENDING
 
@@ -277,7 +277,7 @@ def test_aws_lambda_describe_success():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
-        deployment_operator = AwsLambdaDeploymentOperator()
-        result_pb = deployment_operator.describe(test_deployment_pb, yatai_service_mock)
+        deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
+        result_pb = deployment_operator.describe(test_deployment_pb)
         assert result_pb.status.status_code == status_pb2.Status.OK
         assert result_pb.state.state == DeploymentState.RUNNING

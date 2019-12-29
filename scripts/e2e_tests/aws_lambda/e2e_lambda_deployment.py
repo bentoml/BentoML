@@ -66,7 +66,9 @@ if __name__ == '__main__':
         '--region',
         'us-west-2',
     ]
-    logger.info(f'Running bentoml deploy command: {create_deployment_command}')
+    logger.info(
+        f"Running bentoml deploy command: {' '.join(create_deployment_command)}"
+    )
     with subprocess.Popen(
         create_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:

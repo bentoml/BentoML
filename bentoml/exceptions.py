@@ -121,3 +121,7 @@ class YataiDeploymentException(YataiServiceException):
 
 class YataiRepositoryException(YataiServiceException):
     """Raise when YataiService encounters an issue managing BentoService repoistory"""
+
+
+class AWSServiceError(YataiDeploymentException):
+    """Raise when YataiService encounters an issue with AWS service"""

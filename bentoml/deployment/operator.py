@@ -22,17 +22,17 @@ from bentoml.proto.deployment_pb2 import DeploymentSpec
 from bentoml.exceptions import YataiDeploymentException
 
 
-def get_deployment_operator(deployment_pb):
+def get_deployment_operator(yatai_service, deployment_pb):
     operator = deployment_pb.spec.operator
 
     if operator == DeploymentSpec.AWS_SAGEMAKER:
         from bentoml.deployment.sagemaker import SageMakerDeploymentOperator
 
-        return SageMakerDeploymentOperator()
+        return SageMakerDeploymentOperator(yatai_service)
     elif operator == DeploymentSpec.AWS_LAMBDA:
         from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator
 
-        return AwsLambdaDeploymentOperator()
+        return AwsLambdaDeploymentOperator(yatai_service)
     elif operator == DeploymentSpec.GCP_FUNCTION:
         raise NotImplementedError(
             "GCP Function deployment operator is not supported in current version of "
@@ -52,26 +52,32 @@ def get_deployment_operator(deployment_pb):
 
 
 class DeploymentOperatorBase(object):
+    def __init__(self, yatai_service):
+        self.yatai_service = yatai_service
 
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def add(self, deployment_pb, yatai_service, prev_deployment):
+    def add(self, deployment_pb):
         """
         Create deployment based on deployment_pb spec - the bento name and version
         must be found in the given BentoRepository
         """
 
     @abstractmethod
-    def delete(self, deployment_pb, yatai_service):
+    def update(self, deployment_pb):
         """
-        Delete deployment based on deployment_pb spec - the bento name and version
-        must be found in the given BentoRepository
+        Update existing deployment based on deployment_pb spec
         """
 
     @abstractmethod
-    def describe(self, deployment_pb, yatai_service):
+    def delete(self, deployment_pb):
         """
-        Fetch status on an existing deployment created with deployment_pb spec - the
-        bento name and version must be found in the given BentoRepository
+        Delete deployment based on deployment_pb spec
+        """
+
+    @abstractmethod
+    def describe(self, deployment_pb):
+        """
+        Fetch current state of an existing deployment created with deployment_pb spec
         """

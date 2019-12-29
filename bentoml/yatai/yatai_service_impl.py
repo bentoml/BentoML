@@ -24,7 +24,6 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
-    DeploymentState,
 )
 from bentoml.proto.repository_pb2 import (
     AddBentoResponse,
@@ -91,16 +90,9 @@ class YataiService(YataiServicer):
             )
             if previous_deployment:
                 # check deployment platform
-                if (
-                    previous_deployment.spec.operator
-                    != request.deployment.spec.operator
-                ):
-                    raise YataiServiceRpcAborted(
-                        'Can not change the target deploy platform of existing active '
-                        'deployment. Try delete existing deployment and deploy to new '
-                        'target platform again'
-                    )
-                request.deployment.state.state = DeploymentState.PENDING
+                raise YataiServiceRpcAborted(
+                    'Deployment update is not supported in current version of BentoML'
+                )
             else:
                 request.deployment.created_at.GetCurrentTime()
 
@@ -108,10 +100,10 @@ class YataiService(YataiServicer):
 
             self.deployment_store.insert_or_update(request.deployment)
             # find deployment operator based on deployment spec
-            operator = get_deployment_operator(request.deployment)
+            operator = get_deployment_operator(self, request.deployment)
 
             # deploying to target platform
-            response = operator.add(request.deployment, self, previous_deployment)
+            response = operator.add(request.deployment)
 
             if response.status.status_code == status_pb2.Status.OK:
                 # update deployment state
@@ -156,10 +148,10 @@ class YataiService(YataiServicer):
 
             if deployment_pb:
                 # find deployment operator based on deployment spec
-                operator = get_deployment_operator(deployment_pb)
+                operator = get_deployment_operator(self, deployment_pb)
 
                 # executing deployment deletion
-                response = operator.delete(deployment_pb, self)
+                response = operator.delete(deployment_pb)
 
                 # if delete successful, remove it from active deployment records table
                 if response.status.status_code == status_pb2.Status.OK:
@@ -231,9 +223,9 @@ class YataiService(YataiServicer):
             )
 
             if deployment_pb:
-                operator = get_deployment_operator(deployment_pb)
+                operator = get_deployment_operator(self, deployment_pb)
 
-                response = operator.describe(deployment_pb, self)
+                response = operator.describe(deployment_pb)
 
                 if response.status.status_code == status_pb2.Status.OK:
                     with self.deployment_store.update_deployment(

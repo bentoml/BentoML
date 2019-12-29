@@ -46,7 +46,7 @@ class DeploymentOperatorBase(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def apply(self, deployment_pb, yatai_service, prev_deployment):
+    def add(self, deployment_pb, yatai_service, prev_deployment):
         """
         Create deployment based on deployment_pb spec - the bento name and version
         must be found in the given BentoRepository

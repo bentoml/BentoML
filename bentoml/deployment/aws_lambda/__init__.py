@@ -165,7 +165,7 @@ def _cleanup_s3_bucket(bucket_name, region):
 
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb, yatai_service, prev_deployment):
+    def add(self, deployment_pb, yatai_service, prev_deployment):
         try:
             ensure_sam_available_or_raise()
             ensure_docker_available_or_raise()

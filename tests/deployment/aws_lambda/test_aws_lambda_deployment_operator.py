@@ -201,7 +201,7 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
     test_deployment_pb = generate_lambda_deployment_pb()
     deployment_operator = AwsLambdaDeploymentOperator()
 
-    result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
+    result_pb = deployment_operator.add(test_deployment_pb, yatai_service_mock, None)
 
     assert result_pb.status.status_code == status_pb2.Status.OK
     assert result_pb.deployment.state.state == DeploymentState.PENDING
@@ -232,7 +232,7 @@ def test_aws_lambda_apply_over_bundle_size_limit_success():
     test_deployment_pb = generate_lambda_deployment_pb()
     deployment_operator = AwsLambdaDeploymentOperator()
 
-    result_pb = deployment_operator.apply(test_deployment_pb, yatai_service_mock, None)
+    result_pb = deployment_operator.add(test_deployment_pb, yatai_service_mock, None)
 
     assert result_pb.status.status_code == status_pb2.Status.OK
     assert result_pb.deployment.state.state == DeploymentState.PENDING

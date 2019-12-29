@@ -111,7 +111,7 @@ class YataiService(YataiServicer):
             operator = get_deployment_operator(request.deployment)
 
             # deploying to target platform
-            response = operator.apply(request.deployment, self, previous_deployment)
+            response = operator.add(request.deployment, self, previous_deployment)
 
             if response.status.status_code == status_pb2.Status.OK:
                 # update deployment state

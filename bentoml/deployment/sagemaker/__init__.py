@@ -330,7 +330,7 @@ def _create_sagemaker_endpoint_config(
 
 
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
-    def apply(self, deployment_pb, yatai_service, prev_deployment=None):
+    def add(self, deployment_pb, yatai_service, prev_deployment=None):
         try:
             ensure_docker_available_or_raise()
             deployment_spec = deployment_pb.spec

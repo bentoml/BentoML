@@ -244,9 +244,7 @@ def test_sagemaker_apply_create_model_fail():
     with patch(
         'botocore.client.BaseClient._make_api_call', new=fail_create_model_random
     ):
-        failed_result = deployment_operator.add(
-            sagemaker_deployment_pb, yatai_service
-        )
+        failed_result = deployment_operator.add(sagemaker_deployment_pb, yatai_service)
     assert failed_result.status.status_code == Status.INTERNAL
     assert failed_result.status.error_message.startswith(
         'Failed to create model for SageMaker Deployment'

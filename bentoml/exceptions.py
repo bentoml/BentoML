@@ -26,7 +26,7 @@ _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE = {
     status_pb2.Status.DEADLINE_EXCEEDED: 408,  # Request Time out
     status_pb2.Status.PERMISSION_DENIED: 401,  # Unauthorized
     status_pb2.Status.UNAUTHENTICATED: 401,  # Unauthorized
-    status_pb2.Status.FAILED_PRECONDITION: 500, # Internal Server Error
+    status_pb2.Status.FAILED_PRECONDITION: 500,  # Internal Server Error
 }
 
 
@@ -78,6 +78,7 @@ class NotFound(BentoMLException):
     """
 
     proto_status_code = status_pb2.Status.NOT_FOUND
+
 
 class FailedPrecondition(BentoMLException):
     """

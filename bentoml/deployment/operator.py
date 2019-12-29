@@ -33,10 +33,20 @@ def get_deployment_operator(deployment_pb):
         from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator
 
         return AwsLambdaDeploymentOperator()
+    elif operator == DeploymentSpec.GCP_FUNCTION:
+        raise NotImplementedError(
+            "GCP Function deployment operator is not supported in current version of "
+            "BentoML"
+        )
     elif operator == DeploymentSpec.KUBERNETES:
-        raise NotImplementedError("Kubernetes deployment operator is not implemented")
+        raise NotImplementedError(
+            "Kubernetes deployment operator is not supported in current version of "
+            "BentoML"
+        )
     elif operator == DeploymentSpec.CUSTOM:
-        raise NotImplementedError("Custom deployment operator is not implemented")
+        raise NotImplementedError(
+            "Custom deployment operator is not supported in current version of BentoML"
+        )
     else:
         raise YataiDeploymentException("DeployOperator must be set")
 

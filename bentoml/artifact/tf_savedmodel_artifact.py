@@ -65,7 +65,8 @@ class _TensorflowFunctionWrapper:
             for k, arg in kwargs.items()
         }
         return self.origin_func.get_concrete_function()(
-            *transformed_args, **transformed_kwargs)
+            *transformed_args, **transformed_kwargs
+        )
 
     def __getattr__(self, k):
         return getattr(self.origin_func, k)

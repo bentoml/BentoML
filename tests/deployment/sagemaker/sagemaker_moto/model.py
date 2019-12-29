@@ -3,7 +3,7 @@ import time
 from moto.core import BaseBackend
 from moto.ec2 import ec2_backends
 from moto.iam.models import ACCOUNT_ID
-
+from botocore.exceptions import ClientError
 
 BASE_SAGEMAKER_ARN = 'arn:aws:sagemaker:{region}:{account}'
 
@@ -124,15 +124,28 @@ class SageMakerBackend(BaseBackend):
 
     def delete_endpoint_config(self, config_name):
         if config_name not in self.endpoint_configs:
-            raise ValueError(
-                'Endpoint configuration {} does not exist'.format(config_name)
+            raise ClientError(
+                {
+                    "Error": {
+                        "Code": "ValidationException",
+                        "Message": "Could not find endpoint configuration ...",
+                    }
+                },
+                "DeleteEndpointConfiguration",
             )
         del self.endpoint_configs[config_name]
 
     def delete_model(self, model_name):
         if model_name not in self.models:
-            raise ValueError('Model {} does not exist'.format(model_name))
-
+            raise ClientError(
+                {
+                    "Error": {
+                        "Code": "ValidationException",
+                        "Message": "Could not find model ...",
+                    }
+                },
+                "DeleteModel",
+            )
         del self.models[model_name]
 
     def create_model(

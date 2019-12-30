@@ -50,8 +50,8 @@ INDEX_HTML = '''\
 <script src="/static/swagger-ui-bundle.js"></script>
 <script>
     SwaggerUIBundle({{
-      url: '{url}',
-      dom_id: '#swagger-ui-container'
+        url: '{url}',
+        dom_id: '#swagger-ui-container'
     }})
 </script>
 </body>
@@ -141,6 +141,7 @@ class BentoAPIServer:
     """
 
     _DEFAULT_PORT = config("apiserver").getint("default_port")
+    _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
 
     def __init__(self, bento_service, port=_DEFAULT_PORT, app_name=None):
         app_name = bento_service.name if app_name is None else app_name
@@ -323,7 +324,11 @@ class BentoAPIServer:
 
             # handle_request may raise 4xx or 5xx exception.
             try:
-                response = api.handle_request(request)
+                if request.headers.get(self._MARSHAL_FLAG):
+                    response_body = api.handle_batch_request(request)
+                    response = make_response(response_body)
+                else:
+                    response = api.handle_request(request)
             except BentoMLException as e:
                 self.log_exception(sys.exc_info())
 

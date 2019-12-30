@@ -12,7 +12,11 @@ async def merge_aio_requests(reqs) -> bytes:
 async def split_aio_responses(ori_response):
     from aiohttp import web
     merged = await ori_response.read()
-    merged_responses = pickle.loads(merged)
+    try:
+        merged_responses = pickle.loads(merged)
+    except pickle.UnpicklingError:
+        raise  # TODO catch
+
     if ori_response.status != 200:
         return [web.Response(status=ori_response.status) for _ in merged_responses]
     return [
@@ -37,5 +41,5 @@ def split_flask_requests(req):
 
 
 def merge_flask_responses(resps) -> bytes:
-    merged_resps = [dict(headers=tuple(r.headers), data=r.raw_data) for r in resps]
+    merged_resps = [dict(headers=tuple(r.headers), data=r.data) for r in resps]
     return pickle.dumps(merged_resps)

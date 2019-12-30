@@ -50,6 +50,16 @@ class BentoHandler:
         """
         raise NotImplementedError
 
+    def handle_batch_request(self, requests, func):
+        """Handles an HTTP request, convert it into corresponding data
+        format that user API function is expecting, and return API
+        function result as the HTTP response to client
+
+        :param requests: List of flask request object
+        :param func: user API function
+        """
+        raise NotImplementedError
+
     def handle_cli(self, args, func):
         """Handles an CLI command call, convert CLI arguments into
         corresponding data format that user API function is expecting, and

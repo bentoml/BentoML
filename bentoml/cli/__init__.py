@@ -36,10 +36,11 @@ from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.bento import add_bento_sub_command
 from bentoml.server import BentoAPIServer, get_docs
+from bentoml.server.marshal_server import MarshalServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
-from bentoml.utils import ProtoMessageToDict
+from bentoml.utils import ProtoMessageToDict, detect_free_port
 from bentoml.utils.usage_stats import track_cli
 from bentoml.utils.s3 import is_s3_url
 from bentoml.yatai.client import YataiClient
@@ -234,7 +235,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             return
 
         bento_service = load(bento_service_bundle_path)
-        server = BentoAPIServer(bento_service, port=port)
+        inner_port = detect_free_port()
+        marshal_server = MarshalServer(bento_service, port=port,
+                                       target_host="localhost",
+                                       target_port=inner_port)
+        marshal_server.async_start()
+        server = BentoAPIServer(bento_service, port=inner_port)
         server.start()
 
     # Example Usage:

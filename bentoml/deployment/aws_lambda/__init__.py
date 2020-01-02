@@ -184,7 +184,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     )
                 )
 
-            return self._add(deployment_pb, bento_pb, bento_pb.bento.uri.uri,)
+            return self._add(deployment_pb, bento_pb, bento_pb.bento.uri.uri)
         except BentoMLException as error:
             deployment_pb.state.state = DeploymentState.ERROR
             deployment_pb.state.error_message = f'Error: {str(error)}'

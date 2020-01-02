@@ -45,7 +45,7 @@ class IrisClassifier(bentoml.BentoService):
 
     @bentoml.api(DataframeHandler) # defining prediction service endpoint and expected input format
     def predict(self, df):
-        # Pre-processing logic and access to trained mdoel artifacts in API function
+        # Pre-processing logic and access to trained model artifacts in API function
         return self.artifacts.model.predict(df)
 ```
 
@@ -82,7 +82,7 @@ bentoml serve {saved_path}
 ```
 
 If you are doing this only local machine, visit [http://127.0.0.1:5000](http://127.0.0.1:5000)
-in your browser to play around with the API server's Web UI for debbugging and
+in your browser to play around with the API server's Web UI for debugging and
 sending test request. You can also send prediction request with `curl` from command line:
 
 ```bash
@@ -215,7 +215,7 @@ To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a t
   [tensorflow-serving](https://github.com/tensorflow/serving)
 
 * __Workflow Designed For Teams__ - The YataiService component in BentoML provides
-  Web UI and APIs for managing and deploying all the models and preidciton services
+  Web UI and APIs for managing and deploying all the models and prediction services
   your team has created or deployed, in a centralized service.
 
 

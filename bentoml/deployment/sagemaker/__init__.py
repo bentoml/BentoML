@@ -379,13 +379,17 @@ def _create_sagemaker_model(
             "Environment": {
                 "API_NAME": bento_service_api_name,
                 "BENTO_SERVER_TIMEOUT": config().get('apiserver', 'default_timeout'),
-                "BENTO_SERVER_WORKERS": config().get(
-                    'apiserver', 'default_gunicorn_workers_count'
-                ),
             },
         },
         "ExecutionRoleArn": execution_role_arn,
     }
+    default_worker_count = config().getint(
+        'apiserver', 'default_gunicorn_workers_count'
+    )
+    if default_worker_count > 0:
+        sagemaker_model_info['PrimaryContainer']['Environment'][
+            'BENTO_SERVER_WORKERS'
+        ] = default_worker_count
 
     logger.debug("Creating sagemaker model %s", sagemaker_model_name)
     try:
@@ -457,7 +461,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     )
                 )
 
-            return self._add(deployment_pb, bento_pb, bento_pb.bento.uri.uri,)
+            return self._add(deployment_pb, bento_pb, bento_pb.bento.uri.uri)
 
         except BentoMLException as error:
             deployment_pb.state.state = DeploymentState.ERROR

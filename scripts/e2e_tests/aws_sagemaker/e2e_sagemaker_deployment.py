@@ -5,7 +5,6 @@ import logging
 import uuid
 import sys
 
-import requests
 import json
 from sklearn import svm, datasets
 

@@ -367,7 +367,7 @@ def _init_sagemaker_project(sagemaker_project_dir, bento_path):
 
 
 def _create_sagemaker_model(
-    sagemaker_client, sagemaker_model_name, ecr_image_path, bento_service_api_name
+    sagemaker_client, sagemaker_model_name, ecr_image_path, spec
 ):
     execution_role_arn = get_arn_role_from_current_aws_user()
 
@@ -377,21 +377,21 @@ def _create_sagemaker_model(
             "ContainerHostname": sagemaker_model_name,
             "Image": ecr_image_path,
             "Environment": {
-                "API_NAME": bento_service_api_name,
+                "API_NAME": spec.api_name,
                 "BENTO_SERVER_TIMEOUT": config().get('apiserver', 'default_timeout'),
             },
         },
         "ExecutionRoleArn": execution_role_arn,
     }
-    default_worker_count = config().getint(
-        'apiserver', 'default_gunicorn_workers_count'
-    )
-    if default_worker_count > 0:
-        sagemaker_model_info['PrimaryContainer']['Environment'][
-            'BENTO_SERVER_WORKERS'
-        ] = default_worker_count
 
-    logger.debug("Creating sagemaker model %s", sagemaker_model_name)
+    # Will set envvar, if user defined gunicorn worker is greater than 0.  EnvVar needs
+    # to be string instead of the int.
+    default_num_of_gunicorn_worker_count = spec.num_of_gunicorn_workers_per_instance
+    if default_num_of_gunicorn_worker_count > 0:
+        sagemaker_model_info['PrimaryContainer']['Environment'][
+            'GUNICORN_WORKER_COUNT'
+        ] = str(default_num_of_gunicorn_worker_count)
+
     try:
         create_model_response = sagemaker_client.create_model(**sagemaker_model_info)
     except ClientError as e:
@@ -504,10 +504,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             ) = _get_sagemaker_resource_names(deployment_pb)
 
             _create_sagemaker_model(
-                sagemaker_client,
-                sagemaker_model_name,
-                ecr_image_path,
-                sagemaker_config.api_name,
+                sagemaker_client, sagemaker_model_name, ecr_image_path, sagemaker_config
             )
             _create_sagemaker_endpoint_config(
                 sagemaker_client,

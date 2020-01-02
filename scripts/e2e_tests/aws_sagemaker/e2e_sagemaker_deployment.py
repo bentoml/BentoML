@@ -63,6 +63,8 @@ if __name__ == '__main__':
         region,
         '--api-name',
         'predict',
+        '--gunicorn-workers-per-instance',
+        '2',
     ]
     logger.info(
         f"Running bentoml deploy command: {' '.join(create_deployment_command)}"
@@ -113,7 +115,7 @@ if __name__ == '__main__':
             if result.stderr.decode('utf-8'):
                 logger.error(result.stderr.decode('utf-8'))
                 deployment_failed = True
-            logger.info('REEEEE %s', result.stdout.decode('utf-8'))
+            logger.info('Prediction Result: %s', result.stdout.decode('utf-8'))
             if '[\n  0\n]\n' == result.stdout.decode('utf-8'):
                 deployment_failed = False
             else:

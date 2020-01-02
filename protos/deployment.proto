@@ -34,6 +34,7 @@ message DeploymentSpec {
     string instance_type = 2;
     int32 instance_count = 3;
     string api_name = 4;
+    int32 num_of_gunicorn_workers_per_instance = 5;
   }
 
   message AwsLambdaOperatorConfig {

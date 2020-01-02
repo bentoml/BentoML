@@ -261,6 +261,10 @@ def create_deployment(
             or config().get('sagemaker', 'default_instance_type'),
             'api_name': operator_spec.get('api_name', ''),
         }
+        if operator_spec.get('num_of_gunicorn_workers_per_instance'):
+            deployment_dict['spec']['sagemaker_operator_config'][
+                'num_of_gunicorn_workers_per_instance'
+            ] = operator_spec.get('num_of_gunicorn_workers_per_instance')
     elif operator_value == DeploymentSpec.AWS_LAMBDA:
         deployment_dict['spec']['aws_lambda_operator_config'] = {
             'region': operator_spec.get('region')

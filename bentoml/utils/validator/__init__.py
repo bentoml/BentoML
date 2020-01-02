@@ -51,6 +51,10 @@ deployment_schema = {
                     'region': {'type': 'string'},
                     'instance_type': {'type': 'string'},
                     'instance_count': {'type': 'integer', 'min': 1},
+                    'num_of_gunicorn_workers_per_instance': {
+                        'type': 'integer',
+                        'min': 1,
+                    },
                 },
             },
             'aws_lambda_operator_config': {

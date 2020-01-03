@@ -255,10 +255,8 @@ def create_deployment(
         deployment_dict['spec']['sagemaker_operator_config'] = {
             'region': operator_spec.get('region')
             or config().get('aws', 'default_region'),
-            'instance_count': operator_spec.get('instance_count')
-            or config().getint('sagemaker', 'default_instance_count'),
-            'instance_type': operator_spec.get('instance_type')
-            or config().get('sagemaker', 'default_instance_type'),
+            'instance_count': operator_spec.get('instance_count'),
+            'instance_type': operator_spec.get('instance_type'),
             'api_name': operator_spec.get('api_name', ''),
         }
         if operator_spec.get('num_of_gunicorn_workers_per_instance'):

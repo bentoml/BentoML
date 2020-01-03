@@ -228,7 +228,8 @@ def get_deployment_sub_command():
     @click.option(
         '--num-of-gunicorn-workers-per-instance',
         help='Number of gunicorn worker will be used per instance. Option applicable '
-        'to platform: AWS SageMaker',
+        'to platform: AWS SageMaker. Default value for gunicorn worker is based on '
+        'the instance\' cpu core counts.  The formula is num_of_cpu/2 + 1',
         type=click.INT,
     )
     @click.option(

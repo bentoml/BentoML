@@ -8,6 +8,8 @@ def test_validate_deployment_pb_schema():
     test_pb.spec.bento_version = 'bento_version'
     test_pb.spec.operator = DeploymentSpec.DeploymentOperator.Value('AWS_SAGEMAKER')
     test_pb.spec.sagemaker_operator_config.api_name = 'api_name'
+    test_pb.spec.sagemaker_operator_config.instance_type = 'mock_instance_type'
+    test_pb.spec.sagemaker_operator_config.instance_count = 1
 
     result = validate_deployment_pb_schema(test_pb)
 

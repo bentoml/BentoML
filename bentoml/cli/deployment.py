@@ -219,7 +219,7 @@ def get_deployment_sub_command():
         type=click.INT,
     )
     @click.option(
-        '--gunicorn-workers-per-instance',
+        '--num-of-gunicorn-workers-per-instance',
         help='Number of gunicorn worker will be used per instance. Option applicable '
         'to platform: AWS SageMaker',
         type=click.INT,
@@ -281,7 +281,7 @@ def get_deployment_sub_command():
         region,
         instance_type,
         instance_count,
-        gunicorn_workers_per_instance,
+        num_of_gunicorn_workers_per_instance,
         api_name,
         kube_namespace,
         replicas,
@@ -299,7 +299,7 @@ def get_deployment_sub_command():
             'region': region,
             'instance_type': instance_type,
             'instance_count': instance_count,
-            'num_of_gunicorn_workers_per_instance': gunicorn_workers_per_instance,
+            'num_of_gunicorn_workers_per_instance': num_of_gunicorn_workers_per_instance,  # noqa E501
             'api_name': api_name,
             'kube_namespace': kube_namespace,
             'replicas': replicas,

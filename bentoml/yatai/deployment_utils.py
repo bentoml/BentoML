@@ -69,8 +69,9 @@ def deployment_dict_to_pb(deployment_dict):
         if sagemaker_config.get('instance_type'):
             sagemaker_config_pb.instance_type = sagemaker_config.get('instance_type')
         if sagemaker_config.get('num_of_gunicorn_workers_per_instance'):
-            sagemaker_config_pb.num_of_gunicorn_workers_per_instance = \
-                sagemaker_config.get('num_of_gunicorn_workers_per_instance')
+            sagemaker_config_pb.num_of_gunicorn_workers_per_instance = sagemaker_config.get(
+                'num_of_gunicorn_workers_per_instance'
+            )
     elif deployment_pb.spec.operator == DeploymentSpec.AWS_LAMBDA:
         lambda_conf = spec_dict.get('aws_lambda_operator_config', {})
         for field in ['region', 'api_name', 'memory_size', 'timeout']:

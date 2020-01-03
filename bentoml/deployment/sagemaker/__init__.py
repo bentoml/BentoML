@@ -44,11 +44,6 @@ from bentoml.exceptions import (
     BentoMLException,
     AWSServiceError,
 )
-from bentoml.deployment.sagemaker.templates import (
-    DEFAULT_NGINX_CONFIG,
-    DEFAULT_WSGI_PY,
-    DEFAULT_SERVE_SCRIPT,
-)
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
@@ -352,12 +347,15 @@ def _init_sagemaker_project(sagemaker_project_dir, bento_path):
 
     with open(os.path.join(sagemaker_project_dir, 'Dockerfile-sagemaker'), "w") as f:
         f.write(BENTO_SERVICE_SAGEMAKER_DOCKERFILE)
-    with open(os.path.join(sagemaker_project_dir, "nginx.conf"), "w") as f:
-        f.write(DEFAULT_NGINX_CONFIG)
-    with open(os.path.join(sagemaker_project_dir, "wsgi.py"), "w") as f:
-        f.write(DEFAULT_WSGI_PY)
-    with open(os.path.join(sagemaker_project_dir, "serve"), "w") as f:
-        f.write(DEFAULT_SERVE_SCRIPT)
+
+    nginx_conf_path = os.path.join(os.path.dirname(__file__), 'sagemaker_nginx.conf')
+    shutil.copy(nginx_conf_path, os.path.join(sagemaker_project_dir, 'nginx.conf'))
+
+    wsgi_py_path = os.path.join(os.path.dirname(__file__), 'sagemaker_wsgi.py')
+    shutil.copy(wsgi_py_path, os.path.join(sagemaker_project_dir, 'wsgi.py'))
+
+    serve_file_path = os.path.join(os.path.dirname(__file__), 'sagemaker_serve.py')
+    shutil.copy(serve_file_path, os.path.join(sagemaker_project_dir, 'serve'))
 
     # permission 755 is required for entry script 'serve'
     permission = "755"
@@ -384,13 +382,12 @@ def _create_sagemaker_model(
         "ExecutionRoleArn": execution_role_arn,
     }
 
-    # Will set envvar, if user defined gunicorn worker is greater than 0.  EnvVar needs
+    # Will set envvar, if user defined gunicorn workers per instance.  EnvVar needs
     # to be string instead of the int.
-    default_num_of_gunicorn_worker_count = spec.num_of_gunicorn_workers_per_instance
-    if default_num_of_gunicorn_worker_count > 0:
+    if spec.num_of_gunicorn_workers_per_instance:
         sagemaker_model_info['PrimaryContainer']['Environment'][
             'GUNICORN_WORKER_COUNT'
-        ] = str(default_num_of_gunicorn_worker_count)
+        ] = str(spec.num_of_gunicorn_workers_per_instance)
 
     try:
         create_model_response = sagemaker_client.create_model(**sagemaker_model_info)

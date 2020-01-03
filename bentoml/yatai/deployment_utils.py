@@ -29,15 +29,6 @@ logger = logging.getLogger(__name__)
 
 def deployment_dict_to_pb(deployment_dict):
     deployment_pb = Deployment()
-    if deployment_dict.get('name') is not None:
-        deployment_pb.name = deployment_dict.get('name')
-    if deployment_dict.get('namespace') is not None:
-        deployment_pb.namespace = deployment_dict.get('namespace')
-    if deployment_dict.get('labels') is not None:
-        deployment_pb.labels.update(deployment_dict.get('labels'))
-    if deployment_dict.get('annotations') is not None:
-        deployment_pb.annotations.update(deployment_dict.get('annotations'))
-
     if deployment_dict.get('spec'):
         spec_dict = deployment_dict.get('spec')
     else:
@@ -50,6 +41,14 @@ def deployment_dict_to_pb(deployment_dict):
             platform.replace('-', '_').upper()
         )
 
+    for field in ['name', 'namespace']:
+        if deployment_dict.get(field):
+            deployment_pb.__setattr__(field, deployment_dict.get(field))
+    if deployment_dict.get('labels') is not None:
+        deployment_pb.labels.update(deployment_dict.get('labels'))
+    if deployment_dict.get('annotations') is not None:
+        deployment_pb.annotations.update(deployment_dict.get('annotations'))
+
     if spec_dict.get('bento_name'):
         deployment_pb.spec.bento_name = spec_dict.get('bento_name')
     if spec_dict.get('bento_version'):
@@ -58,19 +57,17 @@ def deployment_dict_to_pb(deployment_dict):
     if deployment_pb.spec.operator == DeploymentSpec.AWS_SAGEMAKER:
         sagemaker_config = spec_dict.get('sagemaker_operator_config', {})
         sagemaker_config_pb = deployment_pb.spec.sagemaker_operator_config
-        if sagemaker_config.get('api_name'):
-            sagemaker_config_pb.api_name = sagemaker_config.get('api_name')
-        if sagemaker_config.get('region'):
-            sagemaker_config_pb.region = sagemaker_config.get('region')
+        for field in [
+            'region',
+            'api_name',
+            'instance_type',
+            'num_of_gunicorn_workers_per_instance',
+        ]:
+            if sagemaker_config.get(field):
+                sagemaker_config_pb.__setattr__(field, sagemaker_config.get(field))
         if sagemaker_config.get('instance_count'):
             sagemaker_config_pb.instance_count = int(
                 sagemaker_config.get('instance_count')
-            )
-        if sagemaker_config.get('instance_type'):
-            sagemaker_config_pb.instance_type = sagemaker_config.get('instance_type')
-        if sagemaker_config.get('num_of_gunicorn_workers_per_instance'):
-            sagemaker_config_pb.num_of_gunicorn_workers_per_instance = sagemaker_config.get(
-                'num_of_gunicorn_workers_per_instance'
             )
     elif deployment_pb.spec.operator == DeploymentSpec.AWS_LAMBDA:
         lambda_conf = spec_dict.get('aws_lambda_operator_config', {})

@@ -54,6 +54,10 @@ from bentoml.yatai import get_yatai_service
 logger = logging.getLogger(__name__)
 
 
+DEFAULT_SAGEMAKER_INSTANCE_TYPE = 'ml.m4.xlarge'
+DEFAULT_SAGEMAKER_INSTANCE_COUNT = 1
+
+
 def parse_key_value_pairs(key_value_pairs_str):
     result = {}
     if key_value_pairs_str:
@@ -210,13 +214,16 @@ def get_deployment_sub_command():
     @click.option(
         '--instance-type',
         help='Type of instance will be used for inference. Option applicable to '
-        'platform: AWS SageMaker, AWS Lambda',
+        'platform: AWS SageMaker. Default to "m1.m4.xlarge"',
+        type=click.STRING,
+        default=DEFAULT_SAGEMAKER_INSTANCE_TYPE,
     )
     @click.option(
         '--instance-count',
         help='Number of instance will be used. Option applicable to platform: AWS '
-        'SageMaker',
+        'SageMaker. Default value is 1',
         type=click.INT,
+        default=DEFAULT_SAGEMAKER_INSTANCE_COUNT,
     )
     @click.option(
         '--num-of-gunicorn-workers-per-instance',

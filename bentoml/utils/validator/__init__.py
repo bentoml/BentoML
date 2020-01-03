@@ -48,9 +48,9 @@ deployment_schema = {
                 'type': 'dict',
                 'schema': {
                     'api_name': {'type': 'string', 'required': True, 'minlength': 3},
+                    'instance_type': {'type': 'string', 'required': True},
+                    'instance_count': {'type': 'integer', 'min': 1, 'required': True},
                     'region': {'type': 'string'},
-                    'instance_type': {'type': 'string'},
-                    'instance_count': {'type': 'integer', 'min': 1},
                     'num_of_gunicorn_workers_per_instance': {
                         'type': 'integer',
                         'min': 1,

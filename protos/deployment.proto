@@ -33,7 +33,12 @@ message DeploymentSpec {
     string region = 1;
     string instance_type = 2;
     int32 instance_count = 3;
+    // API Name is required.  Each sagemaker deployment provide only /invocation path,
+    // If bento service has more than one API function, user needs to define which API
+    // function would like to be used for sagemaker deployment
     string api_name = 4;
+    // Optional. When user didn't define gunicorn worker count, service will find the
+    // current system's cpu core count and set worker equal to half of that plus 1.
     int32 num_of_gunicorn_workers_per_instance = 5;
   }
 

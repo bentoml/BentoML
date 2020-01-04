@@ -44,11 +44,6 @@ from bentoml.exceptions import (
     BentoMLException,
     AWSServiceError,
 )
-from bentoml.deployment.sagemaker.templates import (
-    DEFAULT_NGINX_CONFIG,
-    DEFAULT_WSGI_PY,
-    DEFAULT_SERVE_SCRIPT,
-)
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
@@ -352,12 +347,15 @@ def _init_sagemaker_project(sagemaker_project_dir, bento_path):
 
     with open(os.path.join(sagemaker_project_dir, 'Dockerfile-sagemaker'), "w") as f:
         f.write(BENTO_SERVICE_SAGEMAKER_DOCKERFILE)
-    with open(os.path.join(sagemaker_project_dir, "nginx.conf"), "w") as f:
-        f.write(DEFAULT_NGINX_CONFIG)
-    with open(os.path.join(sagemaker_project_dir, "wsgi.py"), "w") as f:
-        f.write(DEFAULT_WSGI_PY)
-    with open(os.path.join(sagemaker_project_dir, "serve"), "w") as f:
-        f.write(DEFAULT_SERVE_SCRIPT)
+
+    nginx_conf_path = os.path.join(os.path.dirname(__file__), 'sagemaker_nginx.conf')
+    shutil.copy(nginx_conf_path, os.path.join(sagemaker_project_dir, 'nginx.conf'))
+
+    wsgi_py_path = os.path.join(os.path.dirname(__file__), 'sagemaker_wsgi.py')
+    shutil.copy(wsgi_py_path, os.path.join(sagemaker_project_dir, 'wsgi.py'))
+
+    serve_file_path = os.path.join(os.path.dirname(__file__), 'sagemaker_serve.py')
+    shutil.copy(serve_file_path, os.path.join(sagemaker_project_dir, 'serve'))
 
     # permission 755 is required for entry script 'serve'
     permission = "755"
@@ -367,7 +365,7 @@ def _init_sagemaker_project(sagemaker_project_dir, bento_path):
 
 
 def _create_sagemaker_model(
-    sagemaker_client, sagemaker_model_name, ecr_image_path, bento_service_api_name
+    sagemaker_client, sagemaker_model_name, ecr_image_path, spec
 ):
     execution_role_arn = get_arn_role_from_current_aws_user()
 
@@ -377,21 +375,20 @@ def _create_sagemaker_model(
             "ContainerHostname": sagemaker_model_name,
             "Image": ecr_image_path,
             "Environment": {
-                "API_NAME": bento_service_api_name,
+                "API_NAME": spec.api_name,
                 "BENTO_SERVER_TIMEOUT": config().get('apiserver', 'default_timeout'),
             },
         },
         "ExecutionRoleArn": execution_role_arn,
     }
-    default_worker_count = config().getint(
-        'apiserver', 'default_gunicorn_workers_count'
-    )
-    if default_worker_count > 0:
-        sagemaker_model_info['PrimaryContainer']['Environment'][
-            'BENTO_SERVER_WORKERS'
-        ] = default_worker_count
 
-    logger.debug("Creating sagemaker model %s", sagemaker_model_name)
+    # Will set envvar, if user defined gunicorn workers per instance.  EnvVar needs
+    # to be string instead of the int.
+    if spec.num_of_gunicorn_workers_per_instance:
+        sagemaker_model_info['PrimaryContainer']['Environment'][
+            'GUNICORN_WORKER_COUNT'
+        ] = str(spec.num_of_gunicorn_workers_per_instance)
+
     try:
         create_model_response = sagemaker_client.create_model(**sagemaker_model_info)
     except ClientError as e:
@@ -504,10 +501,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             ) = _get_sagemaker_resource_names(deployment_pb)
 
             _create_sagemaker_model(
-                sagemaker_client,
-                sagemaker_model_name,
-                ecr_image_path,
-                sagemaker_config.api_name,
+                sagemaker_client, sagemaker_model_name, ecr_image_path, sagemaker_config
             )
             _create_sagemaker_endpoint_config(
                 sagemaker_client,

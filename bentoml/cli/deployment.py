@@ -54,6 +54,10 @@ from bentoml.yatai import get_yatai_service
 logger = logging.getLogger(__name__)
 
 
+DEFAULT_SAGEMAKER_INSTANCE_TYPE = 'ml.m4.xlarge'
+DEFAULT_SAGEMAKER_INSTANCE_COUNT = 1
+
+
 def parse_key_value_pairs(key_value_pairs_str):
     result = {}
     if key_value_pairs_str:
@@ -210,18 +214,28 @@ def get_deployment_sub_command():
     @click.option(
         '--instance-type',
         help='Type of instance will be used for inference. Option applicable to '
-        'platform: AWS SageMaker, AWS Lambda',
+        'platform: AWS SageMaker. Default to "m1.m4.xlarge"',
+        type=click.STRING,
+        default=DEFAULT_SAGEMAKER_INSTANCE_TYPE,
     )
     @click.option(
         '--instance-count',
         help='Number of instance will be used. Option applicable to platform: AWS '
-        'SageMaker',
+        'SageMaker. Default value is 1',
+        type=click.INT,
+        default=DEFAULT_SAGEMAKER_INSTANCE_COUNT,
+    )
+    @click.option(
+        '--num-of-gunicorn-workers-per-instance',
+        help='Number of gunicorn worker will be used per instance. Option applicable '
+        'to platform: AWS SageMaker. Default value for gunicorn worker is based on '
+        'the instance\' cpu core counts.  The formula is num_of_cpu/2 + 1',
         type=click.INT,
     )
     @click.option(
         '--api-name',
-        help='User defined API function will be used for inference. Option applicable'
-        'to platform: AWS SageMaker',
+        help='User defined API function will be used for inference. Required for AWS '
+        'SageMaker',
     )
     @click.option(
         '--kube-namespace',
@@ -275,6 +289,7 @@ def get_deployment_sub_command():
         region,
         instance_type,
         instance_count,
+        num_of_gunicorn_workers_per_instance,
         api_name,
         kube_namespace,
         replicas,
@@ -292,6 +307,7 @@ def get_deployment_sub_command():
             'region': region,
             'instance_type': instance_type,
             'instance_count': instance_count,
+            'num_of_gunicorn_workers_per_instance': num_of_gunicorn_workers_per_instance,  # noqa E501
             'api_name': api_name,
             'kube_namespace': kube_namespace,
             'replicas': replicas,

@@ -56,7 +56,7 @@ def test_create_deployment_failed_with_no_api_name():
     bento_version = 'version'
     platform = 'aws-sagemaker'
     invalid_operator_spec = {}
-    invalid_result = create_deployment(
+    result = create_deployment(
         deployment_name=deployment_name,
         namespace=namespace,
         bento_name=bento_name,
@@ -67,7 +67,7 @@ def test_create_deployment_failed_with_no_api_name():
         annotations={},
         yatai_service=yatai_service_mock,
     )
-    assert invalid_result.status.status_code == status_pb2.Status.INVALID_ARGUMENT
+    assert result.status.status_code == status_pb2.Status.INVALID_ARGUMENT
 
 
 def test_create_deployment_successful():
@@ -77,7 +77,9 @@ def test_create_deployment_successful():
     bento_name = 'name'
     bento_version = 'version'
     platform = 'aws-sagemaker'
-    operator_spec = {'api_name': 'predict'}
+    operator_spec = {
+        'api_name': 'predict', 'instance_type': 'mock_instance', 'instance_count': 1
+    }
     result = create_deployment(
         deployment_name=deployment_name,
         namespace=namespace,

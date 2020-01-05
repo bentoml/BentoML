@@ -22,6 +22,9 @@ graft bentoml/configuration
 graft bentoml/migrations
 include bentoml/alembic.ini
 
+# include ".conf" file
+include bentoml/deployment/sagemaker/sagemaker_nginx.conf
+
 # Don't include examples, tests directory
 prune examples
 prune tests

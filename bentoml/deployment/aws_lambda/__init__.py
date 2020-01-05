@@ -183,6 +183,10 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         BentoUri.StorageType.Name(bento_pb.bento.uri.type)
                     )
                 )
+            deployment_pb.spec.aws_lambda_operator_config.region = (
+                deployment_pb.spec.aws_lambda_operator_config.region
+                or self.yatai_service.default_aws_region
+            )
 
             return self._add(deployment_pb, bento_pb, bento_pb.bento.uri.uri)
         except BentoMLException as error:

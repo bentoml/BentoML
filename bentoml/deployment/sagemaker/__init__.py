@@ -458,6 +458,11 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     )
                 )
 
+            deployment_pb.spec.sagemaker_operator_config.region = (
+                    deployment_pb.spec.sagemaker_operator_config.region
+                    or self.yatai_service.default_aws_region
+            )
+
             return self._add(deployment_pb, bento_pb, bento_pb.bento.uri.uri)
 
         except BentoMLException as error:

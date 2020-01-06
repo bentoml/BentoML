@@ -4,7 +4,6 @@ API Reference
 .. toctree::
   :glob:
 
-  bentoml 
+  bentoml
   artifacts
   handlers
-

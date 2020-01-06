@@ -1,5 +1,5 @@
-Artifacts
-=========
+Model Artifacts
+===============
 
 SklearnModelArtifact
 ++++++++++++++++++++
@@ -24,6 +24,10 @@ TensorflowSavedModelArtifact
 XgboostModelArtifact
 ++++++++++++++++++++
 .. autoclass:: bentoml.artifact.XgboostModelArtifact
+
+LightGBMModelArtifact
++++++++++++++++++++++
+.. autoclass:: bentoml.artifact.LightGBMModelArtifact
 
 H2oModelArtifact
 ++++++++++++++++

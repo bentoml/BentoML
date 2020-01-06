@@ -167,10 +167,16 @@ def _cleanup_s3_bucket_if_exist(bucket_name, region):
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def add(self, deployment_pb):
         try:
+            deployment_spec = deployment_pb.spec
+            deployment_spec.aws_lambda_operator_config.region = (
+                    deployment_pb.spec.aws_lambda_operator_config.region
+                    or self.yatai_service.default_aws_region
+            )
+            if not deployment_spec.aws_lambda_operator_config.region:
+                raise BentoMLException('AWS region is missing')
+
             ensure_sam_available_or_raise()
             ensure_docker_available_or_raise()
-            deployment_spec = deployment_pb.spec
-
             bento_pb = self.yatai_service.GetBento(
                 GetBentoRequest(
                     bento_name=deployment_spec.bento_name,
@@ -183,10 +189,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                         BentoUri.StorageType.Name(bento_pb.bento.uri.type)
                     )
                 )
-            deployment_pb.spec.aws_lambda_operator_config.region = (
-                deployment_pb.spec.aws_lambda_operator_config.region
-                or self.yatai_service.default_aws_region
-            )
 
             return self._add(deployment_pb, bento_pb, bento_pb.bento.uri.uri)
         except BentoMLException as error:
@@ -367,6 +369,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
             deployment_spec = deployment_pb.spec
             lambda_deployment_config = deployment_spec.aws_lambda_operator_config
+            lambda_deployment_config.region = (
+                lambda_deployment_config.region
+                or self.yatai_service.default_aws_region
+            )
+            if not lambda_deployment_config.region:
+                raise BentoMLException('AWS region is missing')
 
             cf_client = boto3.client('cloudformation', lambda_deployment_config.region)
             stack_name = generate_aws_compatible_string(
@@ -395,6 +403,12 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         try:
             deployment_spec = deployment_pb.spec
             lambda_deployment_config = deployment_spec.aws_lambda_operator_config
+            lambda_deployment_config.region = (
+                    lambda_deployment_config.region
+                    or self.yatai_service.default_aws_region
+            )
+            if not lambda_deployment_config.region:
+                raise BentoMLException('AWS region is missing')
 
             bento_pb = self.yatai_service.GetBento(
                 GetBentoRequest(

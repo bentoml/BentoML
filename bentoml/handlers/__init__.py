@@ -18,7 +18,6 @@ from __future__ import print_function
 
 from bentoml.handlers.base_handlers import BentoHandler
 from bentoml.handlers.dataframe_handler import DataframeHandler
-from bentoml.handlers.pytorch_tensor_handler import PytorchTensorHandler
 from bentoml.handlers.tensorflow_tensor_handler import TensorflowTensorHandler
 from bentoml.handlers.json_handler import JsonHandler
 from bentoml.handlers.image_handler import ImageHandler
@@ -34,7 +33,6 @@ from bentoml.handlers.clipper_handler import (
 __all__ = [
     "BentoHandler",
     "DataframeHandler",
-    "PytorchTensorHandler",
     "TensorflowTensorHandler",
     "JsonHandler",
     "ImageHandler",

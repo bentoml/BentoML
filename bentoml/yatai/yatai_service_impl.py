@@ -18,9 +18,6 @@ from __future__ import print_function
 
 import logging
 
-import boto3
-from botocore.exceptions import ClientError
-
 from bentoml.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,
@@ -66,16 +63,6 @@ class YataiService(YataiServicer):
         self.sess_maker = init_db(db_url)
         self.deployment_store = DeploymentStore(self.sess_maker)
         self.bento_metadata_store = BentoMetadataStore(self.sess_maker)
-
-        self.default_aws_region = ''
-        try:
-            aws_session = boto3.session.Session()
-            self.default_aws_region = aws_session.region_name
-        except ClientError as e:
-            # We will do nothing, if there isn't a default region
-            logger.error(
-                'Encounter error when getting default region for AWS: %s', str(e)
-            )
 
     def HealthCheck(self, request, context=None):
         return HealthCheckResponse(status=Status.OK())

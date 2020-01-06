@@ -437,14 +437,23 @@ def _create_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_
 
 
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
+    def __init__(self, yatai_service):
+        super().__init__(yatai_service)
+        self.default_aws_region = ''
+        try:
+            aws_session = boto3.session.Session()
+            self.default_aws_region = aws_session.region_name
+        except ClientError as e:
+            # We will do nothing, if there isn't a default region
+            logger.error(
+                'Encounter error when getting default region for AWS: %s', str(e)
+            )
+
     def add(self, deployment_pb):
         try:
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
-            sagemaker_config.region = (
-                sagemaker_config.region
-                or self.yatai_service.default_aws_region
-            )
+            sagemaker_config.region = sagemaker_config.region or self.default_aws_region
             if not sagemaker_config.region:
                 raise BentoMLException('AWS region is missing')
 
@@ -536,10 +545,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         try:
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
-            sagemaker_config.region = (
-                sagemaker_config.region
-                or self.yatai_service.default_aws_region
-            )
+            sagemaker_config.region = sagemaker_config.region or self.default_aws_region
             if not sagemaker_config.region:
                 raise BentoMLException('AWS region is missing')
 
@@ -566,10 +572,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         try:
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
-            sagemaker_config.region = (
-                sagemaker_config.region
-                or self.yatai_service.default_aws_region
-            )
+            sagemaker_config.region = sagemaker_config.region or self.default_aws_region
             if not sagemaker_config.region:
                 raise BentoMLException('AWS region is missing')
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)

@@ -165,12 +165,24 @@ def _cleanup_s3_bucket_if_exist(bucket_name, region):
 
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
+    def __init__(self, yatai_service):
+        super().__init__(yatai_service)
+        self.default_aws_region = ''
+        try:
+            aws_session = boto3.session.Session()
+            self.default_aws_region = aws_session.region_name
+        except ClientError as e:
+            # We will do nothing, if there isn't a default region
+            logger.error(
+                'Encounter error when getting default region for AWS: %s', str(e)
+            )
+
     def add(self, deployment_pb):
         try:
             deployment_spec = deployment_pb.spec
             deployment_spec.aws_lambda_operator_config.region = (
-                    deployment_pb.spec.aws_lambda_operator_config.region
-                    or self.yatai_service.default_aws_region
+                deployment_spec.aws_lambda_operator_config.region
+                or self.default_aws_region
             )
             if not deployment_spec.aws_lambda_operator_config.region:
                 raise BentoMLException('AWS region is missing')
@@ -370,8 +382,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             lambda_deployment_config = deployment_spec.aws_lambda_operator_config
             lambda_deployment_config.region = (
-                lambda_deployment_config.region
-                or self.yatai_service.default_aws_region
+                lambda_deployment_config.region or self.default_aws_region
             )
             if not lambda_deployment_config.region:
                 raise BentoMLException('AWS region is missing')
@@ -404,8 +415,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             lambda_deployment_config = deployment_spec.aws_lambda_operator_config
             lambda_deployment_config.region = (
-                    lambda_deployment_config.region
-                    or self.yatai_service.default_aws_region
+                lambda_deployment_config.region or self.default_aws_region
             )
             if not lambda_deployment_config.region:
                 raise BentoMLException('AWS region is missing')

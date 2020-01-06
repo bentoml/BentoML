@@ -1,16 +1,18 @@
 Quick Start
 ===========
 
-See it in action
-----------------
+Installing BentoML
+------------------
 
-Run the code in this guide here on Google's Colab:
+.. code-block:: bash
 
-.. image:: https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal
-    :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb
-    :alt: Launch on Colab
+    $ pip install bentoml
 
-Alternatively, download and run the notebook locally:
+
+Download Quickstart Notebook
+----------------------------
+
+Download and play with the notebook locally:
 
 .. code-block:: bash
 
@@ -18,10 +20,20 @@ Alternatively, download and run the notebook locally:
     $ git clone http://github.com/bentoml/bentoml
     $ jupyter notebook bentoml/guides/quick-start/bentoml-quick-start-guide.ipynb
 
+In order to build model server docker image, you will also need to install `docker` for your system,
+read more about how to install docker `here <https://docs.docker.com/install/>`_.
 
 
-Quick start walk through
-------------------------
+Alternatively, run the code in this guide here on Google's Colab:
+
+.. image:: https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal
+    :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb
+    :alt: Launch on Colab
+
+
+
+Building Model Server with BentoML
+----------------------------------
   
 Defining a prediction service with BentoML:
 
@@ -166,5 +178,5 @@ Learning More?
 Interested in learning more about BentoML? Check out the
 `Examples <https://github.com/bentoml/BentoML#examples>`_ on BentoML github repository.
 
-Be sure to `join BentoML slack channel <http://bit.ly/2N5IpbB>` to hear about the latest
+Be sure to `join BentoML slack channel <http://bit.ly/2N5IpbB>`_ to hear about the latest
 development updates.

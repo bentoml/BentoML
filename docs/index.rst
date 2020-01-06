@@ -9,21 +9,22 @@
     :alt: BentoML
     :target: https://github.com/bentoml/BentoML
 
+
 BentoML Documenation
 ====================
 
-BentoML is a flexible framework that accelerates the workflow of serving and deploying 
-machine learning models in the cloud. It provides two set of high-level APIs:
+BentoML makes it easy to **serve and deploy machine learning models** in the cloud.
 
-* BentoService: Turn your trained ML model into versioned file bundle that can be deployed as containerize REST API server, PyPI package, CLI tool, or batch/streaming job
+It is an open source framework for machine learning teams to build cloud-native prediction API
+services that are ready for production. BentoML supports most popular ML training frameworks
+and common deployment platforms including major cloud providers and docker/kubernetes.
 
-* YataiService: Manage and deploy your saved BentoML bundles into prediction services on Kubernetes cluster or cloud platforms such as AWS Lambda, SageMaker, Azure ML, and GCP Function etc
+👉 `Join BentoML Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_ to hear about the latest development updates.
 
+___________
 
-Content
-----------
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
    quickstart
    api/index

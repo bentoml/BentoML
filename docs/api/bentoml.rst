@@ -1,5 +1,5 @@
-BentoML
-=======
+BentoService API
+================
 
 BentoService
 ++++++++++++

@@ -21,8 +21,8 @@ import bentoml
 # -- Project information -----------------------------------------------------
 
 project = "BentoML"
-copyright = "2019, Atalaya"
-author = "Atalaya"
+copyright = "2020 BentoML Org"
+author = "BentoML.org"
 version = bentoml.__version__
 
 

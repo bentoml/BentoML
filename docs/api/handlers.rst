@@ -23,8 +23,8 @@ FastaiImageHandler
 
 ClipperHandler
 ++++++++++++++
-A special handler that should only be used when deploying BentoService
- with Clipper(http://clipper.ai/)
+
+A special group of handlers that are designed to be used when deploying BentoService with `Clipper <http://clipper.ai/>`_.
 
 .. autoclass:: bentoml.handlers.ClipperBytesHandler
 .. autoclass:: bentoml.handlers.ClipperFloatsHandler

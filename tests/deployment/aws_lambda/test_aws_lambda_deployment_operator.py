@@ -171,10 +171,10 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
 def mock_lambda_related_operations(func):
     @patch('subprocess.check_output', MagicMock())
     @mock_s3
-    # @patch(
-    #     'bentoml.deployment.aws_lambda.get_default_aws_region',
-    #     return_value='mock_region',
-    # )
+    @patch(
+        'bentoml.deployment.aws_lambda.get_default_aws_region',
+        MagicMock(return_value='mock_region'),
+    )
     def mock_wrapper(*args, **kwargs):
         conn = boto3.client('s3', region_name='us-west-2')
         conn.create_bucket(Bucket=mock_s3_bucket_name)
@@ -253,7 +253,7 @@ def test_aws_lambda_describe_still_in_progress():
     test_deployment_pb = generate_lambda_deployment_pb()
     with patch(
         'bentoml.deployment.aws_lambda.get_default_aws_region',
-        return_value='mock_region',
+        MagicMock(return_value='mock_region'),
     ):
         with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
             deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
@@ -286,7 +286,7 @@ def test_aws_lambda_describe_success():
     test_deployment_pb = generate_lambda_deployment_pb()
     with patch(
         'bentoml.deployment.aws_lambda.get_default_aws_region',
-        return_value='mock_region',
+        MagicMock(return_value='mock_region'),
     ):
         with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
             deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)

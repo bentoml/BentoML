@@ -141,8 +141,8 @@ def mock_sagemaker_deployment_wrapper(func):
     @patch('docker.APIClient.push', MagicMock())
     @patch('bentoml.deployment.sagemaker._init_sagemaker_project', MagicMock())
     @patch(
-        'boto3.session.Session',
-        MagicMock(return_value=MagicMock(region_name='mock_region')),
+        'bentoml.deployment.sagemaker.get_default_aws_region',
+        return_value='mock_region',
     )
     def mock_wrapper(*args, **kwargs):
         return func(*args, **kwargs)

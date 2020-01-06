@@ -60,7 +60,7 @@ deployment_schema = {
             'aws_lambda_operator_config': {
                 'type': 'dict',
                 'schema': {
-                    'region': {'type': 'string', 'required': True},
+                    'region': {'type': 'string'},
                     'api_name': {'type': 'string', 'minlength': 3},
                     'memory_size': {'type': 'integer', 'aws_lambda_memory': True},
                     'timeout': {'type': 'integer', 'min': 1, 'max': 900},

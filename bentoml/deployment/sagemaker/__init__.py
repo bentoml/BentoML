@@ -35,6 +35,7 @@ from bentoml.deployment.utils import (
     ensure_docker_available_or_raise,
     generate_aws_compatible_string,
     raise_if_api_names_not_found_in_bento_service_metadata,
+    get_default_aws_region,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.yatai.status import Status
@@ -43,6 +44,7 @@ from bentoml.exceptions import (
     YataiDeploymentException,
     BentoMLException,
     AWSServiceError,
+    InvalidArgument,
 )
 from bentoml.deployment.operator import DeploymentOperatorBase
 from bentoml.proto.deployment_pb2 import (
@@ -439,9 +441,15 @@ def _create_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def add(self, deployment_pb):
         try:
-            ensure_docker_available_or_raise()
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
+            sagemaker_config.region = (
+                sagemaker_config.region or get_default_aws_region()
+            )
+            if not sagemaker_config.region:
+                raise InvalidArgument('AWS region is missing')
+
+            ensure_docker_available_or_raise()
             if sagemaker_config is None:
                 raise YataiDeploymentException('Sagemaker configuration is missing.')
 
@@ -457,7 +465,6 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                         BentoUri.StorageType.Name(bento_pb.bento.uri.type)
                     )
                 )
-
             return self._add(deployment_pb, bento_pb, bento_pb.bento.uri.uri)
 
         except BentoMLException as error:
@@ -530,6 +537,12 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         try:
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
+            sagemaker_config.region = (
+                sagemaker_config.region or get_default_aws_region()
+            )
+            if not sagemaker_config.region:
+                raise InvalidArgument('AWS region is missing')
+
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
             _, _, sagemaker_endpoint_name = _get_sagemaker_resource_names(deployment_pb)
 
@@ -553,6 +566,11 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         try:
             deployment_spec = deployment_pb.spec
             sagemaker_config = deployment_spec.sagemaker_operator_config
+            sagemaker_config.region = (
+                sagemaker_config.region or get_default_aws_region()
+            )
+            if not sagemaker_config.region:
+                raise InvalidArgument('AWS region is missing')
             sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
             _, _, sagemaker_endpoint_name = _get_sagemaker_resource_names(deployment_pb)
 

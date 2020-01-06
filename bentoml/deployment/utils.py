@@ -21,6 +21,9 @@ import logging
 import re
 import subprocess
 
+import boto3
+from botocore.exceptions import ClientError
+
 from bentoml.exceptions import (
     BentoMLException,
     MissingDependencyException,
@@ -118,3 +121,13 @@ def generate_aws_compatible_string(*items, max_length=63):
     invalid_chars = re.compile("[^a-zA-Z0-9-]|_")
     name = re.sub(invalid_chars, "-", name)
     return name
+
+
+def get_default_aws_region():
+    try:
+        aws_session = boto3.session.Session()
+        return aws_session.region_name
+    except ClientError as e:
+        # We will do nothing, if there isn't a default region
+        logger.error('Encounter error when getting default region for AWS: %s', str(e))
+        return ''

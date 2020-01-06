@@ -78,7 +78,9 @@ def test_create_deployment_successful():
     bento_version = 'version'
     platform = 'aws-sagemaker'
     operator_spec = {
-        'api_name': 'predict', 'instance_type': 'mock_instance', 'instance_count': 1
+        'api_name': 'predict',
+        'instance_type': 'mock_instance',
+        'instance_count': 1,
     }
     result = create_deployment(
         deployment_name=deployment_name,

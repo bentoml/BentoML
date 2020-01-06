@@ -171,6 +171,10 @@ def test_generate_aws_lambda_template_yaml(tmpdir):
 def mock_lambda_related_operations(func):
     @patch('subprocess.check_output', MagicMock())
     @mock_s3
+    @patch(
+        'bentoml.deployment.aws_lambda.get_default_aws_region',
+        MagicMock(return_value='mock_region'),
+    )
     def mock_wrapper(*args, **kwargs):
         conn = boto3.client('s3', region_name='us-west-2')
         conn.create_bucket(Bucket=mock_s3_bucket_name)
@@ -247,11 +251,15 @@ def test_aws_lambda_describe_still_in_progress():
 
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
-    with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
-        deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
-        result_pb = deployment_operator.describe(test_deployment_pb)
-        assert result_pb.status.status_code == status_pb2.Status.OK
-        assert result_pb.state.state == DeploymentState.PENDING
+    with patch(
+        'bentoml.deployment.aws_lambda.get_default_aws_region',
+        MagicMock(return_value='mock_region'),
+    ):
+        with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
+            deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
+            result_pb = deployment_operator.describe(test_deployment_pb)
+            assert result_pb.status.status_code == status_pb2.Status.OK
+            assert result_pb.state.state == DeploymentState.PENDING
 
 
 def test_aws_lambda_describe_success():
@@ -276,8 +284,12 @@ def test_aws_lambda_describe_success():
 
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
-    with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
-        deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
-        result_pb = deployment_operator.describe(test_deployment_pb)
-        assert result_pb.status.status_code == status_pb2.Status.OK
-        assert result_pb.state.state == DeploymentState.RUNNING
+    with patch(
+        'bentoml.deployment.aws_lambda.get_default_aws_region',
+        MagicMock(return_value='mock_region'),
+    ):
+        with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
+            deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
+            result_pb = deployment_operator.describe(test_deployment_pb)
+            assert result_pb.status.status_code == status_pb2.Status.OK
+            assert result_pb.state.state == DeploymentState.RUNNING

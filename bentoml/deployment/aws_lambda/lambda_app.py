@@ -52,7 +52,26 @@ this_module = sys.modules[__name__]
 
 
 def api_func(event, context):  # pylint: disable=unused-argument
-    return bento_service_api.handle_aws_lambda_event(event)
+    """
+    Event – AWS Lambda uses this parameter to pass in event data to the handler. This
+    parameter is usually of the Python dict type. It can also be list, str, int,
+    float, or NoneType type. Currently BentoML only handles Lambda event coming from
+    Application Load Balancer, in which case the parameter `event` must be type `dict`
+    containing the HTTP request headers and body.
+
+    see: https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
+    """
+
+    if type(event) is dict and "headers" in event and "body" in event:
+        return bento_service_api.handle_aws_lambda_event(event)
+    else:
+        error_msg = (
+            'Error: Unexpected Lambda event data received. Currently BentoML lambda '
+            'deployment can only handle event triggered by HTTP request from '
+            'Application Load Balancer.'
+        )
+        print(error_msg)
+        raise RuntimeError(error_msg)
 
 
 setattr(this_module, api_name, api_func)

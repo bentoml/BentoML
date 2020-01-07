@@ -337,7 +337,7 @@ class BentoAPIServer:
                     )
                 else:
                     response = make_response('', e.status_code)
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
                 self.log_exception(sys.exc_info())
@@ -378,5 +378,5 @@ class BentoAPIServer:
         :attr:`logger`.
         """
         logger.error(
-            "Exception on %s [%s]" % (request.path, request.method), exc_info=exc_info
+            "Exception on %s [%s]", request.path, request.method, exc_info=exc_info
         )

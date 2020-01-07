@@ -52,7 +52,9 @@ class TempDirectory(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if config('core').getboolean('debug'):
-            logger.debug(f'BentoML in debug mode, keeping temp directory "{self.path}"')
+            logger.debug(
+                'BentoML in debug mode, keeping temp directory "%s"', self.path
+            )
             return
 
         if self._cleanup:
@@ -60,12 +62,12 @@ class TempDirectory(object):
 
     def create(self):
         if self.path is not None:
-            logger.debug(f"Skipped temp direcotry creation: {self.path}")
+            logger.debug("Skipped temp direcotry creation: %s", self.path)
             return self.path
 
         tempdir = tempfile.mkdtemp(prefix="bentoml-{}-".format(self._prefix))
         self.path = os.path.realpath(tempdir)
-        logger.debug(f"Created temporary directory: {self.path}")
+        logger.debug("Created temporary directory: %s", self.path)
 
     def cleanup(self, ignore_errors=False):
         """

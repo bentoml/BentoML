@@ -26,6 +26,8 @@ deployment_schema = {
     'namespace': {'type': 'string', 'required': True, 'minlength': 3},
     'labels': {'type': 'dict', 'allow_unknown': True},
     'annotations': {'type': 'dict', 'allow_unknown': True},
+    'created_at': {'type': 'datetime'},
+    'last_updated_at': {'type': 'datetime'},
     'spec': {
         'type': 'dict',
         'required': True,
@@ -83,6 +85,7 @@ deployment_schema = {
             'state': {'type': 'integer'},
             'error_message': {'type': 'string'},
             'info_json': {'type': 'string'},
+            'timestamp': {'type': 'datetime'},
         },
     },
 }

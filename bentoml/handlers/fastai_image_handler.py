@@ -26,7 +26,7 @@ from flask import Response
 import numpy as np
 
 from bentoml.exceptions import BadInput, MissingDependencyException
-from bentoml.handlers.base_handlers import BentoHandler, get_output_str
+from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
 from bentoml.handlers.image_handler import (
     verify_image_format_or_raise,
     get_default_accept_image_formats,
@@ -163,16 +163,13 @@ class FastaiImageHandler(BentoHandler):
             input_data.append(data)
 
         result = func(*input_data)
-
-        result = get_output_str(result, request.headers.get("output", "json"))
-        return Response(response=result, status=200, mimetype="application/json")
+        json_output = api_func_result_to_json(result)
+        return Response(response=json_output, status=200, mimetype="application/json")
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True)
-        parser.add_argument(
-            "-o", "--output", default="str", choices=["str", "json", "yaml"]
-        )
+        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
         parsed_args = parser.parse_args(args)
         file_path = parsed_args.input
 
@@ -189,7 +186,10 @@ class FastaiImageHandler(BentoHandler):
         )
 
         result = func(image_array)
-        result = get_output_str(result, output_format=parsed_args.output)
+        if parsed_args.output == "json":
+            result = api_func_result_to_json(result)
+        else:
+            result = str(result)
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
@@ -215,5 +215,5 @@ class FastaiImageHandler(BentoHandler):
             image_data = self.fastai_vision.Image(image_data)
 
         result = func(image_data)
-        result = get_output_str(result, event["headers"].get("output", "json"))
-        return {"statusCode": 200, "body": result}
+        json_output = api_func_result_to_json(result)
+        return {"statusCode": 200, "body": json_output}

@@ -67,7 +67,7 @@ def test_tf_tensor_handle_request():
     for input_data in COMMON_TEST_CASES:
         request.data = json.dumps(input_data).encode('utf-8')
         result = handler.handle_request(request, lambda i: i)
-        predictions = json.loads(result.get_data().decode('utf-8'))['predictions']
+        predictions = json.loads(result.get_data().decode('utf-8'))
         assert (
             input_data['instances'] == predictions
             or math.isnan(input_data['instances'])
@@ -78,26 +78,26 @@ def test_tf_tensor_handle_request():
     input_data = {"instances": {"b64": STR_B64}}
     request.data = json.dumps(input_data).encode("utf8")
     result = handler.handle_request(request, lambda i: i)
-    predictions = json.loads(result.get_data().decode('utf-8'))['predictions']
+    predictions = json.loads(result.get_data().decode('utf-8'))
     assert STR == predictions
 
     input_data = {"instances": [{"b64": STR_B64}]}
     request.data = json.dumps(input_data).encode("utf8")
     result = handler.handle_request(request, lambda i: i)
-    predictions = json.loads(result.get_data().decode('utf-8'))['predictions']
+    predictions = json.loads(result.get_data().decode('utf-8'))
     assert [STR] == predictions
 
     # test bin b64
     input_data = {"instances": {"b64": BIN_B64}}
     request.data = json.dumps(input_data).encode("utf8")
     result = handler.handle_request(request, lambda i: i)
-    predictions = json.loads(result.get_data().decode('utf-8'))['predictions']
+    predictions = json.loads(result.get_data().decode('utf-8'))
     assert {"b64": BIN_B64} == predictions
 
     input_data = {"instances": [{"b64": BIN_B64}]}
     request.data = json.dumps(input_data).encode("utf8")
     result = handler.handle_request(request, lambda i: i)
-    predictions = json.loads(result.get_data().decode('utf-8'))['predictions']
+    predictions = json.loads(result.get_data().decode('utf-8'))
     assert [{"b64": BIN_B64}] == predictions
 
 

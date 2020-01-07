@@ -63,7 +63,7 @@ if __name__ == '__main__':
         # region,
         '--api-name',
         'predict',
-        '--gunicorn-workers-per-instance',
+        '--num-of-gunicorn-workers-per-instance',
         '2',
     ]
     logger.info(

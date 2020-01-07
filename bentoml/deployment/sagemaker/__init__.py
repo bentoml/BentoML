@@ -633,12 +633,15 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 != current_sagemaker_config.num_of_gunicorn_workers_per_instance
             ):
                 _create_sagemaker_model(
-                    sagemaker_client, sagemaker_model_name,
+                    sagemaker_client,
+                    sagemaker_model_name,
+                    ecr_image_path,
+                    updated_sagemaker_config,
                 )
             else:
-                sagemaker_model_name = latest_deployment_state['ProductionVariants'][
-                    0
-                ]['VariantName']
+                sagemaker_model_name = latest_deployment_state['ProductionVariants'][0][
+                    'VariantName'
+                ]
             _create_sagemaker_endpoint_config(
                 sagemaker_client,
                 sagemaker_model_name,

@@ -14,12 +14,13 @@ from bentoml.handlers import DataframeHandler
 
 logger = logging.getLogger('bentoml.test')
 
+
 def run_sagemaker_create_or_update_command(deploy_command):
     deployment_failed = False
     endpoint_name = ''
     logger.info(f"Running bentoml deploy command: {' '.join(deploy_command)}")
     with subprocess.Popen(
-            deploy_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        deploy_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
         deployment_stdout = proc.stdout.read().decode('utf-8')
     logger.info('Finish deploying to AWS Sagemaker')
@@ -89,7 +90,7 @@ def delete_deployment(deployment_name):
     ]
     logger.info(f'Delete command: {delete_deployment_command}')
     with subprocess.Popen(
-            delete_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        delete_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
         delete_deployment_stdout = proc.stdout.read().decode('utf-8')
     logger.info(delete_deployment_stdout)
@@ -144,7 +145,7 @@ if __name__ == '__main__':
         'predict',
         '--num-of-gunicorn-workers-per-instance',
         '2',
-        '--wait'
+        '--wait',
     ]
     deployment_failed, endpoint_name = run_sagemaker_create_or_update_command(
         create_deployment_command

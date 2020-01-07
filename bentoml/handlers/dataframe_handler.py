@@ -44,11 +44,15 @@ def _check_dataframe_column_contains(required_column_names, df):
             )
 
 
+class BadResult:
+    pass
+
+
 class DataframeHandler(BentoHandler):
     """Dataframe handler expects inputs from HTTP request or cli arguments that
-     can be converted into a pandas Dataframe. It passes down the dataframe
-     to user defined API function and returns response for REST API call
-     or print result for CLI call
+        can be converted into a pandas Dataframe. It passes down the dataframe
+        to user defined API function and returns response for REST API call
+        or print result for CLI call
 
     Args:
         orient (str): Incoming json orient format for reading json data. Default is
@@ -67,10 +71,14 @@ class DataframeHandler(BentoHandler):
     """
 
     def __init__(
-        self, orient="records", output_orient="records", typ="frame", input_dtypes=None
+        self, orient="records", output_orient="records", typ="frame", input_dtypes=None,
+        micro_batch=False, mb_max_latency=0.8,
     ):
+
         self.orient = orient
         self.output_orient = output_orient or orient
+        self.micro_batch = micro_batch
+        self.mb_max_latency = mb_max_latency
 
         assert self.orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
             f"Invalid option 'orient'='{self.orient}', valid options are "
@@ -157,6 +165,60 @@ class DataframeHandler(BentoHandler):
             result, pandas_dataframe_orient=self.output_orient
         )
         return Response(response=json_output, status=200, mimetype="application/json")
+
+    def handle_batch_request(self, requests, func):
+        dfs = [None] * len(requests)
+        for i, request in enumerate(requests):
+            if request.content_type == "application/json":
+                df = pd.read_json(
+                    request.data.decode("utf-8"),
+                    orient=self.orient,
+                    typ=self.typ,
+                    dtype=False,
+                )
+            elif request.content_type == "text/csv":
+                csv_string = StringIO(request.data.decode('utf-8'))
+                df = pd.read_csv(csv_string)
+            else:
+                continue
+                # TODO avoid raise exception in all request
+                # raise BadInput(
+                #     "Request content-type not supported, only application/json and "
+                #     "text/csv are supported"
+                # )
+
+            if self.typ == "frame" and self.input_dtypes is not None:
+                # TODO avoid raise exception in all request
+                _check_dataframe_column_contains(self.input_dtypes, df)
+            dfs[i] = df
+
+        length_total = 0
+        slices = [None] * len(requests)
+        for i, df in enumerate(dfs):
+            if df is None:
+                continue
+            slices[i] = slice(length_total, df.shape[0] + length_total)
+            length_total += df.shape[0]
+
+        df_conc = pd.concat(dfs)
+        result_conc = func(df_conc)
+
+        #assert len(result_conc) == len(df_conc)
+        # TODO: assert
+
+        results = [s and result_conc[s] or BadResult for s in slices]
+
+        responses = [None] * len(requests)
+        for i, result in enumerate(results):
+            if result is BadResult:
+                responses[i] = Response(status=400, mimetype="application/json")
+                continue
+            json_output = api_func_result_to_json(
+                result, pandas_dataframe_orient=self.output_orient
+            )
+            responses[i] = Response(response=json_output,
+                                    status=200, mimetype="application/json")
+        return responses
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()

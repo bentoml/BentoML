@@ -74,7 +74,9 @@ if __name__ == '__main__':
     )
 
     if not deployment_failed and endpoint_name:
-        deployment_failed = test_deployment_result(endpoint_name, '[\n  0\n]\n')
+        deployment_failed = test_deployment_result(
+            endpoint_name, '[\n  0\n]\n', f'"{json.dumps(sample_data.tolist())}"'
+        )
 
     logger.info('Delete test deployment with BentoML CLI')
     delete_deployment_command = [

@@ -241,7 +241,7 @@ def _get_sagemaker_resource_names(deployment_pb):
     for the use cases of using the same bento service but with different configuration
     or envvar
     """
-    random_string = (uuid.uuid4().hex[:4].lower(),)
+    random_string = uuid.uuid4().hex[:4].lower()
     sagemaker_model_name = generate_aws_compatible_string(
         (deployment_pb.namespace, 10),
         (deployment_pb.name, 12),

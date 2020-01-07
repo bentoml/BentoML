@@ -25,9 +25,10 @@ def run_sagemaker_create_or_update_command(deploy_command):
     return deployment_failed, endpoint_name
 
 
-def test_deployment_result(endpoint_name, expect_result):
+def test_deployment_result(endpoint_name, expect_result, sample_data=None):
     logger.info(f'Test deployment with sample request for {endpoint_name}')
     deployment_failed = False
+    sample_data = sample_data or '""'
     try:
         test_command = [
             'aws',
@@ -38,7 +39,7 @@ def test_deployment_result(endpoint_name, expect_result):
             '--content-type',
             '"application/json"',
             '--body',
-            f'""',
+            sample_data,
             '>(cat) 1>/dev/null',
             '|',
             'jq .',

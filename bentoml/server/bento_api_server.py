@@ -269,6 +269,9 @@ class BentoAPIServer:
 
     @staticmethod
     def log_image(req, request_id):
+        if not config('logging').getboolean('log_request_image_files'):
+            return []
+
         img_prefix = 'image/'
         log_folder = config('logging').get('base_log_dir')
 
@@ -311,9 +314,8 @@ class BentoAPIServer:
         service_version = self.bento_service.version
 
         def api_func_wrapper():
-            image_paths = []
-            if not config('logging').getboolean('disable_logging_image'):
-                image_paths = self.log_image(request, request_id)
+            # Log image files in request if there is any
+            image_paths = self.log_image(request, request_id)
 
             # _request_to_json parses request as JSON; in case errors, it raises
             # a 400 exception. (consider 4xx before 5xx.)

@@ -46,6 +46,7 @@ from bentoml.yatai.python_api import (
     get_deployment,
     describe_deployment,
     list_deployments,
+    update_deployment,
 )
 from bentoml.yatai import get_yatai_service
 
@@ -346,6 +347,7 @@ def get_deployment_sub_command():
                 ),
                 CLI_COLOR_ERROR,
             )
+            return
         else:
             if wait:
                 result_state = get_state_after_await_action_complete(
@@ -371,6 +373,133 @@ def get_deployment_sub_command():
             track_cli('deploy-create-success', platform.replace('-', '_').upper())
             _echo('Successfully created deployment {}'.format(name), CLI_COLOR_SUCCESS)
             _print_deployment_info(result.deployment, output)
+
+    @deployment.command(help='Update existing deployment')
+    @click.argument("name", type=click.STRING, required=True)
+    @click.option(
+        '-n',
+        '--namespace',
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "default" which'
+        'can be changed in BentoML configuration file',
+    )
+    @click.option(
+        '-b',
+        '--bento',
+        '--bento-service-bundle',
+        type=click.STRING,
+        callback=parse_bento_tag_callback,
+        help='Target BentoService to be deployed, referenced by its name and version '
+        'in format of name:version. For example: "iris_classifier:v1.2.0"',
+    )
+    @click.option(
+        '--instance-type',
+        help='Type of instance will be used for inference. Option applicable to '
+        'platform: AWS SageMaker. Default to "m1.m4.xlarge"',
+        type=click.STRING,
+    )
+    @click.option(
+        '--instance-count',
+        help='Number of instance will be used. Option applicable to platform: AWS '
+        'SageMaker. Default value is 1',
+        type=click.INT,
+    )
+    @click.option(
+        '--num-of-gunicorn-workers-per-instance',
+        help='Number of gunicorn worker will be used per instance. Option applicable '
+        'to platform: AWS SageMaker. Default value for gunicorn worker is '
+        'based on the instance\' cpu core counts. The formula is num_of_cpu/2 + 1',
+        type=click.INT,
+    )
+    @click.option(
+        '--api-name',
+        help='User defined API function will be used for inference. Required for AWS '
+        'SageMaker',
+    )
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '--wait/--no-wait',
+        default=True,
+        help='Wait for apply action to complete or encounter an error.'
+        'If set to no-wait, CLI will return immediately. The default value is wait',
+    )
+    def update(
+        name,
+        namespace,
+        bento,
+        instance_type,
+        instance_count,
+        num_of_gunicorn_workers_per_instance,
+        api_name,
+        output,
+        wait,
+    ):
+        yatai_service = get_yatai_service()
+        get_deployment_result = get_deployment(namespace, name, yatai_service)
+        if get_deployment_result.status.status_code != status_pb2.Status.OK:
+            get_deployment_status = get_deployment_result.status
+            _echo(
+                f'Failed to updated deployment {name}.'
+                f'{status_pb2.Status.Code.Name(get_deployment_status.status_code)}'
+                f':{get_deployment_status.error_message}',
+                CLI_COLOR_ERROR,
+            )
+            return
+        current_deployment = get_deployment_result.deployment
+        track_cli(
+            'deploy-update',
+            deploy_platform=DeploymentSpec.DeploymentOperator.Name(
+                current_deployment.spec.operator
+            ),
+        )
+        bento_name, bento_version = bento.split(':')
+        updated_spec = {
+            'bento_name': bento_name,
+            'bento_version': bento_version,
+            'instance_type': instance_type,
+            'instance_count': instance_count,
+            'num_of_gunicorn_workers_per_instance': num_of_gunicorn_workers_per_instance,  # noqa E501
+            'api_name': api_name,
+        }
+        try:
+            result = update_deployment(current_deployment, updated_spec, yatai_service)
+        except BentoMLException as e:
+            _echo(f'Failed to update deployment {name}: {str(e)}', CLI_COLOR_ERROR)
+            return
+        if result.status.status_code != status_pb2.Status.OK:
+            update_deployment_status = result.status
+            _echo(
+                f'Failed to update deployment {name}. '
+                f'{status_pb2.Status.Code.Name(update_deployment_status.status_code)}:'
+                f'{update_deployment_status.error_message}',
+                CLI_COLOR_ERROR,
+            )
+            return
+        else:
+            if wait:
+                result_state = get_state_after_await_action_complete(
+                    yatai_service=yatai_service,
+                    name=name,
+                    namespace=namespace,
+                    message='Updating deployment',
+                )
+                if result_state.status.status_code != status_pb2.Status.OK:
+                    describe_deployment_status = result_state.status
+                    _echo(
+                        f'Updated deployment {name}. Failed to retrieve latest status. '
+                        f'{status_pb2.Status.Code.Name(describe_deployment_status.status_code)}:'  # noqa E501
+                        f'{describe_deployment_status.error_message}'
+                    )
+                    return
+                result.deployment.state.CopyFrom(result_state.state)
+        track_cli(
+            'deploy-update-success',
+            deploy_platform=DeploymentSpec.DeploymentOperator.Name(
+                current_deployment.spec.operator
+            ),
+        )
+        _echo(f'Successfully updated deployment {name}', CLI_COLOR_SUCCESS)
+        _print_deployment_info(result.deployment, output)
 
     @deployment.command(help='Apply model service deployment from yaml file')
     @click.option(

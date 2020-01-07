@@ -33,6 +33,7 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentRequest,
     ListDeploymentsRequest,
     ApplyDeploymentResponse,
+    Deployment,
 )
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
 from bentoml.proto.repository_pb2 import (
@@ -300,9 +301,39 @@ def create_deployment(
     return apply_response
 
 
-# TODO update_deployment is not finished.  It will be working on along with cli command
-def update_deployment(deployment_name, namespace, yatai_service=None):
-    raise NotImplementedError
+def update_deployment(deployment_pb, updated_operator_spec, yatai_service=None):
+    if deployment_pb.spec.operator == DeploymentSpec.AWS_SAGEMAKER:
+        for field in [
+            'api_name',
+            'instance_type',
+            'instance_count',
+            'num_of_gunicorn_workers_per_instance',
+        ]:
+            if updated_operator_spec.get(field):
+                deployment_pb.spec.sagemaker_operator_config.__setattr__(
+                    field, updated_operator_spec.get(field)
+                )
+    elif deployment_pb.spec.operator == DeploymentSpec.AWS_LAMBDA:
+        raise NotImplementedError
+    elif deployment_pb.spec.operator == DeploymentSpec.KUBERNETES:
+        raise NotImplementedError
+    else:
+        raise NotImplementedError
+
+    for field in ['bento_name', 'bento_version']:
+        if updated_operator_spec.get(field):
+            deployment_pb.spec.__setattr__(field, updated_operator_spec.get(field))
+
+    apply_response = apply_deployment(deployment_pb, yatai_service)
+
+    if apply_response.status.status_code == status_pb2.Status.OK:
+        describe_response = describe_deployment(
+            deployment_pb.name, deployment_pb.namespace, yatai_service
+        )
+        if describe_response.status.status_code == status_pb2.Status.OK:
+            apply_response.deployment.state.CopyFrom(describe_response.state)
+            return apply_response
+    return apply_response
 
 
 def apply_deployment(deployment_info, yatai_service=None):
@@ -316,9 +347,11 @@ def apply_deployment(deployment_info, yatai_service=None):
             deployment_pb = deployment_dict_to_pb(deployment_info)
         elif isinstance(deployment_info, str):
             deployment_pb = deployment_yaml_string_to_pb(deployment_info)
+        elif isinstance(deployment_info, Deployment):
+            deployment_pb = deployment_info
         else:
             raise YataiDeploymentException(
-                'Unexpected argument type, expect deployment info to be str in yaml '
+                'Unexpected argument type, expect deployment info to be str or yaml '
                 'format or a dict, instead got: {}'.format(str(type(deployment_info)))
             )
 

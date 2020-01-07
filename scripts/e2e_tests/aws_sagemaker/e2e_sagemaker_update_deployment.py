@@ -34,7 +34,7 @@ def run_sagemaker_create_or_update_command(deploy_command):
 def test_deployment_result(endpoint_name, expect_result, sample_data=None):
     logger.info(f'Test deployment with sample request for {endpoint_name}')
     deployment_failed = False
-    sample_data = sample_data or '""'
+    sample_data = sample_data or '"[0]"'
     try:
         test_command = [
             'aws',
@@ -67,6 +67,11 @@ def test_deployment_result(endpoint_name, expect_result, sample_data=None):
                 deployment_failed = False
             else:
                 deployment_failed = True
+            logger.info(
+                f"Did deployment failed ?{deployment_failed}. "
+                f"Actual result {result.stdout.decode('utf-8')}, and expect "
+                f"result {expect_result}"
+            )
     except Exception as e:
         logger.error(str(e))
         deployment_failed = True
@@ -131,54 +136,63 @@ if __name__ == '__main__':
     )
 
     if not deployment_failed and endpoint_name:
-        deployment_failed = test_deployment_result(endpoint_name, '1')
+        deployment_failed = test_deployment_result(endpoint_name, '1\n')
+    else:
+        logger.info('Deployment failed for creating deployment')
 
-    update_deployment_command = [
-        'bentoml',
-        '--verbose',
-        'deploy',
-        'update',
-        deployment_name,
-        '--api-name',
-        'classify',
-    ]
-    deployment_failed, endpoint_name = run_sagemaker_create_or_update_command(
-        update_deployment_command
-    )
-    if not deployment_failed and endpoint_name:
-        deployment_failed = test_deployment_result(endpoint_name, 'cat')
+    if not deployment_failed:
+        logger.info('UPDATED ENV FOR DEPLOYMENT')
+        update_deployment_command = [
+            'bentoml',
+            '--verbose',
+            'deploy',
+            'update',
+            deployment_name,
+            '--api-name',
+            'classify',
+        ]
+        deployment_failed, endpoint_name = run_sagemaker_create_or_update_command(
+            update_deployment_command
+        )
+        if not deployment_failed and endpoint_name:
+            deployment_failed = test_deployment_result(endpoint_name, 'cat\n')
+    else:
+        logger.info('Deployment failed for updating env without changing BentoService')
 
-    class TestUpdateDeploymentService(BentoService):
-        @api(DataframeHandler)
-        def predict(self, df):
-            return 1
+    if not deployment_failed:
+        class TestUpdateDeploymentService(BentoService):
+            @api(DataframeHandler)
+            def predict(self, df):
+                return 1
 
-        @api(DataframeHandler)
-        def classify(self, df):
-            # change result to dog
-            return 'dog'
+            @api(DataframeHandler)
+            def classify(self, df):
+                # change result from cat to dog
+                return 'dog'
 
-    logger.info('Creating version two BentoService bundle..')
-    service_ver_two = TestUpdateDeploymentService()
-    saved_path = service_ver_two.save()
+        logger.info('UPDATED NEW BENTO FOR DEPLOYMENT')
+        service_ver_two = TestUpdateDeploymentService()
+        saved_path = service_ver_two.save()
 
-    loaded_ver_two_service = load(saved_path)
-    bento_name = f'{loaded_ver_two_service.name}:{loaded_ver_two_service.version}'
+        loaded_ver_two_service = load(saved_path)
+        bento_name = f'{loaded_ver_two_service.name}:{loaded_ver_two_service.version}'
 
-    update_bento_version_deployment_command = [
-        'bentoml',
-        '--verbose',
-        'deploy',
-        'update',
-        deployment_name,
-        '-b',
-        bento_name,
-    ]
-    deployment_failed, endpoint_name = run_sagemaker_create_or_update_command(
-        update_bento_version_deployment_command
-    )
-    if not deployment_failed and endpoint_name:
-        deployment_failed = test_deployment_result(endpoint_name, 'dog')
+        update_bento_version_deployment_command = [
+            'bentoml',
+            '--verbose',
+            'deploy',
+            'update',
+            deployment_name,
+            '-b',
+            bento_name,
+        ]
+        deployment_failed, endpoint_name = run_sagemaker_create_or_update_command(
+            update_bento_version_deployment_command
+        )
+        if not deployment_failed and endpoint_name:
+            deployment_failed = test_deployment_result(endpoint_name, 'dog\n')
+    else:
+        logger.info('Deployment failed for updating BentoService')
 
     delete_deployment(deployment_name)
 

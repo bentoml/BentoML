@@ -324,6 +324,8 @@ def update_deployment(deployment_pb, updated_operator_spec, yatai_service=None):
         if updated_operator_spec.get(field):
             deployment_pb.spec.__setattr__(field, updated_operator_spec.get(field))
 
+    logger.debug('Updated configuration for deployment %s', deployment_pb.name)
+
     apply_response = apply_deployment(deployment_pb, yatai_service)
 
     if apply_response.status.status_code == status_pb2.Status.OK:

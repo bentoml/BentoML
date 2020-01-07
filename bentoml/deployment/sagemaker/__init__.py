@@ -21,7 +21,6 @@ import shutil
 import base64
 import logging
 import json
-import uuid
 from urllib.parse import urlparse
 
 import boto3
@@ -241,20 +240,17 @@ def _get_sagemaker_resource_names(deployment_pb):
     for the use cases of using the same bento service but with different configuration
     or envvar
     """
-    random_string = uuid.uuid4().hex[:4].lower()
     sagemaker_model_name = generate_aws_compatible_string(
         (deployment_pb.namespace, 10),
         (deployment_pb.name, 12),
         (deployment_pb.spec.bento_name, 20),
-        (deployment_pb.spec.bento_version, 14),
-        (random_string, 4),
+        (deployment_pb.spec.bento_version, 18),
     )
     sagemaker_endpoint_config_name = generate_aws_compatible_string(
         (deployment_pb.namespace, 10),
         (deployment_pb.name, 12),
         (deployment_pb.spec.bento_name, 20),
-        (deployment_pb.spec.bento_version, 14),
-        (random_string, 4),
+        (deployment_pb.spec.bento_version, 18),
     )
     sagemaker_endpoint_name = generate_aws_compatible_string(
         deployment_pb.namespace, deployment_pb.name
@@ -597,14 +593,23 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             bento_pb.bento.bento_service_metadata, [updated_sagemaker_config.api_name]
         )
         describe_latest_deployment_state = self.describe(deployment_pb)
-        latest_deployment_state = describe_latest_deployment_state.state.info_json
         current_deployment_spec = current_deployment.spec
         current_sagemaker_config = current_deployment_spec.sagemaker_operator_config
+        latest_deployment_state = json.loads(
+            describe_latest_deployment_state.state.info_json
+        )
+        current_ecr_image_tag = latest_deployment_state['ProductionVariants'][0][
+            'DeployedImages'
+        ][0]['SpecifiedImage']
         if (
             updated_deployment_spec.bento_name != current_deployment_spec.bento_name
             or updated_deployment_spec.bento_version
             != current_deployment_spec.bento_version
         ):
+            logger.debug(
+                'BentoService tag is different from current deployment, creating new '
+                'docker image and push to ECR'
+            )
             with TempDirectory() as temp_dir:
                 sagemaker_project_dir = os.path.join(
                     temp_dir, updated_deployment_spec.bento_name
@@ -617,9 +622,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     sagemaker_project_dir,
                 )
         else:
-            ecr_image_path = latest_deployment_state['ProductionVariants'][0][
-                'DeployedImages'
-            ][0]['SpecifiedImage']
+            logger.debug('Using existing ECR image')
+            ecr_image_path = current_ecr_image_tag
 
         try:
             (
@@ -631,23 +635,33 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 updated_sagemaker_config.api_name != current_sagemaker_config.api_name
                 or updated_sagemaker_config.num_of_gunicorn_workers_per_instance
                 != current_sagemaker_config.num_of_gunicorn_workers_per_instance
+                or ecr_image_path != current_ecr_image_tag
             ):
+                logger.debug(
+                    'Sagemaker model requires update. Delete current sagemaker model '
+                    'and creating new model'
+                )
+                _delete_sagemaker_model_if_exist(sagemaker_client, sagemaker_model_name)
                 _create_sagemaker_model(
                     sagemaker_client,
                     sagemaker_model_name,
                     ecr_image_path,
                     updated_sagemaker_config,
                 )
-            else:
-                sagemaker_model_name = latest_deployment_state['ProductionVariants'][0][
-                    'VariantName'
-                ]
+            logger.debug(
+                'Deleting current sagemaker endpoint configuration and then creating '
+                'new endpoint configuration'
+            )
+            _delete_sagemaker_endpoint_config_if_exist(
+                sagemaker_client, sagemaker_endpoint_config_name
+            )
             _create_sagemaker_endpoint_config(
                 sagemaker_client,
                 sagemaker_model_name,
                 sagemaker_endpoint_config_name,
                 updated_sagemaker_config,
             )
+            logger.debug('Updating endpoint to new endpoint configuration')
             _update_sagemaker_endpoint(
                 sagemaker_client,
                 sagemaker_endpoint_name,

@@ -19,15 +19,15 @@ from __future__ import print_function
 from cerberus import Validator
 
 from bentoml.utils import ProtoMessageToDict
-from bentoml.proto.deployment_pb2 import DeploymentSpec
+from bentoml.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 
 deployment_schema = {
     'name': {'type': 'string', 'required': True, 'minlength': 4},
     'namespace': {'type': 'string', 'required': True, 'minlength': 3},
     'labels': {'type': 'dict', 'allow_unknown': True},
     'annotations': {'type': 'dict', 'allow_unknown': True},
-    'created_at': {'type': 'datetime'},
-    'last_updated_at': {'type': 'datetime'},
+    'created_at': {'type': 'string'},
+    'last_updated_at': {'type': 'string'},
     'spec': {
         'type': 'dict',
         'required': True,
@@ -82,10 +82,10 @@ deployment_schema = {
     'state': {
         'type': 'dict',
         'schema': {
-            'state': {'type': 'integer'},
+            'state': {'type': 'string', 'allowed': DeploymentState.State.keys()},
             'error_message': {'type': 'string'},
             'info_json': {'type': 'string'},
-            'timestamp': {'type': 'datetime'},
+            'timestamp': {'type': 'string'},
         },
     },
 }

@@ -29,4 +29,4 @@ def test_run_command_with_input_file(bento_bundle_path):
     )
 
     assert result.exit_code == 0
-    assert result.output.strip() == '"3"'
+    assert result.output.strip() == '3'

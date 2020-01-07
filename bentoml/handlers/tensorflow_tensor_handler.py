@@ -22,14 +22,14 @@ from flask import Response
 from bentoml.handlers.utils import (
     NestedConverter,
     tf_b64_2_bytes,
-    tf_tendor_2_serializable,
+    tf_tensor_2_serializable,
 )
-from bentoml.handlers.base_handlers import BentoHandler, get_output_str
+from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
 from bentoml.exceptions import BentoMLException, BadInput
 
 
 decode_b64_if_needed = NestedConverter(tf_b64_2_bytes)
-decode_tf_if_needed = NestedConverter(tf_tendor_2_serializable)
+decode_tf_if_needed = NestedConverter(tf_tensor_2_serializable)
 
 
 class TensorflowTensorHandler(BentoHandler):
@@ -90,10 +90,9 @@ class TensorflowTensorHandler(BentoHandler):
             raise NotImplementedError("column format 'inputs' is not implemented")
 
         if output_format == "json":
-            result_object = {"predictions": result}
-            result_str = json.dumps(result_object)
+            result_str = api_func_result_to_json(result)
         elif output_format == "str":
-            result_str = get_output_str(result, output_format)
+            result_str = str(result)
 
         return result_str
 
@@ -107,15 +106,9 @@ class TensorflowTensorHandler(BentoHandler):
         Return:
             response object
         """
-        output_format = request.headers.get("output", "json")
-        if output_format not in {"json", "str"}:
-            raise BadInput(
-                "Request output must be 'json' or 'str' for this BentoService API"
-            )
         if request.content_type == "application/json":
             input_str = request.data.decode("utf-8")
-            output_format = request.headers.get("output", "json")
-            result_str = self._handle_raw_str(input_str, output_format, func)
+            result_str = self._handle_raw_str(input_str, "json", func)
             return Response(
                 response=result_str, status=200, mimetype="application/json"
             )
@@ -136,9 +129,7 @@ class TensorflowTensorHandler(BentoHandler):
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "") == "application/json":
-            result = self._handle_raw_str(
-                event["body"], event["headers"].get("output", "json"), func
-            )
+            result = self._handle_raw_str(event["body"], "json", func)
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

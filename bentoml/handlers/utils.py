@@ -19,7 +19,7 @@ def bytes_2_tf_b64(obj):
         return obj
 
 
-def tf_tendor_2_serializable(obj):
+def tf_tensor_2_serializable(obj):
     '''
     To convert
         tf.Tensor -> json serializable

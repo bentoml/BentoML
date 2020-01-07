@@ -23,13 +23,17 @@ from io import StringIO
 import pandas as pd
 from flask import Response
 
-from bentoml.handlers.base_handlers import BentoHandler, get_output_str
+from bentoml.handlers.base_handlers import (
+    BentoHandler,
+    api_func_result_to_json,
+    PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
+)
 from bentoml.utils import is_url
 from bentoml.utils.s3 import is_s3_url
 from bentoml.exceptions import BadInput
 
 
-def check_dataframe_column_contains(required_column_names, df):
+def _check_dataframe_column_contains(required_column_names, df):
     df_columns = set(map(str, df.columns))
     for col in required_column_names:
         if col not in df_columns:
@@ -41,9 +45,9 @@ def check_dataframe_column_contains(required_column_names, df):
 
 
 class DataframeHandler(BentoHandler):
-    """Dataframe handler expects inputs from rest request or cli options that
-     can be converted into a pandas Dataframe, and pass down the dataframe
-     to user defined API function. It also returns response for REST API call
+    """Dataframe handler expects inputs from HTTP request or cli arguments that
+     can be converted into a pandas Dataframe. It passes down the dataframe
+     to user defined API function and returns response for REST API call
      or print result for CLI call
 
     Args:
@@ -53,11 +57,13 @@ class DataframeHandler(BentoHandler):
             records.
         typ (str): Type of object to recover for read json with pandas. Default is
             frame
-        input_dtypes ({str:str}): A dict of column name and data type.
+        input_dtypes ({str:str}): describing expected input data types of the input
+            dataframe, it must be either a dict of column name and data type, or a list
+            of data types listed by column index in the dataframe
 
     Raises:
         ValueError: Incoming data is missing required columns in input_dtypes
-        ValueError: Incoming data format is not handled. Only json and csv
+        ValueError: Incoming data format can not be handled. Only json and csv
     """
 
     def __init__(
@@ -65,6 +71,16 @@ class DataframeHandler(BentoHandler):
     ):
         self.orient = orient
         self.output_orient = output_orient or orient
+
+        assert self.orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
+            f"Invalid option 'orient'='{self.orient}', valid options are "
+            f"{PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS}"
+        )
+        assert self.orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
+            f"Invalid 'output_orient'='{self.orient}', valid options are "
+            f"{PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS}"
+        )
+
         self.typ = typ
         self.input_dtypes = input_dtypes
 
@@ -106,12 +122,12 @@ class DataframeHandler(BentoHandler):
         return default
 
     def handle_request(self, request, func):
-        orient = request.headers.get("orient", self.orient)
-        output_orient = request.headers.get("output_orient", self.output_orient)
-
         if request.content_type == "application/json":
             df = pd.read_json(
-                request.data.decode("utf-8"), orient=orient, typ=self.typ, dtype=False
+                request.data.decode("utf-8"),
+                orient=self.orient,
+                typ=self.typ,
+                dtype=False,
             )
         elif request.content_type == "text/csv":
             csv_string = StringIO(request.data.decode('utf-8'))
@@ -123,22 +139,28 @@ class DataframeHandler(BentoHandler):
             )
 
         if self.typ == "frame" and self.input_dtypes is not None:
-            check_dataframe_column_contains(self.input_dtypes, df)
+            _check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
-        result = get_output_str(
-            result, request.headers.get("output", "json"), output_orient
+        json_output = api_func_result_to_json(
+            result, pandas_dataframe_orient=self.output_orient
         )
-        return Response(response=result, status=200, mimetype="application/json")
+        return Response(response=json_output, status=200, mimetype="application/json")
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True)
+        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
         parser.add_argument(
-            "-o", "--output", default="str", choices=["str", "json", "yaml"]
+            "--orient",
+            default=self.orient,
+            choices=PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
         )
-        parser.add_argument("--orient", default=self.orient)
-        parser.add_argument("--output_orient", default=self.output_orient)
+        parser.add_argument(
+            "--output_orient",
+            default=self.output_orient,
+            choices=PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
+        )
         parsed_args = parser.parse_args(args)
 
         orient = parsed_args.orient
@@ -166,18 +188,22 @@ class DataframeHandler(BentoHandler):
                 )
 
         if self.typ == "frame" and self.input_dtypes is not None:
-            check_dataframe_column_contains(self.input_dtypes, df)
+            _check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
-        result = get_output_str(result, parsed_args.output, output_orient)
+        if parsed_args.output == 'json':
+            result = api_func_result_to_json(
+                result, pandas_dataframe_orient=output_orient
+            )
+        else:
+            result = str(result)
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        orient = event["headers"].get("orient", self.orient)
-        output_orient = event["headers"].get("output_orient", self.output_orient)
-
         if event["headers"]["Content-Type"] == "application/json":
-            df = pd.read_json(event["body"], orient=orient, typ=self.typ, dtype=False)
+            df = pd.read_json(
+                event["body"], orient=self.orient, typ=self.typ, dtype=False
+            )
         elif event["headers"]["Content-Type"] == "text/csv":
             df = pd.read_csv(event["body"])
         else:
@@ -187,10 +213,10 @@ class DataframeHandler(BentoHandler):
             )
 
         if self.typ == "frame" and self.input_dtypes is not None:
-            check_dataframe_column_contains(self.input_dtypes, df)
+            _check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
-        result = get_output_str(
-            result, event["headers"].get("output", "json"), output_orient
+        result = api_func_result_to_json(
+            result, pandas_dataframe_orient=self.output_orient
         )
         return {"statusCode": 200, "body": result}

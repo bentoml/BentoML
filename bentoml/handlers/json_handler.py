@@ -23,7 +23,7 @@ import argparse
 from flask import Response
 
 from bentoml.exceptions import BadInput
-from bentoml.handlers.base_handlers import BentoHandler, get_output_str
+from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
 
 
 class JsonHandler(BentoHandler):
@@ -42,15 +42,13 @@ class JsonHandler(BentoHandler):
             )
 
         result = func(parsed_json)
-        result = get_output_str(result, request.headers.get("output", "json"))
-        return Response(response=result, status=200, mimetype="application/json")
+        json_output = api_func_result_to_json(result)
+        return Response(response=json_output, status=200, mimetype="application/json")
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True)
-        parser.add_argument(
-            "-o", "--output", default="str", choices=["str", "json", "yaml"]
-        )
+        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
         parsed_args = parser.parse_args(args)
 
         if os.path.isfile(parsed_args.input):
@@ -61,7 +59,10 @@ class JsonHandler(BentoHandler):
 
         input_json = json.loads(content)
         result = func(input_json)
-        result = get_output_str(result, parsed_args.output)
+        if parsed_args.output == 'json':
+            result = api_func_result_to_json(result)
+        else:
+            result = str(result)
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
@@ -74,5 +75,5 @@ class JsonHandler(BentoHandler):
             )
 
         result = func(parsed_json)
-        result = get_output_str(result, event["headers"].get("output", "json"))
-        return {"statusCode": 200, "body": result}
+        json_output = api_func_result_to_json(result)
+        return {"statusCode": 200, "body": json_output}

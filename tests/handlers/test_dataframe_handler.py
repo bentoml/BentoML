@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 from bentoml.handlers import DataframeHandler
-from bentoml.handlers.dataframe_handler import check_dataframe_column_contains
+from bentoml.handlers.dataframe_handler import _check_dataframe_column_contains
 from bentoml.exceptions import BadInput
 
 try:
@@ -72,17 +72,17 @@ def test_check_dataframe_column_contains():
     )
 
     # this should pass
-    check_dataframe_column_contains({"a": "int", "b": "int", "c": "int"}, df)
-    check_dataframe_column_contains({"a": "int"}, df)
-    check_dataframe_column_contains({"a": "int", "c": "int"}, df)
+    _check_dataframe_column_contains({"a": "int", "b": "int", "c": "int"}, df)
+    _check_dataframe_column_contains({"a": "int"}, df)
+    _check_dataframe_column_contains({"a": "int", "c": "int"}, df)
 
     # this should raise exception
     with pytest.raises(BadInput) as e:
-        check_dataframe_column_contains({"required_column_x": "int"}, df)
+        _check_dataframe_column_contains({"required_column_x": "int"}, df)
     assert "Missing columns: required_column_x" in str(e.value)
 
     with pytest.raises(BadInput) as e:
-        check_dataframe_column_contains(
+        _check_dataframe_column_contains(
             {"a": "int", "b": "int", "d": "int", "e": "int"}, df
         )
     assert "Missing columns:" in str(e.value)

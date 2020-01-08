@@ -617,14 +617,14 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     sagemaker_project_dir,
                 )
         else:
-            logger.debug('Using existing ECR image')
+            logger.debug('Using existing ECR image for Sagemaker model')
             ecr_image_path = current_ecr_image_tag
 
         try:
             (
                 updated_sagemaker_model_name,
                 updated_sagemaker_endpoint_config_name,
-                updated_sagemaker_endpoint_name,
+                sagemaker_endpoint_name,
             ) = _get_sagemaker_resource_names(deployment_pb)
             (
                 current_sagemaker_model_name,
@@ -667,7 +667,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             logger.debug('Updating endpoint to new endpoint configuration')
             _update_sagemaker_endpoint(
                 sagemaker_client,
-                updated_sagemaker_endpoint_name,
+                sagemaker_endpoint_name,
                 updated_sagemaker_endpoint_config_name,
             )
         except AWSServiceError as e:

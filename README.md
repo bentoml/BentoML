@@ -177,35 +177,39 @@ Full documentation and API references can be found at [bentoml.readthedocs.io](h
 - [BentoML Kubernetes Deployment Guide](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
 
 
+## Contributing
+
+Have questions or feedback? Post a [new github issue](https://github.com/bentoml/BentoML/issues/new/choose)
+or discuss in our Slack channel: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+
+
+Want to help build BentoML? Check out our
+[contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md) and the
+[development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
+
+
+
 ## Usage Tracking
 
 BentoML by default collects anonymous usage data using [Amplitude](https://amplitude.com).
-It only collects BentoML library's action/config/parameters, no user data nor model data will be collected,
-[here is the code that does it](https://github.com/bentoml/BentoML/blob/master/bentoml/utils/usage_stats.py).
+It only collects BentoML library's own actions and parameters, no user or model data will be collected.
+[Here is the code that does it](https://github.com/bentoml/BentoML/blob/master/bentoml/utils/usage_stats.py).
 
 This helps BentoML team to understand how the community is using this tool and
 what to build next. You can easily opt-out of usage tracking by running the following
 command:
 
 ```bash
-# In terminal:
+# From terminal:
 bentoml config set usage_tracking=false
 ```
 
 ```python
-# In python:
+# From python:
 import bentoml
 bentoml.config().set('core', 'usage_tracking', 'False')
 ```
 
-## Contributing
-
-Have questions or feedback? Post a [new github issue](https://github.com/bentoml/BentoML/issues/new/choose)
-or discuss in our Slack channel: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
-
-Want to help build BentoML? Check out our
-[contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md) and the
-[development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
 
 ## Releases
 

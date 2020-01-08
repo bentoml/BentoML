@@ -647,20 +647,22 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     ecr_image_path,
                     updated_sagemaker_config,
                 )
+            # When bento service tag is not changed, we need to delete the current
+            # endpoint configuration in order to create new one to avoid name collation
             if (
                 current_sagemaker_endpoint_config_name
                 == updated_sagemaker_endpoint_config_name
             ):
                 logger.debug(
                     'Current sagemaker config name %s is same as updated one, '
-                    'deleting it before creat new config',
+                    'delete it before create new endpoint config',
                     current_sagemaker_endpoint_config_name,
                 )
                 _delete_sagemaker_endpoint_config_if_exist(
                     sagemaker_client, current_sagemaker_endpoint_config_name
                 )
             logger.debug(
-                'Creating new endpoint configuration %s',
+                'Create new endpoint configuration %s',
                 updated_sagemaker_endpoint_config_name,
             )
             _create_sagemaker_endpoint_config(
@@ -679,7 +681,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 updated_sagemaker_endpoint_config_name,
             )
             logger.debug(
-                'Deleting old sagemaker config %s',
+                'Delete old sagemaker endpoint config %s',
                 current_sagemaker_endpoint_config_name,
             )
             _delete_sagemaker_endpoint_config_if_exist(

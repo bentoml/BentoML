@@ -353,8 +353,10 @@ def apply_deployment(deployment_info, yatai_service=None):
             deployment_pb = deployment_info
         else:
             raise YataiDeploymentException(
-                'Unexpected argument type, expect deployment info to be str or yaml '
-                'format or a dict, instead got: {}'.format(str(type(deployment_info)))
+                'Unexpected argument type, expect deployment info to be str in yaml '
+                'format or a dict or a deployment protobuf obj, instead got: {}'.format(
+                    str(type(deployment_info))
+                )
             )
 
         validation_errors = validate_deployment_pb_schema(deployment_pb)

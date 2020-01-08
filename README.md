@@ -178,14 +178,18 @@ Full documentation and API references can be found at [bentoml.readthedocs.io](h
 
 ## Usage Tracking
 
-BentoML library by default reports basic usages using
-[Amplitude](https://amplitude.com). It helps BentoML authors to understand how
-people are using this tool and improve it over time. You can easily opt-out by
-running the following command from terminal:
+BentoML by default collects anonymous usage data using [Amplitude](https://amplitude.com).
+It only collects BentoML library's action/config/parameters, no user data nor model data will be collected,
+[here is the code that does it](https://github.com/bentoml/BentoML/blob/master/bentoml/utils/usage_stats.py).
+
+This helps BentoML team to understand how the community is using this tool and
+what to build next. You can easily opt-out of usage tracking by running the following
+command:
 
 ```bash
 bentoml config set usage_tracking=false
 ```
+
 
 ## Contributing
 

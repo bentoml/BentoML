@@ -181,7 +181,7 @@ class SageMakerBackend(BaseBackend):
                 )
             model = self.models[production_variant['ModelName']]
             production_variant['DeployedImages'] = [
-                {'SpecifiedImage': model['PrimaryContainer']['Image'],}
+                {'SpecifiedImage': model['PrimaryContainer']['Image']}
             ]
 
         info = {

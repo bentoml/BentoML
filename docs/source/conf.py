@@ -28,6 +28,12 @@ version = bentoml.__version__
 
 # -- General configuration ---------------------------------------------------
 
+# master_docs = 'index' is the default value for sphinx after version 2. Although
+# readthedocs.org by default will reset this to the old default value "contents"
+# which breaks the build. Hence explicitly setting it here to "index".
+# See https://github.com/readthedocs/readthedocs.org/issues/2149
+master_doc = 'index'
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.

@@ -8,7 +8,7 @@
 > From ML model to production API endpoint with a few lines of code
 
 
-[![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
+[![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
 
 [Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Gallery](https://github.com/bentoml/gallery) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) | [License](https://github.com/bentoml/BentoML/blob/master/LICENSE) | [Blog](https://medium.com/bentoml)
 
@@ -146,11 +146,15 @@ To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a t
 * CIFAR-10 Image Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb)
 
 
-#### Keras
+#### Tensorflow Keras
 
 * Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb)
 * Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb)
 * Toxic Comment Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb)
+
+### Tensorflow 2.0
+
+* tf.Function model - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb)
 
 
 #### XGBoost
@@ -179,7 +183,7 @@ To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a t
 - [BentoML Clipper.ai Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/bentoml-clipper-deployment-guide.ipynb)
 - [BentoML AWS ECS Deployment Guide](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-aws-ecs)
 - [BentoML Google Cloud Run Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-google-cloud-run/deploy-with-google-cloud-run.ipynb)
-- [(Beta) BentoML Kubernetes Deployment Guide](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
+- [BentoML Kubernetes Deployment Guide](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
 
 
 ## Feature Highlights

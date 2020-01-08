@@ -187,9 +187,15 @@ what to build next. You can easily opt-out of usage tracking by running the foll
 command:
 
 ```bash
+# In terminal:
 bentoml config set usage_tracking=false
 ```
 
+```python
+# In python:
+import bentoml
+bentoml.config().set('core', 'usage_tracking', 'False')
+```
 
 ## Contributing
 

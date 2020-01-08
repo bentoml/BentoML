@@ -103,7 +103,8 @@ used to build a docker image for deployment:
 docker build -t my_api_server {saved_path}
 ```
 
-Deploy the saved BentoService to cloud services such as AWS Lambda with the `bentoml `command:
+You can also deploy your BentoService directly to cloud services such as AWS Lambda with `bentoml`, and
+get back a API endpoint hosting your model, that is ready for production use:
 ```
 bentoml deployment create my-iris-classifier --bento IrisClassifier:{VERSION} --platform=aws-lambda
 ```

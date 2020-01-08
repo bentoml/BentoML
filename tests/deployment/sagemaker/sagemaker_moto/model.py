@@ -21,8 +21,8 @@ class EndpointOperation:
     def __init__(self, created_time, latency_seconds, pending_state, complete_state):
         self.start_time = time.time()
         self.created_time = created_time
-        self.pending_state = (pending_state,)
-        self.complete_state = (complete_state,)
+        self.pending_state = pending_state
+        self.complete_state = complete_state
         self.latency_seconds = latency_seconds
 
     def status(self):
@@ -105,15 +105,15 @@ class SageMakerBackend(BaseBackend):
             raise ValueError('Endpoint {} does not exist'.format(endpoint_name))
 
         endpoint = self.endpoints[endpoint_name]
-        config = self.endpoint_configs[endpoint.resource.config_name]
+        config = self.endpoint_configs[endpoint['EndpointConfigName']]
         return {
             'Endpoint': endpoint['EndpointName'],
             'EndpointConfigName': endpoint['EndpointConfigName'],
             'EndpointArn': endpoint['arn'],
-            'EndpointStatus': endpoint['status'],
-            'CreationTime': endpoint['creation_time'],
-            'LastModifiedTime': endpoint['last_modified_time'],
-            'ProductionVariants': config.production_variants,
+            'EndpointStatus': endpoint['latest_operation'].status(),
+            'CreationTime': endpoint['created_time'],
+            'LastModifiedTime': endpoint['latest_operation'].created_time,
+            'ProductionVariants': config['ProductionVariants'],
         }
 
     def delete_endpoint(self, endpoint_name):
@@ -179,6 +179,10 @@ class SageMakerBackend(BaseBackend):
                 raise ValueError(
                     'Model {} does not exist'.format(production_variant['ModelName'])
                 )
+            model = self.models[production_variant['ModelName']]
+            production_variant['DeployedImages'] = [{
+                'SpecifiedImage': model['PrimaryContainer']['Image'],
+            }]
 
         info = {
             'EndpointConfigName': endpoint_config_name,
@@ -221,9 +225,10 @@ class SageMakerBackend(BaseBackend):
                 'Endpoint configuration {} does not exist'.format(config_name)
             )
         endpoint = self.endpoints[endpoint_name]
-        endpoint.resource.config_name = config_name
+        endpoint['EndpointConfigName'] = config_name
+        endpoint['latest_operation'] = EndpointOperation.update_successful(time.time())
 
-        return endpoint
+        return {'arn': endpoint['arn']}
 
 
 sagemaker_backends = {}

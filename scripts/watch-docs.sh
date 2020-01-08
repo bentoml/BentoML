@@ -7,10 +7,10 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 trap 'kill $(jobs -p)' EXIT
 
 echo "Initial docs build..."
-sphinx-build $GIT_ROOT/docs $GIT_ROOT/built-docs
+cd $GIT_ROOT/docs && make html
 
 echo "Starting local http server for preview..."
-python3 -m http.server --directory $GIT_ROOT/built-docs &
+python3 -m http.server --directory $GIT_ROOT/docs/build/html &
 
 echo "Open browser..."
 open -a "Google Chrome" http://0.0.0.0:8000/
@@ -18,7 +18,7 @@ open -a "Google Chrome" http://0.0.0.0:8000/
 fswatch -o $GIT_ROOT/docs $GIT_ROOT/bentoml | while read; \
   do \
     echo "Change detected, rebuilding docs..."
-    sphinx-build -E $GIT_ROOT/docs $GIT_ROOT/built-docs
+    cd $GIT_ROOT/docs && make html
 
     # refresh page
     osascript -e '

@@ -106,17 +106,31 @@ $ pip install -e .[dev]
 
 To build documentation for locally:
 ```bash
-$ ./scripts/build-docs.sh
+$ ./docs/build.sh
 ```
 
 Modify \*.rst files inside the `docs` folder to update content, and to
 view your changes, run the following command:
 
 ```
-$ python -m http.server --directory built-docs
+$ python -m http.server --directory ./docs/build/html
 ```
 
 And go to your browser at `http://localhost:8000`
+
+If you are developing under `macOS`, we also made a script that watches docs
+file changes, automatically rebuild the docs html files, and refresh the browser
+tab to show the change:
+
+Make sure you have fswatch command installed:
+```
+brew install fswatch
+```
+
+Run the `watch.sh` script to start watching docs changes:
+```
+$ ./docs/watch.sh
+```
 
 
 ## Creating Pull Request on Github

@@ -31,7 +31,7 @@ and common deployment platforms including major cloud providers and docker/kuber
 
 ## Getting Started
 
-Installation with pip:
+Installing BentoML with `pip`:
 ```bash
 pip install bentoml
 ```
@@ -103,32 +103,17 @@ used to build a docker image for deployment:
 docker build -t my_api_server {saved_path}
 ```
 
-The saved BentoService bundle can also be loaded directly from command line:
-```bash
-bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
-
-# alternatively:
-bentoml predict {saved_path} --input='./iris_test_data.csv'
-```
-
-The saved bundle is pip-installable and can be directly distributed as a PyPI package:
-```bash
-pip install {saved_path}
-```
-```python
-# Your BentoService class name will become packaged name
-import IrisClassifier
-
-installed_svc = IrisClassifier.load()
-installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
-```
-
 Deploy the saved BentoService to cloud services such as AWS Lambda with the `bentoml `command:
 ```
 bentoml deployment create my-iris-classifier --bento IrisClassifier:{VERSION} --platform=aws-lambda
 ```
 
-To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a trained sklearn model into a containerized REST API server, and then deploy it to AWS Lambda: [Download](https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [nbviewer](https://nbviewer.jupyter.org/github/bentoml/bentoml/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+Try out the full quickstart notebook: [Source](https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [nbviewer](https://nbviewer.jupyter.org/github/bentoml/bentoml/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+
+
+## Documentation
+
+Full documentation and API references can be found at [bentoml.readthedocs.io](http://bentoml.readthedocs.io)
 
 
 ## Examples
@@ -182,54 +167,13 @@ To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a t
 
 ### Deployment guides:
 
+
 - [BentoML AWS Lambda Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-serverless)
 - [BentoML AWS SageMaker Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-sagemaker)
 - [BentoML Clipper.ai Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/bentoml-clipper-deployment-guide.ipynb)
 - [BentoML AWS ECS Deployment Guide](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-aws-ecs)
 - [BentoML Google Cloud Run Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-google-cloud-run/deploy-with-google-cloud-run.ipynb)
 - [BentoML Kubernetes Deployment Guide](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
-
-
-## Feature Highlights
-
-
-* __Multiple Distribution Format__ - Easily package your Machine Learning models
-  and preprocessing code into a format that works best with your inference scenario:
-  * Docker Image - deploy as containers running REST API Server
-  * PyPI Package - integrate into your python applications seamlessly
-  * CLI tool - put your model into Airflow DAG or CI/CD pipeline
-  * Spark UDF - run batch serving on a large dataset with Spark
-  * Serverless Function - host your model on serverless platforms such as AWS Lambda
-
-* __Multiple Framework Support__ - BentoML supports a wide range of ML frameworks
-  out-of-the-box including [Tensorflow](https://github.com/tensorflow/tensorflow/),
-  [PyTorch](https://github.com/pytorch/pytorch),
-  [Keras](https://keras.io/),
-  [Scikit-Learn](https://github.com/scikit-learn/scikit-learn),
-  [xgboost](https://github.com/dmlc/xgboost),
-  [H2O](https://github.com/h2oai/h2o-3),
-  [FastAI](https://github.com/fastai/fastai) and can be easily extended to work
-  with new or custom frameworks
-
-* __Deploy Anywhere__ - BentoService bundle can be easily deployed with
-  platforms such as [Docker](https://www.docker.com/),
-  [Kubernetes](https://kubernetes.io/),
-  [Serverless](https://github.com/serverless/serverless),
-  [Airflow](https://airflow.apache.org) and [Clipper](http://clipper.ai),
-  on cloud platforms including AWS, Google Cloud, and Azure
-
-* __Custom Runtime Backend__ - Easily integrate your python pre-processing code with
-  high-performance deep learning runtime backend, such as
-  [tensorflow-serving](https://github.com/tensorflow/serving)
-
-* __Workflow Designed For Teams__ - The YataiService component in BentoML provides
-  Web UI and APIs for managing and deploying all the models and prediction services
-  your team has created or deployed, in a centralized service.
-
-
-## Documentation
-
-Full documentation and API references can be found at [bentoml.readthedocs.io](http://bentoml.readthedocs.io)
 
 
 ## Usage Tracking

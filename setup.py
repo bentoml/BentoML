@@ -84,7 +84,13 @@ dev_requires = [
 ]
 
 
-docs_requires = ["sphinx", "sphinx-click", "sphinx_rtd_theme", "sphinxcontrib-fulltoc"]
+docs_requires = [
+    "sphinx",
+    "sphinx-click",
+    "sphinx_rtd_theme",
+    "sphinxcontrib-fulltoc",
+    "recommonmark",
+]
 
 dev_all = install_requires + dev_requires + optional_requires + docs_requires
 

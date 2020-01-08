@@ -29,3 +29,11 @@ ___________
    quickstart
    api/index
    cli
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

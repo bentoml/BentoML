@@ -639,8 +639,10 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 or ecr_image_path != current_ecr_image_tag
             ):
                 logger.debug(
-                    'Sagemaker model requires update. Delete current sagemaker model '
-                    'and creating new model'
+                    'Sagemaker model requires update. Delete current sagemaker model %s'
+                    'and creating new model %s',
+                    current_sagemaker_model_name,
+                    updated_sagemaker_model_name,
                 )
                 _delete_sagemaker_model_if_exist(
                     sagemaker_client, current_sagemaker_model_name
@@ -651,12 +653,21 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     ecr_image_path,
                     updated_sagemaker_config,
                 )
+            if (
+                current_sagemaker_endpoint_config_name
+                == updated_sagemaker_endpoint_config_name
+            ):
+                logger.debug(
+                    'Current sagemaker config name %s is same as updated one, '
+                    'deleting it before creat new config',
+                    current_sagemaker_endpoint_config_name,
+                )
+                _delete_sagemaker_endpoint_config_if_exist(
+                    sagemaker_client, current_sagemaker_endpoint_config_name
+                )
             logger.debug(
-                'Deleting current sagemaker endpoint configuration and then creating '
-                'new endpoint configuration'
-            )
-            _delete_sagemaker_endpoint_config_if_exist(
-                sagemaker_client, current_sagemaker_endpoint_config_name
+                'Creating new endpoint configuration %s',
+                updated_sagemaker_endpoint_config_name,
             )
             _create_sagemaker_endpoint_config(
                 sagemaker_client,
@@ -664,11 +675,21 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 updated_sagemaker_endpoint_config_name,
                 updated_sagemaker_config,
             )
-            logger.debug('Updating endpoint to new endpoint configuration')
+            logger.debug(
+                'Updating endpoint to new endpoint configuration %s',
+                updated_sagemaker_endpoint_config_name,
+            )
             _update_sagemaker_endpoint(
                 sagemaker_client,
                 sagemaker_endpoint_name,
                 updated_sagemaker_endpoint_config_name,
+            )
+            logger.debug(
+                'Deleting old sagemaker config %s',
+                current_sagemaker_endpoint_config_name,
+            )
+            _delete_sagemaker_endpoint_config_if_exist(
+                sagemaker_client, current_sagemaker_endpoint_config_name
             )
         except AWSServiceError as e:
             _try_clean_up_sagemaker_deployment_resource(deployment_pb)

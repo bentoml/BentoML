@@ -326,10 +326,8 @@ def test_sagemaker_update_deployment_with_new_bento_service_tag():
     mocked_sagemaker_deployment_pb_with_new_bento_service_tag.spec.bento_version = (
         'NEW_BENTO_VERSION'
     )
-    # need to mock describe call
     update_sagemaker_deployment_result = deployment_operator.update(
         mocked_sagemaker_deployment_pb_with_new_bento_service_tag,
         mocked_sagemaker_deployment_pb,
     )
-    print(update_sagemaker_deployment_result)
     assert update_sagemaker_deployment_result.status.status_code == Status.OK

@@ -180,9 +180,9 @@ class SageMakerBackend(BaseBackend):
                     'Model {} does not exist'.format(production_variant['ModelName'])
                 )
             model = self.models[production_variant['ModelName']]
-            production_variant['DeployedImages'] = [{
-                'SpecifiedImage': model['PrimaryContainer']['Image'],
-            }]
+            production_variant['DeployedImages'] = [
+                {'SpecifiedImage': model['PrimaryContainer']['Image'],}
+            ]
 
         info = {
             'EndpointConfigName': endpoint_config_name,

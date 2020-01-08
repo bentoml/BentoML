@@ -21,8 +21,11 @@ def run_sagemaker_create_or_update_command(deploy_command):
     logger.info('Finish deploying to AWS Sagemaker')
     logger.info(deployment_stdout)
 
-    if deployment_stdout.startswith('Failed to create deployment'):
+    if deployment_stdout.startswith(
+        'Failed to create deployment'
+    ) or deployment_stdout.startswith('Failed to update deployment'):
         deployment_failed = True
+        return deployment_failed, endpoint_name
     deployment_stdout_list = deployment_stdout.split('\n')
     for index, message in enumerate(deployment_stdout_list):
         if '"EndpointName":' in message:
@@ -169,7 +172,9 @@ if __name__ == '__main__':
     #     if not deployment_failed and endpoint_name:
     #         deployment_failed = test_deployment_result(endpoint_name, '1\n')
     # else:
-    #     logger.info('Deployment failed for updating env without changing BentoService')
+    #     logger.info(
+    #         'Deployment failed for updating env without changing BentoService'
+    #     )
 
     if not deployment_failed:
 

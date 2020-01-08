@@ -6,7 +6,7 @@ $ git clone https://github.com/bentoml/BentoML.git
 $ cd BentoML
 ```
 
-Ensure you have python and pip installed, BentoML supports python _2.7_, _3.6_, and _3.7_
+Ensure you have python and pip installed, BentoML supports python _3.6_, and _3.7_
 ```bash
 $ python --version
 ```
@@ -54,7 +54,7 @@ $ tox
 
 If you want to run tests under conda for specific version, use `-e` option:
 ```bash
-$ tox -e py27
+$ tox -e py37
 // or
 $ tox -e py36
 ```

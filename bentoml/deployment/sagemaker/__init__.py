@@ -234,12 +234,6 @@ def _aws_client_error_to_bentoml_exception(e, message_prefix=None):
 
 
 def _get_sagemaker_resource_names(deployment_pb):
-    """Generate sagemaker resource names for model, endpoint configuration, and endpoint
-
-    For model and endpoint config, we are also including 4 characters long random string
-    for the use cases of using the same bento service but with different configuration
-    or envvar
-    """
     sagemaker_model_name = generate_aws_compatible_string(
         (deployment_pb.namespace, 10),
         (deployment_pb.name, 12),

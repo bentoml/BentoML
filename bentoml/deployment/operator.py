@@ -65,7 +65,7 @@ class DeploymentOperatorBase(object):
         """
 
     @abstractmethod
-    def update(self, deployment_pb):
+    def update(self, deployment_pb, previous_deployment):
         """
         Update existing deployment based on deployment_pb spec
         """

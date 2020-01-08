@@ -545,16 +545,10 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
-    def update(self, deployment_pb):
+    def update(self, deployment_pb, previous_deployment):
         try:
             ensure_docker_available_or_raise()
             deployment_spec = deployment_pb.spec
-            previous_deployment = self.yatai_service.deployment_store.get(
-                deployment_pb.name, deployment_pb.namespace
-            )
-            if not previous_deployment:
-                raise BentoMLException('')
-
             bento_pb = self.yatai_service.GetBento(
                 GetBentoRequest(
                     bento_name=deployment_spec.bento_name,
@@ -598,6 +592,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         latest_deployment_state = json.loads(
             describe_latest_deployment_state.state.info_json
         )
+
         current_ecr_image_tag = latest_deployment_state['ProductionVariants'][0][
             'DeployedImages'
         ][0]['SpecifiedImage']
@@ -618,7 +613,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 ecr_image_path = create_and_push_docker_image_to_ecr(
                     updated_sagemaker_config.region,
                     updated_deployment_spec.bento_name,
-                    updated_sagemaker_config.bento_version,
+                    updated_deployment_spec.bento_version,
                     sagemaker_project_dir,
                 )
         else:
@@ -627,10 +622,16 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         try:
             (
-                sagemaker_model_name,
-                sagemaker_endpoint_config_name,
-                sagemaker_endpoint_name,
+                updated_sagemaker_model_name,
+                updated_sagemaker_endpoint_config_name,
+                updated_sagemaker_endpoint_name,
             ) = _get_sagemaker_resource_names(deployment_pb)
+            (
+                current_sagemaker_model_name,
+                current_sagemaker_endpoint_config_name,
+                _,
+            ) = _get_sagemaker_resource_names(current_deployment)
+
             if (
                 updated_sagemaker_config.api_name != current_sagemaker_config.api_name
                 or updated_sagemaker_config.num_of_gunicorn_workers_per_instance
@@ -641,10 +642,12 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     'Sagemaker model requires update. Delete current sagemaker model '
                     'and creating new model'
                 )
-                _delete_sagemaker_model_if_exist(sagemaker_client, sagemaker_model_name)
+                _delete_sagemaker_model_if_exist(
+                    sagemaker_client, current_sagemaker_model_name
+                )
                 _create_sagemaker_model(
                     sagemaker_client,
-                    sagemaker_model_name,
+                    updated_sagemaker_model_name,
                     ecr_image_path,
                     updated_sagemaker_config,
                 )
@@ -653,23 +656,25 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 'new endpoint configuration'
             )
             _delete_sagemaker_endpoint_config_if_exist(
-                sagemaker_client, sagemaker_endpoint_config_name
+                sagemaker_client, current_sagemaker_endpoint_config_name
             )
             _create_sagemaker_endpoint_config(
                 sagemaker_client,
-                sagemaker_model_name,
-                sagemaker_endpoint_config_name,
+                updated_sagemaker_model_name,
+                updated_sagemaker_endpoint_config_name,
                 updated_sagemaker_config,
             )
             logger.debug('Updating endpoint to new endpoint configuration')
             _update_sagemaker_endpoint(
                 sagemaker_client,
-                sagemaker_endpoint_name,
-                sagemaker_endpoint_config_name,
+                updated_sagemaker_endpoint_name,
+                updated_sagemaker_endpoint_config_name,
             )
         except AWSServiceError as e:
             _try_clean_up_sagemaker_deployment_resource(deployment_pb)
             raise e
+
+        return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
     def delete(self, deployment_pb):
         try:

@@ -98,7 +98,7 @@ class YataiService(YataiServicer):
 
             # deploying to target platform
             if previous_deployment:
-                response = operator.update(request.deployment)
+                response = operator.update(request.deployment, previous_deployment)
             else:
                 response = operator.add(request.deployment)
 

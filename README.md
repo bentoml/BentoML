@@ -168,7 +168,7 @@ Full documentation and API references can be found at [bentoml.readthedocs.io](h
 
 ### Deployment guides:
 
-* Automated deployment using BentoML YataiService:
+* Automated end-to-end deployment workflow with BentoML
   - [BentoML AWS Lambda Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-serverless)
   - [BentoML AWS SageMaker Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-sagemaker)
 
@@ -176,9 +176,9 @@ Full documentation and API references can be found at [bentoml.readthedocs.io](h
   - [BentoML Clipper.ai Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/bentoml-clipper-deployment-guide.ipynb)
 
 * Mannual Deployment
-  - [BentoML AWS ECS Deployment Guide](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-aws-ecs)
-  - [BentoML Google Cloud Run Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-google-cloud-run/deploy-with-google-cloud-run.ipynb)
-  - [BentoML Kubernetes Deployment Guide](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
+  - [BentoML AWS ECS Deployment](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-aws-ecs)
+  - [BentoML Google Cloud Run Deployment](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-google-cloud-run/deploy-with-google-cloud-run.ipynb)
+  - [BentoML Kubernetes Deployment](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
 
 
 ## Contributing

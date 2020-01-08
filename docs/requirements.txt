@@ -1,0 +1,5 @@
+sphinx
+sphinx-click
+sphinx_rtd_theme
+sphinxcontrib-fulltoc
+recommonmark

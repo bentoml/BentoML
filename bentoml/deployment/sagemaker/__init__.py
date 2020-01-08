@@ -68,9 +68,8 @@ RUN set -x \\
      && apt-get install -y nginx \\
      && rm -rf /var/lib/apt/lists/*
 
-# update conda, pre-install BentoML base dependencies
-RUN conda update conda -y \\
-      && conda install pip numpy scipy \\
+# pre-install BentoML base dependencies
+RUN conda install pip numpy scipy \\
       && pip install gunicorn gevent
 
 # copy over model files

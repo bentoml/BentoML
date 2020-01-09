@@ -142,7 +142,7 @@ def mock_sagemaker_deployment_wrapper(func):
     @patch('bentoml.deployment.sagemaker._init_sagemaker_project', MagicMock())
     @patch(
         'bentoml.deployment.sagemaker.get_default_aws_region',
-        MagicMock(return_value='mock_region')
+        MagicMock(return_value='mock_region'),
     )
     def mock_wrapper(*args, **kwargs):
         return func(*args, **kwargs)
@@ -310,3 +310,22 @@ def test_sagemaker_apply_duplicate_endpoint():
         with pytest.raises(ValueError) as error:
             deployment_operator.add(sagemaker_deployment_pb)
     assert str(error.value) == expect_value
+
+
+@mock_sagemaker_deployment_wrapper
+def test_sagemaker_update_deployment_with_new_bento_service_tag():
+    mocked_yatai_service = create_yatai_service_mock()
+    mocked_sagemaker_deployment_pb = generate_sagemaker_deployment_pb()
+    deployment_operator = SageMakerDeploymentOperator(mocked_yatai_service)
+    deployment_operator.add(mocked_sagemaker_deployment_pb)
+    mocked_sagemaker_deployment_pb_with_new_bento_service_tag = (
+        generate_sagemaker_deployment_pb()
+    )
+    mocked_sagemaker_deployment_pb_with_new_bento_service_tag.spec.bento_version = (
+        'NEW_BENTO_VERSION'
+    )
+    update_sagemaker_deployment_result = deployment_operator.update(
+        mocked_sagemaker_deployment_pb_with_new_bento_service_tag,
+        mocked_sagemaker_deployment_pb,
+    )
+    assert update_sagemaker_deployment_result.status.status_code == Status.OK

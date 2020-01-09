@@ -33,6 +33,7 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentRequest,
     ListDeploymentsRequest,
     ApplyDeploymentResponse,
+    Deployment,
 )
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
 from bentoml.proto.repository_pb2 import (
@@ -300,9 +301,79 @@ def create_deployment(
     return apply_response
 
 
-# TODO update_deployment is not finished.  It will be working on along with cli command
-def update_deployment(deployment_name, namespace, yatai_service=None):
-    raise NotImplementedError
+def update_sagemaker_deployment(
+    namespace,
+    deployment_name,
+    api_name=None,
+    instance_type=None,
+    instance_count=None,
+    num_of_gunicorn_workers_per_instance=None,
+    bento_name=None,
+    bento_version=None,
+    yatai_service=None,
+):
+    """ Update current sagemaker deployment
+
+    Args:
+        namespace:
+        deployment_name:
+        api_name:
+        instance_type:
+        instance_count:
+        num_of_gunicorn_workers_per_instance:
+        bento_name:
+        bento_version:
+        yatai_service:
+
+    Returns:
+        Protobuf message
+
+    Raises:
+         BentoMLException
+    """
+    if not yatai_service:
+        from bentoml.yatai import get_yatai_service
+        yatai_service = get_yatai_service()
+
+    get_deployment_result = get_deployment(namespace, deployment_name, yatai_service)
+    if get_deployment_result.status.status_code != status_pb2.Status.OK:
+        get_deployment_status = get_deployment_result.status
+        raise BentoMLException(
+            f'Failed to retrieve current deployment {deployment_name} in {namespace}. '
+            f'{status_pb2.Status.Code.Name(get_deployment_status.status_code)}'
+            f':{get_deployment_status.error_message}'
+        )
+
+    deployment_pb = get_deployment_result.deployment
+    if api_name:
+        deployment_pb.spec.sagemaker_operator_config.api_name = api_name
+    if instance_type:
+        deployment_pb.spec.sagemaker_operator_config.instance_type = instance_type
+    if instance_count:
+        deployment_pb.spec.sagemaker_operator_config.instance_count = instance_count
+    if num_of_gunicorn_workers_per_instance:
+        deployment_pb.spec.sagemaker_operator_config.num_of_gunicorn_workers_per_instance = (   # noqa E501
+            num_of_gunicorn_workers_per_instance
+        )
+    if bento_name:
+        deployment_pb.spec.bento_name = bento_name
+    if bento_version:
+        deployment_pb.spec.bento_version = bento_version
+
+    logger.debug(
+        'Updated configuration for sagemaker deployment %s', deployment_pb.name
+    )
+
+    apply_response = apply_deployment(deployment_pb, yatai_service)
+
+    if apply_response.status.status_code == status_pb2.Status.OK:
+        describe_response = describe_deployment(
+            deployment_pb.name, deployment_pb.namespace, yatai_service
+        )
+        if describe_response.status.status_code == status_pb2.Status.OK:
+            apply_response.deployment.state.CopyFrom(describe_response.state)
+            return apply_response
+    return apply_response
 
 
 def apply_deployment(deployment_info, yatai_service=None):
@@ -316,10 +387,14 @@ def apply_deployment(deployment_info, yatai_service=None):
             deployment_pb = deployment_dict_to_pb(deployment_info)
         elif isinstance(deployment_info, str):
             deployment_pb = deployment_yaml_string_to_pb(deployment_info)
+        elif isinstance(deployment_info, Deployment):
+            deployment_pb = deployment_info
         else:
             raise YataiDeploymentException(
                 'Unexpected argument type, expect deployment info to be str in yaml '
-                'format or a dict, instead got: {}'.format(str(type(deployment_info)))
+                'format or a dict or a deployment protobuf obj, instead got: {}'.format(
+                    str(type(deployment_info))
+                )
             )
 
         validation_errors = validate_deployment_pb_schema(deployment_pb)

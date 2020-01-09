@@ -437,6 +437,19 @@ def _create_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_
         )
 
 
+def _update_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_name):
+    try:
+        logger.debug("Updating sagemaker endpoint %s", endpoint_name)
+        update_endpoint_response = sagemaker_client.update_endpoint(
+            EndpointName=endpoint_name, EndpointConfigName=endpoint_config_name
+        )
+        logger.debug("AWS update endpoint response: %s", str(update_endpoint_response))
+    except ClientError as e:
+        raise _aws_client_error_to_bentoml_exception(
+            e, "Failed to update sagemaker endpoint"
+        )
+
+
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
     def add(self, deployment_pb):
         try:
@@ -526,11 +539,160 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
-    def update(self, deployment_pb):
-        raise NotImplementedError(
-            "Updating AWS SageMaker deployment is not supported in current version of "
-            "BentoML"
-        )
+    def update(self, deployment_pb, previous_deployment):
+        try:
+            ensure_docker_available_or_raise()
+            deployment_spec = deployment_pb.spec
+            bento_pb = self.yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
+            )
+            if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
+                raise BentoMLException(
+                    'BentoML currently not support {} repository'.format(
+                        BentoUri.StorageType.Name(bento_pb.bento.uri.type)
+                    )
+                )
+            return self._update(
+                deployment_pb, previous_deployment, bento_pb, bento_pb.bento.uri.uri
+            )
+        except BentoMLException as error:
+            deployment_pb.state.state = DeploymentState.ERROR
+            deployment_pb.state.error_message = (
+                f'Error updating SageMaker deployment: {str(error)}'
+            )
+            return ApplyDeploymentResponse(
+                status=error.status_proto, deployment=deployment_pb
+            )
+
+    def _update(self, deployment_pb, current_deployment, bento_pb, bento_path):
+        if loader._is_remote_path(bento_path):
+            with loader._resolve_remote_bundle_path(bento_path) as local_path:
+                return self._update(
+                    deployment_pb, current_deployment, bento_pb, local_path
+                )
+        updated_deployment_spec = deployment_pb.spec
+        updated_sagemaker_config = updated_deployment_spec.sagemaker_operator_config
+        sagemaker_client = boto3.client('sagemaker', updated_sagemaker_config.region)
+
+        try:
+            raise_if_api_names_not_found_in_bento_service_metadata(
+                bento_pb.bento.bento_service_metadata,
+                [updated_sagemaker_config.api_name],
+            )
+            describe_latest_deployment_state = self.describe(deployment_pb)
+            current_deployment_spec = current_deployment.spec
+            current_sagemaker_config = current_deployment_spec.sagemaker_operator_config
+            latest_deployment_state = json.loads(
+                describe_latest_deployment_state.state.info_json
+            )
+
+            current_ecr_image_tag = latest_deployment_state['ProductionVariants'][0][
+                'DeployedImages'
+            ][0]['SpecifiedImage']
+            if (
+                updated_deployment_spec.bento_name != current_deployment_spec.bento_name
+                or updated_deployment_spec.bento_version
+                != current_deployment_spec.bento_version
+            ):
+                logger.debug(
+                    'BentoService tag is different from current deployment, '
+                    'creating new docker image and push to ECR'
+                )
+                with TempDirectory() as temp_dir:
+                    sagemaker_project_dir = os.path.join(
+                        temp_dir, updated_deployment_spec.bento_name
+                    )
+                    _init_sagemaker_project(sagemaker_project_dir, bento_path)
+                    ecr_image_path = create_and_push_docker_image_to_ecr(
+                        updated_sagemaker_config.region,
+                        updated_deployment_spec.bento_name,
+                        updated_deployment_spec.bento_version,
+                        sagemaker_project_dir,
+                    )
+            else:
+                logger.debug('Using existing ECR image for Sagemaker model')
+                ecr_image_path = current_ecr_image_tag
+
+            (
+                updated_sagemaker_model_name,
+                updated_sagemaker_endpoint_config_name,
+                sagemaker_endpoint_name,
+            ) = _get_sagemaker_resource_names(deployment_pb)
+            (
+                current_sagemaker_model_name,
+                current_sagemaker_endpoint_config_name,
+                _,
+            ) = _get_sagemaker_resource_names(current_deployment)
+
+            if (
+                updated_sagemaker_config.api_name != current_sagemaker_config.api_name
+                or updated_sagemaker_config.num_of_gunicorn_workers_per_instance
+                != current_sagemaker_config.num_of_gunicorn_workers_per_instance
+                or ecr_image_path != current_ecr_image_tag
+            ):
+                logger.debug(
+                    'Sagemaker model requires update. Delete current sagemaker model %s'
+                    'and creating new model %s',
+                    current_sagemaker_model_name,
+                    updated_sagemaker_model_name,
+                )
+                _delete_sagemaker_model_if_exist(
+                    sagemaker_client, current_sagemaker_model_name
+                )
+                _create_sagemaker_model(
+                    sagemaker_client,
+                    updated_sagemaker_model_name,
+                    ecr_image_path,
+                    updated_sagemaker_config,
+                )
+            # When bento service tag is not changed, we need to delete the current
+            # endpoint configuration in order to create new one to avoid name collation
+            if (
+                current_sagemaker_endpoint_config_name
+                == updated_sagemaker_endpoint_config_name
+            ):
+                logger.debug(
+                    'Current sagemaker config name %s is same as updated one, '
+                    'delete it before create new endpoint config',
+                    current_sagemaker_endpoint_config_name,
+                )
+                _delete_sagemaker_endpoint_config_if_exist(
+                    sagemaker_client, current_sagemaker_endpoint_config_name
+                )
+            logger.debug(
+                'Create new endpoint configuration %s',
+                updated_sagemaker_endpoint_config_name,
+            )
+            _create_sagemaker_endpoint_config(
+                sagemaker_client,
+                updated_sagemaker_model_name,
+                updated_sagemaker_endpoint_config_name,
+                updated_sagemaker_config,
+            )
+            logger.debug(
+                'Updating endpoint to new endpoint configuration %s',
+                updated_sagemaker_endpoint_config_name,
+            )
+            _update_sagemaker_endpoint(
+                sagemaker_client,
+                sagemaker_endpoint_name,
+                updated_sagemaker_endpoint_config_name,
+            )
+            logger.debug(
+                'Delete old sagemaker endpoint config %s',
+                current_sagemaker_endpoint_config_name,
+            )
+            _delete_sagemaker_endpoint_config_if_exist(
+                sagemaker_client, current_sagemaker_endpoint_config_name
+            )
+        except AWSServiceError as e:
+            _try_clean_up_sagemaker_deployment_resource(deployment_pb)
+            raise e
+
+        return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
     def delete(self, deployment_pb):
         try:

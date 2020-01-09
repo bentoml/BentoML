@@ -39,7 +39,7 @@ from bentoml.proto.yatai_service_pb2 import (
 )
 from bentoml.deployment.operator import get_deployment_operator
 from bentoml.deployment.store import DeploymentStore
-from bentoml.exceptions import BentoMLException, InvalidArgument, YataiServiceRpcAborted
+from bentoml.exceptions import BentoMLException, InvalidArgument
 from bentoml.repository import BentoRepository
 from bentoml.repository.metadata_store import BentoMetadataStore
 from bentoml.db import init_db
@@ -88,14 +88,8 @@ class YataiService(YataiServicer):
             previous_deployment = self.deployment_store.get(
                 request.deployment.name, request.deployment.namespace
             )
-            if previous_deployment:
-                # check deployment platform
-                raise YataiServiceRpcAborted(
-                    'Deployment update is not supported in current version of BentoML'
-                )
-            else:
+            if not previous_deployment:
                 request.deployment.created_at.GetCurrentTime()
-
             request.deployment.last_updated_at.GetCurrentTime()
 
             self.deployment_store.insert_or_update(request.deployment)
@@ -103,7 +97,10 @@ class YataiService(YataiServicer):
             operator = get_deployment_operator(self, request.deployment)
 
             # deploying to target platform
-            response = operator.add(request.deployment)
+            if previous_deployment:
+                response = operator.update(request.deployment, previous_deployment)
+            else:
+                response = operator.add(request.deployment)
 
             if response.status.status_code == status_pb2.Status.OK:
                 # update deployment state

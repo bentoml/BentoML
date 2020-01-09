@@ -26,6 +26,15 @@ from bentoml.exceptions import InvalidArgument, YataiDeploymentException
 
 logger = logging.getLogger(__name__)
 
+SPEC_FIELDS_AVAILABLE_FOR_UPDATE = ['bento_name', 'bento_version']
+
+SAGEMAKER_FIELDS_AVAILABLE_FOR_UPDATE = [
+    'api_name',
+    'instance_type',
+    'instance_count',
+    'num_of_gunicorn_workers_per_instance',
+]
+
 
 def deployment_dict_to_pb(deployment_dict):
     deployment_pb = Deployment()

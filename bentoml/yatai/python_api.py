@@ -51,6 +51,8 @@ from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,
     deployment_dict_to_pb,
+    SAGEMAKER_FIELDS_AVAILABLE_FOR_UPDATE,
+    SPEC_FIELDS_AVAILABLE_FOR_UPDATE,
 )
 from bentoml.yatai.status import Status
 
@@ -303,12 +305,7 @@ def create_deployment(
 
 def update_deployment(deployment_pb, updated_operator_spec, yatai_service=None):
     if deployment_pb.spec.operator == DeploymentSpec.AWS_SAGEMAKER:
-        for field in [
-            'api_name',
-            'instance_type',
-            'instance_count',
-            'num_of_gunicorn_workers_per_instance',
-        ]:
+        for field in SAGEMAKER_FIELDS_AVAILABLE_FOR_UPDATE:
             if updated_operator_spec.get(field):
                 deployment_pb.spec.sagemaker_operator_config.__setattr__(
                     field, updated_operator_spec.get(field)
@@ -320,7 +317,7 @@ def update_deployment(deployment_pb, updated_operator_spec, yatai_service=None):
     else:
         raise NotImplementedError
 
-    for field in ['bento_name', 'bento_version']:
+    for field in SPEC_FIELDS_AVAILABLE_FOR_UPDATE:
         if updated_operator_spec.get(field):
             deployment_pb.spec.__setattr__(field, updated_operator_spec.get(field))
 

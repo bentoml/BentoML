@@ -11,9 +11,9 @@
 
 BentoML makes it easy to __serve and deploy machine learning models__ in the cloud.
 
-It is an open source framework for machine learning teams to build cloud-native prediction API
-services that are ready for production. BentoML supports most popular ML training frameworks
-and common deployment platforms including major cloud providers and docker/kubernetes.
+It is an open source framework for building cloud-native model serving services.
+BentoML supports most popular ML training frameworks and deployment platforms, including
+major cloud providers and docker/kubernetes.
 
 👉 [Join BentoML Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
  to hear about the latest development updates.
@@ -192,6 +192,14 @@ Want to help build BentoML? Check out our
 [development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
 
 
+## Releases
+
+BentoML is under active development and is evolving rapidly.
+Currently it is a Beta release, __we may change APIs in future releases__.
+
+Read more about the latest features and changes in BentoML from the [releases page](https://github.com/bentoml/BentoML/releases).
+
+
 
 ## Usage Tracking
 
@@ -213,15 +221,6 @@ bentoml config set usage_tracking=false
 import bentoml
 bentoml.config().set('core', 'usage_tracking', 'False')
 ```
-
-
-## Releases
-
-BentoML is under active development and is evolving rapidly. **Currently it is a
-Beta release, we may change APIs in future releases**.
-
-Read more about the latest features and changes in BentoML from the [releases page](https://github.com/bentoml/BentoML/releases).
-
 
 ## License
 

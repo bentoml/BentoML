@@ -46,7 +46,7 @@ from bentoml.yatai.python_api import (
     get_deployment,
     describe_deployment,
     list_deployments,
-    update_deployment,
+    update_sagemaker_deployment,
 )
 from bentoml.yatai import get_yatai_service
 
@@ -435,34 +435,24 @@ def get_deployment_sub_command():
         wait,
     ):
         yatai_service = get_yatai_service()
-        get_deployment_result = get_deployment(namespace, name, yatai_service)
-        if get_deployment_result.status.status_code != status_pb2.Status.OK:
-            get_deployment_status = get_deployment_result.status
-            _echo(
-                f'Failed to updated deployment {name}.'
-                f'{status_pb2.Status.Code.Name(get_deployment_status.status_code)}'
-                f':{get_deployment_status.error_message}',
-                CLI_COLOR_ERROR,
-            )
-            return
-        current_deployment = get_deployment_result.deployment
-        track_cli(
-            'deploy-update',
-            deploy_platform=DeploymentSpec.DeploymentOperator.Name(
-                current_deployment.spec.operator
-            ),
-        )
-        bento_name, bento_version = bento.split(':')
-        updated_spec = {
-            'bento_name': bento_name,
-            'bento_version': bento_version,
-            'instance_type': instance_type,
-            'instance_count': instance_count,
-            'num_of_gunicorn_workers_per_instance': num_of_gunicorn_workers_per_instance,  # noqa E501
-            'api_name': api_name,
-        }
+        track_cli('deploy-update')
+        if bento:
+            bento_name, bento_version = bento.split(':')
+        else:
+            bento_name = None
+            bento_version = None
         try:
-            result = update_deployment(current_deployment, updated_spec, yatai_service)
+            result = update_sagemaker_deployment(
+                namespace=namespace,
+                deployment_name=name,
+                bento_name=bento_name,
+                bento_version=bento_version,
+                instance_count=instance_count,
+                instance_type=instance_type,
+                num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
+                api_name=api_name,
+                yatai_service=yatai_service,
+            )
         except BentoMLException as e:
             _echo(f'Failed to update deployment {name}: {str(e)}', CLI_COLOR_ERROR)
             return
@@ -495,7 +485,7 @@ def get_deployment_sub_command():
         track_cli(
             'deploy-update-success',
             deploy_platform=DeploymentSpec.DeploymentOperator.Name(
-                current_deployment.spec.operator
+                result.deployment.spec.operator
             ),
         )
         _echo(f'Successfully updated deployment {name}', CLI_COLOR_SUCCESS)

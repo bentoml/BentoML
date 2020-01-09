@@ -577,44 +577,45 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         updated_sagemaker_config = updated_deployment_spec.sagemaker_operator_config
         sagemaker_client = boto3.client('sagemaker', updated_sagemaker_config.region)
 
-        raise_if_api_names_not_found_in_bento_service_metadata(
-            bento_pb.bento.bento_service_metadata, [updated_sagemaker_config.api_name]
-        )
-        describe_latest_deployment_state = self.describe(deployment_pb)
-        current_deployment_spec = current_deployment.spec
-        current_sagemaker_config = current_deployment_spec.sagemaker_operator_config
-        latest_deployment_state = json.loads(
-            describe_latest_deployment_state.state.info_json
-        )
-
-        current_ecr_image_tag = latest_deployment_state['ProductionVariants'][0][
-            'DeployedImages'
-        ][0]['SpecifiedImage']
-        if (
-            updated_deployment_spec.bento_name != current_deployment_spec.bento_name
-            or updated_deployment_spec.bento_version
-            != current_deployment_spec.bento_version
-        ):
-            logger.debug(
-                'BentoService tag is different from current deployment, creating new '
-                'docker image and push to ECR'
-            )
-            with TempDirectory() as temp_dir:
-                sagemaker_project_dir = os.path.join(
-                    temp_dir, updated_deployment_spec.bento_name
-                )
-                _init_sagemaker_project(sagemaker_project_dir, bento_path)
-                ecr_image_path = create_and_push_docker_image_to_ecr(
-                    updated_sagemaker_config.region,
-                    updated_deployment_spec.bento_name,
-                    updated_deployment_spec.bento_version,
-                    sagemaker_project_dir,
-                )
-        else:
-            logger.debug('Using existing ECR image for Sagemaker model')
-            ecr_image_path = current_ecr_image_tag
-
         try:
+            raise_if_api_names_not_found_in_bento_service_metadata(
+                bento_pb.bento.bento_service_metadata,
+                [updated_sagemaker_config.api_name],
+            )
+            describe_latest_deployment_state = self.describe(deployment_pb)
+            current_deployment_spec = current_deployment.spec
+            current_sagemaker_config = current_deployment_spec.sagemaker_operator_config
+            latest_deployment_state = json.loads(
+                describe_latest_deployment_state.state.info_json
+            )
+
+            current_ecr_image_tag = latest_deployment_state['ProductionVariants'][0][
+                'DeployedImages'
+            ][0]['SpecifiedImage']
+            if (
+                updated_deployment_spec.bento_name != current_deployment_spec.bento_name
+                or updated_deployment_spec.bento_version
+                != current_deployment_spec.bento_version
+            ):
+                logger.debug(
+                    'BentoService tag is different from current deployment, '
+                    'creating new docker image and push to ECR'
+                )
+                with TempDirectory() as temp_dir:
+                    sagemaker_project_dir = os.path.join(
+                        temp_dir, updated_deployment_spec.bento_name
+                    )
+                    _init_sagemaker_project(sagemaker_project_dir, bento_path)
+                    ecr_image_path = create_and_push_docker_image_to_ecr(
+                        updated_sagemaker_config.region,
+                        updated_deployment_spec.bento_name,
+                        updated_deployment_spec.bento_version,
+                        sagemaker_project_dir,
+                    )
+            else:
+                logger.debug('Using existing ECR image for Sagemaker model')
+                ecr_image_path = current_ecr_image_tag
+
             (
                 updated_sagemaker_model_name,
                 updated_sagemaker_endpoint_config_name,

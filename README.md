@@ -7,27 +7,31 @@
 
 > From ML model to production API endpoint with a few lines of code
 
-
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
-
-[Getting Started](https://github.com/bentoml/BentoML#getting-started) | [Documentation](http://bentoml.readthedocs.io) | [Gallery](https://github.com/bentoml/gallery) | [Contributing](https://github.com/bentoml/BentoML#contributing) | [Releases](https://github.com/bentoml/BentoML#releases) | [License](https://github.com/bentoml/BentoML/blob/master/LICENSE) | [Blog](https://medium.com/bentoml)
-
 
 BentoML makes it easy to __serve and deploy machine learning models__ in the cloud.
 
-It is an open source framework for machine learning teams to build cloud-native prediction API
-services that are ready for production. BentoML supports most popular ML training frameworks
-and common deployment platforms including major cloud providers and docker/kubernetes.
+It is an open source framework for building cloud-native model serving services.
+BentoML supports most popular ML training frameworks and deployment platforms, including
+major cloud providers and docker/kubernetes.
 
 👉 [Join BentoML Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
  to hear about the latest development updates.
 
 ---
 
+- [Getting Started](https://github.com/bentoml/BentoML#getting-started)
+- [Documentation](http://bentoml.readthedocs.io)
+- [Gallery](https://github.com/bentoml/gallery)
+- [Contributing](https://github.com/bentoml/BentoML#contributing)
+- [Releases](https://github.com/bentoml/BentoML#releases)
+- [License](https://github.com/bentoml/BentoML/blob/master/LICENSE)
+- [Blog](https://medium.com/bentoml)
+
 
 ## Getting Started
 
-Installation with pip:
+Installing BentoML with `pip`:
 ```bash
 pip install bentoml
 ```
@@ -99,32 +103,18 @@ used to build a docker image for deployment:
 docker build -t my_api_server {saved_path}
 ```
 
-The saved BentoService bundle can also be loaded directly from command line:
-```bash
-bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
-
-# alternatively:
-bentoml predict {saved_path} --input='./iris_test_data.csv'
-```
-
-The saved bundle is pip-installable and can be directly distributed as a PyPI package:
-```bash
-pip install {saved_path}
-```
-```python
-# Your BentoService class name will become packaged name
-import IrisClassifier
-
-installed_svc = IrisClassifier.load()
-installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
-```
-
-Deploy the saved BentoService to cloud services such as AWS Lambda with the `bentoml `command:
+You can also deploy your BentoService directly to cloud services such as AWS Lambda with `bentoml`, and
+get back a API endpoint hosting your model, that is ready for production use:
 ```
 bentoml deployment create my-iris-classifier --bento IrisClassifier:{VERSION} --platform=aws-lambda
 ```
 
-To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a trained sklearn model into a containerized REST API server, and then deploy it to AWS Lambda: [Download](https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [nbviewer](https://nbviewer.jupyter.org/github/bentoml/bentoml/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+Try out the full quickstart notebook: [Source](https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [nbviewer](https://nbviewer.jupyter.org/github/bentoml/bentoml/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+
+
+## Documentation
+
+Full documentation and API references can be found at [bentoml.readthedocs.io](http://bentoml.readthedocs.io)
 
 
 ## Examples
@@ -152,7 +142,7 @@ To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a t
 * Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb)
 * Toxic Comment Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb)
 
-### Tensorflow 2.0
+#### Tensorflow 2.0
 
 * tf.Function model - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb)
 
@@ -178,83 +168,59 @@ To learn more, try out our 5-mins Quick Start notebook using BentoML to turn a t
 
 ### Deployment guides:
 
-- [BentoML AWS Lambda Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-serverless)
-- [BentoML AWS SageMaker Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-sagemaker)
-- [BentoML Clipper.ai Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/bentoml-clipper-deployment-guide.ipynb)
-- [BentoML AWS ECS Deployment Guide](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-aws-ecs)
-- [BentoML Google Cloud Run Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-google-cloud-run/deploy-with-google-cloud-run.ipynb)
-- [BentoML Kubernetes Deployment Guide](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
+* Automated end-to-end deployment workflow with BentoML
+  - [BentoML AWS Lambda Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-serverless)
+  - [BentoML AWS SageMaker Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-sagemaker)
 
+* Clipper Deployment
+  - [BentoML Clipper.ai Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/bentoml-clipper-deployment-guide.ipynb)
 
-## Feature Highlights
+* Mannual Deployment
+  - [BentoML AWS ECS Deployment](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-aws-ecs)
+  - [BentoML Google Cloud Run Deployment](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-google-cloud-run/deploy-with-google-cloud-run.ipynb)
+  - [BentoML Kubernetes Deployment](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
 
-
-* __Multiple Distribution Format__ - Easily package your Machine Learning models
-  and preprocessing code into a format that works best with your inference scenario:
-  * Docker Image - deploy as containers running REST API Server
-  * PyPI Package - integrate into your python applications seamlessly
-  * CLI tool - put your model into Airflow DAG or CI/CD pipeline
-  * Spark UDF - run batch serving on a large dataset with Spark
-  * Serverless Function - host your model on serverless platforms such as AWS Lambda
-
-* __Multiple Framework Support__ - BentoML supports a wide range of ML frameworks
-  out-of-the-box including [Tensorflow](https://github.com/tensorflow/tensorflow/),
-  [PyTorch](https://github.com/pytorch/pytorch),
-  [Keras](https://keras.io/),
-  [Scikit-Learn](https://github.com/scikit-learn/scikit-learn),
-  [xgboost](https://github.com/dmlc/xgboost),
-  [H2O](https://github.com/h2oai/h2o-3),
-  [FastAI](https://github.com/fastai/fastai) and can be easily extended to work
-  with new or custom frameworks
-
-* __Deploy Anywhere__ - BentoService bundle can be easily deployed with
-  platforms such as [Docker](https://www.docker.com/),
-  [Kubernetes](https://kubernetes.io/),
-  [Serverless](https://github.com/serverless/serverless),
-  [Airflow](https://airflow.apache.org) and [Clipper](http://clipper.ai),
-  on cloud platforms including AWS, Google Cloud, and Azure
-
-* __Custom Runtime Backend__ - Easily integrate your python pre-processing code with
-  high-performance deep learning runtime backend, such as
-  [tensorflow-serving](https://github.com/tensorflow/serving)
-
-* __Workflow Designed For Teams__ - The YataiService component in BentoML provides
-  Web UI and APIs for managing and deploying all the models and prediction services
-  your team has created or deployed, in a centralized service.
-
-
-## Documentation
-
-Full documentation and API references can be found at [bentoml.readthedocs.io](http://bentoml.readthedocs.io)
-
-
-## Usage Tracking
-
-BentoML library by default reports basic usages using
-[Amplitude](https://amplitude.com). It helps BentoML authors to understand how
-people are using this tool and improve it over time. You can easily opt-out by
-running the following command from terminal:
-
-```bash
-bentoml config set usage_tracking=false
-```
 
 ## Contributing
 
 Have questions or feedback? Post a [new github issue](https://github.com/bentoml/BentoML/issues/new/choose)
 or discuss in our Slack channel: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
+
 Want to help build BentoML? Check out our
 [contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md) and the
 [development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
 
+
 ## Releases
 
-BentoML is under active development and is evolving rapidly. **Currently it is a
-Beta release, we may change APIs in future releases**.
+BentoML is under active development and is evolving rapidly.
+Currently it is a Beta release, __we may change APIs in future releases__.
 
 Read more about the latest features and changes in BentoML from the [releases page](https://github.com/bentoml/BentoML/releases).
 
+
+
+## Usage Tracking
+
+BentoML by default collects anonymous usage data using [Amplitude](https://amplitude.com).
+It only collects BentoML library's own actions and parameters, no user or model data will be collected.
+[Here is the code that does it](https://github.com/bentoml/BentoML/blob/master/bentoml/utils/usage_stats.py).
+
+This helps BentoML team to understand how the community is using this tool and
+what to build next. You can easily opt-out of usage tracking by running the following
+command:
+
+```bash
+# From terminal:
+bentoml config set usage_tracking=false
+```
+
+```python
+# From python:
+import bentoml
+bentoml.config().set('core', 'usage_tracking', 'False')
+```
 
 ## License
 

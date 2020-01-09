@@ -39,7 +39,7 @@ from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLException
 from bentoml.cli.utils import Spinner
-from bentoml.yatai.python_api import (
+from bentoml.yatai.client.legacy_client import (
     apply_deployment,
     create_deployment,
     delete_deployment,

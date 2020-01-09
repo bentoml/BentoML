@@ -15,13 +15,7 @@
 # List of APIs for accessing remote or local yatai service via Python
 
 
-import io
-import os
-import json
 import logging
-import tarfile
-import requests
-import shutil
 
 from bentoml import config
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
@@ -36,17 +30,7 @@ from bentoml.proto.deployment_pb2 import (
     Deployment,
 )
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
-from bentoml.proto.repository_pb2 import (
-    AddBentoRequest,
-    GetBentoRequest,
-    BentoUri,
-    UpdateBentoRequest,
-    UploadStatus,
-)
 from bentoml.proto import status_pb2
-from bentoml.utils.usage_stats import track_save
-from bentoml.utils.tempdir import TempDirectory
-from bentoml.bundler import save_to_dir, load_bento_service_metadata
 from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,
@@ -55,147 +39,6 @@ from bentoml.yatai.deployment_utils import (
 from bentoml.yatai.status import Status
 
 logger = logging.getLogger(__name__)
-
-
-def upload_bento_service(bento_service, base_path=None, version=None):
-    """Save given bento_service via BentoML's default Yatai service, which manages
-    all saved Bento files and their deployments in cloud platforms. If remote yatai
-    service has not been configured, this will default to saving new Bento to local
-    file system under BentoML home directory
-
-    Args:
-        bento_service (bentoml.service.BentoService): a Bento Service instance
-        base_path (str): optional, base path of the bento repository
-        version (str): optional,
-    Return:
-        URI to where the BentoService is being saved to
-    """
-    track_save(bento_service)
-
-    with TempDirectory() as tmpdir:
-        save_to_dir(bento_service, tmpdir, version)
-        return _upload_bento_service(tmpdir, base_path)
-
-
-def _upload_bento_service(saved_bento_path, base_path):
-    bento_service_metadata = load_bento_service_metadata(saved_bento_path)
-
-    from bentoml.yatai import get_yatai_service
-
-    # if base_path is not None, default repository base path in config will be override
-    if base_path is not None:
-        logger.warning("Overriding default repository path to '%s'", base_path)
-    yatai = get_yatai_service(repo_base_url=base_path)
-
-    get_bento_response = yatai.GetBento(
-        GetBentoRequest(
-            bento_name=bento_service_metadata.name,
-            bento_version=bento_service_metadata.version,
-        )
-    )
-    if get_bento_response.status.status_code == status_pb2.Status.OK:
-        raise BentoMLException(
-            "BentoService bundle {}:{} already registered in repository. Reset "
-            "BentoService version with BentoService#set_version or bypass BentoML's "
-            "model registry feature with BentoService#save_to_dir".format(
-                bento_service_metadata.name, bento_service_metadata.version
-            )
-        )
-    elif get_bento_response.status.status_code != status_pb2.Status.NOT_FOUND:
-        raise BentoMLException(
-            'Failed accessing YataiService. {error_code}:'
-            '{error_message}'.format(
-                error_code=Status.Name(get_bento_response.status.status_code),
-                error_message=get_bento_response.status.error_message,
-            )
-        )
-    request = AddBentoRequest(
-        bento_name=bento_service_metadata.name,
-        bento_version=bento_service_metadata.version,
-    )
-    response = yatai.AddBento(request)
-
-    if response.status.status_code != status_pb2.Status.OK:
-        raise BentoMLException(
-            "Error adding BentoService bundle to repository: {}:{}".format(
-                Status.Name(response.status.status_code), response.status.error_message
-            )
-        )
-
-    if response.uri.type == BentoUri.LOCAL:
-        if os.path.exists(response.uri.uri):
-            # due to copytree dst must not already exist
-            shutil.rmtree(response.uri.uri)
-        shutil.copytree(saved_bento_path, response.uri.uri)
-
-        _update_bento_upload_progress(yatai, bento_service_metadata)
-
-        logger.info(
-            "BentoService bundle '%s:%s' created at: %s",
-            bento_service_metadata.name,
-            bento_service_metadata.version,
-            response.uri.uri,
-        )
-        # Return URI to saved bento in repository storage
-        return response.uri.uri
-    elif response.uri.type == BentoUri.S3:
-        _update_bento_upload_progress(
-            yatai, bento_service_metadata, UploadStatus.UPLOADING, 0
-        )
-
-        fileobj = io.BytesIO()
-        with tarfile.open(mode="w:gz", fileobj=fileobj) as tar:
-            tar.add(saved_bento_path, arcname=bento_service_metadata.name)
-        fileobj.seek(0, 0)
-
-        files = {'file': ('dummy', fileobj)}  # dummy file name because file name
-        # has been generated when getting the pre-signed signature.
-        data = json.loads(response.uri.additional_fields)
-        uri = data.pop('url')
-        http_response = requests.post(uri, data=data, files=files)
-
-        if http_response.status_code != 204:
-            _update_bento_upload_progress(
-                yatai, bento_service_metadata, UploadStatus.ERROR
-            )
-
-            raise BentoMLException(
-                "Error saving BentoService bundle to S3. {}: {} ".format(
-                    Status.Name(http_response.status_code), http_response.text
-                )
-            )
-
-        _update_bento_upload_progress(yatai, bento_service_metadata)
-
-        logger.info(
-            "Successfully saved BentoService bundle '%s:%s' to S3: %s",
-            bento_service_metadata.name,
-            bento_service_metadata.version,
-            response.uri.uri,
-        )
-
-        return response.uri.uri
-
-    else:
-        raise BentoMLException(
-            "Error saving Bento to target repository, URI type %s at %s not supported"
-            % response.uri.type,
-            response.uri.uri,
-        )
-
-
-def _update_bento_upload_progress(
-    yatai, bento_service_metadata, status=UploadStatus.DONE, percentage=None
-):
-    upload_status = UploadStatus(status=status, percentage=percentage)
-    upload_status.updated_at.GetCurrentTime()
-    update_bento_req = UpdateBentoRequest(
-        bento_name=bento_service_metadata.name,
-        bento_version=bento_service_metadata.version,
-        upload_status=upload_status,
-        service_metadata=bento_service_metadata,
-    )
-    yatai.UpdateBento(update_bento_req)
 
 
 def create_deployment(
@@ -333,6 +176,7 @@ def update_sagemaker_deployment(
     """
     if not yatai_service:
         from bentoml.yatai import get_yatai_service
+
         yatai_service = get_yatai_service()
 
     get_deployment_result = get_deployment(namespace, deployment_name, yatai_service)
@@ -352,7 +196,7 @@ def update_sagemaker_deployment(
     if instance_count:
         deployment_pb.spec.sagemaker_operator_config.instance_count = instance_count
     if num_of_gunicorn_workers_per_instance:
-        deployment_pb.spec.sagemaker_operator_config.num_of_gunicorn_workers_per_instance = (   # noqa E501
+        deployment_pb.spec.sagemaker_operator_config.num_of_gunicorn_workers_per_instance = (  # noqa E501
             num_of_gunicorn_workers_per_instance
         )
     if bento_name:

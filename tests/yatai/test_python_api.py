@@ -8,7 +8,7 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsResponse,
 )
 from bentoml.proto import status_pb2
-from bentoml.yatai.python_api import apply_deployment, create_deployment
+from bentoml.yatai.client.legacy_client import apply_deployment, create_deployment
 from bentoml.yatai.status import Status
 
 

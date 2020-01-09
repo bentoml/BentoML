@@ -21,7 +21,7 @@ import logging
 
 
 from bentoml import config
-from bentoml.yatai.python_api import upload_bento_service
+
 
 logger = logging.getLogger(__name__)
 
@@ -74,4 +74,4 @@ def get_yatai_service(
         )
 
 
-__all__ = ["get_yatai_service", "upload_bento_service"]
+__all__ = ["get_yatai_service"]

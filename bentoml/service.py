@@ -354,7 +354,7 @@ def save(bento_service, base_path=None, version=None):
     else:
         yatai_client = YataiClient()
 
-    return yatai_client.upload_bento_service(bento_service, version)
+    return yatai_client.repository.upload(bento_service, version)
 
 
 class BentoService(BentoServiceBase):

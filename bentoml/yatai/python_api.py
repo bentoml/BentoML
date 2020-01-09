@@ -51,8 +51,6 @@ from bentoml.utils.validator import validate_deployment_pb_schema
 from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,
     deployment_dict_to_pb,
-    SAGEMAKER_FIELDS_AVAILABLE_FOR_UPDATE,
-    SPEC_FIELDS_AVAILABLE_FOR_UPDATE,
 )
 from bentoml.yatai.status import Status
 

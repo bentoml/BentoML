@@ -19,6 +19,7 @@ import logging
 
 from bentoml.yatai import get_yatai_service
 from bentoml.yatai.client.bento_repository_api import BentoRepositoryAPIClient
+from bentoml.yatai.client.deployment_api import DeploymentAPIClient
 
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class YataiClient:
     def __init__(self, yatai_service=None):
         self.yatai_service = yatai_service if yatai_service else get_yatai_service()
         self.bento_repository_api_client = None
+        self.deployment_api_client = None
 
     @property
     def repository(self):
@@ -40,3 +42,10 @@ class YataiClient:
             )
 
         return self.bento_repository_api_client
+
+    @property
+    def deployment(self):
+        if not self.deployment_api_client:
+            self.deployment_api_client = DeploymentAPIClient(self.yatai_service)
+
+        return self.deployment_api_client

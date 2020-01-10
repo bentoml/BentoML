@@ -133,8 +133,8 @@ class DeploymentAPIClient:
         if get_deployment_pb.status.status_code == status_pb2.Status.OK:
             raise YataiDeploymentException(
                 'Deployment "{name}" already existed, use Update or Apply for updating '
-                'existing deployment, delete the deployment, or use a different deployment '
-                'name'.format(name=deployment_name)
+                'existing deployment, delete the deployment, or use a different '
+                'deployment name'.format(name=deployment_name)
             )
         if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
             raise YataiDeploymentException(
@@ -245,7 +245,8 @@ class DeploymentAPIClient:
         if get_deployment_result.status.status_code != status_pb2.Status.OK:
             get_deployment_status = get_deployment_result.status
             raise BentoMLException(
-                f'Failed to retrieve current deployment {deployment_name} in {namespace}. '
+                f'Failed to retrieve current deployment {deployment_name} in '
+                f'{namespace}. '
                 f'{status_pb2.Status.Code.Name(get_deployment_status.status_code)}'
                 f':{get_deployment_status.error_message}'
             )

@@ -463,11 +463,12 @@ def get_deployment_sub_command():
                     message='Updating deployment',
                 )
                 if result_state.status.status_code != status_pb2.Status.OK:
-                    describe_deployment_status = result_state.status
+                    error_code = status_pb2.Status.Code.Name(
+                        result_state.status.status_code
+                    )
                     _echo(
                         f'Updated deployment {name}. Failed to retrieve latest status. '
-                        f'{status_pb2.Status.Code.Name(describe_deployment_status.status_code)}:'  # noqa E501
-                        f'{describe_deployment_status.error_message}'
+                        f'{error_code}:{result_state.status.error_message}'
                     )
                     return
                 result.deployment.state.CopyFrom(result_state.state)

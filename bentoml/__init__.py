@@ -35,11 +35,8 @@ from bentoml.service import (
     env_decorator as env,
     artifacts_decorator as artifacts,
     ver_decorator as ver,
+    save,
 )
-from bentoml.yatai.python_api import upload_bento_service
-
-
-save = upload_bento_service
 
 
 __all__ = [

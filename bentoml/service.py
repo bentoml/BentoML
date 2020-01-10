@@ -344,6 +344,19 @@ def _validate_version_str(version_str):
         )
 
 
+def save(bento_service, base_path=None, version=None):
+    from bentoml.yatai.client import YataiClient
+    from bentoml.yatai import get_yatai_service
+
+    if base_path:
+        yatai_service = get_yatai_service(repo_base_url=base_path)
+        yatai_client = YataiClient(yatai_service)
+    else:
+        yatai_client = YataiClient()
+
+    return yatai_client.repository.upload(bento_service, version)
+
+
 class BentoService(BentoServiceBase):
     """BentoService packs a list of artifacts and exposes service APIs
     for BentoAPIServer and BentoCLI to execute. By subclassing BentoService,
@@ -501,9 +514,7 @@ class BentoService(BentoServiceBase):
         return self._bento_service_version
 
     def save(self, base_path=None, version=None):
-        from bentoml.yatai import python_api
-
-        return python_api.upload_bento_service(self, base_path, version)
+        return save(self, base_path, version)
 
     def save_to_dir(self, path, version=None):
         return save_to_dir(self, path, version)

@@ -68,11 +68,17 @@ class DeploymentAPIClient:
         )
 
     def get(self, namespace, name):
+        namespace = (
+            namespace if namespace else config().get('deployment', 'default_namespace')
+        )
         return self.yatai_service.GetDeployment(
             GetDeploymentRequest(deployment_name=name, namespace=namespace)
         )
 
     def describe(self, namespace, name):
+        namespace = (
+            namespace if namespace else config().get('deployment', 'default_namespace')
+        )
         return self.yatai_service.DescribeDeployment(
             DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
         )
@@ -86,7 +92,7 @@ class DeploymentAPIClient:
             )
         )
 
-    def apply_deployment(self, deployment_info):
+    def apply(self, deployment_info):
         if isinstance(deployment_info, dict):
             deployment_pb = deployment_dict_to_pb(deployment_info)
         elif isinstance(deployment_info, str):
@@ -103,12 +109,9 @@ class DeploymentAPIClient:
 
         validation_errors = validate_deployment_pb_schema(deployment_pb)
         if validation_errors:
-            return ApplyDeploymentResponse(
-                status=Status.INVALID_ARGUMENT(
-                    'Failed to validate deployment: {errors}'.format(
-                        errors=validation_errors
-                    )
-                )
+            raise YataiDeploymentException(
+                f'Failed to validate deployment {deployment_pb.name}: '
+                f'{validation_errors}'
             )
 
         return self.yatai_service.ApplyDeployment(
@@ -210,6 +213,82 @@ class DeploymentAPIClient:
 
         return apply_response
 
+    def create_sagemaker_deployment(
+        self,
+        name,
+        bento_name,
+        bento_version,
+        api_name,
+        instance_type,
+        instance_count,
+        num_of_gunicorn_workers_per_instance=None,
+        region=None,
+        namespace=None,
+        labels=None,
+        annotations=None,
+    ):
+        """Create SageMaker deployment
+
+        Args:
+            name:
+            bento_name:
+            bento_version:
+            api_name:
+            instance_type:
+            instance_count:
+            num_of_gunicorn_workers_per_instance:
+            region:
+            namespace:
+            labels:
+            annotations:
+
+        Returns:
+            ApplyDeploymentResponse: protobuf
+
+        Raises:
+            BentoMLException
+        """
+        namespace = (
+            namespace if namespace else config().get('deployment', 'default_namespace')
+        )
+        # Make sure there is no active deployment with the same deployment name
+        get_deployment_pb = self.yatai_service.GetDeployment(
+            GetDeploymentRequest(deployment_name=name, namespace=namespace)
+        )
+        if get_deployment_pb.status.status_code == status_pb2.Status.OK:
+            raise BentoMLException(
+                f'Deployment "{name}" already existed, use Update or Apply for '
+                f'updating existing deployment, delete the deployment, or use a '
+                f'different deployment name'
+            )
+
+        deployment_pb = Deployment(
+            name=name, namespace=namespace, labels=labels, annotations=annotations
+        )
+        deployment_pb.namespace = (
+            namespace if namespace else config().get('deployment', 'default_namespace')
+        )
+        deployment_pb.spec.bento_name = bento_name
+        deployment_pb.spec.bento_version = bento_version
+        deployment_pb.spec.operator = DeploymentSpec.AWS_SAGEMAKER
+        deployment_pb.spec.sagemaker_operator_config.api_name = api_name
+        deployment_pb.spec.sagemaker_operator_config.instance_count = instance_count
+        deployment_pb.spec.sagemaker_operator_config.instance_type = instance_type
+        if region:
+            deployment_pb.spec.sagemaker_operator_config.region = region
+        if num_of_gunicorn_workers_per_instance:
+            deployment_pb.spec.sagemaker_operator_config.num_of_gunicorn_workers_per_instance = (  # noqa E501
+                num_of_gunicorn_workers_per_instance
+            )
+
+        apply_response = self.apply(deployment_pb)
+        if apply_response.status.status_code == status_pb2.Status.OK:
+            describe_response = self.describe(name, namespace)
+            if describe_response.status.status_code == status_pb2.Status.OK:
+                deployment_state = describe_response.state
+                apply_response.deployment.state.CopyFrom(deployment_state)
+        return apply_response
+
     def update_sagemaker_deployment(
         self,
         namespace,
@@ -281,3 +360,24 @@ class DeploymentAPIClient:
                 apply_response.deployment.state.CopyFrom(describe_response.state)
                 return apply_response
         return apply_response
+
+    def list_sagemaker_deployments(
+        self,
+        limit=None,
+        filters=None,
+        labels=None,
+        namespace=None,
+        is_all_namespaces=False,
+    ):
+        list_result = self.list(limit, filters, labels, namespace, is_all_namespaces)
+        if list_result.status.status_code != status_pb2.Status.OK:
+            return list_result
+
+        sagemaker_deployments = [
+            deployment
+            for deployment in list_result.deployments
+            if deployment.spec.operator == DeploymentSpec.AWS_SAGEMAKER
+        ]
+        del list_result.deployments[:]
+        list_result.deployments.extend(sagemaker_deployments)
+        return list_result

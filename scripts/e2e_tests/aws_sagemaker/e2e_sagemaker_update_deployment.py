@@ -22,8 +22,8 @@ def run_sagemaker_create_or_update_command(deploy_command):
     logger.info(deployment_stdout)
 
     if deployment_stdout.startswith(
-        'Failed to create deployment'
-    ) or deployment_stdout.startswith('Failed to update deployment'):
+        'Failed to create Sagemaker deployment'
+    ) or deployment_stdout.startswith('Failed to update Sagemaker deployment'):
         deployment_failed = True
         return deployment_failed, endpoint_name
     deployment_stdout_list = deployment_stdout.split('\n')
@@ -135,13 +135,12 @@ if __name__ == '__main__':
     create_deployment_command = [
         'bentoml',
         '--verbose',
+        'aws-sagemaker',
         'deploy',
-        'create',
+        '--name',
         deployment_name,
         '-b',
         bento_name,
-        '--platform',
-        'aws-sagemaker',
         '--api-name',
         'classify',
     ]
@@ -188,8 +187,9 @@ if __name__ == '__main__':
         update_bento_version_deployment_command = [
             'bentoml',
             '--verbose',
-            'deploy',
+            'aws-sagemaker',
             'update',
+            '--name',
             deployment_name,
             '-b',
             bento_name,

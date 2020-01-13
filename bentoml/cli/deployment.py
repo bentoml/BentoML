@@ -614,70 +614,43 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
 
-    @deployment.command(help='Get deployment current state')
-    @click.argument("name", type=click.STRING, required=True)
-    @click.option('-n', '--namespace', type=click.STRING, help='Deployment namespace')
-    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
-    def get(name, output, namespace):
-        track_cli('deploy-get')
-
-        yatai_client = YataiClient()
-        result = yatai_client.deployment.get(namespace, name)
-        if result.status.status_code != status_pb2.Status.OK:
-            _echo(
-                'Failed to get deployment {name}. code: {error_code}, message: '
-                '{error_message}'.format(
-                    name=name,
-                    error_code=status_pb2.Status.Code.Name(result.status.status_code),
-                    error_message=result.status.error_message,
-                ),
-                CLI_COLOR_ERROR,
-            )
-        else:
-            _print_deployment_info(result.deployment, output)
-
-    @deployment.command(help='View the detailed state of the deployment')
+    @deployment.command(help='Get deployment info')
     @click.argument("name", type=click.STRING, required=True)
     @click.option(
         '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "default" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration file',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
-    def describe(name, output, namespace):
-        track_cli('deploy-describe')
+    def get(name, output, namespace):
+        track_cli('deploy-get')
         yatai_client = YataiClient()
-
-        result = yatai_client.deployment.describe(namespace, name)
-        if result.status.status_code != status_pb2.Status.OK:
+        get_result = yatai_client.deployment.get(namespace, name)
+        if get_result.status.status_code != status_pb2.Status.OK:
+            error_code = status_pb2.Status.Code.Name(get_result.status.status_code)
+            error_message = get_result.status.error_message
             _echo(
-                'Failed to describe deployment {name}. {error_code}:'
-                '{error_message}'.format(
-                    name=name,
-                    error_code=status_pb2.Status.Code.Name(result.status.status_code),
-                    error_message=result.status.error_message,
-                ),
+                f'Failed to get deployment {name}. '
+                f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
-        else:
-            get_result = yatai_client.deployment.get(namespace, name)
-            if get_result.status.status_code != status_pb2.Status.OK:
-                _echo(
-                    'Failed to describe deployment {name}. {error_code}:'
-                    '{error_message}'.format(
-                        name=name,
-                        error_code=status_pb2.Status.Code.Name(
-                            result.status.status_code
-                        ),
-                        error_message=result.status.error_message,
-                    ),
-                    CLI_COLOR_ERROR,
-                )
-            deployment_pb = get_result.deployment
-            deployment_pb.state.CopyFrom(result.state)
-            _print_deployment_info(deployment_pb, output)
+            return
+        describe_result = yatai_client.deployment.describe(namespace, name)
+        if describe_result.status.status_code != status_pb2.Status.OK:
+            error_code = status_pb2.Status.Code.Name(
+                describe_result.status.status_code
+            )
+            error_message = describe_result.status.error_message
+            _echo(
+                f'Failed to retrieve the latest status for deployment '
+                f'{name}. {error_code}:{error_message}',
+                CLI_COLOR_ERROR,
+            )
+            return
+        get_result.deployment.state.CopyFrom(describe_result.state)
+        _print_deployment_info(get_result.deployment, output)
 
     @deployment.command(name="list", help='List active deployments')
     @click.option(
@@ -728,3 +701,17 @@ def get_deployment_sub_command():
             _print_deployments_info(result.deployments, output)
 
     return deployment
+
+
+def add_additional_deployment_commands(cli):
+    @cli.command()
+    def deploy():
+        pass
+
+    @cli.command()
+    def apply():
+        pass
+
+    @cli.command()
+    def delete():
+        pass

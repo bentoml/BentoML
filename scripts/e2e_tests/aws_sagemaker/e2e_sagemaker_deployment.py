@@ -83,8 +83,9 @@ def delete_deployment(deployment_name):
     logger.info('Delete test deployment with BentoML CLI')
     delete_deployment_command = [
         'bentoml',
-        'deploy',
+        'aws-sagemaker',
         'delete',
+        '--name',
         deployment_name,
         '--force',
     ]
@@ -132,15 +133,14 @@ if __name__ == '__main__':
     create_deployment_command = [
         'bentoml',
         '--verbose',
+        'aws-sagemaker',
         'deploy',
-        'create',
+        '--name',
         deployment_name,
         '-b',
         bento_name,
-        '--platform',
-        'aws-sagemaker',
-        # '--region',
-        # region,
+        '--region',
+        region,
         '--api-name',
         'predict',
         '--num-of-gunicorn-workers-per-instance',
@@ -164,7 +164,7 @@ if __name__ == '__main__':
         logger.info('Create deployment failed')
         deployment_failed = True
 
-    delete_deployment(deployment_name)
+    # delete_deployment(deployment_name)
 
     logger.info('Finished')
     if deployment_failed:

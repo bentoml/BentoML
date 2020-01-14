@@ -30,7 +30,6 @@ from bentoml.cli.click_utils import (
     _echo,
     CLI_COLOR_ERROR,
     CLI_COLOR_SUCCESS,
-    parse_bento_tag_callback,
     parse_yaml_file_callback,
 )
 from bentoml.proto.deployment_pb2 import DeploymentSpec, DeploymentState
@@ -293,13 +292,13 @@ def add_additional_deployment_commands(cli):
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "default" which'
-             'can be changed in BentoML configuration file',
+        'can be changed in BentoML configuration file',
     )
     @click.option(
         '--force',
         is_flag=True,
         help='force delete the deployment record in database and '
-             'ignore errors when deleting cloud resources',
+        'ignore errors when deleting cloud resources',
     )
     def delete(name, namespace, force):
         yatai_client = YataiClient()
@@ -331,8 +330,8 @@ def add_additional_deployment_commands(cli):
             stopped_time = datetime.utcnow()
             extra_properties['uptime'] = int(
                 (
-                        stopped_time
-                        - get_deployment_result.deployment.created_at.ToDatetime()
+                    stopped_time
+                    - get_deployment_result.deployment.created_at.ToDatetime()
                 ).total_seconds()
             )
         track_cli('deploy-delete-success', platform, extra_properties)

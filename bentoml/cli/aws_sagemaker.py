@@ -38,6 +38,8 @@ PLATFORM_NAME = DeploymentSpec.DeploymentOperator.Name(DeploymentSpec.AWS_SAGEMA
 
 
 def get_aws_sagemaker_sub_command():
+    # pylint: disable=unused-variable
+
     @click.group()
     def aws_sagemaker():
         pass

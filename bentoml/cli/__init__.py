@@ -346,10 +346,12 @@ def create_bentoml_cli():
     # Commands created here aren't mean to be used from generated BentoService CLI when
     # installed as PyPI package. The are only used as part of BentoML cli command.
 
+    # pylint: disable=unused-variable
+
     @_cli.command(help='Get BentoML resources')
     @click.argument(
         'resource',
-        type=click.Choice(['deployment', 'bento']),
+        type=click.Choice(['deployment', 'bento', 'deployments', 'bentos']),
         default='deployment',
         required=True,
     )
@@ -394,9 +396,10 @@ def create_bentoml_cli():
         output,
     ):
         yatai_client = YataiClient()
-        if resource == 'deployment':
+        if resource == 'deployment' or resource == 'deployments':
             if deployment_name:
                 track_cli('deploy-get')
+                output = output or 'json'
                 get_result = yatai_client.deployment.get(namespace, deployment_name)
                 error_code, error_message = parse_pb_response_error_message(
                     get_result.status
@@ -426,8 +429,13 @@ def create_bentoml_cli():
                 return
             else:
                 track_cli('deploy-list')
+                output = output or 'table'
                 list_result = yatai_client.deployment.list(
-                    limit, filters, labels, namespace, all_namespaces
+                    limit=limit,
+                    filters=filters,
+                    labels=labels,
+                    namespace=namespace,
+                    is_all_namespaces=all_namespaces,
                 )
                 error_code, error_message = parse_pb_response_error_message(
                     list_result.status
@@ -442,7 +450,7 @@ def create_bentoml_cli():
         else:
             if bento_name and bento_version:
                 track_cli('bento-get')
-                output = output or 'yaml'
+                output = output or 'json'
                 get_bento_result = yatai_client.repository.get(
                     bento_name, bento_version
                 )

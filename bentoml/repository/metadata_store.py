@@ -183,6 +183,13 @@ class BentoMetadataStore(object):
             if filter_str:
                 query.filter(Bento.name.contains(filter_str))
             if bento_name:
-                query.filter_by(name=bento_name)
+                # filter_by apply filtering criterion to a copy of the query
+                query = query.filter_by(name=bento_name)
 
-            return query.all()
+            query_result = query.all()
+            result = [
+                _bento_orm_obj_to_pb(bento_obj)
+                for bento_obj in query_result
+                if not bento_obj.deleted
+            ]
+            return result

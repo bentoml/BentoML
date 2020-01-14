@@ -45,9 +45,11 @@ class DeploymentAPIClient:
     def __init__(self, yatai_service):
         self.yatai_service = yatai_service
 
+    # TODO make sure able to filter base on platform in future PR.
     def list(
         self,
         limit=None,
+        offset=None,
         filters=None,
         labels=None,
         namespace=None,
@@ -63,7 +65,11 @@ class DeploymentAPIClient:
 
         return self.yatai_service.ListDeployments(
             ListDeploymentsRequest(
-                limit=limit, filter=filters, labels=labels, namespace=namespace
+                limit=limit,
+                offset=offset,
+                filter=filters,
+                labels=labels,
+                namespace=namespace,
             )
         )
 
@@ -364,12 +370,22 @@ class DeploymentAPIClient:
     def list_sagemaker_deployments(
         self,
         limit=None,
+        offset=None,
         filters=None,
         labels=None,
         namespace=None,
         is_all_namespaces=False,
     ):
-        list_result = self.list(limit, filters, labels, namespace, is_all_namespaces)
+        # TODO. In future PR, make sure we update the filter field with
+        #  platform = sagemaker
+        list_result = self.list(
+            limit=limit,
+            offset=offset,
+            filters=filters,
+            labels=labels,
+            namespace=namespace,
+            is_all_namespaces=is_all_namespaces,
+        )
         if list_result.status.status_code != status_pb2.Status.OK:
             return list_result
 

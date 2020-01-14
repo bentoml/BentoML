@@ -30,6 +30,7 @@ from bentoml.proto.repository_pb2 import (
     BentoUri,
     UpdateBentoRequest,
     UploadStatus,
+    ListBentoRequest,
 )
 from bentoml.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
@@ -169,3 +170,15 @@ class BentoRepositoryAPIClient:
             service_metadata=bento_service_metadata,
         )
         self.yatai_service.UpdateBento(update_bento_req)
+
+    def get(self, bento_name, bento_version=None):
+        get_bento_request = GetBentoRequest(
+            bento_name=bento_name, bento_version=bento_version
+        )
+        return self.yatai_service.GetBento(get_bento_request)
+
+    def list(self, bento_name=None, offset=None, limit=None, filters=None):
+        list_bento_request = ListBentoRequest(
+            bento_name=bento_name, offset=offset, limit=limit, filter=filters
+        )
+        return self.yatai_service.ListBento(list_bento_request)

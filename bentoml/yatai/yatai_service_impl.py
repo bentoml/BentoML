@@ -341,7 +341,10 @@ class YataiService(YataiServicer):
         try:
             # TODO: validate request
             bento_metadata_pb_list = self.bento_metadata_store.list(
-                request.bento_name, request.offset, request.limit, request.filter
+                bento_name=request.bento_name,
+                offset=request.offset,
+                limit=request.limit,
+                filter_str=request.filter,
             )
 
             return ListBentoResponse(status=Status.OK(), bentos=bento_metadata_pb_list)

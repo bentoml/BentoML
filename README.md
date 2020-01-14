@@ -87,7 +87,7 @@ path to the saved bundle:
 bentoml serve {saved_path}
 ```
 
-The REST API server provides a simply web UI for you to test and debug. If you are
+The REST API server provides web UI for testing and debugging the server. If you are
 running this command on your local machine, visit http://127.0.0.1:5000 in your browser
 and try out sending API request to the server. You can also send prediction request
 with `curl` from command line:
@@ -100,16 +100,16 @@ curl -i \
   http://localhost:5000/predict
 ```
 
-The BentoService SavedBundle is structured to work as a docker build context, that can
-be directed used to build a docker image for API server. Simply use it as the docker
+The BentoService SavedBundle directory is structured to work as a docker build context,
+that can be used to build a API server docker container image:
 build context directory:
 ```bash
 docker build -t my_api_server {saved_path}
 ```
 
-You can also deploy your BentoService directly to cloud services such as AWS Lambda 
-with `bentoml`, and get back a API endpoint hosting your model, that is ready for
-production use:
+You can also deploy your BentoService to cloud services such as AWS Lambda 
+with `bentoml` command. The deployment gives you an API endpoint hosting your model,
+that is ready for production use:
 ```
 bentoml deployment create my-iris-classifier --bento IrisClassifier:{VERSION} --platform=aws-lambda
 ```

@@ -114,8 +114,7 @@ path to the saved bundle:
 
   bentoml serve {saved_path}
 
-
-The REST API server provides a simply web UI for you to test and debug. If you are
+The REST API server provides web UI for testing and debugging the server. If you are
 running this command on your local machine, visit http://127.0.0.1:5000 in your browser
 and try out sending API request to the server.
 
@@ -158,7 +157,7 @@ run the prediction task on the given input dataset:
 
 
 Distribute BentoML SavedBundle as PyPI package
-+++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++
 
 The BentoService SavedBundle is pip-installable and can be directly distributed as a
 PyPI package if you plan to use the model in your python applications. You can install
@@ -193,9 +192,8 @@ or to their organization's private PyPi index to share with other developers.
 Containerize REST API server with Docker
 ++++++++++++++++++++++++++++++++++++++++
 
-The BentoService SavedBundle is structured to work as a docker build context, that can
-be directed used to build a docker image for API server. Simply use it as the docker
-build context directory:
+The BentoService SavedBundle directory is structured to work as a docker build context,
+that can be used to build a API server docker container image:
 
 
 .. code-block:: bash

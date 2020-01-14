@@ -31,7 +31,7 @@ read more about how to install docker `here <https://docs.docker.com/install/>`_
 
 Alternatively, run the code in this guide here on Google's Colab:
 
-.. image:: https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal
+.. image:: https://raster.shields.io/badge/Launch%20on-Google%20Colab-blue?logo=powershell
     :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb
     :alt: Launch on Colab
 
@@ -157,8 +157,8 @@ run the prediction task on the given input dataset:
 
 
 
-Distribute BentoML SavedBundle as PyPI package
-+++++++++++++++++++++++++++++++++++++++++
+Distribute SavedBundle as PyPI package
+++++++++++++++++++++++++++++++++++++++
 
 The BentoService SavedBundle is pip-installable and can be directly distributed as a
 PyPI package if you plan to use the model in your python applications. You can install

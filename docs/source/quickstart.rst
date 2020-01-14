@@ -25,8 +25,9 @@ Download and run the code in this quickstart locally:
     $ git clone http://github.com/bentoml/bentoml
     $ jupyter notebook bentoml/guides/quick-start/bentoml-quick-start-guide.ipynb
 
-In order to build model server docker image, you will also need to install :code:`docker` for your system,
-read more about how to install docker `here <https://docs.docker.com/install/>`_.
+In order to build model server docker image, you will also need to install
+:code:`docker` for your system, read more about how to install docker
+`here <https://docs.docker.com/install/>`_.
 
 
 Alternatively, run the code in this guide here on Google's Colab:
@@ -60,18 +61,20 @@ what a simple prediction service looks like:
           return self.artifacts.model.predict(df)
 
 
-The :code:`bentoml.api` and :code:`DataframeHandler` here tells BentoML, that following by it, is
-the service API callback function, and :code:`pandas.Dataframe` is its expected input format.
+The :code:`bentoml.api` and :code:`DataframeHandler` here tells BentoML, that following
+by it, is the service API callback function, and :code:`pandas.Dataframe` is its
+expected input format.
 
-The :code:`bentoml.env` decorator allows user to specify the dependencies and environment
-settings for this prediction service. Here we are creating the prediction service based
-on a scikit learn model, so we add it to the list of pip dependencies.
+The :code:`bentoml.env` decorator allows user to specify the dependencies and
+environment settings for this prediction service. Here we are creating the prediction
+service based on a scikit learn model, so we add it to the list of pip dependencies.
 
 
-Last but not least, :code:`bentoml.artifact` declares the required trained model to be bundled
-with this prediction service. Here it is using the built-in :code:`SklearnModelArtifact` and
-simply naming it 'model'. BentoML also provide model artifact for other frameworks such
-as :code:`PytorchModelArtifact`, :code:`KerasModelArtifact`, :code:`FastaiModelArtifact`, and
+Last but not least, :code:`bentoml.artifact` declares the required trained model to be
+bundled with this prediction service. Here it is using the built-in
+:code:`SklearnModelArtifact` and simply naming it 'model'. BentoML also provide model
+artifact for other frameworks such as :code:`PytorchModelArtifact`,
+:code:`KerasModelArtifact`, :code:`FastaiModelArtifact`, and
 :code:`XgboostModelArtifact` etc.
 
 
@@ -205,8 +208,8 @@ that can be used to build a API server docker container image:
 
 .. note::
 
-  You will need to install Docker before running this.
-  Follow direction from this link: https://docs.docker.com/install
+  You will need to install :code:`docker` before running this.
+  Follow instructions here: https://docs.docker.com/install
 
 
 Deploy REST API server to the cloud

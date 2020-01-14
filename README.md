@@ -36,7 +36,7 @@ Installing BentoML with `pip`:
 pip install bentoml
 ```
 
-Defining a prediction service with BentoML:
+Creating a prediction service with BentoML:
 
 ```python
 import bentoml
@@ -75,19 +75,22 @@ if __name__ == "__main__":
     # Save the prediction service to a BentoService bundle
     saved_path = iris_classifier_service.save()
 ```
+You've just created a BentoService SavedBundle, it's a versioned file archive that is
+ready for production deployment. It contains the BentoService you defined, as well as
+the packed trained model artifacts, pre-processing code, dependencies and other
+configurations in a single file directory.
 
-A BentoService bundle is a versioned file archive, containing the BentoService you
-defined, along with trained model artifacts, dependencies and configurations.
 
-Now you can start a REST API server based off the saved BentoService bundle form
-command line:
+From a BentoService SavedBundle, you can start a REST API server by providing the file
+path to the saved bundle:
 ```bash
 bentoml serve {saved_path}
 ```
 
-If you are doing this only local machine, visit [http://127.0.0.1:5000](http://127.0.0.1:5000)
-in your browser to play around with the API server's Web UI for debugging and
-sending test request. You can also send prediction request with `curl` from command line:
+The REST API server provides a simply web UI for you to test and debug. If you are
+running this command on your local machine, visit http://127.0.0.1:5000 in your browser
+and try out sending API request to the server. You can also send prediction request
+with `curl` from command line:
 
 ```bash
 curl -i \
@@ -97,27 +100,31 @@ curl -i \
   http://localhost:5000/predict
 ```
 
-Saved BentoService bundle is also structured to work as a docker build context, which can be
-used to build a docker image for deployment:
+The BentoService SavedBundle is structured to work as a docker build context, that can
+be directed used to build a docker image for API server. Simply use it as the docker
+build context directory:
 ```bash
 docker build -t my_api_server {saved_path}
 ```
 
-You can also deploy your BentoService directly to cloud services such as AWS Lambda with `bentoml`, and
-get back a API endpoint hosting your model, that is ready for production use:
+You can also deploy your BentoService directly to cloud services such as AWS Lambda 
+with `bentoml`, and get back a API endpoint hosting your model, that is ready for
+production use:
 ```
 bentoml deployment create my-iris-classifier --bento IrisClassifier:{VERSION} --platform=aws-lambda
 ```
 
-Try out the full quickstart notebook: [Source](https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb), [nbviewer](https://nbviewer.jupyter.org/github/bentoml/bentoml/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
-
+More detailed code and walkthrough of this example can be found in the [BentoML Quickstart Guide](http://docs.bentoml.org/en/latest/quickstart.html).
 
 ## Documentation
 
-Full documentation and API references can be found at [https://docs.bentoml.org/](https://docs.bentoml.org/)
+Full documentation and API references: [https://docs.bentoml.org/](https://docs.bentoml.org/)
 
 
 ## Examples
+
+Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
+ examples and tutorials.
 
 #### FastAI
 
@@ -162,8 +169,6 @@ Full documentation and API references can be found at [https://docs.bentoml.org/
 * Loan Default Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb)
 * Prostate Cancer Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb)
 
- Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
- example projects demonstrating how to use BentoML.
 
 
 ### Deployment guides:

@@ -4,15 +4,20 @@ Quick Start
 Installing BentoML
 ------------------
 
+BentoML requires python 3.6 or above, install via `pip`:
+
 .. code-block:: bash
 
     $ pip install bentoml
+
+Instructions for installing from source can be found in the
+`development guide <https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md>`_.
 
 
 Download Quickstart Notebook
 ----------------------------
 
-Download and play with the notebook locally:
+Download and run the code in this quickstart locally:
 
 .. code-block:: bash
 
@@ -27,18 +32,20 @@ read more about how to install docker `here <https://docs.docker.com/install/>`_
 Alternatively, run the code in this guide here on Google's Colab:
 
 .. image:: https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal
-    :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/examples/quick-start/bentoml-quick-start-guide.ipynb
+    :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb
     :alt: Launch on Colab
 
 
 
-Building Model Server with BentoML
-----------------------------------
-  
-Defining a prediction service with BentoML:
+Creating a Prediction Service with BentoML
+------------------------------------------
+
+The first step of creating a prediction service with BentoML, is to write a prediction
+service class inheriting from `bentoml.BentoService`, and declaratively listing the
+dependencies, model artifacts and writing your service API call back function. Here is
+what a simple prediction service looks like:
 
 .. code-block:: python
-  :linenos:
 
   import bentoml
   from bentoml.handlers import DataframeHandler
@@ -53,17 +60,26 @@ Defining a prediction service with BentoML:
           return self.artifacts.model.predict(df)
 
 
-You can add multiple `bentoml.api` to a BentoService, and the `DataframeHandler` here
-tells BentoML the expected input format of this API.
+The `bentoml.api` and `DataframeHandler` here tells BentoML, that following by it, is
+the service API callback function, and `pandas.Dataframe` is its expected input format.
 
 The `bentoml.env` decorator allows user to specify the dependencies and environment 
-settings for this prediction service and `bentoml.artifact` is used to describe the
-trained models to be bundled with this prediction service. In addition to
-`SklearnModelArtifact`, BentoML libraries also provides `PytorchModelArtifact`,
-`KerasModelArtifact`, `FastaiModelArtifact`, and `XgboostModelArtifact` etc.
+settings for this prediction service. Here we are creating the prediction service based
+on a scikit learn model, so we add it to the list of pip dependencies.
 
 
-Next, train a classifier model with Iris dataset and pack the trained model with the BentoService `IrisClassifier` defined above:
+Last but not least, `bentoml.artifact` declares the required trained model to be bundled
+with this prediction service. Here it is using the built-in `SklearnModelArtifact` and
+simply naming it 'model'. BentoML also provide model artifact for other frameworks such
+as `PytorchModelArtifact`, `KerasModelArtifact`, `FastaiModelArtifact`, and
+`XgboostModelArtifact` etc.
+
+
+Saving a versioned BentoService bundle
+--------------------------------------
+
+Next, we train a classifier model with Iris dataset, and pack the trained model with the
+BentoService `IrisClassifier` defined above:
 
 .. code-block:: python
 
@@ -82,23 +98,32 @@ Next, train a classifier model with Iris dataset and pack the trained model with
   saved_path = iris_classifier_service.save()
 
 
-You've just created a BentoML bundle, it's a versioned file archive, containing the
-BentoService you defined, including the trained model artifacts, pre-processing code,
-dependencies and configurations.
+You've just created a BentoService SavedBundle, it's a versioned file archive that is
+ready for production deployment. It contains the BentoService you defined, as well as
+the packed trained model artifacts, pre-processing code, dependencies and other
+configurations in a single file directory.
 
 
-
-Model serving via REST API
+Model Serving via REST API
 ++++++++++++++++++++++++++
 
-Now you can start a REST API server based off the saved BentoML bundle form command line:
+From a BentoService SavedBundle, you can start a REST API server by providing the file
+path to the saved bundle:
 
 .. code-block:: bash
 
   bentoml serve {saved_path}
 
-If you are doing this only local machine, visit http://127.0.0.1:5000 in your browser to play around with the API server's Web UI for debbugging and testing. You can also send prediction request with curl from command line:
 
+The REST API server provides a simply web UI for you to test and debug. If you are
+running this command on your local machine, visit http://127.0.0.1:5000 in your browser
+and try out sending API request to the server.
+
+.. image:: https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bento-api-server-web-ui.png
+  :width: 600
+  :alt: BentoML API Server Web UI Screenshot
+
+You can also send prediction request with `curl` from command line:
 
 .. code-block:: bash
 
@@ -108,10 +133,20 @@ If you are doing this only local machine, visit http://127.0.0.1:5000 in your br
     --data '[[5.1, 3.5, 1.4, 0.2]]' \
     http://localhost:5000/predict
 
-Model serving via Command Line Interface
-++++++++++++++++++++++++++++++++++++++++
+Or with `python` and `request` library:
 
-Load the saved BentoML bundle directly from command line for inferencing:
+.. code-block:: python
+
+    import requests
+    response = requests.post("http://127.0.0.1:5000/predict", json=[[5.1, 3.5, 1.4, 0.2]])
+    print(response.text)
+
+
+Model Serving via CLI
++++++++++++++++++++++
+
+For testing purpose, you can load the BentoService SavedBundle from command line and
+run the prediction task on the given input dataset:
 
 .. code-block:: bash
 
@@ -121,11 +156,13 @@ Load the saved BentoML bundle directly from command line for inferencing:
   bentoml predict {saved_path} --input='./iris_test_data.csv'
 
 
-Distribute BentoML Bundle as PyPI package
+
+Distribute BentoML SavedBundle as PyPI package
 +++++++++++++++++++++++++++++++++++++++++
 
-BentoML bundle is pip-installable and can be directly distributed as a PyPI package:
-
+The BentoService SavedBundle is pip-installable and can be directly distributed as a
+PyPI package if you plan to use the model in your python applications. You can install
+it as as a system-wide python package with `pip`:
 
 .. code-block:: bash
 
@@ -139,8 +176,8 @@ BentoML bundle is pip-installable and can be directly distributed as a PyPI pack
   installed_svc = IrisClassifier.load()
   installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
 
-This allow users to upload their BentoService to pypi.org as public python package or
-to their organization's private PyPi index to share with other developers.
+This also allow users to upload their BentoService to pypi.org as public python package
+or to their organization's private PyPi index to share with other developers.
 
 .. code-block:: bash
 
@@ -153,10 +190,12 @@ to their organization's private PyPi index to share with other developers.
     https://docs.python.org/3.7/distributing/index.html#distributing-index
 
 
-Run REST API server with Docker
-+++++++++++++++++++++++++++++++
+Containerize REST API server with Docker
+++++++++++++++++++++++++++++++++++++++++
 
-BentoML bundle is structured to work as a docker build context so you can easily build a docker image for this API server by using it as the build context directory:
+The BentoService SavedBundle is structured to work as a docker build context, that can
+be directed used to build a docker image for API server. Simply use it as the docker
+build context directory:
 
 
 .. code-block:: bash
@@ -170,6 +209,9 @@ BentoML bundle is structured to work as a docker build context so you can easily
 
   You will need to install Docker before running this.
   Follow direction from this link: https://docs.docker.com/install
+
+
+
 
 
 Learning More?

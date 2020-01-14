@@ -38,7 +38,7 @@ from bentoml.proto import status_pb2
 from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLException
-from bentoml.cli.utils import Spinner
+from bentoml.cli.utils import Spinner, parse_pb_response_error_message
 from bentoml.yatai.client import YataiClient
 
 # pylint: disable=unused-variable
@@ -502,16 +502,11 @@ def get_deployment_sub_command():
         try:
             yatai_client = YataiClient()
             result = yatai_client.deployment.apply(deployment_yaml)
-            if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = parse_pb_response_error_message(result.status)
+            if error_code and error_message:
                 _echo(
-                    'Failed to apply deployment {name}. '
-                    '{error_code}:{error_message}'.format(
-                        name=deployment_yaml.get('name'),
-                        error_code=status_pb2.Status.Code.Name(
-                            result.status.status_code
-                        ),
-                        error_message=result.status.error_message,
-                    ),
+                    f'Failed to apply deployment {deployment_yaml.get("name")}. '
+                    f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
             else:
@@ -522,16 +517,14 @@ def get_deployment_sub_command():
                         namespace=deployment_yaml.get('namespace'),
                         message='Applying deployment',
                     )
-                    if result_state.status.status_code != status_pb2.Status.OK:
+                    error_code, error_message = parse_pb_response_error_message(
+                        result_state.status
+                    )
+                    if error_code and error_message:
                         _echo(
-                            'Created deployment {name}, failed to retrieve latest'
-                            ' status. {error_code}:{error_message}'.format(
-                                name=deployment_yaml.get('name'),
-                                error_code=status_pb2.Status.Code.Name(
-                                    result_state.status.status_code
-                                ),
-                                error_message=result_state.status.error_message,
-                            )
+                            f'Created deployment {deployment_yaml.get("name")}, '
+                            f'failed to retrieve latest status. '
+                            f'{error_code}:{error_message}',
                         )
                         return
                     result.deployment.state.CopyFrom(result_state.state)
@@ -572,15 +565,13 @@ def get_deployment_sub_command():
     def delete(name, namespace, force):
         yatai_client = YataiClient()
         get_deployment_result = yatai_client.deployment.get(namespace, name)
-        if get_deployment_result.status.status_code != status_pb2.Status.OK:
+        error_code, error_message = parse_pb_response_error_message(
+            get_deployment_result.status
+        )
+        if error_code and error_message:
             _echo(
-                'Failed to get deployment {} for deletion. {}:{}'.format(
-                    name,
-                    status_pb2.Status.Code.Name(
-                        get_deployment_result.status.status_code
-                    ),
-                    get_deployment_result.status.error_message,
-                ),
+                f'Failed to get deployment {name} for deletion. '
+                f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
             return
@@ -589,30 +580,24 @@ def get_deployment_sub_command():
         )
         track_cli('deploy-delete', platform)
         result = yatai_client.deployment.delete(name, namespace, force)
-        if result.status.status_code == status_pb2.Status.OK:
-            extra_properties = {}
-            if get_deployment_result.deployment.created_at:
-                stopped_time = datetime.utcnow()
-                extra_properties['uptime'] = int(
-                    (
-                        stopped_time
-                        - get_deployment_result.deployment.created_at.ToDatetime()
-                    ).total_seconds()
-                )
-            track_cli('deploy-delete-success', platform, extra_properties)
+        error_code, error_message = parse_pb_response_error_message(result.status)
+        if error_code and error_message:
             _echo(
-                'Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS
-            )
-        else:
-            _echo(
-                'Failed to delete deployment {name}. code: {error_code}, message: '
-                '{error_message}'.format(
-                    name=name,
-                    error_code=status_pb2.Status.Code.Name(result.status.status_code),
-                    error_message=result.status.error_message,
-                ),
+                f'Failed to delete deployment {name}. {error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
+            return
+        extra_properties = {}
+        if get_deployment_result.deployment.created_at:
+            stopped_time = datetime.utcnow()
+            extra_properties['uptime'] = int(
+                (
+                    stopped_time
+                    - get_deployment_result.deployment.created_at.ToDatetime()
+                ).total_seconds()
+            )
+        track_cli('deploy-delete-success', platform, extra_properties)
+        _echo('Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS)
 
     @deployment.command(help='Get deployment info')
     @click.argument("name", type=click.STRING, required=True)
@@ -628,21 +613,18 @@ def get_deployment_sub_command():
         track_cli('deploy-get')
         yatai_client = YataiClient()
         get_result = yatai_client.deployment.get(namespace, name)
-        if get_result.status.status_code != status_pb2.Status.OK:
-            error_code = status_pb2.Status.Code.Name(get_result.status.status_code)
-            error_message = get_result.status.error_message
+        error_code, error_message = parse_pb_response_error_message(get_result.status)
+        if error_code and error_message:
             _echo(
-                f'Failed to get deployment {name}. '
-                f'{error_code}:{error_message}',
+                f'Failed to get deployment {name}. ' f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
             return
         describe_result = yatai_client.deployment.describe(namespace, name)
-        if describe_result.status.status_code != status_pb2.Status.OK:
-            error_code = status_pb2.Status.Code.Name(
-                describe_result.status.status_code
-            )
-            error_message = describe_result.status.error_message
+        error_code, error_message = parse_pb_response_error_message(
+            describe_result.status
+        )
+        if error_code and error_message:
             _echo(
                 f'Failed to retrieve the latest status for deployment '
                 f'{name}. {error_code}:{error_message}',
@@ -705,12 +687,142 @@ def get_deployment_sub_command():
 
 def add_additional_deployment_commands(cli):
     @cli.command()
-    def deploy():
-        pass
+    @click.option(
+        '-f',
+        '--file',
+        'deployment_yaml',
+        type=click.File('r'),
+        required=True,
+        callback=parse_yaml_file_callback,
+    )
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '--wait/--no-wait',
+        default=True,
+        help='Wait for apply action to complete or encounter an error.'
+        'If set to no-wait, CLI will return immediately. The default value is wait',
+    )
+    def deploy(deployment_yaml, output, wait):
+        track_cli('deploy-deploy', deployment_yaml.get('spec', {}).get('operator'))
+        try:
+            yatai_client = YataiClient()
+            result = yatai_client.deployment.apply(deployment_yaml)
+            if result.status.status_code != status_pb2.Status.OK:
+                _echo(
+                    'Failed to deploy deployment {name}. '
+                    '{error_code}:{error_message}'.format(
+                        name=deployment_yaml.get('name'),
+                        error_code=status_pb2.Status.Code.Name(
+                            result.status.status_code
+                        ),
+                        error_message=result.status.error_message,
+                    ),
+                    CLI_COLOR_ERROR,
+                )
+            else:
+                if wait:
+                    result_state = get_state_after_await_action_complete(
+                        yatai_client=yatai_client,
+                        name=deployment_yaml.get('name'),
+                        namespace=deployment_yaml.get('namespace'),
+                        message='Deploying deployment',
+                    )
+                    if result_state.status.status_code != status_pb2.Status.OK:
+                        error_code = status_pb2.Status.Code.Name(
+                            result_state.status.status_code
+                        )
+                        error_message = result_state.status.error_message
+                        _echo(
+                            f'Created deployment {deployment_yaml.get("name")}, '
+                            f'failed to retrieve latest status. '
+                            f'{error_code}:{error_message}'
+                        )
+                        return
+                    result.deployment.state.CopyFrom(result_state.state)
 
-    @cli.command()
-    def apply():
-        pass
+                track_cli(
+                    'deploy-deploy-success',
+                    deployment_yaml.get('spec', {}).get('operator'),
+                )
+                _echo(
+                    f'Successfully deploy spec to deployment '
+                    f'{deployment_yaml.get("name")}',
+                    CLI_COLOR_SUCCESS,
+                )
+                _print_deployment_info(result.deployment, output)
+        except BentoMLException as e:
+            _echo(
+                'Failed to apply deployment {name}. Error message: {message}'.format(
+                    name=deployment_yaml.get('name'), message=e
+                )
+            )
+
+    @cli.command(help='Apply BentoService deployment from yaml file')
+    @click.option(
+        '-f',
+        '--file',
+        'deployment_yaml',
+        type=click.File('r'),
+        required=True,
+        callback=parse_yaml_file_callback,
+    )
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '--wait/--no-wait',
+        default=True,
+        help='Wait for apply action to complete or encounter an error.'
+        'If set to no-wait, CLI will return immediately. The default value is wait',
+    )
+    def apply(deployment_yaml, output, wait):
+        track_cli('deploy-apply', deployment_yaml.get('spec', {}).get('operator'))
+        try:
+            yatai_client = YataiClient()
+            result = yatai_client.deployment.apply(deployment_yaml)
+            error_code, error_message = parse_pb_response_error_message(result.status)
+            if error_code and error_message:
+                if result.status.status_code != status_pb2.Status.OK:
+                    _echo(
+                        f'Failed to apply deployment {deployment_yaml.get("name")}. '
+                        f'{error_code}:{error_message}',
+                        CLI_COLOR_ERROR,
+                    )
+            else:
+                if wait:
+                    result_state = get_state_after_await_action_complete(
+                        yatai_client=yatai_client,
+                        name=deployment_yaml.get('name'),
+                        namespace=deployment_yaml.get('namespace'),
+                        message='Applying deployment',
+                    )
+                    error_code, error_message = parse_pb_response_error_message(
+                        result_state.status
+                    )
+                    if error_code and error_message:
+                        _echo(
+                            f'Created deployment {deployment_yaml.get("name")}, '
+                            f'failed to retrieve latest status. '
+                            f'{error_code}:{error_message}',
+                        )
+                        return
+                    result.deployment.state.CopyFrom(result_state.state)
+
+                track_cli(
+                    'deploy-apply-success',
+                    deployment_yaml.get('spec', {}).get('operator'),
+                )
+                _echo(
+                    'Successfully applied spec to deployment {}'.format(
+                        deployment_yaml.get('name')
+                    ),
+                    CLI_COLOR_SUCCESS,
+                )
+                _print_deployment_info(result.deployment, output)
+        except BentoMLException as e:
+            _echo(
+                'Failed to apply deployment {name}. Error message: {message}'.format(
+                    name=deployment_yaml.get('name'), message=e
+                )
+            )
 
     @cli.command()
     def delete():

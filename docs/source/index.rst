@@ -19,7 +19,7 @@ It is an open source framework for machine learning teams to build cloud-native 
 services that are ready for production. BentoML supports most popular ML training frameworks
 and common deployment platforms including major cloud providers and docker/kubernetes.
 
-`Join BentoML Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_ to hear about the latest development updates.
+👉 `Join BentoML Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_ to hear about the latest development updates.
 
 ___________
 

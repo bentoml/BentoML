@@ -21,6 +21,8 @@ import threading
 import itertools
 import time
 
+from bentoml.proto import status_pb2
+
 
 class Spinner:
     def __init__(self, message, delay=0.1):
@@ -68,3 +70,12 @@ class Spinner:
             self.remove_spinner(cleanup=True)
         else:
             sys.stdout.write('\r')
+
+
+def parse_pb_response_error_message(pb_status):
+    error_code = ''
+    error_message = ''
+    if pb_status.status_code != status_pb2.Status.OK:
+        error_code = status_pb2.Status.Code.Name(pb_status.status_code)
+        error_message = pb_status.error_message
+    return error_code, error_message

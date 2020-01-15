@@ -4,7 +4,8 @@ Getting Started
 Installing BentoML
 ------------------
 
-BentoML requires python 3.6 or above, install via :code:`pip`:
+`BentoML <https://github.com/bentoml/BentoML>`_ requires python 3.6 or above, install
+via :code:`pip`:
 
 .. code-block:: bash
 
@@ -106,9 +107,11 @@ the packed trained model artifacts, pre-processing code, dependencies and other
 configurations in a single file directory.
 
 
+Model Serving with BentoML
+--------------------------
 
 Model Serving via REST API
---------------------------
+++++++++++++++++++++++++++
 
 From a BentoService SavedBundle, you can start a REST API server by providing the file
 path to the saved bundle:
@@ -254,9 +257,6 @@ hosting the BentService you've created:
         -b=IrisClassifier:20191126125258_4AB1D4 \
         --platform=aws-lambda \
 
-
-Learning More?
-++++++++++++++
 
 Interested in learning more about BentoML? Check out the
 `Examples <https://github.com/bentoml/BentoML#examples>`_ on BentoML github repository.

@@ -49,7 +49,7 @@ def get_aws_sagemaker_sub_command():
         pass
 
     @aws_sagemaker.command(help='Deploy BentoService to AWS Sagemaker')
-    @click.argument('--name', type=click.STRING)
+    @click.argument('name', type=click.STRING)
     @click.option(
         '-b',
         '--bento',

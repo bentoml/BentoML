@@ -25,9 +25,7 @@ import tempfile
 import subprocess
 from pathlib import Path
 
-from google.protobuf.json_format import MessageToJson
 from ruamel.yaml import YAML
-from tabulate import tabulate
 
 from bentoml.bundler import (
     load,
@@ -38,24 +36,17 @@ from bentoml.bundler import (
 from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.resources import get_resources_sub_command
-from bentoml.cli.utils import parse_pb_response_error_message
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     conditional_argument,
     _echo,
-    CLI_COLOR_ERROR,
 )
-from bentoml.cli.deployment import (
-    add_additional_deployment_commands,
-    _print_deployment_info,
-    _print_deployments_info,
-)
+from bentoml.cli.deployment import add_additional_deployment_commands
 from bentoml.cli.config import get_configuration_sub_command
-from bentoml.utils import ProtoMessageToDict, pb_to_yaml
+from bentoml.utils import ProtoMessageToDict
 from bentoml.utils.log import configure_logging
 from bentoml.utils.usage_stats import track_cli
-from bentoml.yatai.client import YataiClient
 
 
 def escape_shell_params(param):

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
-from datetime import datetime
 
 import click
 from google.protobuf.json_format import MessageToJson
@@ -20,19 +19,14 @@ from tabulate import tabulate
 
 from bentoml.cli.utils import parse_pb_response_error_message
 from bentoml.cli.click_utils import (
-    parse_bento_tag_callback,
     CLI_COLOR_ERROR,
     _echo,
-    CLI_COLOR_SUCCESS,
 )
 from bentoml.cli.deployment import (
-    get_state_after_await_action_complete,
     _print_deployment_info,
     _print_deployments_info,
 )
-from bentoml.exceptions import BentoMLException
 from bentoml.proto import status_pb2
-from bentoml.proto.deployment_pb2 import DeploymentSpec
 from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
@@ -78,6 +72,8 @@ def _print_bentos_info(bentos, output_type):
 
 
 def get_resources_sub_command():
+    # pylint: disable=unused-variable
+
     @click.group(name='get', help='Get BentoML resources')
     def get_resource():
         pass

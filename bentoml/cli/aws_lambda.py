@@ -198,7 +198,6 @@ def get_aws_lambda_sub_command():
         "size in 64MB increments from 128MB to 3008MB. The default value "
         "is 1024 MB.",
         type=click.INT,
-        default=1024,
     )
     @click.option(
         '--timeout',
@@ -206,7 +205,6 @@ def get_aws_lambda_sub_command():
         "stopping it. The default is 3 seconds. The maximum allowed value is "
         "900 seconds",
         type=click.INT,
-        default=3,
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
@@ -223,7 +221,15 @@ def get_aws_lambda_sub_command():
             bento_name = None
             bento_version = None
         try:
-            result = yatai_client.deployment.update_lambda_deployment()
+            result = yatai_client.deployment.update_lambda_deployment(
+                bento_name=bento_name,
+                bento_version=bento_version,
+                deployment_name=name,
+                namespace=namespace,
+                api_name=api_name,
+                memory_size=memory_size,
+                timeout=timeout
+            )
         except BentoMLException as e:
             _echo(
                 f'Failed to updated Lambda deployment {name}: {str(e)}', CLI_COLOR_ERROR
@@ -232,7 +238,8 @@ def get_aws_lambda_sub_command():
         if result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = parse_pb_response_error_message(result.status)
             _echo(
-                f'Failed to update Lambda deployment {name} {error_code}:{error_message}',
+                f'Failed to update Lambda deployment {name} '
+                f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
             return

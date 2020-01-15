@@ -26,7 +26,6 @@ from bentoml.proto.deployment_pb2 import (
     DeploymentSpec,
     DeleteDeploymentRequest,
     ListDeploymentsRequest,
-    ApplyDeploymentResponse,
     Deployment,
 )
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
@@ -36,7 +35,6 @@ from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,
     deployment_dict_to_pb,
 )
-from bentoml.yatai.status import Status
 
 logger = logging.getLogger(__name__)
 

@@ -36,6 +36,7 @@ from bentoml.bundler import (
     load_bento_service_metadata,
 )
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
+from bentoml.cli.resources import get_resources_sub_command
 from bentoml.cli.utils import parse_pb_response_error_message
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.cli.click_utils import (
@@ -301,214 +302,18 @@ def create_bento_service_cli(bundle_path=None):
     return bentoml_cli
 
 
-def _print_bento_info(bento, output_type):
-    if output_type == 'yaml':
-        result = pb_to_yaml(bento)
-    else:
-        result = MessageToJson(bento)
-        _echo(json.dumps(result, indent=2, separators=(',', ': ')))
-        return
-    _echo(result)
-
-
-def _print_bento_table(bentos):
-    table = []
-    headers = ['NAME', 'VERSION', 'CREATED_AT', 'ARTIFACTS', 'HANDLERS']
-    for bento in bentos:
-        artifacts = [
-            artifact.artifact_type
-            for artifact in bento.bento_service_metadata.artifacts
-        ]
-        handlers = [api.handler_type for api in bento.bento_service_metadata.apis]
-        row = [
-            bento.name,
-            bento.version,
-            bento.bento_service_metadata.created_at.ToDatetime(),
-            ', '.join(artifacts),
-            ', '.join(handlers),
-        ]
-        table.append(row)
-    table_display = tabulate(table, headers, tablefmt='plain')
-    _echo(table_display)
-
-
-def _print_bentos_info(bentos, output_type):
-    if output_type == 'table':
-        _print_bento_table(bentos)
-    else:
-        for bento in bentos:
-            _print_bento_info(bento, output_type)
-
-
 def create_bentoml_cli():
     _cli = create_bento_service_cli()
 
     # Commands created here aren't mean to be used from generated BentoService CLI when
     # installed as PyPI package. The are only used as part of BentoML cli command.
 
-    # pylint: disable=unused-variable
-
-    @_cli.command(help='Get BentoML resources')
-    @click.argument(
-        'resource',
-        type=click.Choice(['deployment', 'bento', 'deployments', 'bentos']),
-        default='deployment',
-        required=True,
-    )
-    @click.option('-n', '--deployment-name', type=click.STRING, help='Deployment name')
-    @click.option('-n', '--bento-name', type=click.STRING, help='BentoService name')
-    @click.option(
-        '-n', '--bento-version', type=click.STRING, help='BentoService version'
-    )
-    @click.option(
-        '-n',
-        '--namespace',
-        type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration file',
-    )
-    @click.option('--all-namespaces', is_flag=True)
-    @click.option(
-        '--limit', type=click.INT, help='Limit how many resources will be retrieved'
-    )
-    @click.option(
-        '--filters',
-        type=click.STRING,
-        help='List resources containing the filter string in name',
-    )
-    @click.option(
-        '-l',
-        '--labels',
-        type=click.STRING,
-        help='List deployments matching the giving labels',
-    )
-    @click.option('-o', '--output', type=click.Choice(['json', 'yaml', 'table']))
-    def get(
-        resource,
-        deployment_name,
-        namespace,
-        bento_name,
-        bento_version,
-        all_namespaces,
-        limit,
-        filters,
-        labels,
-        output,
-    ):
-        yatai_client = YataiClient()
-        if resource == 'deployment' or resource == 'deployments':
-            if deployment_name:
-                track_cli('deploy-get')
-                output = output or 'json'
-                get_result = yatai_client.deployment.get(namespace, deployment_name)
-                error_code, error_message = parse_pb_response_error_message(
-                    get_result.status
-                )
-                if error_code and error_message:
-                    _echo(
-                        f'Failed to get deployment {deployment_name}. '
-                        f'{error_code}:{error_message}',
-                        CLI_COLOR_ERROR,
-                    )
-                    return
-                describe_result = yatai_client.deployment.describe(
-                    namespace, deployment_name
-                )
-                error_code, error_message = parse_pb_response_error_message(
-                    describe_result.status
-                )
-                if error_code and error_message:
-                    _echo(
-                        f'Failed to retrieve the latest status for Sagemaker deployment'
-                        f' {deployment_name}. {error_code}:{error_message}',
-                        CLI_COLOR_ERROR,
-                    )
-                    return
-                get_result.deployment.state.CopyFrom(describe_result.state)
-                _print_deployment_info(get_result.deployment, output)
-                return
-            else:
-                track_cli('deploy-list')
-                output = output or 'table'
-                list_result = yatai_client.deployment.list(
-                    limit=limit,
-                    filters=filters,
-                    labels=labels,
-                    namespace=namespace,
-                    is_all_namespaces=all_namespaces,
-                )
-                error_code, error_message = parse_pb_response_error_message(
-                    list_result.status
-                )
-                if error_code and error_message:
-                    _echo(
-                        f'Failed to list deployments. ' f'{error_code}:{error_message}',
-                        CLI_COLOR_ERROR,
-                    )
-                else:
-                    _print_deployments_info(list_result.deployments, output)
-        else:
-            if bento_name and bento_version:
-                track_cli('bento-get')
-                output = output or 'json'
-                get_bento_result = yatai_client.repository.get(
-                    bento_name, bento_version
-                )
-                error_code, error_message = parse_pb_response_error_message(
-                    get_bento_result.status
-                )
-                if error_code and error_message:
-                    _echo(
-                        f'Failed to get BentoService{bento_name}:{bento_version} '
-                        f'{error_code}:{error_message}',
-                        CLI_COLOR_ERROR,
-                    )
-                    return
-                _print_bento_info(get_bento_result.bento, output)
-                return
-            elif bento_name:
-                track_cli('bento-list')
-                output = output or 'table'
-                list_bento_versions_result = yatai_client.repository.list(
-                    bento_name=bento_name, filters=filters, limit=limit
-                )
-                error_code, error_message = parse_pb_response_error_message(
-                    list_bento_versions_result.status
-                )
-                if error_code and error_message:
-                    _echo(
-                        f'Failed to list versions for BentoService {bento_name} '
-                        f'{error_code}:{error_message}',
-                        CLI_COLOR_ERROR,
-                    )
-                    return
-
-                _print_bentos_info(list_bento_versions_result.bentos, output)
-                return
-            else:
-                track_cli('bento-list')
-                output = output or 'table'
-                list_bentos_result = yatai_client.repository.list(
-                    limit=limit, filters=filters
-                )
-                error_code, error_message = parse_pb_response_error_message(
-                    list_bentos_result.status
-                )
-                if error_code and error_message:
-                    _echo(
-                        f'Failed to list BentoServices '
-                        f'{error_code}:{error_message}',
-                        CLI_COLOR_ERROR,
-                    )
-                    return
-
-                _print_bentos_info(list_bentos_result.bentos, output)
-                return
-
     config_sub_command = get_configuration_sub_command()
     aws_sagemaker_sub_command = get_aws_sagemaker_sub_command()
+    resources_sub_command = get_resources_sub_command()
     _cli.add_command(config_sub_command)
     _cli.add_command(aws_sagemaker_sub_command)
+    _cli.add_command(resources_sub_command)
 
     add_additional_deployment_commands(_cli)
 

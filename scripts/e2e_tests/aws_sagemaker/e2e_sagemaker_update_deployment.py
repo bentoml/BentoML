@@ -130,8 +130,8 @@ if __name__ == '__main__':
     service_ver_one = TestDeploymentService()
     saved_path = service_ver_one.save()
 
-    loaded_ver_two_service = load(saved_path)
-    bento_name = f'{loaded_ver_two_service.name}:{loaded_ver_two_service.version}'
+    loaded_ver_one_service = load(saved_path)
+    bento_name = f'{loaded_ver_one_service.name}:{loaded_ver_one_service.version}'
     create_deployment_command = [
         'bentoml',
         '--verbose',

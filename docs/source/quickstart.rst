@@ -1,5 +1,5 @@
-Quick Start
-===========
+Getting Started
+===============
 
 Installing BentoML
 ------------------
@@ -15,7 +15,7 @@ Instructions for installing from source can be found in the
 
 
 Download Quickstart Notebook
-----------------------------
+++++++++++++++++++++++++++++
 
 Download and run the code in this quickstart locally:
 
@@ -37,9 +37,8 @@ Alternatively, run the code in this guide here on Google's Colab:
     :alt: Launch on Colab
 
 
-
-Creating a Prediction Service with BentoML
-------------------------------------------
+Hello World
+-----------
 
 The first step of creating a prediction service with BentoML, is to write a prediction
 service class inheriting from :code:`bentoml.BentoService`, and declaratively listing the
@@ -79,7 +78,7 @@ artifact for other frameworks such as :code:`PytorchModelArtifact`,
 
 
 Saving a versioned BentoService bundle
---------------------------------------
+++++++++++++++++++++++++++++++++++++++
 
 Next, we train a classifier model with Iris dataset, and pack the trained model with the
 BentoService :code:`IrisClassifier` defined above:
@@ -107,8 +106,9 @@ the packed trained model artifacts, pre-processing code, dependencies and other
 configurations in a single file directory.
 
 
+
 Model Serving via REST API
-++++++++++++++++++++++++++
+--------------------------
 
 From a BentoService SavedBundle, you can start a REST API server by providing the file
 path to the saved bundle:
@@ -142,6 +142,7 @@ Or with :code:`python` and :code:`request` library:
     import requests
     response = requests.post("http://127.0.0.1:5000/predict", json=[[5.1, 3.5, 1.4, 0.2]])
     print(response.text)
+
 
 
 Model Serving via CLI
@@ -193,7 +194,7 @@ or to their organization's private PyPi index to share with other developers.
 
 
 Containerize REST API server with Docker
-++++++++++++++++++++++++++++++++++++++++
+----------------------------------------
 
 The BentoService SavedBundle directory is structured to work as a docker build context,
 that can be used to build a API server docker container image:
@@ -213,7 +214,7 @@ that can be used to build a API server docker container image:
 
 
 Deploy REST API server to the cloud
-+++++++++++++++++++++++++++++++++++
+-----------------------------------
 
 BentoML has a built-in deployment management tool called YataiService. YataiService can
 be deployed separately to manage all your teams' trained models, BentoService bundles,

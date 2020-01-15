@@ -8,7 +8,7 @@ BentoML requires python 3.6 or above, install via :code:`pip`:
 
 .. code-block:: bash
 
-    $ pip install bentoml
+    pip install bentoml
 
 Instructions for installing from source can be found in the
 `development guide <https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md>`_.
@@ -21,9 +21,9 @@ Download and run the code in this quickstart locally:
 
 .. code-block:: bash
 
-    $ pip install jupyter
-    $ git clone http://github.com/bentoml/bentoml
-    $ jupyter notebook bentoml/guides/quick-start/bentoml-quick-start-guide.ipynb
+    pip install jupyter
+    git clone http://github.com/bentoml/bentoml
+    jupyter notebook bentoml/guides/quick-start/bentoml-quick-start-guide.ipynb
 
 In order to build model server docker image, you will also need to install
 :code:`docker` for your system, read more about how to install docker
@@ -218,12 +218,13 @@ Deploy REST API server to the cloud
 
 BentoML has a built-in deployment management tool called YataiService. YataiService can
 be deployed separately to manage all your teams' trained models, BentoService bundles,
-and active deployments in the cloud or in your own kubernetes cluster. You can also
-create simple model serving deployments with just the BentoML cli, which launches a
-local YataiService backed by SQLite database on your machine.
+and active deployments in a central place. But you can also create standalone model
+serving deployments with just the BentoML cli, which launches a local YataiService
+backed by SQLite database on your machine.
 
-Now let's deploy the IrisClassifier to `AWS Lambda <https://aws.amazon.com/lambda/>`_ as
-a serverless endpoint.
+BentoML has built-in support for deploying to multiple cloud platforms. For demo
+purpose, let's now deploy the IrisClassifier service we just created, to
+`AWS Lambda <https://aws.amazon.com/lambda/>`_ into a serverless API endpoint.
 
 First you need to install the :code:`aws-sam-cli` package, which is required by BentoML
 to work with AWS Lambda deployment:

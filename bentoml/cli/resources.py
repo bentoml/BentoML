@@ -74,11 +74,11 @@ def _print_bentos_info(bentos, output_type):
 def get_resources_sub_command():
     # pylint: disable=unused-variable
 
-    @click.group(name='get', help='Get BentoML resources')
+    @click.group(name='get', help='Get BentoML resources from db')
     def get_resource():
         pass
 
-    @get_resource.command()
+    @get_resource.command(help='Get deployment information from db')
     @click.option('-n', '--name', type=click.STRING, help='Deployment name')
     @click.option(
         '-n',
@@ -156,7 +156,7 @@ def get_resources_sub_command():
         else:
             _print_deployments_info(list_result.deployments, output)
 
-    @get_resource.command()
+    @get_resource.command(help='Get BentoService information from db')
     @click.option('-n', '--name', type=click.STRING, help='BentoService name')
     @click.option('-v', '--version', type=click.STRING, help='BentoService version')
     @click.option(

@@ -31,6 +31,7 @@ from bentoml.proto.repository_pb2 import (
     UpdateBentoRequest,
     UploadStatus,
     ListBentoRequest,
+    DangerouslyDeleteBentoRequest,
 )
 from bentoml.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
@@ -182,3 +183,11 @@ class BentoRepositoryAPIClient:
             bento_name=bento_name, offset=offset, limit=limit, filter=filters
         )
         return self.yatai_service.ListBento(list_bento_request)
+
+    def dangerously_delete_bento(self, name, version):
+        dangerously_delete_bento_request = DangerouslyDeleteBentoRequest(
+            bento_name=name, bento_version=version
+        )
+        return self.yatai_service.DangerouslyDeleteBento(
+            dangerously_delete_bento_request
+        )

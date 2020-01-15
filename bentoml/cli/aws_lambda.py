@@ -39,11 +39,13 @@ PLATFORM_NAME = DeploymentSpec.DeploymentOperator.Name(DeploymentSpec.AWS_LAMBDA
 def get_aws_lambda_sub_command():
     # pylint: disable=unused-variable
 
-    @click.group()
+    @click.group(
+        help='Commands for creating and managing BentoService deployments on AWS Lambda'
+    )
     def aws_lambda():
         pass
 
-    @aws_lambda.command()
+    @aws_lambda.command(help='Deploy BentoService to AWS Lambda')
     @click.argument('name', type=click.STRING)
     @click.option(
         '-b',
@@ -77,8 +79,7 @@ def get_aws_lambda_sub_command():
     @click.option('--region', help='AWS region name for deployment')
     @click.option(
         '--api-name',
-        help='User defined API function will be used for inference. Required for AWS '
-        'SageMaker',
+        help='User defined API function will be used for inference',
     )
     @click.option(
         '--memory-size',
@@ -164,7 +165,7 @@ def get_aws_lambda_sub_command():
         _echo(f'Successfully created Lambda deployment {name}', CLI_COLOR_SUCCESS)
         _print_deployment_info(result.deployment, output)
 
-    @aws_lambda.command()
+    @aws_lambda.command(help='Update existing AWS Lambda deployment')
     @click.argument('name', type=click.STRING)
     @click.option(
         '-b',
@@ -183,8 +184,7 @@ def get_aws_lambda_sub_command():
     )
     @click.option(
         '--api-name',
-        help='User defined API function will be used for inference. Required for AWS '
-        'SageMaker',
+        help='User defined API function will be used for inference.',
     )
     @click.option(
         '--memory-size',
@@ -258,7 +258,7 @@ def get_aws_lambda_sub_command():
         _echo(f'Successfully updated Lambda deployment {name}', CLI_COLOR_SUCCESS)
         _print_deployment_info(result.deployment, output)
 
-    @aws_lambda.command()
+    @aws_lambda.command(help='Delete AWS Lambda deployment')
     @click.argument('name', type=click.STRING)
     @click.option(
         '--namespace',
@@ -318,7 +318,7 @@ def get_aws_lambda_sub_command():
                 f'Failed to delete Lambda deployment {name} {str(e)}', CLI_COLOR_ERROR
             )
 
-    @aws_lambda.command()
+    @aws_lambda.command(help='Get AWS Lambda deployment information')
     @click.option('-n', '--name', type=click.STRING, help='Deployment name')
     @click.option(
         '--namespace',

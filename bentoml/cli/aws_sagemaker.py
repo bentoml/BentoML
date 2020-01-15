@@ -41,11 +41,14 @@ PLATFORM_NAME = DeploymentSpec.DeploymentOperator.Name(DeploymentSpec.AWS_SAGEMA
 def get_aws_sagemaker_sub_command():
     # pylint: disable=unused-variable
 
-    @click.group()
+    @click.group(
+        help='Commands for creating and managing BentoService deployments on '
+        'AWS Sagemaker'
+    )
     def aws_sagemaker():
         pass
 
-    @aws_sagemaker.command()
+    @aws_sagemaker.command(help='Deploy BentoService to AWS Sagemaker')
     @click.argument('--name', type=click.STRING)
     @click.option(
         '-b',
@@ -79,6 +82,11 @@ def get_aws_sagemaker_sub_command():
     )
     @click.option('--region', help='AWS region name for deployment')
     @click.option(
+        '--api-name',
+        help='User defined API function will be used for inference.',
+        required=True,
+    )
+    @click.option(
         '--instance-type',
         help='Type of instance will be used for inference. Default to "m1.m4.xlarge"',
         type=click.STRING,
@@ -96,11 +104,6 @@ def get_aws_sagemaker_sub_command():
         'gunicorn worker is based on the instance\' cpu core counts.  '
         'The formula is num_of_cpu/2 + 1',
         type=click.INT,
-    )
-    @click.option(
-        '--api-name',
-        help='User defined API function will be used for inference.',
-        required=True,
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
@@ -181,7 +184,7 @@ def get_aws_sagemaker_sub_command():
         )
         _print_deployment_info(result.deployment, output)
 
-    @aws_sagemaker.command()
+    @aws_sagemaker.command(help='Update existing AWS Sagemaker deployment')
     @click.argument('name', type=click.STRING)
     @click.option(
         '-b',
@@ -289,7 +292,7 @@ def get_aws_sagemaker_sub_command():
         _echo(f'Successfully updated Sagemaker deployment {name}', CLI_COLOR_SUCCESS)
         _print_deployment_info(result.deployment, output)
 
-    @aws_sagemaker.command()
+    @aws_sagemaker.command(help='Delete AWS Sagemaker deployment')
     @click.argument('name', type=click.STRING)
     @click.option(
         '--namespace',
@@ -338,7 +341,7 @@ def get_aws_sagemaker_sub_command():
         track_cli('deploy-delete-success', PLATFORM_NAME, extra_properties)
         _echo(f'Successfully deleted Sagemaker deployment "{name}"', CLI_COLOR_SUCCESS)
 
-    @aws_sagemaker.command()
+    @aws_sagemaker.command(help='Get AWS Sagemaker deployment information')
     @click.option('-n', '--name', type=click.STRING, help='Deployment name')
     @click.option(
         '--namespace',

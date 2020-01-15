@@ -307,6 +307,9 @@ class YataiService(YataiServicer):
     def DangerouslyDeleteBento(self, request, context=None):
         try:
             # TODO: validate request
+            logger.info(
+                'Deleting bento %s:%s', request.bento_name, request.bento_version
+            )
             self.bento_metadata_store.dangerously_delete(
                 request.bento_name, request.bento_version
             )

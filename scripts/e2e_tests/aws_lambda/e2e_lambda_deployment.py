@@ -58,7 +58,6 @@ if __name__ == '__main__':
         '--verbose',
         'aws-lambda',
         'deploy',
-        '--name',
         deployment_name,
         '-b',
         bento_name,

@@ -44,9 +44,7 @@ def get_aws_lambda_sub_command():
         pass
 
     @aws_lambda.command()
-    @click.option(
-        '-n', '--name', type=click.STRING, help='Deployment name', required=True
-    )
+    @click.argument('name', type=click.STRING)
     @click.option(
         '-b',
         '--bento',
@@ -57,7 +55,6 @@ def get_aws_lambda_sub_command():
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
-        '-n',
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "default" which'
@@ -168,9 +165,7 @@ def get_aws_lambda_sub_command():
         _print_deployment_info(result.deployment, output)
 
     @aws_lambda.command()
-    @click.option(
-        '-n', '--name', type=click.STRING, help='Deployment name', required=True
-    )
+    @click.argument('name', type=click.STRING)
     @click.option(
         '-b',
         '--bento',
@@ -181,7 +176,6 @@ def get_aws_lambda_sub_command():
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
-        '-n',
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "default" which'
@@ -228,7 +222,7 @@ def get_aws_lambda_sub_command():
                 namespace=namespace,
                 api_name=api_name,
                 memory_size=memory_size,
-                timeout=timeout
+                timeout=timeout,
             )
         except BentoMLException as e:
             _echo(
@@ -265,11 +259,8 @@ def get_aws_lambda_sub_command():
         _print_deployment_info(result.deployment, output)
 
     @aws_lambda.command()
+    @click.argument('name', type=click.STRING)
     @click.option(
-        '-n', '--name', type=click.STRING, help='Deployment name', required=True
-    )
-    @click.option(
-        '-n',
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
@@ -330,7 +321,6 @@ def get_aws_lambda_sub_command():
     @aws_lambda.command()
     @click.option('-n', '--name', type=click.STRING, help='Deployment name')
     @click.option(
-        '-n',
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'

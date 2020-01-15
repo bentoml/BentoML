@@ -85,7 +85,6 @@ def delete_deployment(deployment_name):
         'bentoml',
         'aws-sagemaker',
         'delete',
-        '--name',
         deployment_name,
         '--force',
     ]
@@ -135,7 +134,6 @@ if __name__ == '__main__':
         '--verbose',
         'aws-sagemaker',
         'deploy',
-        '--name',
         deployment_name,
         '-b',
         bento_name,
@@ -164,7 +162,7 @@ if __name__ == '__main__':
         logger.info('Create deployment failed')
         deployment_failed = True
 
-    # delete_deployment(deployment_name)
+    delete_deployment(deployment_name)
 
     logger.info('Finished')
     if deployment_failed:

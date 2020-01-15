@@ -350,9 +350,10 @@ class DeploymentAPIClient:
         deployment_pb.spec.bento_name = bento_name
         deployment_pb.spec.bento_version = bento_version
         deployment_pb.spec.operator = DeploymentSpec.AWS_LAMBDA
-        deployment_pb.spec.aws_lambda_operator_config.api_name = api_name
         deployment_pb.spec.aws_lambda_operator_config.memory_size = memory_size
         deployment_pb.spec.aws_lambda_operator_config.timeout = timeout
+        if api_name:
+            deployment_pb.spec.aws_lambda_operator_config.api_name = api_name
         if region:
             deployment_pb.spec.aws_lambda_operator_config.region = region
         apply_response = self.apply(deployment_pb)

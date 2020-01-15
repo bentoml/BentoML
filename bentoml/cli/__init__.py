@@ -35,6 +35,7 @@ from bentoml.bundler import (
     load_saved_bundle_config,
     load_bento_service_metadata,
 )
+from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.resources import get_resources_sub_command
 from bentoml.cli.utils import parse_pb_response_error_message
@@ -310,9 +311,11 @@ def create_bentoml_cli():
 
     config_sub_command = get_configuration_sub_command()
     aws_sagemaker_sub_command = get_aws_sagemaker_sub_command()
+    aws_lambda_sub_command = get_aws_lambda_sub_command()
     resources_sub_command = get_resources_sub_command()
     _cli.add_command(config_sub_command)
     _cli.add_command(aws_sagemaker_sub_command)
+    _cli.add_command(aws_lambda_sub_command)
     _cli.add_command(resources_sub_command)
 
     add_additional_deployment_commands(_cli)

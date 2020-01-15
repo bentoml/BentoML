@@ -28,6 +28,7 @@ from bentoml.cli.deployment import (
     _print_deployments_info,
 )
 from bentoml.exceptions import BentoMLException
+from bentoml.proto import status_pb2
 from bentoml.proto.deployment_pb2 import DeploymentSpec
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
@@ -150,39 +151,38 @@ def get_aws_sagemaker_sub_command():
             )
             return
 
-        error_code, error_message = parse_pb_response_error_message(result.status)
-        if error_code and error_message:
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = parse_pb_response_error_message(result.status)
             _echo(
                 f'Failed to create Sagemaker deployment {name} '
                 f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
             return
-        else:
-            if wait:
-                result_state = get_state_after_await_action_complete(
-                    yatai_client=yatai_client,
-                    name=name,
-                    namespace=namespace,
-                    message='Creating Sagemaker deployment ',
-                )
+        if wait:
+            result_state = get_state_after_await_action_complete(
+                yatai_client=yatai_client,
+                name=name,
+                namespace=namespace,
+                message='Creating Sagemaker deployment ',
+            )
+            if result_state.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = parse_pb_response_error_message(
                     result_state.status
                 )
-                if error_code and error_message:
-                    _echo(
-                        f'Created Sagemaker deployment {name}, failed to retrieve '
-                        f'latest status. {error_code}'
-                        f':{error_message}'
-                    )
-                    return
-                result.deployment.state.CopyFrom(result_state.state)
+                _echo(
+                    f'Created Sagemaker deployment {name}, failed to retrieve '
+                    f'latest status. {error_code}'
+                    f':{error_message}'
+                )
+                return
+            result.deployment.state.CopyFrom(result_state.state)
 
-            track_cli('deploy-create-success', PLATFORM_NAME)
-            _echo(
-                f'Successfully created Sagemaker deployment {name}', CLI_COLOR_SUCCESS,
-            )
-            _print_deployment_info(result.deployment, output)
+        track_cli('deploy-create-success', PLATFORM_NAME)
+        _echo(
+            f'Successfully created Sagemaker deployment {name}', CLI_COLOR_SUCCESS,
+        )
+        _print_deployment_info(result.deployment, output)
 
     @aws_sagemaker.command()
     @click.option(
@@ -266,32 +266,31 @@ def get_aws_sagemaker_sub_command():
                 CLI_COLOR_ERROR,
             )
             return
-        error_code, error_message = parse_pb_response_error_message(result.status)
-        if error_code and error_message:
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = parse_pb_response_error_message(result.status)
             _echo(
                 f'Failed to update Sagemaker deployment {name}. '
                 f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
             return
-        else:
-            if wait:
-                result_state = get_state_after_await_action_complete(
-                    yatai_client=yatai_client,
-                    name=name,
-                    namespace=namespace,
-                    message='Updating deployment',
-                )
+        if wait:
+            result_state = get_state_after_await_action_complete(
+                yatai_client=yatai_client,
+                name=name,
+                namespace=namespace,
+                message='Updating deployment',
+            )
+            if result_state.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = parse_pb_response_error_message(
                     result_state.status
                 )
-                if error_code and error_message:
-                    _echo(
-                        f'Updated deployment {name}. Failed to retrieve latest status. '
-                        f'{error_code}:{error_message}'
-                    )
-                    return
-                result.deployment.state.CopyFrom(result_state.state)
+                _echo(
+                    f'Updated deployment {name}. Failed to retrieve latest status. '
+                    f'{error_code}:{error_message}'
+                )
+                return
+            result.deployment.state.CopyFrom(result_state.state)
         track_cli('deploy-update-success', PLATFORM_NAME)
         _echo(f'Successfully updated Sagemaker deployment {name}', CLI_COLOR_SUCCESS)
         _print_deployment_info(result.deployment, output)
@@ -316,10 +315,10 @@ def get_aws_sagemaker_sub_command():
     def delete(name, namespace, force):
         yatai_client = YataiClient()
         get_deployment_result = yatai_client.deployment.get(namespace, name)
-        error_code, error_message = parse_pb_response_error_message(
-            get_deployment_result.status
-        )
-        if error_code and error_message:
+        if get_deployment_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = parse_pb_response_error_message(
+                get_deployment_result.status
+            )
             _echo(
                 f'Failed to get Sagemaker deployment {name} for deletion. '
                 f'{error_code}:{error_message}',
@@ -328,8 +327,8 @@ def get_aws_sagemaker_sub_command():
             return
         track_cli('deploy-delete', PLATFORM_NAME)
         result = yatai_client.deployment.delete(name, namespace, force)
-        error_code, error_message = parse_pb_response_error_message(result.status)
-        if error_code and error_message:
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = parse_pb_response_error_message(result.status)
             _echo(
                 f'Failed to delete Sagemaker deployment {name}. '
                 f'{error_code}:{error_message}',
@@ -385,10 +384,10 @@ def get_aws_sagemaker_sub_command():
         if name:
             track_cli('deploy-get', PLATFORM_NAME)
             get_result = yatai_client.deployment.get(namespace, name)
-            error_code, error_message = parse_pb_response_error_message(
-                get_result.status
-            )
-            if error_code and error_message:
+            if get_result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    get_result.status
+                )
                 _echo(
                     f'Failed to get Sagemaker deployment {name}. '
                     f'{error_code}:{error_message}',
@@ -396,10 +395,10 @@ def get_aws_sagemaker_sub_command():
                 )
                 return
             describe_result = yatai_client.deployment.describe(namespace, name)
-            error_code, error_message = parse_pb_response_error_message(
-                describe_result.status
-            )
-            if error_code and error_message:
+            if describe_result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    describe_result.status
+                )
                 _echo(
                     f'Failed to retrieve the latest status for Sagemaker deployment '
                     f'{name}. {error_code}:{error_message}',
@@ -419,10 +418,10 @@ def get_aws_sagemaker_sub_command():
                 namespace=namespace,
                 is_all_namespaces=all_namespaces,
             )
-            error_code, error_message = parse_pb_response_error_message(
-                list_result.status
-            )
-            if error_code and error_message:
+            if list_result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    list_result.status
+                )
                 _echo(
                     f'Failed to list Sagemaker deployments. '
                     f'{error_code}:{error_message}',

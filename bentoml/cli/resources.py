@@ -31,6 +31,7 @@ from bentoml.cli.deployment import (
     _print_deployments_info,
 )
 from bentoml.exceptions import BentoMLException
+from bentoml.proto import status_pb2
 from bentoml.proto.deployment_pb2 import DeploymentSpec
 from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
@@ -77,7 +78,6 @@ def _print_bentos_info(bentos, output_type):
 
 
 def get_resources_sub_command():
-
     @click.group(name='get', help='Get BentoML resources')
     def get_resource():
         pass
@@ -89,7 +89,7 @@ def get_resources_sub_command():
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
-             'can be changed in BentoML configuration file',
+        'can be changed in BentoML configuration file',
     )
     @click.option('--all-namespaces', is_flag=True)
     @click.option(
@@ -113,10 +113,10 @@ def get_resources_sub_command():
             track_cli('deploy-get')
             output = output or 'json'
             get_result = yatai_client.deployment.get(namespace, name)
-            error_code, error_message = parse_pb_response_error_message(
-                get_result.status
-            )
-            if error_code and error_message:
+            if get_result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    get_result.status
+                )
                 _echo(
                     f'Failed to get deployment {name}. '
                     f'{error_code}:{error_message}',
@@ -126,10 +126,10 @@ def get_resources_sub_command():
             describe_result = yatai_client.deployment.describe(
                 namespace=namespace, name=name
             )
-            error_code, error_message = parse_pb_response_error_message(
-                describe_result.status
-            )
-            if error_code and error_message:
+            if describe_result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    describe_result.status
+                )
                 _echo(
                     f'Failed to retrieve the latest status for Sagemaker deployment'
                     f' {name}. {error_code}:{error_message}',
@@ -149,10 +149,10 @@ def get_resources_sub_command():
                 namespace=namespace,
                 is_all_namespaces=all_namespaces,
             )
-        error_code, error_message = parse_pb_response_error_message(
-            list_result.status
-        )
-        if error_code and error_message:
+        if list_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = parse_pb_response_error_message(
+                list_result.status
+            )
             _echo(
                 f'Failed to list deployments. ' f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
@@ -162,9 +162,7 @@ def get_resources_sub_command():
 
     @get_resource.command()
     @click.option('-n', '--name', type=click.STRING, help='BentoService name')
-    @click.option(
-        '-v', '--version', type=click.STRING, help='BentoService version'
-    )
+    @click.option('-v', '--version', type=click.STRING, help='BentoService version')
     @click.option(
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
@@ -180,13 +178,11 @@ def get_resources_sub_command():
         if name and version:
             track_cli('bento-get')
             output = output or 'json'
-            get_bento_result = yatai_client.repository.get(
-                name, version
-            )
-            error_code, error_message = parse_pb_response_error_message(
-                get_bento_result.status
-            )
-            if error_code and error_message:
+            get_bento_result = yatai_client.repository.get(name, version)
+            if get_bento_result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    get_bento_result.status
+                )
                 _echo(
                     f'Failed to get BentoService{name}:{version} '
                     f'{error_code}:{error_message}',
@@ -201,10 +197,10 @@ def get_resources_sub_command():
             list_bento_versions_result = yatai_client.repository.list(
                 bento_name=name, filters=filters, limit=limit
             )
-            error_code, error_message = parse_pb_response_error_message(
-                list_bento_versions_result.status
-            )
-            if error_code and error_message:
+            if list_bento_versions_result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    list_bento_versions_result.status
+                )
                 _echo(
                     f'Failed to list versions for BentoService {name} '
                     f'{error_code}:{error_message}',
@@ -220,13 +216,12 @@ def get_resources_sub_command():
             list_bentos_result = yatai_client.repository.list(
                 limit=limit, filters=filters
             )
-            error_code, error_message = parse_pb_response_error_message(
-                list_bentos_result.status
-            )
-            if error_code and error_message:
+            if list_bentos_result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    list_bentos_result.status
+                )
                 _echo(
-                    f'Failed to list BentoServices '
-                    f'{error_code}:{error_message}',
+                    f'Failed to list BentoServices ' f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
                 return

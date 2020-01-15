@@ -1,29 +1,30 @@
-Quick Start
-===========
+Getting Started
+===============
 
 Installing BentoML
 ------------------
 
-BentoML requires python 3.6 or above, install via :code:`pip`:
+`BentoML <https://github.com/bentoml/BentoML>`_ requires python 3.6 or above, install
+via :code:`pip`:
 
 .. code-block:: bash
 
-    $ pip install bentoml
+    pip install bentoml
 
 Instructions for installing from source can be found in the
 `development guide <https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md>`_.
 
 
 Download Quickstart Notebook
-----------------------------
+++++++++++++++++++++++++++++
 
 Download and run the code in this quickstart locally:
 
 .. code-block:: bash
 
-    $ pip install jupyter
-    $ git clone http://github.com/bentoml/bentoml
-    $ jupyter notebook bentoml/guides/quick-start/bentoml-quick-start-guide.ipynb
+    pip install jupyter
+    git clone http://github.com/bentoml/bentoml
+    jupyter notebook bentoml/guides/quick-start/bentoml-quick-start-guide.ipynb
 
 In order to build model server docker image, you will also need to install
 :code:`docker` for your system, read more about how to install docker
@@ -37,9 +38,8 @@ Alternatively, run the code in this guide here on Google's Colab:
     :alt: Launch on Colab
 
 
-
-Creating a Prediction Service with BentoML
-------------------------------------------
+Hello World
+-----------
 
 The first step of creating a prediction service with BentoML, is to write a prediction
 service class inheriting from :code:`bentoml.BentoService`, and declaratively listing the
@@ -79,7 +79,7 @@ artifact for other frameworks such as :code:`PytorchModelArtifact`,
 
 
 Saving a versioned BentoService bundle
---------------------------------------
+++++++++++++++++++++++++++++++++++++++
 
 Next, we train a classifier model with Iris dataset, and pack the trained model with the
 BentoService :code:`IrisClassifier` defined above:
@@ -106,6 +106,9 @@ ready for production deployment. It contains the BentoService you defined, as we
 the packed trained model artifacts, pre-processing code, dependencies and other
 configurations in a single file directory.
 
+
+Model Serving with BentoML
+--------------------------
 
 Model Serving via REST API
 ++++++++++++++++++++++++++
@@ -142,6 +145,7 @@ Or with :code:`python` and :code:`request` library:
     import requests
     response = requests.post("http://127.0.0.1:5000/predict", json=[[5.1, 3.5, 1.4, 0.2]])
     print(response.text)
+
 
 
 Model Serving via CLI
@@ -193,7 +197,7 @@ or to their organization's private PyPi index to share with other developers.
 
 
 Containerize REST API server with Docker
-++++++++++++++++++++++++++++++++++++++++
+----------------------------------------
 
 The BentoService SavedBundle directory is structured to work as a docker build context,
 that can be used to build a API server docker container image:
@@ -213,16 +217,17 @@ that can be used to build a API server docker container image:
 
 
 Deploy REST API server to the cloud
-+++++++++++++++++++++++++++++++++++
+-----------------------------------
 
 BentoML has a built-in deployment management tool called YataiService. YataiService can
 be deployed separately to manage all your teams' trained models, BentoService bundles,
-and active deployments in the cloud or in your own kubernetes cluster. You can also
-create simple model serving deployments with just the BentoML cli, which launches a
-local YataiService backed by SQLite database on your machine.
+and active deployments in a central place. But you can also create standalone model
+serving deployments with just the BentoML cli, which launches a local YataiService
+backed by SQLite database on your machine.
 
-Now let's deploy the IrisClassifier to `AWS Lambda <https://aws.amazon.com/lambda/>`_ as
-a serverless endpoint.
+BentoML has built-in support for deploying to multiple cloud platforms. For demo
+purpose, let's now deploy the IrisClassifier service we just created, to
+`AWS Lambda <https://aws.amazon.com/lambda/>`_ into a serverless API endpoint.
 
 First you need to install the :code:`aws-sam-cli` package, which is required by BentoML
 to work with AWS Lambda deployment:
@@ -252,9 +257,6 @@ hosting the BentService you've created:
         -b=IrisClassifier:20191126125258_4AB1D4 \
         --platform=aws-lambda \
 
-
-Learning More?
-++++++++++++++
 
 Interested in learning more about BentoML? Check out the
 `Examples <https://github.com/bentoml/BentoML#examples>`_ on BentoML github repository.

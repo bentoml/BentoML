@@ -13,7 +13,8 @@
 BentoML Documenation
 ====================
 
-BentoML makes it easy to **serve and deploy machine learning models** in the cloud.
+`BentoML <https://github.com/bentoml/BentoML>`_
+makes it easy to **serve and deploy machine learning models** in the cloud.
 
 It is an open source framework for machine learning teams to build cloud-native prediction API
 services that are ready for production. BentoML supports most popular ML training frameworks
@@ -27,5 +28,8 @@ ___________
    :maxdepth: 2
 
    quickstart
+   concepts/index
+   guides/index
+   deployment/index
    api/index
    cli

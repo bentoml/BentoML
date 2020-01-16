@@ -353,7 +353,7 @@ def get_aws_lambda_sub_command():
                 get_result.status
             )
             _echo(
-                f'Failed to get Lambda deployment {name}. '
+                f'Failed to get AWS Lambda deployment {name}. '
                 f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )

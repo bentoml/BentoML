@@ -22,8 +22,8 @@ def run_sagemaker_create_or_update_command(deploy_command):
     logger.info(deployment_stdout)
 
     if deployment_stdout.startswith(
-        'Failed to create Sagemaker deployment'
-    ) or deployment_stdout.startswith('Failed to update Sagemaker deployment'):
+        'Failed to create AWS Sagemaker deployment'
+    ) or deployment_stdout.startswith('Failed to update AWS Sagemaker deployment'):
         deployment_failed = True
         return deployment_failed, endpoint_name
     deployment_stdout_list = deployment_stdout.split('\n')

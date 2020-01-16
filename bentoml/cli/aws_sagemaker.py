@@ -152,19 +152,22 @@ def get_aws_sagemaker_sub_command():
                     result.status
                 )
                 _echo(
-                    f'Failed to create Sagemaker deployment {name} '
+                    f'Failed to create AWS Sagemaker deployment {name} '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
                 return
             track_cli('deploy-create-success', PLATFORM_NAME)
             _echo(
-                f'Successfully created Sagemaker deployment {name}', CLI_COLOR_SUCCESS,
+                f'Successfully created AWS Sagemaker deployment {name}',
+                CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             _echo(
-                'Failed to create Sagemaker deployment {}.: {}'.format(name, str(e)),
+                'Failed to create AWS Sagemaker deployment {}.: {}'.format(
+                    name, str(e)
+                ),
                 CLI_COLOR_ERROR,
             )
 
@@ -248,17 +251,18 @@ def get_aws_sagemaker_sub_command():
                     result.status
                 )
                 _echo(
-                    f'Failed to updated deployment {name}.'
+                    f'Failed to update AWS Sagemaker deployment {name}.'
                     f'{error_code}:{error_message}'
                 )
             track_cli('deploy-update-success', PLATFORM_NAME)
             _echo(
-                f'Successfully updated Sagemaker deployment {name}', CLI_COLOR_SUCCESS
+                f'Successfully updated AWS Sagemaker deployment {name}',
+                CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             _echo(
-                f'Failed to update Sagemaker deployment {name}: {str(e)}',
+                f'Failed to update AWS Sagemaker deployment {name}: {str(e)}',
                 CLI_COLOR_ERROR,
             )
 
@@ -290,28 +294,37 @@ def get_aws_sagemaker_sub_command():
             )
             return
         track_cli('deploy-delete', PLATFORM_NAME)
-        result = yatai_client.deployment.delete(name, namespace, force)
-        if result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                result.status
-            )
+        try:
+            result = yatai_client.deployment.delete(name, namespace, force)
+            if result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = status_pb_to_error_code_and_message(
+                    result.status
+                )
+                _echo(
+                    f'Failed to delete AWS Sagemaker deployment {name}. '
+                    f'{error_code}:{error_message}',
+                    CLI_COLOR_ERROR,
+                )
+                return
+            extra_properties = {}
+            if get_deployment_result.deployment.created_at:
+                stopped_time = datetime.utcnow()
+                extra_properties['uptime'] = int(
+                    (
+                        stopped_time
+                        - get_deployment_result.deployment.created_at.ToDatetime()
+                    ).total_seconds()
+                )
+            track_cli('deploy-delete-success', PLATFORM_NAME, extra_properties)
             _echo(
-                f'Failed to delete Sagemaker deployment {name}. '
-                f'{error_code}:{error_message}',
+                f'Successfully deleted AWS Sagemaker deployment "{name}"',
+                CLI_COLOR_SUCCESS,
+            )
+        except BentoMLException as e:
+            _echo(
+                f'Failed to delete AWS Sagemaker deployment {name} {str(e)}',
                 CLI_COLOR_ERROR,
             )
-            return
-        extra_properties = {}
-        if get_deployment_result.deployment.created_at:
-            stopped_time = datetime.utcnow()
-            extra_properties['uptime'] = int(
-                (
-                    stopped_time
-                    - get_deployment_result.deployment.created_at.ToDatetime()
-                ).total_seconds()
-            )
-        track_cli('deploy-delete-success', PLATFORM_NAME, extra_properties)
-        _echo(f'Successfully deleted Sagemaker deployment "{name}"', CLI_COLOR_SUCCESS)
 
     @aws_sagemaker.command(help='Get AWS Sagemaker deployment information')
     @click.option('-n', '--name', type=click.STRING, help='Deployment name')

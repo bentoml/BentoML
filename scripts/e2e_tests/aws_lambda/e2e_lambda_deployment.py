@@ -56,13 +56,11 @@ if __name__ == '__main__':
     create_deployment_command = [
         'bentoml',
         '--verbose',
+        'lambda',
         'deploy',
-        'create',
         deployment_name,
         '-b',
         bento_name,
-        '--platform',
-        'aws-lambda',
         '--region',
         'us-west-2',
     ]
@@ -75,7 +73,7 @@ if __name__ == '__main__':
         create_deployment_stdout = proc.stdout.read().decode('utf-8')
     logger.info('Finish deploying to AWS Lambda')
     logger.info(create_deployment_stdout)
-    if create_deployment_stdout.startswith('Failed to create deployment'):
+    if create_deployment_stdout.startswith('Failed to create AWS Lambda deployment'):
         deployment_failed = True
     create_deployment_output_list = create_deployment_stdout.split('\n')
     deployment_endpoint = ''
@@ -110,7 +108,7 @@ if __name__ == '__main__':
     logger.info('Delete test deployment with BentoML CLI')
     delete_deployment_command = [
         'bentoml',
-        'deploy',
+        'lambda',
         'delete',
         deployment_name,
         '--force',

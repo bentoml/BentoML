@@ -33,8 +33,15 @@ from bentoml.bundler import (
     load_saved_bundle_config,
     load_bento_service_metadata,
 )
+from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
+from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
+from bentoml.cli.bento import get_bento_sub_command
 from bentoml.server import BentoAPIServer, get_docs
-from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
+from bentoml.cli.click_utils import (
+    BentoMLCommandGroup,
+    conditional_argument,
+    _echo,
+)
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
 from bentoml.utils import ProtoMessageToDict
@@ -288,15 +295,23 @@ def create_bento_service_cli(bundle_path=None):
 
 
 def create_bentoml_cli():
+    # pylint: disable=unused-variable
+
     _cli = create_bento_service_cli()
 
     # Commands created here aren't mean to be used from generated BentoService CLI when
     # installed as PyPI package. The are only used as part of BentoML cli command.
 
-    deployment_sub_command = get_deployment_sub_command()
     config_sub_command = get_configuration_sub_command()
+    aws_sagemaker_sub_command = get_aws_sagemaker_sub_command()
+    aws_lambda_sub_command = get_aws_lambda_sub_command()
+    bento_sub_command = get_bento_sub_command()
+    deployment_sub_command = get_deployment_sub_command()
     _cli.add_command(config_sub_command)
+    _cli.add_command(aws_sagemaker_sub_command)
+    _cli.add_command(aws_lambda_sub_command)
     _cli.add_command(deployment_sub_command)
+    _cli.add_command(bento_sub_command)
 
     return _cli
 

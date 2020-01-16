@@ -26,7 +26,7 @@ from google.protobuf.json_format import MessageToJson, MessageToDict
 from ruamel.yaml import YAML
 
 from bentoml import __version__ as BENTOML_VERSION, _version as version_mod
-
+from bentoml.proto import status_pb2
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -88,3 +88,11 @@ def _is_bentoml_in_develop_mode():
 
     setup_py_path = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
     return not _is_pypi_release() and os.path.isfile(setup_py_path)
+
+
+# This function assume the status is not status.OK
+def status_pb_to_error_code_and_message(pb_status):
+    assert pb_status.status_code != status_pb2.Status.OK
+    error_code = status_pb2.Status.Code.Name(pb_status.status_code)
+    error_message = pb_status.error_message
+    return error_code, error_message

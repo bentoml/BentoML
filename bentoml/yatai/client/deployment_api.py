@@ -16,8 +16,10 @@
 
 
 import logging
+import time
 
 from bentoml import config
+from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentRequest,
@@ -26,8 +28,8 @@ from bentoml.proto.deployment_pb2 import (
     DeploymentSpec,
     DeleteDeploymentRequest,
     ListDeploymentsRequest,
-    ApplyDeploymentResponse,
     Deployment,
+    DeploymentState,
 )
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
 from bentoml.proto import status_pb2
@@ -36,18 +38,22 @@ from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,
     deployment_dict_to_pb,
 )
-from bentoml.yatai.status import Status
 
 logger = logging.getLogger(__name__)
+
+WAIT_TIMEOUT_LIMIT = 600
+WAIT_TIME = 5
 
 
 class DeploymentAPIClient:
     def __init__(self, yatai_service):
         self.yatai_service = yatai_service
 
+    # TODO make sure able to filter base on platform in future PR.
     def list(
         self,
         limit=None,
+        offset=None,
         filters=None,
         labels=None,
         namespace=None,
@@ -63,16 +69,26 @@ class DeploymentAPIClient:
 
         return self.yatai_service.ListDeployments(
             ListDeploymentsRequest(
-                limit=limit, filter=filters, labels=labels, namespace=namespace
+                limit=limit,
+                offset=offset,
+                filter=filters,
+                labels=labels,
+                namespace=namespace,
             )
         )
 
     def get(self, namespace, name):
+        namespace = (
+            namespace if namespace else config().get('deployment', 'default_namespace')
+        )
         return self.yatai_service.GetDeployment(
             GetDeploymentRequest(deployment_name=name, namespace=namespace)
         )
 
     def describe(self, namespace, name):
+        namespace = (
+            namespace if namespace else config().get('deployment', 'default_namespace')
+        )
         return self.yatai_service.DescribeDeployment(
             DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
         )
@@ -86,7 +102,7 @@ class DeploymentAPIClient:
             )
         )
 
-    def apply_deployment(self, deployment_info):
+    def create(self, deployment_info, wait):
         if isinstance(deployment_info, dict):
             deployment_pb = deployment_dict_to_pb(deployment_info)
         elif isinstance(deployment_info, str):
@@ -103,123 +119,157 @@ class DeploymentAPIClient:
 
         validation_errors = validate_deployment_pb_schema(deployment_pb)
         if validation_errors:
-            return ApplyDeploymentResponse(
-                status=Status.INVALID_ARGUMENT(
-                    'Failed to validate deployment: {errors}'.format(
-                        errors=validation_errors
-                    )
-                )
+            raise YataiDeploymentException(
+                f'Failed to validate deployment {deployment_pb.name}: '
+                f'{validation_errors}'
             )
 
-        return self.yatai_service.ApplyDeployment(
-            ApplyDeploymentRequest(deployment=deployment_pb)
-        )
-
-    def create(
-        self,
-        deployment_name,
-        namespace,
-        bento_name,
-        bento_version,
-        platform,
-        operator_spec,
-        labels=None,
-        annotations=None,
-    ):
         # Make sure there is no active deployment with the same deployment name
         get_deployment_pb = self.yatai_service.GetDeployment(
-            GetDeploymentRequest(deployment_name=deployment_name, namespace=namespace)
-        )
-        if get_deployment_pb.status.status_code == status_pb2.Status.OK:
-            raise YataiDeploymentException(
-                'Deployment "{name}" already existed, use Update or Apply for updating '
-                'existing deployment, delete the deployment, or use a different '
-                'deployment name'.format(name=deployment_name)
+            GetDeploymentRequest(
+                deployment_name=deployment_pb.name, namespace=deployment_pb.namespace
             )
+        )
         if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
+            raise BentoMLException(
+                f'Deployment "{deployment_pb.name}" already existed, use Update or '
+                f'Apply for updating existing deployment, delete the deployment, '
+                f'or use a different deployment name'
+            )
+        apply_result = self.yatai_service.ApplyDeployment(
+            ApplyDeploymentRequest(deployment=deployment_pb)
+        )
+        if apply_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                apply_result.status
+            )
+            raise YataiDeploymentException(f'{error_code}:{error_message}')
+        if wait:
+            self._wait_deployment_action_complete(
+                deployment_pb.name, deployment_pb.namespace
+            )
+        return self.get(namespace=deployment_pb.namespace, name=deployment_pb.name)
+
+    def apply(self, deployment_info, wait):
+        if isinstance(deployment_info, dict):
+            deployment_pb = deployment_dict_to_pb(deployment_info)
+        elif isinstance(deployment_info, str):
+            deployment_pb = deployment_yaml_string_to_pb(deployment_info)
+        elif isinstance(deployment_info, Deployment):
+            deployment_pb = deployment_info
+        else:
             raise YataiDeploymentException(
-                'Failed accesing YataiService deployment store. {error_code}:'
-                '{error_message}'.format(
-                    error_code=Status.Name(get_deployment_pb.status.status_code),
-                    error_message=get_deployment_pb.status.error_message,
+                'Unexpected argument type, expect deployment info to be str in yaml '
+                'format or a dict or a deployment protobuf obj, instead got: {}'.format(
+                    str(type(deployment_info))
                 )
             )
 
-        deployment_dict = {
-            "name": deployment_name,
-            "namespace": namespace or config().get('deployment', 'default_namespace'),
-            "labels": labels,
-            "annotations": annotations,
-            "spec": {
-                "bento_name": bento_name,
-                "bento_version": bento_version,
-                "operator": platform,
-            },
-        }
-
-        operator = platform.replace('-', '_').upper()
-        try:
-            operator_value = DeploymentSpec.DeploymentOperator.Value(operator)
-        except ValueError:
-            return ApplyDeploymentResponse(
-                status=Status.INVALID_ARGUMENT('Invalid platform "{}"'.format(platform))
-            )
-        if operator_value == DeploymentSpec.AWS_SAGEMAKER:
-            deployment_dict['spec']['sagemaker_operator_config'] = {
-                'region': operator_spec.get('region')
-                or config().get('aws', 'default_region'),
-                'instance_count': operator_spec.get('instance_count'),
-                'instance_type': operator_spec.get('instance_type'),
-                'api_name': operator_spec.get('api_name', ''),
-            }
-            if operator_spec.get('num_of_gunicorn_workers_per_instance'):
-                deployment_dict['spec']['sagemaker_operator_config'][
-                    'num_of_gunicorn_workers_per_instance'
-                ] = operator_spec.get('num_of_gunicorn_workers_per_instance')
-        elif operator_value == DeploymentSpec.AWS_LAMBDA:
-            deployment_dict['spec']['aws_lambda_operator_config'] = {
-                'region': operator_spec.get('region')
-                or config().get('aws', 'default_region')
-            }
-            for field in ['api_name', 'memory_size', 'timeout']:
-                if operator_spec.get(field):
-                    deployment_dict['spec']['aws_lambda_operator_config'][
-                        field
-                    ] = operator_spec[field]
-        elif operator_value == DeploymentSpec.KUBERNETES:
-            deployment_dict['spec']['kubernetes_operator_config'] = {
-                'kube_namespace': operator_spec.get('kube_namespace', ''),
-                'replicas': operator_spec.get('replicas', 0),
-                'service_name': operator_spec.get('service_name', ''),
-                'service_type': operator_spec.get('service_type', ''),
-            }
-        else:
+        validation_errors = validate_deployment_pb_schema(deployment_pb)
+        if validation_errors:
             raise YataiDeploymentException(
-                'Platform "{}" is not supported in the current version of '
-                'BentoML'.format(platform)
+                f'Failed to validate deployment {deployment_pb.name}: '
+                f'{validation_errors}'
             )
 
-        apply_response = self.apply(deployment_dict)
+        apply_result = self.yatai_service.ApplyDeployment(
+            ApplyDeploymentRequest(deployment=deployment_pb)
+        )
+        if apply_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                apply_result.status
+            )
+            raise YataiDeploymentException(f'{error_code}:{error_message}')
+        if wait:
+            self._wait_deployment_action_complete(
+                deployment_pb.name, deployment_pb.namespace
+            )
+        return self.get(namespace=deployment_pb.namespace, name=deployment_pb.name)
 
-        if apply_response.status.status_code == status_pb2.Status.OK:
-            describe_response = self.describe(deployment_name, namespace)
-            if describe_response.status.status_code == status_pb2.Status.OK:
-                deployment_state = describe_response.state
-                apply_response.deployment.state.CopyFrom(deployment_state)
-                return apply_response
+    def _wait_deployment_action_complete(self, name, namespace):
+        start_time = time.time()
+        while (time.time() - start_time) < WAIT_TIMEOUT_LIMIT:
+            result = self.describe(namespace=namespace, name=name)
+            if (
+                result.status.status_code == status_pb2.Status.OK
+                and result.state.state is DeploymentState.PENDING
+            ):
+                time.sleep(WAIT_TIME)
+                continue
+            else:
+                break
+        return result
 
-        return apply_response
+    def create_sagemaker_deployment(
+        self,
+        name,
+        bento_name,
+        bento_version,
+        api_name,
+        instance_type,
+        instance_count,
+        num_of_gunicorn_workers_per_instance=None,
+        region=None,
+        namespace=None,
+        labels=None,
+        annotations=None,
+        wait=None,
+    ):
+        """Create SageMaker deployment
+
+        Args:
+            name:
+            bento_name:
+            bento_version:
+            api_name:
+            instance_type:
+            instance_count:
+            num_of_gunicorn_workers_per_instance:
+            region:
+            namespace:
+            labels:
+            annotations:
+            wait:
+
+        Returns:
+            ApplyDeploymentResponse
+
+        Raises:
+            BentoMLException
+        """
+        namespace = (
+            namespace if namespace else config().get('deployment', 'default_namespace')
+        )
+
+        deployment_pb = Deployment(
+            name=name, namespace=namespace, labels=labels, annotations=annotations
+        )
+        deployment_pb.spec.bento_name = bento_name
+        deployment_pb.spec.bento_version = bento_version
+        deployment_pb.spec.operator = DeploymentSpec.AWS_SAGEMAKER
+        deployment_pb.spec.sagemaker_operator_config.api_name = api_name
+        deployment_pb.spec.sagemaker_operator_config.instance_count = instance_count
+        deployment_pb.spec.sagemaker_operator_config.instance_type = instance_type
+        if region:
+            deployment_pb.spec.sagemaker_operator_config.region = region
+        if num_of_gunicorn_workers_per_instance:
+            deployment_pb.spec.sagemaker_operator_config.num_of_gunicorn_workers_per_instance = (  # noqa E501
+                num_of_gunicorn_workers_per_instance
+            )
+
+        return self.create(deployment_pb, wait)
 
     def update_sagemaker_deployment(
         self,
-        namespace,
         deployment_name,
+        namespace=None,
         api_name=None,
         instance_type=None,
         instance_count=None,
         num_of_gunicorn_workers_per_instance=None,
         bento_name=None,
         bento_version=None,
+        wait=None,
     ):
         """ Update current sagemaker deployment
 
@@ -232,7 +282,7 @@ class DeploymentAPIClient:
             num_of_gunicorn_workers_per_instance:
             bento_name:
             bento_version:
-            yatai_service:
+            wait:
 
         Returns:
             Protobuf message
@@ -271,13 +321,152 @@ class DeploymentAPIClient:
             'Updated configuration for sagemaker deployment %s', deployment_pb.name
         )
 
-        apply_response = self.apply(deployment_pb)
+        return self.apply(deployment_pb, wait)
 
-        if apply_response.status.status_code == status_pb2.Status.OK:
-            describe_response = self.describe(
-                deployment_pb.name, deployment_pb.namespace
+    def list_sagemaker_deployments(
+        self,
+        limit=None,
+        offset=None,
+        filters=None,
+        labels=None,
+        namespace=None,
+        is_all_namespaces=False,
+    ):
+        # TODO. In future PR, make sure we add platform field to list parameters
+        list_result = self.list(
+            limit=limit,
+            offset=offset,
+            filters=filters,
+            labels=labels,
+            namespace=namespace,
+            is_all_namespaces=is_all_namespaces,
+        )
+        if list_result.status.status_code != status_pb2.Status.OK:
+            return list_result
+
+        sagemaker_deployments = [
+            deployment
+            for deployment in list_result.deployments
+            if deployment.spec.operator == DeploymentSpec.AWS_SAGEMAKER
+        ]
+        del list_result.deployments[:]
+        list_result.deployments.extend(sagemaker_deployments)
+        return list_result
+
+    def create_lambda_deployment(
+        self,
+        name,
+        bento_name,
+        bento_version,
+        memory_size,
+        timeout,
+        api_name=None,
+        region=None,
+        namespace=None,
+        labels=None,
+        annotations=None,
+        wait=None,
+    ):
+        """Create Lambda deployment
+
+        Args:
+            name:
+            bento_name:
+            bento_version:
+            memory_size:
+            timeout:
+            api_name:
+            region:
+            namespace:
+            labels:
+            annotations:
+            wait:
+
+        Returns:
+            ApplyDeploymentResponse: status, deployment
+
+        Raises:
+            BentoMLException
+
+        """
+        namespace = (
+            namespace if namespace else config().get('deployment', 'default_namespace')
+        )
+        deployment_pb = Deployment(
+            name=name, namespace=namespace, labels=labels, annotations=annotations
+        )
+        deployment_pb.spec.bento_name = bento_name
+        deployment_pb.spec.bento_version = bento_version
+        deployment_pb.spec.operator = DeploymentSpec.AWS_LAMBDA
+        deployment_pb.spec.aws_lambda_operator_config.memory_size = memory_size
+        deployment_pb.spec.aws_lambda_operator_config.timeout = timeout
+        if api_name:
+            deployment_pb.spec.aws_lambda_operator_config.api_name = api_name
+        if region:
+            deployment_pb.spec.aws_lambda_operator_config.region = region
+        return self.create(deployment_pb, wait)
+
+    def update_lambda_deployment(
+        self,
+        deployment_name,
+        namespace=None,
+        bento_name=None,
+        bento_version=None,
+        api_name=None,
+        memory_size=None,
+        timeout=None,
+        wait=None,
+    ):
+        get_deployment_result = self.get(namespace=namespace, name=deployment_name)
+        if get_deployment_result.status.status_code != status_pb2.Status.OK:
+            error_code = status_pb2.Status.Code.Name(
+                get_deployment_result.status.status_code
             )
-            if describe_response.status.status_code == status_pb2.Status.OK:
-                apply_response.deployment.state.CopyFrom(describe_response.state)
-                return apply_response
-        return apply_response
+            error_message = status_pb2.status.error_message
+            raise BentoMLException(
+                f'Failed to retrieve current deployment {deployment_name} '
+                f'in {namespace}.  {error_code}:{error_message}'
+            )
+        deployment_pb = get_deployment_result.deployment
+        if bento_name:
+            deployment_pb.spec.bento_name = bento_name
+        if bento_version:
+            deployment_pb.spec.bento_version = bento_version
+        if api_name:
+            deployment_pb.spec.aws_lambda_operator_config.api_name = api_name
+        if memory_size:
+            deployment_pb.spec.aws_lambda_operator_config.memory_size = memory_size
+        if timeout:
+            deployment_pb.spec.aws_lambda_operator_config.timeout = timeout
+        logger.debug('Updated configuration for Lambda deployment %s', deployment_name)
+
+        return self.apply(deployment_pb, wait)
+
+    def list_lambda_deployments(
+        self,
+        limit=None,
+        offset=None,
+        filters=None,
+        labels=None,
+        namespace=None,
+        is_all_namespaces=False,
+    ):
+        # TODO in future PR, make sure we update the filter field for platform
+        list_result = self.list(
+            limit=limit,
+            offset=offset,
+            filters=filters,
+            labels=labels,
+            namespace=namespace,
+            is_all_namespaces=is_all_namespaces,
+        )
+        if list_result.status.status_code != status_pb2.Status.OK:
+            return list_result
+        lambda_deployments = [
+            deployment
+            for deployment in list_result.deployments
+            if deployment.spec.operator == DeploymentSpec.AWS_LAMBDA
+        ]
+        del list_result.deployments[:]
+        list_result.deployments.extend(lambda_deployments)
+        return list_result

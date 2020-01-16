@@ -22,8 +22,8 @@ def run_sagemaker_create_or_update_command(deploy_command):
     logger.info(deployment_stdout)
 
     if deployment_stdout.startswith(
-        'Failed to create deployment'
-    ) or deployment_stdout.startswith('Failed to update deployment'):
+        'Failed to create AWS Sagemaker deployment'
+    ) or deployment_stdout.startswith('Failed to update AWS Sagemaker deployment'):
         deployment_failed = True
         return deployment_failed, endpoint_name
     deployment_stdout_list = deployment_stdout.split('\n')
@@ -86,7 +86,7 @@ def delete_deployment(deployment_name):
     logger.info('Delete test deployment with BentoML CLI')
     delete_deployment_command = [
         'bentoml',
-        'deploy',
+        'sagemaker',
         'delete',
         deployment_name,
         '--force',
@@ -130,18 +130,16 @@ if __name__ == '__main__':
     service_ver_one = TestDeploymentService()
     saved_path = service_ver_one.save()
 
-    loaded_ver_two_service = load(saved_path)
-    bento_name = f'{loaded_ver_two_service.name}:{loaded_ver_two_service.version}'
+    loaded_ver_one_service = load(saved_path)
+    bento_name = f'{loaded_ver_one_service.name}:{loaded_ver_one_service.version}'
     create_deployment_command = [
         'bentoml',
         '--verbose',
+        'sagemaker',
         'deploy',
-        'create',
         deployment_name,
         '-b',
         bento_name,
-        '--platform',
-        'aws-sagemaker',
         '--api-name',
         'classify',
     ]
@@ -188,7 +186,7 @@ if __name__ == '__main__':
         update_bento_version_deployment_command = [
             'bentoml',
             '--verbose',
-            'deploy',
+            'sagemaker',
             'update',
             deployment_name,
             '-b',

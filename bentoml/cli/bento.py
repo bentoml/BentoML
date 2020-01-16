@@ -17,13 +17,12 @@ import click
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
-from bentoml.cli.utils import status_pb_to_error_code_and_message
 from bentoml.cli.click_utils import (
     CLI_COLOR_ERROR,
     _echo,
 )
 from bentoml.proto import status_pb2
-from bentoml.utils import pb_to_yaml
+from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
 
@@ -74,7 +73,7 @@ def get_bento_sub_command():
     def bento_repo():
         pass
 
-    @bento_repo.command(help='Get BentoService information from db')
+    @bento_repo.command(help='Get BentoService information')
     @click.option(
         '-b', '--bento', type=click.STRING, help='BentoService name', required=True
     )
@@ -126,7 +125,7 @@ def get_bento_sub_command():
 
             _print_bentos_info(list_bento_versions_result.bentos, output)
 
-    @bento_repo.command(help='List BentoServices information')
+    @bento_repo.command(name='list', help='List BentoServices information')
     @click.option(
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
@@ -138,7 +137,7 @@ def get_bento_sub_command():
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list(limit, filters, output):
+    def list_bentos(limit, filters, output):
         yatai_client = YataiClient()
         track_cli('bento-list')
         list_bentos_result = yatai_client.repository.list(limit=limit, filters=filters)
@@ -154,7 +153,7 @@ def get_bento_sub_command():
 
         _print_bentos_info(list_bentos_result.bentos, output)
 
-    @bento_repo.command(help='Delete BentoService from db')
+    @bento_repo.command(help='Delete BentoService')
     @click.argument('bento', type=click.STRING)
     def delete(bento):
         yatai_client = YataiClient()

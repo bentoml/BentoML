@@ -15,7 +15,7 @@ from datetime import datetime
 
 import click
 
-from bentoml.cli.utils import status_pb_to_error_code_and_message, Spinner
+from bentoml.cli.utils import Spinner
 from bentoml.cli.click_utils import (
     parse_bento_tag_callback,
     CLI_COLOR_ERROR,
@@ -30,6 +30,7 @@ from bentoml.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.exceptions import BentoMLException
 from bentoml.proto import status_pb2
 from bentoml.proto.deployment_pb2 import DeploymentSpec
+from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
 
@@ -42,9 +43,7 @@ def get_aws_sagemaker_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
-        name='sagemaker',
-        help='Commands for creating and managing BentoService deployments on '
-        'AWS Sagemaker',
+        name='sagemaker', help='Commands for AWS Sagemaker BentoService deployments',
     )
     def aws_sagemaker():
         pass
@@ -371,7 +370,9 @@ def get_aws_sagemaker_sub_command():
                 CLI_COLOR_ERROR,
             )
 
-    @aws_sagemaker.command(help='List AWS Sagemaker deployment information')
+    @aws_sagemaker.command(
+        name='list', help='List AWS Sagemaker deployment information'
+    )
     @click.option(
         '-n',
         '--namespace',
@@ -402,7 +403,7 @@ def get_aws_sagemaker_sub_command():
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list(namespace, limit, offset, filters, labels, output):
+    def list_deployment(namespace, limit, offset, filters, labels, output):
         yatai_client = YataiClient()
         track_cli('deploy-list', PLATFORM_NAME)
         try:

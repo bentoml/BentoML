@@ -16,12 +16,23 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
 import sys
 import threading
 import itertools
 import time
+import logging
+from datetime import datetime
 
-from bentoml.proto import status_pb2
+import humanfriendly
+from google.protobuf.json_format import MessageToJson
+from tabulate import tabulate
+
+from bentoml.cli.click_utils import _echo
+from bentoml.proto.deployment_pb2 import DeploymentState, DeploymentSpec
+from bentoml.utils import pb_to_yaml
+
+logger = logging.getLogger(__name__)
 
 
 class Spinner:
@@ -72,9 +83,79 @@ class Spinner:
             sys.stdout.write('\r')
 
 
-# This function assume the status is not status.OK
-def status_pb_to_error_code_and_message(pb_status):
-    assert pb_status.status_code != status_pb2.Status.OK
-    error_code = status_pb2.Status.Code.Name(pb_status.status_code)
-    error_message = pb_status.error_message
-    return error_code, error_message
+def parse_key_value_pairs(key_value_pairs_str):
+    result = {}
+    if key_value_pairs_str:
+        for key_value_pair in key_value_pairs_str.split(','):
+            key, value = key_value_pair.split('=')
+            key = key.strip()
+            value = value.strip()
+            if key in result:
+                logger.warning("duplicated key '%s' found string map parameter", key)
+            result[key] = value
+    return result
+
+
+def _print_deployment_info(deployment, output_type):
+    if output_type == 'yaml':
+        result = pb_to_yaml(deployment)
+    else:
+        result = MessageToJson(deployment)
+        if deployment.state.info_json:
+            result = json.loads(result)
+            result['state']['infoJson'] = json.loads(deployment.state.info_json)
+            _echo(json.dumps(result, indent=2, separators=(',', ': ')))
+            return
+    _echo(result)
+
+
+def _format_labels_for_print(labels):
+    if not labels:
+        return None
+    result = []
+    for label_key in labels:
+        result.append(
+            '{label_key}:{label_value}'.format(
+                label_key=label_key, label_value=labels[label_key]
+            )
+        )
+    return '\n'.join(result)
+
+
+def _format_deployment_age_for_print(deployment_pb):
+    if not deployment_pb.created_at:
+        # deployments created before version 0.4.5 don't have created_at field,
+        # we will not show the age for those deployments
+        return None
+    else:
+        deployment_duration = datetime.utcnow() - deployment_pb.created_at.ToDatetime()
+        return humanfriendly.format_timespan(deployment_duration)
+
+
+def _print_deployments_table(deployments):
+    table = []
+    headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'STATUS', 'AGE']
+    for deployment in deployments:
+        row = [
+            deployment.name,
+            deployment.namespace,
+            _format_labels_for_print(deployment.labels),
+            DeploymentSpec.DeploymentOperator.Name(deployment.spec.operator)
+            .lower()
+            .replace('_', '-'),
+            DeploymentState.State.Name(deployment.state.state)
+            .lower()
+            .replace('_', ' '),
+            _format_deployment_age_for_print(deployment),
+        ]
+        table.append(row)
+    table_display = tabulate(table, headers, tablefmt='plain')
+    _echo(table_display)
+
+
+def _print_deployments_info(deployments, output_type):
+    if output_type == 'table':
+        _print_deployments_table(deployments)
+    else:
+        for deployment in deployments:
+            _print_deployment_info(deployment, output_type)

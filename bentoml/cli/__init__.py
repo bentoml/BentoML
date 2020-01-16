@@ -36,21 +36,17 @@ from bentoml.bundler import (
 from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.bento import get_bento_sub_command
-from bentoml.cli.utils import status_pb_to_error_code_and_message
-from bentoml.proto import status_pb2
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     conditional_argument,
     _echo,
-    CLI_COLOR_ERROR,
 )
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
 from bentoml.utils import ProtoMessageToDict
 from bentoml.utils.log import configure_logging
 from bentoml.utils.usage_stats import track_cli
-from bentoml.yatai.client import YataiClient
 
 
 def escape_shell_params(param):

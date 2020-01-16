@@ -15,7 +15,8 @@ from datetime import datetime
 
 import click
 
-from bentoml.cli.utils import status_pb_to_error_code_and_message, Spinner
+from bentoml.utils import status_pb_to_error_code_and_message
+from bentoml.cli.utils import Spinner
 from bentoml.cli.click_utils import (
     parse_bento_tag_callback,
     CLI_COLOR_ERROR,
@@ -40,8 +41,7 @@ def get_aws_lambda_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
-        name='lambda',
-        help='Commands for creating and managing BentoService deployments on AWS Lambda',
+        name='lambda', help='Commands for AWS Lambda BentoService deployments',
     )
     def aws_lambda():
         pass
@@ -360,7 +360,7 @@ def get_aws_lambda_sub_command():
             return
         _print_deployment_info(get_result.deployment, output)
 
-    @aws_lambda.command(help='List AWS Sagemaker deployments')
+    @aws_lambda.command(name='list', help='List AWS Sagemaker deployments')
     @click.option(
         '-n',
         '--namespace',
@@ -391,7 +391,7 @@ def get_aws_lambda_sub_command():
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list(namespace, limit, offset, filters, labels, output):
+    def list_deployments(namespace, limit, offset, filters, labels, output):
         yatai_client = YataiClient()
         track_cli('deploy-list', PLATFORM_NAME)
         try:

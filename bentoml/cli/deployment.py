@@ -32,12 +32,13 @@ from bentoml.cli.click_utils import (
     CLI_COLOR_SUCCESS,
     parse_yaml_file_callback,
 )
+from bentoml.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 from bentoml.proto import status_pb2
 from bentoml.utils import pb_to_yaml
 from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLException
-from bentoml.cli.utils import Spinner, parse_pb_response_error_message
+from bentoml.cli.utils import Spinner, status_pb_to_error_code_and_message
 from bentoml.yatai.client import YataiClient
 
 # pylint: disable=unused-variable
@@ -146,8 +147,14 @@ def get_state_after_await_action_complete(
     return result
 
 
-def add_additional_deployment_commands(cli):
-    @cli.command()
+def get_deployment_sub_command():
+    # pylint: disable=unused-variable
+
+    @click.group(help='General deployment commands')
+    def deployment():
+        pass
+
+    @deployment.command()
     @click.option(
         '-f',
         '--file',
@@ -163,7 +170,7 @@ def add_additional_deployment_commands(cli):
         help='Wait for apply action to complete or encounter an error.'
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
-    def deploy(deployment_yaml, output, wait):
+    def create(deployment_yaml, output, wait):
         track_cli('deploy-deploy', deployment_yaml.get('spec', {}).get('operator'))
         try:
             yatai_client = YataiClient()
@@ -218,7 +225,7 @@ def add_additional_deployment_commands(cli):
                 )
             )
 
-    @cli.command(help='Apply BentoService deployment from yaml file')
+    @deployment.command(help='Apply BentoService deployment from yaml file')
     @click.option(
         '-f',
         '--file',
@@ -239,7 +246,9 @@ def add_additional_deployment_commands(cli):
         try:
             yatai_client = YataiClient()
             result = yatai_client.deployment.apply(deployment_yaml)
-            error_code, error_message = parse_pb_response_error_message(result.status)
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
+            )
             if error_code and error_message:
                 if result.status.status_code != status_pb2.Status.OK:
                     _echo(
@@ -255,7 +264,7 @@ def add_additional_deployment_commands(cli):
                         namespace=deployment_yaml.get('namespace'),
                         message='Applying deployment',
                     )
-                    error_code, error_message = parse_pb_response_error_message(
+                    error_code, error_message = status_pb_to_error_code_and_message(
                         result_state.status
                     )
                     if error_code and error_message:
@@ -285,7 +294,7 @@ def add_additional_deployment_commands(cli):
                 )
             )
 
-    @cli.command(help='Delete deployment')
+    @deployment.command(help='Delete deployment')
     @click.option('--name', type=click.STRING, required=True, help='Deployment name')
     @click.option(
         '-n',
@@ -303,7 +312,7 @@ def add_additional_deployment_commands(cli):
     def delete(name, namespace, force):
         yatai_client = YataiClient()
         get_deployment_result = yatai_client.deployment.get(namespace, name)
-        error_code, error_message = parse_pb_response_error_message(
+        error_code, error_message = status_pb_to_error_code_and_message(
             get_deployment_result.status
         )
         if error_code and error_message:
@@ -318,7 +327,7 @@ def add_additional_deployment_commands(cli):
         )
         track_cli('deploy-delete', platform)
         result = yatai_client.deployment.delete(name, namespace, force)
-        error_code, error_message = parse_pb_response_error_message(result.status)
+        error_code, error_message = status_pb_to_error_code_and_message(result.status)
         if error_code and error_message:
             _echo(
                 f'Failed to delete deployment {name}. {error_code}:{error_message}',
@@ -336,3 +345,86 @@ def add_additional_deployment_commands(cli):
             )
         track_cli('deploy-delete-success', platform, extra_properties)
         _echo('Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS)
+
+    @deployment.command()
+    @click.argument('name', type=click.STRING)
+    @click.option(
+        '-n',
+        '--namespace',
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
+        'can be changed in BentoML configuration file',
+    )
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    def get(name, namespace, output):
+        yatai_client = YataiClient()
+        track_cli('deploy-get')
+        get_result = yatai_client.deployment.get(namespace, name)
+        if get_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_result.status
+            )
+            _echo(
+                f'Failed to get deployment {name}. ' f'{error_code}:{error_message}',
+                CLI_COLOR_ERROR,
+            )
+            return
+        describe_result = yatai_client.deployment.describe(
+            namespace=namespace, name=name
+        )
+        if describe_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                describe_result.status
+            )
+            _echo(
+                f'Failed to retrieve the latest status for Sagemaker deployment'
+                f' {name}. {error_code}:{error_message}',
+                CLI_COLOR_ERROR,
+            )
+            return
+        get_result.deployment.state.CopyFrom(describe_result.state)
+        _print_deployment_info(get_result.deployment, output)
+
+    @deployment.command()
+    @click.option(
+        '-n',
+        '--namespace',
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
+        'can be changed in BentoML configuration file',
+        default=ALL_NAMESPACE_TAG,
+    )
+    @click.option(
+        '--limit', type=click.INT, help='Limit how many resources will be retrieved'
+    )
+    @click.option(
+        '--filters',
+        type=click.STRING,
+        help='List resources containing the filter string in name',
+    )
+    @click.option(
+        '-l',
+        '--labels',
+        type=click.STRING,
+        help='List deployments matching the giving labels',
+    )
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml', 'table']))
+    def list(namespace, limit, filters, labels, output):
+        yatai_client = YataiClient()
+        track_cli('deploy-list')
+        output = output or 'table'
+        list_result = yatai_client.deployment.list(
+            limit=limit, filters=filters, labels=labels, namespace=namespace,
+        )
+        if list_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                list_result.status
+            )
+            _echo(
+                f'Failed to list deployments. ' f'{error_code}:{error_message}',
+                CLI_COLOR_ERROR,
+            )
+        else:
+            _print_deployments_info(list_result.deployments, output)
+
+    return deployment

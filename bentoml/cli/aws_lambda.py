@@ -15,7 +15,7 @@ from datetime import datetime
 
 import click
 
-from bentoml.cli.utils import parse_pb_response_error_message, Spinner
+from bentoml.cli.utils import status_pb_to_error_code_and_message, Spinner
 from bentoml.cli.click_utils import (
     parse_bento_tag_callback,
     CLI_COLOR_ERROR,
@@ -39,7 +39,8 @@ def get_aws_lambda_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
-        help='Commands for creating and managing BentoService deployments on AWS Lambda'
+        name='lambda',
+        help='Commands for creating and managing BentoService deployments on AWS Lambda',
     )
     def aws_lambda():
         pass
@@ -56,9 +57,9 @@ def get_aws_lambda_sub_command():
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
-        '--namespace',
+        '-n' '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "default" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration file',
     )
     @click.option(
@@ -131,24 +132,33 @@ def get_aws_lambda_sub_command():
                     timeout=timeout,
                     labels=labels,
                     annotations=annotations,
-                    wait=wait
+                    wait=wait,
                 )
             if result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
+                error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
+                track_cli(
+                    'deploy-create-failure',
+                    PLATFORM_NAME,
+                    {'error_code': error_code, 'error_message': error_message},
+                )
                 _echo(
-                    f'Failed to create Lambda deployment {name} '
+                    f'Failed to create AWS Lambda deployment {name} '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
                 return
             track_cli('deploy-create-success', PLATFORM_NAME)
-            _echo(f'Successfully created Lambda deployment {name}', CLI_COLOR_SUCCESS)
+            _echo(
+                f'Successfully created AWS Lambda deployment {name}', CLI_COLOR_SUCCESS
+            )
             _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
+            track_cli('deploy-create-failure', PLATFORM_NAME, {'error_message': str(e)})
             _echo(
-                f'Failed to create Lambda deployment {name} {str(e)}', CLI_COLOR_ERROR
+                f'Failed to create AWS Lambda deployment {name} {str(e)}',
+                CLI_COLOR_ERROR,
             )
 
     @aws_lambda.command(help='Update existing AWS Lambda deployment')
@@ -163,9 +173,10 @@ def get_aws_lambda_sub_command():
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
+        '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "default" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration file',
     )
     @click.option(
@@ -173,9 +184,9 @@ def get_aws_lambda_sub_command():
     )
     @click.option(
         '--memory-size',
-        help="Maximum Memory Capacity for AWS Lambda function, you can set the memory "
-        "size in 64MB increments from 128MB to 3008MB. The default value "
-        "is 1024 MB.",
+        help="Maximum memory capacity for AWS Lambda function in MB, you can set "
+        "the memory size in 64MB increments from 128 to 3008. "
+        "The default value is 1024",
         type=click.INT,
     )
     @click.option(
@@ -209,26 +220,34 @@ def get_aws_lambda_sub_command():
                     api_name=api_name,
                     memory_size=memory_size,
                     timeout=timeout,
-                    wait=wait
+                    wait=wait,
                 )
                 if result.status.status_code != status_pb2.Status.OK:
-                    error_code, error_message = parse_pb_response_error_message(
+                    error_code, error_message = status_pb_to_error_code_and_message(
                         result.status
                     )
+                    track_cli(
+                        'deploy-update-failure',
+                        PLATFORM_NAME,
+                        {'error_code': error_code, 'error_message': error_message},
+                    )
                     _echo(
-                        f'Failed to update Lambda deployment {name} '
+                        f'Failed to update AWS Lambda deployment {name} '
                         f'{error_code}:{error_message}',
                         CLI_COLOR_ERROR,
                     )
                     return
                 track_cli('deploy-update-success', PLATFORM_NAME)
                 _echo(
-                    f'Successfully updated Lambda deployment {name}', CLI_COLOR_SUCCESS
+                    f'Successfully updated AWS Lambda deployment {name}',
+                    CLI_COLOR_SUCCESS,
                 )
                 _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
+            track_cli('deploy-update-failure', PLATFORM_NAME, {'error_message': str(e)})
             _echo(
-                f'Failed to updated Lambda deployment {name}: {str(e)}', CLI_COLOR_ERROR
+                f'Failed to updated AWS Lambda deployment {name}: {str(e)}',
+                CLI_COLOR_ERROR,
             )
 
     @aws_lambda.command(help='Delete AWS Lambda deployment')
@@ -251,11 +270,11 @@ def get_aws_lambda_sub_command():
             namespace=namespace, name=name
         )
         if get_deployment_result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = parse_pb_response_error_message(
+            error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
             _echo(
-                f'Failed to get Lambda deployment {name} for deletion '
+                f'Failed to get AWS Lambda deployment {name} for deletion '
                 f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
@@ -266,11 +285,16 @@ def get_aws_lambda_sub_command():
                 namespace=namespace, deployment_name=name, force_delete=force
             )
             if result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
+                error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
+                track_cli(
+                    'deploy-delete-failure',
+                    PLATFORM_NAME,
+                    {'error_code': error_code, 'error_message': error_message},
+                )
                 _echo(
-                    f'Failed to delete Lambda deployment {name} '
+                    f'Failed to delete AWS Lambda deployment {name} '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
@@ -285,10 +309,15 @@ def get_aws_lambda_sub_command():
                     ).total_seconds()
                 )
             track_cli('deploy-delete-success', PLATFORM_NAME, extra_properties)
-            _echo(f'Successfully deleted Lambda deployment "{name}"', CLI_COLOR_SUCCESS)
-        except BentoMLException as e:
             _echo(
-                f'Failed to delete Lambda deployment {name} {str(e)}', CLI_COLOR_ERROR
+                f'Successfully deleted AWS Lambda deployment "{name}"',
+                CLI_COLOR_SUCCESS,
+            )
+        except BentoMLException as e:
+            track_cli('deploy-delete-failure', PLATFORM_NAME, {'error_message': str(e)})
+            _echo(
+                f'Failed to delete AWS Lambda deployment {name} {str(e)}',
+                CLI_COLOR_ERROR,
             )
 
     @aws_lambda.command(help='Get AWS Lambda deployment information')
@@ -328,7 +357,7 @@ def get_aws_lambda_sub_command():
             track_cli('deploy-get', PLATFORM_NAME)
             get_result = yatai_client.deployment.get(namespace, name)
             if get_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
+                error_code, error_message = status_pb_to_error_code_and_message(
                     get_result.status
                 )
                 _echo(
@@ -339,7 +368,7 @@ def get_aws_lambda_sub_command():
                 return
             describe_result = yatai_client.deployment.describe(namespace, name)
             if describe_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
+                error_code, error_message = status_pb_to_error_code_and_message(
                     describe_result.status
                 )
                 _echo(
@@ -362,7 +391,7 @@ def get_aws_lambda_sub_command():
                 is_all_namespaces=all_namespaces,
             )
             if list_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
+                error_code, error_message = status_pb_to_error_code_and_message(
                     list_result.status
                 )
                 _echo(

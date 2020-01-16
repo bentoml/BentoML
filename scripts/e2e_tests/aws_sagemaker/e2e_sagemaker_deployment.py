@@ -83,7 +83,7 @@ def delete_deployment(deployment_name):
     logger.info('Delete test deployment with BentoML CLI')
     delete_deployment_command = [
         'bentoml',
-        'aws-sagemaker',
+        'sagemaker',
         'delete',
         deployment_name,
         '--force',
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     create_deployment_command = [
         'bentoml',
         '--verbose',
-        'aws-sagemaker',
+        'sagemaker',
         'deploy',
         deployment_name,
         '-b',

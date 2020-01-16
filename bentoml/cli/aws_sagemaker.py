@@ -15,7 +15,7 @@ from datetime import datetime
 
 import click
 
-from bentoml.cli.utils import parse_pb_response_error_message, Spinner
+from bentoml.cli.utils import status_pb_to_error_code_and_message, Spinner
 from bentoml.cli.click_utils import (
     parse_bento_tag_callback,
     CLI_COLOR_ERROR,
@@ -41,8 +41,9 @@ def get_aws_sagemaker_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
+        name='sagemaker',
         help='Commands for creating and managing BentoService deployments on '
-        'AWS Sagemaker'
+        'AWS Sagemaker',
     )
     def aws_sagemaker():
         pass
@@ -62,7 +63,7 @@ def get_aws_sagemaker_sub_command():
     @click.option(
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "default" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration file',
     )
     @click.option(
@@ -146,7 +147,7 @@ def get_aws_sagemaker_sub_command():
                     wait=wait,
                 )
             if result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
+                error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
                 _echo(
@@ -180,7 +181,7 @@ def get_aws_sagemaker_sub_command():
     @click.option(
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "default" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration file',
     )
     @click.option(
@@ -242,7 +243,7 @@ def get_aws_sagemaker_sub_command():
                     wait=wait,
                 )
             if result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
+                error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
                 _echo(
@@ -278,7 +279,7 @@ def get_aws_sagemaker_sub_command():
         yatai_client = YataiClient()
         get_deployment_result = yatai_client.deployment.get(namespace, name)
         if get_deployment_result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = parse_pb_response_error_message(
+            error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
             _echo(
@@ -290,7 +291,9 @@ def get_aws_sagemaker_sub_command():
         track_cli('deploy-delete', PLATFORM_NAME)
         result = yatai_client.deployment.delete(name, namespace, force)
         if result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = parse_pb_response_error_message(result.status)
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
+            )
             _echo(
                 f'Failed to delete Sagemaker deployment {name}. '
                 f'{error_code}:{error_message}',
@@ -346,7 +349,7 @@ def get_aws_sagemaker_sub_command():
             track_cli('deploy-get', PLATFORM_NAME)
             get_result = yatai_client.deployment.get(namespace, name)
             if get_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
+                error_code, error_message = status_pb_to_error_code_and_message(
                     get_result.status
                 )
                 _echo(
@@ -357,7 +360,7 @@ def get_aws_sagemaker_sub_command():
                 return
             describe_result = yatai_client.deployment.describe(namespace, name)
             if describe_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
+                error_code, error_message = status_pb_to_error_code_and_message(
                     describe_result.status
                 )
                 _echo(
@@ -380,7 +383,7 @@ def get_aws_sagemaker_sub_command():
                 is_all_namespaces=all_namespaces,
             )
             if list_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
+                error_code, error_message = status_pb_to_error_code_and_message(
                     list_result.status
                 )
                 _echo(

@@ -35,8 +35,8 @@ from bentoml.bundler import (
 )
 from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
-from bentoml.cli.resources import get_resources_sub_command
-from bentoml.cli.utils import parse_pb_response_error_message
+from bentoml.cli.bento import get_bento_sub_command
+from bentoml.cli.utils import status_pb_to_error_code_and_message
 from bentoml.proto import status_pb2
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.cli.click_utils import (
@@ -45,7 +45,7 @@ from bentoml.cli.click_utils import (
     _echo,
     CLI_COLOR_ERROR,
 )
-from bentoml.cli.deployment import add_additional_deployment_commands
+from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
 from bentoml.utils import ProtoMessageToDict
 from bentoml.utils.log import configure_logging
@@ -305,33 +305,17 @@ def create_bentoml_cli():
 
     # Commands created here aren't mean to be used from generated BentoService CLI when
     # installed as PyPI package. The are only used as part of BentoML cli command.
-    @_cli.command(help='Delete BentoSerivce from db')
-    @click.argument('name', type=click.STRING)
-    @click.option('--version', type=click.STRING, required=True)
-    def dangerously_delete_bento(name, version):
-        yatai_client = YataiClient()
-        result = yatai_client.repository.dangerously_delete_bento(
-            name=name, version=version
-        )
-        if result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = parse_pb_response_error_message(result.status)
-            _echo(
-                f'Failed to delete Bento {name}:{version} {error_code}:{error_message}',
-                CLI_COLOR_ERROR,
-            )
-            return
-        _echo(f'Successfully delete Bento {name}:{version} record from db')
 
     config_sub_command = get_configuration_sub_command()
     aws_sagemaker_sub_command = get_aws_sagemaker_sub_command()
     aws_lambda_sub_command = get_aws_lambda_sub_command()
-    resources_sub_command = get_resources_sub_command()
+    bento_sub_command = get_bento_sub_command()
+    deployment_sub_command = get_deployment_sub_command()
     _cli.add_command(config_sub_command)
     _cli.add_command(aws_sagemaker_sub_command)
     _cli.add_command(aws_lambda_sub_command)
-    _cli.add_command(resources_sub_command)
-
-    add_additional_deployment_commands(_cli)
+    _cli.add_command(deployment_sub_command)
+    _cli.add_command(bento_sub_command)
 
     return _cli
 

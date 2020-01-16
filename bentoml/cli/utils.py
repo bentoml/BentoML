@@ -73,7 +73,7 @@ class Spinner:
 
 
 # This function assume the status is not status.OK
-def parse_pb_response_error_message(pb_status):
+def status_pb_to_error_code_and_message(pb_status):
     assert pb_status.status_code != status_pb2.Status.OK
     error_code = status_pb2.Status.Code.Name(pb_status.status_code)
     error_message = pb_status.error_message

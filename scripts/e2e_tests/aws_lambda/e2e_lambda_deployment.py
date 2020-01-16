@@ -56,7 +56,7 @@ if __name__ == '__main__':
     create_deployment_command = [
         'bentoml',
         '--verbose',
-        'aws-lambda',
+        'lambda',
         'deploy',
         deployment_name,
         '-b',
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     logger.info('Delete test deployment with BentoML CLI')
     delete_deployment_command = [
         'bentoml',
-        'aws-lambda',
+        'lambda',
         'delete',
         deployment_name,
         '--force',

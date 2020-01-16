@@ -213,7 +213,7 @@ class DeploymentAPIClient:
             return apply_response
         if wait:
             state_result = self._wait_deployment_action_complete(name, namespace)
-            if state_result.status.status_code != status_pb2.Status.OK:
+            if state_result.status.status_code == status_pb2.Status.OK:
                 apply_response.deployment.state.CopyFrom(state_result.state)
         return apply_response
 
@@ -286,7 +286,7 @@ class DeploymentAPIClient:
             state_result = self._wait_deployment_action_complete(
                 name=deployment_name, namespace=namespace
             )
-            if state_result.status.status_code != status_pb2.Status.OK:
+            if state_result.status.status_code == status_pb2.Status.OK:
                 apply_response.deployment.state.CopyFrom(state_result.state)
         return apply_response
 
@@ -389,7 +389,7 @@ class DeploymentAPIClient:
             state_result = self._wait_deployment_action_complete(
                 name=name, namespace=namespace
             )
-            if state_result.status.status_code != status_pb2.Status.OK:
+            if state_result.status.status_code == status_pb2.Status.OK:
                 apply_response.deployment.state.CopyFrom(state_result.state)
         return apply_response
 
@@ -434,7 +434,7 @@ class DeploymentAPIClient:
             state_result = self._wait_deployment_action_complete(
                 name=deployment_name, namespace=namespace
             )
-            if state_result.status.status_code != status_pb2.Status.OK:
+            if state_result.status.status_code == status_pb2.Status.OK:
                 apply_response.deployment.state.CopyFrom(state_result.state)
         return apply_response
 

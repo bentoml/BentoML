@@ -72,12 +72,6 @@ def get_aws_lambda_sub_command():
         'to specify identifying attributes of the deployments that are meaningful to '
         'users',
     )
-    @click.option(
-        '--annotations',
-        type=click.STRING,
-        help='Used to attach arbitrary metadata to BentoService deployments, BentoML '
-        'library and other plugins can then retrieve this metadata.',
-    )
     @click.option('--region', help='AWS region name for deployment')
     @click.option(
         '--api-name', help='User defined API function will be used for inference',
@@ -110,7 +104,6 @@ def get_aws_lambda_sub_command():
         namespace,
         bento,
         labels,
-        annotations,
         region,
         api_name,
         memory_size,
@@ -133,7 +126,6 @@ def get_aws_lambda_sub_command():
                     memory_size=memory_size,
                     timeout=timeout,
                     labels=labels,
-                    annotations=annotations,
                     wait=wait,
                 )
             if result.status.status_code != status_pb2.Status.OK:

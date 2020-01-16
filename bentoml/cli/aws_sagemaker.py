@@ -74,12 +74,6 @@ def get_aws_sagemaker_sub_command():
         'to specify identifying attributes of the deployments that are meaningful to '
         'users',
     )
-    @click.option(
-        '--annotations',
-        type=click.STRING,
-        help='Used to attach arbitrary metadata to BentoService deployments, BentoML '
-        'library and other plugins can then retrieve this metadata.',
-    )
     @click.option('--region', help='AWS region name for deployment')
     @click.option(
         '--api-name',
@@ -117,7 +111,6 @@ def get_aws_sagemaker_sub_command():
         bento,
         namespace,
         labels,
-        annotations,
         region,
         instance_type,
         instance_count,
@@ -136,7 +129,6 @@ def get_aws_sagemaker_sub_command():
                     name=name,
                     namespace=namespace,
                     labels=labels,
-                    annotations=annotations,
                     bento_name=bento_name,
                     bento_version=bento_version,
                     instance_count=instance_count,

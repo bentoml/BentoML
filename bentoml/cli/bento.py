@@ -77,9 +77,7 @@ def get_bento_sub_command():
         pass
 
     @bento_repo.command(help='Get BentoService information')
-    @click.option(
-        '-b', '--bento', type=click.STRING, help='BentoService name', required=True
-    )
+    @click.argument('bento', type=click.STRING)
     @click.option(
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
@@ -90,7 +88,11 @@ def get_bento_sub_command():
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml', 'table']))
     def get(bento, limit, filters, output):
-        name, version = bento.split(':')
+        if ':' in bento:
+            name, version = bento.split(':')
+        else:
+            name = bento
+            version = None
         yatai_client = YataiClient()
 
         if name and version:

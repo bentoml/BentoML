@@ -163,7 +163,7 @@ def get_bento_sub_command():
             _echo(
                 'BentoService name or version is missing. Please provide in the '
                 'format of name:version',
-                CLI_COLOR_ERROR
+                CLI_COLOR_ERROR,
             )
             return
         if not click.confirm(

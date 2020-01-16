@@ -26,6 +26,7 @@ from bentoml.cli.deployment import (
     _print_deployment_info,
     _print_deployments_info,
 )
+from bentoml.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.exceptions import BentoMLException
 from bentoml.proto import status_pb2
 from bentoml.proto.deployment_pb2 import DeploymentSpec
@@ -321,14 +322,53 @@ def get_aws_lambda_sub_command():
             )
 
     @aws_lambda.command(help='Get AWS Lambda deployment information')
-    @click.option('-n', '--name', type=click.STRING, help='Deployment name')
+    @click.argument('bento', type=click.STRING)
     @click.option(
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration file',
     )
-    @click.option('--all-namespaces', is_flag=True)
+    @click.option(
+        '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='json'
+    )
+    def get(name, namespace, output):
+        yatai_client = YataiClient()
+        track_cli('deploy-get', PLATFORM_NAME)
+        describe_result = yatai_client.deployment.describe(namespace, name)
+        if describe_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                describe_result.status
+            )
+            _echo(
+                f'Failed to retrieve the latest status for AWS Lambda deployment '
+                f'{name}. {error_code}:{error_message}',
+                CLI_COLOR_ERROR,
+            )
+            return
+
+        get_result = yatai_client.deployment.get(namespace, name)
+        if get_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_result.status
+            )
+            _echo(
+                f'Failed to get Lambda deployment {name}. '
+                f'{error_code}:{error_message}',
+                CLI_COLOR_ERROR,
+            )
+            return
+        _print_deployment_info(get_result.deployment, output)
+
+    @aws_lambda.command(help='List AWS Sagemaker deployments')
+    @click.option(
+        '-n',
+        '--namespace',
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
+        'can be changed in BentoML configuration file',
+        default=ALL_NAMESPACE_TAG,
+    )
     @click.option(
         '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
     )
@@ -351,55 +391,29 @@ def get_aws_lambda_sub_command():
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def get(name, namespace, all_namespaces, limit, offset, filters, labels, output):
+    def list(namespace, limit, offset, filters, labels, output):
         yatai_client = YataiClient()
-        if name:
-            track_cli('deploy-get', PLATFORM_NAME)
-            get_result = yatai_client.deployment.get(namespace, name)
-            if get_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    get_result.status
-                )
-                _echo(
-                    f'Failed to get Lambda deployment {name}. '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
-                )
-                return
-            describe_result = yatai_client.deployment.describe(namespace, name)
-            if describe_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    describe_result.status
-                )
-                _echo(
-                    f'Failed to retrieve the latest status for Lambda deployment '
-                    f'{name}. {error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
-                )
-                return
-            get_result.deployment.state.CopyFrom(describe_result.state)
-            _print_deployment_info(get_result.deployment, output)
-            return
-        else:
-            track_cli('deploy-list', PLATFORM_NAME)
+        track_cli('deploy-list', PLATFORM_NAME)
+        try:
             list_result = yatai_client.deployment.list_lambda_deployments(
                 limit=limit,
                 offset=offset,
                 filters=filters,
                 labels=labels,
                 namespace=namespace,
-                is_all_namespaces=all_namespaces,
             )
             if list_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_result.status
                 )
                 _echo(
-                    f'Failed to list Sagemaker deployments. '
+                    f'Failed to list AWS Sagemaker deployments. '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
             else:
                 _print_deployments_info(list_result.deployments, output)
+        except BentoMLException as e:
+            _echo(f'Failed to list AWS Sagemaker deployment {str(e)}')
 
     return aws_lambda

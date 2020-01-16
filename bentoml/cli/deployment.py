@@ -408,23 +408,27 @@ def get_deployment_sub_command():
         type=click.STRING,
         help='List deployments matching the giving labels',
     )
-    @click.option('-o', '--output', type=click.Choice(['json', 'yaml', 'table']))
+    @click.option(
+        '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
+    )
     def list(namespace, limit, filters, labels, output):
         yatai_client = YataiClient()
         track_cli('deploy-list')
-        output = output or 'table'
-        list_result = yatai_client.deployment.list(
-            limit=limit, filters=filters, labels=labels, namespace=namespace,
-        )
-        if list_result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                list_result.status
+        try:
+            list_result = yatai_client.deployment.list(
+                limit=limit, filters=filters, labels=labels, namespace=namespace,
             )
-            _echo(
-                f'Failed to list deployments. ' f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
-            )
-        else:
+            if list_result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = status_pb_to_error_code_and_message(
+                    list_result.status
+                )
+                _echo(
+                    f'Failed to list deployments {error_code}:{error_message}',
+                    CLI_COLOR_ERROR,
+                )
+                return
             _print_deployments_info(list_result.deployments, output)
+        except BentoMLException as e:
+            _echo(f'Failed to list deployments {str(e)}')
 
     return deployment

@@ -15,7 +15,7 @@ from datetime import datetime
 
 import click
 
-from bentoml.cli.utils import parse_pb_response_error_message
+from bentoml.cli.utils import parse_pb_response_error_message, Spinner
 from bentoml.cli.click_utils import (
     parse_bento_tag_callback,
     CLI_COLOR_ERROR,
@@ -23,7 +23,6 @@ from bentoml.cli.click_utils import (
     CLI_COLOR_SUCCESS,
 )
 from bentoml.cli.deployment import (
-    get_state_after_await_action_complete,
     _print_deployment_info,
     _print_deployments_info,
 )
@@ -78,8 +77,7 @@ def get_aws_lambda_sub_command():
     )
     @click.option('--region', help='AWS region name for deployment')
     @click.option(
-        '--api-name',
-        help='User defined API function will be used for inference',
+        '--api-name', help='User defined API function will be used for inference',
     )
     @click.option(
         '--memory-size',
@@ -121,49 +119,37 @@ def get_aws_lambda_sub_command():
         yatai_client = YataiClient()
         bento_name, bento_version = bento.split(':')
         try:
-            result = yatai_client.deployment.create_lambda_deployment(
-                name=name,
-                namespace=namespace,
-                bento_name=bento_name,
-                bento_version=bento_version,
-                api_name=api_name,
-                region=region,
-                memory_size=memory_size,
-                timeout=timeout,
-                labels=labels,
-                annotations=annotations,
-            )
+            with Spinner('Deploying Lambda deployment '):
+                result = yatai_client.deployment.create_lambda_deployment(
+                    name=name,
+                    namespace=namespace,
+                    bento_name=bento_name,
+                    bento_version=bento_version,
+                    api_name=api_name,
+                    region=region,
+                    memory_size=memory_size,
+                    timeout=timeout,
+                    labels=labels,
+                    annotations=annotations,
+                    wait=wait
+                )
+            if result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    result.status
+                )
+                _echo(
+                    f'Failed to create Lambda deployment {name} '
+                    f'{error_code}:{error_message}',
+                    CLI_COLOR_ERROR,
+                )
+                return
+            track_cli('deploy-create-success', PLATFORM_NAME)
+            _echo(f'Successfully created Lambda deployment {name}', CLI_COLOR_SUCCESS)
+            _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             _echo(
                 f'Failed to create Lambda deployment {name} {str(e)}', CLI_COLOR_ERROR
             )
-        if result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = parse_pb_response_error_message(result.status)
-            _echo(
-                f'Failed to create Lambda deployment {name} '
-                f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
-            )
-            return
-        if wait:
-            result_state = get_state_after_await_action_complete(
-                yatai_client=yatai_client,
-                name=name,
-                namespace=namespace,
-                message='Creating Lambda deployment ',
-            )
-            if result_state.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
-                    result_state.status
-                )
-                _echo(
-                    f'Created Lambda deployment {name}, failed to retrieve latest '
-                    f'status {error_code}:{error_message}'
-                )
-            result.deployment.state.CopyFrom(result_state.state)
-        track_cli('deploy-create-success', PLATFORM_NAME)
-        _echo(f'Successfully created Lambda deployment {name}', CLI_COLOR_SUCCESS)
-        _print_deployment_info(result.deployment, output)
 
     @aws_lambda.command(help='Update existing AWS Lambda deployment')
     @click.argument('name', type=click.STRING)
@@ -183,8 +169,7 @@ def get_aws_lambda_sub_command():
         'can be changed in BentoML configuration file',
     )
     @click.option(
-        '--api-name',
-        help='User defined API function will be used for inference.',
+        '--api-name', help='User defined API function will be used for inference.',
     )
     @click.option(
         '--memory-size',
@@ -215,48 +200,36 @@ def get_aws_lambda_sub_command():
             bento_name = None
             bento_version = None
         try:
-            result = yatai_client.deployment.update_lambda_deployment(
-                bento_name=bento_name,
-                bento_version=bento_version,
-                deployment_name=name,
-                namespace=namespace,
-                api_name=api_name,
-                memory_size=memory_size,
-                timeout=timeout,
-            )
+            with Spinner('Updating Lambda deployment '):
+                result = yatai_client.deployment.update_lambda_deployment(
+                    bento_name=bento_name,
+                    bento_version=bento_version,
+                    deployment_name=name,
+                    namespace=namespace,
+                    api_name=api_name,
+                    memory_size=memory_size,
+                    timeout=timeout,
+                    wait=wait
+                )
+                if result.status.status_code != status_pb2.Status.OK:
+                    error_code, error_message = parse_pb_response_error_message(
+                        result.status
+                    )
+                    _echo(
+                        f'Failed to update Lambda deployment {name} '
+                        f'{error_code}:{error_message}',
+                        CLI_COLOR_ERROR,
+                    )
+                    return
+                track_cli('deploy-update-success', PLATFORM_NAME)
+                _echo(
+                    f'Successfully updated Lambda deployment {name}', CLI_COLOR_SUCCESS
+                )
+                _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             _echo(
                 f'Failed to updated Lambda deployment {name}: {str(e)}', CLI_COLOR_ERROR
             )
-            return
-        if result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = parse_pb_response_error_message(result.status)
-            _echo(
-                f'Failed to update Lambda deployment {name} '
-                f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
-            )
-            return
-        if wait:
-            result_state = get_state_after_await_action_complete(
-                yatai_client=yatai_client,
-                name=name,
-                namespace=namespace,
-                message='Updating Lambda deployment ',
-            )
-            if result_state.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
-                    result_state.status
-                )
-                _echo(
-                    f'Updated Lambda deployment {name}. Failed to retrieve latest '
-                    f'status {error_code}:{error_message}'
-                )
-                return
-            result.deployment.state.CopyFrom(result_state.state)
-        track_cli('deploy-update-success', PLATFORM_NAME)
-        _echo(f'Successfully updated Lambda deployment {name}', CLI_COLOR_SUCCESS)
-        _print_deployment_info(result.deployment, output)
 
     @aws_lambda.command(help='Delete AWS Lambda deployment')
     @click.argument('name', type=click.STRING)

@@ -15,7 +15,7 @@ from datetime import datetime
 
 import click
 
-from bentoml.cli.utils import parse_pb_response_error_message
+from bentoml.cli.utils import parse_pb_response_error_message, Spinner
 from bentoml.cli.click_utils import (
     parse_bento_tag_callback,
     CLI_COLOR_ERROR,
@@ -23,7 +23,6 @@ from bentoml.cli.click_utils import (
     CLI_COLOR_SUCCESS,
 )
 from bentoml.cli.deployment import (
-    get_state_after_await_action_complete,
     _print_deployment_info,
     _print_deployments_info,
 )
@@ -131,58 +130,41 @@ def get_aws_sagemaker_sub_command():
         bento_name, bento_version = bento.split(':')
         yatai_client = YataiClient()
         try:
-            result = yatai_client.deployment.create_sagemaker_deployment(
-                name=name,
-                namespace=namespace,
-                labels=labels,
-                annotations=annotations,
-                bento_name=bento_name,
-                bento_version=bento_version,
-                instance_count=instance_count,
-                instance_type=instance_type,
-                num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
-                api_name=api_name,
-                region=region,
+            with Spinner('Deploying Sagemaker deployment '):
+                result = yatai_client.deployment.create_sagemaker_deployment(
+                    name=name,
+                    namespace=namespace,
+                    labels=labels,
+                    annotations=annotations,
+                    bento_name=bento_name,
+                    bento_version=bento_version,
+                    instance_count=instance_count,
+                    instance_type=instance_type,
+                    num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
+                    api_name=api_name,
+                    region=region,
+                    wait=wait,
+                )
+            if result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    result.status
+                )
+                _echo(
+                    f'Failed to create Sagemaker deployment {name} '
+                    f'{error_code}:{error_message}',
+                    CLI_COLOR_ERROR,
+                )
+                return
+            track_cli('deploy-create-success', PLATFORM_NAME)
+            _echo(
+                f'Successfully created Sagemaker deployment {name}', CLI_COLOR_SUCCESS,
             )
+            _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             _echo(
                 'Failed to create Sagemaker deployment {}.: {}'.format(name, str(e)),
                 CLI_COLOR_ERROR,
             )
-            return
-
-        if result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = parse_pb_response_error_message(result.status)
-            _echo(
-                f'Failed to create Sagemaker deployment {name} '
-                f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
-            )
-            return
-        if wait:
-            result_state = get_state_after_await_action_complete(
-                yatai_client=yatai_client,
-                name=name,
-                namespace=namespace,
-                message='Creating Sagemaker deployment ',
-            )
-            if result_state.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
-                    result_state.status
-                )
-                _echo(
-                    f'Created Sagemaker deployment {name}, failed to retrieve '
-                    f'latest status. {error_code}'
-                    f':{error_message}'
-                )
-                return
-            result.deployment.state.CopyFrom(result_state.state)
-
-        track_cli('deploy-create-success', PLATFORM_NAME)
-        _echo(
-            f'Successfully created Sagemaker deployment {name}', CLI_COLOR_SUCCESS,
-        )
-        _print_deployment_info(result.deployment, output)
 
     @aws_sagemaker.command(help='Update existing AWS Sagemaker deployment')
     @click.argument('name', type=click.STRING)
@@ -247,50 +229,36 @@ def get_aws_sagemaker_sub_command():
             bento_name = None
             bento_version = None
         try:
-            result = yatai_client.deployment.update_sagemaker_deployment(
-                namespace=namespace,
-                deployment_name=name,
-                bento_name=bento_name,
-                bento_version=bento_version,
-                instance_count=instance_count,
-                instance_type=instance_type,
-                num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
-                api_name=api_name,
+            with Spinner('Updating Sagemaker deployment '):
+                result = yatai_client.deployment.update_sagemaker_deployment(
+                    namespace=namespace,
+                    deployment_name=name,
+                    bento_name=bento_name,
+                    bento_version=bento_version,
+                    instance_count=instance_count,
+                    instance_type=instance_type,
+                    num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
+                    api_name=api_name,
+                    wait=wait,
+                )
+            if result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = parse_pb_response_error_message(
+                    result.status
+                )
+                _echo(
+                    f'Failed to updated deployment {name}.'
+                    f'{error_code}:{error_message}'
+                )
+            track_cli('deploy-update-success', PLATFORM_NAME)
+            _echo(
+                f'Successfully updated Sagemaker deployment {name}', CLI_COLOR_SUCCESS
             )
+            _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             _echo(
                 f'Failed to update Sagemaker deployment {name}: {str(e)}',
                 CLI_COLOR_ERROR,
             )
-            return
-        if result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = parse_pb_response_error_message(result.status)
-            _echo(
-                f'Failed to update Sagemaker deployment {name}. '
-                f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
-            )
-            return
-        if wait:
-            result_state = get_state_after_await_action_complete(
-                yatai_client=yatai_client,
-                name=name,
-                namespace=namespace,
-                message='Updating deployment',
-            )
-            if result_state.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = parse_pb_response_error_message(
-                    result_state.status
-                )
-                _echo(
-                    f'Updated deployment {name}. Failed to retrieve latest status. '
-                    f'{error_code}:{error_message}'
-                )
-                return
-            result.deployment.state.CopyFrom(result_state.state)
-        track_cli('deploy-update-success', PLATFORM_NAME)
-        _echo(f'Successfully updated Sagemaker deployment {name}', CLI_COLOR_SUCCESS)
-        _print_deployment_info(result.deployment, output)
 
     @aws_sagemaker.command(help='Delete AWS Sagemaker deployment')
     @click.argument('name', type=click.STRING)

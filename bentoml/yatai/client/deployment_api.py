@@ -16,6 +16,7 @@
 
 
 import logging
+import time
 
 from bentoml import config
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
@@ -27,6 +28,7 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentRequest,
     ListDeploymentsRequest,
     Deployment,
+    DeploymentState,
 )
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
 from bentoml.proto import status_pb2
@@ -37,6 +39,9 @@ from bentoml.yatai.deployment_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+WAIT_TIMEOUT_LIMIT = 600
+WAIT_TIME = 5
 
 
 class DeploymentAPIClient:
@@ -122,6 +127,20 @@ class DeploymentAPIClient:
             ApplyDeploymentRequest(deployment=deployment_pb)
         )
 
+    def _wait_deployment_action_complete(self, name, namespace):
+        start_time = time.time()
+        while (time.time() - start_time) < WAIT_TIMEOUT_LIMIT:
+            result = self.describe(namespace=namespace, name=name)
+            if (
+                result.status.status_code == status_pb2.Status.OK
+                and result.state.state is DeploymentState.PENDING
+            ):
+                time.sleep(WAIT_TIME)
+                continue
+            else:
+                break
+        return result
+
     def create_sagemaker_deployment(
         self,
         name,
@@ -135,6 +154,7 @@ class DeploymentAPIClient:
         namespace=None,
         labels=None,
         annotations=None,
+        wait=None,
     ):
         """Create SageMaker deployment
 
@@ -150,6 +170,7 @@ class DeploymentAPIClient:
             namespace:
             labels:
             annotations:
+            wait:
 
         Returns:
             ApplyDeploymentResponse
@@ -188,10 +209,12 @@ class DeploymentAPIClient:
             )
 
         apply_response = self.apply(deployment_pb)
-        if apply_response.status.status_code == status_pb2.Status.OK:
-            describe_response = self.describe(name, namespace)
-            if describe_response.status.status_code == status_pb2.Status.OK:
-                apply_response.deployment.state.CopyFrom(describe_response.state)
+        if apply_response.status.status_code != status_pb2.Status.OK:
+            return apply_response
+        if wait:
+            state_result = self._wait_deployment_action_complete(name, namespace)
+            if state_result.status.status_code != status_pb2.Status.OK:
+                apply_response.deployment.state.CopyFrom(state_result.state)
         return apply_response
 
     def update_sagemaker_deployment(
@@ -204,6 +227,7 @@ class DeploymentAPIClient:
         num_of_gunicorn_workers_per_instance=None,
         bento_name=None,
         bento_version=None,
+        wait=None,
     ):
         """ Update current sagemaker deployment
 
@@ -216,7 +240,7 @@ class DeploymentAPIClient:
             num_of_gunicorn_workers_per_instance:
             bento_name:
             bento_version:
-            yatai_service:
+            wait:
 
         Returns:
             Protobuf message
@@ -256,14 +280,14 @@ class DeploymentAPIClient:
         )
 
         apply_response = self.apply(deployment_pb)
-
-        if apply_response.status.status_code == status_pb2.Status.OK:
-            describe_response = self.describe(
-                deployment_pb.name, deployment_pb.namespace
+        if apply_response.status.status_code != status_pb2.Status.OK:
+            return apply_response
+        if wait:
+            state_result = self._wait_deployment_action_complete(
+                name=deployment_name, namespace=namespace
             )
-            if describe_response.status.status_code == status_pb2.Status.OK:
-                apply_response.deployment.state.CopyFrom(describe_response.state)
-                return apply_response
+            if state_result.status.status_code != status_pb2.Status.OK:
+                apply_response.deployment.state.CopyFrom(state_result.state)
         return apply_response
 
     def list_sagemaker_deployments(
@@ -309,6 +333,7 @@ class DeploymentAPIClient:
         namespace=None,
         labels=None,
         annotations=None,
+        wait=None,
     ):
         """Create Lambda deployment
 
@@ -323,6 +348,7 @@ class DeploymentAPIClient:
             namespace:
             labels:
             annotations:
+            wait:
 
         Returns:
             ApplyDeploymentResponse: status, deployment
@@ -357,10 +383,14 @@ class DeploymentAPIClient:
         if region:
             deployment_pb.spec.aws_lambda_operator_config.region = region
         apply_response = self.apply(deployment_pb)
-        if apply_response.status.status_code == status_pb2.Status.OK:
-            describe_response = self.describe(name=name, namespace=namespace)
-            if describe_response.status.status_code == status_pb2.Status.OK:
-                apply_response.deployment.state.CopyFrom(describe_response.state)
+        if apply_response.status.status_code != status_pb2.Status.OK:
+            return apply_response
+        if wait:
+            state_result = self._wait_deployment_action_complete(
+                name=name, namespace=namespace
+            )
+            if state_result.status.status_code != status_pb2.Status.OK:
+                apply_response.deployment.state.CopyFrom(state_result.state)
         return apply_response
 
     def update_lambda_deployment(
@@ -372,6 +402,7 @@ class DeploymentAPIClient:
         api_name=None,
         memory_size=None,
         timeout=None,
+        wait=None,
     ):
         get_deployment_result = self.get(namespace=namespace, name=deployment_name)
         if get_deployment_result.status.status_code != status_pb2.Status.OK:
@@ -397,10 +428,14 @@ class DeploymentAPIClient:
         logger.debug('Updated configuration for Lambda deployment %s', deployment_name)
 
         apply_response = self.apply(deployment_pb)
-        if apply_response.status.status_code == status_pb2.Status.OK:
-            describe_response = self.describe(name=deployment_name, namespace=namespace)
-            if describe_response.status.status_code == status_pb2.Status.OK:
-                apply_response.deployment.state.CopyFrom(describe_response.state)
+        if apply_response.status.status_code != status_pb2.Status.OK:
+            return apply_response
+        if wait:
+            state_result = self._wait_deployment_action_complete(
+                name=deployment_name, namespace=namespace
+            )
+            if state_result.status.status_code != status_pb2.Status.OK:
+                apply_response.deployment.state.CopyFrom(state_result.state)
         return apply_response
 
     def list_lambda_deployments(

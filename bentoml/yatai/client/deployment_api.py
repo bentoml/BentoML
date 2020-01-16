@@ -187,7 +187,6 @@ class DeploymentAPIClient:
         return self.get(namespace=deployment_pb.namespace, name=deployment_pb.name)
 
     def _wait_deployment_action_complete(self, name, namespace):
-        print('inside the waiting action ')
         start_time = time.time()
         while (time.time() - start_time) < WAIT_TIMEOUT_LIMIT:
             result = self.describe(namespace=namespace, name=name)

@@ -150,7 +150,7 @@ def get_deployment_sub_command():
             )
 
     @deployment.command(help='Delete deployment')
-    @click.option('--name', type=click.STRING, required=True, help='Deployment name')
+    @click.argument('name', type=click.STRING)
     @click.option(
         '-n',
         '--namespace',

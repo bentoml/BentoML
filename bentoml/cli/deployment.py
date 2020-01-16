@@ -33,7 +33,7 @@ from bentoml.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLException
-from bentoml.cli.utils import Spinner, _print_deployment_info
+from bentoml.cli.utils import Spinner, _print_deployment_info, _print_deployments_info
 
 # pylint: disable=unused-variable
 

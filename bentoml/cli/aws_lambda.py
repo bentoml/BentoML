@@ -58,7 +58,8 @@ def get_aws_lambda_sub_command():
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
-        '-n' '--namespace',
+        '-n',
+        '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration file',

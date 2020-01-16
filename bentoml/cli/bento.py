@@ -39,19 +39,22 @@ def _print_bento_info(bento, output_type):
 
 def _print_bento_table(bentos):
     table = []
-    headers = ['NAME', 'VERSION', 'CREATED_AT', 'ARTIFACTS', 'HANDLERS']
+    headers = ['NAME', 'VERSION', 'CREATED_AT', 'APIS', 'ARTIFACTS']
     for bento in bentos:
         artifacts = [
-            artifact.artifact_type
+            f'{artifact.name}({artifact.artifact_type})'
             for artifact in bento.bento_service_metadata.artifacts
         ]
-        handlers = [api.handler_type for api in bento.bento_service_metadata.apis]
+        apis = [
+            f'{api.name}:({api.handler_type})'
+            for api in bento.bento_service_metadata.apis
+        ]
         row = [
             bento.name,
             bento.version,
             bento.bento_service_metadata.created_at.ToDatetime(),
+            ', '.join(apis),
             ', '.join(artifacts),
-            ', '.join(handlers),
         ]
         table.append(row)
     table_display = tabulate(table, headers, tablefmt='plain')

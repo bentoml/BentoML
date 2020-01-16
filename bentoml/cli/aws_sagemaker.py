@@ -385,11 +385,6 @@ def get_aws_sagemaker_sub_command():
         '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
     )
     @click.option(
-        '--offset',
-        type=click.INT,
-        help='Offset number of deployments will be retrieved',
-    )
-    @click.option(
         '--filters',
         type=click.STRING,
         help='List deployments containing the filter string in name or version',
@@ -403,13 +398,12 @@ def get_aws_sagemaker_sub_command():
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_deployment(namespace, limit, offset, filters, labels, output):
+    def list_deployment(namespace, limit, filters, labels, output):
         yatai_client = YataiClient()
         track_cli('deploy-list', PLATFORM_NAME)
         try:
             list_result = yatai_client.deployment.list_sagemaker_deployments(
                 limit=limit,
-                offset=offset,
                 filters=filters,
                 labels=labels,
                 namespace=namespace,

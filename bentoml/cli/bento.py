@@ -109,7 +109,7 @@ def get_bento_sub_command():
                     CLI_COLOR_ERROR,
                 )
                 return
-            _print_bento_info(get_bento_result.bento_repo, output)
+            _print_bento_info(get_bento_result.bento, output)
             return
         elif name:
             track_cli('bento-list')

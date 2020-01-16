@@ -232,7 +232,7 @@ def get_deployment_sub_command():
                 describe_result.status
             )
             _echo(
-                f'Failed to retrieve the latest status for Sagemaker deployment'
+                f'Failed to retrieve the latest status for deployment'
                 f' {name}. {error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )

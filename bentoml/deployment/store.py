@@ -20,7 +20,7 @@ import logging
 import datetime
 from contextlib import contextmanager
 
-from sqlalchemy import Column, String, Integer, DateTime, JSON, UniqueConstraint
+from sqlalchemy import Column, String, Integer, DateTime, JSON, UniqueConstraint, text
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
@@ -146,17 +146,35 @@ class DeploymentStore(object):
                     "Deployment '%s' in namespace: '%s' is not found" % name, namespace
                 )
 
-    def list(self, namespace, filter_str=None, labels=None, offset=None, limit=None):
+    def list(
+        self,
+        namespace,
+        operators=None,
+        labels=None,
+        offset=None,
+        limit=None,
+        order_by=None,
+        ascending_order=None,
+    ):
         with create_session(self.sess_maker) as sess:
             query = sess.query(Deployment)
             if namespace != ALL_NAMESPACE_TAG:  # else query all namespaces
-                query.filter_by(namespace=namespace)
+                query = query.filter_by(namespace=namespace)
             if limit:
-                query.limit(limit)
+                query = query.limit(limit)
             if offset:
-                query.offset(offset)
-            if filter_str:
-                query.filter(Deployment.name.contains(filter_str))
+                query = query.offset(offset)
+            if operators:
+                print(operators)
+                print('add fake')
+                operators = ['AWS_SAGEMAKER', 'AWS_LAMBDA']
+                query = query.filter(Deployment.spec['operator'].in_(operators))
+            if order_by:
+                list_order = 'asc' if ascending_order else 'desc'
+                query = query.order_by(text(f'{order_by} {list_order}'))
             if labels:
                 raise NotImplementedError("Listing by labels is not yet implemented")
-            return list(map(_deployment_orm_obj_to_pb, query.all()))
+            print(query)
+            query_result = query.all()
+
+            return list(map(_deployment_orm_obj_to_pb, query_result))

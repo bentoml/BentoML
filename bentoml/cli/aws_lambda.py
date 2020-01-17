@@ -366,11 +366,6 @@ def get_aws_lambda_sub_command():
         '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
     )
     @click.option(
-        '--filters',
-        type=click.STRING,
-        help='List deployments containing the filter string in name or version',
-    )
-    @click.option(
         '-l',
         '--labels',
         type=click.STRING,
@@ -379,15 +374,12 @@ def get_aws_lambda_sub_command():
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_deployments(namespace, limit, filters, labels, output):
+    def list_deployments(namespace, limit, labels, output):
         yatai_client = YataiClient()
         track_cli('deploy-list', PLATFORM_NAME)
         try:
             list_result = yatai_client.deployment.list_lambda_deployments(
-                limit=limit,
-                filters=filters,
-                labels=labels,
-                namespace=namespace,
+                limit=limit, labels=labels, namespace=namespace,
             )
             if list_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(

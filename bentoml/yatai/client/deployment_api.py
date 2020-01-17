@@ -49,15 +49,16 @@ class DeploymentAPIClient:
     def __init__(self, yatai_service):
         self.yatai_service = yatai_service
 
-    # TODO make sure able to filter base on platform in future PR.
     def list(
         self,
         limit=None,
         offset=None,
-        filters=None,
         labels=None,
         namespace=None,
         is_all_namespaces=False,
+        operators=None,
+        order_by=None,
+        ascending_order=None,
     ):
         if is_all_namespaces:
             if namespace is not None:
@@ -71,9 +72,11 @@ class DeploymentAPIClient:
             ListDeploymentsRequest(
                 limit=limit,
                 offset=offset,
-                filter=filters,
                 labels=labels,
                 namespace=namespace,
+                operators=operators,
+                order_by=order_by,
+                ascending_order=ascending_order,
             )
         )
 
@@ -327,19 +330,21 @@ class DeploymentAPIClient:
         self,
         limit=None,
         offset=None,
-        filters=None,
         labels=None,
         namespace=None,
         is_all_namespaces=False,
+        order_by=None,
+        ascending_order=None,
     ):
-        # TODO. In future PR, make sure we add platform field to list parameters
         list_result = self.list(
             limit=limit,
             offset=offset,
-            filters=filters,
             labels=labels,
             namespace=namespace,
             is_all_namespaces=is_all_namespaces,
+            operators=[DeploymentSpec.AWS_SAGEMAKER],
+            order_by=order_by,
+            ascending_order=ascending_order,
         )
         if list_result.status.status_code != status_pb2.Status.OK:
             return list_result
@@ -446,27 +451,29 @@ class DeploymentAPIClient:
         self,
         limit=None,
         offset=None,
-        filters=None,
         labels=None,
         namespace=None,
         is_all_namespaces=False,
+        order_by=None,
+        ascending_order=None,
     ):
-        # TODO in future PR, make sure we update the filter field for platform
         list_result = self.list(
             limit=limit,
             offset=offset,
-            filters=filters,
             labels=labels,
             namespace=namespace,
             is_all_namespaces=is_all_namespaces,
+            operators=[DeploymentSpec.AWS_LAMBDA],
+            order_by=order_by,
+            ascending_order=ascending_order,
         )
         if list_result.status.status_code != status_pb2.Status.OK:
             return list_result
-        lambda_deployments = [
-            deployment
-            for deployment in list_result.deployments
-            if deployment.spec.operator == DeploymentSpec.AWS_LAMBDA
-        ]
-        del list_result.deployments[:]
-        list_result.deployments.extend(lambda_deployments)
+        # lambda_deployments = [
+        #     deployment
+        #     for deployment in list_result.deployments
+        #     if deployment.spec.operator == DeploymentSpec.AWS_LAMBDA
+        # ]
+        # del list_result.deployments[:]
+        # list_result.deployments.extend(lambda_deployments)
         return list_result

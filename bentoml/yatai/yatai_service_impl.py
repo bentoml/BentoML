@@ -24,6 +24,8 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
+    ListDeploymentsRequest,
+    DeploymentSpec,
 )
 from bentoml.proto.repository_pb2 import (
     AddBentoResponse,
@@ -31,6 +33,7 @@ from bentoml.proto.repository_pb2 import (
     GetBentoResponse,
     UpdateBentoResponse,
     ListBentoResponse,
+    ListBentoRequest,
 )
 from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
 from bentoml.proto.yatai_service_pb2 import (
@@ -246,12 +249,26 @@ class YataiService(YataiServicer):
     def ListDeployments(self, request, context=None):
         try:
             namespace = request.namespace or self.default_namespace
+            order_column_name = (
+                ListDeploymentsRequest.SORTABLE_COLUMN.Name(request.order_by)
+                if request.order_by
+                else 'created_at'
+            )
+            if request.operators:
+                operator_names = [
+                    DeploymentSpec.DeploymentOperator.Name(operator)
+                    for operator in request.operators
+                ]
+            else:
+                operator_names = None
             deployment_pb_list = self.deployment_store.list(
                 namespace=namespace,
-                filter_str=request.filter,
                 labels=request.labels,
                 offset=request.offset,
                 limit=request.limit,
+                operators=operator_names,
+                order_by=order_column_name,
+                ascending_order=request.ascending_order,
             )
 
             return ListDeploymentsResponse(
@@ -343,11 +360,17 @@ class YataiService(YataiServicer):
     def ListBento(self, request, context=None):
         try:
             # TODO: validate request
+            order_column_name = (
+                ListBentoRequest.SORTABLE_COLUMN.Name(request.order_by)
+                if request.order_by
+                else 'created_at'
+            )
             bento_metadata_pb_list = self.bento_metadata_store.list(
                 bento_name=request.bento_name,
                 offset=request.offset,
                 limit=request.limit,
-                filter_str=request.filter,
+                order_by=order_column_name,
+                ascending_order=request.ascending_order,
             )
 
             return ListBentoResponse(status=Status.OK(), bentos=bento_metadata_pb_list)

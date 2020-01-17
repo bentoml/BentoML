@@ -28,6 +28,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
@@ -173,18 +174,26 @@ class BentoMetadataStore(object):
                     "Bento %s:%s is not found in repository" % bento_name, bento_version
                 )
 
-    def list(self, bento_name=None, offset=None, limit=None, filter_str=None):
+    def list(
+        self,
+        bento_name=None,
+        offset=None,
+        limit=None,
+        order_by=None,
+        ascending_order=None,
+    ):
         with create_session(self.sess_maker) as sess:
             query = sess.query(Bento)
             if limit:
-                query.limit(limit)
+                query = query.limit(limit)
             if offset:
-                query.offset(offset)
-            if filter_str:
-                query.filter(Bento.name.contains(filter_str))
+                query = query.offset(offset)
             if bento_name:
                 # filter_by apply filtering criterion to a copy of the query
                 query = query.filter_by(name=bento_name)
+            if order_by:
+                list_order = 'asc' if ascending_order else 'desc'
+                query = query.order_by(text(f'{order_by} {list_order}'))
 
             query_result = query.all()
             result = [

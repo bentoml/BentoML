@@ -28,7 +28,6 @@ from sqlalchemy import (
     JSON,
     UniqueConstraint,
     text,
-    or_,
 )
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict

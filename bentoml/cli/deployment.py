@@ -139,6 +139,12 @@ def get_deployment_sub_command():
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
+                return
+            track_cli('deploy-create-success', platform_name)
+            _echo(
+                f'Successfully applied deployment {deployment_name}', CLI_COLOR_SUCCESS,
+            )
+            _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             track_cli(
                 'deploy-apply-failure', platform_name, {'error_message': str(e)},

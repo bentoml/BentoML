@@ -20,7 +20,16 @@ import logging
 import datetime
 from contextlib import contextmanager
 
-from sqlalchemy import Column, String, Integer, DateTime, JSON, UniqueConstraint, text
+from sqlalchemy import (
+    Column,
+    String,
+    Integer,
+    DateTime,
+    JSON,
+    UniqueConstraint,
+    text,
+    or_,
+)
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
@@ -149,7 +158,7 @@ class DeploymentStore(object):
     def list(
         self,
         namespace,
-        operators=None,
+        operator=None,
         labels=None,
         offset=None,
         limit=None,
@@ -164,17 +173,13 @@ class DeploymentStore(object):
                 query = query.limit(limit)
             if offset:
                 query = query.offset(offset)
-            if operators:
-                print(operators)
-                print('add fake')
-                operators = ['AWS_SAGEMAKER', 'AWS_LAMBDA']
-                query = query.filter(Deployment.spec['operator'].in_(operators))
+            if operator:
+                query = query.filter(Deployment.spec['operator'].contains(operator))
             if order_by:
                 list_order = 'asc' if ascending_order else 'desc'
                 query = query.order_by(text(f'{order_by} {list_order}'))
             if labels:
                 raise NotImplementedError("Listing by labels is not yet implemented")
-            print(query)
             query_result = query.all()
 
             return list(map(_deployment_orm_obj_to_pb, query_result))

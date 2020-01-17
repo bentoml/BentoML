@@ -383,14 +383,25 @@ def get_aws_sagemaker_sub_command():
         help='List deployments matching the giving labels',
     )
     @click.option(
+        '--order-by',
+        type=click.Choice(['created_at', 'name']),
+        case_sensitive=False,
+        default='created_at',
+    )
+    @click.option('--ascending-order', type=click.BOOL, default=False)
+    @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_deployment(namespace, limit, labels, output):
+    def list_deployment(namespace, limit, labels, order_by, ascending_order, output):
         yatai_client = YataiClient()
         track_cli('deploy-list', PLATFORM_NAME)
         try:
             list_result = yatai_client.deployment.list_sagemaker_deployments(
-                limit=limit, labels=labels, namespace=namespace,
+                limit=limit,
+                labels=labels,
+                namespace=namespace,
+                order_by=order_by,
+                ascending_order=ascending_order,
             )
             if list_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(

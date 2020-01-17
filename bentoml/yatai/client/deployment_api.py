@@ -56,7 +56,7 @@ class DeploymentAPIClient:
         labels=None,
         namespace=None,
         is_all_namespaces=False,
-        operators=None,
+        operator=None,
         order_by=None,
         ascending_order=None,
     ):
@@ -67,6 +67,10 @@ class DeploymentAPIClient:
                     namespace,
                 )
             namespace = ALL_NAMESPACE_TAG
+        if isinstance(operator, str):
+            operator = DeploymentSpec.DeploymentOperator.Value(
+                operator.replace('-', '_').upper()
+            )
 
         return self.yatai_service.ListDeployments(
             ListDeploymentsRequest(
@@ -74,7 +78,7 @@ class DeploymentAPIClient:
                 offset=offset,
                 labels=labels,
                 namespace=namespace,
-                operators=operators,
+                operator=operator,
                 order_by=order_by,
                 ascending_order=ascending_order,
             )
@@ -342,7 +346,7 @@ class DeploymentAPIClient:
             labels=labels,
             namespace=namespace,
             is_all_namespaces=is_all_namespaces,
-            operators=[DeploymentSpec.AWS_SAGEMAKER],
+            operator=DeploymentSpec.AWS_SAGEMAKER,
             order_by=order_by,
             ascending_order=ascending_order,
         )
@@ -463,7 +467,7 @@ class DeploymentAPIClient:
             labels=labels,
             namespace=namespace,
             is_all_namespaces=is_all_namespaces,
-            operators=[DeploymentSpec.AWS_LAMBDA],
+            operator=DeploymentSpec.AWS_LAMBDA,
             order_by=order_by,
             ascending_order=ascending_order,
         )

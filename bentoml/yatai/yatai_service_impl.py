@@ -254,19 +254,17 @@ class YataiService(YataiServicer):
                 if request.order_by
                 else 'created_at'
             )
-            if request.operators:
-                operator_names = [
-                    DeploymentSpec.DeploymentOperator.Name(operator)
-                    for operator in request.operators
-                ]
-            else:
-                operator_names = None
+            operator_name = (
+                DeploymentSpec.DeploymentOperator.Name(request.operator)
+                if request.operator
+                else None
+            )
             deployment_pb_list = self.deployment_store.list(
                 namespace=namespace,
                 labels=request.labels,
                 offset=request.offset,
                 limit=request.limit,
-                operators=operator_names,
+                operator=operator_name,
                 order_by=order_column_name,
                 ascending_order=request.ascending_order,
             )

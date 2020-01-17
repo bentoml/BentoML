@@ -180,7 +180,7 @@ message ListDeploymentsRequest {
   string namespace = 1;
   int32 offset = 2;
   int32 limit = 3;
-  repeated DeploymentSpec.DeploymentOperator operators = 4;
+  DeploymentSpec.DeploymentOperator operator = 4;
   SORTABLE_COLUMN order_by = 5;
   bool ascending_order = 6;
   map<string, string> labels = 7;

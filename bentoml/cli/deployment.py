@@ -251,6 +251,7 @@ def get_deployment_sub_command():
         'can be changed in BentoML configuration file',
         default=ALL_NAMESPACE_TAG,
     )
+    @click.option('-p', '--platform', type=click.STRING, help='platform')
     @click.option(
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
@@ -261,14 +262,28 @@ def get_deployment_sub_command():
         help='List deployments matching the giving labels',
     )
     @click.option(
+        '--order-by',
+        type=click.Choice(['created_at', 'name']),
+        case_sensitive=False,
+        default='created_at',
+    )
+    @click.option('--ascending-order', type=click.BOOL, default=False)
+    @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_deployments(namespace, limit, labels, output):
+    def list_deployments(
+        namespace, platform, limit, labels, order_by, ascending_order, output
+    ):
         yatai_client = YataiClient()
         track_cli('deploy-list')
         try:
             list_result = yatai_client.deployment.list(
-                limit=limit, labels=labels, namespace=namespace,
+                limit=limit,
+                labels=labels,
+                namespace=namespace,
+                operator=platform,
+                order_by=order_by,
+                ascending_order=ascending_order,
             )
             if list_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(

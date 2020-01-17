@@ -383,12 +383,9 @@ def get_aws_sagemaker_sub_command():
         help='List deployments matching the giving labels',
     )
     @click.option(
-        '--order-by',
-        type=click.Choice(['created_at', 'name']),
-        case_sensitive=False,
-        default='created_at',
+        '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
     )
-    @click.option('--ascending-order', type=click.BOOL, default=False)
+    @click.option('--ascending-order', is_flag=True)
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )

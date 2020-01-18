@@ -114,7 +114,7 @@ that is ready for production use:
 bentoml deployment create my-iris-classifier --bento IrisClassifier:{VERSION} --platform=aws-lambda
 ```
 
-More detailed code and walkthrough of this example can be found in the [BentoML Quickstart Guide](http://docs.bentoml.org/en/latest/quickstart.html).
+More detailed code and walkthrough of this example can be found in the [BentoML Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html).
 
 ## Documentation
 

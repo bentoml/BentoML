@@ -178,9 +178,20 @@ class BentoRepositoryAPIClient:
         )
         return self.yatai_service.GetBento(get_bento_request)
 
-    def list(self, bento_name=None, offset=None, limit=None, filters=None):
+    def list(
+        self,
+        bento_name=None,
+        offset=None,
+        limit=None,
+        order_by=None,
+        ascending_order=None,
+    ):
         list_bento_request = ListBentoRequest(
-            bento_name=bento_name, offset=offset, limit=limit, filter=filters
+            bento_name=bento_name,
+            offset=offset,
+            limit=limit,
+            order_by=order_by,
+            ascending_order=ascending_order,
         )
         return self.yatai_service.ListBento(list_bento_request)
 

@@ -76,13 +76,9 @@ def get_bento_sub_command():
     @click.option(
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
-    @click.option(
-        '--filters',
-        type=click.STRING,
-        help='List resources containing the filter string in name',
-    )
+    @click.option('--ascending-order', is_flag=True)
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml', 'table']))
-    def get(bento, limit, filters, output):
+    def get(bento, limit, ascending_order, output):
         if ':' in bento:
             name, version = bento.split(':')
         else:
@@ -110,7 +106,7 @@ def get_bento_sub_command():
             track_cli('bento-list')
             output = output or 'table'
             list_bento_versions_result = yatai_client.repository.list(
-                bento_name=name, filters=filters, limit=limit
+                bento_name=name, limit=limit, ascending_order=ascending_order
             )
             if list_bento_versions_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
@@ -127,20 +123,27 @@ def get_bento_sub_command():
 
     @bento_repo.command(name='list', help='List BentoServices information')
     @click.option(
-        '--limit', type=click.INT, help='Limit how many resources will be retrieved'
+        '--limit', type=click.INT, help='Limit how many BentoServices will be retrieved'
     )
     @click.option(
-        '--filters',
-        type=click.STRING,
-        help='List resources containing the filter string in name',
+        '--offset', type=click.INT, help='How many BentoServices will be skipped'
     )
+    @click.option(
+        '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
+    )
+    @click.option('--ascending-order', is_flag=True)
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_bentos(limit, filters, output):
+    def list_bentos(limit, offset, order_by, ascending_order, output):
         yatai_client = YataiClient()
         track_cli('bento-list')
-        list_bentos_result = yatai_client.repository.list(limit=limit, filters=filters)
+        list_bentos_result = yatai_client.repository.list(
+            limit=limit,
+            offset=offset,
+            order_by=order_by,
+            ascending_order=ascending_order,
+        )
         if list_bentos_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_bentos_result.status

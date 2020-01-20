@@ -473,11 +473,4 @@ class DeploymentAPIClient:
         )
         if list_result.status.status_code != status_pb2.Status.OK:
             return list_result
-        # lambda_deployments = [
-        #     deployment
-        #     for deployment in list_result.deployments
-        #     if deployment.spec.operator == DeploymentSpec.AWS_LAMBDA
-        # ]
-        # del list_result.deployments[:]
-        # list_result.deployments.extend(lambda_deployments)
         return list_result

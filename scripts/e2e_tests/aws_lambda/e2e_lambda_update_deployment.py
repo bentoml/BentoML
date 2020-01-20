@@ -6,24 +6,23 @@ import uuid
 import sys
 
 import requests
-import json
 
 from bentoml import BentoService, load, api
-from bentoml.handlers import DataframeHandler
+from bentoml.handlers import DataframeHandler, JsonHandler
 
 
 logger = logging.getLogger('bentoml.test')
 
 
 class TestLambdaDeployment(BentoService):
-    @api(DataframeHandler)
-    def predict(self, df):
+    @api(JsonHandler)
+    def predict(self, data):
         return 'cat'
 
 
 class UpdatedLambdaDeployment(BentoService):
-    @api(DataframeHandler)
-    def predict(self, df):
+    @api(JsonHandler)
+    def predict(self, data):
         return 'dog'
 
 
@@ -82,7 +81,8 @@ def delete_deployment(deployment_name):
     logger.info('Delete test deployment with BentoML CLI')
     delete_deployment_command = [
         'bentoml',
-        'lambda' 'delete',
+        'lambda',
+        'delete',
         deployment_name,
         '--force',
     ]
@@ -97,7 +97,7 @@ def delete_deployment(deployment_name):
 if __name__ == '__main__':
     deployment_failed = False
     random_hash = uuid.uuid4().hex[:6]
-    deployment_name = f'tests-lambda-e2e-{random_hash}'
+    deployment_name = f'tests-lambda-update-{random_hash}'
 
     args = sys.argv
     bento_name = None
@@ -123,10 +123,11 @@ if __name__ == '__main__':
 
     if not deployment_failed and deployment_endpoint:
         deployment_failed = test_deployment_with_sample_data(
-            deployment_endpoint, '"cat"\n'
+            deployment_endpoint, '"cat"'
         )
 
     service_two = UpdatedLambdaDeployment()
+    service_two.save()
     updated_bento_name = f'{service_two.name}:{service_two.version}'
     update_deployment_command = [
         'bentoml',
@@ -142,8 +143,11 @@ if __name__ == '__main__':
     )
     if not deployment_failed and deployment_endpoint:
         deployment_failed = test_deployment_with_sample_data(
-            deployment_endpoint, '"dog"\n'
+            deployment_endpoint, '"dog"'
         )
+    else:
+        deployment_failed = True
+        logger.debug('Update Lambda failed')
 
     delete_deployment(deployment_name)
 

@@ -349,7 +349,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 lambda_deployment_config=lambda_deployment_config,
                 bento_path=bento_path,
             )
-            deployment_pb.state.state = DeploymentState.PENDING
             return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
         except BentoMLException as error:
             if lambda_s3_bucket and lambda_deployment_config:
@@ -414,9 +413,8 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 bento_path=bento_path,
             )
 
-            deployment_pb.state.state = DeploymentState.PENDING
             return ApplyDeploymentResponse(
-                deployment_pb=deployment_pb, status=Status.OK()
+                deployment=deployment_pb, status=Status.OK()
             )
         except BentoMLException as error:
             deployment_pb.state.state = DeploymentState.ERROR

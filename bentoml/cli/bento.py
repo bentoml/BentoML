@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
-
 import click
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
@@ -29,12 +27,9 @@ from bentoml.yatai.client import YataiClient
 
 def _print_bento_info(bento, output_type):
     if output_type == 'yaml':
-        result = pb_to_yaml(bento)
+        _echo(pb_to_yaml(bento))
     else:
-        result = MessageToJson(bento)
-        _echo(json.dumps(result, indent=2, separators=(',', ': ')))
-        return
-    _echo(result)
+        _echo(MessageToJson(bento))
 
 
 def _print_bento_table(bentos):

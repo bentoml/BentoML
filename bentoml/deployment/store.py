@@ -161,32 +161,36 @@ class DeploymentStore(object):
         operator=None,
         labels=None,
         offset=None,
-        limit=200,
+        limit=None,
         order_by=ListDeploymentsRequest.created_at,
         ascending_order=False,
     ):
         with create_session(self.sess_maker) as sess:
-            query = sess.query(Deployment).limit(limit)
-            if namespace != ALL_NAMESPACE_TAG:  # else query all namespaces
-                query = query.filter_by(namespace=namespace)
-            if offset:
-                query = query.offset(offset)
-            if operator:
-                operator_name = DeploymentSpec.DeploymentOperator.Name(operator)
-                query = query.filter(
-                    Deployment.spec['operator'].contains(operator_name)
-                )
-            if order_by:
-                order_by = ListDeploymentsRequest.SORTABLE_COLUMN.Name(order_by)
-            else:
-                order_by = 'created_at'
+            query = sess.query(Deployment)
+            order_by = ListDeploymentsRequest.SORTABLE_COLUMN.Name(order_by)
             order_by_field = getattr(Deployment, order_by)
             order_by_action = (
                 order_by_field if ascending_order else desc(order_by_field)
             )
             query = query.order_by(order_by_action)
+            if namespace != ALL_NAMESPACE_TAG:  # else query all namespaces
+                query = query.filter_by(namespace=namespace)
+            if operator:
+                operator_name = DeploymentSpec.DeploymentOperator.Name(operator)
+                query = query.filter(
+                    Deployment.spec['operator'].contains(operator_name)
+                )
             if labels:
                 raise NotImplementedError("Listing by labels is not yet implemented")
+
+            # We are not defaulting limit to 200 in the signature,
+            # because protobuf will pass 0 as value
+            limit = limit or 200
+            # Limit and offset need to be called after order_by filter/filter_by is
+            # called
+            query = query.limit(limit)
+            if offset:
+                query = query.offset(offset)
             query_result = query.all()
 
             return list(map(_deployment_orm_obj_to_pb, query_result))

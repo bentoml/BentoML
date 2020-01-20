@@ -179,26 +179,30 @@ class BentoMetadataStore(object):
         self,
         bento_name=None,
         offset=None,
-        limit=200,
+        limit=None,
         order_by=ListBentoRequest.created_at,
         ascending_order=False,
     ):
         with create_session(self.sess_maker) as sess:
-            query = sess.query(Bento).limit(limit)
-            if offset:
-                query = query.offset(offset)
-            if bento_name:
-                # filter_by apply filtering criterion to a copy of the query
-                query = query.filter_by(name=bento_name)
-            if order_by:
-                order_by = ListBentoRequest.SORTABLE_COLUMN.Name(order_by)
-            else:
-                order_by = 'created_at'
+            query = sess.query(Bento)
+            order_by = ListBentoRequest.SORTABLE_COLUMN.Name(order_by)
             order_by_field = getattr(Bento, order_by)
             order_by_action = (
                 order_by_field if ascending_order else desc(order_by_field)
             )
             query = query.order_by(order_by_action)
+            if bento_name:
+                # filter_by apply filtering criterion to a copy of the query
+                query = query.filter_by(name=bento_name)
+
+            # We are not defaulting limit to 200 in the signature,
+            # because protobuf will pass 0 as value
+            limit = limit or 200
+            # Limit and offset need to be called after order_by filter/filter_by is
+            # called
+            query = query.limit(limit)
+            if offset:
+                query = query.offset(offset)
 
             query_result = query.all()
             result = [

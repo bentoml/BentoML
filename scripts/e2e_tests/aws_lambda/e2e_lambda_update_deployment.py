@@ -8,7 +8,7 @@ import sys
 import requests
 
 from bentoml import BentoService, load, api
-from bentoml.handlers import DataframeHandler, JsonHandler
+from bentoml.handlers import JsonHandler
 
 
 logger = logging.getLogger('bentoml.test')

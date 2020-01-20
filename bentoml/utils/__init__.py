@@ -60,7 +60,7 @@ def dump_to_yaml_str(yaml_dict):
 
 
 def pb_to_yaml(message):
-    message_dict = MessageToJson(message)
+    message_dict = MessageToDict(message)
     return dump_to_yaml_str(message_dict)
 
 

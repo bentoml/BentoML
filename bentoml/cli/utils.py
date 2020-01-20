@@ -25,7 +25,7 @@ import logging
 from datetime import datetime
 
 import humanfriendly
-from google.protobuf.json_format import MessageToJson
+from google.protobuf.json_format import MessageToDict
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import _echo
@@ -98,15 +98,14 @@ def parse_key_value_pairs(key_value_pairs_str):
 
 def _print_deployment_info(deployment, output_type):
     if output_type == 'yaml':
-        result = pb_to_yaml(deployment)
+        _echo(pb_to_yaml(deployment))
     else:
-        result = MessageToJson(deployment)
-        if deployment.state.info_json:
-            result = json.loads(result)
-            result['state']['infoJson'] = json.loads(deployment.state.info_json)
-            _echo(json.dumps(result, indent=2, separators=(',', ': ')))
-            return
-    _echo(result)
+        deployment_info = MessageToDict(deployment)
+        if deployment_info['state']['infoJson']:
+            deployment_info['state']['infoJson'] = json.loads(
+                deployment_info['state']['infoJson']
+            )
+        _echo(json.dumps(deployment_info, indent=2, separators=(',', ': ')))
 
 
 def _format_labels_for_print(labels):

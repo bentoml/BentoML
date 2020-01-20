@@ -315,7 +315,7 @@ def get_aws_lambda_sub_command():
             )
 
     @aws_lambda.command(help='Get AWS Lambda deployment information')
-    @click.argument('bento', type=click.STRING)
+    @click.argument('name', type=click.STRING)
     @click.option(
         '--namespace',
         type=click.STRING,

@@ -28,6 +28,7 @@ from sqlalchemy import (
     JSON,
     UniqueConstraint,
     text,
+    desc,
 )
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
@@ -35,6 +36,7 @@ from google.protobuf.json_format import ParseDict
 from bentoml.exceptions import YataiDeploymentException
 from bentoml.db import Base, create_session
 from bentoml.proto import deployment_pb2
+from bentoml.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
 from bentoml.utils import ProtoMessageToDict
 
 
@@ -173,10 +175,19 @@ class DeploymentStore(object):
             if offset:
                 query = query.offset(offset)
             if operator:
-                query = query.filter(Deployment.spec['operator'].contains(operator))
+                operator_name = DeploymentSpec.DeploymentOperator.Name(operator)
+                query = query.filter(
+                    Deployment.spec['operator'].contains(operator_name)
+                )
             if order_by:
-                list_order = 'asc' if ascending_order else 'desc'
-                query = query.order_by(text(f'{order_by} {list_order}'))
+                order_by = ListDeploymentsRequest.SORTABLE_COLUMN.Name(order_by)
+            else:
+                order_by = 'created_at'
+            order_by_field = getattr(Deployment, order_by)
+            order_by_action = (
+                desc(order_by_field) if not ascending_order else order_by_field
+            )
+            query = query.order_by(order_by_action)
             if labels:
                 raise NotImplementedError("Listing by labels is not yet implemented")
             query_result = query.all()

@@ -249,23 +249,13 @@ class YataiService(YataiServicer):
     def ListDeployments(self, request, context=None):
         try:
             namespace = request.namespace or self.default_namespace
-            order_column_name = (
-                ListDeploymentsRequest.SORTABLE_COLUMN.Name(request.order_by)
-                if request.order_by
-                else 'created_at'
-            )
-            operator_name = (
-                DeploymentSpec.DeploymentOperator.Name(request.operator)
-                if request.operator
-                else None
-            )
             deployment_pb_list = self.deployment_store.list(
                 namespace=namespace,
                 labels=request.labels,
                 offset=request.offset,
                 limit=request.limit,
-                operator=operator_name,
-                order_by=order_column_name,
+                operator=request.operator,
+                order_by=request.order_by,
                 ascending_order=request.ascending_order,
             )
 
@@ -358,16 +348,11 @@ class YataiService(YataiServicer):
     def ListBento(self, request, context=None):
         try:
             # TODO: validate request
-            order_column_name = (
-                ListBentoRequest.SORTABLE_COLUMN.Name(request.order_by)
-                if request.order_by
-                else 'created_at'
-            )
             bento_metadata_pb_list = self.bento_metadata_store.list(
                 bento_name=request.bento_name,
                 offset=request.offset,
                 limit=request.limit,
-                order_by=order_column_name,
+                order_by=request.order_by,
                 ascending_order=request.ascending_order,
             )
 

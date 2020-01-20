@@ -29,6 +29,7 @@ from sqlalchemy import (
     DateTime,
     UniqueConstraint,
     text,
+    desc,
 )
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
@@ -41,6 +42,7 @@ from bentoml.proto.repository_pb2 import (
     BentoUri,
     BentoServiceMetadata,
     Bento as BentoPB,
+    ListBentoRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -192,8 +194,14 @@ class BentoMetadataStore(object):
                 # filter_by apply filtering criterion to a copy of the query
                 query = query.filter_by(name=bento_name)
             if order_by:
-                list_order = 'asc' if ascending_order else 'desc'
-                query = query.order_by(text(f'{order_by} {list_order}'))
+                order_by = ListBentoRequest.SORTABLE_COLUMN.Name(order_by)
+            else:
+                order_by = 'created_at'
+            order_by_field = getattr(Bento, order_by)
+            order_by_action = (
+                desc(order_by_field) if not ascending_order else order_by_field
+            )
+            query = query.order_by(order_by_action)
 
             query_result = query.all()
             result = [

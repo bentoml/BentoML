@@ -424,7 +424,6 @@ class DeploymentAPIClient:
         namespace=None,
         bento_name=None,
         bento_version=None,
-        api_name=None,
         memory_size=None,
         timeout=None,
         wait=None,
@@ -444,8 +443,6 @@ class DeploymentAPIClient:
             deployment_pb.spec.bento_name = bento_name
         if bento_version:
             deployment_pb.spec.bento_version = bento_version
-        if api_name:
-            deployment_pb.spec.aws_lambda_operator_config.api_name = api_name
         if memory_size:
             deployment_pb.spec.aws_lambda_operator_config.memory_size = memory_size
         if timeout:

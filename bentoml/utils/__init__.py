@@ -22,7 +22,7 @@ from io import StringIO
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 
-from google.protobuf.json_format import MessageToJson, MessageToDict
+from google.protobuf.json_format import MessageToDict
 from ruamel.yaml import YAML
 
 from bentoml import __version__ as BENTOML_VERSION, _version as version_mod

@@ -28,6 +28,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     UniqueConstraint,
+    desc,
 )
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
@@ -40,6 +41,7 @@ from bentoml.proto.repository_pb2 import (
     BentoUri,
     BentoServiceMetadata,
     Bento as BentoPB,
+    ListBentoRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -173,18 +175,34 @@ class BentoMetadataStore(object):
                     "Bento %s:%s is not found in repository" % bento_name, bento_version
                 )
 
-    def list(self, bento_name=None, offset=None, limit=None, filter_str=None):
+    def list(
+        self,
+        bento_name=None,
+        offset=None,
+        limit=None,
+        order_by=ListBentoRequest.created_at,
+        ascending_order=False,
+    ):
         with create_session(self.sess_maker) as sess:
             query = sess.query(Bento)
-            if limit:
-                query.limit(limit)
-            if offset:
-                query.offset(offset)
-            if filter_str:
-                query.filter(Bento.name.contains(filter_str))
+            order_by = ListBentoRequest.SORTABLE_COLUMN.Name(order_by)
+            order_by_field = getattr(Bento, order_by)
+            order_by_action = (
+                order_by_field if ascending_order else desc(order_by_field)
+            )
+            query = query.order_by(order_by_action)
             if bento_name:
                 # filter_by apply filtering criterion to a copy of the query
                 query = query.filter_by(name=bento_name)
+
+            # We are not defaulting limit to 200 in the signature,
+            # because protobuf will pass 0 as value
+            limit = limit or 200
+            # Limit and offset need to be called after order_by filter/filter_by is
+            # called
+            query = query.limit(limit)
+            if offset:
+                query = query.offset(offset)
 
             query_result = query.all()
             result = [

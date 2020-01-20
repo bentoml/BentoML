@@ -171,11 +171,18 @@ message DescribeDeploymentResponse {
 }
 
 message ListDeploymentsRequest {
+  enum SORTABLE_COLUMN {
+    created_at = 0;
+    name = 1;
+  }
+
   string namespace = 1;
   int32 offset = 2;
   int32 limit = 3;
-  string filter = 4;
-  map<string, string> labels = 5;
+  DeploymentSpec.DeploymentOperator operator = 4;
+  SORTABLE_COLUMN order_by = 5;
+  bool ascending_order = 6;
+  map<string, string> labels = 7;
 }
 
 message ListDeploymentsResponse {

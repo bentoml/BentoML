@@ -363,12 +363,9 @@ def get_aws_lambda_sub_command():
         default=ALL_NAMESPACE_TAG,
     )
     @click.option(
-        '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
-    )
-    @click.option(
-        '--filters',
-        type=click.STRING,
-        help='List deployments containing the filter string in name or version',
+        '--limit',
+        type=click.INT,
+        help='The maximum amount of AWS Lambda deployments to be listed at once',
     )
     @click.option(
         '-l',
@@ -377,17 +374,26 @@ def get_aws_lambda_sub_command():
         help='List deployments matching the giving labels',
     )
     @click.option(
+        '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
+    )
+    @click.option(
+        '--asc/--desc',
+        default=False,
+        help='Ascending or descending order for list deployments',
+    )
+    @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_deployments(namespace, limit, filters, labels, output):
+    def list_deployments(namespace, limit, labels, order_by, asc, output):
         yatai_client = YataiClient()
         track_cli('deploy-list', PLATFORM_NAME)
         try:
             list_result = yatai_client.deployment.list_lambda_deployments(
                 limit=limit,
-                filters=filters,
                 labels=labels,
                 namespace=namespace,
+                order_by=order_by,
+                ascending_order=asc,
             )
             if list_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(

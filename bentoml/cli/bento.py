@@ -34,7 +34,7 @@ def _print_bento_info(bento, output_type):
 
 def _print_bento_table(bentos):
     table = []
-    headers = ['NAME', 'VERSION', 'CREATED_AT', 'APIS', 'ARTIFACTS']
+    headers = ['BentoService', 'CREATED_AT', 'APIS', 'ARTIFACTS']
     for bento in bentos:
         artifacts = [
             f'{artifact.name}({artifact.artifact_type})'
@@ -45,8 +45,7 @@ def _print_bento_table(bentos):
             for api in bento.bento_service_metadata.apis
         ]
         row = [
-            bento.name,
-            bento.version,
+            f'{bento.name}:{bento.version}',
             bento.bento_service_metadata.created_at.ToDatetime(),
             ', '.join(apis),
             ', '.join(artifacts),
@@ -64,25 +63,16 @@ def _print_bentos_info(bentos, output_type):
             _print_bento_info(bento, output_type)
 
 
-def get_bento_sub_command():
+def add_bento_sub_command(cli):
     # pylint: disable=unused-variable
-
-    @click.group(name='bento', help='BentoService management and operation commands')
-    def bento_repo():
-        pass
-
-    @bento_repo.command(help='Get BentoService information')
+    @cli.command(help='Get BentoService information')
     @click.argument('bento', type=click.STRING)
     @click.option(
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
-    @click.option(
-        '--filters',
-        type=click.STRING,
-        help='List resources containing the filter string in name',
-    )
+    @click.option('--ascending-order', is_flag=True)
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml', 'table']))
-    def get(bento, limit, filters, output):
+    def get(bento, limit, ascending_order, output):
         if ':' in bento:
             name, version = bento.split(':')
         else:
@@ -110,7 +100,7 @@ def get_bento_sub_command():
             track_cli('bento-list')
             output = output or 'table'
             list_bento_versions_result = yatai_client.repository.list(
-                bento_name=name, filters=filters, limit=limit
+                bento_name=name, limit=limit, ascending_order=ascending_order
             )
             if list_bento_versions_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
@@ -125,22 +115,29 @@ def get_bento_sub_command():
 
             _print_bentos_info(list_bento_versions_result.bentos, output)
 
-    @bento_repo.command(name='list', help='List BentoServices information')
+    @cli.command(name='list', help='List BentoServices information')
     @click.option(
-        '--limit', type=click.INT, help='Limit how many resources will be retrieved'
+        '--limit', type=click.INT, help='Limit how many BentoServices will be retrieved'
     )
     @click.option(
-        '--filters',
-        type=click.STRING,
-        help='List resources containing the filter string in name',
+        '--offset', type=click.INT, help='How many BentoServices will be skipped'
     )
+    @click.option(
+        '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
+    )
+    @click.option('--ascending-order', is_flag=True)
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_bentos(limit, filters, output):
+    def list_bentos(limit, offset, order_by, ascending_order, output):
         yatai_client = YataiClient()
         track_cli('bento-list')
-        list_bentos_result = yatai_client.repository.list(limit=limit, filters=filters)
+        list_bentos_result = yatai_client.repository.list(
+            limit=limit,
+            offset=offset,
+            order_by=order_by,
+            ascending_order=ascending_order,
+        )
         if list_bentos_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_bentos_result.status
@@ -153,7 +150,7 @@ def get_bento_sub_command():
 
         _print_bentos_info(list_bentos_result.bentos, output)
 
-    @bento_repo.command(help='Delete BentoService')
+    @cli.command(help='Delete BentoService')
     @click.argument('bento', type=click.STRING)
     def delete(bento):
         yatai_client = YataiClient()
@@ -184,5 +181,3 @@ def get_bento_sub_command():
             )
             return
         _echo(f'BentoService {name}:{version} deleted')
-
-    return bento_repo

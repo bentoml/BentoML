@@ -20,13 +20,22 @@ import logging
 import datetime
 from contextlib import contextmanager
 
-from sqlalchemy import Column, String, Integer, DateTime, JSON, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    String,
+    Integer,
+    DateTime,
+    JSON,
+    UniqueConstraint,
+    desc,
+)
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
 from bentoml.exceptions import YataiDeploymentException
 from bentoml.db import Base, create_session
 from bentoml.proto import deployment_pb2
+from bentoml.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
 from bentoml.utils import ProtoMessageToDict
 
 
@@ -146,17 +155,42 @@ class DeploymentStore(object):
                     "Deployment '%s' in namespace: '%s' is not found" % name, namespace
                 )
 
-    def list(self, namespace, filter_str=None, labels=None, offset=None, limit=None):
+    def list(
+        self,
+        namespace,
+        operator=None,
+        labels=None,
+        offset=None,
+        limit=None,
+        order_by=ListDeploymentsRequest.created_at,
+        ascending_order=False,
+    ):
         with create_session(self.sess_maker) as sess:
             query = sess.query(Deployment)
+            order_by = ListDeploymentsRequest.SORTABLE_COLUMN.Name(order_by)
+            order_by_field = getattr(Deployment, order_by)
+            order_by_action = (
+                order_by_field if ascending_order else desc(order_by_field)
+            )
+            query = query.order_by(order_by_action)
             if namespace != ALL_NAMESPACE_TAG:  # else query all namespaces
-                query.filter_by(namespace=namespace)
-            if limit:
-                query.limit(limit)
-            if offset:
-                query.offset(offset)
-            if filter_str:
-                query.filter(Deployment.name.contains(filter_str))
+                query = query.filter_by(namespace=namespace)
+            if operator:
+                operator_name = DeploymentSpec.DeploymentOperator.Name(operator)
+                query = query.filter(
+                    Deployment.spec['operator'].contains(operator_name)
+                )
             if labels:
                 raise NotImplementedError("Listing by labels is not yet implemented")
-            return list(map(_deployment_orm_obj_to_pb, query.all()))
+
+            # We are not defaulting limit to 200 in the signature,
+            # because protobuf will pass 0 as value
+            limit = limit or 200
+            # Limit and offset need to be called after order_by filter/filter_by is
+            # called
+            query = query.limit(limit)
+            if offset:
+                query = query.offset(offset)
+            query_result = query.all()
+
+            return list(map(_deployment_orm_obj_to_pb, query_result))

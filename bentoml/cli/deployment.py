@@ -139,6 +139,12 @@ def get_deployment_sub_command():
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
+                return
+            track_cli('deploy-create-success', platform_name)
+            _echo(
+                f'Successfully applied deployment {deployment_name}', CLI_COLOR_SUCCESS,
+            )
+            _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             track_cli(
                 'deploy-apply-failure', platform_name, {'error_message': str(e)},
@@ -167,10 +173,10 @@ def get_deployment_sub_command():
     def delete(name, namespace, force):
         yatai_client = YataiClient()
         get_deployment_result = yatai_client.deployment.get(namespace, name)
-        error_code, error_message = status_pb_to_error_code_and_message(
-            get_deployment_result.status
-        )
-        if error_code and error_message:
+        if get_deployment_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_deployment_result.status
+            )
             _echo(
                 f'Failed to get deployment {name} for deletion. '
                 f'{error_code}:{error_message}',
@@ -182,8 +188,10 @@ def get_deployment_sub_command():
         )
         track_cli('deploy-delete', platform)
         result = yatai_client.deployment.delete(name, namespace, force)
-        error_code, error_message = status_pb_to_error_code_and_message(result.status)
-        if error_code and error_message:
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
+            )
             _echo(
                 f'Failed to delete deployment {name}. {error_code}:{error_message}',
                 CLI_COLOR_ERROR,
@@ -250,12 +258,12 @@ def get_deployment_sub_command():
         default=ALL_NAMESPACE_TAG,
     )
     @click.option(
-        '--limit', type=click.INT, help='Limit how many resources will be retrieved'
+        '-p', '--platform', type=click.Choice(['sagemaker', 'lambda']), help='platform',
     )
     @click.option(
-        '--filters',
-        type=click.STRING,
-        help='List resources containing the filter string in name',
+        '--limit',
+        type=click.INT,
+        help='The maximum amount of deployments to be listed at once',
     )
     @click.option(
         '-l',
@@ -264,14 +272,27 @@ def get_deployment_sub_command():
         help='List deployments matching the giving labels',
     )
     @click.option(
+        '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
+    )
+    @click.option(
+        '--asc/--desc',
+        default=False,
+        help='Ascending or descending order for list deployments',
+    )
+    @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_deployments(namespace, limit, filters, labels, output):
+    def list_deployments(namespace, platform, limit, labels, order_by, asc, output):
         yatai_client = YataiClient()
         track_cli('deploy-list')
         try:
             list_result = yatai_client.deployment.list(
-                limit=limit, filters=filters, labels=labels, namespace=namespace,
+                limit=limit,
+                labels=labels,
+                namespace=namespace,
+                operator=platform,
+                order_by=order_by,
+                ascending_order=asc,
             )
             if list_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(

@@ -248,10 +248,12 @@ class YataiService(YataiServicer):
             namespace = request.namespace or self.default_namespace
             deployment_pb_list = self.deployment_store.list(
                 namespace=namespace,
-                filter_str=request.filter,
                 labels=request.labels,
                 offset=request.offset,
                 limit=request.limit,
+                operator=request.operator,
+                order_by=request.order_by,
+                ascending_order=request.ascending_order,
             )
 
             return ListDeploymentsResponse(
@@ -347,7 +349,8 @@ class YataiService(YataiServicer):
                 bento_name=request.bento_name,
                 offset=request.offset,
                 limit=request.limit,
-                filter_str=request.filter,
+                order_by=request.order_by,
+                ascending_order=request.ascending_order,
             )
 
             return ListBentoResponse(status=Status.OK(), bentos=bento_metadata_pb_list)

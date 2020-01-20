@@ -35,7 +35,7 @@ from bentoml.bundler import (
 )
 from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
-from bentoml.cli.bento import get_bento_sub_command
+from bentoml.cli.bento import add_bento_sub_command
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
@@ -305,13 +305,12 @@ def create_bentoml_cli():
     config_sub_command = get_configuration_sub_command()
     aws_sagemaker_sub_command = get_aws_sagemaker_sub_command()
     aws_lambda_sub_command = get_aws_lambda_sub_command()
-    bento_sub_command = get_bento_sub_command()
     deployment_sub_command = get_deployment_sub_command()
+    add_bento_sub_command(_cli)
     _cli.add_command(config_sub_command)
     _cli.add_command(aws_sagemaker_sub_command)
     _cli.add_command(aws_lambda_sub_command)
     _cli.add_command(deployment_sub_command)
-    _cli.add_command(bento_sub_command)
 
     return _cli
 

@@ -68,9 +68,12 @@ class DeploymentAPIClient:
                 )
             namespace = ALL_NAMESPACE_TAG
         if isinstance(operator, str):
-            operator = DeploymentSpec.DeploymentOperator.Value(
-                operator.replace('-', '_').upper()
-            )
+            if operator == 'sagemaker':
+                operator = DeploymentSpec.AWS_SAGEMAKER
+            elif operator == 'lambda':
+                operator = DeploymentSpec.AWS_LAMBDA
+            else:
+                raise BentoMLException(f'Unrecognized operator {operator}')
 
         return self.yatai_service.ListDeployments(
             ListDeploymentsRequest(
@@ -461,7 +464,7 @@ class DeploymentAPIClient:
         order_by=None,
         ascending_order=None,
     ):
-        list_result = self.list(
+        return self.list(
             limit=limit,
             offset=offset,
             labels=labels,
@@ -471,6 +474,3 @@ class DeploymentAPIClient:
             order_by=order_by,
             ascending_order=ascending_order,
         )
-        if list_result.status.status_code != status_pb2.Status.OK:
-            return list_result
-        return list_result

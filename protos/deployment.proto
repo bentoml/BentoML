@@ -172,9 +172,8 @@ message DescribeDeploymentResponse {
 
 message ListDeploymentsRequest {
   enum SORTABLE_COLUMN {
-    unset = 0;
-    created_at = 1;
-    name = 2;
+    created_at = 0;
+    name = 1;
   }
 
   string namespace = 1;

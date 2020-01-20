@@ -374,7 +374,9 @@ def get_aws_sagemaker_sub_command():
         default=ALL_NAMESPACE_TAG,
     )
     @click.option(
-        '--limit', type=click.INT, help='Limit how many deployments will be retrieved'
+        '--limit',
+        type=click.INT,
+        help='The maximum amount of AWS Sagemaker deployments to be listed at once',
     )
     @click.option(
         '-l',
@@ -385,11 +387,15 @@ def get_aws_sagemaker_sub_command():
     @click.option(
         '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
     )
-    @click.option('--ascending-order', is_flag=True)
+    @click.option(
+        '--asc/--desc',
+        default=False,
+        help='Ascending or descending order for list deployments',
+    )
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_deployment(namespace, limit, labels, order_by, ascending_order, output):
+    def list_deployment(namespace, limit, labels, order_by, asc, output):
         yatai_client = YataiClient()
         track_cli('deploy-list', PLATFORM_NAME)
         try:
@@ -398,7 +404,7 @@ def get_aws_sagemaker_sub_command():
                 labels=labels,
                 namespace=namespace,
                 order_by=order_by,
-                ascending_order=ascending_order,
+                ascending_order=asc,
             )
             if list_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(

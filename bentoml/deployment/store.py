@@ -27,7 +27,6 @@ from sqlalchemy import (
     DateTime,
     JSON,
     UniqueConstraint,
-    text,
     desc,
 )
 from sqlalchemy.orm.exc import NoResultFound
@@ -162,16 +161,14 @@ class DeploymentStore(object):
         operator=None,
         labels=None,
         offset=None,
-        limit=None,
-        order_by=None,
-        ascending_order=None,
+        limit=200,
+        order_by=ListDeploymentsRequest.created_at,
+        ascending_order=False,
     ):
         with create_session(self.sess_maker) as sess:
-            query = sess.query(Deployment)
+            query = sess.query(Deployment).limit(limit)
             if namespace != ALL_NAMESPACE_TAG:  # else query all namespaces
                 query = query.filter_by(namespace=namespace)
-            if limit:
-                query = query.limit(limit)
             if offset:
                 query = query.offset(offset)
             if operator:
@@ -185,7 +182,7 @@ class DeploymentStore(object):
                 order_by = 'created_at'
             order_by_field = getattr(Deployment, order_by)
             order_by_action = (
-                desc(order_by_field) if not ascending_order else order_by_field
+                order_by_field if ascending_order else desc(order_by_field)
             )
             query = query.order_by(order_by_action)
             if labels:

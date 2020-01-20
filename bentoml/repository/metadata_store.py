@@ -28,7 +28,6 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     UniqueConstraint,
-    text,
     desc,
 )
 from sqlalchemy.orm.exc import NoResultFound
@@ -180,14 +179,12 @@ class BentoMetadataStore(object):
         self,
         bento_name=None,
         offset=None,
-        limit=None,
-        order_by=None,
-        ascending_order=None,
+        limit=200,
+        order_by=ListBentoRequest.created_at,
+        ascending_order=False,
     ):
         with create_session(self.sess_maker) as sess:
-            query = sess.query(Bento)
-            if limit:
-                query = query.limit(limit)
+            query = sess.query(Bento).limit(limit)
             if offset:
                 query = query.offset(offset)
             if bento_name:
@@ -199,7 +196,7 @@ class BentoMetadataStore(object):
                 order_by = 'created_at'
             order_by_field = getattr(Bento, order_by)
             order_by_action = (
-                desc(order_by_field) if not ascending_order else order_by_field
+                order_by_field if ascending_order else desc(order_by_field)
             )
             query = query.order_by(order_by_action)
 

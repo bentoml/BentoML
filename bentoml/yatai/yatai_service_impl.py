@@ -24,8 +24,6 @@ from bentoml.proto.deployment_pb2 import (
     ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
-    ListDeploymentsRequest,
-    DeploymentSpec,
 )
 from bentoml.proto.repository_pb2 import (
     AddBentoResponse,
@@ -33,7 +31,6 @@ from bentoml.proto.repository_pb2 import (
     GetBentoResponse,
     UpdateBentoResponse,
     ListBentoResponse,
-    ListBentoRequest,
 )
 from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
 from bentoml.proto.yatai_service_pb2 import (

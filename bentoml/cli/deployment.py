@@ -258,13 +258,12 @@ def get_deployment_sub_command():
         default=ALL_NAMESPACE_TAG,
     )
     @click.option(
-        '-p',
-        '--platform',
-        type=click.Choice(['aws-sagemaker', 'aws-lambda']),
-        help='platform',
+        '-p', '--platform', type=click.Choice(['sagemaker', 'lambda']), help='platform',
     )
     @click.option(
-        '--limit', type=click.INT, help='Limit how many resources will be retrieved'
+        '--limit',
+        type=click.INT,
+        help='The maximum amount of deployments to be listed at once',
     )
     @click.option(
         '-l',
@@ -275,13 +274,15 @@ def get_deployment_sub_command():
     @click.option(
         '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
     )
-    @click.option('--ascending-order', is_flag=True)
+    @click.option(
+        '--asc/--desc',
+        default=False,
+        help='Ascending or descending order for list deployments',
+    )
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
-    def list_deployments(
-        namespace, platform, limit, labels, order_by, ascending_order, output
-    ):
+    def list_deployments(namespace, platform, limit, labels, order_by, asc, output):
         yatai_client = YataiClient()
         track_cli('deploy-list')
         try:
@@ -291,7 +292,7 @@ def get_deployment_sub_command():
                 namespace=namespace,
                 operator=platform,
                 order_by=order_by,
-                ascending_order=ascending_order,
+                ascending_order=asc,
             )
             if list_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(

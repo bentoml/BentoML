@@ -25,7 +25,7 @@ import logging
 from datetime import datetime
 
 import humanfriendly
-from google.protobuf.json_format import MessageToJson, MessageToDict
+from google.protobuf.json_format import MessageToDict
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import _echo

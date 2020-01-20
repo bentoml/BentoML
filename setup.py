@@ -110,6 +110,7 @@ setuptools.setup(
     description="A platform for serving and deploying machine learning models in the "
     "cloud",
     long_description=long_description,
+    license="Apache License 2.0",
     long_description_content_type="text/markdown",
     install_requires=install_requires,
     extras_require=extras_require,

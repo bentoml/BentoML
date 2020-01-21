@@ -174,9 +174,6 @@ def get_aws_lambda_sub_command():
         'can be changed in BentoML configuration file',
     )
     @click.option(
-        '--api-name', help='User defined API function will be used for inference.',
-    )
-    @click.option(
         '--memory-size',
         help="Maximum memory capacity for AWS Lambda function in MB, you can set "
         "the memory size in 64MB increments from 128 to 3008. "
@@ -197,7 +194,7 @@ def get_aws_lambda_sub_command():
         help='Wait for apply action to complete or encounter an error.'
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
-    def update(name, namespace, bento, api_name, memory_size, timeout, output, wait):
+    def update(name, namespace, bento, memory_size, timeout, output, wait):
         yatai_client = YataiClient()
         if bento:
             bento_name, bento_version = bento.split(':')
@@ -211,7 +208,6 @@ def get_aws_lambda_sub_command():
                     bento_version=bento_version,
                     deployment_name=name,
                     namespace=namespace,
-                    api_name=api_name,
                     memory_size=memory_size,
                     timeout=timeout,
                     wait=wait,

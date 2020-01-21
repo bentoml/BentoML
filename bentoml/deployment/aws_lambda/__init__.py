@@ -48,7 +48,12 @@ from bentoml.deployment.utils import (
     raise_if_api_names_not_found_in_bento_service_metadata,
     get_default_aws_region,
 )
-from bentoml.exceptions import BentoMLException, InvalidArgument
+from bentoml.exceptions import (
+    BentoMLException,
+    InvalidArgument,
+    YataiDeploymentException,
+)
+from bentoml.proto import status_pb2
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DeploymentState,
@@ -56,6 +61,7 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentResponse,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
+from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
@@ -165,6 +171,129 @@ def _cleanup_s3_bucket_if_exist(bucket_name, region):
             raise e
 
 
+def _deploy_lambda_function(
+    deployment_pb,
+    bento_service_metadata,
+    deployment_spec,
+    lambda_s3_bucket,
+    lambda_deployment_config,
+    bento_path,
+):
+    deployment_path_prefix = os.path.join(deployment_pb.namespace, deployment_pb.name)
+
+    py_major, py_minor, _ = bento_service_metadata.env.python_version.split('.')
+    if py_major != '3':
+        raise BentoMLException('Python 2 is not supported for Lambda Deployment')
+    python_runtime = 'python{}.{}'.format(py_major, py_minor)
+
+    artifact_types = [item.artifact_type for item in bento_service_metadata.artifacts]
+    if any(
+        i in ['TensorflowSavedModelArtifact', 'KerasModelArtifact']
+        for i in artifact_types
+    ) and (py_major, py_minor) != ('3', '6'):
+        raise BentoMLException(
+            'For Tensorflow and Keras model, only python3.6 is '
+            'supported for AWS Lambda deployment'
+        )
+
+    api_names = (
+        [lambda_deployment_config.api_name]
+        if lambda_deployment_config.api_name
+        else [api.name for api in bento_service_metadata.apis]
+    )
+
+    raise_if_api_names_not_found_in_bento_service_metadata(
+        bento_service_metadata, api_names
+    )
+
+    with TempDirectory() as lambda_project_dir:
+        logger.debug(
+            'Generating cloudformation template.yaml for lambda project at %s',
+            lambda_project_dir,
+        )
+        template_file_path = _create_aws_lambda_cloudformation_template_file(
+            project_dir=lambda_project_dir,
+            namespace=deployment_pb.namespace,
+            deployment_name=deployment_pb.name,
+            deployment_path_prefix=deployment_path_prefix,
+            api_names=api_names,
+            bento_service_name=deployment_spec.bento_name,
+            s3_bucket_name=lambda_s3_bucket,
+            py_runtime=python_runtime,
+            memory_size=lambda_deployment_config.memory_size,
+            timeout=lambda_deployment_config.timeout,
+        )
+        logger.debug('Validating generated template.yaml')
+        validate_lambda_template(
+            template_file_path, lambda_deployment_config.region, lambda_project_dir,
+        )
+        logger.debug(
+            'Initializing lambda project in directory: %s ...', lambda_project_dir,
+        )
+        init_sam_project(
+            lambda_project_dir,
+            bento_path,
+            deployment_pb.name,
+            deployment_spec.bento_name,
+            api_names,
+            aws_region=lambda_deployment_config.region,
+        )
+        for api_name in api_names:
+            build_directory = os.path.join(
+                lambda_project_dir, '.aws-sam', 'build', api_name
+            )
+            logger.debug(
+                'Checking is function "%s" bundle under lambda size ' 'limit', api_name,
+            )
+            # Since we only use s3 get object in lambda function, and
+            # lambda function pack their own boto3/botocore modules,
+            # we will just delete those modules from function bundle
+            # directory
+            delete_list = ['boto3', 'botocore']
+            for name in delete_list:
+                logger.debug('Remove module "%s" from build directory', name)
+                shutil.rmtree(os.path.join(build_directory, name))
+            total_build_dir_size = total_file_or_directory_size(build_directory)
+            if total_build_dir_size > LAMBDA_FUNCTION_MAX_LIMIT:
+                raise BentoMLException(
+                    'Build function size is over 700MB, max size '
+                    'capable for AWS Lambda function'
+                )
+            if total_build_dir_size >= LAMBDA_FUNCTION_LIMIT:
+                logger.debug(
+                    'Function %s is over lambda size limit, attempting ' 'reduce it',
+                    api_name,
+                )
+                reduce_bundle_size_and_upload_extra_resources_to_s3(
+                    build_directory=build_directory,
+                    region=lambda_deployment_config.region,
+                    s3_bucket=lambda_s3_bucket,
+                    deployment_prefix=deployment_path_prefix,
+                    function_name=api_name,
+                    lambda_project_dir=lambda_project_dir,
+                )
+            else:
+                logger.debug(
+                    'Function bundle is within Lambda limit, removing '
+                    'download_extra_resources.py file from function bundle'
+                )
+                os.remove(os.path.join(build_directory, 'download_extra_resources.py'))
+        logger.info('Packaging AWS Lambda project at %s ...', lambda_project_dir)
+        lambda_package(
+            lambda_project_dir,
+            lambda_deployment_config.region,
+            lambda_s3_bucket,
+            deployment_path_prefix,
+        )
+        logger.info('Deploying lambda project')
+        stack_name = generate_aws_compatible_string(
+            deployment_pb.namespace + '-' + deployment_pb.name
+        )
+        lambda_deploy(
+            lambda_project_dir, lambda_deployment_config.region, stack_name=stack_name,
+        )
+
+
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
     def add(self, deployment_pb):
         try:
@@ -214,142 +343,18 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 random_string=uuid.uuid4().hex[:6].lower(),
             )
         )
-
         try:
-            py_major, py_minor, _ = bento_service_metadata.env.python_version.split('.')
-            if py_major != '3':
-                raise BentoMLException(
-                    'Python 2 is not supported for Lambda Deployment'
-                )
-            python_runtime = 'python{}.{}'.format(py_major, py_minor)
-
-            artifact_types = [
-                item.artifact_type for item in bento_service_metadata.artifacts
-            ]
-            if any(
-                i in ['TensorflowSavedModelArtifact', 'KerasModelArtifact']
-                for i in artifact_types
-            ) and (py_major, py_minor) != ('3', '6'):
-                raise BentoMLException(
-                    'For Tensorflow and Keras model, only python3.6 is '
-                    'supported for AWS Lambda deployment'
-                )
-
-            api_names = (
-                [lambda_deployment_config.api_name]
-                if lambda_deployment_config.api_name
-                else [api.name for api in bento_service_metadata.apis]
-            )
-
-            raise_if_api_names_not_found_in_bento_service_metadata(
-                bento_service_metadata, api_names
-            )
-
             create_s3_bucket_if_not_exists(
                 lambda_s3_bucket, lambda_deployment_config.region
             )
-            deployment_path_prefix = os.path.join(
-                deployment_pb.namespace, deployment_pb.name
+            _deploy_lambda_function(
+                deployment_pb=deployment_pb,
+                bento_service_metadata=bento_service_metadata,
+                deployment_spec=deployment_spec,
+                lambda_s3_bucket=lambda_s3_bucket,
+                lambda_deployment_config=lambda_deployment_config,
+                bento_path=bento_path,
             )
-            with TempDirectory() as lambda_project_dir:
-                logger.debug(
-                    'Generating cloudformation template.yaml for lambda project at %s',
-                    lambda_project_dir,
-                )
-                template_file_path = _create_aws_lambda_cloudformation_template_file(
-                    project_dir=lambda_project_dir,
-                    namespace=deployment_pb.namespace,
-                    deployment_name=deployment_pb.name,
-                    deployment_path_prefix=deployment_path_prefix,
-                    api_names=api_names,
-                    bento_service_name=deployment_spec.bento_name,
-                    s3_bucket_name=lambda_s3_bucket,
-                    py_runtime=python_runtime,
-                    memory_size=lambda_deployment_config.memory_size,
-                    timeout=lambda_deployment_config.timeout,
-                )
-                logger.debug('Validating generated template.yaml')
-                validate_lambda_template(
-                    template_file_path,
-                    lambda_deployment_config.region,
-                    lambda_project_dir,
-                )
-                logger.debug(
-                    'Initializing lambda project in directory: %s ...',
-                    lambda_project_dir,
-                )
-                init_sam_project(
-                    lambda_project_dir,
-                    bento_path,
-                    deployment_pb.name,
-                    deployment_spec.bento_name,
-                    api_names,
-                    aws_region=lambda_deployment_config.region,
-                )
-                for api_name in api_names:
-                    build_directory = os.path.join(
-                        lambda_project_dir, '.aws-sam', 'build', api_name
-                    )
-                    logger.debug(
-                        'Checking is function "%s" bundle under lambda size ' 'limit',
-                        api_name,
-                    )
-                    # Since we only use s3 get object in lambda function, and
-                    # lambda function pack their own boto3/botocore modules,
-                    # we will just delete those modules from function bundle
-                    # directory
-                    delete_list = ['boto3', 'botocore']
-                    for name in delete_list:
-                        logger.debug('Remove module "%s" from build directory', name)
-                        shutil.rmtree(os.path.join(build_directory, name))
-                    total_build_dir_size = total_file_or_directory_size(build_directory)
-                    if total_build_dir_size > LAMBDA_FUNCTION_MAX_LIMIT:
-                        raise BentoMLException(
-                            'Build function size is over 700MB, max size '
-                            'capable for AWS Lambda function'
-                        )
-                    if total_build_dir_size >= LAMBDA_FUNCTION_LIMIT:
-                        logger.debug(
-                            'Function %s is over lambda size limit, attempting '
-                            'reduce it',
-                            api_name,
-                        )
-                        reduce_bundle_size_and_upload_extra_resources_to_s3(
-                            build_directory=build_directory,
-                            region=lambda_deployment_config.region,
-                            s3_bucket=lambda_s3_bucket,
-                            deployment_prefix=deployment_path_prefix,
-                            function_name=api_name,
-                            lambda_project_dir=lambda_project_dir,
-                        )
-                    else:
-                        logger.debug(
-                            'Function bundle is within Lambda limit, removing '
-                            'download_extra_resources.py file from function bundle'
-                        )
-                        os.remove(
-                            os.path.join(build_directory, 'download_extra_resources.py')
-                        )
-                logger.info(
-                    'Packaging AWS Lambda project at %s ...', lambda_project_dir
-                )
-                lambda_package(
-                    lambda_project_dir,
-                    lambda_deployment_config.region,
-                    lambda_s3_bucket,
-                    deployment_path_prefix,
-                )
-                logger.info('Deploying lambda project')
-                stack_name = generate_aws_compatible_string(
-                    deployment_pb.namespace + '-' + deployment_pb.name
-                )
-                lambda_deploy(
-                    lambda_project_dir,
-                    lambda_deployment_config.region,
-                    stack_name=stack_name,
-                )
-
-            deployment_pb.state.state = DeploymentState.PENDING
             return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
         except BentoMLException as error:
             if lambda_s3_bucket and lambda_deployment_config:
@@ -358,11 +363,74 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 )
             raise error
 
-    def update(self, deployment_pb):
-        raise NotImplementedError(
-            "Updating AWS Lambda deployment is not supported in current version of "
-            "BentoML"
+    def update(self, deployment_pb, previous_deployment):
+        try:
+            ensure_sam_available_or_raise()
+            ensure_docker_available_or_raise()
+
+            deployment_spec = deployment_pb.spec
+            bento_pb = self.yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
+            )
+            if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
+                raise BentoMLException(
+                    'BentoML currently not support {} repository'.format(
+                        BentoUri.StorageType.Name(bento_pb.bento.uri.type)
+                    )
+                )
+
+            return self._update(
+                deployment_pb, previous_deployment, bento_pb, bento_pb.bento.uri.uri
+            )
+        except BentoMLException as error:
+            deployment_pb.state.state = DeploymentState.ERROR
+            deployment_pb.state.error_message = f'Error: {str(error)}'
+            return ApplyDeploymentResponse(
+                status=error.status_code, deployment_pb=deployment_pb
+            )
+
+    def _update(self, deployment_pb, current_deployment, bento_pb, bento_path):
+        if loader._is_remote_path(bento_path):
+            with loader._resolve_remote_bundle_path(bento_path) as local_path:
+                return self._update(
+                    deployment_pb, current_deployment, bento_pb, local_path
+                )
+        updated_deployment_spec = deployment_pb.spec
+        updated_lambda_deployment_config = (
+            updated_deployment_spec.aws_lambda_operator_config
         )
+        updated_bento_service_metadata = bento_pb.bento.bento_service_metadata
+        describe_result = self.describe(deployment_pb)
+        if describe_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                describe_result.status
+            )
+            raise YataiDeploymentException(
+                f'Failed fetching Lambda deployment current status - '
+                f'{error_code}:{error_message}'
+            )
+        latest_deployment_state = json.loads(describe_result.state.info_json)
+        if 's3_bucket' in latest_deployment_state:
+            lambda_s3_bucket = latest_deployment_state['s3_bucket']
+        else:
+            raise BentoMLException(
+                'S3 Bucket is missing in the AWS Lambda deployment, please make sure '
+                'it exists and try again'
+            )
+
+        _deploy_lambda_function(
+            deployment_pb=deployment_pb,
+            bento_service_metadata=updated_bento_service_metadata,
+            deployment_spec=updated_deployment_spec,
+            lambda_s3_bucket=lambda_s3_bucket,
+            lambda_deployment_config=updated_lambda_deployment_config,
+            bento_path=bento_path,
+        )
+
+        return ApplyDeploymentResponse(deployment=deployment_pb, status=Status.OK())
 
     def delete(self, deployment_pb):
         try:

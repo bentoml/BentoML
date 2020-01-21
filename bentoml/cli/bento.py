@@ -89,7 +89,7 @@ def add_bento_sub_command(cli):
                     get_bento_result.status
                 )
                 _echo(
-                    f'Failed to get BentoService{name}:{version} '
+                    f'BentoService {name}:{version} not found - '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )

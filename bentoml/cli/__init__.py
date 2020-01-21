@@ -40,11 +40,17 @@ from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     conditional_argument,
     _echo,
+    CLI_COLOR_ERROR,
 )
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
 from bentoml.utils import ProtoMessageToDict
 from bentoml.utils.usage_stats import track_cli
+from bentoml.utils.s3 import is_s3_url
+from bentoml.yatai.client import YataiClient
+from bentoml.proto import status_pb2
+from bentoml.utils import status_pb_to_error_code_and_message
+from bentoml.exceptions import BentoMLException
 
 
 def escape_shell_params(param):
@@ -86,7 +92,7 @@ def run_with_conda_env(bundle_path, command):
     return
 
 
-def create_bento_service_cli(bundle_path=None):
+def create_bento_service_cli(pip_installed_bundle_path=None):
     # pylint: disable=unused-variable
 
     @click.group(cls=BentoMLCommandGroup)
@@ -96,6 +102,38 @@ def create_bento_service_cli(bundle_path=None):
         BentoML CLI tool
         """
 
+    def resolve_bundle_path(bento, pip_installed_bundle_path):
+        if pip_installed_bundle_path:
+            assert (
+                bento is None
+            ), "pip installed BentoService commands should not have Bento argument"
+            return pip_installed_bundle_path
+
+        if os.path.isdir(bento) or is_s3_url(bento):
+            # bundler already support loading local and s3 path
+            return bento
+
+        elif ":" in bento:
+            # assuming passing in BentoService in the form of Name:Version tag
+            yatai_client = YataiClient()
+            name, version = bento.split(':')
+            get_bento_result = yatai_client.repository.get(name, version)
+            if get_bento_result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = status_pb_to_error_code_and_message(
+                    get_bento_result.status
+                )
+                raise BentoMLException(
+                    f'BentoService {name}:{version} not found - '
+                    f'{error_code}:{error_message}'
+                )
+            return get_bento_result.bento.uri.uri
+        else:
+            raise BentoMLException(
+                f'BentoService "{bento}" not found - either specify the file path of the'
+                f'BentoService saved bundle, or the BentoService id in the form of '
+                f'"name:version"'
+            )
+
     # Example Usage: bentoml run {API_NAME} {BUNDLE_PATH} --input=...
     @bentoml_cli.command(
         help="Run a API defined in saved BentoService bundle from command line",
@@ -103,7 +141,7 @@ def create_bento_service_cli(bundle_path=None):
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
     @click.argument("api_name", type=click.STRING)
-    @conditional_argument(bundle_path is None, "bundle_path", type=click.STRING)
+    @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
     @click.option(
         '--with-conda',
@@ -111,21 +149,24 @@ def create_bento_service_cli(bundle_path=None):
         default=False,
         help="Run API server in a BentoML managed Conda environment",
     )
-    def run(api_name, run_args, bundle_path=bundle_path, with_conda=False):
+    def run(api_name, run_args, bento=None, with_conda=False):
+        track_cli('run')
+        bento_service_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path
+        )
+
         if with_conda:
             run_with_conda_env(
-                bundle_path,
-                'bentoml run {api_name} {bundle_path} {args}'.format(
-                    bundle_path=bundle_path,
+                bento_service_bundle_path,
+                'bentoml run {api_name} {bento} {args}'.format(
+                    bento=bento_service_bundle_path,
                     api_name=api_name,
                     args=' '.join(map(escape_shell_params, run_args)),
                 ),
             )
             return
 
-        track_cli('run')
-
-        api = load_bento_service_api(bundle_path, api_name)
+        api = load_bento_service_api(bento_service_bundle_path, api_name)
         api.handle_cli(run_args)
 
     # Example Usage: bentoml info {BUNDLE_PATH}
@@ -133,13 +174,20 @@ def create_bento_service_cli(bundle_path=None):
         help="List all APIs defined in the BentoService loaded from saved bundle",
         short_help="List APIs",
     )
-    @conditional_argument(bundle_path is None, "bundle-path", type=click.STRING)
-    def info(bundle_path=bundle_path):
+    @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
+    def info(bento=None):
         """
         List all APIs defined in the BentoService loaded from saved bundle
         """
         track_cli('info')
-        bento_service_metadata_pb = load_bento_service_metadata(bundle_path)
+
+        bento_service_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path
+        )
+
+        bento_service_metadata_pb = load_bento_service_metadata(
+            bento_service_bundle_path
+        )
         output = json.dumps(ProtoMessageToDict(bento_service_metadata_pb), indent=2)
         _echo(output)
 
@@ -149,10 +197,15 @@ def create_bento_service_cli(bundle_path=None):
         help="Display API specification JSON in Open-API format",
         short_help="Display OpenAPI/Swagger JSON specs",
     )
-    @conditional_argument(bundle_path is None, "bundle-path", type=click.STRING)
-    def open_api_spec(bundle_path=bundle_path):
+    @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
+    def open_api_spec(bento=None):
         track_cli('open-api-spec')
-        bento_service = load(bundle_path)
+
+        bento_service_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path
+        )
+
+        bento_service = load(bento_service_bundle_path)
 
         _echo(json.dumps(get_docs(bento_service), indent=2))
 
@@ -161,7 +214,7 @@ def create_bento_service_cli(bundle_path=None):
         help="Start REST API server hosting BentoService loaded from saved bundle",
         short_help="Start local rest server",
     )
-    @conditional_argument(bundle_path is None, "bundle-path", type=click.STRING)
+    @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.option(
         "--port",
         type=click.INT,
@@ -174,19 +227,22 @@ def create_bento_service_cli(bundle_path=None):
         default=False,
         help="Run API server in a BentoML managed Conda environment",
     )
-    def serve(port, bundle_path=bundle_path, with_conda=False):
+    def serve(port, bento=None, with_conda=False):
+        track_cli('serve')
+        bento_service_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path
+        )
+
         if with_conda:
             run_with_conda_env(
-                bundle_path,
-                'bentoml serve {bundle_path} --port {port}'.format(
-                    bundle_path=bundle_path, port=port,
+                bento_service_bundle_path,
+                'bentoml serve {bento} --port {port}'.format(
+                    bento=bento_service_bundle_path, port=port,
                 ),
             )
             return
 
-        track_cli('serve')
-
-        bento_service = load(bundle_path)
+        bento_service = load(bento_service_bundle_path)
         server = BentoAPIServer(bento_service, port=port)
         server.start()
 
@@ -196,7 +252,9 @@ def create_bento_service_cli(bundle_path=None):
         help="Start REST API server from saved BentoService bundle with gunicorn",
         short_help="Start local gunicorn server",
     )
-    @conditional_argument(bundle_path is None, "bundle-path", type=click.STRING)
+    @conditional_argument(
+        pip_installed_bundle_path is None, "bundle-path", type=click.STRING
+    )
     @click.option("-p", "--port", type=click.INT, default=None)
     @click.option(
         "-w",
@@ -212,15 +270,18 @@ def create_bento_service_cli(bundle_path=None):
         default=False,
         help="Run API server in a BentoML managed Conda environment",
     )
-    def serve_gunicorn(
-        port, workers, timeout, bundle_path=bundle_path, with_conda=False
-    ):
+    def serve_gunicorn(port, workers, timeout, bento=None, with_conda=False):
+        track_cli('serve_gunicorn')
+        bento_service_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path
+        )
+
         if with_conda:
             run_with_conda_env(
-                bundle_path,
-                'bentoml serve_gunicorn {bundle_path} -p {port} -w {workers} '
+                pip_installed_bundle_path,
+                'bentoml serve_gunicorn {bento} -p {port} -w {workers} '
                 '--timeout {timeout}'.format(
-                    bundle_path=bundle_path,
+                    bento=bento_service_bundle_path,
                     port=port,
                     workers=workers,
                     timeout=timeout,
@@ -228,11 +289,11 @@ def create_bento_service_cli(bundle_path=None):
             )
             return
 
-        track_cli('serve_gunicorn')
-
         from bentoml.server.gunicorn_server import GunicornBentoServer
 
-        gunicorn_app = GunicornBentoServer(bundle_path, port, workers, timeout)
+        gunicorn_app = GunicornBentoServer(
+            bento_service_bundle_path, port, workers, timeout
+        )
         gunicorn_app.run()
 
     # pylint: enable=unused-variable

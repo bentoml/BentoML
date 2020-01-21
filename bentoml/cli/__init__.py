@@ -53,6 +53,39 @@ def escape_shell_params(param):
     return '{}={}'.format(k, v)
 
 
+def run_with_conda_env(bundle_path, command):
+    config = load_saved_bundle_config(bundle_path)
+    metadata = config['metadata']
+    env_name = metadata['service_name'] + '_' + metadata['service_version']
+
+    yaml = YAML()
+    yaml.default_flow_style = False
+    tmpf = tempfile.NamedTemporaryFile(delete=False)
+    env_path = tmpf.name + '.yaml'
+    yaml.dump(config['env']['conda_env'], Path(env_path))
+
+    pip_req = os.path.join(bundle_path, 'requirements.txt')
+
+    subprocess.call(
+        'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
+        'parameter requires conda but it\'s not installed."; exit 1; }} && '
+        'conda env update -n {env_name} -f {env_file} && '
+        'conda init bash && '
+        'eval "$(conda shell.bash hook)" && '
+        'conda activate {env_name} && '
+        '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
+        'dependencies."; }} && {cmd}'.format(
+            env_name=env_name,
+            env_file=env_path,
+            bundle_path=bundle_path,
+            pip_req=pip_req,
+            cmd=command,
+        ),
+        shell=True,
+    )
+    return
+
+
 def create_bento_service_cli(bundle_path=None):
     # pylint: disable=unused-variable
 
@@ -63,60 +96,37 @@ def create_bento_service_cli(bundle_path=None):
         BentoML CLI tool
         """
 
-    # Example Usage: bentoml {API_NAME} {BUNDLE_PATH} --input=...
+    # Example Usage: bentoml run {API_NAME} {BUNDLE_PATH} --input=...
     @bentoml_cli.command(
         help="Run a API defined in saved BentoService bundle from command line",
         short_help="Run API function",
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
-    @click.argument("api-name", type=click.STRING)
-    @conditional_argument(bundle_path is None, "bundle-path", type=click.STRING)
+    @click.argument("api_name", type=click.STRING)
+    @conditional_argument(bundle_path is None, "bundle_path", type=click.STRING)
+    @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
     @click.option(
         '--with-conda',
         is_flag=True,
         default=False,
         help="Run API server in a BentoML managed Conda environment",
     )
-    @click.pass_context
-    def run(ctx, api_name, bundle_path=bundle_path, with_conda=False):
+    def run(api_name, run_args, bundle_path=bundle_path, with_conda=False):
         if with_conda:
-            config = load_saved_bundle_config(bundle_path)
-            metadata = config['metadata']
-            env_name = metadata['service_name'] + '_' + metadata['service_version']
-
-            yaml = YAML()
-            yaml.default_flow_style = False
-            tmpf = tempfile.NamedTemporaryFile(delete=False)
-            env_path = tmpf.name
-            yaml.dump(config['env']['conda_env'], Path(env_path))
-
-            pip_req = os.path.join(bundle_path, 'requirements.txt')
-
-            subprocess.call(
-                'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
-                'parameter requires conda but it\'s not installed."; exit 1; }} && '
-                'conda env update -n {env_name} -f {env_file} && '
-                'conda init bash && '
-                'eval "$(conda shell.bash hook)" && '
-                'conda activate {env_name} && '
-                '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
-                'dependencies."; }} &&'
-                'bentoml {api_name} {bundle_path} {args}'.format(
-                    env_name=env_name,
-                    env_file=env_path,
+            run_with_conda_env(
+                bundle_path,
+                'bentoml run {api_name} {bundle_path} {args}'.format(
                     bundle_path=bundle_path,
                     api_name=api_name,
-                    args=' '.join(map(escape_shell_params, ctx.args)),
-                    pip_req=pip_req,
+                    args=' '.join(map(escape_shell_params, run_args)),
                 ),
-                shell=True,
             )
             return
 
         track_cli('run')
 
         api = load_bento_service_api(bundle_path, api_name)
-        api.handle_cli(ctx.args)
+        api.handle_cli(run_args)
 
     # Example Usage: bentoml info {BUNDLE_PATH}
     @bentoml_cli.command(
@@ -166,28 +176,11 @@ def create_bento_service_cli(bundle_path=None):
     )
     def serve(port, bundle_path=bundle_path, with_conda=False):
         if with_conda:
-            config = load_saved_bundle_config(bundle_path)
-            metadata = config['metadata']
-            env_name = metadata['service_name'] + '_' + metadata['service_version']
-            pip_req = os.path.join(bundle_path, 'requirements.txt')
-
-            subprocess.call(
-                'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
-                'parameter requires conda but it\'s not installed."; exit 1; }} && '
-                'conda env update -n {env_name} -f {env_file} && '
-                'conda init bash && '
-                'eval "$(conda shell.bash hook)" && '
-                'conda activate {env_name} && '
-                '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
-                'dependencies."; }} &&'
+            run_with_conda_env(
+                bundle_path,
                 'bentoml serve {bundle_path} --port {port}'.format(
-                    env_name=env_name,
-                    env_file=os.path.join(bundle_path, 'environment.yml'),
-                    bundle_path=bundle_path,
-                    port=port,
-                    pip_req=pip_req,
+                    bundle_path=bundle_path, port=port,
                 ),
-                shell=True,
             )
             return
 
@@ -223,31 +216,15 @@ def create_bento_service_cli(bundle_path=None):
         port, workers, timeout, bundle_path=bundle_path, with_conda=False
     ):
         if with_conda:
-            config = load_saved_bundle_config(bundle_path)
-            metadata = config['metadata']
-            env_name = metadata['service_name'] + '_' + metadata['service_version']
-            pip_req = os.path.join(bundle_path, 'requirements.txt')
-
-            subprocess.call(
-                'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
-                'parameter requires conda but it\'s not installed."; exit 1; }} && '
-                'conda env update -n {env_name} -f {env_file} && '
-                'conda init bash && '
-                'eval "$(conda shell.bash hook)" && '
-                'conda activate {env_name} && '
-                '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
-                'dependencies."; }} &&'
+            run_with_conda_env(
+                bundle_path,
                 'bentoml serve_gunicorn {bundle_path} -p {port} -w {workers} '
                 '--timeout {timeout}'.format(
-                    env_name=env_name,
-                    env_file=os.path.join(bundle_path, 'environment.yml'),
                     bundle_path=bundle_path,
                     port=port,
                     workers=workers,
                     timeout=timeout,
-                    pip_req=pip_req,
                 ),
-                shell=True,
             )
             return
 

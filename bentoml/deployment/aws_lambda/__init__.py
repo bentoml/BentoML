@@ -413,7 +413,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 f'{error_code}:{error_message}'
             )
         latest_deployment_state = json.loads(describe_result.state.info_json)
-        if latest_deployment_state.get('s3_bucket'):
+        if 's3_bucket' in latest_deployment_state:
             lambda_s3_bucket = latest_deployment_state['s3_bucket']
         else:
             raise BentoMLException(

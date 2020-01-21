@@ -404,17 +404,21 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
         )
         updated_bento_service_metadata = bento_pb.bento.bento_service_metadata
         describe_result = self.describe(deployment_pb)
-        if describe_result.state.status != status_pb2.Status.OK:
+        if describe_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
-                describe_result.state
+                describe_result.status
             )
-            raise YataiDeploymentException(f'{error_code}:{error_message}')
+            raise YataiDeploymentException(
+                f'Failed fetching Lambda deployment current status - '
+                f'{error_code}:{error_message}'
+            )
         latest_deployment_state = json.loads(describe_result.state.info_json)
-        lambda_s3_bucket = latest_deployment_state['s3_bucket']
-        if not lambda_s3_bucket:
+        if latest_deployment_state.get('s3_bucket'):
+            lambda_s3_bucket = latest_deployment_state['s3_bucket']
+        else:
             raise BentoMLException(
-                f'S3 Bucket {lambda_s3_bucket} is missing in the AWS Lambda '
-                f'deployment, please make sure it exists and try again'
+                'S3 Bucket is missing in the AWS Lambda deployment, please make sure '
+                'it exists and try again'
             )
 
         _deploy_lambda_function(

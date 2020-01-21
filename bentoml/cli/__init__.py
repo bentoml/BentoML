@@ -20,7 +20,6 @@ import re
 import os
 import json
 import click
-import logging
 import tempfile
 import subprocess
 from pathlib import Path
@@ -45,7 +44,6 @@ from bentoml.cli.click_utils import (
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
 from bentoml.utils import ProtoMessageToDict
-from bentoml.utils.log import configure_logging
 from bentoml.utils.usage_stats import track_cli
 
 
@@ -59,38 +57,11 @@ def create_bento_service_cli(bundle_path=None):
     # pylint: disable=unused-variable
 
     @click.group(cls=BentoMLCommandGroup)
-    @click.option(
-        '-q',
-        '--quiet',
-        is_flag=True,
-        default=False,
-        help="Hide process logs and only print command results",
-    )
-    @click.option(
-        '--verbose',
-        '--debug',
-        is_flag=True,
-        default=False,
-        help="Print verbose debugging information for BentoML developer",
-    )
     @click.version_option()
-    @click.pass_context
-    def bentoml_cli(ctx, verbose, quiet):
+    def bentoml_cli():
         """
         BentoML CLI tool
         """
-        ctx.verbose = verbose
-        ctx.quiet = quiet
-
-        if verbose:
-            from bentoml import config
-
-            config().set('core', 'debug', 'true')
-            configure_logging(logging.DEBUG)
-        elif quiet:
-            configure_logging(logging.ERROR)
-        else:
-            configure_logging()  # use default setting in local bentoml.cfg
 
     # Example Usage: bentoml {API_NAME} {BUNDLE_PATH} --input=...
     @bentoml_cli.command(

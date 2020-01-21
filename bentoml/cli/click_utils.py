@@ -18,8 +18,12 @@ from __future__ import print_function
 
 import re
 import click
+import functools
+import logging
 
 from ruamel.yaml import YAML
+
+from bentoml.utils.log import configure_logging
 
 # Available CLI colors for _echo:
 #
@@ -56,6 +60,54 @@ class BentoMLCommandGroup(click.Group):
     """Click command class customized for BentoML cli, allow specifying a default
     command for each group defined
     """
+
+    NUMBER_OF_COMMON_PARAMS = 2
+
+    @staticmethod
+    def bentoml_common_params(func):
+        @click.option(
+            '-q',
+            '--quiet',
+            is_flag=True,
+            default=False,
+            help="Hide process logs and errors",
+        )
+        @click.option(
+            '--verbose',
+            '--debug',
+            is_flag=True,
+            default=False,
+            help="Show additional details when running command",
+        )
+        @functools.wraps(func)
+        def wrapper(quiet, verbose, *args, **kwargs):
+            if verbose:
+                from bentoml import config
+
+                config().set('core', 'debug', 'true')
+                configure_logging(logging.DEBUG)
+            elif quiet:
+                configure_logging(logging.ERROR)
+            else:
+                configure_logging()  # use default setting in local bentoml.cfg
+
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    def command(self, *args, **kwargs):
+        def wrapper(func):
+            # add common parameters to command
+            func = BentoMLCommandGroup.bentoml_common_params(func)
+
+            # move common parameters to end of the parameters list
+            func.__click_params__ = (
+                func.__click_params__[-self.NUMBER_OF_COMMON_PARAMS :]
+                + func.__click_params__[: -self.NUMBER_OF_COMMON_PARAMS]
+            )
+            return super(BentoMLCommandGroup, self).command(*args, **kwargs)(func)
+
+        return wrapper
 
 
 def conditional_argument(condition, *param_decls, **attrs):

@@ -17,6 +17,7 @@ import click
 
 from bentoml.cli.utils import Spinner
 from bentoml.cli.click_utils import (
+    BentoMLCommandGroup,
     parse_bento_tag_callback,
     CLI_COLOR_ERROR,
     _echo,
@@ -43,7 +44,9 @@ def get_aws_sagemaker_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
-        name='sagemaker', help='Commands for AWS Sagemaker BentoService deployments',
+        name='sagemaker',
+        help='Commands for AWS Sagemaker BentoService deployments',
+        cls=BentoMLCommandGroup,
     )
     def aws_sagemaker():
         pass

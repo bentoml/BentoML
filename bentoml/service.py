@@ -483,7 +483,7 @@ class BentoService(BentoServiceBase):
             and self._bento_service_version != version_str
         ):
             logger.warning(
-                "Reseting BentoServive '%s' version from %s to %s",
+                "Resetting BentoService '%s' version from %s to %s",
                 self.name,
                 self._bento_service_version,
                 version_str,

@@ -48,7 +48,12 @@ from bentoml.deployment.utils import (
     raise_if_api_names_not_found_in_bento_service_metadata,
     get_default_aws_region,
 )
-from bentoml.exceptions import BentoMLException, InvalidArgument
+from bentoml.exceptions import (
+    BentoMLException,
+    InvalidArgument,
+    YataiDeploymentException,
+)
+from bentoml.proto import status_pb2
 from bentoml.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DeploymentState,
@@ -56,6 +61,7 @@ from bentoml.proto.deployment_pb2 import (
     DeleteDeploymentResponse,
 )
 from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
+from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.status import Status
@@ -397,31 +403,30 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             updated_deployment_spec.aws_lambda_operator_config
         )
         updated_bento_service_metadata = bento_pb.bento.bento_service_metadata
-        try:
-            describe_latest_deployment_state = self.describe(deployment_pb)
-            latest_deployment_state = json.loads(
-                describe_latest_deployment_state.state.info_json
+        describe_result = self.describe(deployment_pb)
+        if describe_result.state.status != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                describe_result.state
             )
-            lambda_s3_bucket = latest_deployment_state['s3_bucket']
-
-            _deploy_lambda_function(
-                deployment_pb=deployment_pb,
-                bento_service_metadata=updated_bento_service_metadata,
-                deployment_spec=updated_deployment_spec,
-                lambda_s3_bucket=lambda_s3_bucket,
-                lambda_deployment_config=updated_lambda_deployment_config,
-                bento_path=bento_path,
+            raise YataiDeploymentException(f'{error_code}:{error_message}')
+        latest_deployment_state = json.loads(describe_result.state.info_json)
+        lambda_s3_bucket = latest_deployment_state['s3_bucket']
+        if not lambda_s3_bucket:
+            raise BentoMLException(
+                f'S3 Bucket {lambda_s3_bucket} is missing in the AWS Lambda '
+                f'deployment, please make sure it exists and try again'
             )
 
-            return ApplyDeploymentResponse(
-                deployment=deployment_pb, status=Status.OK()
-            )
-        except BentoMLException as error:
-            deployment_pb.state.state = DeploymentState.ERROR
-            deployment_pb.state.error_message = f'Error: {str(error)}'
-            return ApplyDeploymentResponse(
-                status=error.status_code, deployment_pb=deployment_pb
-            )
+        _deploy_lambda_function(
+            deployment_pb=deployment_pb,
+            bento_service_metadata=updated_bento_service_metadata,
+            deployment_spec=updated_deployment_spec,
+            lambda_s3_bucket=lambda_s3_bucket,
+            lambda_deployment_config=updated_lambda_deployment_config,
+            bento_path=bento_path,
+        )
+
+        return ApplyDeploymentResponse(deployment=deployment_pb, status=Status.OK())
 
     def delete(self, deployment_pb):
         try:

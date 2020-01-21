@@ -25,7 +25,15 @@ def test_run_command_with_input_file(bento_bundle_path):
     run_cmd = cli.commands["run"]
     result = runner.invoke(
         run_cmd,
-        ["predict_dataframe", bento_bundle_path, "--input", input_path, "-o", "json"],
+        [
+            "predict_dataframe",
+            bento_bundle_path,
+            "--input",
+            input_path,
+            "-o",
+            "json",
+            "--quiet",
+        ],
     )
 
     assert result.exit_code == 0

@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import os
 from sys import version_info
+import stat
 from pathlib import Path
 
 from ruamel.yaml import YAML
@@ -101,7 +102,7 @@ class BentoServiceEnv(object):
         if pip_dependencies:
             self._pip_dependencies += pip_dependencies
 
-        self._setup_sh = setup_sh
+        self.set_setup_sh(setup_sh)
 
         if conda_channels:
             self.add_conda_channels(conda_channels)
@@ -130,7 +131,12 @@ class BentoServiceEnv(object):
         self._pip_dependencies += handler_dependencies
 
     def set_setup_sh(self, setup_sh_path_or_content):
-        setup_sh_file = Path(setup_sh_path_or_content)
+        self._setup_sh = None
+
+        if setup_sh_path_or_content:
+            setup_sh_file = Path(setup_sh_path_or_content)
+        else:
+            return
 
         if setup_sh_file.is_file():
             with setup_sh_file.open("rb") as f:
@@ -165,6 +171,10 @@ class BentoServiceEnv(object):
             setup_sh_file = os.path.join(path, "setup.sh")
             with open(setup_sh_file, "wb") as f:
                 f.write(self._setup_sh)
+
+            # chmod +x setup.sh
+            st = os.stat(setup_sh_file)
+            os.chmod(setup_sh_file, st.st_mode | stat.S_IEXEC)
 
     def to_dict(self):
         env_dict = dict()

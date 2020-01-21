@@ -78,15 +78,15 @@ RUN conda install pip numpy scipy \\
 COPY . /bento
 WORKDIR /bento
 
+# run user defined setup script
+RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
+
 # update conda base env
 RUN conda env update -n base -f /bento/environment.yml
 RUN pip install -r /bento/requirements.txt
 
- # Install additional pip dependencies inside bundled_pip_dependencies dir
+# Install additional pip dependencies inside bundled_pip_dependencies dir
 RUN if [ -f /bento/bentoml_init.sh ]; then /bin/bash -c /bento/bentoml_init.sh; fi
-
-# run user defined setup script
-RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
 
 # Run Gunicorn server with path to module.
 CMD ["bentoml serve-gunicorn /bento"]

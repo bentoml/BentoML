@@ -131,7 +131,6 @@ if __name__ == '__main__':
         bento_name = f'{loaded_service.name}:{loaded_service.version}'
     create_deployment_command = [
         'bentoml',
-        '--verbose',
         'sagemaker',
         'deploy',
         deployment_name,
@@ -144,6 +143,7 @@ if __name__ == '__main__':
         '--num-of-gunicorn-workers-per-instance',
         '2',
         '--wait',
+        '--verbose',
     ]
     deployment_failed, endpoint_name = run_sagemaker_create_or_update_command(
         create_deployment_command

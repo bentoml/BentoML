@@ -210,6 +210,7 @@ class BentoMetadataStore(object):
             if bento_name:
                 # filter_by apply filtering criterion to a copy of the query
                 query = query.filter_by(name=bento_name)
+            query = query.filter_by(deleted=False)
 
             # We are not defaulting limit to 200 in the signature,
             # because protobuf will pass 0 as value
@@ -221,9 +222,5 @@ class BentoMetadataStore(object):
                 query = query.offset(offset)
 
             query_result = query.all()
-            result = [
-                _bento_orm_obj_to_pb(bento_obj)
-                for bento_obj in query_result
-                if not bento_obj.deleted
-            ]
+            result = [_bento_orm_obj_to_pb(bento_obj) for bento_obj in query_result]
             return result

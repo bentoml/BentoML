@@ -36,11 +36,7 @@ from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.bento import add_bento_sub_command
 from bentoml.server import BentoAPIServer, get_docs
-from bentoml.cli.click_utils import (
-    BentoMLCommandGroup,
-    conditional_argument,
-    _echo
-)
+from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
 from bentoml.utils import ProtoMessageToDict
@@ -80,10 +76,7 @@ def run_with_conda_env(bundle_path, command):
         'conda activate {env_name} && '
         '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
         'dependencies."; }} && {cmd}'.format(
-            env_name=env_name,
-            env_file=env_path,
-            pip_req=pip_req,
-            cmd=command,
+            env_name=env_name, env_file=env_path, pip_req=pip_req, cmd=command,
         ),
         shell=True,
     )

@@ -105,7 +105,23 @@ class BentoMetadataStore(object):
             bento_obj.uri_type = BentoUri.StorageType.Name(uri_type)
             return sess.add(bento_obj)
 
-    def get(self, bento_name, bento_version):
+    def _get_latest(self, bento_name):
+        with create_session(self.sess_maker) as sess:
+            query = sess.query(Bento)\
+                .filter_by(name=bento_name, deleted=False)\
+                .order_by(desc(Bento.created_at))\
+                .limit(1)
+
+            query_result = query.all()
+            if len(query_result) == 1:
+                return _bento_orm_obj_to_pb(query_result[0])
+            else:
+                return None
+
+    def get(self, bento_name, bento_version="latest"):
+        if bento_version.lower() == "latest":
+            return self._get_latest(bento_name)
+
         with create_session(self.sess_maker) as sess:
             try:
                 bento_obj = (

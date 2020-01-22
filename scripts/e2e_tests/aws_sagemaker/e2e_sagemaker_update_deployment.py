@@ -134,7 +134,6 @@ if __name__ == '__main__':
     bento_name = f'{loaded_ver_one_service.name}:{loaded_ver_one_service.version}'
     create_deployment_command = [
         'bentoml',
-        '--verbose',
         'sagemaker',
         'deploy',
         deployment_name,
@@ -142,6 +141,7 @@ if __name__ == '__main__':
         bento_name,
         '--api-name',
         'classify',
+        '--verbose',
     ]
     deployment_failed, endpoint_name = run_sagemaker_create_or_update_command(
         create_deployment_command
@@ -157,12 +157,12 @@ if __name__ == '__main__':
     #     logger.info('UPDATED ENV FOR DEPLOYMENT')
     #     update_deployment_command = [
     #         'bentoml',
-    #         '--verbose',
     #         'deploy',
     #         'update',
     #         deployment_name,
     #         '--api-name',
     #         'predict',
+    #         '--verbose',
     #     ]
     #     deployment_failed, endpoint_name = run_sagemaker_create_or_update_command(
     #         update_deployment_command
@@ -185,13 +185,13 @@ if __name__ == '__main__':
 
         update_bento_version_deployment_command = [
             'bentoml',
-            '--verbose',
             'sagemaker',
             'update',
             deployment_name,
             '-b',
             bento_name,
             '--wait',
+            '--verbose',
         ]
         deployment_failed, endpoint_name = run_sagemaker_create_or_update_command(
             update_bento_version_deployment_command

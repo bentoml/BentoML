@@ -21,6 +21,7 @@ import logging
 from datetime import datetime
 
 from bentoml.cli.click_utils import (
+    BentoMLCommandGroup,
     _echo,
     CLI_COLOR_ERROR,
     CLI_COLOR_SUCCESS,
@@ -47,7 +48,10 @@ DEFAULT_SAGEMAKER_INSTANCE_COUNT = 1
 def get_deployment_sub_command():
     # pylint: disable=unused-variable
 
-    @click.group(help='Commands for manageing and operating BentoService deployments')
+    @click.group(
+        help='Commands for manageing and operating BentoService deployments',
+        cls=BentoMLCommandGroup,
+    )
     def deployment():
         pass
 

@@ -18,6 +18,7 @@ import click
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.cli.utils import Spinner
 from bentoml.cli.click_utils import (
+    BentoMLCommandGroup,
     parse_bento_tag_callback,
     CLI_COLOR_ERROR,
     _echo,
@@ -41,7 +42,9 @@ def get_aws_lambda_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
-        name='lambda', help='Commands for AWS Lambda BentoService deployments',
+        name='lambda',
+        help='Commands for AWS Lambda BentoService deployments',
+        cls=BentoMLCommandGroup,
     )
     def aws_lambda():
         pass

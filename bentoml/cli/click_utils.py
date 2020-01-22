@@ -18,8 +18,12 @@ from __future__ import print_function
 
 import re
 import click
+import functools
+import logging
 
 from ruamel.yaml import YAML
+
+from bentoml.utils.log import configure_logging
 
 # Available CLI colors for _echo:
 #
@@ -57,40 +61,53 @@ class BentoMLCommandGroup(click.Group):
     command for each group defined
     """
 
+    NUMBER_OF_COMMON_PARAMS = 2
+
+    @staticmethod
+    def bentoml_common_params(func):
+        @click.option(
+            '-q',
+            '--quiet',
+            is_flag=True,
+            default=False,
+            help="Hide process logs and errors",
+        )
+        @click.option(
+            '--verbose',
+            '--debug',
+            is_flag=True,
+            default=False,
+            help="Show additional details when running command",
+        )
+        @functools.wraps(func)
+        def wrapper(quiet, verbose, *args, **kwargs):
+            if verbose:
+                from bentoml import config
+
+                config().set('core', 'debug', 'true')
+                configure_logging(logging.DEBUG)
+            elif quiet:
+                configure_logging(logging.ERROR)
+            else:
+                configure_logging()  # use default setting in local bentoml.cfg
+
+            return func(*args, **kwargs)
+
+        return wrapper
+
     def command(self, *args, **kwargs):
-        default_command = kwargs.pop("default_command", False)
-        default_command_usage = kwargs.pop("default_command_usage", "")
-        default_command_display_name = kwargs.pop("default_command_display_name", "<>")
+        def wrapper(func):
+            # add common parameters to command
+            func = BentoMLCommandGroup.bentoml_common_params(func)
 
-        if default_command and not args:
-            kwargs["name"] = kwargs.get("name", default_command_display_name)
-        decorator = super(BentoMLCommandGroup, self).command(*args, **kwargs)
+            # move common parameters to end of the parameters list
+            func.__click_params__ = (
+                func.__click_params__[-self.NUMBER_OF_COMMON_PARAMS :]
+                + func.__click_params__[: -self.NUMBER_OF_COMMON_PARAMS]
+            )
+            return super(BentoMLCommandGroup, self).command(*args, **kwargs)(func)
 
-        if default_command:
-
-            def default_command_format_usage(ctx, formatter):
-                formatter.write_usage(ctx.parent.command_path, default_command_usage)
-
-            def new_decorator(f):
-                cmd = decorator(f)
-                cmd.format_usage = default_command_format_usage
-                # pylint:disable=attribute-defined-outside-init
-                self.default_command = cmd.name
-                # pylint:enable=attribute-defined-outside-init
-
-                return cmd
-
-            return new_decorator
-
-        return decorator
-
-    def resolve_command(self, ctx, args):
-        try:
-            return super(BentoMLCommandGroup, self).resolve_command(ctx, args)
-        except click.UsageError:
-            # command did not parse, assume it is the default command
-            args.insert(0, self.default_command)
-            return super(BentoMLCommandGroup, self).resolve_command(ctx, args)
+        return wrapper
 
 
 def conditional_argument(condition, *param_decls, **attrs):

@@ -55,7 +55,6 @@ if __name__ == '__main__':
         bento_name = f'{loaded_service.name}:{loaded_service.version}'
     create_deployment_command = [
         'bentoml',
-        '--verbose',
         'lambda',
         'deploy',
         deployment_name,
@@ -63,6 +62,7 @@ if __name__ == '__main__':
         bento_name,
         '--region',
         'us-west-2',
+        '--verbose',
     ]
     logger.info(
         f"Running bentoml deploy command: {' '.join(create_deployment_command)}"

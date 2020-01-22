@@ -26,7 +26,7 @@ from configparser import ConfigParser
 
 from bentoml import config as bentoml_config
 from bentoml.configuration import get_local_config_file, DEFAULT_CONFIG_FILE
-from bentoml.cli.click_utils import _echo, CLI_COLOR_ERROR
+from bentoml.cli.click_utils import BentoMLCommandGroup, _echo, CLI_COLOR_ERROR
 from bentoml.utils.usage_stats import track_cli
 
 # pylint: disable=unused-variable
@@ -52,6 +52,7 @@ def get_configuration_sub_command():
     @click.group(
         help="Configure BentoML configurations and settings",
         short_help="Config BentoML library",
+        cls=BentoMLCommandGroup,
     )
     def config():
         create_local_config_file_if_not_found()

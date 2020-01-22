@@ -43,7 +43,7 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     env["PYTHONPATH"] = ":".join(sys.path + [install_path, bentoml_path])
 
     output = subprocess.check_output(
-        [cli_bin_path, "--quiet", "info"], env=env
+        [cli_bin_path, "info", "--quiet"], env=env
     ).decode()
     output = json.loads(output)
     assert output["name"] == "TestBentoService"
@@ -51,7 +51,7 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     assert "predict_dataframe" in map(lambda x: x["name"], output["apis"])
 
     output = subprocess.check_output(
-        [cli_bin_path, "--quiet", "open-api-spec"], env=env
+        [cli_bin_path, "open-api-spec", "--quiet"], env=env
     ).decode()
     output = json.loads(output)
     assert output["info"]["version"] == svc.version

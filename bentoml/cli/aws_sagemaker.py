@@ -318,7 +318,7 @@ def get_aws_sagemaker_sub_command():
             )
 
     @aws_sagemaker.command(help='Get AWS Sagemaker deployment information')
-    @click.option('-n', '--name', type=click.STRING, help='Deployment name')
+    @click.argument('name', type=click.STRING)
     @click.option(
         '--namespace',
         type=click.STRING,

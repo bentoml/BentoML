@@ -105,7 +105,25 @@ class BentoMetadataStore(object):
             bento_obj.uri_type = BentoUri.StorageType.Name(uri_type)
             return sess.add(bento_obj)
 
-    def get(self, bento_name, bento_version):
+    def _get_latest(self, bento_name):
+        with create_session(self.sess_maker) as sess:
+            query = (
+                sess.query(Bento)
+                .filter_by(name=bento_name, deleted=False)
+                .order_by(desc(Bento.created_at))
+                .limit(1)
+            )
+
+            query_result = query.all()
+            if len(query_result) == 1:
+                return _bento_orm_obj_to_pb(query_result[0])
+            else:
+                return None
+
+    def get(self, bento_name, bento_version="latest"):
+        if bento_version.lower() == "latest":
+            return self._get_latest(bento_name)
+
         with create_session(self.sess_maker) as sess:
             try:
                 bento_obj = (
@@ -194,6 +212,7 @@ class BentoMetadataStore(object):
             if bento_name:
                 # filter_by apply filtering criterion to a copy of the query
                 query = query.filter_by(name=bento_name)
+            query = query.filter_by(deleted=False)
 
             # We are not defaulting limit to 200 in the signature,
             # because protobuf will pass 0 as value
@@ -205,9 +224,5 @@ class BentoMetadataStore(object):
                 query = query.offset(offset)
 
             query_result = query.all()
-            result = [
-                _bento_orm_obj_to_pb(bento_obj)
-                for bento_obj in query_result
-                if not bento_obj.deleted
-            ]
+            result = [_bento_orm_obj_to_pb(bento_obj) for bento_obj in query_result]
             return result

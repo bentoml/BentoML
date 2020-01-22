@@ -343,6 +343,9 @@ def _validate_version_str(version_str):
             "128 characthers".format(version_str)
         )
 
+    if version_str.lower() == "latest":
+        raise InvalidArgument('BentoService version can not be set to "latest"')
+
 
 def save(bento_service, base_path=None, version=None):
     from bentoml.yatai.client import YataiClient

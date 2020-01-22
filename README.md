@@ -107,7 +107,7 @@ build context directory:
 docker build -t my_api_server {saved_path}
 ```
 
-You can also deploy your BentoService to cloud services such as AWS Lambda 
+You can also deploy your BentoService to cloud services such as AWS Lambda
 with `bentoml` command. The deployment gives you an API endpoint hosting your model,
 that is ready for production use:
 ```
@@ -174,8 +174,8 @@ Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
 ### Deployment guides:
 
 * Automated end-to-end deployment workflow with BentoML
-  - [BentoML AWS Lambda Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-serverless)
-  - [BentoML AWS SageMaker Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-sagemaker)
+  - [BentoML AWS Lambda Deployment Guide](https://docs.bentoml.org/en/latest/deployment/aws_lambda.html)
+  - [BentoML AWS SageMaker Deployment Guide](https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html)
 
 * Clipper Deployment
   - [BentoML Clipper.ai Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/bentoml-clipper-deployment-guide.ipynb)

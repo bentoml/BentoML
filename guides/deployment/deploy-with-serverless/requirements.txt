@@ -1,5 +1,0 @@
-matplotlib
-numpy
-pandas
-sklearn
-bentoml

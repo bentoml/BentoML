@@ -108,7 +108,6 @@ if __name__ == '__main__':
 
     create_deployment_command = [
         'bentoml',
-        '--verbose',
         'lambda',
         'deploy',
         deployment_name,
@@ -116,6 +115,7 @@ if __name__ == '__main__':
         bento_name,
         '--region',
         'us-west-2',
+        '--verbose',
     ]
     deployment_failed, deployment_endpoint = run_lambda_create_or_update_command(
         create_deployment_command
@@ -131,12 +131,12 @@ if __name__ == '__main__':
     updated_bento_name = f'{service_two.name}:{service_two.version}'
     update_deployment_command = [
         'bentoml',
-        '--verbose',
         'lambda',
         'update',
         deployment_name,
         '-b',
         updated_bento_name,
+        '--verbose',
     ]
     deployment_failed, deployment_endpoint = run_lambda_create_or_update_command(
         update_deployment_command

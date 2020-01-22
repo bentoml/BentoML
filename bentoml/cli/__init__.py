@@ -39,8 +39,7 @@ from bentoml.server import BentoAPIServer, get_docs
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     conditional_argument,
-    _echo,
-    CLI_COLOR_ERROR,
+    _echo
 )
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
@@ -83,7 +82,6 @@ def run_with_conda_env(bundle_path, command):
         'dependencies."; }} && {cmd}'.format(
             env_name=env_name,
             env_file=env_path,
-            bundle_path=bundle_path,
             pip_req=pip_req,
             cmd=command,
         ),
@@ -129,8 +127,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             return get_bento_result.bento.uri.uri
         else:
             raise BentoMLException(
-                f'BentoService "{bento}" not found - either specify the file path of the'
-                f'BentoService saved bundle, or the BentoService id in the form of '
+                f'BentoService "{bento}" not found - either specify the file path of '
+                f'the BentoService saved bundle, or the BentoService id in the form of '
                 f'"name:version"'
             )
 

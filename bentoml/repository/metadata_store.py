@@ -107,10 +107,12 @@ class BentoMetadataStore(object):
 
     def _get_latest(self, bento_name):
         with create_session(self.sess_maker) as sess:
-            query = sess.query(Bento)\
-                .filter_by(name=bento_name, deleted=False)\
-                .order_by(desc(Bento.created_at))\
+            query = (
+                sess.query(Bento)
+                .filter_by(name=bento_name, deleted=False)
+                .order_by(desc(Bento.created_at))
                 .limit(1)
+            )
 
             query_result = query.all()
             if len(query_result) == 1:

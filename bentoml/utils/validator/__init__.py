@@ -38,7 +38,11 @@ deployment_schema = {
                 'allowed': DeploymentSpec.DeploymentOperator.keys(),
             },
             'bento_name': {'type': 'string', 'required': True},
-            'bento_version': {'type': 'string', 'required': True, 'bento_service_version': True},
+            'bento_version': {
+                'type': 'string',
+                'required': True,
+                'bento_service_version': True,
+            },
             'custom_operator_config': {
                 'type': 'dict',
                 'schema': {
@@ -96,7 +100,7 @@ class YataiDeploymentValidator(Validator):
         """ Test the memory size restriction for AWS Lambda.
 
         The rule's arguments are validated against this schema:
-        {'type': 'integer'}
+        {'type': 'boolean'}
         """
         if aws_lambda_memory:
             if value > 3008 or value < 128:
@@ -114,17 +118,16 @@ class YataiDeploymentValidator(Validator):
 
     def _validate_bento_service_version(self, bento_service_version, field, value):
         """ Test the given BentoService version is not "latest"
-        
+
         The rule's arguments are validated against this schema:
-        {'type': 'string'}
+        {'type': 'boolean'}
         """
-        if bento_service_version:
-            if value.lower() == "latest":
-                self._error(
-                    field,
-                    'Must set specific "bento_version" in deployment, using "latest" is'
-                    'an anti-pattern.',
-                )
+        if bento_service_version and value.lower() == "latest":
+            self._error(
+                field,
+                'Must use specific "bento_version" in deployment, using "latest" is '
+                'an anti-pattern.',
+            )
 
 
 def validate_pb_schema(pb, schema):

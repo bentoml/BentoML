@@ -32,9 +32,9 @@ def _print_bento_info(bento, output_type):
         _echo(MessageToJson(bento))
 
 
-def _print_bento_table(bentos):
+def _print_bento_table(bentos, wide=False):
     table = []
-    headers = ['BENTO_SERVICE', 'CREATED_AT', 'URI', 'APIS', 'ARTIFACTS']
+    headers = ['BENTO_SERVICE', 'CREATED_AT', 'APIS', 'ARTIFACTS']
     for bento in bentos:
         artifacts = [
             f'{artifact.name}::{artifact.artifact_type}'
@@ -49,11 +49,16 @@ def _print_bento_table(bentos):
             bento.bento_service_metadata.created_at.ToDatetime().strftime(
                 "%Y-%m-%d %H:%M"
             ),
-            bento.uri.uri,
             ', '.join(apis),
             ', '.join(artifacts),
         ]
         table.append(row)
+
+    if wide:
+        headers.append('URI')
+        for i, bento in enumerate(bentos):
+            table[i].append(bento.uri.uri)
+
     table_display = tabulate(table, headers, tablefmt='plain')
     _echo(table_display)
 
@@ -61,6 +66,8 @@ def _print_bento_table(bentos):
 def _print_bentos_info(bentos, output_type):
     if output_type == 'table':
         _print_bento_table(bentos)
+    elif output_type == 'wide':
+        _print_bento_table(bentos, wide=True)
     else:
         for bento in bentos:
             _print_bento_info(bento, output_type)
@@ -74,7 +81,9 @@ def add_bento_sub_command(cli):
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
     @click.option('--ascending-order', is_flag=True)
-    @click.option('-o', '--output', type=click.Choice(['json', 'yaml', 'table']))
+    @click.option(
+        '-o', '--output', type=click.Choice(['json', 'yaml', 'table', 'wide'])
+    )
     def get(bento, limit, ascending_order, output):
         if ':' in bento:
             name, version = bento.split(':')
@@ -130,7 +139,10 @@ def add_bento_sub_command(cli):
     )
     @click.option('--ascending-order', is_flag=True)
     @click.option(
-        '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
+        '-o',
+        '--output',
+        type=click.Choice(['json', 'yaml', 'table', 'wide']),
+        default='table',
     )
     def list_bentos(limit, offset, order_by, ascending_order, output):
         yatai_client = YataiClient()

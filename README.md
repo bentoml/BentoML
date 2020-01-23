@@ -80,11 +80,10 @@ ready for production deployment. It contains the BentoService you defined, as we
 the packed trained model artifacts, pre-processing code, dependencies and other
 configurations in a single file directory.
 
-
 From a BentoService SavedBundle, you can start a REST API server by providing the file
 path to the saved bundle:
 ```bash
-bentoml serve {saved_path}
+bentoml serve IrisClassifier:latest
 ```
 
 The REST API server provides web UI for testing and debugging the server. If you are
@@ -108,10 +107,17 @@ docker build -t my_api_server {saved_path}
 ```
 
 You can also deploy your BentoService to cloud services such as AWS Lambda
-with `bentoml` command. The deployment gives you an API endpoint hosting your model,
-that is ready for production use:
+with `bentoml lambda` command. The deployment gives you a production-ready API endpoint
+hosting the BentoService you specified:
 ```
-bentoml deployment create my-iris-classifier --bento IrisClassifier:{VERSION} --platform=aws-lambda
+> bentoml get IrisClassifier
+BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
+IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict::DataframeHandler  model::SklearnModelArtifact
+IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict::DataframeHandler  clf::PickleArtifact
+...
+
+> bentoml lambda deploy test-deploy -b IrisClassifier:20200121114004_360ECB
+...
 ```
 
 More detailed code and walkthrough of this example can be found in the [BentoML Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html).

@@ -327,6 +327,11 @@ class YataiService(YataiServicer):
             bento_metadata_pb = self.bento_metadata_store.get(
                 request.bento_name, request.bento_version
             )
+            if request.bento_version.lower() == 'latest':
+                logger.info(
+                    f'Getting latest version {request.bento_name}:'
+                    f'{bento_metadata_pb.version}'
+                )
 
             if bento_metadata_pb:
                 return GetBentoResponse(status=Status.OK(), bento=bento_metadata_pb)

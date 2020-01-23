@@ -131,8 +131,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         short_help="Run API function",
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
     )
-    @click.argument("api_name", type=click.STRING)
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
+    @click.argument("api_name", type=click.STRING)
     @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
     @click.option(
         '--with-conda',

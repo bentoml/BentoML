@@ -26,8 +26,8 @@ def test_run_command_with_input_file(bento_bundle_path):
     result = runner.invoke(
         run_cmd,
         [
-            "predict_dataframe",
             bento_bundle_path,
+            "predict_dataframe",
             "--input",
             input_path,
             "-o",

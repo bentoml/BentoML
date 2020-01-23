@@ -155,7 +155,10 @@ def add_bento_sub_command(cli):
 
     @cli.command(help='Delete BentoService')
     @click.argument('bento', type=click.STRING)
-    def delete(bento):
+    @click.option(
+        '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
+    )
+    def delete(bento, yes):
         yatai_client = YataiClient()
         name, version = bento.split(':')
         if not name and not version:
@@ -165,7 +168,7 @@ def add_bento_sub_command(cli):
                 CLI_COLOR_ERROR,
             )
             return
-        if not click.confirm(
+        if not yes and not click.confirm(
             f'Are you sure about delete {bento}? This will delete the BentoService '
             f'saved bundle files permanently'
         ):

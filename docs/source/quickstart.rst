@@ -118,7 +118,7 @@ path to the saved bundle:
 
 .. code-block:: bash
 
-  bentoml serve {saved_path}
+  bentoml serve IrisClassifier:latest
 
 The REST API server provides web UI for testing and debugging the server. If you are
 running this command on your local machine, visit http://127.0.0.1:5000 in your browser
@@ -156,15 +156,22 @@ run the prediction task on the given input dataset:
 
 .. code-block:: bash
 
-  bentoml predict {saved_path} --input='[[5.1, 3.5, 1.4, 0.2]]'
+  bentoml run IrisClassifier:latest predict --input='[[5.1, 3.5, 1.4, 0.2]]'
 
-  # alternatively:
-  bentoml predict {saved_path} --input='./iris_test_data.csv'
-
+  # alternatively pass input data via CSV file:
+  bentoml run IrisClassifier:latest predict --input='./iris_test_data.csv'
 
 
 Distribute BentoML SavedBundle as PyPI package
 ++++++++++++++++++++++++++++++++++++++++++++++
+
+.. note::
+
+    The :code:`{saved_path}` in the following commands are referring to the returned
+    value of :code:`iris_classifier_service.save()`.
+    It is the file path where the BentoService saved bundle is stored.
+    You can also find it via :code:`bentoml get IrisClassifier -o wide` command. 
+
 
 The BentoService SavedBundle is pip-installable and can be directly distributed as a
 PyPI package if you plan to use the model in your python applications. You can install

@@ -26,9 +26,9 @@ try:
         # for pip >= 20.0
         from pip._internal.network.session import PipSession
     except ModuleNotFoundError:
-        # for pip >= 10, < 20.0, 
+        # for pip >= 10, < 20.0
         from pip._internal.download import PipSession
-except ImportError: 
+except ImportError:
     # for pip <= 9.0.3
     from pip.req import parse_requirements
     from pip.download import PipSession

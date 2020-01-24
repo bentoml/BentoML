@@ -51,10 +51,8 @@ def test_gunicorn_serve_command():
     with mock.patch(
         'bentoml.server.gunicorn_server.GunicornBentoServer',
     ) as mocked_class:
-        instance = mocked_class.return_value
-        instance.run.return_value = 1
-
         runner.invoke(
             gunicorn_cmd, ["/"],
         )
+        instance = mocked_class.return_value
         assert instance.run.called

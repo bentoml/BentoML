@@ -1,5 +1,7 @@
 import os
 import tempfile
+
+import mock
 from click.testing import CliRunner
 
 from bentoml.cli import create_bento_service_cli
@@ -38,3 +40,21 @@ def test_run_command_with_input_file(bento_bundle_path):
 
     assert result.exit_code == 0
     assert result.output.strip() == '3'
+
+
+def test_gunicorn_serve_command():
+    runner = CliRunner()
+
+    cli = create_bento_service_cli()
+    gunicorn_cmd = cli.commands["serve-gunicorn"]
+
+    with mock.patch(
+        'bentoml.server.gunicorn_server.GunicornBentoServer',
+    ) as mocked_class:
+        instance = mocked_class.return_value
+        instance.run.return_value = 1
+
+        runner.invoke(
+            gunicorn_cmd, ["/"],
+        )
+        assert instance.run.called

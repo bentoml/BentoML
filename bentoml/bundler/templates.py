@@ -21,13 +21,11 @@ BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE = """\
 import setuptools
 try:  # for pip >= 10
     from pip._internal.req import parse_requirements
-    from pip._internal.download import PipSession
 except ImportError:  # for pip <= 9.0.3
     from pip.req import parse_requirements
-    from pip.download import PipSession
 
 try:
-    raw = parse_requirements('requirements.txt', session=PipSession())
+    raw = parse_requirements('requirements.txt', session=None)
     install_reqs =  [str(i.req) for i in raw]
 except Exception:
     install_reqs = []

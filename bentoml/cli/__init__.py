@@ -243,9 +243,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Start REST API server from saved BentoService bundle with gunicorn",
         short_help="Start local gunicorn server",
     )
-    @conditional_argument(
-        pip_installed_bundle_path is None, "bundle-path", type=click.STRING
-    )
+    @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.option("-p", "--port", type=click.INT, default=None)
     @click.option(
         "-w",

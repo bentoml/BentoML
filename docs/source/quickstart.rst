@@ -110,15 +110,27 @@ configurations in a single file directory.
 Model Serving with BentoML
 --------------------------
 
+.. note::
+
+    The :code:`{saved_path}` in the following commands are referring to the returned
+    value of :code:`iris_classifier_service.save()`.
+    It is the file path where the BentoService saved bundle is stored.
+    BentoML locally keeps track of all the BentoService you've saved,
+    you can also find the saved_path of your BentoService via
+    :code:`bentoml get IrisClassifier -o wide` command.
+
+
 Model Serving via REST API
 ++++++++++++++++++++++++++
 
-From a BentoService SavedBundle, you can start a REST API server by providing the file
-path to the saved bundle:
+You can start a REST API server by specifying the BentoService's name and version, or
+provide the file path to the saved bundle:
 
 .. code-block:: bash
 
   bentoml serve IrisClassifier:latest
+  # or
+  bentoml serve {saved_path}
 
 The REST API server provides web UI for testing and debugging the server. If you are
 running this command on your local machine, visit http://127.0.0.1:5000 in your browser
@@ -165,13 +177,6 @@ run the prediction task on the given input dataset:
 Distribute BentoML SavedBundle as PyPI package
 ++++++++++++++++++++++++++++++++++++++++++++++
 
-.. note::
-
-    The :code:`{saved_path}` in the following commands are referring to the returned
-    value of :code:`iris_classifier_service.save()`.
-    It is the file path where the BentoService saved bundle is stored.
-    You can also find it via :code:`bentoml get IrisClassifier -o wide` command. 
-
 
 The BentoService SavedBundle is pip-installable and can be directly distributed as a
 PyPI package if you plan to use the model in your python applications. You can install
@@ -194,7 +199,7 @@ or to their organization's private PyPi index to share with other developers.
 
 .. code-block:: bash
 
-    !cd {saved_path} & python setup.py sdist upload
+    cd {saved_path} & python setup.py sdist upload
 
 .. note::
 
@@ -260,7 +265,7 @@ hosting the BentService you've created:
 .. code-block:: bash
 
     # replace the version here with the generated version string when creating the BentoService SavedBundle
-    bentoml deployment create quick-start-guide-deployment \
+    bentoml lambda deploy quick-start-guide-deployment \
         -b=IrisClassifier:20191126125258_4AB1D4 \
         --platform=aws-lambda \
 

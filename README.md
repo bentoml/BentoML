@@ -80,10 +80,13 @@ ready for production deployment. It contains the BentoService you defined, as we
 the packed trained model artifacts, pre-processing code, dependencies and other
 configurations in a single file directory.
 
-From a BentoService SavedBundle, you can start a REST API server by providing the file
-path to the saved bundle:
+You can start a REST API server by specifying the BentoService's name and version, or
+provide the file path to the saved bundle:
+
 ```bash
 bentoml serve IrisClassifier:latest
+# or
+bentoml serve {saved_path}
 ```
 
 The REST API server provides web UI for testing and debugging the server. If you are

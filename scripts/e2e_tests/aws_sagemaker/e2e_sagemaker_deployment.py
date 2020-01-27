@@ -164,6 +164,14 @@ if __name__ == '__main__':
 
     delete_deployment(deployment_name)
 
+    delete_bento_command = ['bentoml', 'delete', bento_name, '-y']
+    logger.info(f'Delete bento service command: {delete_bento_command}')
+    with subprocess.Popen(
+        delete_bento_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ) as proc:
+        delete_bento_stdout = proc.stdout.read().decode('utf-8')
+    logger.info(delete_bento_stdout)
+
     logger.info('Finished')
     if deployment_failed:
         logger.info('E2E deployment failed, fix the issues before releasing')

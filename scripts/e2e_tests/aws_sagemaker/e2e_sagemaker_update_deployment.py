@@ -181,7 +181,9 @@ if __name__ == '__main__':
         saved_path = service_ver_two.save()
 
         loaded_ver_two_service = load(saved_path)
-        bento_name = f'{loaded_ver_two_service.name}:{loaded_ver_two_service.version}'
+        updated_bento_name = (
+            f'{loaded_ver_two_service.name}:{loaded_ver_two_service.version}'
+        )
 
         update_bento_version_deployment_command = [
             'bentoml',
@@ -189,7 +191,7 @@ if __name__ == '__main__':
             'update',
             deployment_name,
             '-b',
-            bento_name,
+            updated_bento_name,
             '--wait',
             '--verbose',
         ]
@@ -202,6 +204,22 @@ if __name__ == '__main__':
         logger.info('Deployment failed for updating BentoService')
 
     delete_deployment(deployment_name)
+
+    logger.info(f'Deleting bento service {bento_name}')
+    delete_first_bento_command = ['bentoml', 'delete', bento_name, '-y']
+    with subprocess.Popen(
+        delete_first_bento_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ) as proc:
+        delete_updated_bento_stdout = proc.stdout.read().decode('utf-8')
+    logger.info(delete_updated_bento_stdout)
+
+    logger.info(f'Deleting bento service {updated_bento_name}')
+    delete_first_bento_command = ['bentoml', 'delete', bento_name, '-y']
+    with subprocess.Popen(
+        delete_first_bento_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ) as proc:
+        delete_first_bento_stdout = proc.stdout.read().decode('utf-8')
+    logger.info(delete_first_bento_command)
 
     logger.info('Finished')
     if deployment_failed:

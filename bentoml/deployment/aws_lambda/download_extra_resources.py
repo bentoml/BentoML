@@ -29,6 +29,7 @@ def download_extra_resources():
     additional_pkg_dir = '/tmp/requirements'
 
     if not os.path.exists(additional_pkg_dir) or not os.listdir(additional_pkg_dir):
+        # Using print instead of logger.info, because this ran before bentoml is loaded.
         print('Additional required modules are not present. Downloading from s3')
         s3_file_path = os.path.join(s3_prefix, 'requirements.tar')
 

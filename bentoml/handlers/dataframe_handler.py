@@ -200,16 +200,12 @@ class DataframeHandler(BentoHandler):
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        if event["headers"]["Content-Type"] == "application/json":
-            df = pd.read_json(
-                event["body"], orient=self.orient, typ=self.typ, dtype=False
-            )
-        elif event["headers"]["Content-Type"] == "text/csv":
+        if event["headers"].get("Content-Type", None) == "text/csv":
             df = pd.read_csv(event["body"])
         else:
-            raise BadInput(
-                "Request content-type not supported, only application/json and "
-                "text/csv are supported"
+            # Optimistically assuming Content-Type to be json as a default
+            df = pd.read_json(
+                event["body"], orient=self.orient, typ=self.typ, dtype=False
             )
 
         if self.typ == "frame" and self.input_dtypes is not None:

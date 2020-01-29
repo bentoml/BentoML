@@ -31,6 +31,9 @@ except ImportError:
     # silently
     pass
 
+if '/tmp/requirements' not in sys.path:
+    sys.path.append('/tmp/requirements')
+
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 from bentoml import load  # noqa

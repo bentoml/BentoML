@@ -122,20 +122,16 @@ class DataframeHandler(BentoHandler):
         return default
 
     def handle_request(self, request, func):
-        if request.content_type == "application/json":
+        if request.content_type == "text/csv":
+            csv_string = StringIO(request.data.decode('utf-8'))
+            df = pd.read_csv(csv_string)
+        else:
+            # Optimistically assuming Content-Type to be "application/json"
             df = pd.read_json(
                 request.data.decode("utf-8"),
                 orient=self.orient,
                 typ=self.typ,
                 dtype=False,
-            )
-        elif request.content_type == "text/csv":
-            csv_string = StringIO(request.data.decode('utf-8'))
-            df = pd.read_csv(csv_string)
-        else:
-            raise BadInput(
-                "Request content-type not supported, only application/json and "
-                "text/csv are supported"
             )
 
         if self.typ == "frame" and self.input_dtypes is not None:
@@ -203,7 +199,7 @@ class DataframeHandler(BentoHandler):
         if event["headers"].get("Content-Type", None) == "text/csv":
             df = pd.read_csv(event["body"])
         else:
-            # Optimistically assuming Content-Type to be json as a default
+            # Optimistically assuming Content-Type to be "application/json"
             df = pd.read_json(
                 event["body"], orient=self.orient, typ=self.typ, dtype=False
             )

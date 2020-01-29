@@ -49,21 +49,31 @@ def test_dataframe_handle_aws_lambda_event():
         return df["name"][0]
 
     handler = DataframeHandler()
-    success_event_obj = {
+    event = {
         "headers": {"Content-Type": "application/json"},
         "body": test_content,
     }
-    success_response = handler.handle_aws_lambda_event(success_event_obj, test_func)
+    response = handler.handle_aws_lambda_event(event, test_func)
+    assert response["statusCode"] == 200
+    assert response["body"] == '"john"'
 
-    assert success_response["statusCode"] == 200
-    assert success_response["body"] == '"john"'
+    handler = DataframeHandler()
+    event_without_content_type_header = {
+        "headers": {},
+        "body": test_content,
+    }
+    response = handler.handle_aws_lambda_event(
+        event_without_content_type_header, test_func
+    )
+    assert response["statusCode"] == 200
+    assert response["body"] == '"john"'
 
     with pytest.raises(BadInput):
-        error_event_obj = {
-            "headers": {"Content-Type": "this_will_fail"},
-            "body": test_content,
+        event_with_bad_input = {
+            "headers": {},
+            "body": "bad_input_content",
         }
-        handler.handle_aws_lambda_event(error_event_obj, test_func)
+        handler.handle_aws_lambda_event(event_with_bad_input, test_func)
 
 
 def test_check_dataframe_column_contains():

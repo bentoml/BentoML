@@ -329,8 +329,9 @@ class YataiService(YataiServicer):
             )
             if request.bento_version.lower() == 'latest':
                 logger.info(
-                    f'Getting latest version {request.bento_name}:'
-                    f'{bento_metadata_pb.version}'
+                    'Getting latest version %s:%s',
+                    request.bento_name,
+                    bento_metadata_pb.version,
                 )
 
             if bento_metadata_pb:

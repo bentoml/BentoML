@@ -122,21 +122,23 @@ class DataframeHandler(BentoHandler):
         return default
 
     def handle_request(self, request, func):
-        if request.content_type == "application/json":
-            df = pd.read_json(
-                request.data.decode("utf-8"),
-                orient=self.orient,
-                typ=self.typ,
-                dtype=False,
-            )
-        elif request.content_type == "text/csv":
+        if request.content_type == "text/csv":
             csv_string = StringIO(request.data.decode('utf-8'))
             df = pd.read_csv(csv_string)
         else:
-            raise BadInput(
-                "Request content-type not supported, only application/json and "
-                "text/csv are supported"
-            )
+            # Optimistically assuming Content-Type to be "application/json"
+            try:
+                df = pd.read_json(
+                    request.data.decode("utf-8"),
+                    orient=self.orient,
+                    typ=self.typ,
+                    dtype=False,
+                )
+            except ValueError:
+                raise BadInput(
+                    "Failed parsing request data, only Content-Type application/json "
+                    "and text/csv are supported in BentoML DataframeHandler"
+                )
 
         if self.typ == "frame" and self.input_dtypes is not None:
             _check_dataframe_column_contains(self.input_dtypes, df)
@@ -200,17 +202,19 @@ class DataframeHandler(BentoHandler):
         print(result)
 
     def handle_aws_lambda_event(self, event, func):
-        if event["headers"]["Content-Type"] == "application/json":
-            df = pd.read_json(
-                event["body"], orient=self.orient, typ=self.typ, dtype=False
-            )
-        elif event["headers"]["Content-Type"] == "text/csv":
+        if event["headers"].get("Content-Type", None) == "text/csv":
             df = pd.read_csv(event["body"])
         else:
-            raise BadInput(
-                "Request content-type not supported, only application/json and "
-                "text/csv are supported"
-            )
+            # Optimistically assuming Content-Type to be "application/json"
+            try:
+                df = pd.read_json(
+                    event["body"], orient=self.orient, typ=self.typ, dtype=False
+                )
+            except ValueError:
+                raise BadInput(
+                    "Failed parsing request data, only Content-Type application/json "
+                    "and text/csv are supported in BentoML DataframeHandler"
+                )
 
         if self.typ == "frame" and self.input_dtypes is not None:
             _check_dataframe_column_contains(self.input_dtypes, df)

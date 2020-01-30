@@ -156,16 +156,16 @@ if __name__ == '__main__':
     with subprocess.Popen(
         delete_first_bento_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
-        delete_updated_bento_stdout = proc.stdout.read().decode('utf-8')
-    logger.info(delete_updated_bento_stdout)
+        delete_first_bento_stdout = proc.stdout.read().decode('utf-8')
+    logger.info(delete_first_bento_stdout)
 
     logger.info(f'Deleting bento service {updated_bento_name}')
-    delete_first_bento_command = ['bentoml', 'delete', bento_name, '-y']
+    delete_updated_bento_command = ['bentoml', 'delete', updated_bento_name, '-y']
     with subprocess.Popen(
-        delete_first_bento_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        delete_updated_bento_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
-        delete_first_bento_stdout = proc.stdout.read().decode('utf-8')
-    logger.info(delete_first_bento_command)
+        delete_updated_bento_stdout = proc.stdout.read().decode('utf-8')
+    logger.info(delete_updated_bento_stdout)
 
     logger.info('Finished')
     if deployment_failed:

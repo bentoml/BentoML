@@ -98,7 +98,7 @@ class BentoServiceEnv(object):
         )
 
         bentoml_deploy_version = get_bentoml_deploy_version()
-        self._pip_dependencies = ["bentoml=={}".format(bentoml_deploy_version)]
+        self._pip_dependencies = ["{}".format(bentoml_deploy_version)]
         if pip_dependencies:
             self._pip_dependencies += pip_dependencies
 

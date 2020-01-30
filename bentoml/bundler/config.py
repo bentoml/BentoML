@@ -107,9 +107,7 @@ class SavedBundleConfig(object):
             # If major version is different, then there could be incompatible API
             # changes. Raise error in this case.
             if conf["version"].split(".")[0] != BENTOML_VERSION.split(".")[0]:
-                if not BENTOML_VERSION.startswith('0+untagged'):
-                    raise BentoMLConfigException(msg)
-                else:
+                if BENTOML_VERSION.startswith('0+untagged'):
                     logger.warning(msg)
             else:  # Otherwise just show a warning.
                 logger.warning(msg)

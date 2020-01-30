@@ -31,6 +31,13 @@ except ImportError:
     # silently
     pass
 
+# After lambda "warm up" instance, the PYTHONPATH resets. Since the `/tmp/requirements`
+# directory is already downloaded/extracted, we won't have a chance to add it to
+# PYTHONPATH. We are going to ensure the requirements directory is in the PYTHONPATH, by
+# checking it in the app.py
+if '/tmp/requirements' not in sys.path:
+    sys.path.append('/tmp/requirements')
+
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 from bentoml import load  # noqa

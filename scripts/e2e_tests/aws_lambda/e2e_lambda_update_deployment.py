@@ -1,14 +1,29 @@
 #!/usr/bin/env python
 
-import subprocess
 import logging
 import uuid
 import sys
 
-import requests
 
 from bentoml import BentoService, load, api
 from bentoml.handlers import JsonHandler
+
+try:
+    from scripts.e2e_tests.aws_lambda.utils import (
+        test_deployment_with_sample_data,
+        run_lambda_create_or_update_command,
+    )
+except ModuleNotFoundError:
+    # Put dummy lambda here to stop deployment complains
+    run_lambda_create_or_update_command = lambda x: None
+    test_deployment_with_sample_data = lambda x, y, z: None
+
+try:
+    from scripts.e2e_tests.cli_operations import delete_deployment, delete_bento
+except ModuleNotFoundError:
+    # Put dummy lambda here to stop deployment complains
+    delete_deployment = lambda x, y: None
+    delete_bento = lambda x: None
 
 
 logger = logging.getLogger('bentoml.test')
@@ -24,74 +39,6 @@ class UpdatedLambdaDeployment(BentoService):
     @api(JsonHandler)
     def predict(self, data):
         return 'dog'
-
-
-def run_lambda_create_or_update_command(deploy_command):
-    logger.info(f"Running bentoml deploy command: {' '.join(deploy_command)}")
-    deployment_failed = False
-    deployment_endpoint = ''
-
-    with subprocess.Popen(
-        deploy_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    ) as proc:
-        deploy_command_stdout = proc.stdout.read().decode('utf-8')
-    logger.info('Finish deploying to AWS Lambda')
-    logger.info(deploy_command_stdout)
-    if deploy_command_stdout.startswith(
-        'Failed to create deployment'
-    ) or deploy_command_stdout.startswith('Failed to update deployment'):
-        deployment_failed = True
-    deploy_command_stdout_list = deploy_command_stdout.split('\n')
-    for index, message in enumerate(deploy_command_stdout_list):
-        if '"endpoints": [' in message:
-            deployment_endpoint = (
-                deploy_command_stdout_list[index + 1].strip().replace('"', '')
-            )
-    return deployment_failed, deployment_endpoint
-
-
-def test_deployment_with_sample_data(
-    deployment_endpoint, expect_result, sample_data=None
-):
-    logger.info('Test deployment with sample request')
-    sample_data = sample_data or '"{}"'
-    deployment_failed = False
-    try:
-        request_result = requests.post(
-            deployment_endpoint,
-            data=sample_data,
-            headers={'Content-Type': 'application/json'},
-        )
-        if request_result.status_code != 200:
-            deployment_failed = True
-        if request_result.content.decode('utf-8') != expect_result:
-            logger.info(
-                'Test request failed. {}:{}'.format(
-                    request_result.status_code, request_result.content.decode('utf-8'),
-                )
-            )
-            deployment_failed = True
-    except Exception as e:
-        logger.error(str(e))
-        deployment_failed = True
-    return deployment_failed
-
-
-def delete_deployment(deployment_name):
-    logger.info('Delete test deployment with BentoML CLI')
-    delete_deployment_command = [
-        'bentoml',
-        'lambda',
-        'delete',
-        deployment_name,
-        '--force',
-    ]
-    logger.info(f'Delete command: {delete_deployment_command}')
-    with subprocess.Popen(
-        delete_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    ) as proc:
-        delete_deployment_stdout = proc.stdout.read().decode('utf-8')
-    logger.info(delete_deployment_stdout)
 
 
 if __name__ == '__main__':
@@ -149,23 +96,10 @@ if __name__ == '__main__':
         deployment_failed = True
         logger.debug('Update Lambda failed')
 
-    delete_deployment(deployment_name)
-
-    logger.info(f'Deleting bento service {bento_name}')
-    delete_first_bento_command = ['bentoml', 'delete', bento_name, '-y']
-    with subprocess.Popen(
-        delete_first_bento_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    ) as proc:
-        delete_first_bento_stdout = proc.stdout.read().decode('utf-8')
-    logger.info(delete_first_bento_stdout)
-
-    logger.info(f'Deleting bento service {updated_bento_name}')
-    delete_updated_bento_command = ['bentoml', 'delete', updated_bento_name, '-y']
-    with subprocess.Popen(
-        delete_updated_bento_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    ) as proc:
-        delete_updated_bento_stdout = proc.stdout.read().decode('utf-8')
-    logger.info(delete_updated_bento_stdout)
+    delete_deployment('lambda', deployment_name)
+    delete_bento(bento_name)
+    if updated_bento_name:
+        delete_bento(updated_bento_name)
 
     logger.info('Finished')
     if deployment_failed:

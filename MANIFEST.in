@@ -25,10 +25,11 @@ include bentoml/alembic.ini
 # include ".conf" file
 include bentoml/deployment/sagemaker/sagemaker_nginx.conf
 
-# Don't include examples, tests directory
+# Don't include examples, tests, docs and scripts directory
 prune examples
 prune tests
 prune docs
+prune scripts
 
 # Patterns to exclude from any directory
 global-exclude *~

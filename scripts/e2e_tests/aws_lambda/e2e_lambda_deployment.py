@@ -18,15 +18,15 @@ try:
     )
 except ModuleNotFoundError:
     # Put dummy lambda here to stop deployment complains
-    run_lambda_create_or_update_command = lambda x: None
-    test_deployment_with_sample_data = lambda x, y, z: None
+    run_lambda_create_or_update_command = lambda x: None  # noqa
+    test_deployment_with_sample_data = lambda x, y, z: None  # noqa
 
 try:
     from scripts.e2e_tests.cli_operations import delete_deployment, delete_bento
 except ModuleNotFoundError:
     # Put dummy lambda here to stop deployment complains
-    delete_deployment = lambda x, y: None
-    delete_bento = lambda x: None
+    delete_deployment = lambda x, y: None  # noqa
+    delete_bento = lambda x: None  # noqa
 
 logger = logging.getLogger('bentoml.test')
 

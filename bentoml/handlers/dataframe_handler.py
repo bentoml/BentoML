@@ -203,8 +203,7 @@ class DataframeHandler(BentoHandler):
         df_conc = pd.concat(dfs)
         result_conc = func(df_conc)
 
-        #assert len(result_conc) == len(df_conc)
-        # TODO: assert
+        # TODO: check length
 
         results = [s and result_conc[s] or BadResult for s in slices]
 

@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 from collections import OrderedDict
 import asyncio
 import logging
@@ -48,8 +46,6 @@ class Parade:
     async def start_wait(self, interval, call):
         try:
             await asyncio.sleep(interval)
-            print(self.batch_input.keys())  # TODO: delete
-            print(len(self.batch_input.keys()))  # TODO: delete
             self.status = self.STATUS_CLOSED
             outputs = await call(self.batch_input.values())
             self.batch_output = OrderedDict(
@@ -86,7 +82,6 @@ class ParadeDispatcher:
         async def _func(inputs):
             id_ = uuid.uuid4().hex
             parade = self.get_parade()
-            print(id_)  # TODO: delete
             parade.feed(id_, inputs)
             async with parade.returned:
                 await parade.returned.wait()
@@ -108,7 +103,7 @@ class MarshalService:
     def add_batch_handler(self, api_name, max_latency):
         if api_name not in self.batch_handlers:
 
-            @ParadeDispatcher(max_latency)  # TODO modify
+            @ParadeDispatcher(max_latency)
             async def _func(requests):
                 reqs_s = await merge_aio_requests(requests)
                 async with aiohttp.ClientSession() as client:

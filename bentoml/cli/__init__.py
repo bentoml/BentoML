@@ -219,7 +219,13 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         default=False,
         help="Run API server in a BentoML managed Conda environment",
     )
-    def serve(port, bento=None, with_conda=False):
+    @click.option(
+        '--with-marshal',
+        is_flag=True,
+        default=False,
+        help="Run API server with marshal service",
+    )
+    def serve(port, bento=None, with_conda=False, with_marshal=False):
         track_cli('serve')
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
@@ -235,12 +241,15 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             return
 
         bento_service = load(bento_service_bundle_path)
-        inner_port = detect_free_port()
-        marshal_server = MarshalServer(bento_service, port=port,
-                                       target_host="localhost",
-                                       target_port=inner_port)
-        marshal_server.async_start()
-        server = BentoAPIServer(bento_service, port=inner_port)
+        if with_marshal:
+            inner_port = detect_free_port()
+            marshal_server = MarshalServer(bento_service, port=port,
+                                           target_host="localhost",
+                                           target_port=inner_port)
+            marshal_server.async_start()
+            server = BentoAPIServer(bento_service, port=inner_port)
+        else:
+            server = BentoAPIServer(bento_service, port=port)
         server.start()
 
     # Example Usage:

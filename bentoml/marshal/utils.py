@@ -15,7 +15,7 @@ async def split_aio_responses(ori_response):
     try:
         merged_responses = pickle.loads(merged)
     except pickle.UnpicklingError:
-        return [web.Response(status=web.BaseRequest)] * len(merged_responses)
+        raise
 
     if ori_response.status != 200:
         return [web.Response(status=ori_response.status)] * len(merged_responses)

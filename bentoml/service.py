@@ -414,13 +414,13 @@ class BentoService(BentoServiceBase):
     _version_major = None
     _version_minor = None
 
-    def __init__(self):
+    def __init__(self, skip_artifact=False):
         from bentoml.artifact import ArtifactCollection
 
         self._bento_service_version = self.__class__._bento_service_bundle_version
         self._packed_artifacts = ArtifactCollection()
 
-        if self._bento_service_bundle_path:
+        if self._bento_service_bundle_path and not skip_artifact:
             # load artifacts from saved BentoService bundle
             self._load_artifacts(self._bento_service_bundle_path)
 

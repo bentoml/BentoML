@@ -37,10 +37,11 @@ from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.bento import add_bento_sub_command
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.marshal_server import MarshalServer
+from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
-from bentoml.utils import ProtoMessageToDict, detect_free_port
+from bentoml.utils import ProtoMessageToDict, reserve_free_port
 from bentoml.utils.usage_stats import track_cli
 from bentoml.utils.s3 import is_s3_url
 from bentoml.yatai.client import YataiClient
@@ -220,37 +221,43 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Run API server in a BentoML managed Conda environment",
     )
     @click.option(
-        '--with-marshal',
+        '--enable-marshal',
         is_flag=True,
         default=False,
-        help="Run API server with marshal service",
+        help="(Alpha) Run API server with marshal service",
     )
-    def serve(port, bento=None, with_conda=False, with_marshal=False):
+    def serve(port, bento=None, with_conda=False, enable_marshal=False):
         track_cli('serve')
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
+        bento_service = load(bento_service_bundle_path)
 
         if with_conda:
-            run_with_conda_env(
-                bento_service_bundle_path,
-                'bentoml serve {bento} --port {port}'.format(
-                    bento=bento_service_bundle_path, port=port,
-                ),
-            )
-            return
-
-        bento_service = load(bento_service_bundle_path)
-        if with_marshal:
-            inner_port = detect_free_port()
-            marshal_server = MarshalServer(bento_service, port=port,
-                                           target_host="localhost",
-                                           target_port=inner_port)
-            marshal_server.async_start()
-            server = BentoAPIServer(bento_service, port=inner_port)
+            def _start_api_server(_api_server_port):
+                run_with_conda_env(
+                    bento_service_bundle_path,
+                    'bentoml serve {bento} --port {port}'.format(
+                        bento=bento_service_bundle_path, port=_api_server_port,
+                    ),
+                )
         else:
-            server = BentoAPIServer(bento_service, port=port)
-        server.start()
+            def _start_api_server(_api_server_port):
+                api_server = BentoAPIServer(bento_service, port=_api_server_port)
+                api_server.start()
+
+        if enable_marshal:
+            with reserve_free_port() as api_server_port:
+                # start server right after port released
+                #  to reduce potential race
+                marshal_server = MarshalServer(port=port,
+                                               target_host="localhost",
+                                               target_port=api_server_port)
+                marshal_server.setup_routes(bento_service)
+            marshal_server.async_start()
+            _start_api_server(api_server_port)
+        else:
+            _start_api_server(port)
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
@@ -274,31 +281,51 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         default=False,
         help="Run API server in a BentoML managed Conda environment",
     )
-    def serve_gunicorn(port, workers, timeout, bento=None, with_conda=False):
+    @click.option(
+        '--enable-marshal',
+        is_flag=True,
+        default=False,
+        help="(Alpha) Run API server with marshal service",
+    )
+    def serve_gunicorn(port, workers, timeout, bento=None, with_conda=False,
+                       enable_marshal=False):
         track_cli('serve_gunicorn')
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
 
         if with_conda:
-            run_with_conda_env(
-                pip_installed_bundle_path,
-                'bentoml serve_gunicorn {bento} -p {port} -w {workers} '
-                '--timeout {timeout}'.format(
-                    bento=bento_service_bundle_path,
-                    port=port,
-                    workers=workers,
-                    timeout=timeout,
-                ),
-            )
-            return
+            def _run_api_server(_api_server_port):
+                run_with_conda_env(
+                    pip_installed_bundle_path,
+                    'bentoml serve_gunicorn {bento} -p {port} -w {workers} '
+                    '--timeout {timeout}'.format(
+                        bento=bento_service_bundle_path,
+                        port=_api_server_port,
+                        workers=workers,
+                        timeout=timeout,
+                    ),
+                )
+        else:
+            def _run_api_server(_api_server_port):
+                gunicorn_app = GunicornBentoServer(
+                    bento_service_bundle_path, _api_server_port, workers, timeout
+                )
+                gunicorn_app.run()
 
-        from bentoml.server.gunicorn_server import GunicornBentoServer
-
-        gunicorn_app = GunicornBentoServer(
-            bento_service_bundle_path, port, workers, timeout
-        )
-        gunicorn_app.run()
+        if enable_marshal:
+            # avoid load model before gunicorn fork
+            bento_service = load(bento_service_bundle_path, skip_artifact=True)
+            with reserve_free_port() as api_server_port:
+                marshal_server = MarshalServer(port=port,
+                                               target_host="localhost",
+                                               target_port=api_server_port)
+                marshal_server.setup_routes(bento_service)
+                del bento_service
+            marshal_server.async_start()
+            _run_api_server(api_server_port)
+        else:
+            _run_api_server(port)
 
     # pylint: enable=unused-variable
     return bentoml_cli

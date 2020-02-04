@@ -39,18 +39,12 @@ class MarshalServer:
     _DEFAULT_PORT = config("apiserver").getint("default_port")
     _DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
 
-    def __init__(self, bento_service, target_host, target_port,
-                 port=_DEFAULT_PORT, app_name=None):
-        app_name = bento_service.name if app_name is None else app_name
-
+    def __init__(self, target_host, target_port, port=_DEFAULT_PORT):
         self.port = port
-        self.bento_service = bento_service
-
         self.marshal_app = MarshalService(target_host, target_port)
-        self.setup_routes()
 
-    def setup_routes(self):
-        for api in self.bento_service.get_service_apis():
+    def setup_routes(self, bento_service):
+        for api in bento_service.get_service_apis():
             if getattr(api.handler, "micro_batch", False):
                 max_latency = getattr(api.handler, "mb_max_latency",
                                       self._DEFAULT_MAX_LATENCY)

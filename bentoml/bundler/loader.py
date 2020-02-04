@@ -144,7 +144,7 @@ def load_bento_service_class(bundle_path):
     return model_service_class
 
 
-def load(bundle_path):
+def load(bundle_path, skip_artifact=False):
     """Load bento service from local file path or s3 path
 
     Args:
@@ -159,12 +159,14 @@ def load(bundle_path):
         with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
             return load(local_bundle_path)
 
-    track_load_start()
+    if not skip_artifact:
+        track_load_start()
 
     svc_cls = load_bento_service_class(bundle_path)
-    svc = svc_cls()
+    svc = svc_cls(skip_artifact)
 
-    track_load_finish(svc)
+    if not skip_artifact:
+        track_load_finish(svc)
     return svc
 
 

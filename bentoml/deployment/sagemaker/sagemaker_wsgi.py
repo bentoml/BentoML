@@ -13,9 +13,13 @@
 # limitations under the License.
 
 import os
+import sys
 
-from bentoml.bundler import load
+from bentoml.bundler import load, load_bento_service_metadata
 from bentoml.server.bento_sagemaker_server import BentoSagemakerServer
+
+bento_service_metadata = load_bento_service_metadata('/opt/program')
+sys.path.append(os.path.join('/opt/program', bento_service_metadata.name))
 
 api_name = os.environ.get('API_NAME', None)
 model_service = load('/opt/program')

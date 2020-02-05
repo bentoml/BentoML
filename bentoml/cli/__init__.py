@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import re
 import os
+import sys
 import json
 import click
 import tempfile
@@ -223,6 +224,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
+        bento_service_metadata = load_bento_service_metadata(bento_service_bundle_path)
+
+        bento_service_path = os.path.join(
+            bento_service_bundle_path, bento_service_metadata.name
+        )
+        sys.path.append(bento_service_path)
 
         if with_conda:
             run_with_conda_env(
@@ -264,6 +271,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
+        bento_service_metadata = load_bento_service_metadata(bento_service_bundle_path)
+
+        bento_service_path = os.path.join(
+            bento_service_bundle_path, bento_service_metadata.name
+        )
+        sys.path.append(bento_service_path)
 
         if with_conda:
             run_with_conda_env(

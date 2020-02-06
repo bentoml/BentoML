@@ -17,6 +17,10 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
+import json
+import collections
+import itertools
 import argparse
 from io import StringIO
 
@@ -42,6 +46,87 @@ def _check_dataframe_column_contains(required_column_names, df):
                     ",".join(set(required_column_names) - df_columns), df_columns
                 )
             )
+
+
+def _dataframe_csv_from_input(raws, content_types):
+    n_row_sum = -1
+    for i, (data, content_type) in enumerate(zip(raws, content_types)):
+        if content_type.lower() == "application/json":
+            if sys.version_info >= (3, 6):
+                od = json.loads(data.decode('utf-8'))
+            else:
+                od = json.loads(data.decode('utf-8'),    # preserve order
+                                object_pairs_hook=collections.OrderedDict)
+
+            if n_row_sum == -1:
+                yield ",".join(itertools.chain(('',), map(str, od))), None
+                n_row_sum += 1
+
+            n_row = 0
+            for n_row, name_row in enumerate(next(iter(od.values()))):
+                datas_row = (od[name_col][name_row]
+                             for n_col, name_col in enumerate(od))
+                yield ','.join(itertools.chain(
+                    (str(n_row_sum),),
+                    map(str, datas_row))), i
+                n_row_sum += 1
+        elif content_type.lower() == "text/csv":
+            data_str = data.decode('utf-8')
+            row_strs = data_str.split('\n')
+            if not row_strs:
+                continue
+            if row_strs[0].strip().startswith(','):  # csv with index column
+                if n_row_sum == -1:
+                    yield row_strs[0], None
+                for row_str in row_strs[1:]:
+                    if not row_str.strip():  # skip blank line
+                        continue
+                    yield f"{str(n_row_sum)},{row_str.split(',', maxsplit=1)[1]}", i
+                    n_row_sum += 1
+            else:
+                if n_row_sum == -1:
+                    yield "," + row_strs[0], None
+                for row_str in row_strs[1:]:
+                    if not row_str.strip():  # skip blank line
+                        continue
+                    yield f"{str(n_row_sum)},{row_str.strip()}", i
+                    n_row_sum += 1
+        else:
+            raise ValueError()
+
+
+def _gen_slice(ids):
+    start = -1
+    i = -1
+    for i, id_ in enumerate(ids):
+        if start == -1:
+            start = i
+            continue
+
+        if ids[start] != id_:
+            yield slice(start, i)
+            start = i
+            continue
+    yield slice(start, i + 1)
+
+
+def read_dataframes_from_json_n_csv(datas, content_types):
+    '''
+    load detaframes from multiple raw datas in json or csv fromat, efficiently
+
+    Background: Each calling of pandas.read_csv or pandas.read_json cost about 100ms,
+    no matter how many lines it contains. Concat jsons/csvs before read_json/read_csv
+    to improve performance.
+    '''
+    rows_csv_with_id = [r for r in
+                        _dataframe_csv_from_input(datas, content_types)]
+    str_csv = [r for r, _ in rows_csv_with_id]
+    df_str_csv = '\n'.join(str_csv)
+    df_merged = pd.read_csv(StringIO(df_str_csv), index_col=0)
+
+    dfs_id = [i for _, i in rows_csv_with_id][1:]
+    slices = _gen_slice(dfs_id)
+    return df_merged, slices
 
 
 class BadResult:
@@ -167,42 +252,14 @@ class DataframeHandler(BentoHandler):
         return Response(response=json_output, status=200, mimetype="application/json")
 
     def handle_batch_request(self, requests, func):
-        dfs = [None] * len(requests)
-        for i, request in enumerate(requests):
-            if request.content_type == "application/json":
-                df = pd.read_json(
-                    request.data.decode("utf-8"),
-                    orient=self.orient,
-                    typ=self.typ,
-                    dtype=False,
-                )
-            elif request.content_type == "text/csv":
-                csv_string = StringIO(request.data.decode('utf-8'))
-                df = pd.read_csv(csv_string)
-            else:
-                continue
-                # TODO avoid raise exception in all request
-                # raise BadInput(
-                #     "Request content-type not supported, only application/json and "
-                #     "text/csv are supported"
-                # )
 
-            if self.typ == "frame" and self.input_dtypes is not None:
-                # TODO avoid raise exception in all request
-                _check_dataframe_column_contains(self.input_dtypes, df)
-            dfs[i] = df
+        datas = [r.data for r in requests]
+        content_types = [r.content_type for r in requests]
+        # TODO: check content_type
 
-        length_total = 0
-        slices = [None] * len(requests)
-        for i, df in enumerate(dfs):
-            if df is None:
-                continue
-            slices[i] = slice(length_total, df.shape[0] + length_total)
-            length_total += df.shape[0]
+        df_conc, slices = read_dataframes_from_json_n_csv(datas, content_types)
 
-        df_conc = pd.concat(dfs)
         result_conc = func(df_conc)
-
         # TODO: check length
 
         results = [s and result_conc[s] or BadResult for s in slices]

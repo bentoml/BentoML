@@ -102,6 +102,7 @@ extras_require = {
     "doc_builder": docs_requires + install_requires,  # required by readthedocs.io
 }
 
+
 setuptools.setup(
     name="BentoML",
     version=versioneer.get_version(),

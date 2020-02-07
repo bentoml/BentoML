@@ -136,9 +136,8 @@ def _print_deployments_table(deployments):
     headers = [
         'NAME',
         'NAMESPACE',
-        'LABELS',
         'PLATFORM',
-        'BENTO SERVICE',
+        'BENTO_SERVICE',
         'STATUS',
         'AGE',
     ]
@@ -146,7 +145,6 @@ def _print_deployments_table(deployments):
         row = [
             deployment.name,
             deployment.namespace,
-            _format_labels_for_print(deployment.labels),
             DeploymentSpec.DeploymentOperator.Name(deployment.spec.operator)
             .lower()
             .replace('_', '-'),

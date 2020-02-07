@@ -37,7 +37,6 @@ from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.bento import add_bento_sub_command
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.marshal_server import MarshalServer
-from bentoml.server.gunicorn_server import GunicornBentoServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
@@ -307,6 +306,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     ),
                 )
         else:
+            from bentoml.server.gunicorn_server import GunicornBentoServer
+
             def _run_api_server(_api_server_port):
                 gunicorn_app = GunicornBentoServer(
                     bento_service_bundle_path, _api_server_port, workers, timeout

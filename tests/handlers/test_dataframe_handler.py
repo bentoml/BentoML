@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 
 from bentoml.handlers import DataframeHandler
-from bentoml.handlers.dataframe_handler import (
-    _check_dataframe_column_contains, read_dataframes_from_json_n_csv)
+from bentoml.handlers.dataframe_handler import (_check_dataframe_column_contains,
+                                                read_dataframes_from_json_n_csv)
 from bentoml.exceptions import BadInput
 
 try:
@@ -39,7 +39,7 @@ def test_dataframe_handle_cli(capsys, tmpdir):
 
     test_args = ["--input={}".format(json_file)]
     handler.handle_cli(test_args, test_func)
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out.strip().endswith("john")
 
 
@@ -116,17 +116,15 @@ def test_dataframe_handle_request_csv():
 
 
 def test_read_dataframes_from_json_n_csv():
-    from pandas.util.testing import assert_frame_equal
-
     df = pd.DataFrame(np.random.rand(2, 3))
     csv_str = df.to_json()
     test_datas = [csv_str.encode()] * 20 \
-               + [df.to_csv().encode()] * 20 \
-               + [df.to_csv(index=False).encode()] * 20
-            
+        + [df.to_csv().encode()] * 20 \
+        + [df.to_csv(index=False).encode()] * 20
+
     test_types = ['application/json'] * 20 \
-               + ['text/csv'] * 20 \
-               + ['text/csv'] * 20
+        + ['text/csv'] * 20 \
+        + ['text/csv'] * 20
 
     df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types)
     for s in slices:

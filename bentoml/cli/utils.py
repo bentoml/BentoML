@@ -133,15 +133,22 @@ def _format_deployment_age_for_print(deployment_pb):
 
 def _print_deployments_table(deployments):
     table = []
-    headers = ['NAME', 'NAMESPACE', 'LABELS', 'PLATFORM', 'STATUS', 'AGE']
+    headers = [
+        'NAME',
+        'NAMESPACE',
+        'PLATFORM',
+        'BENTO_SERVICE',
+        'STATUS',
+        'AGE',
+    ]
     for deployment in deployments:
         row = [
             deployment.name,
             deployment.namespace,
-            _format_labels_for_print(deployment.labels),
             DeploymentSpec.DeploymentOperator.Name(deployment.spec.operator)
             .lower()
             .replace('_', '-'),
+            f'{deployment.spec.bento_name}:{deployment.spec.bento_version}',
             DeploymentState.State.Name(deployment.state.state)
             .lower()
             .replace('_', ' '),

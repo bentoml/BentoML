@@ -42,7 +42,7 @@ def test_run_command_with_input_file(bento_bundle_path):
     assert result.output.strip() == '3'
 
 
-def test_gunicorn_serve_command():
+def test_gunicorn_serve_command(bento_bundle_path):
     runner = CliRunner()
 
     cli = create_bento_service_cli()
@@ -52,7 +52,7 @@ def test_gunicorn_serve_command():
         'bentoml.server.gunicorn_server.GunicornBentoServer',
     ) as mocked_class:
         runner.invoke(
-            gunicorn_cmd, ["/"],
+            gunicorn_cmd, [bento_bundle_path],
         )
         instance = mocked_class.return_value
         assert instance.run.called

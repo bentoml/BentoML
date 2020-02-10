@@ -22,6 +22,8 @@ from bentoml.cli.click_utils import (
     CLI_COLOR_ERROR,
     _echo,
     CLI_COLOR_SUCCESS,
+    parse_labels_callback,
+    validate_labels_query_callback,
 )
 from bentoml.cli.deployment import (
     _print_deployment_info,
@@ -73,9 +75,10 @@ def get_aws_sagemaker_sub_command():
         '-l',
         '--labels',
         type=click.STRING,
+        callback=parse_labels_callback,
         help='Key:value pairs that are attached to deployments and intended to be used'
         'to specify identifying attributes of the deployments that are meaningful to '
-        'users',
+        'users. Multiple labels are separated with `,`',
     )
     @click.option('--region', help='AWS region name for deployment')
     @click.option(
@@ -385,6 +388,7 @@ def get_aws_sagemaker_sub_command():
         '-l',
         '--labels',
         type=click.STRING,
+        callback=validate_labels_query_callback,
         help='List deployments matching the giving labels',
     )
     @click.option(
@@ -404,7 +408,7 @@ def get_aws_sagemaker_sub_command():
         try:
             list_result = yatai_client.deployment.list_sagemaker_deployments(
                 limit=limit,
-                labels=labels,
+                labels_query=labels,
                 namespace=namespace,
                 order_by=order_by,
                 ascending_order=asc,

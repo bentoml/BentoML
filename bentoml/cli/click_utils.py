@@ -133,6 +133,40 @@ def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argum
     return value
 
 
+def parse_labels_callback(ctx, param, value):  # pylint: disable=unused-argument
+    if not value:
+        return value
+
+    parsed_labels = {}
+    label_list = value.split(',')
+    for label in label_list:
+        if ':' not in label:
+            raise click.BadParameter(
+                f'Bad formatting for label {label}. '
+                f'Please present label in key:value format'
+            )
+        label_key, label_value = label.split(':')
+        parsed_labels[label_key] = label_value
+
+    return parsed_labels
+
+
+def validate_labels_query_callback(
+    ctx, param, value
+):  # pylint: disable=unused-argument
+    if not value:
+        return value
+
+    labels = value.split(',')
+    for label in labels:
+        if '=' not in label:
+            raise click.BadParameter(
+                f'Bad formatting for label {label}. '
+                f'Please present labels query in key=value format'
+            )
+    return value
+
+
 def parse_yaml_file_callback(ctx, param, value):  # pylint: disable=unused-argument
     yaml = YAML()
     yml_content = value.read()

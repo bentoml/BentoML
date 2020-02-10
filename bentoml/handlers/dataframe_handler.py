@@ -89,6 +89,15 @@ class DataframeHandler(BentoHandler):
                 (str(index), dtype) for index, dtype in enumerate(self.input_dtypes)
             )
 
+    @property
+    def config(self):
+        return {
+            "orient": self.orient,
+            "output_orient": self.output_orient,
+            "typ": self.typ,
+            "input_dtypes": self.input_dtypes
+        }
+
     def _get_type(self, item):
         if item.startswith('int'):
             return 'integer'

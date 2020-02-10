@@ -107,6 +107,7 @@ def load_bento_service_class(bundle_path):
 
     # Prepend bundle_path to sys.path for loading extra python dependencies
     sys.path.insert(0, bundle_path)
+    sys.path.insert(0, os.path.join(bundle_path, metadata["service_name"]))
 
     module_name = metadata["module_name"]
     if module_name in sys.modules:

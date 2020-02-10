@@ -26,6 +26,7 @@ from bentoml.cli.click_utils import (
     CLI_COLOR_ERROR,
     CLI_COLOR_SUCCESS,
     parse_yaml_file_callback,
+    validate_labels_query_callback,
 )
 from bentoml.yatai.client import YataiClient
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
@@ -273,6 +274,7 @@ def get_deployment_sub_command():
         '-l',
         '--labels',
         type=click.STRING,
+        callback=validate_labels_query_callback,
         help='List deployments matching the giving labels',
     )
     @click.option(
@@ -292,7 +294,7 @@ def get_deployment_sub_command():
         try:
             list_result = yatai_client.deployment.list(
                 limit=limit,
-                labels=labels,
+                labels_query=labels,
                 namespace=namespace,
                 operator=platform,
                 order_by=order_by,

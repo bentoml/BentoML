@@ -32,7 +32,7 @@ from sqlalchemy import (
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
-from bentoml.exceptions import YataiDeploymentException
+from bentoml.exceptions import YataiDeploymentException, BadInput
 from bentoml.db import Base, create_session
 from bentoml.proto import deployment_pb2
 from bentoml.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
@@ -159,7 +159,7 @@ class DeploymentStore(object):
         self,
         namespace,
         operator=None,
-        labels=None,
+        labels_query=None,
         offset=None,
         limit=None,
         order_by=ListDeploymentsRequest.created_at,
@@ -180,8 +180,20 @@ class DeploymentStore(object):
                 query = query.filter(
                     Deployment.spec['operator'].contains(operator_name)
                 )
-            if labels:
-                raise NotImplementedError("Listing by labels is not yet implemented")
+            if labels_query:
+                # We only handle key=value query at the moment, the more advanced query
+                # such as `in` or `notin` are not handled.
+                labels_list = labels_query.split(',')
+                for label in labels_list:
+                    if '=' not in label:
+                        raise BadInput(
+                            'Invalid label format. Please present query in '
+                            'key=value format'
+                        )
+                    label_key, label_value = label.split('=')
+                    query = query.filter(
+                        Deployment.labels[label_key].contains(label_value)
+                    )
 
             # We are not defaulting limit to 200 in the signature,
             # because protobuf will pass 0 as value

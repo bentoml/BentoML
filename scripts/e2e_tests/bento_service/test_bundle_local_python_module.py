@@ -11,19 +11,17 @@ from bentoml.artifact import SklearnModelArtifact
 from my_test_dependency import dummy_util_func
 
 
-@bentoml.env(
-    pip_dependencies=["scikit-learn"]
-)  # defining pip/conda dependencies to be packed
-@bentoml.artifacts(
-    [SklearnModelArtifact('model')]
-)  # defining required artifacts, typically trained models
+@bentoml.env(pip_dependencies=["scikit-learn"])
+@bentoml.artifacts([SklearnModelArtifact('model')])
 class IrisClassifier(bentoml.BentoService):
-    @bentoml.api(
-        DataframeHandler
-    )  # defining prediction service endpoint and expected input format
+    @bentoml.api(DataframeHandler)
     def predict(self, df):
-        # Pre-processing logic and access to trained model artifacts in API function
         df = dummy_util_func(df)
+
+        from dynamically_imported_dependency import dummy_util_func_ii
+
+        df = dummy_util_func_ii(df)
+
         return self.artifacts.model.predict(df)
 
 
@@ -61,5 +59,4 @@ if __name__ == "__main__":
         assert output == '[0]\n'
 
     from scripts.e2e_tests.cli_operations import delete_bento
-
     delete_bento(bento_name)

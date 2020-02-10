@@ -112,7 +112,6 @@ class FastaiImageHandler(BentoHandler):
         return {
             # Converting to list, google.protobuf.Struct does not work with tuple type
             "input_names": list(self.input_names),
-
             "accept_image_formats": self.accept_image_formats,
             "convert_mode": self.convert_mode,
             "div": self.div,

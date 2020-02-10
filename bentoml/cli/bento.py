@@ -16,6 +16,7 @@ from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import CLI_COLOR_ERROR, _echo, parse_bento_tag_callback
+from bentoml.cli.utils import humanfriendly_age_from_datetime
 from bentoml.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
@@ -31,30 +32,37 @@ def _print_bento_info(bento, output_type):
 
 def _print_bento_table(bentos, wide=False):
     table = []
-    headers = ['BENTO_SERVICE', 'CREATED_AT', 'APIS', 'ARTIFACTS']
+    if wide:
+        headers = ['BENTO_SERVICE', 'CREATED_AT', 'APIS', 'ARTIFACTS', 'URI']
+    else:
+        headers = ['BENTO_SERVICE', 'AGE', 'APIS', 'ARTIFACTS']
+
     for bento in bentos:
         artifacts = [
-            f'{artifact.name}::{artifact.artifact_type}'
+            f'{artifact.name}<{artifact.artifact_type}>'
             for artifact in bento.bento_service_metadata.artifacts
         ]
         apis = [
-            f'{api.name}::{api.handler_type}'
+            f'{api.name}<{api.handler_type}>'
             for api in bento.bento_service_metadata.apis
         ]
+        if wide:
+            created_at = bento.bento_service_metadata.created_at.ToDatetime().strftime(
+                "%Y-%m-%d %H:%M"
+            )
+        else:
+            created_at = humanfriendly_age_from_datetime(
+                bento.bento_service_metadata.created_at.ToDatetime()
+            )
         row = [
             f'{bento.name}:{bento.version}',
-            bento.bento_service_metadata.created_at.ToDatetime().strftime(
-                "%Y-%m-%d %H:%M"
-            ),
+            created_at,
             ', '.join(apis),
             ', '.join(artifacts),
         ]
+        if wide:
+            row.append(bento.uri.uri)
         table.append(row)
-
-    if wide:
-        headers.append('URI')
-        for i, bento in enumerate(bentos):
-            table[i].append(bento.uri.uri)
 
     table_display = tabulate(table, headers, tablefmt='plain')
     _echo(table_display)

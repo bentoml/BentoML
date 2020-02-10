@@ -127,8 +127,11 @@ def _format_deployment_age_for_print(deployment_pb):
         # we will not show the age for those deployments
         return None
     else:
-        deployment_duration = datetime.utcnow() - deployment_pb.created_at.ToDatetime()
-        return humanfriendly.format_timespan(deployment_duration)
+        return humanfriendly_age_from_datetime(deployment_pb.created_at.ToDatetime())
+
+
+def humanfriendly_age_from_datetime(dt, detailed=False, max_unit=2):
+    return humanfriendly.format_timespan(datetime.utcnow() - dt, detailed, max_unit)
 
 
 def _print_deployments_table(deployments):

@@ -84,6 +84,13 @@ class BentoHandler:
         """
         return []
 
+    @property
+    def config(self):
+        """
+        :return: config map used for customizing this handler
+        """
+        return {}
+
 
 class NumpyJsonEncoder(json.JSONEncoder):
     """ Special json encoder for numpy types """

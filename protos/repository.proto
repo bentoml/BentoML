@@ -1,6 +1,7 @@
 syntax = "proto3";
 package bentoml;
 
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 import "status.proto";
@@ -38,6 +39,9 @@ message BentoServiceMetadata {
     string name = 1;
     string handler_type = 2;
     string docs = 3;
+
+    // Configs for customizing BentoHandler
+    google.protobuf.Struct handler_config = 4;
   }
 
   string name = 1;

@@ -102,6 +102,16 @@ class ImageHandler(BentoHandler):
         )
 
     @property
+    def config(self):
+        return {
+            # Converting to list, google.protobuf.Struct does not work with tuple type
+            "input_names": list(self.input_names),
+
+            "accept_image_formats": self.accept_image_formats,
+            "pilmode": self.pilmode,
+        }
+
+    @property
     def request_schema(self):
         return {
             "image/*": {"schema": {"type": "string", "format": "binary"}},

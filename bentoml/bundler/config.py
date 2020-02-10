@@ -43,13 +43,14 @@ logger = logging.getLogger(__name__)
 def _get_apis_list(bento_service):
     result = []
     for api in bento_service.get_service_apis():
-        result.append(
-            {
-                "name": api.name,
-                "handler_type": api.handler.__class__.__name__,
-                "docs": api.doc,
-            }
-        )
+        api_obj = {
+            "name": api.name,
+            "docs": api.doc,
+            "handler_type": api.handler.__class__.__name__,
+        }
+        if api.handler.config:
+            api_obj["handler_config"] = api.handler.config
+        result.append(api_obj)
     return result
 
 
@@ -144,13 +145,14 @@ class SavedBundleConfig(object):
 
         if "apis" in self.config:
             for api_config in self.config["apis"]:
-                api_metadata = BentoServiceMetadata.BentoServiceApi()
-                if "name" in api_config:
-                    api_metadata.name = api_config["name"]
-                if "handler_type" in api_config:
-                    api_metadata.handler_type = api_config["handler_type"]
-                if "docs" in api_config:
-                    api_metadata.docs = api_config["docs"]
+                api_metadata = BentoServiceMetadata.BentoServiceApi(
+                    name=api_config["name"],
+                    docs=api_config["docs"],
+                    handler_type=api_config.get("handler_type", "unknown"),
+                )
+                if "handler_config" in api_config:
+                    for k, v in api_config["handler_config"].items():
+                        api_metadata.handler_config[k] = v
                 bento_service_metadata.apis.extend([api_metadata])
 
         if "artifacts" in self.config:

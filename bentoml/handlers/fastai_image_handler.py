@@ -108,6 +108,19 @@ class FastaiImageHandler(BentoHandler):
         self.after_open = after_open
 
     @property
+    def config(self):
+        return {
+            # Converting to list, google.protobuf.Struct does not work with tuple type
+            "input_names": list(self.input_names),
+
+            "accept_image_formats": self.accept_image_formats,
+            "convert_mode": self.convert_mode,
+            "div": self.div,
+            "cls": self.cls.__name__ if self.cls else None,
+            "after_open": self.after_open.__name__ if self.after_open else None,
+        }
+
+    @property
     def request_schema(self):
         return {
             "image/*": {"schema": {"type": "string", "format": "binary"}},

@@ -59,4 +59,5 @@ if __name__ == "__main__":
         assert output == '[0]\n'
 
     from scripts.e2e_tests.cli_operations import delete_bento
+
     delete_bento(bento_name)

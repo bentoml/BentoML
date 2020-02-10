@@ -159,7 +159,7 @@ class DeploymentStore(object):
         self,
         namespace,
         operator=None,
-        labels=None,
+        labels_query=None,
         offset=None,
         limit=None,
         order_by=ListDeploymentsRequest.created_at,
@@ -180,8 +180,10 @@ class DeploymentStore(object):
                 query = query.filter(
                     Deployment.spec['operator'].contains(operator_name)
                 )
-            if labels:
-                labels_list = labels.split(',')
+            if labels_query:
+                # We only handle key=value query at the moment, the more advanced query
+                # such as `in` or `notin` are not handled.
+                labels_list = labels_query.split(',')
                 for label in labels_list:
                     if '=' not in label:
                         raise BadInput(

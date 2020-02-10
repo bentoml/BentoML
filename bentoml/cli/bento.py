@@ -15,10 +15,7 @@ import click
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
-from bentoml.cli.click_utils import (
-    CLI_COLOR_ERROR,
-    _echo,
-)
+from bentoml.cli.click_utils import CLI_COLOR_ERROR, _echo, parse_bento_tag_callback
 from bentoml.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
@@ -165,12 +162,17 @@ def add_bento_sub_command(cli):
 
         _print_bentos_info(list_bentos_result.bentos, output)
 
-    @cli.command(help='Delete BentoService')
-    @click.argument('bento', type=click.STRING)
+    @cli.command()
+    @click.argument("bento", type=click.STRING, callback=parse_bento_tag_callback)
     @click.option(
         '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
     )
     def delete(bento, yes):
+        """Delete saved BentoService.
+
+        BENTO is the target BentoService to be deleted, referenced by its name and
+        version in format of name:version. For example: "iris_classifier:v1.2.0"
+        """
         yatai_client = YataiClient()
         name, version = bento.split(':')
         if not name and not version:

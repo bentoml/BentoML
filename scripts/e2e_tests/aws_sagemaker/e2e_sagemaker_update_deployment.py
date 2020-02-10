@@ -6,22 +6,6 @@ import uuid
 from bentoml import BentoService, load, api
 from bentoml.handlers import DataframeHandler
 
-try:
-    from scripts.e2e_tests.aws_sagemaker.utils import (
-        run_sagemaker_create_or_update_command,
-        test_deployment_result,
-    )
-except ModuleNotFoundError:
-    # Put dummy lambda here to stop deployment complains
-    test_deployment_result = lambda x, y, z: None  # noqa
-    run_sagemaker_create_or_update_command = lambda x: None  # noqa
-
-try:
-    from scripts.e2e_tests.cli_operations import delete_deployment, delete_bento
-except ModuleNotFoundError:
-    # Put dummy lambda here to stop deployment complains
-    delete_deployment = lambda x, y: None  # noqa
-    delete_bento = lambda x: None  # noqa
 
 logger = logging.getLogger('bentoml.test')
 
@@ -48,6 +32,12 @@ class UpdatedTestDeploymentService(BentoService):
 
 
 if __name__ == '__main__':
+    from scripts.e2e_tests.aws_sagemaker.utils import (
+        run_sagemaker_create_or_update_command,
+        test_deployment_result,
+    )
+    from scripts.e2e_tests.cli_operations import delete_deployment, delete_bento
+
     deployment_failed = False
     random_hash = uuid.uuid4().hex[:6]
     deployment_name = f'tests-sagemaker-update-e2e-{random_hash}'

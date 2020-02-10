@@ -11,22 +11,6 @@ from bentoml import BentoService, load, api, env, artifacts
 from bentoml.artifact import PickleArtifact
 from bentoml.handlers import DataframeHandler
 
-try:
-    from scripts.e2e_tests.aws_lambda.utils import (
-        test_deployment_with_sample_data,
-        run_lambda_create_or_update_command,
-    )
-except ModuleNotFoundError:
-    # Put dummy lambda here to stop deployment complains
-    run_lambda_create_or_update_command = lambda x: None  # noqa
-    test_deployment_with_sample_data = lambda x, y, z: None  # noqa
-
-try:
-    from scripts.e2e_tests.cli_operations import delete_deployment, delete_bento
-except ModuleNotFoundError:
-    # Put dummy lambda here to stop deployment complains
-    delete_deployment = lambda x, y: None  # noqa
-    delete_bento = lambda x: None  # noqa
 
 logger = logging.getLogger('bentoml.test')
 
@@ -40,6 +24,12 @@ class IrisClassifier(BentoService):
 
 
 if __name__ == '__main__':
+    from scripts.e2e_tests.aws_lambda.utils import (
+        test_deployment_with_sample_data,
+        run_lambda_create_or_update_command,
+    )
+    from scripts.e2e_tests.cli_operations import delete_deployment, delete_bento
+
     deployment_failed = False
     random_hash = uuid.uuid4().hex[:6]
     deployment_name = f'tests-lambda-e2e-{random_hash}'

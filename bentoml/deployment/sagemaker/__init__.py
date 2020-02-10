@@ -716,7 +716,15 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     "AWS delete endpoint response: %s", delete_endpoint_response
                 )
             except ClientError as e:
-                raise _aws_client_error_to_bentoml_exception(e)
+                # If Sagemaker endpoint doesnt exist, we won't need to raise exception.
+                error_response = e.response.get('Error', {})
+                error_code = error_response.get('Code', 'Unknown')
+                error_message = error_response.get('Message', 'Unknown')
+                if (
+                    not error_code == 'ValidationException'
+                    or 'Could not find endpoint' not in error_message
+                ):
+                    raise _aws_client_error_to_bentoml_exception(e)
 
             _try_clean_up_sagemaker_deployment_resource(deployment_pb)
 

@@ -102,6 +102,14 @@ class ImageHandler(BentoHandler):
         )
 
     @property
+    def config(self):
+        return {
+            "input_names": self.input_names,
+            "accept_image_formats": self.accept_image_formats,
+            "pilmode": self.pilmode,
+        }
+
+    @property
     def request_schema(self):
         return {
             "image/*": {"schema": {"type": "string", "format": "binary"}},

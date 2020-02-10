@@ -67,7 +67,7 @@ class DataframeHandler(BentoHandler):
     """
 
     def __init__(
-        self, orient="records", output_orient="records", typ="frame", input_dtypes=None
+        self, orient="records", output_orient="records", typ="frame", input_dtypes=[]
     ):
         self.orient = orient
         self.output_orient = output_orient or orient
@@ -95,7 +95,7 @@ class DataframeHandler(BentoHandler):
             "orient": self.orient,
             "output_orient": self.output_orient,
             "typ": self.typ,
-            "input_dtypes": self.input_dtypes
+            "input_dtypes": self.input_dtypes,
         }
 
     def _get_type(self, item):

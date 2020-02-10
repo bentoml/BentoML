@@ -54,6 +54,12 @@ class TensorflowTensorHandler(BentoHandler):
         self.method = method
 
     @property
+    def config(self):
+        return {
+            "method": self.method,
+        }
+
+    @property
     def request_schema(self):
         if self.method == self.PREDICT:
             return {

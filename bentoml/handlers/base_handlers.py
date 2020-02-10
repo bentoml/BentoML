@@ -91,6 +91,7 @@ class BentoHandler:
         """
         return {}
 
+
 class NumpyJsonEncoder(json.JSONEncoder):
     """ Special json encoder for numpy types """
 

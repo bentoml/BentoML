@@ -145,13 +145,11 @@ class SavedBundleConfig(object):
 
         if "apis" in self.config:
             for api_config in self.config["apis"]:
-                api_metadata = BentoServiceMetadata.BentoServiceApi()
-                if "name" in api_config:
-                    api_metadata.name = api_config["name"]
-                if "docs" in api_config:
-                    api_metadata.docs = api_config["docs"]
-                if "handler_type" in api_config:
-                    api_metadata.handler_type = api_config["handler_type"]
+                api_metadata = BentoServiceMetadata.BentoServiceApi(
+                    name=api_config["name"],
+                    docs=api_config["docs"],
+                    handler_type=api_config.get("handler_type", "unknown"),
+                )
                 if "handler_config" in api_config:
                     for k, v in api_config["handler_config"].items():
                         api_metadata.handler_config[k] = v

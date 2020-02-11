@@ -190,7 +190,7 @@ Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
   - [BentoML Clipper.ai Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/bentoml-clipper-deployment-guide.ipynb)
 
 * Mannual Deployment
-  - [BentoML AWS ECS Deployment](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-aws-ecs)
+  - [BentoML AWS ECS Deployment](https://docs.bentoml.org/en/latest/deployment/aws_ecs.html)
   - [BentoML Google Cloud Run Deployment](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-google-cloud-run/deploy-with-google-cloud-run.ipynb)
   - [BentoML Kubernetes Deployment](https://github.com/bentoml/BentoML/tree/master/guides/deployment/deploy-with-kubernetes)
 

@@ -22,6 +22,78 @@ Prerequisites
   * Install instruction: https://docs.docker.com/install
 
 
+Build BentoService for Clipper
+------------------------------
+
+===========================
+Train Iris classifier model
+===========================
+
+.. code-block:: python
+
+    >>> from sklearn import svm
+    >>> from sklearn import datasets
+
+    >>> clf = svm.SVC()
+    >>> iris = datasets.load_iris()
+    >>> X, y = iris.data, iris.target
+    >>> clf.fit(X, y)
+
+
+BentoML provides handler types that are specific for use with Clipper, including `ClipperBytesHandler`,
+`ClipperIntsHandler`, `ClipperFloatsHandler`, `ClipperDoublesHandler`, `ClipperStringsHandler` each
+corresponding to one input type that clipper support.
+
+Other than using Clipper specific handler, the rest are the same as defining a regular BentoService class:
+
+.. code-block:: python
+
+    >>> from bentoml import BentoService, api, env, artifacts
+    >>> from bentoml.artifact import PickleArtifact
+    >>> from bentoml.handlers import DataframeHandler, ClipperFloatsHandler
+
+    >>> @artifacts([PickleArtifact('model')])
+    >>> @env(pip_dependencies=["scikit-learn"])
+    >>> class IrisClassifier(BentoService):
+
+    >>>     @api(DataframeHandler)
+    >>>     def predict(self, df):
+    >>>         return self.artifacts.model.predict(df)
+    >>>
+    >>>     @api(ClipperFloatsHandler)
+    >>>     def predict_clipper(self, inputs):
+    >>>         return self.artifacts.model.predict(inputs)
+
+
+Save the BentoService
+
+.. code-block:: python
+
+    >>> # 1) import the custom BentoService defined above
+    >>> from iris_classifier import IrisClassifier
+
+    >>> # 2) `pack` it with required artifacts
+    >>> svc = IrisClassifier()
+    >>> svc.pack('model', clf)
+
+    >>> # 3) save packed BentoService as archive
+    >>> saved_path = svc.save()
+
+    running sdist
+    running egg_info
+    writing requirements to BentoML.egg-info/requires.txt
+    writing BentoML.egg-info/PKG-INFO
+    writing top-level names to BentoML.egg-info/top_level.txt
+    writing dependency_links to BentoML.egg-info/dependency_links.txt
+    writing entry points to BentoML.egg-info/entry_points.txt
+    reading manifest file 'BentoML.egg-info/SOURCES.txt'
+    ...
+    ...
+    ...
+    [2019-11-13 15:41:24,395] INFO - BentoService bundle 'IrisClassifier:20191113154121_E7D3CE' created at: /Users/chaoyuyang/bentoml/repository/IrisClassifier/20191113154121_E7D3CE
+
+
+
 Deploying BentoService to local Clipper cluster
 -----------------------------------------------
 
@@ -57,7 +129,6 @@ which will first build a clipper model docker image that containing your BentoSe
 
     >>> from bentoml.clipper import deploy_bentoml
 
-    >>> saved_path = ''
     >>> clipper_model_name, clipper_model_version = deploy_bentoml(cl, saved_path), 'predict_clipper')
 
     [2019-11-13 15:45:49,422] WARNING - BentoML local changes detected - Local BentoML repository including all code changes will be bundled together with the BentoService archive. When used with docker, the base docker image will be default to same version as last PyPI release at version: 0.4.9. You can also force bentoml to use a specific version for deploying your BentoService archive, by setting the config 'core/bentoml_deploy_version' to a pinned version or your custom BentoML on github, e.g.:'bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{branch}'

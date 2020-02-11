@@ -233,18 +233,14 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service = load(bento_service_bundle_path)
 
         if with_conda:
-            def _start_api_server(_api_server_port):
-                run_with_conda_env(
-                    bento_service_bundle_path,
-                    'bentoml serve {bento} --port {port} {flags}'.format(
-                        bento=bento_service_bundle_path, port=_api_server_port,
-                        flags="--enable-microbatch" if enable_microbatch else "",
-                    ),
-                )
-        else:
-            def _start_api_server(_api_server_port):
-                api_server = BentoAPIServer(bento_service, port=_api_server_port)
-                api_server.start()
+            run_with_conda_env(
+                bento_service_bundle_path,
+                'bentoml serve {bento} --port {port} {flags}'.format(
+                    bento=bento_service_bundle_path, port=port,
+                    flags="--enable-microbatch" if enable_microbatch else "",
+                ),
+            )
+            return
 
         if enable_microbatch:
             with reserve_free_port() as api_server_port:
@@ -256,10 +252,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                                                target_host="localhost",
                                                target_port=api_server_port)
                 marshal_server.setup_routes_from_pb(bento_service_metadata_pb)
+                api_server = BentoAPIServer(bento_service, port=api_server_port)
             marshal_server.async_start()
-            _start_api_server(api_server_port)
+            api_server.start()
         else:
-            _start_api_server(port)
+            api_server = BentoAPIServer(bento_service, port=port)
+            api_server.start()
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
@@ -297,25 +295,20 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         )
 
         if with_conda:
-            def _run_api_server(_api_server_port):
-                run_with_conda_env(
-                    pip_installed_bundle_path,
-                    'bentoml serve_gunicorn {bento} -p {port} -w {workers} '
-                    '--timeout {timeout}'.format(
-                        bento=bento_service_bundle_path,
-                        port=_api_server_port,
-                        workers=workers,
-                        timeout=timeout,
-                    ),
-                )
-        else:
-            from bentoml.server.gunicorn_server import GunicornBentoServer
+            run_with_conda_env(
+                pip_installed_bundle_path,
+                'bentoml serve_gunicorn {bento} -p {port} -w {workers} '
+                '--timeout {timeout} {flags}'.format(
+                    bento=bento_service_bundle_path,
+                    port=port,
+                    workers=workers,
+                    timeout=timeout,
+                    flags="--enable-microbatch" if enable_microbatch else "",
+                ),
+            )
+            return
 
-            def _run_api_server(_api_server_port):
-                gunicorn_app = GunicornBentoServer(
-                    bento_service_bundle_path, _api_server_port, workers, timeout
-                )
-                gunicorn_app.run()
+        from bentoml.server.gunicorn_server import GunicornBentoServer
 
         if enable_microbatch:
             # avoid load model before gunicorn fork
@@ -326,10 +319,16 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                                                target_host="localhost",
                                                target_port=api_server_port)
                 marshal_server.setup_routes_from_pb(bento_service_metadata_pb)
+                gunicorn_app = GunicornBentoServer(
+                    bento_service_bundle_path, api_server_port, workers, timeout
+                )
             marshal_server.async_start()
-            _run_api_server(api_server_port)
+            gunicorn_app.run()
         else:
-            _run_api_server(port)
+            gunicorn_app = GunicornBentoServer(
+                bento_service_bundle_path, port, workers, timeout
+            )
+            gunicorn_app.run()
 
     # pylint: enable=unused-variable
     return bentoml_cli

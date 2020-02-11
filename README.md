@@ -187,7 +187,7 @@ Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
   - [BentoML AWS SageMaker Deployment Guide](https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html)
 
 * Clipper Deployment
-  - [BentoML Clipper.ai Deployment Guide](https://github.com/bentoml/BentoML/blob/master/guides/deployment/deploy-with-clipper/bentoml-clipper-deployment-guide.ipynb)
+  - [BentoML Clipper.ai Deployment Guide](https://docs.bentoml.org/end/latest/deployment/clipper.html)
 
 * Mannual Deployment
   - [BentoML AWS ECS Deployment](https://docs.bentoml.org/en/latest/deployment/aws_ecs.html)

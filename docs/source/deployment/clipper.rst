@@ -93,6 +93,14 @@ Save the BentoService
     [2019-11-13 15:41:24,395] INFO - BentoService bundle 'IrisClassifier:20191113154121_E7D3CE' created at: /Users/chaoyuyang/bentoml/repository/IrisClassifier/20191113154121_E7D3CE
 
 
+Test the clipper handler directly with a list of floats as input
+
+.. code-block:: python
+
+    >>> svc.predict_clipper([X[0]])
+
+    array([0])
+
 
 Deploying BentoService to local Clipper cluster
 -----------------------------------------------

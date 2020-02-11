@@ -118,7 +118,15 @@ class SageMakerBackend(BaseBackend):
 
     def delete_endpoint(self, endpoint_name):
         if endpoint_name not in self.endpoints:
-            raise ValueError('Endpoint {} does not exist'.format(endpoint_name))
+            raise ClientError(
+                {
+                    "Error": {
+                        "Code": "ValidationException",
+                        "Message": "Could not find endpoint ...",
+                    }
+                },
+                "DeleteEndpoint",
+            )
 
         del self.endpoints[endpoint_name]
 

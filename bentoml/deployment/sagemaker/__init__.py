@@ -328,20 +328,21 @@ def _delete_sagemaker_endpoint_if_exist(sagemaker_client, sagemaker_endpoint_nam
         )
 
 
-def _try_clean_up_sagemaker_deployment_resource(deployment_pb):
+def delete_sagemaker_deployment_resources_if_exist(deployment_pb):
     sagemaker_config = deployment_pb.spec.sagemaker_operator_config
     sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
 
     (
         sagemaker_model_name,
         sagemaker_endpoint_config_name,
-        _,
+        sagemaker_endpoint_name,
     ) = _get_sagemaker_resource_names(deployment_pb)
 
     _delete_sagemaker_model_if_exist(sagemaker_client, sagemaker_model_name)
     _delete_sagemaker_endpoint_config_if_exist(
         sagemaker_client, sagemaker_endpoint_config_name
     )
+    _delete_sagemaker_endpoint_if_exist(sagemaker_client, sagemaker_endpoint_name)
 
 
 def _init_sagemaker_project(sagemaker_project_dir, bento_path):
@@ -535,7 +536,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 sagemaker_endpoint_config_name,
             )
         except AWSServiceError as e:
-            _try_clean_up_sagemaker_deployment_resource(deployment_pb)
+            delete_sagemaker_deployment_resources_if_exist(deployment_pb)
             raise e
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
@@ -690,7 +691,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 sagemaker_client, current_sagemaker_endpoint_config_name
             )
         except AWSServiceError as e:
-            _try_clean_up_sagemaker_deployment_resource(deployment_pb)
+            delete_sagemaker_deployment_resources_if_exist(deployment_pb)
             raise e
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
@@ -705,20 +706,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             if not sagemaker_config.region:
                 raise InvalidArgument('AWS region is missing')
 
-            sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
-            _, _, sagemaker_endpoint_name = _get_sagemaker_resource_names(deployment_pb)
-
-            try:
-                delete_endpoint_response = sagemaker_client.delete_endpoint(
-                    EndpointName=sagemaker_endpoint_name
-                )
-                logger.debug(
-                    "AWS delete endpoint response: %s", delete_endpoint_response
-                )
-            except ClientError as e:
-                raise _aws_client_error_to_bentoml_exception(e)
-
-            _try_clean_up_sagemaker_deployment_resource(deployment_pb)
+            delete_sagemaker_deployment_resources_if_exist(deployment_pb)
 
             return DeleteDeploymentResponse(status=Status.OK())
         except BentoMLException as error:

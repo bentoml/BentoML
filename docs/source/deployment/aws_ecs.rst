@@ -3,9 +3,9 @@ Deploying to AWS ECS(Elastic Container Service)
 
 
 AWS ECS (elastic container service) is a fully managed container orchestration service.
-With AWS Fargate, a serverless compute engine for containers, ECS provide the benefit of AWS Lambda without sacrificing computing performance.
-
-It is great for running more advanced services that require more computing power compare to AWS Lambda.
+With AWS Fargate, a serverless compute engine for containers, ECS provides the benefit of AWS Lambda without sacrificing computing performance.
+It is great for running more advanced ML prediction service that require more computing power compare to AWS Lambda, while still want to take
+advantage of the benefits that AWS Lambda brings.
 
 Prerequisites
 -------------
@@ -27,8 +27,10 @@ Prerequisites
 AWS ECS deployment with BentoML
 -------------------------------------------------
 
+We will walk through from deploying BentoService with ECS, validate result with sample data and removing service and clean up AWS resources.
+
+
 We will use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html).
-Use `bento get` to get the BentoService information.
 
 
 .. code-block:: bash
@@ -200,6 +202,10 @@ Create IAM role
       --policy-arn arn:aws:iam:aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 
 
+=================
+Configure ECR CLI
+=================
+
 Create ECR CLI profile
 
 .. code-block:: bash
@@ -213,6 +219,12 @@ Create ECR cluster profile configuration
 
     ecs-cli configure --cluster tutorial --default-launch-type FARGATE --config-name tutorial --region us-west-2
 
+
+==================================
+Prepare ECR cluster for deployment
+==================================
+
+Start ECR cluster with the ecr profile we created in the earlier step
 
 .. code-block:: bash
 
@@ -280,6 +292,11 @@ Use security group ID from previous command
     > aws ec2 authorize-security-group-ingress --group-id sg-0258b891f053e077b --protocol tcp \
       --port 5000 --cidr 0.0.0.0/0 --region us-west-2
 
+
+=====================================
+Deploying BentoService to ECR cluster
+=====================================
+
 Create `docker-compose.yaml` file, use the image tag from previous steps
 
 .. code-block:: yaml
@@ -320,7 +337,7 @@ Compose `ecs-params.yaml` with subnets information from starting up ECS cluster,
           assign_public_ip: ENABLED
 
 
-After create `ecs-params.yaml`, we can create our BentoService in ECS
+After create `ecs-params.yaml`, we can deploy our BentoService to the ECS cluster
 
 .. code-block:: bash
 
@@ -348,7 +365,9 @@ Now, after creating the service, we can use `ecs-cli service ps` command to chec
     ecd119f0-b159-42e6-b86c-e6a62242ce7a/web  RUNNING  34.212.49.46:5000->5000/tcp  tutorial-bentoml-ecs:1  UNKNOWN
 
 
-A quick curl call to validate deployment's result
+====================================
+Testing ECS service with sample data
+====================================
 
 .. code-block:: bash
 

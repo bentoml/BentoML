@@ -43,12 +43,14 @@ class MarshalServer:
         self.port = port
         self.marshal_app = MarshalService(target_host, target_port)
 
-    def setup_routes(self, bento_service):
-        for api in bento_service.get_service_apis():
-            if getattr(api.handler, "micro_batch", False):
-                max_latency = getattr(api.handler, "mb_max_latency",
-                                      self._DEFAULT_MAX_LATENCY)
-                self.marshal_app.add_batch_handler(api.name, max_latency)
+    def setup_routes_from_pb(self, bento_service_metadata_pb):
+        for api_config in bento_service_metadata_pb.apis:
+            handler_config = getattr(api_config, "handler_config")
+            if 'micro_batch' in handler_config and handler_config['micro_batch']:
+                max_latency = (handler_config["mb_max_latency"]
+                               if "mb_max_latency" in handler_config
+                               else self._DEFAULT_MAX_LATENCY)
+                self.marshal_app.add_batch_handler(api_config.name, max_latency)
 
     def async_start(self):
         """

@@ -189,6 +189,8 @@ class DataframeHandler(BentoHandler):
             "output_orient": self.output_orient,
             "typ": self.typ,
             "input_dtypes": self.input_dtypes,
+            "micro_batch": self.micro_batch,
+            "mb_max_latency": self.mb_max_latency,
         }
 
     def _get_type(self, item):

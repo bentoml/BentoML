@@ -30,6 +30,12 @@ from bentoml.handlers.clipper_handler import (
     ClipperStringsHandler,
 )
 
+
+HANDLER_TYPES_BATCH_MODE_SUPPORTED = {
+    name for name, v in locals().items()
+    if name.endswith("Handler") and getattr(v, 'BATCH_MODE_SUPPORTED', None)
+}
+
 __all__ = [
     "BentoHandler",
     "DataframeHandler",

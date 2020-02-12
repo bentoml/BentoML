@@ -19,6 +19,8 @@ from __future__ import print_function
 import re
 import os
 from io import StringIO
+import socket
+from contextlib import contextmanager
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 
@@ -30,6 +32,26 @@ from bentoml.proto import status_pb2
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+
+
+def detect_free_port(host='localhost'):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((host, 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
+
+
+@contextmanager
+def reserve_free_port(host='localhost'):
+    """
+    detect free port and reserve until exit the context
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((host, 0))
+    port = sock.getsockname()[1]
+    yield port
+    sock.close()
 
 
 def is_url(url):

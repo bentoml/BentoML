@@ -40,12 +40,33 @@ class BentoHandler:
 
     HTTP_METHODS = ["POST", "GET"]
 
+    BATCH_MODE_SUPPORTED = False
+
+    def __init__(self, **base_config):
+        self._config = base_config
+
+    @property
+    def config(self):
+        if getattr(self, '_config', None) is None:
+            self._config = {}
+        return self._config
+
     def handle_request(self, request, func):
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API
         function result as the HTTP response to client
 
         :param request: Flask request object
+        :param func: user API function
+        """
+        raise NotImplementedError
+
+    def handle_batch_request(self, requests, func):
+        """Handles an HTTP request, convert it into corresponding data
+        format that user API function is expecting, and return API
+        function result as the HTTP response to client
+
+        :param requests: List of flask request object
         :param func: user API function
         """
         raise NotImplementedError
@@ -83,13 +104,6 @@ class BentoHandler:
         :return: List of PyPI package names required by this BentoHandler
         """
         return []
-
-    @property
-    def config(self):
-        """
-        :return: config map used for customizing this handler
-        """
-        return {}
 
 
 class NumpyJsonEncoder(json.JSONEncoder):

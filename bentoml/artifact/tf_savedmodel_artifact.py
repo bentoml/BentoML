@@ -40,6 +40,7 @@ class _TensorflowFunctionWrapper:
 
     def __init__(self, origin_func, fullargspec):
         self.origin_func = origin_func
+        self.concrete_func = None
         self.fullargspec = fullargspec
         self._args_to_indices = {arg: i for i, arg in enumerate(fullargspec.args)}
 
@@ -64,7 +65,9 @@ class _TensorflowFunctionWrapper:
             k: self._transform_input_by_tensorspec(arg, signatures_by_kw[k])
             for k, arg in kwargs.items()
         }
-        return self.origin_func.get_concrete_function()(
+        if not self.concrete_func:
+            self.concrete_func = self.origin_func.get_concrete_function()
+        return self.concrete_func(
             *transformed_args, **transformed_kwargs
         )
 

@@ -29,6 +29,7 @@ from bentoml.bundler.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import isidentifier
 from bentoml.utils.hybirdmethod import hybridmethod
+from bentoml.marshal.utils import split_flask_requests, merge_flask_responses
 from bentoml.exceptions import NotFound, InvalidArgument
 
 ARTIFACTS_DIR_NAME = "artifacts"
@@ -90,6 +91,11 @@ class BentoServiceAPI(object):
 
     def handle_request(self, request):
         return self.handler.handle_request(request, self.func)
+
+    def handle_batch_request(self, request):
+        requests = split_flask_requests(request)
+        responses = self.handler.handle_batch_request(requests, self.func)
+        return merge_flask_responses(responses)
 
     def handle_cli(self, args):
         return self.handler.handle_cli(args, self.func)

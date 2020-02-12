@@ -39,6 +39,7 @@ install_requires = [
     "tabulate",
     "humanfriendly",
     "alembic",
+    "aiohttp",
     # python-dateutil required by pandas and boto3, this makes sure the version
     # works for both
     "python-dateutil>=2.1,<2.8.1",

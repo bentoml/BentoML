@@ -266,7 +266,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         short_help="Start local gunicorn server",
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
-    @click.option("-p", "--port", type=click.INT, default=None)
+    @click.option("-p", "--port", type=click.INT, default=BentoAPIServer._DEFAULT_PORT)
     @click.option(
         "-w",
         "--workers",

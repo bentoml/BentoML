@@ -42,6 +42,15 @@ class BentoHandler:
 
     BATCH_MODE_SUPPORTED = False
 
+    def __init__(self, **base_config):
+        self._config = base_config
+
+    @property
+    def config(self):
+        if getattr(self, '_config', None) is None:
+            self._config = {}
+        return self._config
+
     def handle_request(self, request, func):
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API
@@ -95,13 +104,6 @@ class BentoHandler:
         :return: List of PyPI package names required by this BentoHandler
         """
         return []
-
-    @property
-    def config(self):
-        """
-        :return: config map used for customizing this handler
-        """
-        return {}
 
 
 class NumpyJsonEncoder(json.JSONEncoder):

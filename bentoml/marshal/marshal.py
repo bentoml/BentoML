@@ -63,6 +63,10 @@ class Parade:
 
 class ParadeDispatcher:
     def __init__(self, interval):
+        '''
+        params:
+            * interval: milliseconds
+        '''
         self.interval = interval
         self.callback = None
         self._current_parade = None
@@ -73,7 +77,7 @@ class ParadeDispatcher:
             return self._current_parade
         self._current_parade = Parade()
         asyncio.get_event_loop().create_task(
-            self._current_parade.start_wait(self.interval, self.callback))
+            self._current_parade.start_wait(self.interval / 1000.0, self.callback))
         return self._current_parade
 
     def __call__(self, callback):

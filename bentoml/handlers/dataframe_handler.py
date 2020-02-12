@@ -32,12 +32,9 @@ from bentoml.handlers.base_handlers import (
     api_func_result_to_json,
     PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
 )
-from bentoml import config
 from bentoml.utils import is_url
 from bentoml.utils.s3 import is_s3_url
 from bentoml.exceptions import BadInput
-
-_DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
 
 
 def _check_dataframe_column_contains(required_column_names, df):
@@ -160,14 +157,12 @@ class DataframeHandler(BentoHandler):
 
     BATCH_MODE_SUPPORTED = True
 
-    def __init__(
-        self, orient="records", output_orient="records", typ="frame", input_dtypes=None,
-        mb_max_latency=_DEFAULT_MAX_LATENCY,
-    ):
+    def __init__(self, orient="records", output_orient="records", typ="frame",
+                 input_dtypes=None, **base_kwargs):
+        super(DataframeHandler, self).__init__(**base_kwargs)
 
         self.orient = orient
         self.output_orient = output_orient or orient
-        self.mb_max_latency = mb_max_latency
 
         assert self.orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
             f"Invalid option 'orient'='{self.orient}', valid options are "
@@ -188,13 +183,14 @@ class DataframeHandler(BentoHandler):
 
     @property
     def config(self):
-        return {
-            "orient": self.orient,
-            "output_orient": self.output_orient,
-            "typ": self.typ,
-            "input_dtypes": self.input_dtypes,
-            "mb_max_latency": self.mb_max_latency,
-        }
+        base_config = super(self.__class__, self).config
+        return dict(
+            base_config,
+            orient=self.orient,
+            output_orient=self.output_orient,
+            typ=self.typ,
+            input_dtypes=self.input_dtypes,
+        )
 
     def _get_type(self, item):
         if item.startswith('int'):

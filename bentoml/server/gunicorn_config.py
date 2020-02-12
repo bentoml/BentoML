@@ -1,4 +1,7 @@
+import atexit
+
 from bentoml.server.utils import get_gunicorn_num_of_workers
+from bentoml.utils.usage_stats import track_server_stop
 
 workers = get_gunicorn_num_of_workers()
 
@@ -46,3 +49,8 @@ def worker_int(worker):
 
 def worker_abort(worker):
     worker.log.debug("worker received SIGABRT signal")
+
+
+def post_worker_init(worker):
+    worker.log.debug('Unregistering usage tracking in worker process')
+    atexit.unregister(track_server_stop)

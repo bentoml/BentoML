@@ -82,3 +82,25 @@ class NestedConverter:
             return [self(v) for v in obj]
         else:
             return obj
+
+
+def concat_list(lst):
+    '''
+    >>> lst = [
+        [1],
+        [1, 2],
+        [1, 2, 3],
+        ]
+    >>> concat_list(lst)
+    [1, 1, 2, 1, 2, 3], [slice(0, 1), slice(1, 3), slice(3, 6)]
+    '''
+    slices = [slice(0)] * len(lst)
+    datas = []
+    row_flag = 0
+    for i, r in enumerate(lst):
+        j = -1
+        for j, d in enumerate(r):
+            datas.append(d)
+        slices[i] = slice(row_flag, row_flag + j + 1)
+        row_flag += j + 1
+    return datas, slices

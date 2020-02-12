@@ -32,9 +32,12 @@ from bentoml.handlers.base_handlers import (
     api_func_result_to_json,
     PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
 )
+from bentoml import config
 from bentoml.utils import is_url
 from bentoml.utils.s3 import is_s3_url
 from bentoml.exceptions import BadInput
+
+_DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
 
 
 def _check_dataframe_column_contains(required_column_names, df):
@@ -51,7 +54,7 @@ def _check_dataframe_column_contains(required_column_names, df):
 def _dataframe_csv_from_input(raws, content_types):
     n_row_sum = -1
     for i, (data, content_type) in enumerate(zip(raws, content_types)):
-        if content_type.lower() == "application/json":
+        if not content_type or content_type.lower() == "application/json":
             if sys.version_info >= (3, 6):
                 od = json.loads(data.decode('utf-8'))
             else:
@@ -155,14 +158,15 @@ class DataframeHandler(BentoHandler):
         ValueError: Incoming data format can not be handled. Only json and csv
     """
 
+    BATCH_MODE_SUPPORTED = True
+
     def __init__(
         self, orient="records", output_orient="records", typ="frame", input_dtypes=None,
-        micro_batch=False, mb_max_latency=0.8,
+        mb_max_latency=_DEFAULT_MAX_LATENCY,
     ):
 
         self.orient = orient
         self.output_orient = output_orient or orient
-        self.micro_batch = micro_batch
         self.mb_max_latency = mb_max_latency
 
         assert self.orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
@@ -189,7 +193,6 @@ class DataframeHandler(BentoHandler):
             "output_orient": self.output_orient,
             "typ": self.typ,
             "input_dtypes": self.input_dtypes,
-            "micro_batch": self.micro_batch,
             "mb_max_latency": self.mb_max_latency,
         }
 

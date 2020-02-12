@@ -19,6 +19,7 @@ import multiprocessing
 
 from bentoml import config
 from bentoml.marshal import MarshalService
+from bentoml.handlers import HANDLER_TYPES_BATCH_MODE_SUPPORTED
 from bentoml.utils.usage_stats import track_server
 
 
@@ -42,8 +43,8 @@ class MarshalServer:
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):
         for api_config in bento_service_metadata_pb.apis:
-            handler_config = getattr(api_config, "handler_config")
-            if 'micro_batch' in handler_config and handler_config['micro_batch']:
+            if api_config.handler_type in HANDLER_TYPES_BATCH_MODE_SUPPORTED:
+                handler_config = getattr(api_config, "handler_config", {})
                 max_latency = (handler_config["mb_max_latency"]
                                if "mb_max_latency" in handler_config
                                else self._DEFAULT_MAX_LATENCY)

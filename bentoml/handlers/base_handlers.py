@@ -40,6 +40,8 @@ class BentoHandler:
 
     HTTP_METHODS = ["POST", "GET"]
 
+    BATCH_MODE_SUPPORTED = False
+
     def handle_request(self, request, func):
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API

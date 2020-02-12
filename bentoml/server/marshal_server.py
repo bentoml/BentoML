@@ -45,9 +45,11 @@ class MarshalServer:
         for api_config in bento_service_metadata_pb.apis:
             if api_config.handler_type in HANDLER_TYPES_BATCH_MODE_SUPPORTED:
                 handler_config = getattr(api_config, "handler_config", {})
-                max_latency = (handler_config["mb_max_latency"]
-                               if "mb_max_latency" in handler_config
-                               else self._DEFAULT_MAX_LATENCY)
+                max_latency = (
+                    handler_config["mb_max_latency"]
+                    if "mb_max_latency" in handler_config
+                    else self._DEFAULT_MAX_LATENCY
+                )
                 self.marshal_app.add_batch_handler(api_config.name, max_latency)
                 marshal_logger.info("Micro batch enabled for API `%s`", api_config.name)
 
@@ -59,7 +61,8 @@ class MarshalServer:
         marshal_proc = multiprocessing.Process(
             target=self.marshal_app.fork_start_app,
             kwargs=dict(port=self.port),
-            daemon=True)
+            daemon=True,
+        )
         # TODO: make sure child process dies when parent process is killed.
         marshal_proc.start()
         marshal_logger.info("Running micro batch service on :%d", self.port)

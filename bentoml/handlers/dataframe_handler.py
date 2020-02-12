@@ -55,8 +55,10 @@ def _dataframe_csv_from_input(raws, content_types):
             if sys.version_info >= (3, 6):
                 od = json.loads(data.decode('utf-8'))
             else:
-                od = json.loads(data.decode('utf-8'),    # preserve order
-                                object_pairs_hook=collections.OrderedDict)
+                od = json.loads(
+                    data.decode('utf-8'),  # preserve order
+                    object_pairs_hook=collections.OrderedDict,
+                )
 
             if n_row_sum == -1:
                 yield ",".join(itertools.chain(('',), map(str, od))), None
@@ -64,11 +66,12 @@ def _dataframe_csv_from_input(raws, content_types):
 
             n_row = 0
             for n_row, name_row in enumerate(next(iter(od.values()))):
-                datas_row = (od[name_col][name_row]
-                             for n_col, name_col in enumerate(od))
-                yield ','.join(itertools.chain(
-                    (str(n_row_sum),),
-                    map(str, datas_row))), i
+                datas_row = (
+                    od[name_col][name_row] for n_col, name_col in enumerate(od)
+                )
+                yield ','.join(
+                    itertools.chain((str(n_row_sum),), map(str, datas_row))
+                ), i
                 n_row_sum += 1
         elif content_type.lower() == "text/csv":
             data_str = data.decode('utf-8')
@@ -118,8 +121,7 @@ def read_dataframes_from_json_n_csv(datas, content_types):
     no matter how many lines it contains. Concat jsons/csvs before read_json/read_csv
     to improve performance.
     '''
-    rows_csv_with_id = [r for r in
-                        _dataframe_csv_from_input(datas, content_types)]
+    rows_csv_with_id = [r for r in _dataframe_csv_from_input(datas, content_types)]
     str_csv = [r for r, _ in rows_csv_with_id]
     df_str_csv = '\n'.join(str_csv)
     df_merged = pd.read_csv(StringIO(df_str_csv), index_col=0)
@@ -157,8 +159,14 @@ class DataframeHandler(BentoHandler):
 
     BATCH_MODE_SUPPORTED = True
 
-    def __init__(self, orient="records", output_orient="records", typ="frame",
-                 input_dtypes=None, **base_kwargs):
+    def __init__(
+        self,
+        orient="records",
+        output_orient="records",
+        typ="frame",
+        input_dtypes=None,
+        **base_kwargs,
+    ):
         super(DataframeHandler, self).__init__(**base_kwargs)
 
         self.orient = orient
@@ -273,8 +281,9 @@ class DataframeHandler(BentoHandler):
             json_output = api_func_result_to_json(
                 result, pandas_dataframe_orient=self.output_orient
             )
-            responses[i] = Response(response=json_output,
-                                    status=200, mimetype="application/json")
+            responses[i] = Response(
+                response=json_output, status=200, mimetype="application/json"
+            )
         return responses
 
     def handle_cli(self, args, func):

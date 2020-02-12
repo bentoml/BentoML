@@ -26,11 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class Parade:
-    STATUSES = (
-        STATUS_OPEN,
-        STATUS_CLOSED,
-        STATUS_RETURNED,
-    ) = range(3)
+    STATUSES = (STATUS_OPEN, STATUS_CLOSED, STATUS_RETURNED,) = range(3)
 
     def __init__(self):
         self.batch_input = OrderedDict()
@@ -72,12 +68,12 @@ class ParadeDispatcher:
         self._current_parade = None
 
     def get_parade(self):
-        if (self._current_parade
-                and self._current_parade.status == Parade.STATUS_OPEN):
+        if self._current_parade and self._current_parade.status == Parade.STATUS_OPEN:
             return self._current_parade
         self._current_parade = Parade()
         asyncio.get_event_loop().create_task(
-            self._current_parade.start_wait(self.interval / 1000.0, self.callback))
+            self._current_parade.start_wait(self.interval / 1000.0, self.callback)
+        )
         return self._current_parade
 
     def __call__(self, callback):
@@ -90,6 +86,7 @@ class ParadeDispatcher:
             async with parade.returned:
                 await parade.returned.wait()
             return parade.batch_output.get(id_)
+
         return _func
 
 
@@ -112,8 +109,10 @@ class MarshalService:
                 reqs_s = await merge_aio_requests(requests)
                 async with aiohttp.ClientSession() as client:
                     async with client.post(
-                            f"http://{self.target_host}:{self.target_port}/{api_name}",
-                            data=reqs_s, headers={self._MARSHAL_FLAG: 'true'}) as resp:
+                        f"http://{self.target_host}:{self.target_port}/{api_name}",
+                        data=reqs_s,
+                        headers={self._MARSHAL_FLAG: 'true'},
+                    ) as resp:
                         resps = await split_aio_responses(resp)
                 return resps
 
@@ -128,14 +127,13 @@ class MarshalService:
             data = await request.read()
             async with aiohttp.ClientSession() as client:
                 async with client.post(
-                        f"http://{self.target_host}:{self.target_port}/{api_name}",
-                        data=data,
-                        headers=request.headers) as resp:
+                    f"http://{self.target_host}:{self.target_port}/{api_name}",
+                    data=data,
+                    headers=request.headers,
+                ) as resp:
                     body = await resp.read()
                     return aiohttp.web.Response(
-                        status=resp.status,
-                        body=body,
-                        headers=resp.headers,
+                        status=resp.status, body=body, headers=resp.headers,
                     )
         return resp
 

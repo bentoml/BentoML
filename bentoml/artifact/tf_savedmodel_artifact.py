@@ -67,9 +67,7 @@ class _TensorflowFunctionWrapper:
         }
         if not self.concrete_func:
             self.concrete_func = self.origin_func.get_concrete_function()
-        return self.concrete_func(
-            *transformed_args, **transformed_kwargs
-        )
+        return self.concrete_func(*transformed_args, **transformed_kwargs)
 
     def __getattr__(self, k):
         return getattr(self.origin_func, k)

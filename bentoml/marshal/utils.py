@@ -11,6 +11,7 @@ async def merge_aio_requests(reqs) -> bytes:
 
 async def split_aio_responses(ori_response):
     from aiohttp import web
+
     merged = await ori_response.read()
     try:
         merged_responses = pickle.loads(merged)
@@ -27,6 +28,7 @@ async def split_aio_responses(ori_response):
 
 def split_flask_requests(req):
     import flask
+
     raw = req.data
     info_list = pickle.loads(raw)
     return [
@@ -36,8 +38,10 @@ def split_flask_requests(req):
             query_string=req.query_string,
             method=req.method,
             headers=i['headers'],
-            data=i['data']
-        ) for i in info_list]
+            data=i['data'],
+        )
+        for i in info_list
+    ]
 
 
 def merge_flask_responses(resps) -> bytes:

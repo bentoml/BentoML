@@ -236,7 +236,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             run_with_conda_env(
                 bento_service_bundle_path,
                 'bentoml serve {bento} --port {port} {flags}'.format(
-                    bento=bento_service_bundle_path, port=port,
+                    bento=bento_service_bundle_path,
+                    port=port,
                     flags="--enable-microbatch" if enable_microbatch else "",
                 ),
             )
@@ -247,10 +248,11 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 # start server right after port released
                 #  to reduce potential race
                 bento_service_metadata_pb = load_bento_service_metadata(
-                    bento_service_bundle_path)
-                marshal_server = MarshalServer(port=port,
-                                               target_host="localhost",
-                                               target_port=api_server_port)
+                    bento_service_bundle_path
+                )
+                marshal_server = MarshalServer(
+                    port=port, target_host="localhost", target_port=api_server_port
+                )
                 marshal_server.setup_routes_from_pb(bento_service_metadata_pb)
                 api_server = BentoAPIServer(bento_service, port=api_server_port)
             marshal_server.async_start()
@@ -287,8 +289,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         default=False,
         help="(Alpha) Run API server with micro batch enabled",
     )
-    def serve_gunicorn(port, workers, timeout, bento=None, with_conda=False,
-                       enable_microbatch=False):
+    def serve_gunicorn(
+        port, workers, timeout, bento=None, with_conda=False, enable_microbatch=False
+    ):
         track_cli('serve_gunicorn')
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
@@ -313,11 +316,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         if enable_microbatch:
             # avoid load model before gunicorn fork
             bento_service_metadata_pb = load_bento_service_metadata(
-                bento_service_bundle_path)
+                bento_service_bundle_path
+            )
             with reserve_free_port() as api_server_port:
-                marshal_server = MarshalServer(port=port,
-                                               target_host="localhost",
-                                               target_port=api_server_port)
+                marshal_server = MarshalServer(
+                    port=port, target_host="localhost", target_port=api_server_port
+                )
                 marshal_server.setup_routes_from_pb(bento_service_metadata_pb)
                 gunicorn_app = GunicornBentoServer(
                     bento_service_bundle_path, api_server_port, workers, timeout

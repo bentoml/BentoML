@@ -163,6 +163,15 @@ def track_cli(command, deploy_platform=None, extra_properties=None):
     return track('cli-' + command, properties)
 
 
+def track_server_stop(server_type, start_time, properties):
+    # track server stop event
+    duration = time.time() - start_time
+    properties['uptime'] = int(duration)
+    return track(
+        'server-{server_type}-stop'.format(server_type=server_type), properties
+    )
+
+
 def track_server(server_type, extra_properties=None):
     properties = extra_properties or {}
 
@@ -170,12 +179,4 @@ def track_server(server_type, extra_properties=None):
     track('server-{server_type}-start'.format(server_type=server_type), properties)
 
     start_time = time.time()
-
-    @atexit.register
-    def log_exit():  # pylint: disable=unused-variable
-        # track server stop event
-        duration = time.time() - start_time
-        properties['uptime'] = int(duration)
-        return track(
-            'server-{server_type}-stop'.format(server_type=server_type), properties
-        )
+    atexit.register(track_server_stop, server_type, start_time, properties)

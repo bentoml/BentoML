@@ -12,4 +12,5 @@ Deployment Management
   kubernetes
   aws_ecs
   google_cloud_run
+  azure_container_instance
 

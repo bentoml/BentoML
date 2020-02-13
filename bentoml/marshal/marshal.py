@@ -19,10 +19,12 @@ import uuid
 import aiohttp
 
 from bentoml import config
+from bentoml.utils.trace import async_trace, make_http_headers
 from bentoml.marshal.utils import merge_aio_requests, split_aio_responses
 
 
 logger = logging.getLogger(__name__)
+ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 
 
 class Parade:
@@ -106,49 +108,72 @@ class MarshalService:
 
             @ParadeDispatcher(max_latency)
             async def _func(requests):
-                reqs_s = await merge_aio_requests(requests)
-                async with aiohttp.ClientSession() as client:
-                    async with client.post(
-                        f"http://{self.target_host}:{self.target_port}/{api_name}",
-                        data=reqs_s,
-                        headers={self._MARSHAL_FLAG: 'true'},
-                    ) as resp:
-                        resps = await split_aio_responses(resp)
+                headers = {self._MARSHAL_FLAG: 'true'}
+                api_url = f"http://{self.target_host}:{self.target_port}/{api_name}"
+
+                with async_trace(
+                    ZIPKIN_API_URL,
+                    service_name=self.__class__.__name__,
+                    span_name=f"merged {api_name}",
+                ) as trace_ctx:
+                    headers.update(make_http_headers(trace_ctx))
+
+                    reqs_s = await merge_aio_requests(requests)
+                    async with aiohttp.ClientSession() as client:
+                        async with client.post(
+                            api_url, data=reqs_s, headers=headers
+                        ) as resp:
+                            resps = await split_aio_responses(resp)
                 if resps is None:
                     return [aiohttp.web.HTTPInternalServerError] * len(requests)
                 return resps
 
             self.batch_handlers[api_name] = _func
 
-    async def request_handler(self, request):
-        api_name = request.match_info['name']
-        if api_name in self.batch_handlers:
-            target_handler = self.batch_handlers[api_name]
-            resp = await target_handler(request)
-        else:
-            data = await request.read()
-            async with aiohttp.ClientSession() as client:
-                async with client.post(
-                    f"http://{self.target_host}:{self.target_port}/{api_name}",
-                    data=data,
-                    headers=request.headers,
-                ) as resp:
-                    body = await resp.read()
-                    return aiohttp.web.Response(
-                        status=resp.status, body=body, headers=resp.headers,
-                    )
-        return resp
+    async def request_dispatcher(self, request):
+        with async_trace(
+            ZIPKIN_API_URL,
+            request.headers,
+            service_name=self.__class__.__name__,
+            span_name="handle request",
+        ):
+            api_name = request.match_info['name']
+            if api_name in self.batch_handlers:
+                resp = await self.batch_handlers[api_name](request)
+                return resp
+            else:
+                resp = await self._relay_handler(request, api_name)
+                return resp
 
     def make_app(self):
         app = aiohttp.web.Application()
-        app.router.add_post('/{name}', self.request_handler)
+        app.router.add_post('/{name}', self.request_dispatcher)
         return app
 
     def fork_start_app(self, port):
         # Use new eventloop in the fork process to avoid problems on MacOS
         # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI
-        ev = asyncio.new_event_loop()
-        asyncio.set_event_loop(ev)
-
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         app = self.make_app()
         aiohttp.web.run_app(app, port=port)
+
+    async def _relay_handler(self, request, api_name):
+        data = await request.read()
+        headers = request.headers
+        api_url = f"http://{self.target_host}:{self.target_port}/{api_name}"
+
+        with async_trace(
+            ZIPKIN_API_URL,
+            service_name=self.__class__.__name__,
+            span_name=f"{api_name} relay",
+        ) as trace_ctx:
+            headers.update(make_http_headers(trace_ctx))
+            async with aiohttp.ClientSession() as client:
+                async with client.post(
+                    api_url, data=data, headers=request.headers
+                ) as resp:
+                    body = await resp.read()
+            return aiohttp.web.Response(
+                status=resp.status, body=body, headers=resp.headers,
+            )

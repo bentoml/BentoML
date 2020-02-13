@@ -137,7 +137,7 @@ class TensorflowTensorHandler(BentoHandler):
                         response="Column format 'inputs' is not implemented", status=501
                     )
 
-            except:
+            except (json.exceptions.JSONDecodeError, UnicodeDecodeError):
                 import traceback
                 traceback.print_exc()
 

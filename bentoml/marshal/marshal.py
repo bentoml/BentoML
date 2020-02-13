@@ -114,6 +114,8 @@ class MarshalService:
                         headers={self._MARSHAL_FLAG: 'true'},
                     ) as resp:
                         resps = await split_aio_responses(resp)
+                if resps is None:
+                    return [aiohttp.web.HTTPInternalServerError] * len(requests)
                 return resps
 
             self.batch_handlers[api_name] = _func

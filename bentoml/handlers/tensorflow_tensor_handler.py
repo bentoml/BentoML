@@ -59,10 +59,7 @@ class TensorflowTensorHandler(BentoHandler):
     @property
     def config(self):
         base_config = super(self.__class__, self).config
-        return dict(
-            base_config,
-            method=self.method,
-        )
+        return dict(base_config, method=self.method,)
 
     @property
     def request_schema(self):
@@ -108,13 +105,14 @@ class TensorflowTensorHandler(BentoHandler):
         return result_str
 
     def handle_batch_request(self, requests, func):
-        '''
+        """
         TODO(hrmthw):
         1. check content type
         1. specify batch dim
         1. output str fromat
-        '''
+        """
         import tensorflow as tf
+
         bad_resp = Response(response="Bad Input", status=400)
         instances_list = [None] * len(requests)
         responses = [bad_resp] * len(requests)
@@ -139,6 +137,7 @@ class TensorflowTensorHandler(BentoHandler):
 
             except (json.exceptions.JSONDecodeError, UnicodeDecodeError):
                 import traceback
+
                 traceback.print_exc()
 
         merged_instances, slices = concat_list(instances_list)
@@ -152,8 +151,9 @@ class TensorflowTensorHandler(BentoHandler):
 
         for i, result in enumerate(results):
             result_str = api_func_result_to_json(result)
-            responses[i] = Response(response=result_str, status=200,
-                                    mimetype="application/json")
+            responses[i] = Response(
+                response=result_str, status=200, mimetype="application/json"
+            )
 
         return responses
 
@@ -182,8 +182,7 @@ class TensorflowTensorHandler(BentoHandler):
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True)
-        parser.add_argument("-o", "--output", default="str",
-                            choices=["str", "json"])
+        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
         parsed_args = parser.parse_args(args)
 
         result = self._handle_raw_str(parsed_args.input, parsed_args.output, func)

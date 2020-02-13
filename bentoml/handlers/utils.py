@@ -1,4 +1,4 @@
-TF_B64_KEY = 'b64'
+TF_B64_KEY = "b64"
 
 
 def tf_b64_2_bytes(obj):
@@ -14,19 +14,19 @@ def bytes_2_tf_b64(obj):
     import base64
 
     if isinstance(obj, bytes):
-        return {TF_B64_KEY: base64.b64encode(obj).decode('utf-8')}
+        return {TF_B64_KEY: base64.b64encode(obj).decode("utf-8")}
     else:
         return obj
 
 
 def tf_tensor_2_serializable(obj):
-    '''
+    """
     To convert
         tf.Tensor -> json serializable
         np.ndarray -> json serializable
         bytes -> {'b64': <b64_str>}
         others -> themselves
-    '''
+    """
     import tensorflow as tf
     import numpy as np
 
@@ -63,10 +63,10 @@ def tf_tensor_2_serializable(obj):
 
 
 class NestedConverter:
-    '''
+    """
     Generate a nested converter that supports object in list/tuple/dict
     from a single converter.
-    '''
+    """
 
     def __init__(self, converter):
         self.converter = converter
@@ -85,7 +85,7 @@ class NestedConverter:
 
 
 def concat_list(lst):
-    '''
+    """
     >>> lst = [
         [1],
         [1, 2],
@@ -93,7 +93,7 @@ def concat_list(lst):
         ]
     >>> concat_list(lst)
     [1, 1, 2, 1, 2, 3], [slice(0, 1), slice(1, 3), slice(3, 6)]
-    '''
+    """
     slices = [slice(0)] * len(lst)
     datas = []
     row_flag = 0

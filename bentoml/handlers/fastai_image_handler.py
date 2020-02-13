@@ -94,7 +94,9 @@ class FastaiImageHandler(BentoHandler):
         div=True,
         cls=None,
         after_open=None,
+        **base_kwargs,
     ):
+        super(FastaiImageHandler, self).__init__(**base_kwargs)
         self.imread = _import_imageio_imread()
         self.fastai_vision = _import_fastai_vision()
 
@@ -137,6 +139,9 @@ class FastaiImageHandler(BentoHandler):
     @property
     def pip_dependencies(self):
         return ['imageio', 'fastai']
+
+    def handle_batch_request(self, requests, func):
+        raise NotImplementedError
 
     def handle_request(self, request, func):
         input_streams = []

@@ -45,6 +45,9 @@ class JsonHandler(BentoHandler):
         json_output = api_func_result_to_json(result)
         return Response(response=json_output, status=200, mimetype="application/json")
 
+    def handle_batch_request(self, requests, func):
+        raise NotImplementedError
+
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True)

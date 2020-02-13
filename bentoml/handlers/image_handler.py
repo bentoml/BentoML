@@ -91,8 +91,13 @@ class ImageHandler(BentoHandler):
     HTTP_METHODS = ["POST"]
 
     def __init__(
-        self, input_names=("image",), accept_image_formats=None, pilmode="RGB"
+        self,
+        input_names=("image",),
+        accept_image_formats=None,
+        pilmode="RGB",
+        **base_kwargs,
     ):
+        super(ImageHandler, self).__init__(**base_kwargs)
         self.imread = _import_imageio_imread()
 
         self.input_names = tuple(input_names)
@@ -128,6 +133,9 @@ class ImageHandler(BentoHandler):
     @property
     def pip_dependencies(self):
         return ['imageio']
+
+    def handle_batch_request(self, requests, func):
+        raise NotImplementedError
 
     def handle_request(self, request, func):
         """Handle http request that has image file/s. It will convert image into a

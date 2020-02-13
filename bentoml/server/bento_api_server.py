@@ -30,10 +30,12 @@ from werkzeug.utils import secure_filename
 
 from bentoml import config
 from bentoml.utils.usage_stats import track_server
+from bentoml.utils.trace import trace
 from bentoml.exceptions import BentoMLException
 from .middlewares import InstrumentMiddleware
 
 
+ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
 prediction_logger = logging.getLogger("bentoml.prediction")
@@ -316,7 +318,7 @@ class BentoAPIServer:
         service_name = self.bento_service.name
         service_version = self.bento_service.version
 
-        def api_func_wrapper():
+        def api_func():
             # Log image files in request if there is any
             image_paths = self.log_image(request, request_id)
 
@@ -376,7 +378,14 @@ class BentoAPIServer:
 
             return response
 
-        return api_func_wrapper
+        def _wrapped_api_func():
+            with trace(
+                ZIPKIN_API_URL, request.headers, service_name=self.__class__.__name__
+            ):
+                resp = api_func()
+            return resp
+
+        return _wrapped_api_func
 
     def log_exception(self, exc_info):
         """Logs an exception.  This is called by :meth:`handle_exception`

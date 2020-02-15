@@ -20,6 +20,7 @@ import re
 import os
 import json
 import click
+import click_completion
 import tempfile
 import subprocess
 from pathlib import Path
@@ -48,6 +49,7 @@ from bentoml.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.exceptions import BentoMLException
 
+click_completion.init()
 
 def escape_shell_params(param):
     k, v = param.split('=')
@@ -333,6 +335,17 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 bento_service_bundle_path, port, workers, timeout
             )
             gunicorn_app.run()
+
+    @bentoml_cli.command(
+        help="Install shell command completion",
+        short_help="Install shell command completion",
+    )
+    @click.option('--append/--overwrite', help="Append the completion code to the file", default=None)
+    @click.argument('shell', required=False, type=click_completion.DocumentedChoice(click_completion.core.shells))
+    @click.argument('path', required=False)
+    def install_completion(append, shell, path):
+        shell, path = click_completion.core.install(shell=shell, path=path, append=append)
+        click.echo('%s completion installed in %s' % (shell, path))
 
     # pylint: enable=unused-variable
     return bentoml_cli

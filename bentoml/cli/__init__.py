@@ -52,9 +52,10 @@ from bentoml.exceptions import BentoMLException
 try:
     import click_completion
     click_completion.init()
+    shell_types = click_completion.DocumentedChoice(click_completion.core.shells)
 except ImportError:
     # click_completion package is optional to use BentoML cli,
-    pass
+    shell_types = click.Choice(['bash', 'zsh', 'fish', 'powershell'])
 
 
 def escape_shell_params(param):
@@ -351,7 +352,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                   default=None)
     @click.argument('shell',
                     required=False,
-                    type=click_completion.DocumentedChoice(click_completion.core.shells)
+                    type=shell_types
                     )
     @click.argument('path', required=False)
     def install_completion(append, shell, path):

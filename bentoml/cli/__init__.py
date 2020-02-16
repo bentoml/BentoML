@@ -49,7 +49,12 @@ from bentoml.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.exceptions import BentoMLException
 
-click_completion.init()
+try:
+    import click_completion
+    click_completion.init()
+except ImportError:
+    # click_completion package is optional to use BentoML cli,
+    pass
 
 def escape_shell_params(param):
     k, v = param.split('=')
@@ -340,12 +345,24 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Install shell command completion",
         short_help="Install shell command completion",
     )
-    @click.option('--append/--overwrite', help="Append the completion code to the file", default=None)
-    @click.argument('shell', required=False, type=click_completion.DocumentedChoice(click_completion.core.shells))
+    @click.option('--append/--overwrite',
+                  help="Append the completion code to the file",
+                  default=None)
+    @click.argument('shell',
+                    required=False,
+                    type=click_completion.DocumentedChoice(click_completion.core.shells)
+                    )
     @click.argument('path', required=False)
     def install_completion(append, shell, path):
-        shell, path = click_completion.core.install(shell=shell, path=path, append=append)
-        click.echo('%s completion installed in %s' % (shell, path))
+        try:
+            import click_completion
+            shell, path = click_completion.core.install(shell=shell,
+                                                        path=path,
+                                                        append=append)
+            click.echo('%s completion installed in %s' % (shell, path))
+        except ImportError:
+            click.echo("'click_completion' is required for BentoML auto-completion, "
+                       "install it with `pip install click_completion`")
 
     # pylint: enable=unused-variable
     return bentoml_cli

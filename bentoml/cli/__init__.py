@@ -18,9 +18,9 @@ from __future__ import print_function
 
 import re
 import os
+import sys
 import json
 import click
-import click_completion
 import tempfile
 import subprocess
 from pathlib import Path
@@ -55,6 +55,7 @@ try:
 except ImportError:
     # click_completion package is optional to use BentoML cli,
     pass
+
 
 def escape_shell_params(param):
     k, v = param.split('=')
@@ -354,13 +355,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     )
     @click.argument('path', required=False)
     def install_completion(append, shell, path):
-        try:
-            import click_completion
+        if 'click_completion' in sys.modules:
             shell, path = click_completion.core.install(shell=shell,
                                                         path=path,
                                                         append=append)
             click.echo('%s completion installed in %s' % (shell, path))
-        except ImportError:
+        else:
             click.echo("'click_completion' is required for BentoML auto-completion, "
                        "install it with `pip install click_completion`")
 

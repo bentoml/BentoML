@@ -48,6 +48,14 @@ from bentoml.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.exceptions import BentoMLException
 
+try:
+    import click_completion
+    click_completion.init()
+    shell_types = click_completion.DocumentedChoice(click_completion.core.shells)
+except ImportError:
+    # click_completion package is optional to use BentoML cli,
+    shell_types = click.Choice(['bash', 'zsh', 'fish', 'powershell'])
+
 
 def escape_shell_params(param):
     k, v = param.split('=')
@@ -333,6 +341,29 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 bento_service_bundle_path, port, workers, timeout
             )
             gunicorn_app.run()
+
+    @bentoml_cli.command(
+        help="Install shell command completion",
+        short_help="Install shell command completion",
+    )
+    @click.option('--append/--overwrite',
+                  help="Append the completion code to the file",
+                  default=None)
+    @click.argument('shell',
+                    required=False,
+                    type=shell_types
+                    )
+    @click.argument('path', required=False)
+    def install_completion(append, shell, path):
+        if click_completion:
+            # click_completion package is imported
+            shell, path = click_completion.core.install(shell=shell,
+                                                        path=path,
+                                                        append=append)
+            click.echo('%s completion installed in %s' % (shell, path))
+        else:
+            click.echo("'click_completion' is required for BentoML auto-completion, "
+                       "install it with `pip install click_completion`")
 
     # pylint: enable=unused-variable
     return bentoml_cli

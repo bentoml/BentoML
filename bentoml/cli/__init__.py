@@ -18,7 +18,6 @@ from __future__ import print_function
 
 import re
 import os
-import sys
 import json
 import click
 import tempfile
@@ -356,7 +355,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     )
     @click.argument('path', required=False)
     def install_completion(append, shell, path):
-        if 'click_completion' in sys.modules:
+        if click_completion:
+            # click_completion package is imported
             shell, path = click_completion.core.install(shell=shell,
                                                         path=path,
                                                         append=append)

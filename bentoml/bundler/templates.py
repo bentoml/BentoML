@@ -96,7 +96,8 @@ RUN pip install -r /bento/requirements.txt
 RUN if [ -f /bento/bentoml_init.sh ]; then /bin/bash -c /bento/bentoml_init.sh; fi
 
 # Run Gunicorn server with path to module.
-CMD ["bentoml serve-gunicorn /bento"]
+ENV FLAGS=""
+CMD ["bentoml serve-gunicorn /bento $FLAGS"]
 """  # noqa: E501
 
 

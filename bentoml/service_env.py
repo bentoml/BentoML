@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import logging
 from sys import version_info
 import stat
 from pathlib import Path
@@ -24,6 +25,11 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from bentoml.configuration import get_bentoml_deploy_version
+from bentoml.utils.pip_pkg import EPP_PKG_NOT_EXIST, EPP_PKG_VERSION_MISMATCH, \
+    parse_requirement_string, verify_pkg
+
+
+logger = logging.getLogger(__name__)
 
 PYTHON_VERSION = "{major}.{minor}.{micro}".format(
     major=version_info.major, minor=version_info.minor, micro=version_info.micro
@@ -100,6 +106,8 @@ class BentoServiceEnv(object):
         bentoml_deploy_version = get_bentoml_deploy_version()
         self._pip_dependencies = ["bentoml=={}".format(bentoml_deploy_version)]
         if pip_dependencies:
+            for dependency in pip_dependencies:
+                self.check_dependency(dependency)
             self._pip_dependencies += pip_dependencies
 
         self.set_setup_sh(setup_sh)
@@ -108,6 +116,17 @@ class BentoServiceEnv(object):
             self.add_conda_channels(conda_channels)
         if conda_dependencies:
             self.add_conda_dependencies(conda_dependencies)
+
+    @staticmethod
+    def check_dependency(dependency):
+        name, version = parse_requirement_string(dependency)
+        code = verify_pkg(name, version)
+        if code == EPP_PKG_NOT_EXIST:
+            logger.warning('%s package does not exist in the current python '
+                           'session', name)
+        elif code == EPP_PKG_VERSION_MISMATCH:
+            logger.warning('%s package version is different from the version '
+                           'being used in the current python session', name)
 
     def get_conda_env_name(self):
         return self._conda_env.get_name()

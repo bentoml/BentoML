@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import logging
 from sys import version_info
 import stat
@@ -26,7 +27,7 @@ from ruamel.yaml import YAML
 
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.utils.pip_pkg import EPP_PKG_NOT_EXIST, EPP_PKG_VERSION_MISMATCH, \
-    parse_requirement_string, verify_pkg
+    parse_requirement_string, verify_pkg, seek_pip_dependencies
 
 
 logger = logging.getLogger(__name__)
@@ -94,6 +95,7 @@ class BentoServiceEnv(object):
         bento_service_name,
         setup_sh=None,
         pip_dependencies=None,
+        auto_pip_dependencies=False,
         conda_channels=None,
         conda_dependencies=None,
     ):
@@ -109,6 +111,8 @@ class BentoServiceEnv(object):
             for dependency in pip_dependencies:
                 self.check_dependency(dependency)
             self._pip_dependencies += pip_dependencies
+
+        self._auto_pip_dependencies = auto_pip_dependencies
 
         self.set_setup_sh(setup_sh)
 
@@ -183,7 +187,27 @@ class BentoServiceEnv(object):
         requirements_txt_file = os.path.join(path, "requirements.txt")
 
         with open(requirements_txt_file, "wb") as f:
-            pip_content = "\n".join(self._pip_dependencies).encode("utf-8")
+            dependencies_map = {}
+            for dep in self._pip_dependencies:
+                name, version = parse_requirement_string(dep)
+                dependencies_map[name] = version
+            if self._auto_pip_dependencies:
+                if "__main__" in sys.modules:
+                    main_module = sys.modules["__main__"]
+                    if hasattr(main_module, "__file__"):
+                        project_path = os.path.split(main_module.__file__)[0]
+                        reqs, unknown_modules = seek_pip_dependencies(project_path)
+                        for package_name, package_version in reqs:
+                            dependencies_map[package_name] = package_version
+                        for module_name in unknown_modules:
+                            logger.warning("unknown package dependency for module: %s",
+                                           module_name)
+
+            pip_content = "\n".join(
+                map(lambda nv: "{}=={}".format(nv[0], nv[1]) if nv[1] else nv[0],
+                    dependencies_map.items())
+            ).encode('utf-8')
+            # pip_content = "\n".join(self._pip_dependencies).encode("utf-8")
             f.write(pip_content)
 
         if self._setup_sh:

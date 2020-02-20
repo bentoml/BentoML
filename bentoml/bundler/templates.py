@@ -90,6 +90,8 @@ RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
 
 # update conda base env
 RUN conda env update -n base -f /bento/environment.yml
+ARG PIP_TRUSTED_HOST
+ARG PIP_INDEX_URL
 RUN pip install -r /bento/requirements.txt
 
 # Install additional pip dependencies inside bundled_pip_dependencies dir

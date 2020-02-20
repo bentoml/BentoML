@@ -98,6 +98,8 @@ COPY . /container
 WORKDIR /container
 
 # Install pip dependencies
+ENV PIP_INDEX_URL={pip_index_url}
+ENV PIP_TRUSTED_HOST={pip_trusted_url}
 RUN pip install --upgrade numpy && pip install -r /container/bento/requirements.txt
 
 # Install additional pip dependencies inside bundled_pip_dependencies dir
@@ -130,7 +132,9 @@ def get_clipper_compatiable_string(item):
     return result.lower()
 
 
-def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=None):
+def deploy_bentoml(
+    clipper_conn, bundle_path, api_name, model_name=None, labels=None, build_envs=None
+):
     """Deploy bentoml bundle to clipper cluster
 
     Args:
@@ -147,6 +151,7 @@ def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=
     """
     track("clipper-deploy", {'bento_service_bundle_path': bundle_path})
 
+    build_envs = {} if build_envs is None else build_envs
     # docker is required to build clipper model image
     ensure_docker_available_or_raise()
 
@@ -201,7 +206,11 @@ def deploy_bentoml(clipper_conn, bundle_path, api_name, model_name=None, labels=
             )
 
         docker_content = CLIPPER_DOCKERFILE.format(
-            model_name=model_name, model_version=model_version, base_image=base_image
+            model_name=model_name,
+            model_version=model_version,
+            base_image=base_image,
+            pip_index_url=build_envs.get("PIP_INDEX_URL", ""),
+            pip_trusted_url=build_envs.get("PIP_TRUSTED_HOST", ""),
         )
         with open(os.path.join(tempdir, "Dockerfile-clipper"), "w") as f:
             f.write(docker_content)

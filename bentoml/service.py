@@ -24,15 +24,18 @@ import uuid
 from datetime import datetime
 from abc import abstractmethod, ABCMeta
 
+from bentoml import config
 from bentoml.bundler import save_to_dir
 from bentoml.bundler.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import isidentifier
 from bentoml.utils.hybirdmethod import hybridmethod
 from bentoml.marshal.utils import split_flask_requests, merge_flask_responses
+from bentoml.utils.trace import trace
 from bentoml.exceptions import NotFound, InvalidArgument
 
 ARTIFACTS_DIR_NAME = "artifacts"
+ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +67,7 @@ class BentoServiceAPI(object):
         self._doc = doc
         self._handler = handler
         self._func = func
+        self._wrapped_func = None
 
     @property
     def service(self):
@@ -83,7 +87,19 @@ class BentoServiceAPI(object):
 
     @property
     def func(self):
-        return self._func
+        if not self._wrapped_func:
+
+            def _wrapped_func(*args, **kwargs):
+                with trace(
+                    ZIPKIN_API_URL,
+                    service_name=self.__class__.__name__,
+                    span_name="user defined api handler",
+                ):
+                    resp = self._func(*args, **kwargs)
+                return resp
+
+            self._wrapped_func = _wrapped_func
+        return self._wrapped_func
 
     @property
     def request_schema(self):

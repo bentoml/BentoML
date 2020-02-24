@@ -26,8 +26,13 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from bentoml.configuration import get_bentoml_deploy_version
-from bentoml.utils.pip_pkg import EPP_PKG_NOT_EXIST, EPP_PKG_VERSION_MISMATCH, \
-    parse_requirement_string, verify_pkg, seek_pip_dependencies
+from bentoml.utils.pip_pkg import (
+    EPP_PKG_NOT_EXIST,
+    EPP_PKG_VERSION_MISMATCH,
+    parse_requirement_string,
+    verify_pkg,
+    seek_pip_dependencies,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -126,11 +131,15 @@ class BentoServiceEnv(object):
         name, version = parse_requirement_string(dependency)
         code = verify_pkg(name, version)
         if code == EPP_PKG_NOT_EXIST:
-            logger.warning('%s package does not exist in the current python '
-                           'session', name)
+            logger.warning(
+                '%s package does not exist in the current python ' 'session', name
+            )
         elif code == EPP_PKG_VERSION_MISMATCH:
-            logger.warning('%s package version is different from the version '
-                           'being used in the current python session', name)
+            logger.warning(
+                '%s package version is different from the version '
+                'being used in the current python session',
+                name,
+            )
 
     def get_conda_env_name(self):
         return self._conda_env.get_name()
@@ -180,7 +189,7 @@ class BentoServiceEnv(object):
             module_list = content.decode("utf-8").split("\n")
             self._pip_dependencies += module_list
 
-    def save(self, path):
+    def save(self, path, bento_service):
         conda_yml_file = os.path.join(path, "environment.yml")
         self._conda_env.write_to_yaml_file(conda_yml_file)
 
@@ -192,20 +201,23 @@ class BentoServiceEnv(object):
                 name, version = parse_requirement_string(dep)
                 dependencies_map[name] = version
             if self._auto_pip_dependencies:
-                if "__main__" in sys.modules:
-                    main_module = sys.modules["__main__"]
-                    if hasattr(main_module, "__file__"):
-                        project_path = os.path.split(main_module.__file__)[0]
-                        reqs, unknown_modules = seek_pip_dependencies(project_path)
-                        for package_name, package_version in reqs:
-                            dependencies_map[package_name] = package_version
-                        for module_name in unknown_modules:
-                            logger.warning("unknown package dependency for module: %s",
-                                           module_name)
+                bento_service_module = sys.modules[bento_service.__class__.__module__]
+                if hasattr(bento_service_module, "__file__"):
+                    bento_service_py_file_path = bento_service_module.__file__
+                    reqs, unknown_modules = seek_pip_dependencies(
+                        bento_service_py_file_path
+                    )
+                    dependencies_map.update(reqs)
+                    for module_name in unknown_modules:
+                        logger.warning(
+                            "unknown package dependency for module: %s", module_name
+                        )
 
             pip_content = "\n".join(
-                map(lambda nv: "{}=={}".format(nv[0], nv[1]) if nv[1] else nv[0],
-                    dependencies_map.items())
+                map(
+                    lambda nv: "{}=={}".format(nv[0], nv[1]) if nv[1] else nv[0],
+                    dependencies_map.items(),
+                )
             ).encode('utf-8')
             # pip_content = "\n".join(self._pip_dependencies).encode("utf-8")
             f.write(pip_content)

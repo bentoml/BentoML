@@ -268,7 +268,7 @@ def env_decorator(
     pip_dependencies=None,
     auto_pip_dependencies=False,
     conda_channels=None,
-    conda_dependencies=None
+    conda_dependencies=None,
 ):
     """Define environment and dependencies required for the BentoService being created
 

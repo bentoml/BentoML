@@ -184,7 +184,9 @@ def copy_used_py_modules(target_module, destination):
 
     # Lastly, add target module itself
     user_packages_and_modules[target_module_name] = target_module
-    logger.debug("Copying user local python dependecies: %s", user_packages_and_modules)
+    logger.debug(
+        "Copying user local python dependencies: %s", user_packages_and_modules
+    )
 
     for module_name, module in user_packages_and_modules.items():
         module_file = _get_module_src_file(module)

@@ -16,22 +16,15 @@ from __future__ import absolute_import
 
 import os
 import sys
-import ast
 import pkg_resources
-
-__pip_pkg_map = {}
-__pip_module_map = {}
+import pkgutil
+import ast
 
 EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1
 EPP_PKG_VERSION_MISMATCH = 2
 
-
-def collect_pip_pkg_info():
-    for dist in pkg_resources.working_set:
-        __pip_pkg_map[dist._key] = dist._version
-        for mn in dist._get_metadata("top_level.txt"):
-            __pip_module_map.setdefault(mn, []).append((dist._key, dist._version))
+__mm = None
 
 
 def parse_requirement_string(rs):
@@ -40,130 +33,170 @@ def parse_requirement_string(rs):
 
 
 def verify_pkg(pkg_name, pkg_version):
-    if not __pip_pkg_map:
-        collect_pip_pkg_info()
-    if pkg_name not in __pip_pkg_map:
-        # package does not exist in the current python session
-        return EPP_PKG_NOT_EXIST
-    if pkg_version and pkg_version != __pip_pkg_map[pkg_name]:
-        # package version is different from the version being used
-        # in the current python session
-        return EPP_PKG_VERSION_MISMATCH
-    return EPP_NO_ERROR
+    global __mm
+    if __mm is None:
+        __mm = ModuleManager()
+    return __mm.verify_pkg(pkg_name, pkg_version)
 
 
-def seek_pip_dependencies(root_path):
-    root_module = parse_dir_module(root_path, None)
-    external_import_set = extract_external_import_set(root_module)
-    return filter_requirements(external_import_set, root_path)
+def seek_pip_dependencies(target_py_file_path):
+    global __mm
+    if __mm is None:
+        __mm = ModuleManager()
+    return __mm.seek_pip_dependencies(target_py_file_path)
 
 
-class Module(object):
-
-    def __init__(self, name, parent):
-        super(Module, self).__init__()
+class ModuleInfo(object):
+    def __init__(self, name, path, is_local, is_pkg):
+        super(ModuleInfo, self).__init__()
         self.name = name
-        self.parent = parent
-        self.sub_module_map = {}   # name -> module
-        self.import_set = set()
-
-    def add_sub_module(self, sub_mod):
-        self.sub_module_map[sub_mod.name] = sub_mod
-
-    def __contains__(self, item):
-        return item in self.sub_module_map
-
-    def sub_modules(self):
-        return self.sub_module_map.values()
+        self.path = path
+        self.is_local = is_local
+        self.is_pkg = is_pkg
 
 
-def parse_file_module(content, module_name, parent):
-    """
+class ModuleManager(object):
+    def __init__(self):
+        super(ModuleManager, self).__init__()
+        self.pip_pkg_map = {}
+        self.pip_module_map = {}
+        self.setuptools_module_set = set()
+        for dist in pkg_resources.working_set:
+            self.pip_pkg_map[dist._key] = dist._version
+            for mn in dist._get_metadata("top_level.txt"):
+                if dist._key != "setuptools":
+                    self.pip_module_map.setdefault(mn, []).append(
+                        (dist._key, dist._version)
+                    )
+                else:
+                    self.setuptools_module_set.add(mn)
 
-    :param content: py file content
-    :param module_name: py file name, as module name
-    :param parent: parent module
-    :return: py file module
-    """
-    mod = Module(module_name, parent)
-    tree = ast.parse(content)
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for name in node.names:
-                mod.import_set.add(name.name.partition(".")[0])
-        elif isinstance(node, ast.ImportFrom):
-            if node.module is not None and node.level == 0:
-                mod.import_set.add(node.module.partition(".")[0])
-    return mod
+        self.nonlocal_package_path = set()
 
+        self.searched_modules = {}
+        for m in pkgutil.iter_modules():
+            if m[1] not in self.searched_modules:
+                path = m[0].path
+                is_local = self.is_local_path(path)
+                self.searched_modules[m[1]] = ModuleInfo(m[1], path, is_local, m[2])
 
-def parse_dir_module(path, parent):
-    """
+    def verify_pkg(self, pkg_name, pkg_version):
+        if pkg_name not in self.pip_pkg_map:
+            # package does not exist in the current python session
+            return EPP_PKG_NOT_EXIST
+        if pkg_version and pkg_version != self.pip_pkg_map[pkg_name]:
+            # package version is different from the version being used
+            # in the current python session
+            return EPP_PKG_VERSION_MISMATCH
+        return EPP_NO_ERROR
 
-    :param path: package path
-    :param parent: parent module
-    :return: package module
-    """
-    module_name = os.path.basename(path)
-    mod = Module(module_name, parent)
-    for item in os.listdir(path):
-        if item.startswith("."):
-            continue
+    def seek_pip_dependencies(self, target_py_file_path):
+        work = DepSeekWork(self, target_py_file_path)
+        work.do()
+        requirements = {}
+        for _, pkg_info_list in work.dependencies.items():
+            for pkg_name, pkg_version in pkg_info_list:
+                requirements[pkg_name] = pkg_version
 
-        item_path = os.path.join(path, item)
-        if os.path.isdir(item_path):
-            sub_mod = parse_dir_module(item_path, mod)
-            mod.add_sub_module(sub_mod)
-        else:
-            name, ext = os.path.splitext(item)
-            if ext != ".py":
-                continue
+        return requirements, work.unknown_module_set
 
-            with open(item_path) as f:
-                sub_mod = parse_file_module(f.read(), name, mod)
-                mod.add_sub_module(sub_mod)
+    def is_local_path(self, path):
+        if path in self.nonlocal_package_path:
+            return False
 
-    return mod
+        dir_name = os.path.split(path)[1]
 
+        if (
+            "site-packages" in path
+            or "anaconda" in path
+            or path.endswith("packages")
+            or dir_name == "bin"
+            or dir_name.startswith("lib")
+            or dir_name.startswith("python")
+            or dir_name.startswith("plat")
+        ):
+            self.nonlocal_package_path.add(path)
+            return False
 
-def extract_external_import_set(root_module):
-    external_import_set = set()
-    mod_list = [root_module]
-    while mod_list:
-        mod = mod_list.pop(0)
-        for import_m in mod.import_set:
-            if import_m not in root_module:
-                external_import_set.add(import_m)
-        mod_list.extend(mod.sub_modules())
-    return external_import_set
-
-
-def filter_requirements(external_import_set, project_path):
-    # pip安装的包
-    if not __pip_module_map:
-        collect_pip_pkg_info()
-
-    # 已安装的模块，包含自带的包和第三方安装的包（第三方安装的包包含pip安装的包）
-    installed_modules = collect_installed_modules(project_path)
-    # 内建的模块
-    builtin_modules = sys.builtin_module_names
-    requirements = []
-    unknown_modules = []
-    for module_name in external_import_set:
-        if module_name in __pip_module_map:
-            requirements.extend(__pip_module_map[module_name])
-        else:
-            if module_name not in installed_modules \
-               and module_name not in builtin_modules:
-                unknown_modules.append(module_name)
-    return requirements, unknown_modules
+        return True
 
 
-def collect_installed_modules(project_path):
-    import pkgutil
-    installed_modules = {}
-    for m in pkgutil.iter_modules():
-        if getattr(m[0], "path", "") == project_path:
-            continue
-        installed_modules[m[1]] = m[2]
-    return installed_modules
+class DepSeekWork(object):
+    def __init__(self, module_manager, target_py_file_path):
+        super(DepSeekWork, self).__init__()
+        self.module_manager = module_manager
+        self.target_py_file_path = target_py_file_path
+
+        self.dependencies = {}
+        self.unknown_module_set = set()
+        self.parsed_module_set = set()
+
+    def do(self):
+        self.seek_in_file(self.target_py_file_path)
+
+    def seek_in_file(self, file_path):
+        if not os.path.isfile(file_path):
+            return
+
+        # ast解析target_py_file，获取其依赖的module
+        with open(file_path) as f:
+            content = f.read()
+            tree = ast.parse(content)
+            import_set = set()
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for name in node.names:
+                        import_set.add(name.name.partition(".")[0])
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module is not None and node.level == 0:
+                        import_set.add(node.module.partition(".")[0])
+            for module_name in import_set:
+                if module_name in self.parsed_module_set:
+                    continue
+                self.parsed_module_set.add(module_name)
+
+                if module_name in self.module_manager.searched_modules:
+                    m = self.module_manager.searched_modules[module_name]
+                    if m.is_local:
+                        # 递归解析
+                        if m.is_pkg:
+                            self.seek_in_dir(os.path.join(m.path, m.name))
+                        else:
+                            self.seek_in_file(
+                                os.path.join(m.path, "{}.py".format(m.name))
+                            )
+                    else:
+                        # 判断是否在pip安装包中
+                        if (
+                            module_name in self.module_manager.pip_module_map
+                            and module_name not in self.dependencies
+                            and module_name
+                            not in self.module_manager.setuptools_module_set
+                        ):
+                            self.dependencies[
+                                module_name
+                            ] = self.module_manager.pip_module_map[module_name]
+                else:
+                    if module_name in self.module_manager.pip_module_map:
+                        if module_name not in self.dependencies:
+                            # 某些特殊情况下，pip安装的module不存在searched_modules中
+                            self.dependencies[
+                                module_name
+                            ] = self.module_manager.pip_module_map[module_name]
+                    else:
+                        if module_name not in sys.builtin_module_names:
+                            self.unknown_module_set.add(module_name)
+
+    def seek_in_dir(self, dir_path):
+        if not os.path.isdir(dir_path):
+            return
+
+        for path, dir_list, file_list in os.walk(dir_path):
+            for file_name in file_list:
+                if not file_name.endswith(".py"):
+                    continue
+                self.seek_in_file(os.path.join(path, file_name))
+            for dir_name in dir_list:
+                if dir_name == '__pycache__':
+                    continue
+                self.seek_in_dir(os.path.join(path, dir_name))

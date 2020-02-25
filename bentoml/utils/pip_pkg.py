@@ -75,10 +75,12 @@ class ModuleManager(object):
 
         self.searched_modules = {}
         for m in pkgutil.iter_modules():
-            if m[1] not in self.searched_modules:
-                path = m[0].path
+            if m.name not in self.searched_modules:
+                path = m.module_finder.path
                 is_local = self.is_local_path(path)
-                self.searched_modules[m[1]] = ModuleInfo(m[1], path, is_local, m[2])
+                self.searched_modules[m.name] = ModuleInfo(
+                    m.name, path, is_local, m.ispkg
+                )
 
     def verify_pkg(self, pkg_name, pkg_version):
         if pkg_name not in self.pip_pkg_map:
@@ -135,10 +137,7 @@ class DepSeekWork(object):
         self.seek_in_file(self.target_py_file_path)
 
     def seek_in_file(self, file_path):
-        if not os.path.isfile(file_path):
-            return
-
-        # ast解析target_py_file，获取其依赖的module
+        # ast解析py file，获取其依赖的modules
         with open(file_path) as f:
             content = f.read()
             tree = ast.parse(content)
@@ -188,9 +187,6 @@ class DepSeekWork(object):
                             self.unknown_module_set.add(module_name)
 
     def seek_in_dir(self, dir_path):
-        if not os.path.isdir(dir_path):
-            return
-
         for path, dir_list, file_list in os.walk(dir_path):
             for file_name in file_list:
                 if not file_name.endswith(".py"):

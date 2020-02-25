@@ -214,10 +214,12 @@ class BentoServiceEnv(object):
                         )
 
             pip_content = "\n".join(
-                map(
-                    lambda nv: "{}=={}".format(nv[0], nv[1]) if nv[1] else nv[0],
-                    dependencies_map.items(),
-                )
+                [
+                    "{}{}".format(
+                        pkg_name, "=={}".format(pkg_version) if pkg_version else ""
+                    )
+                    for pkg_name, pkg_version in dependencies_map.items()
+                ]
             ).encode('utf-8')
             # pip_content = "\n".join(self._pip_dependencies).encode("utf-8")
             f.write(pip_content)

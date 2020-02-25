@@ -280,7 +280,11 @@ def artifacts_decorator(artifacts):
 
 
 def env_decorator(
-    setup_sh=None, pip_dependencies=None, conda_channels=None, conda_dependencies=None
+    setup_sh=None,
+    pip_dependencies=None,
+    auto_pip_dependencies=False,
+    conda_channels=None,
+    conda_dependencies=None,
 ):
     """Define environment and dependencies required for the BentoService being created
 
@@ -288,6 +292,8 @@ def env_decorator(
         setup_sh (str): bash script for initializing docker environment before loading
             the BentoService for inferencing
         pip_dependencies (list(str)): List of python PyPI package dependencies
+        auto_pip_dependencies (bool): Flag to tell bentoml auto seek package
+            dependencies for project or not
         conda_channels (list(str)): List of conda channels required for conda
             dependencies
         conda_dependencies (list(str)): List of conda dependencies required
@@ -298,6 +304,7 @@ def env_decorator(
             bento_service_name=bento_service_cls.name(),
             setup_sh=setup_sh,
             pip_dependencies=pip_dependencies,
+            auto_pip_dependencies=auto_pip_dependencies,
             conda_channels=conda_channels,
             conda_dependencies=conda_dependencies,
         )

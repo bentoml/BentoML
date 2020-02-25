@@ -17,6 +17,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
+import logging
 from sys import version_info
 import stat
 from pathlib import Path
@@ -24,6 +26,16 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from bentoml.configuration import get_bentoml_deploy_version
+from bentoml.utils.pip_pkg import (
+    EPP_PKG_NOT_EXIST,
+    EPP_PKG_VERSION_MISMATCH,
+    parse_requirement_string,
+    verify_pkg,
+    seek_pip_dependencies,
+)
+
+
+logger = logging.getLogger(__name__)
 
 PYTHON_VERSION = "{major}.{minor}.{micro}".format(
     major=version_info.major, minor=version_info.minor, micro=version_info.micro
@@ -88,6 +100,7 @@ class BentoServiceEnv(object):
         bento_service_name,
         setup_sh=None,
         pip_dependencies=None,
+        auto_pip_dependencies=False,
         conda_channels=None,
         conda_dependencies=None,
     ):
@@ -100,7 +113,11 @@ class BentoServiceEnv(object):
         bentoml_deploy_version = get_bentoml_deploy_version()
         self._pip_dependencies = ["bentoml=={}".format(bentoml_deploy_version)]
         if pip_dependencies:
+            for dependency in pip_dependencies:
+                self.check_dependency(dependency)
             self._pip_dependencies += pip_dependencies
+
+        self._auto_pip_dependencies = auto_pip_dependencies
 
         self.set_setup_sh(setup_sh)
 
@@ -108,6 +125,21 @@ class BentoServiceEnv(object):
             self.add_conda_channels(conda_channels)
         if conda_dependencies:
             self.add_conda_dependencies(conda_dependencies)
+
+    @staticmethod
+    def check_dependency(dependency):
+        name, version = parse_requirement_string(dependency)
+        code = verify_pkg(name, version)
+        if code == EPP_PKG_NOT_EXIST:
+            logger.warning(
+                '%s package does not exist in the current python ' 'session', name
+            )
+        elif code == EPP_PKG_VERSION_MISMATCH:
+            logger.warning(
+                '%s package version is different from the version '
+                'being used in the current python session',
+                name,
+            )
 
     def get_conda_env_name(self):
         return self._conda_env.get_name()
@@ -157,14 +189,37 @@ class BentoServiceEnv(object):
             module_list = content.decode("utf-8").split("\n")
             self._pip_dependencies += module_list
 
-    def save(self, path):
+    def save(self, path, bento_service):
         conda_yml_file = os.path.join(path, "environment.yml")
         self._conda_env.write_to_yaml_file(conda_yml_file)
 
         requirements_txt_file = os.path.join(path, "requirements.txt")
 
         with open(requirements_txt_file, "wb") as f:
-            pip_content = "\n".join(self._pip_dependencies).encode("utf-8")
+            dependencies_map = {}
+            for dep in self._pip_dependencies:
+                name, version = parse_requirement_string(dep)
+                dependencies_map[name] = version
+            if self._auto_pip_dependencies:
+                bento_service_module = sys.modules[bento_service.__class__.__module__]
+                if hasattr(bento_service_module, "__file__"):
+                    bento_service_py_file_path = bento_service_module.__file__
+                    reqs, unknown_modules = seek_pip_dependencies(
+                        bento_service_py_file_path
+                    )
+                    dependencies_map.update(reqs)
+                    for module_name in unknown_modules:
+                        logger.warning(
+                            "unknown package dependency for module: %s", module_name
+                        )
+
+            pip_content = "\n".join(
+                map(
+                    lambda nv: "{}=={}".format(nv[0], nv[1]) if nv[1] else nv[0],
+                    dependencies_map.items(),
+                )
+            ).encode('utf-8')
+            # pip_content = "\n".join(self._pip_dependencies).encode("utf-8")
             f.write(pip_content)
 
         if self._setup_sh:

@@ -15,6 +15,12 @@ class ExampleBentoService(bentoml.BentoService):
     Example BentoService class made for testing purpose
     """
 
+    @bentoml.api(DataframeHandler)
+    def predict(self, df):
+        """An API for testing simple bento model service
+        """
+        return self.artifacts.model.predict(df)
+
     @bentoml.api(DataframeHandler, input_dtypes={"col1": "int"})
     def predict_dataframe(self, df):
         """predict_dataframe expects dataframe as input

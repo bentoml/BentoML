@@ -19,22 +19,22 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
 
     assert "Processing {}".format(bento_bundle_path) in stdout
     assert "Collecting bentoml=={}".format(get_bentoml_deploy_version()) in stdout
-    assert "Successfully built TestBentoService" in stdout
+    assert "Successfully built ExampleBentoService" in stdout
 
     # ensure BentoML is installed as dependency
     assert os.path.isfile(os.path.join(install_path, "bin/bentoml"))
     assert os.path.isdir(os.path.join(install_path, "bentoml"))
 
     sys.path.insert(0, install_path)
-    TestBentoService = __import__("TestBentoService")
+    ExampleBentoService = __import__("ExampleBentoService")
     sys.path.remove(install_path)
 
-    svc = TestBentoService.load()
+    svc = ExampleBentoService.load()
     res = svc.predict_dataframe(pd.DataFrame(pd.DataFrame([1], columns=["col1"])))
     assert res == 1
 
     # pip install should place cli entry script under target/bin directory
-    cli_bin_path = os.path.join(install_path, "bin", "TestBentoService")
+    cli_bin_path = os.path.join(install_path, "bin", "ExampleBentoService")
     assert os.path.isfile(cli_bin_path)
 
     # add install_path and local bentoml module to PYTHONPATH to make them
@@ -46,7 +46,7 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
         [cli_bin_path, "info", "--quiet"], env=env
     ).decode()
     output = json.loads(output)
-    assert output["name"] == "TestBentoService"
+    assert output["name"] == "ExampleBentoService"
     assert output["version"] == svc.version
     assert "predict_dataframe" in map(lambda x: x["name"], output["apis"])
 

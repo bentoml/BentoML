@@ -28,7 +28,7 @@ def example_bento_service_class():
 
 
 @pytest.fixture()
-def bento_service(example_bento_service_class):
+def bento_service(example_bento_service_class):  # pylint:disable=redefined-outer-name
     """Create a new ExampleBentoService
     """
     test_model = TestModel()

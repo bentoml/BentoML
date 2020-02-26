@@ -14,7 +14,7 @@ class IrisClassifier(bentoml.BentoService):
     def predict(self, df):
         df = dummy_util_func(df)
 
-        from tests.bento_service_examples.local_dependencies.dynamically_imported_dependency import (
+        from tests.bento_service_examples.local_dependencies.dynamically_imported_dependency import (  # noqa: E501
             dummy_util_func_ii,
         )
 

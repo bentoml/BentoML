@@ -110,6 +110,7 @@ setuptools.setup(
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     author="bentoml.org",
+    author_email="contact@bentoml.ai",
     description="A platform for serving and deploying machine learning models in the "
     "cloud",
     long_description=long_description,

@@ -92,9 +92,9 @@ $ pip install -e .\[dev\]
 
 Run linter/format script:
 ```bash
-./script/format.sh
+./dev/format.sh
 
-./script/lint.sh
+./dev/lint.sh
 ```
 
 ## How to edit, run, build documentation site

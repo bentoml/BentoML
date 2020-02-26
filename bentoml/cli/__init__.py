@@ -55,6 +55,7 @@ try:
     shell_types = click_completion.DocumentedChoice(click_completion.core.shells)
 except ImportError:
     # click_completion package is optional to use BentoML cli,
+    click_completion = None
     shell_types = click.Choice(['bash', 'zsh', 'fish', 'powershell'])
 
 

@@ -12,7 +12,6 @@ from bentoml.artifact import PickleArtifact
 from bentoml.handlers import DataframeHandler
 
 
-
 logger = logging.getLogger('bentoml.test')
 
 

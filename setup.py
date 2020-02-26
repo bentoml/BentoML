@@ -69,6 +69,7 @@ test_requires = (
         "codecov",
         "moto",
         "numpy",
+        "scikit-learn",
     ]
     + imageio
     + aws_sam_cli

@@ -1,4 +1,3 @@
-import os
 import uuid
 import mock
 import pytest
@@ -9,6 +8,8 @@ import bentoml
 from bentoml.handlers import DataframeHandler
 from bentoml.bundler import load_bento_service_metadata
 from bentoml.exceptions import BentoMLException
+
+from tests.conftest import delete_saved_bento_service
 
 
 class TestModel(object):
@@ -26,15 +27,12 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
 
     assert svc.predict(1000) == 2000
     version = "test_" + uuid.uuid4().hex
-    saved_path = svc.save(str(tmpdir), version=version)
+
+    svc.save_to_dir(str(tmpdir), version=version)
+    model_service = bentoml.load(str(tmpdir))
 
     expected_version = "2.10.{}".format(version)
-    assert saved_path == os.path.join(
-        str(tmpdir), "ExampleBentoService", expected_version
-    )
-    assert os.path.exists(saved_path)
-
-    model_service = bentoml.load(saved_path)
+    assert model_service.version == expected_version
 
     api = model_service.get_service_api('predict')
     assert api.name == "predict"
@@ -43,7 +41,20 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
 
     # Check api methods are available
     assert model_service.predict(1) == 2
-    assert model_service.version == expected_version
+
+
+def test_warning_when_save_without_decalred_artifact(
+    tmpdir, example_bento_service_class
+):
+    svc = example_bento_service_class()
+
+    with mock.patch('bentoml.bundler.bundler.logger') as log_mock:
+        svc.save_to_dir(str(tmpdir))
+        log_mock.warning.assert_called_once_with(
+            "Missing declared artifact '%s' for BentoService '%s'",
+            'model',
+            'ExampleBentoService',
+        )
 
 
 def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
@@ -53,38 +64,24 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
     test_model = TestModel()
     svc = example_bento_service_class()
 
-    with mock.patch('bentoml.bundler.bundler.logger') as log_mock:
-        svc.save()
-        log_mock.warning.assert_called_once_with(
-            "Missing declared artifact '%s' for BentoService '%s'",
-            'model',
-            'ExampleBentoService',
-        )
-
     svc.pack("model", test_model)
     assert svc.predict(1000) == 2000
 
     version = "test_" + uuid.uuid4().hex
     svc.set_version(version)
 
-    saved_path = svc.save(str(tmpdir))
+    svc.save_to_dir(str(tmpdir))
+    model_service = bentoml.load(str(tmpdir))
 
     expected_version = "2.10.{}".format(version)
-    assert saved_path == os.path.join(
-        str(tmpdir), "ExampleBentoService", expected_version
-    )
-    assert os.path.exists(saved_path)
-
-    model_service = bentoml.load(saved_path)
+    assert model_service.version == expected_version
 
     api = model_service.get_service_api('predict')
     assert api.name == "predict"
     assert isinstance(api.handler, DataframeHandler)
     assert api.func(1) == 2
-
     # Check api methods are available
     assert model_service.predict(1) == 2
-    assert model_service.version == expected_version
 
 
 class TestBentoWithOutArtifact(bentoml.BentoService):
@@ -100,23 +97,26 @@ def test_bento_without_artifact(tmpdir):
     assert len(model_service.get_service_apis()) == 1
 
 
-def test_save_duplicated_bento_exception_raised(tmpdir, example_bento_service_class):
+def test_save_duplicated_bento_exception_raised(example_bento_service_class):
     test_model = TestModel()
     svc = example_bento_service_class()
     svc.pack("model", test_model)
 
-    saved_path = svc.save(str(tmpdir))
+    saved_path = svc.save()
     svc_metadata = load_bento_service_metadata(saved_path)
     assert svc.version == svc_metadata.version
 
     with pytest.raises(BentoMLException):
         with patch.object(bentoml.BentoService, 'save_to_dir') as save_to_dir_method:
             # attempt to save again
-            svc.save(str(tmpdir))
+            svc.save()
             save_to_dir_method.assert_not_called()
 
     # reset svc version
     svc.set_version()
-    saved_path = svc.save(str(tmpdir))
-    svc_metadata = load_bento_service_metadata(saved_path)
-    assert svc.version == svc_metadata.version
+    saved_path = svc.save()
+    svc_metadata_new = load_bento_service_metadata(saved_path)
+    assert svc.version == svc_metadata_new.version
+
+    delete_saved_bento_service(svc_metadata.name, svc_metadata.version)
+    delete_saved_bento_service(svc_metadata_new.name, svc_metadata_new.version)

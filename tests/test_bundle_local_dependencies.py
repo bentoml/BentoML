@@ -6,6 +6,7 @@ from sklearn import datasets
 from tests.bento_service_examples.local_dependencies.my_test_bento_service import (
     IrisClassifier,
 )
+from tests.conftest import delete_saved_bento_service
 
 
 def test_bundle_local_dependencies():
@@ -41,3 +42,7 @@ def test_bundle_local_dependencies():
     ) as proc:
         output = proc.stdout.read().decode('utf-8')
         assert output == '[0]\n'
+
+    delete_saved_bento_service(
+        iris_classifier_service.name, iris_classifier_service.version
+    )

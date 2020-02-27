@@ -43,5 +43,9 @@ def bento_bundle_path(bento_service):  # pylint:disable=redefined-outer-name
     """
     saved_path = bento_service.save()
     yield saved_path
+    delete_saved_bento_service(bento_service.name, bento_service.version)
+
+
+def delete_saved_bento_service(name, version):
     yc = YataiClient()
-    yc.repository.dangerously_delete_bento(bento_service.name, bento_service.version)
+    yc.repository.dangerously_delete_bento(name, version)

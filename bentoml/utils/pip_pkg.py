@@ -61,7 +61,9 @@ class ModuleManager(object):
         self.pip_pkg_map = {}
         self.pip_module_map = {}
         self.setuptools_module_set = set()
+        self.nonlocal_package_path = set()
         for dist in pkg_resources.working_set:
+            self.nonlocal_package_path.add(dist.module_path)
             self.pip_pkg_map[dist._key] = dist._version
             for mn in dist._get_metadata("top_level.txt"):
                 if dist._key != "setuptools":
@@ -70,8 +72,6 @@ class ModuleManager(object):
                     )
                 else:
                     self.setuptools_module_set.add(mn)
-
-        self.nonlocal_package_path = set()
 
         self.searched_modules = {}
         for m in pkgutil.iter_modules():

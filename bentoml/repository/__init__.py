@@ -20,6 +20,7 @@ import os
 import json
 import shutil
 import boto3
+import logging
 from pathlib import Path
 from abc import abstractmethod, ABCMeta
 from urllib.parse import urlparse
@@ -28,6 +29,9 @@ from bentoml import config
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.utils.s3 import is_s3_url
 from bentoml.proto.repository_pb2 import BentoUri
+
+
+logger = logging.getLogger(__name__)
 
 
 class BentoRepositoryBase(object):
@@ -113,7 +117,15 @@ class _LocalBentoRepository(BentoRepositoryBase):
 
     def dangerously_delete(self, bento_name, bento_version):
         saved_path = os.path.join(self.base_path, bento_name, bento_version)
-        return shutil.rmtree(saved_path)
+        try:
+            return shutil.rmtree(saved_path)
+        except FileNotFoundError:
+            logger.warning(
+                "BentoService %s:%s has already been deleted from local storage",
+                bento_name,
+                bento_version,
+            )
+            return
 
 
 class _S3BentoRepository(BentoRepositoryBase):

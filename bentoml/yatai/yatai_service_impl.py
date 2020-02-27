@@ -309,6 +309,16 @@ class YataiService(YataiServicer):
     def DangerouslyDeleteBento(self, request, context=None):
         try:
             # TODO: validate request
+            bento_metadata_pb = self.bento_metadata_store.get(
+                request.bento_name, request.bento_version
+            )
+            if not bento_metadata_pb:
+                msg = (
+                    f"BentoService {request.bento_name}:{request.bento_version} "
+                    f"has already been deleted"
+                )
+                return DangerouslyDeleteBentoResponse(status=Status.ABORTED(msg))
+
             logger.debug(
                 'Deleting BentoService %s:%s', request.bento_name, request.bento_version
             )

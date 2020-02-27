@@ -123,14 +123,30 @@ def conditional_argument(condition, *param_decls, **attrs):
     return decorator
 
 
+def _is_valid_bento_tag(value):
+    return re.match(r"^[A-Za-z_][A-Za-z_0-9]*:[A-Za-z0-9.+-_]*$", value) is not None
+
+
 def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argument
-    if re.match(r"^[A-Za-z_][A-Za-z_0-9]*:[A-Za-z0-9.+-_]*$", value) is None:
+    if not _is_valid_bento_tag(value):
         raise click.BadParameter(
             "Bad formatting. Please present in BentoName:Version, for example "
             "iris_classifier:v1.2.0"
         )
-
     return value
+
+
+def parse_bento_tag_list_callback(ctx, param, value):  # pylint: disable=unused-argument
+    bento_tags = value.split(",")
+    bento_tags = list(map(str.strip, bento_tags))
+    for bento_tag in bento_tags:
+        if not _is_valid_bento_tag(bento_tag):
+            raise click.BadParameter(
+                "Bad formatting. Please present in BentoName:Version, for example "
+                "\"iris_classifier:v1.2.0\". For list of BentoService, separate tags "
+                "by \",\", for example: \"my_service:v1,my_service:v2,classifier:v3\""
+            )
+    return bento_tags
 
 
 def parse_labels_callback(ctx, param, value):  # pylint: disable=unused-argument

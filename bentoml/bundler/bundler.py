@@ -79,7 +79,12 @@ def save_to_dir(bento_service, path, version=None):
             )
 
     module_base_path = os.path.join(path, bento_service.name)
-    os.mkdir(module_base_path)
+    try:
+        os.mkdir(module_base_path)
+    except FileExistsError:
+        raise BentoMLException(
+            f"Existing module file found for BentoService {bento_service.name}"
+        )
 
     # write README.md with custom BentoService's docstring if presented
     saved_bundle_readme = DEFAULT_SAVED_BUNDLE_README.format(

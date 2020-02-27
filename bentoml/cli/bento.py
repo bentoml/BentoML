@@ -15,7 +15,11 @@ import click
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
-from bentoml.cli.click_utils import CLI_COLOR_ERROR, _echo, parse_bento_tag_callback
+from bentoml.cli.click_utils import (
+    CLI_COLOR_ERROR,
+    _echo,
+    parse_bento_tag_list_callback,
+)
 from bentoml.cli.utils import humanfriendly_age_from_datetime
 from bentoml.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
@@ -171,41 +175,46 @@ def add_bento_sub_command(cli):
         _print_bentos_info(list_bentos_result.bentos, output)
 
     @cli.command()
-    @click.argument("bento", type=click.STRING, callback=parse_bento_tag_callback)
+    @click.argument("bentos", type=click.STRING, callback=parse_bento_tag_list_callback)
     @click.option(
         '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
     )
-    def delete(bento, yes):
+    def delete(bentos, yes):
         """Delete saved BentoService.
 
         BENTO is the target BentoService to be deleted, referenced by its name and
         version in format of name:version. For example: "iris_classifier:v1.2.0"
+
+        `bentoml delete` command also supports deleting multiple saved BentoService at
+        once, by providing name version tag separated by ",", for example:
+
+        `bentoml delete iris_classifier:v1.2.0,my_svc:v1,my_svc2:v3`
         """
         yatai_client = YataiClient()
-        name, version = bento.split(':')
-        if not name and not version:
-            _echo(
-                'BentoService name or version is missing. Please provide in the '
-                'format of name:version',
-                CLI_COLOR_ERROR,
+        for bento in bentos:
+            name, version = bento.split(':')
+            if not name and not version:
+                _echo(
+                    'BentoService name or version is missing. Please provide in the '
+                    'format of name:version',
+                    CLI_COLOR_ERROR,
+                )
+                return
+            if not yes and not click.confirm(
+                f'Are you sure about delete {bento}? This will delete the BentoService '
+                f'saved bundle files permanently'
+            ):
+                return
+            result = yatai_client.repository.dangerously_delete_bento(
+                name=name, version=version
             )
-            return
-        if not yes and not click.confirm(
-            f'Are you sure about delete {bento}? This will delete the BentoService '
-            f'saved bundle files permanently'
-        ):
-            return
-        result = yatai_client.repository.dangerously_delete_bento(
-            name=name, version=version
-        )
-        if result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                result.status
-            )
-            _echo(
-                f'Failed to delete Bento {name}:{version} '
-                f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
-            )
-            return
-        _echo(f'BentoService {name}:{version} deleted')
+            if result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = status_pb_to_error_code_and_message(
+                    result.status
+                )
+                _echo(
+                    f'Failed to delete Bento {name}:{version} '
+                    f'{error_code}:{error_message}',
+                    CLI_COLOR_ERROR,
+                )
+            _echo(f'BentoService {name}:{version} deleted')

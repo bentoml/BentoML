@@ -137,9 +137,8 @@ class BentoRepositoryAPIClient:
                 )
 
                 raise BentoMLException(
-                    "Error saving BentoService bundle to S3. {}: {} ".format(
-                        Status.Name(http_response.status_code), http_response.text
-                    )
+                    f"Error saving BentoService bundle to S3. "
+                    f"{http_response.status_code}: {http_response.text}"
                 )
 
             self._update_bento_upload_progress(bento_service_metadata)

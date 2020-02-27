@@ -44,7 +44,7 @@ def test_invalid_artifact_type():
     with pytest.raises(InvalidArgument) as e:
 
         @bentoml.artifacts(["Not A Artifact"])  # pylint: disable=unused-variable
-        class TestBentoService(bentoml.BentoService):
+        class ExampleBentoService(bentoml.BentoService):
             pass
 
     assert "only accept list of type BentoServiceArtifact" in str(e.value)
@@ -56,7 +56,7 @@ def test_duplicated_artifact_name():
         @bentoml.artifacts(  # pylint: disable=unused-variable
             [PickleArtifact("model"), PickleArtifact("model")]
         )
-        class TestBentoService(bentoml.BentoService):
+        class ExampleBentoService(bentoml.BentoService):
             pass
 
     assert "Duplicated artifact name `model` detected" in str(e.value)
@@ -65,7 +65,9 @@ def test_duplicated_artifact_name():
 def test_invalid_api_handler():
     with pytest.raises(InvalidArgument) as e:
 
-        class TestBentoService(bentoml.BentoService):  # pylint: disable=unused-variable
+        class ExampleBentoService(
+            bentoml.BentoService
+        ):  # pylint: disable=unused-variable
             @bentoml.api("Not A BentoHandler")
             def test(self):
                 pass

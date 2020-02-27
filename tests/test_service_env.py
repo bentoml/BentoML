@@ -35,9 +35,9 @@ def test_service_env_pip_dependencies(tmpdir):
             return df
 
     service_with_list = ServiceWithList()
-    saved_path = service_with_list.save(str(tmpdir))
+    service_with_list.save_to_dir(str(tmpdir))
 
-    requirements_txt_path = os.path.join(saved_path, 'requirements.txt')
+    requirements_txt_path = os.path.join(str(tmpdir), 'requirements.txt')
     with open(requirements_txt_path, 'rb') as f:
         saved_requirements = f.read()
         module_list = saved_requirements.decode('utf-8').split('\n')
@@ -58,9 +58,9 @@ def test_can_instantiate_setup_sh_from_file(tmpdir):
             return df
 
     service_with_setup = ServiceWithSetup()
-    saved_path = service_with_setup.save(str(tmpdir))
+    service_with_setup.save_to_dir(str(tmpdir))
 
-    setup_sh_path = os.path.join(saved_path, 'setup.sh')
+    setup_sh_path = os.path.join(str(tmpdir), 'setup.sh')
     assert os.path.isfile(setup_sh_path)
 
     st = os.stat(setup_sh_path)
@@ -78,9 +78,9 @@ def test_can_instantiate_setup_sh_from_txt(tmpdir):
             return df
 
     service_with_setup = ServiceWithSetup()
-    saved_path = service_with_setup.save(str(tmpdir))
+    service_with_setup.save_to_dir(str(tmpdir))
 
-    setup_sh_path = os.path.join(saved_path, 'setup.sh')
+    setup_sh_path = os.path.join(str(tmpdir), 'setup.sh')
     assert os.path.isfile(setup_sh_path)
 
     st = os.stat(setup_sh_path)

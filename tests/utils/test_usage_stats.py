@@ -20,10 +20,10 @@ def test_get_bento_service_event_properties(bento_service):
 
 
 def test_get_bento_service_event_properties_with_no_artifact():
-    class TestBentoService(bentoml.BentoService):
+    class ExampleBentoService(bentoml.BentoService):
         pass
 
-    properties = _get_bento_service_event_properties(TestBentoService())
+    properties = _get_bento_service_event_properties(ExampleBentoService())
 
     assert "handler_types" not in properties
     assert properties["artifact_types"]

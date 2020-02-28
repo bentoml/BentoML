@@ -76,7 +76,7 @@ def create_all_or_upgrade_db(engine, db_url):
         tables = inspector.get_table_names()
     elif is_postgres_db(db_url):
         from sqlalchemy_utils import database_exists, create_database
-        
+
         if not database_exists(engine.url):
             create_database(engine.url)
         inspector = inspect(engine)

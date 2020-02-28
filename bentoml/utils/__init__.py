@@ -118,3 +118,30 @@ def status_pb_to_error_code_and_message(pb_status):
     error_code = status_pb2.Status.Code.Name(pb_status.status_code)
     error_message = pb_status.error_message
     return error_code, error_message
+
+
+def is_postgres_db(db_url):
+    try:
+        return urlparse(db_url).scheme in [
+            'postgresql',
+            'postgresql+psycopg2',
+            'postgresql+pg8000',
+        ]
+    except Exception:  # pylint:disable=broad-except
+        return False
+
+
+def is_postgres_db_name_exists(db_url):
+    try:
+        parsed_url = urlparse(db_url)
+        result = True if parsed_url.path and parsed_url.path != '/' else False
+        return result
+    except Exception:  # pylint:disable=broad-except
+        return False
+
+
+def is_sqlite_db(db_url):
+    try:
+        return urlparse(db_url).scheme in ['sqlite']
+    except Exception:  # pylint:disable=broad-except
+        return False

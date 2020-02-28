@@ -25,6 +25,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from bentoml.exceptions import BentoMLException
+from bentoml.utils import is_sqlite_db, is_postgres_db, is_postgres_db_name_exists
 
 Base = declarative_base()
 
@@ -33,9 +34,15 @@ logger = logging.getLogger(__name__)
 
 def init_db(db_url):
     # Use default config if not provided
-    engine = create_engine(
-        db_url, echo=False, connect_args={'check_same_thread': False}
-    )
+    # we have to parse the db url. Depends on what type of it,
+    if is_sqlite_db(db_url):
+        engine = create_engine(
+            db_url, echo=False, connect_args={'check_same_thread': False}
+        )
+    elif is_postgres_db(db_url):
+        if not is_postgres_db_name_exists(db_url):
+            db_url = os.path.join(db_url, 'bentoml')
+        engine = create_engine(db_url, echo=False)
     create_all_or_upgrade_db(engine, db_url)
 
     return sessionmaker(bind=engine)
@@ -59,13 +66,20 @@ def create_all_or_upgrade_db(engine, db_url):
     from alembic import command
     from alembic.config import Config
     from sqlalchemy import inspect
+    from sqlalchemy_utils import database_exists, create_database
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
     alembic_config = Config(os.path.join(current_dir, 'alembic.ini'))
     alembic_config.set_main_option('sqlalchemy.url', db_url)
 
-    inspector = inspect(engine)
-    tables = inspector.get_table_names()
+    if is_sqlite_db(db_url):
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+    elif is_postgres_db(db_url):
+        if not database_exists(engine.url):
+            create_database(engine.url)
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
 
     if 'deployments' not in tables and 'bentos' not in tables:
         logger.debug('Creating tables')

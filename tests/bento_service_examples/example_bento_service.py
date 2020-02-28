@@ -9,7 +9,7 @@ from bentoml.artifact import PickleArtifact
 
 
 @bentoml.artifacts([PickleArtifact("model")])
-@bentoml.env()
+@bentoml.env(auto_pip_dependencies=True)
 class ExampleBentoService(bentoml.BentoService):
     """
     Example BentoService class made for testing purpose

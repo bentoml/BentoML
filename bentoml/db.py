@@ -66,7 +66,6 @@ def create_all_or_upgrade_db(engine, db_url):
     from alembic import command
     from alembic.config import Config
     from sqlalchemy import inspect
-    from sqlalchemy_utils import database_exists, create_database
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
     alembic_config = Config(os.path.join(current_dir, 'alembic.ini'))
@@ -76,6 +75,8 @@ def create_all_or_upgrade_db(engine, db_url):
         inspector = inspect(engine)
         tables = inspector.get_table_names()
     elif is_postgres_db(db_url):
+        from sqlalchemy_utils import database_exists, create_database
+        
         if not database_exists(engine.url):
             create_database(engine.url)
         inspector = inspect(engine)

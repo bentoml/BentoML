@@ -89,10 +89,19 @@ class BentoServiceEnv(object):
     """Defines all aspect of the system environment requirements for a custom
     BentoService to be used. This includes:
 
-    conda environment - for most python third-party packages and libraries
-    requirements_txt  - for pypi dependencies that can be resolved by pip
-        when exported BentoArchieve is installed as a pypi package
-    setup_sh - for customizing the environment with user defined bash script
+
+    Args:
+        bento_service_name: name of the BentoService name bundled with this Env
+        setup_sh: user defined setup bash script, it is executed in docker build time
+        pip_dependencies: list of pip_dependencies required, specified by package name
+            or with specified version `{package_name}=={package_version}`
+        auto_pip_dependencies: (Beta) whether to automatically find all the required
+            pip dependencies and pin their version
+        conda_channels: extra conda channels to be used
+        conda_dependencies: list of conda dependencies required
+        requirements_txt_file: pip dependencies in the form of a requirements.txt file,
+            this can be a relative path to the requirements.txt file or the content
+            of the file
     """
 
     def __init__(
@@ -116,8 +125,8 @@ class BentoServiceEnv(object):
         if pip_dependencies:
             if auto_pip_dependencies:
                 logger.warning(
-                    "auto_pip_dependencies enabled, ignoring parameter "
-                    "`pip_dependencies=%s`",
+                    "auto_pip_dependencies enabled, it may override package versions "
+                    "specified in `pip_dependencies=%s`",
                     pip_dependencies,
                 )
             else:
@@ -128,8 +137,8 @@ class BentoServiceEnv(object):
         if requirements_txt_file:
             if auto_pip_dependencies:
                 logger.warning(
-                    "auto_pip_dependencies enabled, ignoring parameter "
-                    "`requirements_txt_file=%s`",
+                    "auto_pip_dependencies enabled, it may override package versions "
+                    "specified in `requirements_txt_file=%s`",
                     requirements_txt_file,
                 )
             else:

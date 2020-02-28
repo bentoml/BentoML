@@ -1,2 +1,2 @@
-def dummy_util_func_ii(a):
+def dynamically_imported_dependency_func(a):
     return a

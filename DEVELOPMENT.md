@@ -132,6 +132,32 @@ Run the `watch.sh` script to start watching docs changes:
 $ ./docs/watch.sh
 ```
 
+## How to test Yatai server
+
+Instll all dev dependenci:
+```bash
+$ pip install -e .[dev]
+```
+
+Install grpcui:
+```bash
+$ go get github.com/fullstorydev/grpcui
+$ go install githun.com/fullstorydev/grpcui/cmd/grpcui
+```
+
+Start Yatai server in debug mode:
+```bash
+$ bentoml yatai-service-start --debug
+```
+
+In another terminal session run grpcui:
+```bash
+$ grpcui -plain text localhost:50051
+
+gRPC Web UI available at http://127.0.0.1:60551/...
+```
+Navigate to the URL from above
+
 
 ## Creating Pull Request on Github
 

@@ -21,7 +21,7 @@ import logging
 
 
 from bentoml import config
-
+from bentoml.exceptions import BentoMLConfigException
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,14 @@ logger = logging.getLogger(__name__)
 def get_yatai_service(
     channel_address=None, db_url=None, repo_base_url=None, default_namespace=None
 ):
+    try:
+        config_channel_address = config().get('yatai_service', 'channel_address')
+        channel_address = (
+            config_channel_address if channel_address is None else channel_address
+        )
+    except BentoMLConfigException as e:
+        logger.debug(e)
+
     if channel_address is not None:
         import grpc
         from bentoml.proto.yatai_service_pb2_grpc import YataiStub

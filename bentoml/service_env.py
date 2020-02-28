@@ -103,6 +103,7 @@ class BentoServiceEnv(object):
         auto_pip_dependencies=False,
         conda_channels=None,
         conda_dependencies=None,
+        requirements_txt_file=None,
     ):
         self._python_version = PYTHON_VERSION
 
@@ -113,18 +114,35 @@ class BentoServiceEnv(object):
         bentoml_deploy_version = get_bentoml_deploy_version()
         self._pip_dependencies = ["bentoml=={}".format(bentoml_deploy_version)]
         if pip_dependencies:
-            for dependency in pip_dependencies:
-                self.check_dependency(dependency)
-            self._pip_dependencies += pip_dependencies
+            if auto_pip_dependencies:
+                logger.warning(
+                    "auto_pip_dependencies enabled, ignoring parameter "
+                    "`pip_dependencies=%s`",
+                    pip_dependencies,
+                )
+            else:
+                for dependency in pip_dependencies:
+                    self.check_dependency(dependency)
+                self._pip_dependencies += pip_dependencies
+
+        if requirements_txt_file:
+            if auto_pip_dependencies:
+                logger.warning(
+                    "auto_pip_dependencies enabled, ignoring parameter "
+                    "`requirements_txt_file=%s`",
+                    requirements_txt_file,
+                )
+            else:
+                self._set_requirements_txt(requirements_txt_file)
 
         self._auto_pip_dependencies = auto_pip_dependencies
 
-        self.set_setup_sh(setup_sh)
+        self._set_setup_sh(setup_sh)
 
         if conda_channels:
-            self.add_conda_channels(conda_channels)
+            self._add_conda_channels(conda_channels)
         if conda_dependencies:
-            self.add_conda_dependencies(conda_dependencies)
+            self._add_conda_dependencies(conda_dependencies)
 
     @staticmethod
     def check_dependency(dependency):
@@ -147,22 +165,22 @@ class BentoServiceEnv(object):
     def set_conda_env_name(self, name):
         self._conda_env.set_name(name)
 
-    def add_conda_channels(self, channels):
+    def _add_conda_channels(self, channels):
         if not isinstance(channels, list):
             channels = [channels]
         self._conda_env.add_channels(channels)
 
-    def add_conda_dependencies(self, conda_dependencies):
+    def _add_conda_dependencies(self, conda_dependencies):
         if not isinstance(conda_dependencies, list):
             conda_dependencies = [conda_dependencies]
         self._conda_env.add_conda_dependencies(conda_dependencies)
 
-    def add_handler_dependencies(self, handler_dependencies):
-        if not isinstance(handler_dependencies, list):
-            handler_dependencies = [handler_dependencies]
-        self._pip_dependencies += handler_dependencies
+    def _add_pip_dependencies(self, pip_dependencies):
+        if not isinstance(pip_dependencies, list):
+            pip_dependencies = [pip_dependencies]
+        self._pip_dependencies += pip_dependencies
 
-    def set_setup_sh(self, setup_sh_path_or_content):
+    def _set_setup_sh(self, setup_sh_path_or_content):
         self._setup_sh = None
 
         if setup_sh_path_or_content:
@@ -176,12 +194,7 @@ class BentoServiceEnv(object):
         else:
             self._setup_sh = setup_sh_path_or_content.encode("utf-8")
 
-    def add_pip_dependencies(self, pip_dependencies):
-        if not isinstance(pip_dependencies, list):
-            pip_dependencies = [pip_dependencies]
-        self._pip_dependencies += pip_dependencies
-
-    def set_requirements_txt(self, requirements_txt_path):
+    def _set_requirements_txt(self, requirements_txt_path):
         requirements_txt_file = Path(requirements_txt_path)
 
         with requirements_txt_file.open("rb") as f:
@@ -200,6 +213,7 @@ class BentoServiceEnv(object):
             for dep in self._pip_dependencies:
                 name, version = parse_requirement_string(dep)
                 dependencies_map[name] = version
+
             if self._auto_pip_dependencies:
                 bento_service_module = sys.modules[bento_service.__class__.__module__]
                 if hasattr(bento_service_module, "__file__"):
@@ -213,15 +227,26 @@ class BentoServiceEnv(object):
                             "unknown package dependency for module: %s", module_name
                         )
 
-            pip_content = "\n".join(
-                [
+                # Reset bentoml to configured deploy version - this is for users using
+                # customized BentoML branch for development but use a different stable
+                # version for deployment
+                #
+                # For example, a BentoService created with local dirty branch will fail
+                # to deploy with docker due to the version can't be found on PyPI, but
+                # get_bentoml_deploy_version gives the user the latest released PyPI
+                # version that's closest to the `dirty` branch
+                dependencies_map['bentoml'] = get_bentoml_deploy_version()
+
+            # Set self._pip_dependencies so it get writes to BentoService config file
+            self._pip_dependencies = []
+            for pkg_name, pkg_version in dependencies_map.items():
+                self._pip_dependencies.append(
                     "{}{}".format(
                         pkg_name, "=={}".format(pkg_version) if pkg_version else ""
                     )
-                    for pkg_name, pkg_version in dependencies_map.items()
-                ]
-            ).encode('utf-8')
-            # pip_content = "\n".join(self._pip_dependencies).encode("utf-8")
+                )
+
+            pip_content = "\n".join(self._pip_dependencies).encode("utf-8")
             f.write(pip_content)
 
         if self._setup_sh:

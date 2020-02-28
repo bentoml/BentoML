@@ -3,6 +3,8 @@ import logging
 import uuid
 import os
 
+import docker
+
 from bentoml import BentoService, api
 from bentoml.deployment.aws_lambda import _cleanup_s3_bucket_if_exist
 from bentoml.deployment.utils import ensure_docker_available_or_raise
@@ -17,17 +19,30 @@ GRPC_PORT = '50051'
 GRPC_CHANNEL_ADDRESS = f'127.0.0.1:{GRPC_PORT}'
 
 
+def wait_until_container_is_running(container_name):
+    docker_client = docker.from_env()
+    container_is_not_running = True
+    while container_is_not_running:
+        logger.debug('Fetching running container list')
+        container_list = docker_client.containers.list(filters={'status': 'running'})
+        for container in container_list:
+            if container.name == container_name:
+                container_is_not_running = False
+    return
+
+
 def create_test_postgres():
     ensure_docker_available_or_raise()
     temp_dir = TempDirectory()
     temp_dir.create()
+    container_name = 'e2e-yatai-pg-docker'
 
     command = [
         'docker',
         'run',
         '--rm',
         '--name',
-        'e2e-yatai-pg-docker',
+        container_name,
         '-e',
         'POSTGRES_PASSWORD=postgres',
         '-p',
@@ -39,6 +54,7 @@ def create_test_postgres():
     docker_proc = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
+    wait_until_container_is_running(container_name)
     return (
         docker_proc,
         temp_dir,

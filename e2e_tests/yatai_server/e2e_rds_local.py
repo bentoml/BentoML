@@ -31,6 +31,7 @@ if __name__ == '__main__':
             db_url,
             '--debug',
         ]
+        logger.info(f'Running command {" ".join(yatai_server_command)}')
         proc = subprocess.Popen(
             yatai_server_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )

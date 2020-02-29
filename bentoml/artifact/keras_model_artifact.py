@@ -72,6 +72,16 @@ class KerasModelArtifact(BentoServiceArtifact):
         self.graph = None
         self.sess = None
 
+    @property
+    def pip_dependencies(self):
+        # Note that keras module is not required, user can use tf.keras as an
+        # replacement for the keras module. Although tensorflow module is required to
+        #  be used as the default Keras backend
+        deps = ['tensorflow']
+        if self._keras_module_name == 'keras':
+            deps.append('keras')
+        return deps
+
     def _keras_module_name_path(self, base_path):
         # The name of the keras module used, can be 'keras' or 'tensorflow.keras'
         return os.path.join(base_path, self.name + '_keras_module_name.txt')

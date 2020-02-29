@@ -58,6 +58,10 @@ class LightGBMModelArtifact(BentoServiceArtifact):
 
         return self.pack(bst)
 
+    @property
+    def pip_dependencies(self):
+        return ['lightgbm']
+
 
 class _LightGBMModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model):

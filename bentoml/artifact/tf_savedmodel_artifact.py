@@ -201,6 +201,10 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     >>> svc.pack('model', '/tmp/adder/1')
     """
 
+    @property
+    def pip_dependencies(self):
+        return ['tensorflow']
+
     def _saved_model_path(self, base_path):
         return os.path.join(base_path, self.name + '_saved_model')
 

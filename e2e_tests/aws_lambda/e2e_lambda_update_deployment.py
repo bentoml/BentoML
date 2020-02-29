@@ -26,7 +26,7 @@ class UpdatedLambdaDeployment(BentoService):
 
 if __name__ == '__main__':
     from e2e_tests.aws_lambda.utils import (
-        test_deployment_with_sample_data,
+        send_iris_test_data_to_endpoint,
         run_lambda_create_or_update_command,
     )
     from e2e_tests.cli_operations import delete_deployment, delete_bento
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     )
 
     if not deployment_failed and deployment_endpoint:
-        deployment_failed = test_deployment_with_sample_data(
+        deployment_failed = send_iris_test_data_to_endpoint(
             deployment_endpoint, '"cat"'
         )
 
@@ -78,7 +78,7 @@ if __name__ == '__main__':
         update_deployment_command
     )
     if not deployment_failed and deployment_endpoint:
-        deployment_failed = test_deployment_with_sample_data(
+        deployment_failed = send_iris_test_data_to_endpoint(
             deployment_endpoint, '"dog"'
         )
     else:

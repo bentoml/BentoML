@@ -17,9 +17,13 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import logging
 
 from bentoml.utils import cloudpickle
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+
+
+logger = logging.getLogger(__name__)
 
 
 class PickleArtifact(BentoServiceArtifact):
@@ -42,6 +46,16 @@ class PickleArtifact(BentoServiceArtifact):
             self._pickle = __import__(pickle_module)
         else:
             self._pickle = pickle_module
+
+    @property
+    def pip_dependencies(self):
+        if self._pickle != cloudpickle:
+            logger.warning(
+                "Custom pickle module '%s' must be manually added to BentoService "
+                "environment definition",
+                self._pickle.__name__,
+            )
+        return []
 
     def _pkl_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._pickle_extension)

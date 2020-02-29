@@ -36,6 +36,10 @@ class BentoServiceArtifact(object):
         self._name = name
 
     @property
+    def pip_dependencies(self):
+        return []
+
+    @property
     def name(self):
         """
         The name of an artifact is used to set parameters for #pack when used

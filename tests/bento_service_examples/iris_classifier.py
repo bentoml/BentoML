@@ -1,4 +1,3 @@
-import sklearn  # noqa: F401, pylint:disable=unused-import
 import bentoml
 from bentoml.handlers import DataframeHandler
 from bentoml.artifact import SklearnModelArtifact

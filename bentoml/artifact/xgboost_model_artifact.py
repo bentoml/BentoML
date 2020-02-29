@@ -39,6 +39,10 @@ class XgboostModelArtifact(BentoServiceArtifact):
         super(XgboostModelArtifact, self).__init__(name)
         self._model_extension = model_extension
 
+    @property
+    def pip_dependencies(self):
+        return ['xgboost']
+
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._model_extension)
 

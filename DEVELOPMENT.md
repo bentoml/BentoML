@@ -35,9 +35,9 @@ $ bentoml --version
 pip install .[test]
 ```
 
-2. Run all tests with current python version and environment
+2. Run all unit tests with current python version and environment
 ```bash
-$ pytest
+$ pytest tests
 ```
 
 3. Run test under all supported python versions using Conda

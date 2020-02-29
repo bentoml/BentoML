@@ -41,4 +41,5 @@ def run_lambda_create_or_update_command(deploy_command):
             deployment_endpoint = (
                 deploy_command_stdout_list[index + 1].strip().replace('"', '')
             )
-    return True, deployment_endpoint
+            return True, deployment_endpoint
+    return False, None

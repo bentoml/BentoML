@@ -1,8 +1,6 @@
 import pickle
 from functools import lru_cache
-
-# from collections import namedtuple
-from typing import NamedTuple
+from typing import NamedTuple, Iterable
 
 
 class SimpleRequest(NamedTuple):
@@ -14,10 +12,6 @@ class SimpleResponse(NamedTuple):
     data: str
     headers: tuple
     status: int
-
-
-# SimpleRequest = namedtuple('SimpleRequest', ('data', 'headers'))
-# SimpleResponse = namedtuple('SimpleResponse', ('data', 'headers', 'status'))
 
 
 class PlasmaDataLoader:
@@ -71,19 +65,19 @@ class PlasmaDataLoader:
 
 class PickleDataLoader:
     @classmethod
-    def merge_aio_requests(cls, reqs) -> bytes:
+    def merge_aio_requests(cls, reqs: Iterable[SimpleRequest]) -> bytes:
         return pickle.dumps(reqs)
 
     @classmethod
-    def split_flask_requests(cls, raw: bytes):
+    def split_flask_requests(cls, raw: bytes) -> Iterable[SimpleRequest]:
         return pickle.loads(raw)
 
     @classmethod
-    def merge_flask_responses(cls, resps) -> bytes:
+    def merge_flask_responses(cls, resps: Iterable[SimpleResponse]) -> bytes:
         return pickle.dumps(resps)
 
     @classmethod
-    def split_aio_responses(cls, raw: bytes):
+    def split_aio_responses(cls, raw: bytes) -> Iterable[SimpleResponse]:
         try:
             return pickle.loads(raw)
         except pickle.UnpicklingError:

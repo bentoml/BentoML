@@ -14,6 +14,7 @@
 
 import asyncio
 import logging
+from typing import Callable
 from functools import lru_cache, partial
 
 import aiohttp
@@ -30,15 +31,20 @@ class Parade:
     STATUSES = (STATUS_OPEN, STATUS_CLOSED, STATUS_RETURNED,) = range(3)
 
     def __init__(self, max_size, outbound_sema):
+        self.max_size = max_size
+        self.outbound_sema = outbound_sema
         self.batch_input = [None] * max_size
         self.batch_output = [None] * max_size
         self.cur = 0
-        self.max_size = max_size
         self.returned = asyncio.Condition()
-        self.outbound_sema = outbound_sema
         self.status = self.STATUS_OPEN
 
-    def feed(self, data):
+    def feed(self, data) -> Callable:
+        '''
+        feed data into this parade.
+        return:
+            the output index in parade.batch_output
+        '''
         assert self.status == self.STATUS_OPEN
         self.batch_input[self.cur] = data
         self.cur += 1
@@ -94,7 +100,7 @@ class ParadeDispatcher:
         create semaphore lazily
         '''
         # TODO(hrmthw): config
-        return asyncio.Semaphore(2)
+        return asyncio.Semaphore(3)
 
     def get_parade(self):
         if self._current_parade and self._current_parade.status == Parade.STATUS_OPEN:
@@ -110,10 +116,10 @@ class ParadeDispatcher:
 
         async def _func(inputs):
             parade = self.get_parade()
-            id_ = parade.feed(inputs)
+            _id = parade.feed(inputs)
             async with parade.returned:
                 await parade.returned.wait()
-            return parade.batch_output[id_]
+            return parade.batch_output[_id]
 
         return _func
 

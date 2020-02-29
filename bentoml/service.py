@@ -30,7 +30,7 @@ from bentoml.bundler.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import isidentifier
 from bentoml.utils.hybirdmethod import hybridmethod
-from bentoml.marshal.utils import split_flask_requests, merge_flask_responses
+from bentoml.marshal.utils import DataLoader
 from bentoml.utils.trace import trace
 from bentoml.exceptions import NotFound, InvalidArgument
 
@@ -109,9 +109,14 @@ class BentoServiceAPI(object):
         return self.handler.handle_request(request, self.func)
 
     def handle_batch_request(self, request):
-        requests = split_flask_requests(request)
-        responses = self.handler.handle_batch_request(requests, self.func)
-        return merge_flask_responses(responses)
+        requests = DataLoader.split_flask_requests(request.data)
+        with trace(
+            ZIPKIN_API_URL,
+            service_name=self.__class__.__name__,
+            span_name=f"call `{self._handler.__class__.__name__}`",
+        ):
+            responses = self.handler.handle_batch_request(requests, self.func)
+        return DataLoader.merge_flask_responses(responses)
 
     def handle_cli(self, args):
         return self.handler.handle_cli(args, self.func)

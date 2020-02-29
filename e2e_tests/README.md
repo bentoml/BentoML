@@ -10,4 +10,4 @@
 ### How to run test:
 1. pip install -r requirements.txt
 2. pip install -e . # install BentoML in dev mode
-3. python (test_script).py
+3. pytest e2e_tests

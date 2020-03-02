@@ -23,6 +23,7 @@ import grpc
 from bentoml import config
 from bentoml.cli.click_utils import _echo
 from bentoml.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
+from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai import get_yatai_service
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,8 @@ logger = logging.getLogger(__name__)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
-def serve_yatai_grpc_server(yatai_service, port):
+def start_yatai_grpc_server(yatai_service, port):
+    track_cli('yatai-server-start')
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     add_YataiServicer_to_server(yatai_service, server)
     if config().getboolean('core', 'debug'):
@@ -57,8 +59,9 @@ def serve_yatai_grpc_server(yatai_service, port):
         while True:
             time.sleep(_ONE_DAY_IN_SECONDS)
     except KeyboardInterrupt:
+        track_cli('yatai-server-stop')
         _echo("Terminating Yatai server...")
-        server.stop(0)
+        server.stop(grace=None)
 
 
 def add_yatai_service_sub_command(cli):
@@ -78,4 +81,4 @@ def add_yatai_service_sub_command(cli):
     )
     def yatai_service_start(db_url, repo_base_url, port):
         yatai_service = get_yatai_service(db_url=db_url, repo_base_url=repo_base_url)
-        serve_yatai_grpc_server(yatai_service, port)
+        start_yatai_grpc_server(yatai_service, port)

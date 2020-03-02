@@ -132,7 +132,7 @@ Run the `watch.sh` script to start watching docs changes:
 $ ./docs/watch.sh
 ```
 
-## How to test Yatai server
+## How to debug YataiService GRPC server
 
 Instll all dev dependenci:
 ```bash

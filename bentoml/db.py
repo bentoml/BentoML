@@ -43,6 +43,10 @@ def init_db(db_url):
         if not is_postgres_db_name_exists(db_url):
             db_url = os.path.join(db_url, 'bentoml')
         engine = create_engine(db_url, echo=False)
+    else:
+        raise BentoMLException(
+            f"BentoML doesn't support database {db_url} at the moment."
+        )
     create_all_or_upgrade_db(engine, db_url)
 
     return sessionmaker(bind=engine)
@@ -81,6 +85,10 @@ def create_all_or_upgrade_db(engine, db_url):
             create_database(engine.url)
         inspector = inspect(engine)
         tables = inspector.get_table_names()
+    else:
+        raise BentoMLException(
+            f"BentoML doesn't support database {db_url} at the moment."
+        )
 
     if 'deployments' not in tables and 'bentos' not in tables:
         logger.debug('Creating tables')

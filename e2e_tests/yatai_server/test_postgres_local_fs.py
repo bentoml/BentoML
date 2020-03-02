@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-
 import subprocess
 import logging
-import sys
-import traceback
 
 from bentoml.proto.repository_pb2 import BentoUri
 from e2e_tests.yatai_server.utils import (
@@ -17,9 +13,8 @@ from e2e_tests.yatai_server.utils import (
 
 logger = logging.getLogger('bentoml.test')
 
-if __name__ == '__main__':
-    e2e_test_failed = False
 
+def test_yatai_server_with_postgres_and_local_storage():
     logger.info('Setting yatai server channel address to BentoML config')
     proc, temp_dir, db_url = create_test_postgres()
 
@@ -44,39 +39,27 @@ if __name__ == '__main__':
         logger.info("Display bentoservice info")
         get_svc_result = get_bento_service(bento_tag)
         logger.info(get_svc_result)
-        if get_svc_result.bento.uri.type != BentoUri.LOCAL:
-            logger.error('Get bento service info failed')
-            e2e_test_failed = True
+        assert (
+            get_svc_result.bento.uri_type == BentoUri.LOCAL
+        ), 'BentoService storage type mismatched, expect LOCAL'
 
         logger.info('Validate BentoService prediction result')
         run_result = run_bento_service_prediction(bento_tag, '[]')
         logger.info(run_result)
-        if 'cat' not in run_result:
-            logger.error('Run prediction failed')
-            e2e_test_failed = True
+        assert 'cat' in run_result, 'Unexpected BentoService prediction result'
 
         logger.info('Delete BentoService for testing')
         delete_svc_result = delete_bento_service(bento_tag)
         logger.info(delete_svc_result)
-        if f'BentoService {bento_tag} deleted' not in delete_svc_result:
-            logger.error('Delete bento service failed')
-            e2e_test_failed = True
+        assert (
+            f'BentoService {bento_tag} deleted' in delete_svc_result
+        ), 'Unexpected delete BentoService message.'
 
         logger.info('Display Yatai Server log')
         proc.terminate()
         server_std_out = proc.stdout.read().decode('utf-8')
         logger.info(server_std_out)
-
         logger.info('Shutting down YataiServer')
+    finally:
+        print(proc.stdout.read().decode('utf-8'))
         delete_test_postgres(proc, temp_dir)
-    except Exception:
-        e2e_test_failed = True
-        delete_test_postgres(proc, temp_dir)
-        traceback.print_exc()
-
-    if e2e_test_failed:
-        logger.info('E2E YataiServer with Postgres and local fs failed')
-        sys.exit(1)
-    else:
-        logger.info('E2E YataiServer with Postgres and local fs testing is successful')
-        sys.exit(0)

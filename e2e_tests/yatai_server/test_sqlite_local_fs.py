@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import subprocess
 import logging
 import sys
@@ -32,24 +30,23 @@ if __name__ == '__main__':
     logger.info("Display bentoservice info")
     get_svc_result = get_bento_service(bento_tag)
     logger.info(get_svc_result)
-    if get_svc_result.bento.uri.type != BentoUri.LOCAL:
-        logger.error('Get bento service info failed')
-        e2e_test_failed = True
+    assert (
+        get_svc_result.bento.uri.type == BentoUri.LOCAL
+    ), 'BentoService save storage type mismatch'
 
     logger.info('Validate BentoService prediction result')
     run_result = run_bento_service_prediction(bento_tag, '[]')
     logger.info(run_result)
-    if 'cat' not in run_result:
-        logger.error('Run prediction failed')
-        e2e_test_failed = True
+    assert (
+        'cast' in run_result
+    ), 'BentoService prediction result mismatch with expecation'
 
     logger.info('Delete BentoService for testing')
     delete_svc_result = delete_bento_service(bento_tag)
     logger.info(delete_svc_result)
-    if f'BentoService {bento_tag} deleted' not in delete_svc_result:
-        logger.error('Delete bento service failed')
-        e2e_test_failed = True
-
+    assert (
+        f'BentoService {bento_tag} deleted' in delete_svc_result
+    ), 'Delete result message mismatch'
     logger.info('Display Yatai Server log')
     proc.terminate()
     server_std_out = proc.stdout.read().decode('utf-8')
@@ -57,12 +54,3 @@ if __name__ == '__main__':
 
     logger.info('Shutting down YataiServer')
     logger.info('Unset channel address')
-
-    if e2e_test_failed:
-        logger.info('E2E YataiServer with local sqlite and local fs failed')
-        sys.exit(1)
-    else:
-        logger.info(
-            'E2E YataiServer with local sqlite and local fs testing is successful'
-        )
-        sys.exit(0)

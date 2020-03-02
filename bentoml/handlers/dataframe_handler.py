@@ -16,6 +16,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from typing import Iterable
 import os
 import sys
 import json
@@ -33,6 +34,7 @@ from bentoml.handlers.base_handlers import (
     PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
 )
 from bentoml.utils import is_url
+from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.utils.s3 import is_s3_url
 from bentoml.exceptions import BadInput
 
@@ -260,10 +262,15 @@ class DataframeHandler(BentoHandler):
         )
         return Response(response=json_output, status=200, mimetype="application/json")
 
-    def handle_batch_request(self, requests, func):
+    def handle_batch_request(
+        self, requests: Iterable[SimpleRequest], func
+    ) -> Iterable[SimpleResponse]:
 
         datas = [r.data for r in requests]
-        content_types = [r.content_type for r in requests]
+        headers = [
+            {hk.lower(): hv for hk, hv in r.headers or tuple()} for r in requests
+        ]
+        content_types = [h.get('content-type', 'application/json') for h in headers]
         # TODO: check content_type
 
         df_conc, slices = read_dataframes_from_json_n_csv(datas, content_types)
@@ -273,16 +280,15 @@ class DataframeHandler(BentoHandler):
 
         results = [s and result_conc[s] or BadResult for s in slices]
 
-        responses = [None] * len(requests)
+        responses = [SimpleResponse("bad request", None, 400)] * len(requests)
         for i, result in enumerate(results):
             if result is BadResult:
-                responses[i] = Response(status=400, mimetype="application/json")
                 continue
             json_output = api_func_result_to_json(
                 result, pandas_dataframe_orient=self.output_orient
             )
-            responses[i] = Response(
-                response=json_output, status=200, mimetype="application/json"
+            responses[i] = SimpleResponse(
+                json_output, (("Content-Type", "application/json"),), 200
             )
         return responses
 

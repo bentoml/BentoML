@@ -26,7 +26,7 @@ from py_zipkin.transport import BaseTransportHandler
 from py_zipkin.util import generate_random_64bit_string
 
 
-trace_stack_var = ContextVar('trace_stack', default=list())
+trace_stack_var = ContextVar('trace_stack', default=None)
 
 
 def load_http_headers(headers):
@@ -124,28 +124,30 @@ def trace(
     request_headers=None,
     async_transport=False,
     sample_rate=1.0,
+    standalone=False,
+    is_root=False,
     service_name="some service",
     span_name="service procedure",
     port=0,
 ):
     trace_stack = trace_stack_var.get()
 
-    parent_attrs = (
-        load_http_headers(request_headers) or trace_stack and trace_stack[-1] or None
-    )
+    parent_attrs = load_http_headers(request_headers) or trace_stack or None
 
-    if parent_attrs:
+    if not is_root and parent_attrs:
         attrs = make_child_attrs(parent_attrs)
     else:
         attrs = make_new_attrs(sample_rate)
 
     if not attrs.is_sampled or not server_url:
-        trace_stack.append(attrs)
-        trace_stack_var.set(trace_stack)
-        yield attrs
-        trace_stack.pop()
-        trace_stack_var.set(trace_stack)
-        return
+        if standalone:
+            yield None
+            return
+        else:
+            token = trace_stack_var.set(attrs)
+            yield attrs
+            trace_stack_var.reset(token)
+            return
 
     if async_transport:
         transport_handler = AsyncHttpTransport(server_url)
@@ -159,12 +161,15 @@ def trace(
         transport_handler=transport_handler,
         port=port,
         _tracer=Tracer(),
-    ) as ctx:
-        trace_stack.append(attrs)
-        trace_stack_var.set(trace_stack)
-        yield ctx.zipkin_attrs
-        trace_stack.pop()
-        trace_stack_var.set(trace_stack)
+    ):
+        if standalone:
+            yield None
+            return
+        else:
+            token = trace_stack_var.set(attrs)
+            # yield ctx.zipkin_attrs
+            yield attrs
+            trace_stack_var.reset(token)
 
 
 async_trace = partial(trace, async_transport=True)

@@ -36,6 +36,7 @@ class MarshalServer:
 
     _DEFAULT_PORT = config("apiserver").getint("default_port")
     _DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
+    _DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
 
     def __init__(self, target_host, target_port, port=_DEFAULT_PORT):
         self.port = port
@@ -50,7 +51,9 @@ class MarshalServer:
                     if "mb_max_latency" in handler_config
                     else self._DEFAULT_MAX_LATENCY
                 )
-                self.marshal_app.add_batch_handler(api_config.name, max_latency)
+                self.marshal_app.add_batch_handler(
+                    api_config.name, max_latency, self._DEFAULT_MAX_BATCH_SIZE
+                )
                 marshal_logger.info("Micro batch enabled for API `%s`", api_config.name)
 
     def async_start(self):

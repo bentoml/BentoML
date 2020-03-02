@@ -16,6 +16,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from typing import Iterable
+
 import json
 import argparse
 from flask import Response
@@ -27,6 +29,7 @@ from bentoml.handlers.utils import (
 )
 from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
 from bentoml.exceptions import BentoMLException, BadInput
+from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
 
 decode_b64_if_needed = NestedConverter(tf_b64_2_bytes)
@@ -104,7 +107,9 @@ class TensorflowTensorHandler(BentoHandler):
 
         return result_str
 
-    def handle_batch_request(self, requests, func):
+    def handle_batch_request(
+        self, requests: Iterable[SimpleRequest], func
+    ) -> Iterable[SimpleResponse]:
         """
         TODO(hrmthw):
         1. check content type
@@ -113,13 +118,13 @@ class TensorflowTensorHandler(BentoHandler):
         """
         import tensorflow as tf
 
-        bad_resp = Response(response="Bad Input", status=400)
+        bad_resp = SimpleResponse(b"Bad Input", None, 400)
         instances_list = [None] * len(requests)
         responses = [bad_resp] * len(requests)
 
         for i, request in enumerate(requests):
             try:
-                raw_str = request.data.decode("utf-8")
+                raw_str = request[0]  # .decode("utf-8")
                 parsed_json = json.loads(raw_str)
                 if parsed_json.get("instances") is not None:
                     instances = parsed_json.get("instances")
@@ -131,8 +136,8 @@ class TensorflowTensorHandler(BentoHandler):
                     instances_list[i] = instances
 
                 elif parsed_json.get("inputs"):
-                    responses[i] = Response(
-                        response="Column format 'inputs' is not implemented", status=501
+                    responses[i] = SimpleResponse(
+                        "Column format 'inputs' not implemented", None, 501,
                     )
 
             except (json.exceptions.JSONDecodeError, UnicodeDecodeError):
@@ -151,9 +156,7 @@ class TensorflowTensorHandler(BentoHandler):
 
         for i, result in enumerate(results):
             result_str = api_func_result_to_json(result)
-            responses[i] = Response(
-                response=result_str, status=200, mimetype="application/json"
-            )
+            responses[i] = SimpleResponse(result_str, dict(), 200)
 
         return responses
 

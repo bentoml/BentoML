@@ -16,11 +16,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from bentoml.marshal.utils import merge_flask_responses, split_flask_requests
+from bentoml.marshal.utils import DataLoader
 from bentoml.marshal.marshal import MarshalService
 
 __all__ = [
     "MarshalService",
-    "merge_flask_responses",
-    "split_flask_requests",
+    "DataLoader",
 ]

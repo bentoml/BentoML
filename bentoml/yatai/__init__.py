@@ -33,7 +33,7 @@ def get_yatai_service(
     channel_address = (
         config_channel_address if channel_address is None else channel_address
     )
-    if channel_address is not None:
+    if channel_address:
         import grpc
         from bentoml.proto.yatai_service_pb2_grpc import YataiStub
 

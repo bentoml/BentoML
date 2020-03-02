@@ -12,9 +12,7 @@ from e2e_tests.yatai_server.utils import (
 
 logger = logging.getLogger('bentoml.test')
 
-if __name__ == '__main__':
-    e2e_test_failed = False
-
+def test_yatai_server_with_sqlite_and_local_storage():
     logger.info('Setting yatai server channel address to BentoML config')
 
     yatai_server_command = ['bentoml', 'yatai-service-start', '--debug']
@@ -38,7 +36,7 @@ if __name__ == '__main__':
     run_result = run_bento_service_prediction(bento_tag, '[]')
     logger.info(run_result)
     assert (
-        'cast' in run_result
+        'cat' in run_result
     ), 'BentoService prediction result mismatch with expecation'
 
     logger.info('Delete BentoService for testing')

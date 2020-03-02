@@ -40,7 +40,7 @@ def test_yatai_server_with_postgres_and_local_storage():
         get_svc_result = get_bento_service(bento_tag)
         logger.info(get_svc_result)
         assert (
-            get_svc_result.bento.uri_type == BentoUri.LOCAL
+            get_svc_result.bento.uri.type == BentoUri.LOCAL
         ), 'BentoService storage type mismatched, expect LOCAL'
 
         logger.info('Validate BentoService prediction result')

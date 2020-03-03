@@ -5,7 +5,6 @@ from e2e_tests.aws_lambda.utils import (
     send_test_data_to_endpoint,
     run_lambda_create_or_update_command,
 )
-from e2e_tests.cli_operations import delete_deployment
 
 logger = logging.getLogger('bentoml.test')
 

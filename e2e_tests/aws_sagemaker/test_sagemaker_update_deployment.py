@@ -24,7 +24,7 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
         '-b',
         basic_bentoservice_v1,
         '--api-name',
-        'classify',
+        'predict',
         '--region',
         region,
         '--verbose',
@@ -50,10 +50,15 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
             '--wait',
             '--verbose',
         ]
-        updated_deployment_success, endpoint_name = run_sagemaker_create_or_update_command(
+        (
+            updated_deployment_success,
+            endpoint_name,
+        ) = run_sagemaker_create_or_update_command(
             update_bento_version_deployment_command
         )
-        assert updated_deployment_success, 'Sagemaker update deployment was unsuccessful'
+        assert (
+            updated_deployment_success
+        ), 'Sagemaker update deployment was unsuccessful'
         assert endpoint_name, 'Sagemaker deployment endpoint name is missing'
 
         request_success, prediction_result = send_test_data_to_endpoint(endpoint_name)
@@ -61,4 +66,3 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
         assert '"dog"\n', 'Sagemaker prediction result mismatches with expected value'
     finally:
         delete_deployment('sagemaker', deployment_name)
-

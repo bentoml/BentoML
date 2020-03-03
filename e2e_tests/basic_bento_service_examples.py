@@ -12,5 +12,3 @@ class UpdatedBasicBentoService(BentoService):
     @api(JsonHandler)
     def predict(self, data):
         return 'dog'
-
-

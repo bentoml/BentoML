@@ -6,7 +6,7 @@ import requests
 logger = logging.getLogger('bentoml.test')
 
 
-def send_iris_test_data_to_endpoint(deployment_endpoint, sample_data=None):
+def send_test_data_to_endpoint(deployment_endpoint, sample_data=None):
     logger.info('Test deployment with sample request')
     sample_data = sample_data or '"{}"'
     request_result = requests.post(

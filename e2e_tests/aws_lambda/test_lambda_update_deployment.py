@@ -2,7 +2,7 @@ import uuid
 import logging
 
 from e2e_tests.aws_lambda.utils import (
-    send_iris_test_data_to_endpoint,
+    send_test_data_to_endpoint,
     run_lambda_create_or_update_command,
 )
 from e2e_tests.cli_operations import delete_deployment
@@ -31,6 +31,9 @@ def test_aws_lambda_update_deployment(basic_bentoservice_v1, basic_bentoservice_
         )
         assert deployment_success, "AWS Lambda deployment creation should success"
         assert deployment_endpoint, "AWS Lambda deployment should have endpoint"
+        status_code, content = send_test_data_to_endpoint(deployment_endpoint)
+        assert status_code == 200, "prediction request should success"
+        assert content == '"cat"', "prediction result mismatch"
 
         update_deployment_command = [
             'bentoml',
@@ -50,11 +53,10 @@ def test_aws_lambda_update_deployment(basic_bentoservice_v1, basic_bentoservice_
             update_deployment_success
         ), "AWS Lambda deployment creation should success"
         assert update_deployment_endpoint, "AWS Lambda deployment should have endpoint"
-        status_code, content = send_iris_test_data_to_endpoint(
-            deployment_endpoint, '"dog"'
-        )
-        print(status_code, content)
-        assert status_code == 200, "prediction request should success"
-        assert content == 'dog', "prediction result mismatch"
+
+        status_code, content = send_test_data_to_endpoint(deployment_endpoint)
+        assert status_code == 200, "Updated prediction request should success"
+        assert content == '"dog"', "Updated prediction result mismatch"
     finally:
-        delete_deployment('lambda', deployment_name)
+        # delete_deployment('lambda', deployment_name)
+        print('finally..... fin')

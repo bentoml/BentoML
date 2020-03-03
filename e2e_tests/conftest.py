@@ -2,8 +2,10 @@ import logging
 import pytest
 from sklearn import svm, datasets
 
-from e2e_tests.basic_bento_service_examples import BasicBentoService, \
-    UpdatedBasicBentoService
+from e2e_tests.basic_bento_service_examples import (
+    BasicBentoService,
+    UpdatedBasicBentoService,
+)
 from e2e_tests.iris_classifier_example import IrisClassifier
 from e2e_tests.cli_operations import delete_bento
 

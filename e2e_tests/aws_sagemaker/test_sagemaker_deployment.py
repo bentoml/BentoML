@@ -49,7 +49,7 @@ def test_sagemaker_deployment(iris_clf_service):
         )
         assert request_success, 'Failed to make successful Sagemaker prediction'
         assert (
-            '[\n 0\n]\n' == prediction_result
+            '[\n  0\n]\n' == prediction_result
         ), 'Sagemaker prediction result mismatches with expected value'
     finally:
         delete_deployment('sagemaker', deployment_name)

@@ -21,7 +21,7 @@ import logging
 
 
 from bentoml import config
-from bentoml.exceptions import BentoMLConfigException
+
 
 logger = logging.getLogger(__name__)
 

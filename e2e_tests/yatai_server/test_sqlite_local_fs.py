@@ -1,6 +1,5 @@
 import subprocess
 import logging
-import sys
 
 from bentoml.proto.repository_pb2 import BentoUri
 from e2e_tests.yatai_server.utils import (
@@ -10,7 +9,9 @@ from e2e_tests.yatai_server.utils import (
     save_bento_service_with_channel_address,
 )
 
+
 logger = logging.getLogger('bentoml.test')
+
 
 def test_yatai_server_with_sqlite_and_local_storage():
     logger.info('Setting yatai server channel address to BentoML config')

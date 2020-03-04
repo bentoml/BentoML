@@ -52,7 +52,7 @@ def start_yatai_grpc_server(yatai_service, port):
     server.start()
     _echo(f'Yatai Server is running on 127.0.0.1:{port}  (Press CTRL+C to quit)')
     _echo(
-        f'Run `bentoml config set yatai_service.channel_address=127.0.0.1:{port}` '
+        f'Run `bentoml config set yatai_service.url=127.0.0.1:{port}` '
         f'in another terminal before use any BentoML tooling.'
     )
     try:

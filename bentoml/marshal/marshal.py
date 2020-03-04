@@ -162,7 +162,7 @@ class MarshalService:
 
     def make_app(self):
         app = aiohttp.web.Application()
-        app.router.add_post("/{name}", self.request_dispatcher)
+        app.router.add_view("/{name}", self.request_dispatcher)
         return app
 
     def fork_start_app(self, port):
@@ -185,8 +185,8 @@ class MarshalService:
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
             async with aiohttp.ClientSession() as client:
-                async with client.post(
-                    api_url, data=data, headers=request.headers
+                async with client.request(
+                    request.method, api_url, data=data, headers=request.headers
                 ) as resp:
                     body = await resp.read()
         return aiohttp.web.Response(

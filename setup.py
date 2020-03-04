@@ -33,6 +33,7 @@ install_requires = [
     "docker",
     "configparser",
     "sqlalchemy>=1.3.0",
+    "sqlalchemy-utils",
     "protobuf>=3.6.0",
     "grpcio",
     "cerberus",
@@ -55,7 +56,7 @@ xgboost = ["xgboost"]
 h2o = ["h2o"]
 api_server = ["gunicorn", "prometheus_client"]
 aws_sam_cli = ["aws-sam-cli==0.33.1"]
-postgres = ['psycopg2', 'sqlalchemy-utils']
+postgres = ['psycopg2']
 
 optional_requires = (
     api_server
@@ -82,7 +83,6 @@ test_requires = (
     ]
     + imageio
     + aws_sam_cli
-    + postgres
 )
 
 dev_requires = [

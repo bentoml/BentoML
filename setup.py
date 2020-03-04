@@ -82,6 +82,7 @@ test_requires = (
     ]
     + imageio
     + aws_sam_cli
+    + postgres
 )
 
 dev_requires = [

@@ -29,7 +29,8 @@ logger = logging.getLogger(__name__)
 def get_yatai_service(
     channel_address=None, db_url=None, repo_base_url=None, default_namespace=None
 ):
-    if channel_address is not None:
+    channel_address = channel_address or config().get('yatai_service', 'url')
+    if channel_address:
         import grpc
         from bentoml.proto.yatai_service_pb2_grpc import YataiStub
 

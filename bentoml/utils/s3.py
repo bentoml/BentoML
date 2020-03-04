@@ -34,7 +34,7 @@ def is_s3_url(url):
     """
     try:
         return urlparse(url).scheme in ["s3", "s3n", "s3a"]
-    except Exception:  # pylint:disable=broad-except
+    except ValueError:
         return False
 
 

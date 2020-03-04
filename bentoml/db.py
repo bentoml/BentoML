@@ -25,6 +25,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from bentoml.exceptions import BentoMLException
+from bentoml.utils import is_sqlite_db
 
 Base = declarative_base()
 
@@ -32,10 +33,20 @@ logger = logging.getLogger(__name__)
 
 
 def init_db(db_url):
-    # Use default config if not provided
-    engine = create_engine(
-        db_url, echo=False, connect_args={'check_same_thread': False}
-    )
+    from sqlalchemy_utils import database_exists
+
+    extra_db_args = {'echo': True}
+
+    if is_sqlite_db(db_url):
+        extra_db_args['connect_args'] = {'check_same_thread': False}
+        extra_db_args['echo'] = False
+    engine = create_engine(db_url, **extra_db_args)
+
+    if not database_exists(engine.url) and not is_sqlite_db(db_url):
+        raise BentoMLException(
+            f'Database does not exist or Database name is missing in config '
+            f'db.url: {db_url}'
+        )
     create_all_or_upgrade_db(engine, db_url)
 
     return sessionmaker(bind=engine)

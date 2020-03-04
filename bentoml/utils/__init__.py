@@ -118,3 +118,17 @@ def status_pb_to_error_code_and_message(pb_status):
     error_code = status_pb2.Status.Code.Name(pb_status.status_code)
     error_message = pb_status.error_message
     return error_code, error_message
+
+
+def is_postgres_db(db_url):
+    try:
+        return urlparse(db_url).schema.startswith('postgresql')
+    except ValueError:
+        return False
+
+
+def is_sqlite_db(db_url):
+    try:
+        return urlparse(db_url).scheme == 'sqlite'
+    except ValueError:
+        return False

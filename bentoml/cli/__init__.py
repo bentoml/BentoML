@@ -35,6 +35,7 @@ from bentoml.bundler import (
 from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.bento import add_bento_sub_command
+from bentoml.cli.yatai_service import add_yatai_service_sub_command
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.marshal_server import MarshalServer, GunicornMarshalServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
@@ -398,6 +399,7 @@ def create_bentoml_cli():
     aws_lambda_sub_command = get_aws_lambda_sub_command()
     deployment_sub_command = get_deployment_sub_command()
     add_bento_sub_command(_cli)
+    add_yatai_service_sub_command(_cli)
     _cli.add_command(config_sub_command)
     _cli.add_command(aws_sagemaker_sub_command)
     _cli.add_command(aws_lambda_sub_command)

@@ -55,9 +55,18 @@ xgboost = ["xgboost"]
 h2o = ["h2o"]
 api_server = ["gunicorn", "prometheus_client"]
 aws_sam_cli = ["aws-sam-cli==0.33.1"]
+postgres = ['psycopg2', 'sqlalchemy-utils']
 
 optional_requires = (
-    api_server + imageio + pytorch + tensorflow + fastai + xgboost + h2o + aws_sam_cli
+    api_server
+    + imageio
+    + pytorch
+    + tensorflow
+    + fastai
+    + xgboost
+    + h2o
+    + aws_sam_cli
+    + postgres
 )
 
 test_requires = (
@@ -73,6 +82,7 @@ test_requires = (
     ]
     + imageio
     + aws_sam_cli
+    + postgres
 )
 
 dev_requires = [
@@ -83,6 +93,7 @@ dev_requires = [
     "setuptools",
     "gitpython>=2.0.2",
     "grpcio-tools",
+    "grpcio-reflection",
     "pylint>=2.3.1",
     "black",
 ]

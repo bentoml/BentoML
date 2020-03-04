@@ -60,7 +60,13 @@ class Bento(Base):
 
     # Storage URI for this Bento
     uri = Column(String, nullable=False)
-    uri_type = Column(Enum(*BentoUri.StorageType.keys()), default=BentoUri.UNSET)
+
+    # Name is is required for PostgreSQL and any future supported database which
+    # requires an explicitly named type, or an explicitly named constraint in order to
+    # generate the type and/or a table that uses it.
+    uri_type = Column(
+        Enum(*BentoUri.StorageType.keys(), name='uri_type'), default=BentoUri.UNSET
+    )
 
     # JSON filed mapping directly to BentoServiceMetadata proto message
     bento_service_metadata = Column(JSON, nullable=False, default={})

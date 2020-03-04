@@ -121,7 +121,7 @@ def get_aws_lambda_sub_command():
         yatai_client = YataiClient()
         bento_name, bento_version = bento.split(':')
         try:
-            with Spinner('Deploying Lambda deployment '):
+            with Spinner(f'Deploying "{bento}" to AWS Lambda '):
                 result = yatai_client.deployment.create_lambda_deployment(
                     name=name,
                     namespace=namespace,

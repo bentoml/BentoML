@@ -108,7 +108,7 @@ class BentoRepositoryAPIClient:
             self._update_bento_upload_progress(bento_service_metadata)
 
             logger.info(
-                "BentoService bundle '%s:%s' created at: %s",
+                "BentoService bundle '%s:%s' saved to: %s",
                 bento_service_metadata.name,
                 bento_service_metadata.version,
                 response.uri.uri,

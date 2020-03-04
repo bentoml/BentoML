@@ -127,14 +127,6 @@ def is_postgres_db(db_url):
         return False
 
 
-def is_postgres_db_name_exists(db_url):
-    try:
-        parsed_url = urlparse(db_url)
-        return parsed_url.path and parsed_url.path != '/'
-    except ValueError:
-        return False
-
-
 def is_sqlite_db(db_url):
     try:
         return urlparse(db_url).scheme in ['sqlite']

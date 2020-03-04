@@ -299,8 +299,20 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         default=False,
         help="(Alpha) Run API server with micro batch enabled",
     )
+    @click.option(
+        '--microbatch-workers',
+        type=click.INT,
+        default=1,
+        help="(Alpha) Number of microbatch workers",
+    )
     def serve_gunicorn(
-        port, workers, timeout, bento=None, with_conda=False, enable_microbatch=False
+        port,
+        workers,
+        timeout,
+        bento=None,
+        with_conda=False,
+        enable_microbatch=False,
+        microbatch_workers=1,
     ):
         track_cli('serve_gunicorn')
         bento_service_bundle_path = resolve_bundle_path(
@@ -331,7 +343,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     target_port=api_server_port,
                     bundle_path=bento_service_bundle_path,
                     port=port,
-                    num_of_workers=1,
+                    num_of_workers=microbatch_workers,
                 )
 
                 gunicorn_app = GunicornBentoServer(

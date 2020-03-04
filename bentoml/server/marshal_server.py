@@ -124,7 +124,7 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         return server.marshal_app.make_app()
 
     def run(self):
-        track_server('gunicorn', {"number_of_workers": self.cfg.workers})
+        track_server('gunicorn-microbatch', {"number_of_workers": self.cfg.workers})
         super(GunicornMarshalServer, self).run()
 
     def async_run(self):

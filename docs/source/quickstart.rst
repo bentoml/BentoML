@@ -52,7 +52,7 @@ what a simple prediction service looks like:
   from bentoml.handlers import DataframeHandler
   from bentoml.artifact import SklearnModelArtifact
 
-  @bentoml.env(pip_dependencies=["scikit-learn"])
+  @bentoml.env(auto_pip_dependencies=True)
   @bentoml.artifacts([SklearnModelArtifact('model')])
   class IrisClassifier(bentoml.BentoService):
 
@@ -66,8 +66,9 @@ by it, is the service API callback function, and :code:`pandas.Dataframe` is its
 expected input format.
 
 The :code:`bentoml.env` decorator allows user to specify the dependencies and
-environment settings for this prediction service. Here we are creating the prediction
-service based on a scikit learn model, so we add it to the list of pip dependencies.
+environment settings for this prediction service. Here we are using BentoML's
+:code:`auto_pip_dependencies` fature which automatically extracts and bundles all pip
+packages that are required for your prediction service and pins down their version.
 
 
 Last but not least, :code:`bentoml.artifact` declares the required trained model to be
@@ -267,7 +268,6 @@ hosting the BentService you've created:
     # replace the version here with the generated version string when creating the BentoService SavedBundle
     bentoml lambda deploy quick-start-guide-deployment \
         -b=IrisClassifier:20191126125258_4AB1D4 \
-        --platform=aws-lambda \
 
 
 Interested in learning more about BentoML? Check out the

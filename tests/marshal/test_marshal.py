@@ -10,7 +10,7 @@ async def test_parade_dispatcher():
     def _test_func(i):
         return i * 2
 
-    @ParadeDispatcher(MAX_LATENCY)
+    @ParadeDispatcher(MAX_LATENCY, max_size=1000)
     async def _do_sth_slow(input_list):
         await asyncio.sleep(0.1)
         return [_test_func(i) for i in input_list]

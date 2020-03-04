@@ -17,7 +17,10 @@ from __future__ import absolute_import, division, print_function
 import logging
 import multiprocessing
 
+from gunicorn.app.base import Application
+
 from bentoml import config
+from bentoml.bundler import load_bento_service_metadata
 from bentoml.marshal import MarshalService
 from bentoml.handlers import HANDLER_TYPES_BATCH_MODE_SUPPORTED
 from bentoml.utils.usage_stats import track_server
@@ -67,5 +70,67 @@ class MarshalServer:
             daemon=True,
         )
         # TODO: make sure child process dies when parent process is killed.
+        marshal_proc.start()
+        marshal_logger.info("Running micro batch service on :%d", self.port)
+
+
+class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
+    def __init__(
+        self,
+        target_host,
+        target_port,
+        bundle_path,
+        port=None,
+        num_of_workers=1,
+        timeout=None,
+    ):
+        self.bento_service_bundle_path = bundle_path
+
+        self.target_port = target_port
+        self.target_host = target_host
+        self.port = port or config("apiserver").getint("default_port")
+        timeout = timeout or config("apiserver").getint("default_timeout")
+        self.options = {
+            "bind": "%s:%s" % ("0.0.0.0", self.port),
+            "timeout": timeout,
+            "loglevel": config("logging").get("LOGGING_LEVEL").upper(),
+            "worker_class": "aiohttp.worker.GunicornWebWorker",
+        }
+        if num_of_workers:
+            self.options['workers'] = num_of_workers
+
+        super(GunicornMarshalServer, self).__init__()
+
+    def load_config(self):
+        self.load_config_from_file("python:bentoml.server.gunicorn_config")
+
+        # override config with self.options
+        gunicorn_config = dict(
+            [
+                (key, value)
+                for key, value in self.options.items()
+                if key in self.cfg.settings and value is not None
+            ]
+        )
+        for key, value in gunicorn_config.items():
+            self.cfg.set(key.lower(), value)
+
+    def load(self):
+        server = MarshalServer(self.target_host, self.target_port, port=self.port)
+        bento_service_metadata_pb = load_bento_service_metadata(
+            self.bento_service_bundle_path
+        )
+        server.setup_routes_from_pb(bento_service_metadata_pb)
+        return server.marshal_app.make_app()
+
+    def run(self):
+        track_server('gunicorn-microbatch', {"number_of_workers": self.cfg.workers})
+        super(GunicornMarshalServer, self).run()
+
+    def async_run(self):
+        """
+        Start an micro batch server.
+        """
+        marshal_proc = multiprocessing.Process(target=self.run, daemon=True,)
         marshal_proc.start()
         marshal_logger.info("Running micro batch service on :%d", self.port)

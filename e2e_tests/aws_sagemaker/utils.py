@@ -5,8 +5,9 @@ logger = logging.getLogger('bentoml.test')
 
 
 def run_sagemaker_create_or_update_command(deploy_command):
-    deployment_failed = False
-    endpoint_name = ''
+    """
+    :return: deployment_success, endpoint_name
+    """
     logger.info(f"Running bentoml deploy command: {' '.join(deploy_command)}")
     with subprocess.Popen(
         deploy_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -18,59 +19,38 @@ def run_sagemaker_create_or_update_command(deploy_command):
     if deployment_stdout.startswith(
         'Failed to create AWS Sagemaker deployment'
     ) or deployment_stdout.startswith('Failed to update AWS Sagemaker deployment'):
-        deployment_failed = True
-        return deployment_failed, endpoint_name
+        return False, None
     deployment_stdout_list = deployment_stdout.split('\n')
     for index, message in enumerate(deployment_stdout_list):
         if '"EndpointName":' in message:
             endpoint_name = message.split(':')[1].strip(',').replace('"', '')
+            return True, endpoint_name
+    return False, None
 
-    return deployment_failed, endpoint_name
 
-
-def test_deployment_result(endpoint_name, expect_result, sample_data=None):
+def send_test_data_to_endpoint(endpoint_name, sample_data=None):
     logger.info(f'Test deployment with sample request for {endpoint_name}')
-    deployment_failed = False
     sample_data = sample_data or '"[0]"'
-    try:
-        test_command = [
-            'aws',
-            'sagemaker-runtime',
-            'invoke-endpoint',
-            '--endpoint-name',
-            endpoint_name,
-            '--content-type',
-            '"application/json"',
-            '--body',
-            sample_data,
-            '>(cat) 1>/dev/null',
-            '|',
-            'jq .',
-        ]
-        logger.info('Testing command: %s', ' '.join(test_command))
-        result = subprocess.run(
-            ' '.join(test_command),
-            capture_output=True,
-            shell=True,
-            executable='/bin/bash',
-        )
-        logger.info(result)
-        if result.stderr.decode('utf-8'):
-            logger.error(result.stderr.decode('utf-8'))
-            deployment_failed = True
-        else:
-            logger.info('Prediction Result: %s', result.stdout.decode('utf-8'))
-            if expect_result == result.stdout.decode('utf-8'):
-                deployment_failed = False
-            else:
-                deployment_failed = True
-            logger.info(
-                f"Did deployment failed? {deployment_failed}  "
-                f"Actual result '{result.stdout.decode('utf-8')}', and expect "
-                f"result '{expect_result}'"
-            )
-    except Exception as e:
-        logger.error(str(e))
-        deployment_failed = True
-
-    return deployment_failed
+    test_command = [
+        'aws',
+        'sagemaker-runtime',
+        'invoke-endpoint',
+        '--endpoint-name',
+        endpoint_name,
+        '--content-type',
+        '"application/json"',
+        '--body',
+        sample_data,
+        '>(cat) 1>/dev/null',
+        '|',
+        'jq .',
+    ]
+    logger.info('Testing command: %s', ' '.join(test_command))
+    result = subprocess.run(
+        ' '.join(test_command), capture_output=True, shell=True, executable='/bin/bash',
+    )
+    logger.info(result)
+    if result.stderr.decode('utf-8'):
+        return False, None
+    else:
+        return True, result.stdout.decode('utf-8')

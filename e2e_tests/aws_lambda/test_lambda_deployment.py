@@ -5,7 +5,7 @@ import json
 from sklearn import datasets
 
 from e2e_tests.aws_lambda.utils import (
-    send_iris_test_data_to_endpoint,
+    send_test_data_to_endpoint,
     run_lambda_create_or_update_command,
 )
 from e2e_tests.cli_operations import delete_deployment
@@ -37,7 +37,7 @@ def test_aws_lambda_deployment(iris_clf_service):
 
         iris = datasets.load_iris()
         sample_data = iris.data[0:1]
-        status_code, content = send_iris_test_data_to_endpoint(
+        status_code, content = send_test_data_to_endpoint(
             deployment_endpoint, json.dumps(sample_data.tolist())
         )
         assert status_code == 200, "prediction request should success"

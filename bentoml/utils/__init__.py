@@ -129,6 +129,6 @@ def is_postgres_db(db_url):
 
 def is_sqlite_db(db_url):
     try:
-        return urlparse(db_url).scheme is 'sqlite'
+        return urlparse(db_url).scheme == 'sqlite'
     except ValueError:
         return False

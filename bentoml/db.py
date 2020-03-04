@@ -33,8 +33,6 @@ logger = logging.getLogger(__name__)
 
 
 def init_db(db_url):
-    # Use default config if not provided
-    # we have to parse the db url. Depends on what type of it,
     from sqlalchemy_utils import database_exists
 
     extra_db_args = {'echo': True}
@@ -44,8 +42,11 @@ def init_db(db_url):
         extra_db_args['echo'] = False
     engine = create_engine(db_url, **extra_db_args)
 
-    if not database_exists(engine.url):
-        raise BentoMLException(f'Database name is missing in config db.url: {db_url}')
+    if not database_exists(engine.url) and not is_sqlite_db(db_url):
+        raise BentoMLException(
+            f'Database does not exist or Database name is missing in config '
+            f'db.url: {db_url}'
+        )
     create_all_or_upgrade_db(engine, db_url)
 
     return sessionmaker(bind=engine)

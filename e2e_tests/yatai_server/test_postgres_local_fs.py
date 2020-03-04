@@ -1,12 +1,13 @@
-import subprocess
 import logging
 
 from bentoml.proto.repository_pb2 import BentoUri
+from e2e_tests.cli_operations import delete_bento
 from e2e_tests.yatai_server.utils import (
-    delete_bento_service,
     get_bento_service,
     run_bento_service_prediction,
-    save_bento_service_with_channel_address,
+    start_yatai_server,
+    modified_environ,
+    BentoServiceForYataiTest,
 )
 
 logger = logging.getLogger('bentoml.test')
@@ -15,44 +16,27 @@ logger = logging.getLogger('bentoml.test')
 def test_yatai_server_with_postgres_and_local_storage(temporary_docker_postgres_url):
     logger.info('Setting yatai server channel address to BentoML config')
 
-    yatai_server_command = [
-        'bentoml',
-        'yatai-service-start',
-        '--db-url',
-        temporary_docker_postgres_url,
-        '--debug',
-    ]
-    logger.info(f'Running command {" ".join(yatai_server_command)}')
-    proc = subprocess.Popen(
-        yatai_server_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    with start_yatai_server(temporary_docker_postgres_url) as yatai_service_url:
+        with modified_environ(BENTOML__YATAI_SERVICE__URL=yatai_service_url):
+            logger.info('Saving bento service')
+            svc = BentoServiceForYataiTest()
+            svc.save()
+            bento_tag = f'{svc.name}:{svc.version}'
+            logger.info('BentoService saved')
 
-    logger.info('Saving bento service')
-    bento_name, bento_version = save_bento_service_with_channel_address()
-    bento_tag = f'{bento_name}:{bento_version}'
-    logger.info('BentoService saved')
+            logger.info("Display bentoservice info")
+            get_svc_result = get_bento_service(svc.name, svc.version)
+            logger.info(get_svc_result)
+            assert (
+                get_svc_result.bento.uri.type == BentoUri.LOCAL
+            ), 'BentoService storage type mismatched, expect LOCAL'
 
-    logger.info("Display bentoservice info")
-    get_svc_result = get_bento_service(bento_tag)
-    logger.info(get_svc_result)
-    assert (
-        get_svc_result.bento.uri.type == BentoUri.LOCAL
-    ), 'BentoService storage type mismatched, expect LOCAL'
+            logger.info('Validate BentoService prediction result')
+            run_result = run_bento_service_prediction(bento_tag, '[]')
+            logger.info(run_result)
+            assert 'cat' in run_result, 'Unexpected BentoService prediction result'
 
-    logger.info('Validate BentoService prediction result')
-    run_result = run_bento_service_prediction(bento_tag, '[]')
-    logger.info(run_result)
-    assert 'cat' in run_result, 'Unexpected BentoService prediction result'
-
-    logger.info('Delete BentoService for testing')
-    delete_svc_result = delete_bento_service(bento_tag)
-    logger.info(delete_svc_result)
-    assert (
-        f'BentoService {bento_tag} deleted' in delete_svc_result
-    ), 'Unexpected delete BentoService message.'
-
-    logger.info('Display Yatai Server log')
-    proc.terminate()
-    server_std_out = proc.stdout.read().decode('utf-8')
-    logger.info(server_std_out)
-    logger.info('Shutting down YataiServer')
+            logger.info('Delete BentoService for testing')
+            delete_svc_result = delete_bento(bento_tag)
+            logger.info(delete_svc_result)
+            assert delete_svc_result is None, 'Unexpected delete BentoService message.'

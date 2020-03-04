@@ -25,7 +25,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from bentoml.exceptions import BentoMLException
-from bentoml.utils import is_sqlite_db, is_postgres_db
+from bentoml.utils import is_sqlite_db
 
 Base = declarative_base()
 
@@ -36,6 +36,7 @@ def init_db(db_url):
     # Use default config if not provided
     # we have to parse the db url. Depends on what type of it,
     from sqlalchemy_utils import database_exists
+
     extra_db_args = {'echo': True}
 
     if is_sqlite_db(db_url):

@@ -2,7 +2,6 @@ import subprocess
 import contextlib
 import logging
 import os
-import time
 
 from bentoml import BentoService, api
 from bentoml.handlers import DataframeHandler

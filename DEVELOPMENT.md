@@ -142,7 +142,7 @@ $ pip install -e .[dev]
 Install grpcui:
 ```bash
 $ go get github.com/fullstorydev/grpcui
-$ go install githun.com/fullstorydev/grpcui/cmd/grpcui
+$ go install github.com/fullstorydev/grpcui/cmd/grpcui
 ```
 
 Start Yatai server in debug mode:

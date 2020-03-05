@@ -14,9 +14,8 @@ logger = logging.getLogger('bentoml.test')
 
 
 def test_yatai_server_with_postgres_and_local_storage(temporary_docker_postgres_url):
-    logger.info('Setting yatai server channel address to BentoML config')
-
     with start_yatai_server(temporary_docker_postgres_url) as yatai_service_url:
+        logger.info(f'Setting config yatai_service.url to: {yatai_service_url}')
         with modified_environ(BENTOML__YATAI_SERVICE__URL=yatai_service_url):
             logger.info('Saving bento service')
             svc = BentoServiceForYataiTest()

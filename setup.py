@@ -56,7 +56,7 @@ xgboost = ["xgboost"]
 h2o = ["h2o"]
 api_server = ["gunicorn", "prometheus_client"]
 aws_sam_cli = ["aws-sam-cli==0.33.1"]
-postgres = ['psycopg2']
+postgres = ['psycopg2-binary']
 
 optional_requires = (
     api_server

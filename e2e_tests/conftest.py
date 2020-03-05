@@ -102,6 +102,7 @@ def temporary_docker_postgres_url():
             break
 
     from sqlalchemy_utils import create_database
+
     create_database(db_url)
     yield db_url
     docker_proc.terminate()

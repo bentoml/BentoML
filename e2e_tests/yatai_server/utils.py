@@ -2,6 +2,7 @@ import subprocess
 import contextlib
 import logging
 import os
+import time
 
 from bentoml import BentoService, api
 from bentoml.handlers import DataframeHandler
@@ -67,7 +68,7 @@ def modified_environ(*remove, **update):
 
 @contextlib.contextmanager
 def start_yatai_server(db_url=None, repo_base_url=None, port=50051):
-    yatai_server_command = ['bentoml', 'yatai-service-start' '--debug']
+    yatai_server_command = ['bentoml', 'yatai-service-start']
     if db_url:
         yatai_server_command.extend(['--db-url', db_url])
     if repo_base_url:

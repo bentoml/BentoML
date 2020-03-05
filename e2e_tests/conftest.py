@@ -1,7 +1,7 @@
 import logging
 import subprocess
 import uuid
-from time import sleep
+import time
 
 import docker
 import pytest
@@ -18,20 +18,6 @@ from e2e_tests.basic_bento_service_examples import (
 )
 
 logger = logging.getLogger('bentoml.test')
-
-
-def wait_until_container_is_running(container_name):
-    docker_client = docker.from_env()
-    is_docker_running = False
-    while not is_docker_running:
-        logger.info('Fetching running container list')
-        container_list = docker_client.containers.list(filters={'status': 'running'})
-        for container in container_list:
-            if container.name == container_name:
-                is_docker_running = True
-                break
-        sleep(5)
-    return
 
 
 @pytest.fixture()
@@ -75,10 +61,10 @@ def basic_bentoservice_v2():
 
 
 @pytest.fixture(scope='session')
-def temporary_docker_postgres_url(tmpdir_factory):
-    tmpdir = tmpdir_factory.mktemp('yatai_db')
+def temporary_docker_postgres_url():
     ensure_docker_available_or_raise()
-    container_name = 'e2e-yatai-pg-docker'
+    container_name = f'e2e-test-yatai-service-postgres-db-{uuid.uuid4().hex[:6]}'
+    db_url = 'postgresql://postgres:postgres@localhost:5432/bentoml'
 
     command = [
         'docker',
@@ -90,15 +76,34 @@ def temporary_docker_postgres_url(tmpdir_factory):
         'POSTGRES_PASSWORD=postgres',
         '-p',
         '5432:5432',
-        '-v',
-        f'{tmpdir}:/var/lib/postgresql/data',
         'postgres',
     ]
     docker_proc = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
-    wait_until_container_is_running(container_name)
-    yield 'postgresql://postgres:postgres@localhost:5432/bentoml'
+    # wait until postgres db is ready
+    docker_client = docker.from_env()
+    while True:
+        time.sleep(1)
+        container_list = docker_client.containers.list(
+            filters={'name': container_name, 'status': 'running'}
+        )
+        logger.info("container_list: " + str(container_list))
+        if not container_list:
+            continue
+        assert len(container_list) == 1, "should be only one container with name"
+
+        postgres_container = container_list[0]
+        logger.info("container_log:" + str(postgres_container.logs()))
+        if (
+            b'database system is ready to accept connections'
+            in postgres_container.logs()
+        ):
+            break
+
+    from sqlalchemy_utils import create_database
+    create_database(db_url)
+    yield db_url
     docker_proc.terminate()
 
 

@@ -96,7 +96,8 @@ BentoService :code:`IrisClassifier` defined above:
   clf.fit(X, y)
 
   # Create a iris classifier service with the newly trained model
-  iris_classifier_service = IrisClassifier.pack(model=clf)
+  iris_classifier_service = IrisClassifier()
+  iris_classifier_service.pack("model", clf)
 
   # Save the entire prediction service to file bundle
   saved_path = iris_classifier_service.save()

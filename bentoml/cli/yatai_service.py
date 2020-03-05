@@ -59,9 +59,10 @@ def start_yatai_service_grpc_server(yatai_service, port):
     _echo(
         f'* Starting BentoML YataiService gRPC Server\n'
         f'* Debug mode: { "on" if debug_mode else "off"}\n'
+        f'* Running on 127.0.0.1:{port} (Press CTRL+C to quit)\n'
+        f'* Usage: `bentoml config set yatai_service.url=127.0.0.1:{port}`\n'
         f'* Help and instructions: '
-        f'https://docs.bentoml.org/en/latest/concepts/yatai_service.html\n'
-        f'* Running on 127.0.0.1:{port} (Press CTRL+C to quit)'
+        f'https://docs.bentoml.org/en/latest/concepts/yatai_service.html'
     )
     try:
         while True:

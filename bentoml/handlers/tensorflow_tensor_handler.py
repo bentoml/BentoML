@@ -118,13 +118,13 @@ class TensorflowTensorHandler(BentoHandler):
         """
         import tensorflow as tf
 
-        bad_resp = SimpleResponse(b"Bad Input", None, 400)
+        bad_resp = SimpleResponse(400, None, "Bad Input")
         instances_list = [None] * len(requests)
         responses = [bad_resp] * len(requests)
 
         for i, request in enumerate(requests):
             try:
-                raw_str = request[0]  # .decode("utf-8")
+                raw_str = request.data
                 parsed_json = json.loads(raw_str)
                 if parsed_json.get("instances") is not None:
                     instances = parsed_json.get("instances")
@@ -137,10 +137,10 @@ class TensorflowTensorHandler(BentoHandler):
 
                 elif parsed_json.get("inputs"):
                     responses[i] = SimpleResponse(
-                        "Column format 'inputs' not implemented", None, 501,
+                        501, None, "Column format 'inputs' not implemented"
                     )
 
-            except (json.exceptions.JSONDecodeError, UnicodeDecodeError):
+            except (json.JSONDecodeError, UnicodeDecodeError):
                 import traceback
 
                 traceback.print_exc()
@@ -156,7 +156,7 @@ class TensorflowTensorHandler(BentoHandler):
 
         for i, result in enumerate(results):
             result_str = api_func_result_to_json(result)
-            responses[i] = SimpleResponse(result_str, dict(), 200)
+            responses[i] = SimpleResponse(200, dict(), result_str)
 
         return responses
 

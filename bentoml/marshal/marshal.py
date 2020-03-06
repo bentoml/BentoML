@@ -12,135 +12,148 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
 import asyncio
 import logging
-from typing import Callable
-from functools import lru_cache, partial
+import multiprocessing
+from functools import partial
 
 import aiohttp
 from bentoml import config
 from bentoml.utils.trace import async_trace, make_http_headers
 from bentoml.marshal.utils import DataLoader, SimpleRequest
-
+from bentoml.handlers import HANDLER_TYPES_BATCH_MODE_SUPPORTED
+from bentoml.bundler import load_bento_service_metadata
+from bentoml.utils.usage_stats import track_server
+from bentoml.marshal.dispatcher import ParadeDispatcher
 
 logger = logging.getLogger(__name__)
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 
 
-class Parade:
-    STATUSES = (STATUS_OPEN, STATUS_CLOSED, STATUS_RETURNED,) = range(3)
+def metrics_patch(cls):
+    from prometheus_client import Histogram, Counter, Gauge
 
-    def __init__(self, max_size, outbound_sema):
-        self.max_size = max_size
-        self.outbound_sema = outbound_sema
-        self.batch_input = [None] * max_size
-        self.batch_output = [None] * max_size
-        self.cur = 0
-        self.returned = asyncio.Condition()
-        self.status = self.STATUS_OPEN
+    class _MarshalService(cls):
+        def __init__(self, *args, **kwargs):
+            super(_MarshalService, self).__init__(*args, **kwargs)
+            namespace = config('instrument').get(
+                'default_namespace'
+            )  # its own namespace?
+            service_name = self.bento_service_metadata_pb.name
 
-    def feed(self, data) -> Callable:
-        '''
-        feed data into this parade.
-        return:
-            the output index in parade.batch_output
-        '''
-        assert self.status == self.STATUS_OPEN
-        self.batch_input[self.cur] = data
-        self.cur += 1
-        if self.cur == self.max_size:
-            self.status = self.STATUS_CLOSED
-        return self.cur - 1
+            self.metrics_request_batch_size = Histogram(
+                name=service_name + '_mb_batch_size',
+                documentation=service_name + "microbatch request batch size",
+                namespace=namespace,
+                labelnames=['endpoint'],
+            )
+            self.metrics_request_duration = Histogram(
+                name=service_name + '_mb_requestmb_duration_seconds',
+                documentation=service_name + "API HTTP request duration in seconds",
+                namespace=namespace,
+                labelnames=['endpoint', 'http_response_code'],
+            )
+            self.metrics_request_in_progress = Gauge(
+                name=service_name + "_mb_request_in_progress",
+                documentation='Totoal number of HTTP requests in progress now',
+                namespace=namespace,
+                labelnames=['endpoint', 'http_method'],
+            )
+            self.metrics_request_exception = Counter(
+                name=service_name + "_mb_request_exception",
+                documentation='Totoal number of service exceptions',
+                namespace=namespace,
+                labelnames=['endpoint', 'exception_class'],
+            )
+            self.metrics_request_total = Counter(
+                name=service_name + "_mb_request_total",
+                documentation='Totoal number of service exceptions',
+                namespace=namespace,
+                labelnames=['endpoint', 'http_response_code'],
+            )
 
-    async def start_wait(self, interval, call):
-        with async_trace(
-            ZIPKIN_API_URL,
-            service_name=self.__class__.__name__,
-            span_name="[1]parade task",
-            sample_rate=1,
-            is_root=True,
-        ):
+        async def request_dispatcher(self, request):
+            func = super(_MarshalService, self).request_dispatcher
+            api_name = request.match_info["name"]
+            _metrics_request_in_progress = self.metrics_request_in_progress.labels(
+                endpoint=api_name, http_method=request.method,
+            )
+            _metrics_request_in_progress.inc()
+            time_st = time.time()
             try:
-                # await asyncio.sleep(interval)
-                await asyncio.sleep(0.02)
-                with async_trace(
-                    ZIPKIN_API_URL,
-                    service_name=self.__class__.__name__,
-                    span_name="[2]call",
-                ):
-                    async with self.outbound_sema:
-                        self.status = self.STATUS_CLOSED
-                        self.batch_output = await call(self.batch_input[: self.cur])
-                        self.status = self.STATUS_RETURNED
-                        async with self.returned:
-                            self.returned.notify_all()
-            except Exception as e:  # noqa TODO
-                raise e
-            finally:
-                # make sure parade is closed
-                if self.status != self.STATUS_OPEN:
-                    self.status = self.STATUS_CLOSED
+                resp = await func(request)
+            except Exception as e:  # pylint: disable=broad-except
+                self.metrics_request_exception.labels(
+                    endpoint=api_name, exception_class=e.__class__.__name__
+                ).inc()
+                resp = aiohttp.web.Response(status=500)
+            self.metrics_request_total.labels(
+                endpoint=api_name, http_response_code=resp.status
+            ).inc()
+            self.metrics_request_duration.labels(
+                endpoint=api_name, http_response_code=resp.status
+            ).observe(time.time() - time_st)
+            _metrics_request_in_progress.dec()
+            return resp
+
+        async def _batch_handler_template(self, requests, api_name):
+            func = super(_MarshalService, self)._batch_handler_template
+            self.metrics_request_batch_size.labels(endpoint=api_name).observe(
+                len(requests)
+            )
+            return await func(requests, api_name)
+
+    return _MarshalService
 
 
-class ParadeDispatcher:
-    def __init__(self, interval, max_size):
-        """
-        params:
-            * interval: milliseconds
-        """
-        self.interval = interval
-        self.max_size = max_size
-        self.callback = None
-        self._current_parade = None
-
-    @property
-    @lru_cache(maxsize=1)
-    def outbound_sema(self):
-        '''
-        create semaphore lazily
-        '''
-        # TODO(hrmthw): config
-        return asyncio.Semaphore(3)
-
-    def get_parade(self):
-        if self._current_parade and self._current_parade.status == Parade.STATUS_OPEN:
-            return self._current_parade
-        self._current_parade = Parade(self.max_size, self.outbound_sema)
-        asyncio.get_event_loop().create_task(
-            self._current_parade.start_wait(self.interval / 1000.0, self.callback)
-        )
-        return self._current_parade
-
-    def __call__(self, callback):
-        self.callback = callback
-
-        async def _func(inputs):
-            parade = self.get_parade()
-            _id = parade.feed(inputs)
-            async with parade.returned:
-                await parade.returned.wait()
-            return parade.batch_output[_id]
-
-        return _func
-
-
+@metrics_patch
 class MarshalService:
-    _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
+    """
+    MarshalService creates a reverse proxy server in front of actual API server,
+    implementing the micro batching feature.
+    Requests in a short period(mb_max_latency) are collected and sent to API server,
+    merged into a single request.
+    """
 
-    def __init__(self, target_host="localhost", target_port=None):
+    _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
+    _DEFAULT_PORT = config("apiserver").getint("default_port")
+    _DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
+    _DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
+
+    def __init__(self, bento_bundle_path, target_host="localhost", target_port=None):
         self.target_host = target_host
         self.target_port = target_port
         self.batch_handlers = dict()
+
+        self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
+
+        self.setup_routes_from_pb(self.bento_service_metadata_pb)
 
     def set_target_port(self, target_port):
         self.target_port = target_port
 
     def add_batch_handler(self, api_name, max_latency, max_batch_size):
+
         if api_name not in self.batch_handlers:
             _func = ParadeDispatcher(max_latency, max_batch_size)(
                 partial(self._batch_handler_template, api_name=api_name)
             )
             self.batch_handlers[api_name] = _func
+
+    def setup_routes_from_pb(self, bento_service_metadata_pb):
+        for api_config in bento_service_metadata_pb.apis:
+            if api_config.handler_type in HANDLER_TYPES_BATCH_MODE_SUPPORTED:
+                handler_config = getattr(api_config, "handler_config", {})
+                max_latency = (
+                    handler_config["mb_max_latency"]
+                    if "mb_max_latency" in handler_config
+                    else self._DEFAULT_MAX_LATENCY
+                )
+                self.add_batch_handler(
+                    api_config.name, max_latency, self._DEFAULT_MAX_BATCH_SIZE
+                )
+                logger.info("Micro batch enabled for API `%s`", api_config.name)
 
     async def request_dispatcher(self, request):
         with async_trace(
@@ -153,25 +166,11 @@ class MarshalService:
         ):
             api_name = request.match_info["name"]
             if api_name in self.batch_handlers:
-                req = SimpleRequest(await request.read(), request.raw_headers)
+                req = SimpleRequest(request.raw_headers, await request.read())
                 resp = await self.batch_handlers[api_name](req)
-                return resp
             else:
                 resp = await self._relay_handler(request, api_name)
-                return resp
-
-    def make_app(self):
-        app = aiohttp.web.Application()
-        app.router.add_view("/{name}", self.request_dispatcher)
-        return app
-
-    def fork_start_app(self, port):
-        # Use new eventloop in the fork process to avoid problems on MacOS
-        # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        app = self.make_app()
-        aiohttp.web.run_app(app, port=port)
+            return resp
 
     async def _relay_handler(self, request, api_name):
         data = await request.read()
@@ -203,15 +202,40 @@ class MarshalService:
             span_name=f"[2]merged {api_name}",
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
-            reqs_s = DataLoader.merge_aio_requests(requests)
+            reqs_s = DataLoader.merge_requests(requests)
             async with aiohttp.ClientSession() as client:
                 async with client.post(api_url, data=reqs_s, headers=headers) as resp:
                     raw = await resp.read()
 
-        merged = DataLoader.split_aio_responses(raw)
+        merged = DataLoader.split_responses(raw)
         if merged is None:
             return (aiohttp.web.HTTPInternalServerError,) * len(requests)
         return tuple(
             aiohttp.web.Response(body=i.data, headers=i.headers, status=i.status)
             for i in merged
         )
+
+    def async_start(self, port):
+        """
+        Start an micro batch server at the specific port on the instance or parameter.
+        """
+        track_server('marshal')
+        marshal_proc = multiprocessing.Process(
+            target=self.fork_start_app, kwargs=dict(port=port), daemon=True,
+        )
+        # TODO: make sure child process dies when parent process is killed.
+        marshal_proc.start()
+        logger.info("Running micro batch service on :%d", port)
+
+    def make_app(self):
+        app = aiohttp.web.Application()
+        app.router.add_view("/{name}", self.request_dispatcher)
+        return app
+
+    def fork_start_app(self, port):
+        # Use new eventloop in the fork process to avoid problems on MacOS
+        # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        app = self.make_app()
+        aiohttp.web.run_app(app, port=port)

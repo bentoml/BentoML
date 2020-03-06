@@ -46,6 +46,7 @@ install_requires = [
     # python-dateutil required by pandas and boto3, this makes sure the version
     # works for both
     "python-dateutil>=2.1,<2.8.1",
+    "prometheus_async==19.2.0",
 ]
 
 imageio = ["imageio>=2.5.0"]

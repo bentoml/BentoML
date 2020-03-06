@@ -109,14 +109,14 @@ class BentoServiceAPI(object):
         return self.handler.handle_request(request, self.func)
 
     def handle_batch_request(self, request):
-        requests = DataLoader.split_flask_requests(request.data)
+        requests = DataLoader.split_requests(request.data)
         with trace(
             ZIPKIN_API_URL,
             service_name=self.__class__.__name__,
             span_name=f"call `{self._handler.__class__.__name__}`",
         ):
             responses = self.handler.handle_batch_request(requests, self.func)
-        return DataLoader.merge_flask_responses(responses)
+        return DataLoader.merge_responses(responses)
 
     def handle_cli(self, args):
         return self.handler.handle_cli(args, self.func)

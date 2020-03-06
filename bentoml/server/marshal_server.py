@@ -14,64 +14,19 @@
 
 from __future__ import absolute_import, division, print_function
 
+import os
+import shutil
 import logging
 import multiprocessing
 
 from gunicorn.app.base import Application
 
 from bentoml import config
-from bentoml.bundler import load_bento_service_metadata
 from bentoml.marshal import MarshalService
-from bentoml.handlers import HANDLER_TYPES_BATCH_MODE_SUPPORTED
 from bentoml.utils.usage_stats import track_server
 
 
 marshal_logger = logging.getLogger("bentoml.marshal")
-
-
-class MarshalServer:
-    """
-    MarshalServer creates a reverse proxy server in front of actual API server,
-    implementing the micro batching feature.
-    Requests in a short period(mb_max_latency) are collected and sent to API server,
-    merged into a single request.
-    """
-
-    _DEFAULT_PORT = config("apiserver").getint("default_port")
-    _DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
-    _DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
-
-    def __init__(self, target_host, target_port, port=_DEFAULT_PORT):
-        self.port = port
-        self.marshal_app = MarshalService(target_host, target_port)
-
-    def setup_routes_from_pb(self, bento_service_metadata_pb):
-        for api_config in bento_service_metadata_pb.apis:
-            if api_config.handler_type in HANDLER_TYPES_BATCH_MODE_SUPPORTED:
-                handler_config = getattr(api_config, "handler_config", {})
-                max_latency = (
-                    handler_config["mb_max_latency"]
-                    if "mb_max_latency" in handler_config
-                    else self._DEFAULT_MAX_LATENCY
-                )
-                self.marshal_app.add_batch_handler(
-                    api_config.name, max_latency, self._DEFAULT_MAX_BATCH_SIZE
-                )
-                marshal_logger.info("Micro batch enabled for API `%s`", api_config.name)
-
-    def async_start(self):
-        """
-        Start an micro batch server at the specific port on the instance or parameter.
-        """
-        track_server('marshal')
-        marshal_proc = multiprocessing.Process(
-            target=self.marshal_app.fork_start_app,
-            kwargs=dict(port=self.port),
-            daemon=True,
-        )
-        # TODO: make sure child process dies when parent process is killed.
-        marshal_proc.start()
-        marshal_logger.info("Running micro batch service on :%d", self.port)
 
 
 class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
@@ -115,16 +70,34 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         for key, value in gunicorn_config.items():
             self.cfg.set(key.lower(), value)
 
-    def load(self):
-        server = MarshalServer(self.target_host, self.target_port, port=self.port)
-        bento_service_metadata_pb = load_bento_service_metadata(
-            self.bento_service_bundle_path
+    def setup_prometheus_multiproc_dir(self):
+        """
+        Set up prometheus_multiproc_dir for prometheus to work in multiprocess mode,
+        which is required when working with Gunicorn server
+
+        Warning: for this to work, prometheus_client library must be imported after
+        this function is called. It relies on the os.environ['prometheus_multiproc_dir']
+        to properly setup for multiprocess mode
+        """
+
+        prometheus_multiproc_dir = config('instrument').get('prometheus_multiproc_dir')
+        marshal_logger.debug(
+            "Setting up prometheus_multiproc_dir: %s", prometheus_multiproc_dir
         )
-        server.setup_routes_from_pb(bento_service_metadata_pb)
-        return server.marshal_app.make_app()
+        if os.path.isdir(prometheus_multiproc_dir):
+            shutil.rmtree(prometheus_multiproc_dir)
+        os.mkdir(prometheus_multiproc_dir)
+        os.environ['prometheus_multiproc_dir'] = prometheus_multiproc_dir
+
+    def load(self):
+        server = MarshalService(
+            self.bento_service_bundle_path, self.target_host, self.target_port,
+        )
+        return server.make_app()
 
     def run(self):
         track_server('gunicorn-microbatch', {"number_of_workers": self.cfg.workers})
+        self.setup_prometheus_multiproc_dir()
         super(GunicornMarshalServer, self).run()
 
     def async_run(self):

@@ -17,10 +17,12 @@ from __future__ import division
 from __future__ import print_function
 
 import json
+from typing import Iterable
 
 import pandas as pd
 import numpy as np
 
+from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
 PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS = [
     'dict',
@@ -61,7 +63,9 @@ class BentoHandler:
         """
         raise NotImplementedError
 
-    def handle_batch_request(self, requests, func):
+    def handle_batch_request(
+        self, requests: Iterable[SimpleRequest], func
+    ) -> Iterable[SimpleResponse]:
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API
         function result as the HTTP response to client

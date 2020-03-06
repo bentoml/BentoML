@@ -298,7 +298,7 @@ class DataframeHandler(BentoHandler):
 
         results = [s and result_conc[s] or BadResult for s in slices]
 
-        responses = [SimpleResponse("bad request", None, 400)] * len(requests)
+        responses = [SimpleResponse(400, None, "bad request")] * len(requests)
         for i, result in enumerate(results):
             if result is BadResult:
                 continue
@@ -306,7 +306,7 @@ class DataframeHandler(BentoHandler):
                 result, pandas_dataframe_orient=self.output_orient
             )
             responses[i] = SimpleResponse(
-                json_output, (("Content-Type", "application/json"),), 200
+                200, (("Content-Type", "application/json"),), json_output
             )
         return responses
 

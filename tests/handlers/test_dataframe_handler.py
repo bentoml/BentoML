@@ -1,6 +1,8 @@
 import pytest
+import math
 import pandas as pd
 import numpy as np
+import json
 
 from bentoml.handlers import DataframeHandler
 from bentoml.handlers.dataframe_handler import (
@@ -117,17 +119,36 @@ def test_dataframe_handle_request_csv():
     assert result.get_data().decode('utf-8') == '"john"'
 
 
-def test_read_dataframes_from_json_n_csv():
-    df = pd.DataFrame(np.random.rand(2, 3))
-    csv_str = df.to_json()
-    test_datas = (
-        [csv_str.encode()] * 20
-        + [df.to_csv().encode()] * 20
-        + [df.to_csv(index=False).encode()] * 20
-    )
+def test_batch_read_dataframes_from_json_n_csv():
+    for df in (
+        pd.DataFrame(np.random.rand(2, 3)),
+        pd.DataFrame(["str1", "str2", "str3"]),  # single dim sting array
+        pd.DataFrame([np.nan]),  # special values
+        pd.DataFrame([math.nan]),  # special values
+        pd.DataFrame([" "]),  # special values
+        # pd.DataFrame([""]),  # TODO: -> NaN
+    ):
+        csv_str = df.to_json()
+        list_str = json.dumps(df.to_numpy().tolist())
+        test_datas = (
+            [csv_str.encode()] * 20
+            + [list_str.encode()] * 20
+            + [df.to_csv().encode()] * 20
+            + [df.to_csv(index=False).encode()] * 20
+        )
 
-    test_types = ['application/json'] * 20 + ['text/csv'] * 20 + ['text/csv'] * 20
+        test_types = (
+            ['application/json'] * 20
+            + ['application/json'] * 20
+            + ['text/csv'] * 20
+            + ['text/csv'] * 20
+        )
 
-    df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types)
-    for s in slices:
-        np.testing.assert_almost_equal(df_merged[s].values, df.values)
+        df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types)
+        for s in slices:
+            left = df_merged[s].values
+            right = df.values
+            if right.dtype == np.float:
+                np.testing.assert_array_almost_equal(left, right)
+            else:
+                np.testing.assert_array_equal(left, right)

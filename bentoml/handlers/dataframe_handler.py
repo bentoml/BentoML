@@ -50,6 +50,12 @@ def _check_dataframe_column_contains(required_column_names, df):
             )
 
 
+def _to_csv_cell(v):
+    if v is None:
+        return ""
+    return str(v)
+
+
 def _dataframe_csv_from_input(raws, content_types):
     n_row_sum = -1
     for i, (data, content_type) in enumerate(zip(raws, content_types)):
@@ -62,19 +68,31 @@ def _dataframe_csv_from_input(raws, content_types):
                     object_pairs_hook=collections.OrderedDict,
                 )
 
-            if n_row_sum == -1:
-                yield ",".join(itertools.chain(('',), map(str, od))), None
-                n_row_sum += 1
+            if isinstance(od, list):
+                if n_row_sum == -1:  # make header
+                    yield ",".join(
+                        itertools.chain(('',), map(str, range(len(od[0]))))
+                    ), None
+                    n_row_sum += 1
 
-            n_row = 0
-            for n_row, name_row in enumerate(next(iter(od.values()))):
-                datas_row = (
-                    od[name_col][name_row] for n_col, name_col in enumerate(od)
-                )
-                yield ','.join(
-                    itertools.chain((str(n_row_sum),), map(str, datas_row))
-                ), i
-                n_row_sum += 1
+                for n_row, datas_row in enumerate(od):
+                    yield ','.join(
+                        itertools.chain((str(n_row_sum),), map(_to_csv_cell, datas_row))
+                    ), i
+                    n_row_sum += 1
+            elif isinstance(od, dict):
+                if n_row_sum == -1:  # make header
+                    yield ",".join(itertools.chain(('',), map(_to_csv_cell, od))), None
+                    n_row_sum += 1
+
+                for n_row, name_row in enumerate(next(iter(od.values()))):
+                    datas_row = (
+                        od[name_col][name_row] for n_col, name_col in enumerate(od)
+                    )
+                    yield ','.join(
+                        itertools.chain((str(n_row_sum),), map(_to_csv_cell, datas_row))
+                    ), i
+                    n_row_sum += 1
         elif content_type.lower() == "text/csv":
             data_str = data.decode('utf-8')
             row_strs = data_str.split('\n')

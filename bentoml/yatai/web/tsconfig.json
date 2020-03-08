@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "declaration": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "server/dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "allowJs": true
+  },
+  "include": [
+    "server/src/**/*"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

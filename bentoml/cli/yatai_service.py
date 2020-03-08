@@ -14,6 +14,8 @@
 
 
 import logging
+import os
+import subprocess
 import time
 from concurrent import futures
 
@@ -32,7 +34,7 @@ logger = logging.getLogger(__name__)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
-def start_yatai_service_grpc_server(yatai_service, port):
+def get_yatai_service_grpc_server(yatai_service, port):
     track_server('yatai-service-grpc-server')
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     add_YataiServicer_to_server(yatai_service, server)
@@ -55,6 +57,7 @@ def start_yatai_service_grpc_server(yatai_service, port):
             )
 
     server.add_insecure_port(f'[::]:{port}')
+    return server
     server.start()
     _echo(
         f'* Starting BentoML YataiService gRPC Server\n'
@@ -92,7 +95,41 @@ def add_yatai_service_sub_command(cli):
     @click.option(
         '--port', type=click.INT, default=50051, help='Port for Yatai server to use'
     )
-    def yatai_service_start(db_url, repo_base_url, port):
+    @click.option(
+        '--no-ui', is_flag=True, help='Start BentoML YataiService without Web UI'
+    )
+    def yatai_service_start(db_url, repo_base_url, port, no_ui):
         track_cli('yatai-service-start')
         yatai_service = get_yatai_service(db_url=db_url, repo_base_url=repo_base_url)
-        start_yatai_service_grpc_server(yatai_service, port)
+        yatai_grpc_server = get_yatai_service_grpc_server(yatai_service, port)
+        if not no_ui:
+            web_ui_dir = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), '..', 'yatai', 'web')
+            )
+            web_ui_command = ['yarn', 'start']
+            web_proc = subprocess.Popen(
+                web_ui_command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=web_ui_dir,
+            )
+        yatai_grpc_server.start()
+        debug_mode = config().getboolean('core', 'debug')
+        _echo(
+            f'* Starting BentoML YataiService gRPC Server\n'
+            f'* Debug mode: {"on" if debug_mode else "off"}\n'
+            f'* Web UI: {"off" if no_ui else "running on http://127.0.0.1:3000"}\n'
+            f'* Running on 127.0.0.1:{port} (Press CTRL+C to quit)\n'
+            f'* Usage: `bentoml config set yatai_service.url=127.0.0.1:{port}`\n'
+            f'* Help and instructions: '
+            f'https://docs.bentoml.org/en/latest/concepts/yatai_service.html'
+        )
+        try:
+            while True:
+                time.sleep(_ONE_DAY_IN_SECONDS)
+        except KeyboardInterrupt:
+            _echo("Terminating YataiService web ui..")
+            if not no_ui:
+                web_proc.terminate()
+            _echo("Terminating YataiService gRPC server..")
+            yatai_grpc_server.stop(grace=None)

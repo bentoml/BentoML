@@ -1,0 +1,58 @@
+$gray-900: #CCC9DC;
+$gray-600: #324A5F;
+$gray-100: #0C1821;
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: $gray-900;
+  color: $gray-100;
+}
+
+div {
+  height: 100vh;
+  margin: auto;
+  padding: 2rem;
+}
+
+h1 {
+  color: $gray-600;
+  font-size: 3rem;
+}
+
+button {
+  padding: 1rem 1.4rem;
+  border: none;
+  background-color: $gray-600;
+  border-radius: 0.4rem;
+  font-size: 1.2rem;
+  color: $gray-900;
+
+  transition: background-color 0.25s;
+
+  &:disabled {
+    background-color: transparent;
+    color: $gray-600;
+  }
+}
+
+/* Tablet and bigger */
+@media only screen and (min-width: 750px) {
+  div {
+    height: 100vh;
+    margin: auto;
+    padding: 5rem;
+  }
+  
+  h1 {
+    color: $gray-600;
+    font-size: 6rem;
+  }
+  
+  button {
+    padding: 1.2rem 1.6rem;
+    font-size: 1.4rem;
+  }
+}

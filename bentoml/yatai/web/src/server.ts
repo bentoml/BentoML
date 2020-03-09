@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'path';
 import { Request, Response } from "express";
 import express from 'express'
 import * as grpc from 'grpc';
@@ -11,10 +11,10 @@ const app = express()
 
 app.use(express.json())
 app.use(
-  express.static(path.join(__dirname, '../../client/dist/'))
+  express.static(path.join(__dirname, '../dist/client'))
 )
 
-const protoPath = '/Users/bozhaoyu/src/bento/protos/yatai_service.proto'
+const protoPath = path.join(__dirname, '../../../../protos/yatai_service.proto');
 
 const packageDefinition = protoLoader.loadSync(
   protoPath,
@@ -27,8 +27,14 @@ const packageDefinition = protoLoader.loadSync(
   },
 );
 
+console.log('dirname', __dirname);
+
 const bento_proto = grpc.loadPackageDefinition(packageDefinition).bentoml;
-const client = new bento_proto['Yatai']('localhost:50051', grpc.credentials.createInsecure());
+const client = new bento_proto['Yatai'](
+  'localhost:50051',
+  grpc.credentials.createInsecure()
+);
+// Allow grpc call works with promise style
 promisifyAll(client);
 
 const root = new protobuf.Root();
@@ -47,9 +53,10 @@ for (var i in methods) {
     const processRequest = async(req: Request, res: Response) => {
       const requestData = requestMessage.create(req.body);
 
-      let result = await serviceCall().sendMessage(requestData).then(response => response);
+      let result = await serviceCall().sendMessage(requestData)
+        .then(response => response);
       return res.status(200).json(result);
-    }
+    };
 
     app.get(`/api/${i}`, processRequest);
   }

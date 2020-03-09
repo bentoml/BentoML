@@ -7,13 +7,13 @@
     "experimentalDecorators": true,
     "target": "es2017",
     "sourceMap": true,
-    "outDir": "server/dist",
+    "outDir": "dist",
     "baseUrl": "./",
     "incremental": true,
     "allowJs": true
   },
   "include": [
-    "server/src/**/*"
+    "src/**/*"
   ],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "client"]
 }

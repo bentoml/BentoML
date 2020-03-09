@@ -51,6 +51,10 @@ for (var i in methods) {
     const serviceCall = client[serviceName];
 
     const processRequest = async(req: Request, res: Response) => {
+      let validationError = requestMessage.verify(req.body);
+      if (validationError) {
+        return res.status(400).json({error: validationError});
+      }
       const requestData = requestMessage.create(req.body);
 
       let result = await serviceCall().sendMessage(requestData)
@@ -58,7 +62,7 @@ for (var i in methods) {
       return res.status(200).json(result);
     };
 
-    app.get(`/api/${i}`, processRequest);
+    app.post(`/api/${i}`, processRequest);
   }
 }
 

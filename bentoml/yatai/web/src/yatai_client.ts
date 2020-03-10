@@ -6,9 +6,15 @@ export const createYataiClient = (grpcAddress: string) => {
     grpcAddress,
     grpc.credentials.createInsecure()
   );
+
   const rpcImpl = function(method, requestData, callback) {
+    /* Conventionally in gRPC, the request path looks like
+     "/package.names.ServiceName/MethodName/",
+     so getPath would generate that from the method */
+     const methodPath = `/bentoml.Yatai/${method.name}`;
+
     client.makeUnaryRequest(
-      method.name,
+      methodPath,
       arg => arg,
       arg => arg,
       requestData,

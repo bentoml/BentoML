@@ -139,6 +139,15 @@ def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
         # WIP need to find way to include port and yatai server address into watch
         web_ui_command = ['npm', 'watch']
     else:
+        # NOTE, we need to make sure we build dist before we start this
+        if not os.path.exists(os.path.join(web_ui_dir, 'dist')):
+            build_web_dist = subprocess.Popen(
+                ['npm', 'build'],
+                cwd=web_ui_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            logger.debug(build_web_dist.stdout.read().decode('utf-8'))
         web_ui_command = ['node', 'dist/index.js', yatai_server_address, ui_port]
     web_proc = subprocess.Popen(
         web_ui_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=web_ui_dir,

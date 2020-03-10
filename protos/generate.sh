@@ -69,3 +69,21 @@ for PKG in $PKGS; do
   done
 
 echo "Done"
+
+
+echo "Generate grpc code for javascript/typescript"
+echo "Please make sure protobufjs is installed on your system"
+echo "You can install with npm i -g protobufjs"
+
+JS_GRPC_PATH=$GIT_ROOT/bentoml/yatai/web/src/generated
+echo "Cleaning up existing proto generated js code.."
+rm -rf $JS_GRPC_PATH
+mkdir -p $JS_GRPC_PATH
+
+echo "Generating grpc JS code..."
+pbjs -t static-module -w es6 --keep-case -o bentoml_grpc.js $PROTO_PATH/*.proto
+pbts -o bentoml_grpc.d.ts bentoml_grpc.js
+
+mv $GIT_ROOT/bentoml_grpc.js $JS_GRPC_PATH
+mv $GIT_ROOT/bentoml_grpc.d.ts $JS_GRPC_PATH
+echo "Done"

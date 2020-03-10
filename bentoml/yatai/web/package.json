@@ -19,10 +19,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@grpc/proto-loader": "^0.5.3",
     "express": "^4.17.1",
     "grpc": "^1.24.2",
-    "grpc-promise": "^1.4.0",
     "protobufjs": "^6.8.8",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.5.4"
@@ -43,13 +41,13 @@
     "nodemon": "^2.0.2",
     "parcel-bundler": "^1.12.4",
     "prettier": "^1.18.2",
-    "sass": "^1.26.1",
+    "sass": "^1.26.2",
     "supertest": "^4.0.2",
     "ts-jest": "25.2.0",
     "ts-loader": "^6.2.1",
     "ts-node": "^8.6.0",
     "tsconfig-paths": "^3.9.0",
-    "typescript": "^3.8.2"
+    "typescript": "^3.8.3"
   },
   "jest": {
     "moduleFileExtensions": [

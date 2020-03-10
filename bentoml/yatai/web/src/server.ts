@@ -2,10 +2,7 @@ import path from 'path';
 import { Request, Response } from "express";
 import express from 'express'
 import * as grpc from 'grpc';
-import * as protoLoader from '@grpc/proto-loader';
-import * as protobuf from 'protobufjs';
-import { promisifyAll } from 'grpc-promise';
-import { bentoml } from './compiled';
+import { bentoml } from './generated/bentoml_grpc';
 
 const app = express()
 
@@ -14,58 +11,112 @@ app.use(
   express.static(path.join(__dirname, '../dist/client'))
 )
 
-const protoPath = path.join(__dirname, '../../../../protos/yatai_service.proto');
+const grpc_port = 50051;
+const default_grpc_server_address = `localhost:${grpc_port}`;
 
-const packageDefinition = protoLoader.loadSync(
-  protoPath,
-  {
-    keepCase: true,
-    longs: String,
-    enums: String,
-    defaults: true,
-    oneofs: true,
-  },
-);
-
-console.log('dirname', __dirname);
-
-const bento_proto = grpc.loadPackageDefinition(packageDefinition).bentoml;
-const client = new bento_proto['Yatai'](
-  'localhost:50051',
+const client = new grpc.Client(
+  default_grpc_server_address,
   grpc.credentials.createInsecure()
 );
-// Allow grpc call works with promise style
-promisifyAll(client);
-
-const root = new protobuf.Root();
-const loadRoot = root.loadSync(protoPath);
-const methods = loadRoot.nested.bentoml['nested']['Yatai']['methods'];
-
-const _internalBentoMlService = ['HealthCheck', 'GetYataiServiceVersion'];
-for (var i in methods) {
-  if (!_internalBentoMlService.includes(i)) {
-    const service = methods[i];
-    const requestType = service.requestType;
-    const requestMessage = bentoml[requestType];
-    const serviceName = service.name.charAt(0).toLowerCase() + service.name.substr(1);
-    const serviceCall = client[serviceName];
-
-    const processRequest = async(req: Request, res: Response) => {
-      let validationError = requestMessage.verify(req.body);
-      if (validationError) {
-        return res.status(400).json({error: validationError});
-      }
-      const requestData = requestMessage.create(req.body);
-
-      let result = await serviceCall().sendMessage(requestData)
-        .then(response => response);
-      return res.status(200).json(result);
-    };
-
-    app.post(`/api/${i}`, processRequest);
-  }
+const rpcImpl = function(method, requestData, callback) {
+  client.makeUnaryRequest(
+    method.name,
+    arg => arg,
+    arg => arg,
+    requestData,
+    null,
+    null,
+    callback
+  )
 }
 
-// console.log(app._router.stack);
+const yataiClient = bentoml.Yatai.create(rpcImpl, false, false)
+
+app.get('/api/ListBento', async(req: Request, res: Response) => {
+  let verifyError = bentoml.ListBentoRequest.verify(req.query);
+  if (verifyError) {
+    return res.status(400).json({error: verifyError})
+  }
+  let requestMessage = bentoml.ListBentoRequest.create(req.query)
+  let result = await yataiClient.listBento(requestMessage).then(response => response);
+  return res.status(200).json(result);
+});
+
+app.get('/api/GetBento', async(req: Request, res: Response) => {
+  let verifyError = bentoml.GetBentoRequest.verify(req.query);
+  if (verifyError) {
+    return res.status(400).json({error: verifyError})
+  }
+  let requestMessage = bentoml.GetBentoRequest.create(req.query)
+  let result = await yataiClient.getBento(requestMessage)
+    .then(response => response);
+  return res.status(200).json(result);
+});
+
+app.get('/api/GetDeployment', async(req: Request, res: Response) => {
+  let verifyError = bentoml.GetDeploymentRequest.verify(req.query);
+  if (verifyError) {
+    return res.status(400).json({error: verifyError})
+  }
+  let requestMessage = bentoml.GetDeploymentRequest.create(req.query)
+  let result = await yataiClient.getDeployment(requestMessage)
+    .then(response => response);
+  return res.status(200).json(result);
+});
+
+app.get('/api/ListDeployments', async(req: Request, res: Response) => {
+  let verifyError = bentoml.ListDeploymentsRequest.verify(req.query);
+  if (verifyError) {
+    return res.status(400).json({error: verifyError})
+  }
+  let requestMessage = bentoml.ListDeploymentsRequest.create(req.query)
+  let result = await yataiClient.listDeployments(requestMessage)
+    .then(response => response);
+  return res.status(200).json(result);
+});
+
+app.post('/api/DeleteDeployment', async(req: Request, res: Response) => {
+  let verifyError = bentoml.DeleteDeploymentRequest.verify(req.body);
+  if (verifyError) {
+    return res.status(400).json({error: verifyError})
+  }
+  let requestMessage = bentoml.DeleteDeploymentRequest.create(req.body)
+  let result = await yataiClient.deleteDeployment(requestMessage)
+    .then(response => response);
+  return res.status(200).json(result);
+});
+
+app.post('/api/DeleteBento', async(req: Request, res: Response) => {
+  let verifyError = bentoml.DangerouslyDeleteBentoRequest.verify(req.body);
+  if (verifyError) {
+    return res.status(400).json({error: verifyError})
+  }
+  let requestMessage = bentoml.DangerouslyDeleteBentoRequest.create(req.body)
+  let result = await yataiClient.dangerouslyDeleteBento(requestMessage)
+    .then(response => response);
+  return res.status(200).json(result);
+});
+
+app.post('/api/AddBento', async(req: Request, res: Response) => {
+  let verifyError = bentoml.AddBentoRequest.verify(req.body);
+  if (verifyError) {
+    return res.status(400).json({error: verifyError})
+  }
+  let requestMessage = bentoml.AddBentoRequest.create(req.body)
+  let result = await yataiClient.addBento(requestMessage)
+    .then(response => response);
+  return res.status(200).json(result);
+});
+
+app.post('/api/ApplyDeployment', async(req: Request, res: Response) => {
+  let verifyError = bentoml.ApplyDeploymentRequest.verify(req.body);
+  if (verifyError) {
+    return res.status(400).json({error: verifyError})
+  }
+  let requestMessage = bentoml.ApplyDeploymentRequest.create(req.body)
+  let result = await yataiClient.applyDeployment(requestMessage)
+    .then(response => response);
+  return res.status(200).json(result);
+});
 
 export default app

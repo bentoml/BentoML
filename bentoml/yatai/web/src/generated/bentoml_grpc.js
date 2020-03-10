@@ -1,22 +1,20 @@
 /*eslint-disable block-scoped-var, id-length, no-control-regex, no-magic-numbers, no-prototype-builtins, no-redeclare, no-shadow, no-var, sort-vars*/
-"use strict";
-
-var $protobuf = require("protobufjs/minimal");
+import * as $protobuf from "protobufjs/minimal";
 
 // Common aliases
-var $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
+const $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
 
 // Exported root namespace
-var $root = $protobuf.roots["default"] || ($protobuf.roots["default"] = {});
+const $root = $protobuf.roots["default"] || ($protobuf.roots["default"] = {});
 
-$root.bentoml = (function() {
+export const bentoml = $root.bentoml = (() => {
 
     /**
      * Namespace bentoml.
      * @exports bentoml
      * @namespace
      */
-    var bentoml = {};
+    const bentoml = {};
 
     bentoml.DeploymentSpec = (function() {
 
@@ -44,7 +42,7 @@ $root.bentoml = (function() {
          */
         function DeploymentSpec(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -114,7 +112,7 @@ $root.bentoml = (function() {
         DeploymentSpec.prototype.kubernetes_operator_config = null;
 
         // OneOf field names bound to virtual getters and setters
-        var $oneOfFields;
+        let $oneOfFields;
 
         /**
          * DeploymentSpec deployment_operator_config.
@@ -197,9 +195,9 @@ $root.bentoml = (function() {
         DeploymentSpec.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.bento_name = reader.string();
@@ -260,7 +258,7 @@ $root.bentoml = (function() {
         DeploymentSpec.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            var properties = {};
+            let properties = {};
             if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 if (!$util.isString(message.bento_name))
                     return "bento_name: string expected";
@@ -282,7 +280,7 @@ $root.bentoml = (function() {
             if (message.custom_operator_config != null && message.hasOwnProperty("custom_operator_config")) {
                 properties.deployment_operator_config = 1;
                 {
-                    var error = $root.bentoml.DeploymentSpec.CustomOperatorConfig.verify(message.custom_operator_config);
+                    let error = $root.bentoml.DeploymentSpec.CustomOperatorConfig.verify(message.custom_operator_config);
                     if (error)
                         return "custom_operator_config." + error;
                 }
@@ -292,7 +290,7 @@ $root.bentoml = (function() {
                     return "deployment_operator_config: multiple values";
                 properties.deployment_operator_config = 1;
                 {
-                    var error = $root.bentoml.DeploymentSpec.SageMakerOperatorConfig.verify(message.sagemaker_operator_config);
+                    let error = $root.bentoml.DeploymentSpec.SageMakerOperatorConfig.verify(message.sagemaker_operator_config);
                     if (error)
                         return "sagemaker_operator_config." + error;
                 }
@@ -302,7 +300,7 @@ $root.bentoml = (function() {
                     return "deployment_operator_config: multiple values";
                 properties.deployment_operator_config = 1;
                 {
-                    var error = $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.verify(message.aws_lambda_operator_config);
+                    let error = $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.verify(message.aws_lambda_operator_config);
                     if (error)
                         return "aws_lambda_operator_config." + error;
                 }
@@ -312,7 +310,7 @@ $root.bentoml = (function() {
                     return "deployment_operator_config: multiple values";
                 properties.deployment_operator_config = 1;
                 {
-                    var error = $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig.verify(message.gcp_function_operator_config);
+                    let error = $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig.verify(message.gcp_function_operator_config);
                     if (error)
                         return "gcp_function_operator_config." + error;
                 }
@@ -322,7 +320,7 @@ $root.bentoml = (function() {
                     return "deployment_operator_config: multiple values";
                 properties.deployment_operator_config = 1;
                 {
-                    var error = $root.bentoml.DeploymentSpec.KubernetesOperatorConfig.verify(message.kubernetes_operator_config);
+                    let error = $root.bentoml.DeploymentSpec.KubernetesOperatorConfig.verify(message.kubernetes_operator_config);
                     if (error)
                         return "kubernetes_operator_config." + error;
                 }
@@ -341,7 +339,7 @@ $root.bentoml = (function() {
         DeploymentSpec.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.DeploymentSpec)
                 return object;
-            var message = new $root.bentoml.DeploymentSpec();
+            let message = new $root.bentoml.DeploymentSpec();
             if (object.bento_name != null)
                 message.bento_name = String(object.bento_name);
             if (object.bento_version != null)
@@ -412,7 +410,7 @@ $root.bentoml = (function() {
         DeploymentSpec.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.bento_name = "";
                 object.bento_version = "";
@@ -475,7 +473,7 @@ $root.bentoml = (function() {
          * @property {number} KUBERNETES=5 KUBERNETES value
          */
         DeploymentSpec.DeploymentOperator = (function() {
-            var valuesById = {}, values = Object.create(valuesById);
+            const valuesById = {}, values = Object.create(valuesById);
             values[valuesById[0] = "UNSET"] = 0;
             values[valuesById[1] = "CUSTOM"] = 1;
             values[valuesById[2] = "AWS_SAGEMAKER"] = 2;
@@ -505,7 +503,7 @@ $root.bentoml = (function() {
              */
             function CustomOperatorConfig(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -584,9 +582,9 @@ $root.bentoml = (function() {
             CustomOperatorConfig.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.CustomOperatorConfig();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.CustomOperatorConfig();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         message.name = reader.string();
@@ -633,7 +631,7 @@ $root.bentoml = (function() {
                     if (!$util.isString(message.name))
                         return "name: string expected";
                 if (message.config != null && message.hasOwnProperty("config")) {
-                    var error = $root.google.protobuf.Struct.verify(message.config);
+                    let error = $root.google.protobuf.Struct.verify(message.config);
                     if (error)
                         return "config." + error;
                 }
@@ -651,7 +649,7 @@ $root.bentoml = (function() {
             CustomOperatorConfig.fromObject = function fromObject(object) {
                 if (object instanceof $root.bentoml.DeploymentSpec.CustomOperatorConfig)
                     return object;
-                var message = new $root.bentoml.DeploymentSpec.CustomOperatorConfig();
+                let message = new $root.bentoml.DeploymentSpec.CustomOperatorConfig();
                 if (object.name != null)
                     message.name = String(object.name);
                 if (object.config != null) {
@@ -674,7 +672,7 @@ $root.bentoml = (function() {
             CustomOperatorConfig.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.defaults) {
                     object.name = "";
                     object.config = null;
@@ -723,7 +721,7 @@ $root.bentoml = (function() {
              */
             function SageMakerOperatorConfig(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -832,9 +830,9 @@ $root.bentoml = (function() {
             SageMakerOperatorConfig.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.SageMakerOperatorConfig();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.SageMakerOperatorConfig();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         message.region = reader.string();
@@ -915,7 +913,7 @@ $root.bentoml = (function() {
             SageMakerOperatorConfig.fromObject = function fromObject(object) {
                 if (object instanceof $root.bentoml.DeploymentSpec.SageMakerOperatorConfig)
                     return object;
-                var message = new $root.bentoml.DeploymentSpec.SageMakerOperatorConfig();
+                let message = new $root.bentoml.DeploymentSpec.SageMakerOperatorConfig();
                 if (object.region != null)
                     message.region = String(object.region);
                 if (object.instance_type != null)
@@ -941,7 +939,7 @@ $root.bentoml = (function() {
             SageMakerOperatorConfig.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.defaults) {
                     object.region = "";
                     object.instance_type = "";
@@ -998,7 +996,7 @@ $root.bentoml = (function() {
              */
             function AwsLambdaOperatorConfig(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -1097,9 +1095,9 @@ $root.bentoml = (function() {
             AwsLambdaOperatorConfig.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         message.region = reader.string();
@@ -1174,7 +1172,7 @@ $root.bentoml = (function() {
             AwsLambdaOperatorConfig.fromObject = function fromObject(object) {
                 if (object instanceof $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig)
                     return object;
-                var message = new $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig();
+                let message = new $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig();
                 if (object.region != null)
                     message.region = String(object.region);
                 if (object.api_name != null)
@@ -1198,7 +1196,7 @@ $root.bentoml = (function() {
             AwsLambdaOperatorConfig.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.defaults) {
                     object.region = "";
                     object.api_name = "";
@@ -1250,7 +1248,7 @@ $root.bentoml = (function() {
              */
             function GcpFunctionOperatorConfig(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -1329,9 +1327,9 @@ $root.bentoml = (function() {
             GcpFunctionOperatorConfig.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         message.region = reader.string();
@@ -1394,7 +1392,7 @@ $root.bentoml = (function() {
             GcpFunctionOperatorConfig.fromObject = function fromObject(object) {
                 if (object instanceof $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig)
                     return object;
-                var message = new $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig();
+                let message = new $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig();
                 if (object.region != null)
                     message.region = String(object.region);
                 if (object.api_name != null)
@@ -1414,7 +1412,7 @@ $root.bentoml = (function() {
             GcpFunctionOperatorConfig.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.defaults) {
                     object.region = "";
                     object.api_name = "";
@@ -1462,7 +1460,7 @@ $root.bentoml = (function() {
              */
             function KubernetesOperatorConfig(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -1561,9 +1559,9 @@ $root.bentoml = (function() {
             KubernetesOperatorConfig.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.KubernetesOperatorConfig();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.KubernetesOperatorConfig();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         message.kube_namespace = reader.string();
@@ -1638,7 +1636,7 @@ $root.bentoml = (function() {
             KubernetesOperatorConfig.fromObject = function fromObject(object) {
                 if (object instanceof $root.bentoml.DeploymentSpec.KubernetesOperatorConfig)
                     return object;
-                var message = new $root.bentoml.DeploymentSpec.KubernetesOperatorConfig();
+                let message = new $root.bentoml.DeploymentSpec.KubernetesOperatorConfig();
                 if (object.kube_namespace != null)
                     message.kube_namespace = String(object.kube_namespace);
                 if (object.replicas != null)
@@ -1662,7 +1660,7 @@ $root.bentoml = (function() {
             KubernetesOperatorConfig.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.defaults) {
                     object.kube_namespace = "";
                     object.replicas = 0;
@@ -1719,7 +1717,7 @@ $root.bentoml = (function() {
          */
         function DeploymentState(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -1818,9 +1816,9 @@ $root.bentoml = (function() {
         DeploymentState.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentState();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentState();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.state = reader.int32();
@@ -1891,7 +1889,7 @@ $root.bentoml = (function() {
                 if (!$util.isString(message.info_json))
                     return "info_json: string expected";
             if (message.timestamp != null && message.hasOwnProperty("timestamp")) {
-                var error = $root.google.protobuf.Timestamp.verify(message.timestamp);
+                let error = $root.google.protobuf.Timestamp.verify(message.timestamp);
                 if (error)
                     return "timestamp." + error;
             }
@@ -1909,7 +1907,7 @@ $root.bentoml = (function() {
         DeploymentState.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.DeploymentState)
                 return object;
-            var message = new $root.bentoml.DeploymentState();
+            let message = new $root.bentoml.DeploymentState();
             switch (object.state) {
             case "PENDING":
             case 0:
@@ -1972,7 +1970,7 @@ $root.bentoml = (function() {
         DeploymentState.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.state = options.enums === String ? "PENDING" : 0;
                 object.error_message = "";
@@ -2016,7 +2014,7 @@ $root.bentoml = (function() {
          * @property {number} INACTIVATED=8 INACTIVATED value
          */
         DeploymentState.State = (function() {
-            var valuesById = {}, values = Object.create(valuesById);
+            const valuesById = {}, values = Object.create(valuesById);
             values[valuesById[0] = "PENDING"] = 0;
             values[valuesById[1] = "RUNNING"] = 1;
             values[valuesById[2] = "SUCCEEDED"] = 2;
@@ -2060,7 +2058,7 @@ $root.bentoml = (function() {
             this.annotations = {};
             this.labels = {};
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -2162,10 +2160,10 @@ $root.bentoml = (function() {
             if (message.state != null && message.hasOwnProperty("state"))
                 $root.bentoml.DeploymentState.encode(message.state, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             if (message.annotations != null && message.hasOwnProperty("annotations"))
-                for (var keys = Object.keys(message.annotations), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(message.annotations), i = 0; i < keys.length; ++i)
                     writer.uint32(/* id 5, wireType 2 =*/42).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.annotations[keys[i]]).ldelim();
             if (message.labels != null && message.hasOwnProperty("labels"))
-                for (var keys = Object.keys(message.labels), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(message.labels), i = 0; i < keys.length; ++i)
                     writer.uint32(/* id 6, wireType 2 =*/50).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.labels[keys[i]]).ldelim();
             if (message.created_at != null && message.hasOwnProperty("created_at"))
                 $root.google.protobuf.Timestamp.encode(message.created_at, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
@@ -2201,9 +2199,9 @@ $root.bentoml = (function() {
         Deployment.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.Deployment(), key;
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.Deployment(), key;
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.namespace = reader.string();
@@ -2281,38 +2279,38 @@ $root.bentoml = (function() {
                 if (!$util.isString(message.name))
                     return "name: string expected";
             if (message.spec != null && message.hasOwnProperty("spec")) {
-                var error = $root.bentoml.DeploymentSpec.verify(message.spec);
+                let error = $root.bentoml.DeploymentSpec.verify(message.spec);
                 if (error)
                     return "spec." + error;
             }
             if (message.state != null && message.hasOwnProperty("state")) {
-                var error = $root.bentoml.DeploymentState.verify(message.state);
+                let error = $root.bentoml.DeploymentState.verify(message.state);
                 if (error)
                     return "state." + error;
             }
             if (message.annotations != null && message.hasOwnProperty("annotations")) {
                 if (!$util.isObject(message.annotations))
                     return "annotations: object expected";
-                var key = Object.keys(message.annotations);
-                for (var i = 0; i < key.length; ++i)
+                let key = Object.keys(message.annotations);
+                for (let i = 0; i < key.length; ++i)
                     if (!$util.isString(message.annotations[key[i]]))
                         return "annotations: string{k:string} expected";
             }
             if (message.labels != null && message.hasOwnProperty("labels")) {
                 if (!$util.isObject(message.labels))
                     return "labels: object expected";
-                var key = Object.keys(message.labels);
-                for (var i = 0; i < key.length; ++i)
+                let key = Object.keys(message.labels);
+                for (let i = 0; i < key.length; ++i)
                     if (!$util.isString(message.labels[key[i]]))
                         return "labels: string{k:string} expected";
             }
             if (message.created_at != null && message.hasOwnProperty("created_at")) {
-                var error = $root.google.protobuf.Timestamp.verify(message.created_at);
+                let error = $root.google.protobuf.Timestamp.verify(message.created_at);
                 if (error)
                     return "created_at." + error;
             }
             if (message.last_updated_at != null && message.hasOwnProperty("last_updated_at")) {
-                var error = $root.google.protobuf.Timestamp.verify(message.last_updated_at);
+                let error = $root.google.protobuf.Timestamp.verify(message.last_updated_at);
                 if (error)
                     return "last_updated_at." + error;
             }
@@ -2330,7 +2328,7 @@ $root.bentoml = (function() {
         Deployment.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.Deployment)
                 return object;
-            var message = new $root.bentoml.Deployment();
+            let message = new $root.bentoml.Deployment();
             if (object.namespace != null)
                 message.namespace = String(object.namespace);
             if (object.name != null)
@@ -2349,14 +2347,14 @@ $root.bentoml = (function() {
                 if (typeof object.annotations !== "object")
                     throw TypeError(".bentoml.Deployment.annotations: object expected");
                 message.annotations = {};
-                for (var keys = Object.keys(object.annotations), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(object.annotations), i = 0; i < keys.length; ++i)
                     message.annotations[keys[i]] = String(object.annotations[keys[i]]);
             }
             if (object.labels) {
                 if (typeof object.labels !== "object")
                     throw TypeError(".bentoml.Deployment.labels: object expected");
                 message.labels = {};
-                for (var keys = Object.keys(object.labels), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(object.labels), i = 0; i < keys.length; ++i)
                     message.labels[keys[i]] = String(object.labels[keys[i]]);
             }
             if (object.created_at != null) {
@@ -2384,7 +2382,7 @@ $root.bentoml = (function() {
         Deployment.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.objects || options.defaults) {
                 object.annotations = {};
                 object.labels = {};
@@ -2405,15 +2403,15 @@ $root.bentoml = (function() {
                 object.spec = $root.bentoml.DeploymentSpec.toObject(message.spec, options);
             if (message.state != null && message.hasOwnProperty("state"))
                 object.state = $root.bentoml.DeploymentState.toObject(message.state, options);
-            var keys2;
+            let keys2;
             if (message.annotations && (keys2 = Object.keys(message.annotations)).length) {
                 object.annotations = {};
-                for (var j = 0; j < keys2.length; ++j)
+                for (let j = 0; j < keys2.length; ++j)
                     object.annotations[keys2[j]] = message.annotations[keys2[j]];
             }
             if (message.labels && (keys2 = Object.keys(message.labels)).length) {
                 object.labels = {};
-                for (var j = 0; j < keys2.length; ++j)
+                for (let j = 0; j < keys2.length; ++j)
                     object.labels[keys2[j]] = message.labels[keys2[j]];
             }
             if (message.created_at != null && message.hasOwnProperty("created_at"))
@@ -2456,7 +2454,7 @@ $root.bentoml = (function() {
          */
         function DeploymentStatus(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -2525,9 +2523,9 @@ $root.bentoml = (function() {
         DeploymentStatus.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentStatus();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentStatus();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.state = $root.bentoml.DeploymentState.decode(reader, reader.uint32());
@@ -2568,7 +2566,7 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.state != null && message.hasOwnProperty("state")) {
-                var error = $root.bentoml.DeploymentState.verify(message.state);
+                let error = $root.bentoml.DeploymentState.verify(message.state);
                 if (error)
                     return "state." + error;
             }
@@ -2586,7 +2584,7 @@ $root.bentoml = (function() {
         DeploymentStatus.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.DeploymentStatus)
                 return object;
-            var message = new $root.bentoml.DeploymentStatus();
+            let message = new $root.bentoml.DeploymentStatus();
             if (object.state != null) {
                 if (typeof object.state !== "object")
                     throw TypeError(".bentoml.DeploymentStatus.state: object expected");
@@ -2607,7 +2605,7 @@ $root.bentoml = (function() {
         DeploymentStatus.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults)
                 object.state = null;
             if (message.state != null && message.hasOwnProperty("state"))
@@ -2648,7 +2646,7 @@ $root.bentoml = (function() {
          */
         function ApplyDeploymentRequest(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -2717,9 +2715,9 @@ $root.bentoml = (function() {
         ApplyDeploymentRequest.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ApplyDeploymentRequest();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ApplyDeploymentRequest();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.deployment = $root.bentoml.Deployment.decode(reader, reader.uint32());
@@ -2760,7 +2758,7 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.deployment != null && message.hasOwnProperty("deployment")) {
-                var error = $root.bentoml.Deployment.verify(message.deployment);
+                let error = $root.bentoml.Deployment.verify(message.deployment);
                 if (error)
                     return "deployment." + error;
             }
@@ -2778,7 +2776,7 @@ $root.bentoml = (function() {
         ApplyDeploymentRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.ApplyDeploymentRequest)
                 return object;
-            var message = new $root.bentoml.ApplyDeploymentRequest();
+            let message = new $root.bentoml.ApplyDeploymentRequest();
             if (object.deployment != null) {
                 if (typeof object.deployment !== "object")
                     throw TypeError(".bentoml.ApplyDeploymentRequest.deployment: object expected");
@@ -2799,7 +2797,7 @@ $root.bentoml = (function() {
         ApplyDeploymentRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults)
                 object.deployment = null;
             if (message.deployment != null && message.hasOwnProperty("deployment"))
@@ -2841,7 +2839,7 @@ $root.bentoml = (function() {
          */
         function ApplyDeploymentResponse(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -2920,9 +2918,9 @@ $root.bentoml = (function() {
         ApplyDeploymentResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ApplyDeploymentResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ApplyDeploymentResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -2966,12 +2964,12 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
             if (message.deployment != null && message.hasOwnProperty("deployment")) {
-                var error = $root.bentoml.Deployment.verify(message.deployment);
+                let error = $root.bentoml.Deployment.verify(message.deployment);
                 if (error)
                     return "deployment." + error;
             }
@@ -2989,7 +2987,7 @@ $root.bentoml = (function() {
         ApplyDeploymentResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.ApplyDeploymentResponse)
                 return object;
-            var message = new $root.bentoml.ApplyDeploymentResponse();
+            let message = new $root.bentoml.ApplyDeploymentResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.ApplyDeploymentResponse.status: object expected");
@@ -3015,7 +3013,7 @@ $root.bentoml = (function() {
         ApplyDeploymentResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.status = null;
                 object.deployment = null;
@@ -3062,7 +3060,7 @@ $root.bentoml = (function() {
          */
         function DeleteDeploymentRequest(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -3151,9 +3149,9 @@ $root.bentoml = (function() {
         DeleteDeploymentRequest.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeleteDeploymentRequest();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeleteDeploymentRequest();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.deployment_name = reader.string();
@@ -3222,7 +3220,7 @@ $root.bentoml = (function() {
         DeleteDeploymentRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.DeleteDeploymentRequest)
                 return object;
-            var message = new $root.bentoml.DeleteDeploymentRequest();
+            let message = new $root.bentoml.DeleteDeploymentRequest();
             if (object.deployment_name != null)
                 message.deployment_name = String(object.deployment_name);
             if (object.namespace != null)
@@ -3244,7 +3242,7 @@ $root.bentoml = (function() {
         DeleteDeploymentRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.deployment_name = "";
                 object.namespace = "";
@@ -3292,7 +3290,7 @@ $root.bentoml = (function() {
          */
         function DeleteDeploymentResponse(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -3361,9 +3359,9 @@ $root.bentoml = (function() {
         DeleteDeploymentResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeleteDeploymentResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeleteDeploymentResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -3404,7 +3402,7 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
@@ -3422,7 +3420,7 @@ $root.bentoml = (function() {
         DeleteDeploymentResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.DeleteDeploymentResponse)
                 return object;
-            var message = new $root.bentoml.DeleteDeploymentResponse();
+            let message = new $root.bentoml.DeleteDeploymentResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.DeleteDeploymentResponse.status: object expected");
@@ -3443,7 +3441,7 @@ $root.bentoml = (function() {
         DeleteDeploymentResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults)
                 object.status = null;
             if (message.status != null && message.hasOwnProperty("status"))
@@ -3485,7 +3483,7 @@ $root.bentoml = (function() {
          */
         function GetDeploymentRequest(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -3564,9 +3562,9 @@ $root.bentoml = (function() {
         GetDeploymentRequest.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.GetDeploymentRequest();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.GetDeploymentRequest();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.deployment_name = reader.string();
@@ -3629,7 +3627,7 @@ $root.bentoml = (function() {
         GetDeploymentRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.GetDeploymentRequest)
                 return object;
-            var message = new $root.bentoml.GetDeploymentRequest();
+            let message = new $root.bentoml.GetDeploymentRequest();
             if (object.deployment_name != null)
                 message.deployment_name = String(object.deployment_name);
             if (object.namespace != null)
@@ -3649,7 +3647,7 @@ $root.bentoml = (function() {
         GetDeploymentRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.deployment_name = "";
                 object.namespace = "";
@@ -3695,7 +3693,7 @@ $root.bentoml = (function() {
          */
         function GetDeploymentResponse(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -3774,9 +3772,9 @@ $root.bentoml = (function() {
         GetDeploymentResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.GetDeploymentResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.GetDeploymentResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -3820,12 +3818,12 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
             if (message.deployment != null && message.hasOwnProperty("deployment")) {
-                var error = $root.bentoml.Deployment.verify(message.deployment);
+                let error = $root.bentoml.Deployment.verify(message.deployment);
                 if (error)
                     return "deployment." + error;
             }
@@ -3843,7 +3841,7 @@ $root.bentoml = (function() {
         GetDeploymentResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.GetDeploymentResponse)
                 return object;
-            var message = new $root.bentoml.GetDeploymentResponse();
+            let message = new $root.bentoml.GetDeploymentResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.GetDeploymentResponse.status: object expected");
@@ -3869,7 +3867,7 @@ $root.bentoml = (function() {
         GetDeploymentResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.status = null;
                 object.deployment = null;
@@ -3915,7 +3913,7 @@ $root.bentoml = (function() {
          */
         function DescribeDeploymentRequest(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -3994,9 +3992,9 @@ $root.bentoml = (function() {
         DescribeDeploymentRequest.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DescribeDeploymentRequest();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DescribeDeploymentRequest();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.deployment_name = reader.string();
@@ -4059,7 +4057,7 @@ $root.bentoml = (function() {
         DescribeDeploymentRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.DescribeDeploymentRequest)
                 return object;
-            var message = new $root.bentoml.DescribeDeploymentRequest();
+            let message = new $root.bentoml.DescribeDeploymentRequest();
             if (object.deployment_name != null)
                 message.deployment_name = String(object.deployment_name);
             if (object.namespace != null)
@@ -4079,7 +4077,7 @@ $root.bentoml = (function() {
         DescribeDeploymentRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.deployment_name = "";
                 object.namespace = "";
@@ -4125,7 +4123,7 @@ $root.bentoml = (function() {
          */
         function DescribeDeploymentResponse(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -4204,9 +4202,9 @@ $root.bentoml = (function() {
         DescribeDeploymentResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DescribeDeploymentResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DescribeDeploymentResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -4250,12 +4248,12 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
             if (message.state != null && message.hasOwnProperty("state")) {
-                var error = $root.bentoml.DeploymentState.verify(message.state);
+                let error = $root.bentoml.DeploymentState.verify(message.state);
                 if (error)
                     return "state." + error;
             }
@@ -4273,7 +4271,7 @@ $root.bentoml = (function() {
         DescribeDeploymentResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.DescribeDeploymentResponse)
                 return object;
-            var message = new $root.bentoml.DescribeDeploymentResponse();
+            let message = new $root.bentoml.DescribeDeploymentResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.DescribeDeploymentResponse.status: object expected");
@@ -4299,7 +4297,7 @@ $root.bentoml = (function() {
         DescribeDeploymentResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.status = null;
                 object.state = null;
@@ -4350,7 +4348,7 @@ $root.bentoml = (function() {
          */
         function ListDeploymentsRequest(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -4479,9 +4477,9 @@ $root.bentoml = (function() {
         ListDeploymentsRequest.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ListDeploymentsRequest();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ListDeploymentsRequest();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.namespace = reader.string();
@@ -4588,7 +4586,7 @@ $root.bentoml = (function() {
         ListDeploymentsRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.ListDeploymentsRequest)
                 return object;
-            var message = new $root.bentoml.ListDeploymentsRequest();
+            let message = new $root.bentoml.ListDeploymentsRequest();
             if (object.namespace != null)
                 message.namespace = String(object.namespace);
             if (object.offset != null)
@@ -4650,7 +4648,7 @@ $root.bentoml = (function() {
         ListDeploymentsRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.namespace = "";
                 object.offset = 0;
@@ -4696,7 +4694,7 @@ $root.bentoml = (function() {
          * @property {number} name=1 name value
          */
         ListDeploymentsRequest.SORTABLE_COLUMN = (function() {
-            var valuesById = {}, values = Object.create(valuesById);
+            const valuesById = {}, values = Object.create(valuesById);
             values[valuesById[0] = "created_at"] = 0;
             values[valuesById[1] = "name"] = 1;
             return values;
@@ -4726,7 +4724,7 @@ $root.bentoml = (function() {
         function ListDeploymentsResponse(properties) {
             this.deployments = [];
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -4774,7 +4772,7 @@ $root.bentoml = (function() {
             if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             if (message.deployments != null && message.deployments.length)
-                for (var i = 0; i < message.deployments.length; ++i)
+                for (let i = 0; i < message.deployments.length; ++i)
                     $root.bentoml.Deployment.encode(message.deployments[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
@@ -4806,9 +4804,9 @@ $root.bentoml = (function() {
         ListDeploymentsResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ListDeploymentsResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ListDeploymentsResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -4854,15 +4852,15 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
             if (message.deployments != null && message.hasOwnProperty("deployments")) {
                 if (!Array.isArray(message.deployments))
                     return "deployments: array expected";
-                for (var i = 0; i < message.deployments.length; ++i) {
-                    var error = $root.bentoml.Deployment.verify(message.deployments[i]);
+                for (let i = 0; i < message.deployments.length; ++i) {
+                    let error = $root.bentoml.Deployment.verify(message.deployments[i]);
                     if (error)
                         return "deployments." + error;
                 }
@@ -4881,7 +4879,7 @@ $root.bentoml = (function() {
         ListDeploymentsResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.ListDeploymentsResponse)
                 return object;
-            var message = new $root.bentoml.ListDeploymentsResponse();
+            let message = new $root.bentoml.ListDeploymentsResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.ListDeploymentsResponse.status: object expected");
@@ -4891,7 +4889,7 @@ $root.bentoml = (function() {
                 if (!Array.isArray(object.deployments))
                     throw TypeError(".bentoml.ListDeploymentsResponse.deployments: array expected");
                 message.deployments = [];
-                for (var i = 0; i < object.deployments.length; ++i) {
+                for (let i = 0; i < object.deployments.length; ++i) {
                     if (typeof object.deployments[i] !== "object")
                         throw TypeError(".bentoml.ListDeploymentsResponse.deployments: object expected");
                     message.deployments[i] = $root.bentoml.Deployment.fromObject(object.deployments[i]);
@@ -4912,7 +4910,7 @@ $root.bentoml = (function() {
         ListDeploymentsResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.arrays || options.defaults)
                 object.deployments = [];
             if (options.defaults)
@@ -4921,7 +4919,7 @@ $root.bentoml = (function() {
                 object.status = $root.bentoml.Status.toObject(message.status, options);
             if (message.deployments && message.deployments.length) {
                 object.deployments = [];
-                for (var j = 0; j < message.deployments.length; ++j)
+                for (let j = 0; j < message.deployments.length; ++j)
                     object.deployments[j] = $root.bentoml.Deployment.toObject(message.deployments[j], options);
             }
             return object;
@@ -4961,7 +4959,7 @@ $root.bentoml = (function() {
          */
         function Status(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -5040,9 +5038,9 @@ $root.bentoml = (function() {
         Status.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.Status();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.Status();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status_code = reader.int32();
@@ -5126,7 +5124,7 @@ $root.bentoml = (function() {
         Status.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.Status)
                 return object;
-            var message = new $root.bentoml.Status();
+            let message = new $root.bentoml.Status();
             switch (object.status_code) {
             case "OK":
             case 0:
@@ -5218,7 +5216,7 @@ $root.bentoml = (function() {
         Status.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.status_code = options.enums === String ? "OK" : 0;
                 object.error_message = "";
@@ -5265,7 +5263,7 @@ $root.bentoml = (function() {
          * @property {number} DO_NOT_USE_RESERVED_FOR_FUTURE_EXPANSION_USE_DEFAULT_IN_SWITCH_INSTEAD_=20 DO_NOT_USE_RESERVED_FOR_FUTURE_EXPANSION_USE_DEFAULT_IN_SWITCH_INSTEAD_ value
          */
         Status.Code = (function() {
-            var valuesById = {}, values = Object.create(valuesById);
+            const valuesById = {}, values = Object.create(valuesById);
             values[valuesById[0] = "OK"] = 0;
             values[valuesById[1] = "CANCELLED"] = 1;
             values[valuesById[2] = "UNKNOWN"] = 2;
@@ -5311,7 +5309,7 @@ $root.bentoml = (function() {
          */
         function BentoUri(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -5400,9 +5398,9 @@ $root.bentoml = (function() {
         BentoUri.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoUri();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoUri();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.type = reader.int32();
@@ -5480,7 +5478,7 @@ $root.bentoml = (function() {
         BentoUri.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.BentoUri)
                 return object;
-            var message = new $root.bentoml.BentoUri();
+            let message = new $root.bentoml.BentoUri();
             switch (object.type) {
             case "UNSET":
             case 0:
@@ -5526,7 +5524,7 @@ $root.bentoml = (function() {
         BentoUri.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.type = options.enums === String ? "UNSET" : 0;
                 object.uri = "";
@@ -5564,7 +5562,7 @@ $root.bentoml = (function() {
          * @property {number} HDFS=5 HDFS value
          */
         BentoUri.StorageType = (function() {
-            var valuesById = {}, values = Object.create(valuesById);
+            const valuesById = {}, values = Object.create(valuesById);
             values[valuesById[0] = "UNSET"] = 0;
             values[valuesById[1] = "LOCAL"] = 1;
             values[valuesById[2] = "S3"] = 2;
@@ -5603,7 +5601,7 @@ $root.bentoml = (function() {
             this.artifacts = [];
             this.apis = [];
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -5689,10 +5687,10 @@ $root.bentoml = (function() {
             if (message.env != null && message.hasOwnProperty("env"))
                 $root.bentoml.BentoServiceMetadata.BentoServiceEnv.encode(message.env, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             if (message.artifacts != null && message.artifacts.length)
-                for (var i = 0; i < message.artifacts.length; ++i)
+                for (let i = 0; i < message.artifacts.length; ++i)
                     $root.bentoml.BentoServiceMetadata.BentoArtifact.encode(message.artifacts[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
             if (message.apis != null && message.apis.length)
-                for (var i = 0; i < message.apis.length; ++i)
+                for (let i = 0; i < message.apis.length; ++i)
                     $root.bentoml.BentoServiceMetadata.BentoServiceApi.encode(message.apis[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
             return writer;
         };
@@ -5724,9 +5722,9 @@ $root.bentoml = (function() {
         BentoServiceMetadata.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.name = reader.string();
@@ -5792,20 +5790,20 @@ $root.bentoml = (function() {
                 if (!$util.isString(message.version))
                     return "version: string expected";
             if (message.created_at != null && message.hasOwnProperty("created_at")) {
-                var error = $root.google.protobuf.Timestamp.verify(message.created_at);
+                let error = $root.google.protobuf.Timestamp.verify(message.created_at);
                 if (error)
                     return "created_at." + error;
             }
             if (message.env != null && message.hasOwnProperty("env")) {
-                var error = $root.bentoml.BentoServiceMetadata.BentoServiceEnv.verify(message.env);
+                let error = $root.bentoml.BentoServiceMetadata.BentoServiceEnv.verify(message.env);
                 if (error)
                     return "env." + error;
             }
             if (message.artifacts != null && message.hasOwnProperty("artifacts")) {
                 if (!Array.isArray(message.artifacts))
                     return "artifacts: array expected";
-                for (var i = 0; i < message.artifacts.length; ++i) {
-                    var error = $root.bentoml.BentoServiceMetadata.BentoArtifact.verify(message.artifacts[i]);
+                for (let i = 0; i < message.artifacts.length; ++i) {
+                    let error = $root.bentoml.BentoServiceMetadata.BentoArtifact.verify(message.artifacts[i]);
                     if (error)
                         return "artifacts." + error;
                 }
@@ -5813,8 +5811,8 @@ $root.bentoml = (function() {
             if (message.apis != null && message.hasOwnProperty("apis")) {
                 if (!Array.isArray(message.apis))
                     return "apis: array expected";
-                for (var i = 0; i < message.apis.length; ++i) {
-                    var error = $root.bentoml.BentoServiceMetadata.BentoServiceApi.verify(message.apis[i]);
+                for (let i = 0; i < message.apis.length; ++i) {
+                    let error = $root.bentoml.BentoServiceMetadata.BentoServiceApi.verify(message.apis[i]);
                     if (error)
                         return "apis." + error;
                 }
@@ -5833,7 +5831,7 @@ $root.bentoml = (function() {
         BentoServiceMetadata.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.BentoServiceMetadata)
                 return object;
-            var message = new $root.bentoml.BentoServiceMetadata();
+            let message = new $root.bentoml.BentoServiceMetadata();
             if (object.name != null)
                 message.name = String(object.name);
             if (object.version != null)
@@ -5852,7 +5850,7 @@ $root.bentoml = (function() {
                 if (!Array.isArray(object.artifacts))
                     throw TypeError(".bentoml.BentoServiceMetadata.artifacts: array expected");
                 message.artifacts = [];
-                for (var i = 0; i < object.artifacts.length; ++i) {
+                for (let i = 0; i < object.artifacts.length; ++i) {
                     if (typeof object.artifacts[i] !== "object")
                         throw TypeError(".bentoml.BentoServiceMetadata.artifacts: object expected");
                     message.artifacts[i] = $root.bentoml.BentoServiceMetadata.BentoArtifact.fromObject(object.artifacts[i]);
@@ -5862,7 +5860,7 @@ $root.bentoml = (function() {
                 if (!Array.isArray(object.apis))
                     throw TypeError(".bentoml.BentoServiceMetadata.apis: array expected");
                 message.apis = [];
-                for (var i = 0; i < object.apis.length; ++i) {
+                for (let i = 0; i < object.apis.length; ++i) {
                     if (typeof object.apis[i] !== "object")
                         throw TypeError(".bentoml.BentoServiceMetadata.apis: object expected");
                     message.apis[i] = $root.bentoml.BentoServiceMetadata.BentoServiceApi.fromObject(object.apis[i]);
@@ -5883,7 +5881,7 @@ $root.bentoml = (function() {
         BentoServiceMetadata.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.arrays || options.defaults) {
                 object.artifacts = [];
                 object.apis = [];
@@ -5904,12 +5902,12 @@ $root.bentoml = (function() {
                 object.env = $root.bentoml.BentoServiceMetadata.BentoServiceEnv.toObject(message.env, options);
             if (message.artifacts && message.artifacts.length) {
                 object.artifacts = [];
-                for (var j = 0; j < message.artifacts.length; ++j)
+                for (let j = 0; j < message.artifacts.length; ++j)
                     object.artifacts[j] = $root.bentoml.BentoServiceMetadata.BentoArtifact.toObject(message.artifacts[j], options);
             }
             if (message.apis && message.apis.length) {
                 object.apis = [];
-                for (var j = 0; j < message.apis.length; ++j)
+                for (let j = 0; j < message.apis.length; ++j)
                     object.apis[j] = $root.bentoml.BentoServiceMetadata.BentoServiceApi.toObject(message.apis[j], options);
             }
             return object;
@@ -5948,7 +5946,7 @@ $root.bentoml = (function() {
              */
             function BentoServiceEnv(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -6047,9 +6045,9 @@ $root.bentoml = (function() {
             BentoServiceEnv.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata.BentoServiceEnv();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata.BentoServiceEnv();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         message.setup_sh = reader.string();
@@ -6124,7 +6122,7 @@ $root.bentoml = (function() {
             BentoServiceEnv.fromObject = function fromObject(object) {
                 if (object instanceof $root.bentoml.BentoServiceMetadata.BentoServiceEnv)
                     return object;
-                var message = new $root.bentoml.BentoServiceMetadata.BentoServiceEnv();
+                let message = new $root.bentoml.BentoServiceMetadata.BentoServiceEnv();
                 if (object.setup_sh != null)
                     message.setup_sh = String(object.setup_sh);
                 if (object.conda_env != null)
@@ -6148,7 +6146,7 @@ $root.bentoml = (function() {
             BentoServiceEnv.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.defaults) {
                     object.setup_sh = "";
                     object.conda_env = "";
@@ -6200,7 +6198,7 @@ $root.bentoml = (function() {
              */
             function BentoArtifact(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -6279,9 +6277,9 @@ $root.bentoml = (function() {
             BentoArtifact.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata.BentoArtifact();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata.BentoArtifact();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         message.name = reader.string();
@@ -6344,7 +6342,7 @@ $root.bentoml = (function() {
             BentoArtifact.fromObject = function fromObject(object) {
                 if (object instanceof $root.bentoml.BentoServiceMetadata.BentoArtifact)
                     return object;
-                var message = new $root.bentoml.BentoServiceMetadata.BentoArtifact();
+                let message = new $root.bentoml.BentoServiceMetadata.BentoArtifact();
                 if (object.name != null)
                     message.name = String(object.name);
                 if (object.artifact_type != null)
@@ -6364,7 +6362,7 @@ $root.bentoml = (function() {
             BentoArtifact.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.defaults) {
                     object.name = "";
                     object.artifact_type = "";
@@ -6412,7 +6410,7 @@ $root.bentoml = (function() {
              */
             function BentoServiceApi(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -6511,9 +6509,9 @@ $root.bentoml = (function() {
             BentoServiceApi.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata.BentoServiceApi();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata.BentoServiceApi();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         message.name = reader.string();
@@ -6572,7 +6570,7 @@ $root.bentoml = (function() {
                     if (!$util.isString(message.docs))
                         return "docs: string expected";
                 if (message.handler_config != null && message.hasOwnProperty("handler_config")) {
-                    var error = $root.google.protobuf.Struct.verify(message.handler_config);
+                    let error = $root.google.protobuf.Struct.verify(message.handler_config);
                     if (error)
                         return "handler_config." + error;
                 }
@@ -6590,7 +6588,7 @@ $root.bentoml = (function() {
             BentoServiceApi.fromObject = function fromObject(object) {
                 if (object instanceof $root.bentoml.BentoServiceMetadata.BentoServiceApi)
                     return object;
-                var message = new $root.bentoml.BentoServiceMetadata.BentoServiceApi();
+                let message = new $root.bentoml.BentoServiceMetadata.BentoServiceApi();
                 if (object.name != null)
                     message.name = String(object.name);
                 if (object.handler_type != null)
@@ -6617,7 +6615,7 @@ $root.bentoml = (function() {
             BentoServiceApi.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.defaults) {
                     object.name = "";
                     object.handler_type = "";
@@ -6675,7 +6673,7 @@ $root.bentoml = (function() {
          */
         function Bento(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -6784,9 +6782,9 @@ $root.bentoml = (function() {
         Bento.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.Bento();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.Bento();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.name = reader.string();
@@ -6845,17 +6843,17 @@ $root.bentoml = (function() {
                 if (!$util.isString(message.version))
                     return "version: string expected";
             if (message.uri != null && message.hasOwnProperty("uri")) {
-                var error = $root.bentoml.BentoUri.verify(message.uri);
+                let error = $root.bentoml.BentoUri.verify(message.uri);
                 if (error)
                     return "uri." + error;
             }
             if (message.bento_service_metadata != null && message.hasOwnProperty("bento_service_metadata")) {
-                var error = $root.bentoml.BentoServiceMetadata.verify(message.bento_service_metadata);
+                let error = $root.bentoml.BentoServiceMetadata.verify(message.bento_service_metadata);
                 if (error)
                     return "bento_service_metadata." + error;
             }
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.UploadStatus.verify(message.status);
+                let error = $root.bentoml.UploadStatus.verify(message.status);
                 if (error)
                     return "status." + error;
             }
@@ -6873,7 +6871,7 @@ $root.bentoml = (function() {
         Bento.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.Bento)
                 return object;
-            var message = new $root.bentoml.Bento();
+            let message = new $root.bentoml.Bento();
             if (object.name != null)
                 message.name = String(object.name);
             if (object.version != null)
@@ -6908,7 +6906,7 @@ $root.bentoml = (function() {
         Bento.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.name = "";
                 object.version = "";
@@ -6963,7 +6961,7 @@ $root.bentoml = (function() {
          */
         function AddBentoRequest(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -7042,9 +7040,9 @@ $root.bentoml = (function() {
         AddBentoRequest.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.AddBentoRequest();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.AddBentoRequest();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.bento_name = reader.string();
@@ -7107,7 +7105,7 @@ $root.bentoml = (function() {
         AddBentoRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.AddBentoRequest)
                 return object;
-            var message = new $root.bentoml.AddBentoRequest();
+            let message = new $root.bentoml.AddBentoRequest();
             if (object.bento_name != null)
                 message.bento_name = String(object.bento_name);
             if (object.bento_version != null)
@@ -7127,7 +7125,7 @@ $root.bentoml = (function() {
         AddBentoRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.bento_name = "";
                 object.bento_version = "";
@@ -7173,7 +7171,7 @@ $root.bentoml = (function() {
          */
         function AddBentoResponse(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -7252,9 +7250,9 @@ $root.bentoml = (function() {
         AddBentoResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.AddBentoResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.AddBentoResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -7298,12 +7296,12 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
             if (message.uri != null && message.hasOwnProperty("uri")) {
-                var error = $root.bentoml.BentoUri.verify(message.uri);
+                let error = $root.bentoml.BentoUri.verify(message.uri);
                 if (error)
                     return "uri." + error;
             }
@@ -7321,7 +7319,7 @@ $root.bentoml = (function() {
         AddBentoResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.AddBentoResponse)
                 return object;
-            var message = new $root.bentoml.AddBentoResponse();
+            let message = new $root.bentoml.AddBentoResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.AddBentoResponse.status: object expected");
@@ -7347,7 +7345,7 @@ $root.bentoml = (function() {
         AddBentoResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.status = null;
                 object.uri = null;
@@ -7395,7 +7393,7 @@ $root.bentoml = (function() {
          */
         function UploadStatus(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -7494,9 +7492,9 @@ $root.bentoml = (function() {
         UploadStatus.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.UploadStatus();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.UploadStatus();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = reader.int32();
@@ -7557,7 +7555,7 @@ $root.bentoml = (function() {
                     break;
                 }
             if (message.updated_at != null && message.hasOwnProperty("updated_at")) {
-                var error = $root.google.protobuf.Timestamp.verify(message.updated_at);
+                let error = $root.google.protobuf.Timestamp.verify(message.updated_at);
                 if (error)
                     return "updated_at." + error;
             }
@@ -7581,7 +7579,7 @@ $root.bentoml = (function() {
         UploadStatus.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.UploadStatus)
                 return object;
-            var message = new $root.bentoml.UploadStatus();
+            let message = new $root.bentoml.UploadStatus();
             switch (object.status) {
             case "UNINITIALIZED":
             case 0:
@@ -7628,7 +7626,7 @@ $root.bentoml = (function() {
         UploadStatus.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.status = options.enums === String ? "UNINITIALIZED" : 0;
                 object.updated_at = null;
@@ -7668,7 +7666,7 @@ $root.bentoml = (function() {
          * @property {number} TIMEOUT=4 TIMEOUT value
          */
         UploadStatus.Status = (function() {
-            var valuesById = {}, values = Object.create(valuesById);
+            const valuesById = {}, values = Object.create(valuesById);
             values[valuesById[0] = "UNINITIALIZED"] = 0;
             values[valuesById[1] = "UPLOADING"] = 1;
             values[valuesById[2] = "DONE"] = 2;
@@ -7702,7 +7700,7 @@ $root.bentoml = (function() {
          */
         function UpdateBentoRequest(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -7801,9 +7799,9 @@ $root.bentoml = (function() {
         UpdateBentoRequest.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.UpdateBentoRequest();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.UpdateBentoRequest();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.bento_name = reader.string();
@@ -7859,12 +7857,12 @@ $root.bentoml = (function() {
                 if (!$util.isString(message.bento_version))
                     return "bento_version: string expected";
             if (message.upload_status != null && message.hasOwnProperty("upload_status")) {
-                var error = $root.bentoml.UploadStatus.verify(message.upload_status);
+                let error = $root.bentoml.UploadStatus.verify(message.upload_status);
                 if (error)
                     return "upload_status." + error;
             }
             if (message.service_metadata != null && message.hasOwnProperty("service_metadata")) {
-                var error = $root.bentoml.BentoServiceMetadata.verify(message.service_metadata);
+                let error = $root.bentoml.BentoServiceMetadata.verify(message.service_metadata);
                 if (error)
                     return "service_metadata." + error;
             }
@@ -7882,7 +7880,7 @@ $root.bentoml = (function() {
         UpdateBentoRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.UpdateBentoRequest)
                 return object;
-            var message = new $root.bentoml.UpdateBentoRequest();
+            let message = new $root.bentoml.UpdateBentoRequest();
             if (object.bento_name != null)
                 message.bento_name = String(object.bento_name);
             if (object.bento_version != null)
@@ -7912,7 +7910,7 @@ $root.bentoml = (function() {
         UpdateBentoRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.bento_name = "";
                 object.bento_version = "";
@@ -7963,7 +7961,7 @@ $root.bentoml = (function() {
          */
         function UpdateBentoResponse(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -8032,9 +8030,9 @@ $root.bentoml = (function() {
         UpdateBentoResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.UpdateBentoResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.UpdateBentoResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -8075,7 +8073,7 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
@@ -8093,7 +8091,7 @@ $root.bentoml = (function() {
         UpdateBentoResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.UpdateBentoResponse)
                 return object;
-            var message = new $root.bentoml.UpdateBentoResponse();
+            let message = new $root.bentoml.UpdateBentoResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.UpdateBentoResponse.status: object expected");
@@ -8114,7 +8112,7 @@ $root.bentoml = (function() {
         UpdateBentoResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults)
                 object.status = null;
             if (message.status != null && message.hasOwnProperty("status"))
@@ -8156,7 +8154,7 @@ $root.bentoml = (function() {
          */
         function DangerouslyDeleteBentoRequest(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -8235,9 +8233,9 @@ $root.bentoml = (function() {
         DangerouslyDeleteBentoRequest.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DangerouslyDeleteBentoRequest();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DangerouslyDeleteBentoRequest();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.bento_name = reader.string();
@@ -8300,7 +8298,7 @@ $root.bentoml = (function() {
         DangerouslyDeleteBentoRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.DangerouslyDeleteBentoRequest)
                 return object;
-            var message = new $root.bentoml.DangerouslyDeleteBentoRequest();
+            let message = new $root.bentoml.DangerouslyDeleteBentoRequest();
             if (object.bento_name != null)
                 message.bento_name = String(object.bento_name);
             if (object.bento_version != null)
@@ -8320,7 +8318,7 @@ $root.bentoml = (function() {
         DangerouslyDeleteBentoRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.bento_name = "";
                 object.bento_version = "";
@@ -8365,7 +8363,7 @@ $root.bentoml = (function() {
          */
         function DangerouslyDeleteBentoResponse(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -8434,9 +8432,9 @@ $root.bentoml = (function() {
         DangerouslyDeleteBentoResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DangerouslyDeleteBentoResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DangerouslyDeleteBentoResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -8477,7 +8475,7 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
@@ -8495,7 +8493,7 @@ $root.bentoml = (function() {
         DangerouslyDeleteBentoResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.DangerouslyDeleteBentoResponse)
                 return object;
-            var message = new $root.bentoml.DangerouslyDeleteBentoResponse();
+            let message = new $root.bentoml.DangerouslyDeleteBentoResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.DangerouslyDeleteBentoResponse.status: object expected");
@@ -8516,7 +8514,7 @@ $root.bentoml = (function() {
         DangerouslyDeleteBentoResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults)
                 object.status = null;
             if (message.status != null && message.hasOwnProperty("status"))
@@ -8558,7 +8556,7 @@ $root.bentoml = (function() {
          */
         function GetBentoRequest(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -8637,9 +8635,9 @@ $root.bentoml = (function() {
         GetBentoRequest.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.GetBentoRequest();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.GetBentoRequest();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.bento_name = reader.string();
@@ -8702,7 +8700,7 @@ $root.bentoml = (function() {
         GetBentoRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.GetBentoRequest)
                 return object;
-            var message = new $root.bentoml.GetBentoRequest();
+            let message = new $root.bentoml.GetBentoRequest();
             if (object.bento_name != null)
                 message.bento_name = String(object.bento_name);
             if (object.bento_version != null)
@@ -8722,7 +8720,7 @@ $root.bentoml = (function() {
         GetBentoRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.bento_name = "";
                 object.bento_version = "";
@@ -8768,7 +8766,7 @@ $root.bentoml = (function() {
          */
         function GetBentoResponse(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -8847,9 +8845,9 @@ $root.bentoml = (function() {
         GetBentoResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.GetBentoResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.GetBentoResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -8893,12 +8891,12 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
             if (message.bento != null && message.hasOwnProperty("bento")) {
-                var error = $root.bentoml.Bento.verify(message.bento);
+                let error = $root.bentoml.Bento.verify(message.bento);
                 if (error)
                     return "bento." + error;
             }
@@ -8916,7 +8914,7 @@ $root.bentoml = (function() {
         GetBentoResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.GetBentoResponse)
                 return object;
-            var message = new $root.bentoml.GetBentoResponse();
+            let message = new $root.bentoml.GetBentoResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.GetBentoResponse.status: object expected");
@@ -8942,7 +8940,7 @@ $root.bentoml = (function() {
         GetBentoResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.status = null;
                 object.bento = null;
@@ -8991,7 +8989,7 @@ $root.bentoml = (function() {
          */
         function ListBentoRequest(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -9100,9 +9098,9 @@ $root.bentoml = (function() {
         ListBentoRequest.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ListBentoRequest();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ListBentoRequest();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.bento_name = reader.string();
@@ -9188,7 +9186,7 @@ $root.bentoml = (function() {
         ListBentoRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.ListBentoRequest)
                 return object;
-            var message = new $root.bentoml.ListBentoRequest();
+            let message = new $root.bentoml.ListBentoRequest();
             if (object.bento_name != null)
                 message.bento_name = String(object.bento_name);
             if (object.offset != null)
@@ -9222,7 +9220,7 @@ $root.bentoml = (function() {
         ListBentoRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.bento_name = "";
                 object.offset = 0;
@@ -9262,7 +9260,7 @@ $root.bentoml = (function() {
          * @property {number} name=1 name value
          */
         ListBentoRequest.SORTABLE_COLUMN = (function() {
-            var valuesById = {}, values = Object.create(valuesById);
+            const valuesById = {}, values = Object.create(valuesById);
             values[valuesById[0] = "created_at"] = 0;
             values[valuesById[1] = "name"] = 1;
             return values;
@@ -9292,7 +9290,7 @@ $root.bentoml = (function() {
         function ListBentoResponse(properties) {
             this.bentos = [];
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -9340,7 +9338,7 @@ $root.bentoml = (function() {
             if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             if (message.bentos != null && message.bentos.length)
-                for (var i = 0; i < message.bentos.length; ++i)
+                for (let i = 0; i < message.bentos.length; ++i)
                     $root.bentoml.Bento.encode(message.bentos[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
@@ -9372,9 +9370,9 @@ $root.bentoml = (function() {
         ListBentoResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ListBentoResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ListBentoResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -9420,15 +9418,15 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
             if (message.bentos != null && message.hasOwnProperty("bentos")) {
                 if (!Array.isArray(message.bentos))
                     return "bentos: array expected";
-                for (var i = 0; i < message.bentos.length; ++i) {
-                    var error = $root.bentoml.Bento.verify(message.bentos[i]);
+                for (let i = 0; i < message.bentos.length; ++i) {
+                    let error = $root.bentoml.Bento.verify(message.bentos[i]);
                     if (error)
                         return "bentos." + error;
                 }
@@ -9447,7 +9445,7 @@ $root.bentoml = (function() {
         ListBentoResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.ListBentoResponse)
                 return object;
-            var message = new $root.bentoml.ListBentoResponse();
+            let message = new $root.bentoml.ListBentoResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.ListBentoResponse.status: object expected");
@@ -9457,7 +9455,7 @@ $root.bentoml = (function() {
                 if (!Array.isArray(object.bentos))
                     throw TypeError(".bentoml.ListBentoResponse.bentos: array expected");
                 message.bentos = [];
-                for (var i = 0; i < object.bentos.length; ++i) {
+                for (let i = 0; i < object.bentos.length; ++i) {
                     if (typeof object.bentos[i] !== "object")
                         throw TypeError(".bentoml.ListBentoResponse.bentos: object expected");
                     message.bentos[i] = $root.bentoml.Bento.fromObject(object.bentos[i]);
@@ -9478,7 +9476,7 @@ $root.bentoml = (function() {
         ListBentoResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.arrays || options.defaults)
                 object.bentos = [];
             if (options.defaults)
@@ -9487,7 +9485,7 @@ $root.bentoml = (function() {
                 object.status = $root.bentoml.Status.toObject(message.status, options);
             if (message.bentos && message.bentos.length) {
                 object.bentos = [];
-                for (var j = 0; j < message.bentos.length; ++j)
+                for (let j = 0; j < message.bentos.length; ++j)
                     object.bentos[j] = $root.bentoml.Bento.toObject(message.bentos[j], options);
             }
             return object;
@@ -9957,7 +9955,7 @@ $root.bentoml = (function() {
          */
         function HealthCheckResponse(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -10026,9 +10024,9 @@ $root.bentoml = (function() {
         HealthCheckResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.HealthCheckResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.HealthCheckResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -10069,7 +10067,7 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
@@ -10087,7 +10085,7 @@ $root.bentoml = (function() {
         HealthCheckResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.HealthCheckResponse)
                 return object;
-            var message = new $root.bentoml.HealthCheckResponse();
+            let message = new $root.bentoml.HealthCheckResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.HealthCheckResponse.status: object expected");
@@ -10108,7 +10106,7 @@ $root.bentoml = (function() {
         HealthCheckResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults)
                 object.status = null;
             if (message.status != null && message.hasOwnProperty("status"))
@@ -10150,7 +10148,7 @@ $root.bentoml = (function() {
          */
         function GetYataiServiceVersionResponse(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -10229,9 +10227,9 @@ $root.bentoml = (function() {
         GetYataiServiceVersionResponse.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.GetYataiServiceVersionResponse();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.GetYataiServiceVersionResponse();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.status = $root.bentoml.Status.decode(reader, reader.uint32());
@@ -10275,7 +10273,7 @@ $root.bentoml = (function() {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.status != null && message.hasOwnProperty("status")) {
-                var error = $root.bentoml.Status.verify(message.status);
+                let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
@@ -10296,7 +10294,7 @@ $root.bentoml = (function() {
         GetYataiServiceVersionResponse.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.GetYataiServiceVersionResponse)
                 return object;
-            var message = new $root.bentoml.GetYataiServiceVersionResponse();
+            let message = new $root.bentoml.GetYataiServiceVersionResponse();
             if (object.status != null) {
                 if (typeof object.status !== "object")
                     throw TypeError(".bentoml.GetYataiServiceVersionResponse.status: object expected");
@@ -10319,7 +10317,7 @@ $root.bentoml = (function() {
         GetYataiServiceVersionResponse.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults) {
                 object.status = null;
                 object.version = "";
@@ -10364,7 +10362,7 @@ $root.bentoml = (function() {
          */
         function Chunk(properties) {
             if (properties)
-                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
                         this[keys[i]] = properties[keys[i]];
         }
@@ -10433,9 +10431,9 @@ $root.bentoml = (function() {
         Chunk.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.Chunk();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.Chunk();
             while (reader.pos < end) {
-                var tag = reader.uint32();
+                let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
                     message.content = reader.bytes();
@@ -10492,7 +10490,7 @@ $root.bentoml = (function() {
         Chunk.fromObject = function fromObject(object) {
             if (object instanceof $root.bentoml.Chunk)
                 return object;
-            var message = new $root.bentoml.Chunk();
+            let message = new $root.bentoml.Chunk();
             if (object.content != null)
                 if (typeof object.content === "string")
                     $util.base64.decode(object.content, message.content = $util.newBuffer($util.base64.length(object.content)), 0);
@@ -10513,7 +10511,7 @@ $root.bentoml = (function() {
         Chunk.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            var object = {};
+            let object = {};
             if (options.defaults)
                 if (options.bytes === String)
                     object.content = "";
@@ -10544,14 +10542,14 @@ $root.bentoml = (function() {
     return bentoml;
 })();
 
-$root.google = (function() {
+export const google = $root.google = (() => {
 
     /**
      * Namespace google.
      * @exports google
      * @namespace
      */
-    var google = {};
+    const google = {};
 
     google.protobuf = (function() {
 
@@ -10560,7 +10558,7 @@ $root.google = (function() {
          * @memberof google
          * @namespace
          */
-        var protobuf = {};
+        const protobuf = {};
 
         protobuf.Struct = (function() {
 
@@ -10582,7 +10580,7 @@ $root.google = (function() {
             function Struct(properties) {
                 this.fields = {};
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -10620,7 +10618,7 @@ $root.google = (function() {
                 if (!writer)
                     writer = $Writer.create();
                 if (message.fields != null && message.hasOwnProperty("fields"))
-                    for (var keys = Object.keys(message.fields), i = 0; i < keys.length; ++i) {
+                    for (let keys = Object.keys(message.fields), i = 0; i < keys.length; ++i) {
                         writer.uint32(/* id 1, wireType 2 =*/10).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]);
                         $root.google.protobuf.Value.encode(message.fields[keys[i]], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim().ldelim();
                     }
@@ -10654,9 +10652,9 @@ $root.google = (function() {
             Struct.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.Struct(), key;
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.Struct(), key;
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         reader.skip().pos++;
@@ -10704,9 +10702,9 @@ $root.google = (function() {
                 if (message.fields != null && message.hasOwnProperty("fields")) {
                     if (!$util.isObject(message.fields))
                         return "fields: object expected";
-                    var key = Object.keys(message.fields);
-                    for (var i = 0; i < key.length; ++i) {
-                        var error = $root.google.protobuf.Value.verify(message.fields[key[i]]);
+                    let key = Object.keys(message.fields);
+                    for (let i = 0; i < key.length; ++i) {
+                        let error = $root.google.protobuf.Value.verify(message.fields[key[i]]);
                         if (error)
                             return "fields." + error;
                     }
@@ -10725,12 +10723,12 @@ $root.google = (function() {
             Struct.fromObject = function fromObject(object) {
                 if (object instanceof $root.google.protobuf.Struct)
                     return object;
-                var message = new $root.google.protobuf.Struct();
+                let message = new $root.google.protobuf.Struct();
                 if (object.fields) {
                     if (typeof object.fields !== "object")
                         throw TypeError(".google.protobuf.Struct.fields: object expected");
                     message.fields = {};
-                    for (var keys = Object.keys(object.fields), i = 0; i < keys.length; ++i) {
+                    for (let keys = Object.keys(object.fields), i = 0; i < keys.length; ++i) {
                         if (typeof object.fields[keys[i]] !== "object")
                             throw TypeError(".google.protobuf.Struct.fields: object expected");
                         message.fields[keys[i]] = $root.google.protobuf.Value.fromObject(object.fields[keys[i]]);
@@ -10751,13 +10749,13 @@ $root.google = (function() {
             Struct.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.objects || options.defaults)
                     object.fields = {};
-                var keys2;
+                let keys2;
                 if (message.fields && (keys2 = Object.keys(message.fields)).length) {
                     object.fields = {};
-                    for (var j = 0; j < keys2.length; ++j)
+                    for (let j = 0; j < keys2.length; ++j)
                         object.fields[keys2[j]] = $root.google.protobuf.Value.toObject(message.fields[keys2[j]], options);
                 }
                 return object;
@@ -10801,7 +10799,7 @@ $root.google = (function() {
              */
             function Value(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -10855,7 +10853,7 @@ $root.google = (function() {
             Value.prototype.listValue = null;
 
             // OneOf field names bound to virtual getters and setters
-            var $oneOfFields;
+            let $oneOfFields;
 
             /**
              * Value kind.
@@ -10934,9 +10932,9 @@ $root.google = (function() {
             Value.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.Value();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.Value();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         message.nullValue = reader.int32();
@@ -10991,7 +10989,7 @@ $root.google = (function() {
             Value.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                var properties = {};
+                let properties = {};
                 if (message.nullValue != null && message.hasOwnProperty("nullValue")) {
                     properties.kind = 1;
                     switch (message.nullValue) {
@@ -11027,7 +11025,7 @@ $root.google = (function() {
                         return "kind: multiple values";
                     properties.kind = 1;
                     {
-                        var error = $root.google.protobuf.Struct.verify(message.structValue);
+                        let error = $root.google.protobuf.Struct.verify(message.structValue);
                         if (error)
                             return "structValue." + error;
                     }
@@ -11037,7 +11035,7 @@ $root.google = (function() {
                         return "kind: multiple values";
                     properties.kind = 1;
                     {
-                        var error = $root.google.protobuf.ListValue.verify(message.listValue);
+                        let error = $root.google.protobuf.ListValue.verify(message.listValue);
                         if (error)
                             return "listValue." + error;
                     }
@@ -11056,7 +11054,7 @@ $root.google = (function() {
             Value.fromObject = function fromObject(object) {
                 if (object instanceof $root.google.protobuf.Value)
                     return object;
-                var message = new $root.google.protobuf.Value();
+                let message = new $root.google.protobuf.Value();
                 switch (object.nullValue) {
                 case "NULL_VALUE":
                 case 0:
@@ -11094,7 +11092,7 @@ $root.google = (function() {
             Value.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (message.nullValue != null && message.hasOwnProperty("nullValue")) {
                     object.nullValue = options.enums === String ? $root.google.protobuf.NullValue[message.nullValue] : message.nullValue;
                     if (options.oneofs)
@@ -11149,7 +11147,7 @@ $root.google = (function() {
          * @property {number} NULL_VALUE=0 NULL_VALUE value
          */
         protobuf.NullValue = (function() {
-            var valuesById = {}, values = Object.create(valuesById);
+            const valuesById = {}, values = Object.create(valuesById);
             values[valuesById[0] = "NULL_VALUE"] = 0;
             return values;
         })();
@@ -11174,7 +11172,7 @@ $root.google = (function() {
             function ListValue(properties) {
                 this.values = [];
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -11212,7 +11210,7 @@ $root.google = (function() {
                 if (!writer)
                     writer = $Writer.create();
                 if (message.values != null && message.values.length)
-                    for (var i = 0; i < message.values.length; ++i)
+                    for (let i = 0; i < message.values.length; ++i)
                         $root.google.protobuf.Value.encode(message.values[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 return writer;
             };
@@ -11244,9 +11242,9 @@ $root.google = (function() {
             ListValue.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.ListValue();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.ListValue();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         if (!(message.values && message.values.length))
@@ -11291,8 +11289,8 @@ $root.google = (function() {
                 if (message.values != null && message.hasOwnProperty("values")) {
                     if (!Array.isArray(message.values))
                         return "values: array expected";
-                    for (var i = 0; i < message.values.length; ++i) {
-                        var error = $root.google.protobuf.Value.verify(message.values[i]);
+                    for (let i = 0; i < message.values.length; ++i) {
+                        let error = $root.google.protobuf.Value.verify(message.values[i]);
                         if (error)
                             return "values." + error;
                     }
@@ -11311,12 +11309,12 @@ $root.google = (function() {
             ListValue.fromObject = function fromObject(object) {
                 if (object instanceof $root.google.protobuf.ListValue)
                     return object;
-                var message = new $root.google.protobuf.ListValue();
+                let message = new $root.google.protobuf.ListValue();
                 if (object.values) {
                     if (!Array.isArray(object.values))
                         throw TypeError(".google.protobuf.ListValue.values: array expected");
                     message.values = [];
-                    for (var i = 0; i < object.values.length; ++i) {
+                    for (let i = 0; i < object.values.length; ++i) {
                         if (typeof object.values[i] !== "object")
                             throw TypeError(".google.protobuf.ListValue.values: object expected");
                         message.values[i] = $root.google.protobuf.Value.fromObject(object.values[i]);
@@ -11337,12 +11335,12 @@ $root.google = (function() {
             ListValue.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.arrays || options.defaults)
                     object.values = [];
                 if (message.values && message.values.length) {
                     object.values = [];
-                    for (var j = 0; j < message.values.length; ++j)
+                    for (let j = 0; j < message.values.length; ++j)
                         object.values[j] = $root.google.protobuf.Value.toObject(message.values[j], options);
                 }
                 return object;
@@ -11382,7 +11380,7 @@ $root.google = (function() {
              */
             function Timestamp(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -11461,9 +11459,9 @@ $root.google = (function() {
             Timestamp.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.Timestamp();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.Timestamp();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
                         message.seconds = reader.int64();
@@ -11526,7 +11524,7 @@ $root.google = (function() {
             Timestamp.fromObject = function fromObject(object) {
                 if (object instanceof $root.google.protobuf.Timestamp)
                     return object;
-                var message = new $root.google.protobuf.Timestamp();
+                let message = new $root.google.protobuf.Timestamp();
                 if (object.seconds != null)
                     if ($util.Long)
                         (message.seconds = $util.Long.fromValue(object.seconds)).unsigned = false;
@@ -11553,10 +11551,10 @@ $root.google = (function() {
             Timestamp.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
-                var object = {};
+                let object = {};
                 if (options.defaults) {
                     if ($util.Long) {
-                        var long = new $util.Long(0, 0, false);
+                        let long = new $util.Long(0, 0, false);
                         object.seconds = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
                     } else
                         object.seconds = options.longs === String ? "0" : 0;
@@ -11604,7 +11602,7 @@ $root.google = (function() {
              */
             function Empty(properties) {
                 if (properties)
-                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
                             this[keys[i]] = properties[keys[i]];
             }
@@ -11663,9 +11661,9 @@ $root.google = (function() {
             Empty.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.Empty();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.google.protobuf.Empty();
                 while (reader.pos < end) {
-                    var tag = reader.uint32();
+                    let tag = reader.uint32();
                     switch (tag >>> 3) {
                     default:
                         reader.skipType(tag & 7);
@@ -11752,4 +11750,4 @@ $root.google = (function() {
     return google;
 })();
 
-module.exports = $root;
+export { $root as default };

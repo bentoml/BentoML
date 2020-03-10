@@ -136,8 +136,8 @@ def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
     web_ui_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'web'))
     if debug_mode:
-        # WIP
-        web_ui_command = ['node', 'dist/index.js', yatai_server_address, ui_port]
+        # WIP need to find way to include port and yatai server address into watch
+        web_ui_command = ['npm', 'watch']
     else:
         web_ui_command = ['node', 'dist/index.js', yatai_server_address, ui_port]
     web_proc = subprocess.Popen(

@@ -46,7 +46,9 @@ def add_yatai_service_sub_command(cli):
     @click.option(
         '--ui-port', type=click.INT, default=3000, help='Port for Yatai web UI'
     )
-    @click.option('--ui/--no-ui', default=True, help='Start BentoML YataiService without Web UI')
+    @click.option(
+        '--ui/--no-ui', default=True, help='Start BentoML YataiService without Web UI'
+    )
     def yatai_service_start(db_url, repo_base_url, grpc_port, ui_port, ui):
         track_cli('yatai-service-start')
         start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, ui)

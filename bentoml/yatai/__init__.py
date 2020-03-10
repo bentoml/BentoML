@@ -20,6 +20,7 @@ from __future__ import print_function
 import logging
 import os
 import subprocess
+import sys
 import time
 from concurrent import futures
 
@@ -121,6 +122,9 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
         f'* Help and instructions: '
         f'https://docs.bentoml.org/en/latest/concepts/yatai_service.html'
     )
+    if with_ui and debug_mode:
+        for line in iter(proc.stdout.readline, b''):
+            logger.debug(line.decode('utf-8'))
     try:
         while True:
             time.sleep(_ONE_DAY_IN_SECONDS)
@@ -132,12 +136,14 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
 
 
 def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
+    copied_env = os.environ.copy()
     if ui_port is not None:
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
     web_ui_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'web'))
     if debug_mode:
-        # WIP need to find way to include port and yatai server address into watch
-        web_ui_command = ['npm', 'watch']
+        web_ui_command = ['npm', 'run', 'watch']
+        copied_env['BENTOML__YATAI_GRPC_SERVER_ADDRESS'] = yatai_server_address
+        copied_env['BENTOML__YATAI_WEB_UI_PORT'] = ui_port
     else:
         # NOTE, we need to make sure we build dist before we start this
         if not os.path.exists(os.path.join(web_ui_dir, 'dist')):
@@ -145,12 +151,16 @@ def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
                 ['npm', 'build'],
                 cwd=web_ui_dir,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
             logger.debug(build_web_dist.stdout.read().decode('utf-8'))
         web_ui_command = ['node', 'dist/index.js', yatai_server_address, ui_port]
     web_proc = subprocess.Popen(
-        web_ui_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=web_ui_dir,
+        web_ui_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=web_ui_dir,
+        env=copied_env,
     )
     return web_proc
 

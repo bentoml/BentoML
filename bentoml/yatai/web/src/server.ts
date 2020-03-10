@@ -71,17 +71,6 @@ const createRoutes = (app, yataiClient) => {
     return res.status(200).json(result);
   });
 
-  app.post('/api/AddBento', async(req: Request, res: Response) => {
-    let verifyError = bentoml.AddBentoRequest.verify(req.body);
-    if (verifyError) {
-      return res.status(400).json({error: verifyError})
-    }
-    let requestMessage = bentoml.AddBentoRequest.create(req.body)
-    let result = await yataiClient.addBento(requestMessage)
-      .then(response => response);
-    return res.status(200).json(result);
-  });
-
   app.post('/api/ApplyDeployment', async(req: Request, res: Response) => {
     let verifyError = bentoml.ApplyDeploymentRequest.verify(req.body);
     if (verifyError) {

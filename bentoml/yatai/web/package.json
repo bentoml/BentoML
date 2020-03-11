@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "start": "node dist/index.js",
+    "dev": "bash -c 'concurrently \"nodemon -- ${0} ${1}\" \"npm run watch:client\"'",
     "watch": "concurrently \"npm:watch:*\"",
     "watch:server": "nodemon",
     "watch:client": "parcel watch client/src/index.html --out-dir dist/client --public-url ./",

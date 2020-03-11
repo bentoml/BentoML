@@ -16,11 +16,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
+import atexit
 import logging
 import os
 import subprocess
-import sys
 import time
 from concurrent import futures
 
@@ -108,42 +107,39 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
             )
     server.add_insecure_port(f'[::]:{grpc_port}')
     server.start()
+    logger.info('* Starting BentoML YataiService gRPC Server')
+    logger.info(f'* Debug mode: { "on" if debug_mode else "off"}')
+    logger.info(
+        f'* Web UI: {f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}'
+    )
+    logger.info(f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)')
+    logger.info(
+        f'* Usage: `bentoml config set yatai_service.url=127.0.0.1:{grpc_port}`'
+    )
+    logger.info(
+        '* Help and instructions: '
+        'https://docs.bentoml.org/en/latest/concepts/yatai_service.html'
+    )
+
     if with_ui:
         yatai_grpc_server_addess = f'localhost:{grpc_port}'
-        proc = async_start_yatai_service_web_ui(
+        async_start_yatai_service_web_ui(
             yatai_grpc_server_addess, ui_port, debug_mode
         )
-    logger.info(
-        f'* Starting BentoML YataiService gRPC Server\n'
-        f'* Debug mode: { "on" if debug_mode else "off"}\n'
-        f'* Web UI: {f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'
-        f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
-        f'* Usage: `bentoml config set yatai_service.url=127.0.0.1:{grpc_port}`\n'
-        f'* Help and instructions: '
-        f'https://docs.bentoml.org/en/latest/concepts/yatai_service.html'
-    )
-    if with_ui and debug_mode:
-        for line in iter(proc.stdout.readline, b''):
-            logger.debug(line.decode('utf-8'))
     try:
         while True:
             time.sleep(_ONE_DAY_IN_SECONDS)
     except KeyboardInterrupt:
         logger.info("Terminating YataiService gRPC server..")
-        if with_ui and proc:
-            proc.terminate()
         server.stop(grace=None)
 
 
 def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
-    copied_env = os.environ.copy()
     if ui_port is not None:
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
     web_ui_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'web'))
     if debug_mode:
-        web_ui_command = ['npm', 'run', 'watch']
-        copied_env['BENTOML__YATAI_GRPC_SERVER_ADDRESS'] = yatai_server_address
-        copied_env['BENTOML__YATAI_WEB_UI_PORT'] = ui_port
+        web_ui_command = ['npm', 'run', 'dev', '--', yatai_server_address, ui_port]
     else:
         # NOTE, we need to make sure we build dist before we start this
         if not os.path.exists(os.path.join(web_ui_dir, 'dist')):
@@ -160,9 +156,11 @@ def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=web_ui_dir,
-        env=copied_env,
     )
-    return web_proc
+    if debug_mode:
+        for line in iter(web_proc.stdout.readline, b''):
+            logger.debug(line.decode('utf-8'))
+    atexit.register(web_proc.terminate)
 
 
 __all__ = [

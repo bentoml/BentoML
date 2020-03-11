@@ -2,10 +2,9 @@ import { getExpressApp } from './server'
 
 const args = process.argv.slice(2);
 
-const grpcServerAddress = process.env['BENTOML__YATAI_GRPC_SERVER_ADDRESS'] || args[0];
-const port = process.env['BENTOML__YATAI_WEB_UI_PORT'] || args[1];
+const grpcServerAddress = args[0];
+const port = args[1];
 
-console.log(grpcServerAddress, port)
 if (!grpcServerAddress || !port) {
   throw Error('Required field grpc server address or port is missing');
 }

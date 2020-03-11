@@ -26,6 +26,7 @@ from concurrent import futures
 import grpc
 
 from bentoml import config
+from bentoml.exceptions import BentoMLException
 from bentoml.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
 from bentoml.utils.usage_stats import track_server
 
@@ -141,15 +142,12 @@ def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
     if debug_mode:
         web_ui_command = ['npm', 'run', 'dev', '--', yatai_server_address, ui_port]
     else:
-        # NOTE, we need to make sure we build dist before we start this
-        if not os.path.exists(os.path.join(web_ui_dir, 'dist')):
-            build_web_dist = subprocess.Popen(
-                ['npm', 'build'],
-                cwd=web_ui_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+        if not os.path.isdir(os.path.join(web_ui_dir, 'dist')):
+            raise BentoMLException(
+                'Yatai web client built is missing. '
+                'Please run `npm run build` in the bentoml/yatai/web directory '
+                'and then try again'
             )
-            logger.debug(build_web_dist.stdout.read().decode('utf-8'))
         web_ui_command = ['node', 'dist/index.js', yatai_server_address, ui_port]
     web_proc = subprocess.Popen(
         web_ui_command,

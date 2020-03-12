@@ -29,7 +29,7 @@ from bentoml.bundler import save_to_dir
 from bentoml.bundler.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import isidentifier
-from bentoml.utils.hybirdmethod import hybridmethod
+from bentoml.utils.hybridmethod import hybridmethod
 from bentoml.marshal.utils import DataLoader
 from bentoml.utils.trace import trace
 from bentoml.exceptions import NotFound, InvalidArgument
@@ -382,6 +382,19 @@ def _validate_version_str(version_str):
 
 
 def save(bento_service, base_path=None, version=None):
+    """
+    Save and register the given BentoService via BentoML's built-in model management
+    system. BentoML by default keeps track of all the SavedBundle's files and metadata
+    in local file system under the $BENTOML_HOME(~/bentoml) directory. Users can also
+    configure BentoML to save their BentoService to a shared Database and cloud object
+    storage such as AWS S3.
+
+    :param bento_service: target BentoService instance to be saved
+    :param base_path: optional - override repository base path
+    :param version: optional - save with version override
+    :return: saved_path: file path to where the BentoService is saved
+    """
+
     from bentoml.yatai.client import YataiClient
     from bentoml.yatai import get_yatai_service
 
@@ -395,10 +408,16 @@ def save(bento_service, base_path=None, version=None):
 
 
 class BentoService(BentoServiceBase):
-    """BentoService packs a list of artifacts and exposes service APIs
-    for BentoAPIServer and BentoCLI to execute. By subclassing BentoService,
-    users can customize the artifacts and environments required for
-    a ML service.
+    """
+    BentoService is the base component for building prediction services using BentoML.
+
+    BentoService provide an abstraction for describing model artifacts and environment
+    dependencies required for a prediction service. And allows users to write custom
+    prediction API handling logic via BentoService API callback function.
+
+    Each BentoService can contain multiple models via the BentoML Artifact class, and
+    can define multiple APIs for accessing this service. Each API should specify a type
+    of Handler, which defines the expected input data format for this API.
 
     >>>  from bentoml import BentoService, env, api, artifacts, ver
     >>>  from bentoml.handlers import DataframeHandler
@@ -466,6 +485,9 @@ class BentoService(BentoServiceBase):
 
     @property
     def artifacts(self):
+        """
+        :return: List of model artifacts
+        """
         return self._packed_artifacts
 
     @property
@@ -561,6 +583,17 @@ class BentoService(BentoServiceBase):
 
     @hybridmethod
     def pack(self, name, *args, **kwargs):
+        """
+        BentoService#pack method is used for packing trained model instances with a
+        BentoService instance and make it ready for BentoService#save.
+
+        pack(name, *args, **kwargs):
+
+        :param name: name of the declared model artifact
+        :param args: args passing to the target model artifact to be packed
+        :param kwargs: kwargs passing to the target model artifact to be packed
+        :return: this BentoService instance
+        """
         if name in self.artifacts:
             logger.warning(
                 "BentoService '%s' #pack overriding existing artifact '%s'",
@@ -578,6 +611,16 @@ class BentoService(BentoServiceBase):
 
     @pack.classmethod
     def pack(cls, *args, **kwargs):  # pylint: disable=no-self-argument
+        """
+        **Deprecated**: Legacy `BentoService#pack` class method, which can be used to
+        initialize a BentoService instance along with trained model artifacts. This will
+        be deprecated soon:
+
+        :param args: args passing to the BentoService class
+        :param kwargs: kwargs passing to the BentoService class and (artifact_name,
+            args) pair for creating declared model artifacts
+        :return: a new BentoService instance
+        """
         from bentoml.artifact import ArtifactCollection
 
         if args and isinstance(args[0], ArtifactCollection):

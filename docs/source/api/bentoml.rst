@@ -1,8 +1,11 @@
 BentoService API
 ================
 
+.. _bentoml-bentoservice-label:
+
 BentoService
 ++++++++++++
+
 .. autoclass:: bentoml.BentoService
 
   .. automethod:: bentoml.BentoService.name
@@ -12,6 +15,22 @@ BentoService
   .. automethod:: bentoml.BentoService.set_version
 
   .. automethod:: bentoml.BentoService.get_service_apis
+
+  .. automethod:: bentoml.BentoService.artifacts
+
+  .. method:: pack(name, *args, *kwargs)
+
+        BentoService#pack method is used for packing trained model instances with a
+        BentoService instance and make it ready for BentoService#save.
+
+        :param name: name of the declared model artifact
+        :param args: args passing to the target model artifact to be packed
+        :param kwargs: kwargs passing to the target model artifact to be packed
+        :return: this BentoService instance
+
+  .. automethod:: bentoml.BentoService.pack
+
+
 
 
 api

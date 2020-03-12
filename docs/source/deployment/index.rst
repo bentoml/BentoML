@@ -11,6 +11,12 @@ Azure Virtual Machines are on our roadmap.
 You can also manually deploy the BentoService API Server or its docker image to cloud
 platforms, and we've created a few step by step tutorials for doing that.
 
+.. note::
+
+    This documentation is about deploying online serving workloads, enssentially deploy
+    API server that serves prediction calls via HTTP request. For offline serving (or
+    batch serving, batch inference), see :doc:`../guides/batch_serving`.
+
 
 Automated Deployment Management:
 

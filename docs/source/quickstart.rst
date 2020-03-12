@@ -42,9 +42,9 @@ Hello World
 -----------
 
 The first step of creating a prediction service with BentoML, is to write a prediction
-service class inheriting from :code:`bentoml.BentoService`, and declaratively listing the
-dependencies, model artifacts and writing your service API call back function. Here is
-what a simple prediction service looks like:
+service class inheriting from :code:`bentoml.BentoService`, and describe the required
+model artifacts, environment dependencies and writing your service API call back
+function. Here is what a simple prediction service looks like:
 
 .. code-block:: python
 

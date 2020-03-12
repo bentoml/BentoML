@@ -97,18 +97,18 @@ Deploy the image to Google Cloud Run
 
 **Select container image URL from the selection menu, choose allow Unauthenitcated invocations from the Authentication section**
 
-.. image:: _static/img/gcloud-start.png
+.. image:: ../_static/img/gcloud-start.png
     :alt: GCP project creation
 
 
 **Expand Show Optional Revision Settings and change COntainer Port from `8080` to `5000`**
 
-.. image:: _static/img/gcloud-setting.png
+.. image:: ../_static/img/gcloud-setting.png
     :alt: GCP project setting
 
 After successful deployment, you can fin the service endpoint URL at top of the page.
 
-.. image:: _static/img/gcloud-endpoint.png
+.. image:: ../_static/img/gcloud-endpoint.png
     :alt: GCP project endpoint
 
 

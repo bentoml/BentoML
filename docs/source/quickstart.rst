@@ -38,6 +38,7 @@ Alternatively, run the code in this guide here on Google's Colab:
     :alt: Launch on Colab
 
 
+
 Hello World
 -----------
 
@@ -65,13 +66,13 @@ The :code:`bentoml.api` and :code:`DataframeHandler` here tells BentoML, that fo
 by it, is the service API callback function, and :code:`pandas.Dataframe` is its
 expected input format.
 
-The :code:`bentoml.env` decorator allows user to specify the dependencies and
-environment settings for this prediction service. Here we are using BentoML's
+The :code:`bentoml.env` decorator allows specifying the dependencies and environment
+settings for this prediction service. Here we are using BentoML's
 :code:`auto_pip_dependencies` fature which automatically extracts and bundles all pip
 packages that are required for your prediction service and pins down their version.
 
 
-Last but not least, :code:`bentoml.artifact` declares the required trained model to be
+Lastly :code:`bentoml.artifact` defines the required trained models to be
 bundled with this prediction service. Here it is using the built-in
 :code:`SklearnModelArtifact` and simply naming it 'model'. BentoML also provide model
 artifact for other frameworks such as :code:`PytorchModelArtifact`,
@@ -79,11 +80,12 @@ artifact for other frameworks such as :code:`PytorchModelArtifact`,
 :code:`XgboostModelArtifact` etc.
 
 
-Saving a versioned BentoService bundle
-++++++++++++++++++++++++++++++++++++++
+From Model Training To Serving
+------------------------------
 
-Next, we train a classifier model with Iris dataset, and pack the trained model with the
-BentoService :code:`IrisClassifier` defined above:
+Next, we train a classifier model with Iris dataset, and pack the trained model with an
+instance of the :code:`IrisClassifier` BentoService defined above, and save the entire
+prediction service.
 
 .. code-block:: python
 
@@ -102,28 +104,26 @@ BentoService :code:`IrisClassifier` defined above:
   # Save the entire prediction service to file bundle
   saved_path = iris_classifier_service.save()
 
+With the :code:`BentoService#save` call, you've just created a BentoML SavedBundle. It
+is a versioned file archive that is ready for model serving deployment. The file archive
+directory contains the BentoService you defined, the trained model artifact, all the
+local python code you imported and PyPI dependencies in a requirements.txt etc, all
+bundled in one place.
 
-You've just created a BentoService SavedBundle, it's a versioned file archive that is
-ready for production deployment. It contains the BentoService you defined, as well as
-the packed trained model artifacts, pre-processing code, dependencies and other
-configurations in a single file directory.
-
-
-Model Serving with BentoML
---------------------------
 
 .. note::
 
     The :code:`{saved_path}` in the following commands are referring to the returned
     value of :code:`iris_classifier_service.save()`.
     It is the file path where the BentoService saved bundle is stored.
-    BentoML locally keeps track of all the BentoService you've saved,
+    BentoML locally keeps track of all the BentoService SavedBundle you've created,
     you can also find the saved_path of your BentoService via
+    :code:`bentoml list -o wide` or
     :code:`bentoml get IrisClassifier -o wide` command.
 
 
 Model Serving via REST API
-++++++++++++++++++++++++++
+--------------------------
 
 You can start a REST API server by specifying the BentoService's name and version, or
 provide the file path to the saved bundle:
@@ -162,59 +162,25 @@ Or with :code:`python` and :code:`request` library:
 
 
 
-Model Serving via CLI
-+++++++++++++++++++++
+Batch Serving via CLI
+---------------------
 
-For testing purpose, you can load the BentoService SavedBundle from command line and
-run the prediction task on the given input dataset:
+For batch offline serving or testing your prediction service on batch test data, you
+can load the BentoService SavedBundle from command line and run the prediction task on
+the given input dataset. e.g.:
 
 .. code-block:: bash
 
   bentoml run IrisClassifier:latest predict --input='[[5.1, 3.5, 1.4, 0.2]]'
 
-  # alternatively pass input data via CSV file:
   bentoml run IrisClassifier:latest predict --input='./iris_test_data.csv'
 
 
-Distribute BentoML SavedBundle as PyPI package
-++++++++++++++++++++++++++++++++++++++++++++++
-
-
-The BentoService SavedBundle is pip-installable and can be directly distributed as a
-PyPI package if you plan to use the model in your python applications. You can install
-it as as a system-wide python package with :code:`pip`:
-
-.. code-block:: bash
-
-  pip install {saved_path}
-
-.. code-block:: python
-
-  # Your bentoML model class name will become packaged name
-  import IrisClassifier
-
-  installed_svc = IrisClassifier.load()
-  installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
-
-This also allow users to upload their BentoService to pypi.org as public python package
-or to their organization's private PyPi index to share with other developers.
-
-.. code-block:: bash
-
-    cd {saved_path} & python setup.py sdist upload
-
-.. note::
-
-    You will have to configure ".pypirc" file before uploading to pypi index.
-    You can find more information about distributing python package at:
-    https://docs.python.org/3.7/distributing/index.html#distributing-index
-
-
-Containerize REST API server with Docker
-----------------------------------------
+Containerize Model API Server
+-----------------------------
 
 The BentoService SavedBundle directory is structured to work as a docker build context,
-that can be used to build a API server docker container image:
+which can be used directly to build a API server docker container image:
 
 
 .. code-block:: bash
@@ -230,8 +196,8 @@ that can be used to build a API server docker container image:
   Follow instructions here: https://docs.docker.com/install
 
 
-Deploy REST API server to the cloud
------------------------------------
+Deploy API server to the cloud
+------------------------------
 
 BentoML has a built-in deployment management tool called YataiService. YataiService can
 be deployed separately to manage all your teams' trained models, BentoService bundles,
@@ -270,6 +236,38 @@ hosting the BentService you've created:
     bentoml lambda deploy quick-start-guide-deployment \
         -b=IrisClassifier:20191126125258_4AB1D4 \
 
+
+Distribute BentoService as a PyPI package
+-----------------------------------------
+
+The BentoService SavedBundle is pip-installable and can be directly distributed as a
+PyPI package if you plan to use the model in your python applications. You can install
+it as as a system-wide python package with :code:`pip`:
+
+.. code-block:: bash
+
+  pip install {saved_path}
+
+.. code-block:: python
+
+  # Your bentoML model class name will become packaged name
+  import IrisClassifier
+
+  installed_svc = IrisClassifier.load()
+  installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
+
+This also allow users to upload their BentoService to pypi.org as public python package
+or to their organization's private PyPi index to share with other developers.
+
+.. code-block:: bash
+
+    cd {saved_path} & python setup.py sdist upload
+
+.. note::
+
+    You will have to configure ".pypirc" file before uploading to pypi index.
+    You can find more information about distributing python package at:
+    https://docs.python.org/3.7/distributing/index.html#distributing-index
 
 Interested in learning more about BentoML? Check out the
 `Examples <https://github.com/bentoml/BentoML#examples>`_ on BentoML github repository.

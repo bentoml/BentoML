@@ -1,12 +1,9 @@
 Core Concepts
 =============
 
-
-Introducing BentoService
-------------------------
-
 The main idea behind BentoML is that Data Science team should be shipping prediction
-services instead of shipping pickled models. BentoService is the base component for
+services instead of shipping pickled models.
+:ref:`bentoml.BentoService <bentoml-bentoservice-label>` is the base component for
 building prediction services using BentoML. Here's the example BentoService in the
 :doc:`Getting Started Guide <quickstart>`:
 
@@ -23,20 +20,6 @@ building prediction services using BentoML. Here's the example BentoService in t
       @bentoml.api(DataframeHandler)
       def predict(self, df):
           return self.artifacts.model.predict(df)
-
-
-.. note::
-
-    The BentoService class can not be defined in the :code:`__main__` module, meaning
-    the class itself should not be defined in a Jupyter notebook cell or a python
-    interactive shell. You can however use the :code:`%writefile` magic command in
-    jupyter notebook to write the BentoService class definition to a separate file, see
-    example in `BentoML quickstart notebook <https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
-
-    We recommend to always put the code of every BentoService defined into a separate
-    Python file and check it into source control(e.g. git) along with your model
-    training code. And at the end of your model training code, import the BentoService
-    class and create a BentoService saved bundle for each training job run. e.g.:
 
 
 
@@ -88,8 +71,34 @@ RDS, S3), and allow your ML team to easily share, find and use each others' mode
     ...
 
 
+Creating BentoService
+---------------------
+
+see :ref:`bentoml.BentoService <bentoml-bentoservice-label>`
+
+It is recommended to always put the code of your BentoService class into individual
+Python file and check it into source control(e.g. git) along with your model
+training code. And at the end of your model training code, import the BentoService
+class and create a BentoService saved bundle. This way you will get a deployable
+and testable prediction service after each training job.
+
+
+.. note::
+
+    The BentoService class can not be defined in the :code:`__main__` module, meaning
+    the class itself should not be defined in a Jupyter notebook cell or a python
+    interactive shell. You can however use the :code:`%writefile` magic command in
+    jupyter notebook to write the BentoService class definition to a separate file, see
+    example in `BentoML quickstart notebook <https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
+
+
+
+
 Packaging Model Artifacts
 -------------------------
+
+
+
 
 
 Using API Handlers

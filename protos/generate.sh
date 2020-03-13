@@ -81,7 +81,7 @@ rm -rf $JS_GRPC_PATH
 mkdir -p $JS_GRPC_PATH
 
 echo "Generating grpc JS code..."
-pbjs -t static-module -w es6 --keep-case -o bentoml_grpc.js $PROTO_PATH/*.proto
+pbjs -t static-module -w es6 --keep-case --force-number -o bentoml_grpc.js $PROTO_PATH/*.proto
 pbts -o bentoml_grpc.d.ts bentoml_grpc.js
 
 mv $GIT_ROOT/bentoml_grpc.js $JS_GRPC_PATH

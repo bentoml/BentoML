@@ -11366,7 +11366,7 @@ export const google = $root.google = (() => {
              * Properties of a Timestamp.
              * @memberof google.protobuf
              * @interface ITimestamp
-             * @property {number|Long|null} [seconds] Timestamp seconds
+             * @property {number|null} [seconds] Timestamp seconds
              * @property {number|null} [nanos] Timestamp nanos
              */
 
@@ -11387,7 +11387,7 @@ export const google = $root.google = (() => {
 
             /**
              * Timestamp seconds.
-             * @member {number|Long} seconds
+             * @member {number} seconds
              * @memberof google.protobuf.Timestamp
              * @instance
              */

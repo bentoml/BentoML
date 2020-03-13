@@ -4774,7 +4774,7 @@ export namespace google {
         interface ITimestamp {
 
             /** Timestamp seconds */
-            seconds?: (number|Long|null);
+            seconds?: (number|null);
 
             /** Timestamp nanos */
             nanos?: (number|null);
@@ -4790,7 +4790,7 @@ export namespace google {
             constructor(properties?: google.protobuf.ITimestamp);
 
             /** Timestamp seconds. */
-            public seconds: (number|Long);
+            public seconds: number;
 
             /** Timestamp nanos. */
             public nanos: number;

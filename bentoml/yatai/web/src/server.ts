@@ -1,9 +1,9 @@
 import path from 'path';
 import { Request, Response } from "express";
 import express from 'express'
-import * as grpc from 'grpc';
 import { bentoml } from './generated/bentoml_grpc';
 import { createYataiClient } from './yatai_client';
+
 
 const createRoutes = (app, yataiClient) => {
   app.get('/api/ListBento', async(req: Request, res: Response) => {
@@ -13,7 +13,11 @@ const createRoutes = (app, yataiClient) => {
     }
     let requestMessage = bentoml.ListBentoRequest.create(req.query)
     let result = await yataiClient.listBento(requestMessage)
-    return res.status(200).json(result);
+    if (result.status.status_code != 0) {
+      return res.status(500).json({error: result.status.error_message});
+    } else {
+      return res.status(200).json(result);
+    }
   });
 
   app.get('/api/GetBento', async(req: Request, res: Response) => {

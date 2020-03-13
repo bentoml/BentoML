@@ -29,7 +29,7 @@ from bentoml import config
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
 from bentoml.utils.usage_stats import track_server
-
+from bentoml.yatai.utils import ensure_node_available_or_raise
 
 logger = logging.getLogger(__name__)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -123,10 +123,9 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
     )
 
     if with_ui:
+        ensure_node_available_or_raise()
         yatai_grpc_server_addess = f'localhost:{grpc_port}'
-        async_start_yatai_service_web_ui(
-            yatai_grpc_server_addess, ui_port, debug_mode
-        )
+        async_start_yatai_service_web_ui(yatai_grpc_server_addess, ui_port, debug_mode)
     try:
         while True:
             time.sleep(_ONE_DAY_IN_SECONDS)
@@ -150,10 +149,7 @@ def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
             )
         web_ui_command = ['node', 'dist/index.js', yatai_server_address, ui_port]
     web_proc = subprocess.Popen(
-        web_ui_command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=web_ui_dir,
+        web_ui_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=web_ui_dir,
     )
     if debug_mode:
         for line in iter(web_proc.stdout.readline, b''):

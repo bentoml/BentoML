@@ -17,6 +17,9 @@ import logging
 
 import click
 
+from bentoml.cli.click_utils import CLI_COLOR_ERROR
+from bentoml.cli.utils import _echo
+from bentoml.exceptions import BentoMLException
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai import start_yatai_service_grpc_server
 
@@ -51,4 +54,9 @@ def add_yatai_service_sub_command(cli):
     )
     def yatai_service_start(db_url, repo_base_url, grpc_port, ui_port, ui):
         track_cli('yatai-service-start')
-        start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, ui)
+        try:
+            start_yatai_service_grpc_server(
+                db_url, repo_base_url, grpc_port, ui_port, ui
+            )
+        except BentoMLException as e:
+            _echo(f'Yatai gRPC server failed: {str(e)}', CLI_COLOR_ERROR)

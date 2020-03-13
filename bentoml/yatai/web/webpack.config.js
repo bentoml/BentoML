@@ -3,8 +3,6 @@ const spawnSync = require('child_process').spawnSync;
 
 const webpack = require('webpack');
 const { CheckerPlugin } = require('awesome-typescript-loader')
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-
 
 // Patch fs with graceful-fs for CopyWebpackPlugin to correctly copy node_modules
 // in order to avoid "Error: EMFILE: too many open files, open.." in large project
@@ -75,12 +73,6 @@ module.exports = (settings) => {
     },
     plugins: [
       new CheckerPlugin(),
-      new CopyWebpackPlugin([
-        { from: 'package.json', to: './package.json'},
-        { from: 'node_modules/grpc', to: './node_modules/grpc' },
-        { from: 'node_modules/protobufjs', to: './node_modules/protobufjs' },
-        { from: 'node_modules/express', to: './node_modules/express' },
-      ]),
     ],
     stats: {
       // Config for minimal console.log mess.

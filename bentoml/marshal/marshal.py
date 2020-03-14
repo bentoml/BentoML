@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import time
+import resource
 import asyncio
 import logging
 import multiprocessing
@@ -32,10 +33,10 @@ ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 
 
 def metrics_patch(cls):
-    from prometheus_client import Histogram, Counter, Gauge
-
     class _MarshalService(cls):
         def __init__(self, *args, **kwargs):
+            from prometheus_client import Histogram, Counter, Gauge
+
             super(_MarshalService, self).__init__(*args, **kwargs)
             namespace = config('instrument').get(
                 'default_namespace'
@@ -130,6 +131,15 @@ class MarshalService:
 
         self.setup_routes_from_pb(self.bento_service_metadata_pb)
 
+        self.CONNECTION_LIMIT = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+        logger.info(
+            "Your system nofile limit is %d, which means each instance of microbatch "
+            "service is able to hold this number of connections at same time. "
+            "You can increase the number of file descriptors for the server process, "
+            "or launch more microbatch instances to accept more concurrent connection.",
+            self.CONNECTION_LIMIT,
+        )
+
     def set_target_port(self, target_port):
         self.target_port = target_port
 
@@ -170,7 +180,7 @@ class MarshalService:
                 resp = await self.batch_handlers[api_name](req)
             else:
                 resp = await self._relay_handler(request, api_name)
-            return resp
+        return resp
 
     async def _relay_handler(self, request, api_name):
         data = await request.read()
@@ -203,11 +213,16 @@ class MarshalService:
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
             reqs_s = DataLoader.merge_requests(requests)
-            async with aiohttp.ClientSession() as client:
-                async with client.post(api_url, data=reqs_s, headers=headers) as resp:
-                    raw = await resp.read()
+            try:
+                async with aiohttp.ClientSession() as client:
+                    async with client.post(
+                        api_url, data=reqs_s, headers=headers
+                    ) as resp:
+                        raw = await resp.read()
+                merged = DataLoader.split_responses(raw)
+            except aiohttp.ClientConnectorError:
+                return (aiohttp.web.HTTPServiceUnavailable,) * len(requests)
 
-        merged = DataLoader.split_responses(raw)
         if merged is None:
             return (aiohttp.web.HTTPInternalServerError,) * len(requests)
         return tuple(

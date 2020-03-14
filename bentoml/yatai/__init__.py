@@ -41,7 +41,6 @@ def get_yatai_service(
 ):
     channel_address = channel_address or config().get('yatai_service', 'url')
     if channel_address:
-        import grpc
         from bentoml.proto.yatai_service_pb2_grpc import YataiStub
 
         if db_url is not None:
@@ -140,16 +139,27 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
         server.stop(grace=None)
 
 
+def _is_web_server_debug_tools_available(root_dir):
+    return (
+        os.path.exists(os.path.join(root_dir, 'node_modules/.bin', 'concurrently'))
+        and os.path.exists(os.path.join(root_dir, 'node_modules/.bin', 'ts-node'))
+        and os.path.exists(os.path.join(root_dir, 'node_modules/.bin', 'nodemon'))
+    )
+
+
 def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
     if ui_port is not None:
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
     web_ui_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'web'))
     if debug_mode:
-        # Only when web/src/index.ts exists, we will run dev (nodemon)
-        if os.path.exists(os.path.join(web_ui_dir, 'src', 'index.ts')):
+
+        # Only when src/index.ts exists, we will run dev (nodemon)
+        if os.path.exists(
+            os.path.join(web_ui_dir, 'src/index.ts')
+        ) and _is_web_server_debug_tools_available(web_ui_dir):
             web_ui_command = ['npm', 'run', 'dev', '--', yatai_server_address, ui_port]
         else:
-            web_ui_command = ['node', 'dist/index.js', yatai_server_address, ui_port]
+            web_ui_command = ['node', 'dist/bundle.js', yatai_server_address, ui_port]
     else:
         if not os.path.isdir(os.path.join(web_ui_dir, 'dist')):
             raise BentoMLException(
@@ -157,7 +167,7 @@ def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
                 'Please run `npm run build` in the bentoml/yatai/web directory '
                 'and then try again'
             )
-        web_ui_command = ['node', 'dist/index.js', yatai_server_address, ui_port]
+        web_ui_command = ['node', 'dist/bundle.js', yatai_server_address, ui_port]
     web_proc = subprocess.Popen(
         web_ui_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=web_ui_dir,
     )

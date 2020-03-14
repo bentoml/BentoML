@@ -11,7 +11,7 @@
     "watch:server": "nodemon",
     "watch:client": "parcel watch client/src/index.html --out-dir dist/client --public-url ./",
     "build": "npm run build:client && npm run build:server",
-    "build:server": "webpack && cd dist && npm init --yes && yarn add express@\"~4.17.1\" protobufjs@\"~6.8.8\" grpc@\"~1.24.2\"",
+    "build:server": "webpack && cd dist && npm init --yes && yarn add express@\"~4.17.1\" protobufjs@\"~6.8.8\" grpc@\"~1.24.2\" && rm -rf node_modules/.bin",
     "build:client": "parcel build client/src/index.html --out-dir dist/client/ --public-url ./ --no-source-maps",
     "test": "jest",
     "test:watch": "jest --watch",

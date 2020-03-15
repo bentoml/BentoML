@@ -26,6 +26,7 @@ from concurrent import futures
 import grpc
 
 from bentoml import config
+from bentoml.cli.click_utils import _echo
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
 from bentoml.utils.usage_stats import track_server
@@ -108,28 +109,25 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
             )
     server.add_insecure_port(f'[::]:{grpc_port}')
     server.start()
-    logger.info('* Starting BentoML YataiService gRPC Server')
-    logger.info(f'* Debug mode: { "on" if debug_mode else "off"}')
-    logger.info(
-        f'* Web UI: {f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}'
-    )
-    logger.info(f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)')
-    logger.info(
-        f'* Usage: `bentoml config set yatai_service.url=127.0.0.1:{grpc_port}`'
-    )
-    logger.info(
-        '* Help and instructions: '
-        'https://docs.bentoml.org/en/latest/concepts/yatai_service.html'
-    )
-    web_server_log_path = os.path.join(
-        config("logging").get("BASE_LOG_DIR"),
-        config('logging').get("yatai_web_server_log_filename"),
-    )
     if with_ui:
         ensure_node_available_or_raise()
         yatai_grpc_server_addess = f'localhost:{grpc_port}'
         async_start_yatai_service_web_ui(yatai_grpc_server_addess, ui_port, debug_mode)
-    logger.info(f'* Web server log can be found here: {web_server_log_path}')
+
+        web_ui_log_path = os.path.join(
+            config("logging").get("BASE_LOG_DIR"),
+            config('logging').get("yatai_web_server_log_filename"),
+        )
+    _echo(
+        f'* Starting BentoML YataiService gRPC Server\n'
+        f'* Debug mode: { "on" if debug_mode else "off"}\n'
+        f'* Web UI: {f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'
+        f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
+        f'* Usage: `bentoml config set yatai_service.url=127.0.0.1:{grpc_port}`\n'
+        f'* Help and instructions: '
+        f'https://docs.bentoml.org/en/latest/concepts/yatai_service.html\n'
+        f'{f"* Web server log can be found here: {web_ui_log_path}" if with_ui else ""}'
+    )
 
     try:
         while True:

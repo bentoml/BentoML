@@ -23,10 +23,10 @@ import subprocess
 import time
 from concurrent import futures
 
+import click
 import grpc
 
 from bentoml import config
-from bentoml.cli.click_utils import _echo
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
 from bentoml.utils.usage_stats import track_server
@@ -120,7 +120,8 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
             yatai_grpc_server_addess, ui_port, web_ui_log_path, debug_mode
         )
 
-    _echo(
+    # We don't import _echo function from click_utils because of circular dep
+    click.echo(
         f'* Starting BentoML YataiService gRPC Server\n'
         f'* Debug mode: { "on" if debug_mode else "off"}\n'
         f'* Web UI: {f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'

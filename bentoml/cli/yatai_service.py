@@ -17,8 +17,7 @@ import logging
 
 import click
 
-from bentoml.cli.click_utils import CLI_COLOR_ERROR
-from bentoml.cli.utils import _echo
+from bentoml.cli.click_utils import CLI_COLOR_ERROR, _echo
 from bentoml.exceptions import BentoMLException
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai import start_yatai_service_grpc_server

@@ -28,11 +28,14 @@ $ bentoml --version
 ```
 
 
-## How to run BentoML tests
+## How to run unit tests
 
 1. Install all test dependencies:
 ```bash
 pip install .[test]
+
+# For zsh users, use:
+$ pip install -e .\[test\]
 ```
 
 2. Run all unit tests with current python version and environment
@@ -40,7 +43,7 @@ pip install .[test]
 $ pytest tests
 ```
 
-3. Run test under all supported python versions using Conda
+## Optional: Run unit test with all supported python versions
 
 Make sure you [have conda installed](https://docs.conda.io/projects/conda/en/latest/user-guide/install/):
 ```bash
@@ -59,7 +62,7 @@ $ tox -e py37
 $ tox -e py36
 ```
 
-## Using forks/branches of BentoML
+## Installing BentoML from forks/branches
 
 When trying new BentoML feature that has not been released, testing a fork of
 BentoML on Google Colab or trying out changes in a pull request, an easy  way of
@@ -157,6 +160,29 @@ $ grpcui -plain text localhost:50051
 gRPC Web UI available at http://127.0.0.1:60551/...
 ```
 Navigate to the URL from above
+
+
+## How to run and develop BentoML Web UI
+
+Make sure you have `yarn` installed: https://classic.yarnpkg.com/en/docs/install 
+
+Install all npm packages required by BentoML Web UI:
+
+```bash
+# install npm packages required by BentoML's Node.js Web Server
+cd {PROJECT_ROOT}/bentoml/yatai/web/
+yarn
+
+# install npm packages required by BentoML web frontend
+cd {PROJECT_ROOT}/bentoml/yatai/web/client/
+yarn
+```
+
+Build the Web Server and frontend UI code:
+```bash
+cd {PROJECT_ROOT}/bentoml/yatai/web/
+npm run build
+```
 
 
 ## Creating Pull Request on Github

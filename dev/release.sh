@@ -49,6 +49,12 @@ fi
 echo "Installing dev dependencies..."
 pip install .[dev]
 
+echo "Build Yatai server web UI..."
+YATAI_WEB_DIR=$GIT_ROOT/bentoml/yatai/web
+cd $YATAI_WEB_DIR
+node build
+cd $GIT_ROOT
+
 echo "Generating distribution archives..."
 python3 setup.py sdist bdist_wheel
 

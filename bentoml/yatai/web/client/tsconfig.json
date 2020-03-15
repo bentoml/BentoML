@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "es2017",
+        "module": "ESNext",
+        "jsx": "react",
+        "moduleResolution": "commonjs",
+        "lib": [
+            "dom",
+            "es5",
+            "es6",
+            "es2017"
+        ],
+        "incremental": true,
+        "experimentalDecorators": true
+    },
+    "include": [
+        "src/**/*"
+    ]
+}

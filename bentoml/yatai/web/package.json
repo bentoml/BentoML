@@ -1,0 +1,72 @@
+{
+  "name": "yatai_web_ui",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "bash -c 'concurrently \"nodemon -- ${0} ${1} ${2}\" \"npm run watch:client\"'",
+    "watch": "concurrently \"npm:watch:*\"",
+    "watch:server": "nodemon",
+    "watch:client": "parcel watch client/src/index.html --out-dir dist/client --public-url ./",
+    "build": "npm run build:client && npm run build:server",
+    "build:server": "webpack && cd dist && npm init --yes && yarn add express@\"~4.17.1\" protobufjs@\"~6.8.8\" grpc@\"~1.24.2\" && rm -rf node_modules/.bin",
+    "build:client": "parcel build client/src/index.html --out-dir dist/client/ --public-url ./ --no-source-maps",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "grpc": "^1.24.2",
+    "protobufjs": "^6.8.8",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^6.5.4",
+    "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.3",
+    "@types/jest": "25.1.2",
+    "@types/long": "^4.0.1",
+    "@types/node": "^13.1.6",
+    "@types/supertest": "^2.0.8",
+    "@types/winston": "^2.4.4",
+    "@typescript-eslint/eslint-plugin": "^2.12.0",
+    "@typescript-eslint/parser": "^2.12.0",
+    "awesome-typescript-loader": "^5.2.1",
+    "concurrently": "^5.1.0",
+    "eslint": "^6.7.2",
+    "eslint-config-prettier": "^6.7.0",
+    "eslint-plugin-import": "^2.19.1",
+    "jest": "^24.9.0",
+    "nodemon": "^2.0.2",
+    "parcel-bundler": "^1.12.4",
+    "prettier": "^1.18.2",
+    "sass": "^1.26.2",
+    "supertest": "^4.0.2",
+    "ts-jest": "25.2.0",
+    "ts-loader": "^6.2.1",
+    "ts-node": "^8.6.0",
+    "tsconfig-paths": "^3.9.0",
+    "typescript": "^3.8.3",
+    "webpack": "^4.42.0",
+    "webpack-cli": "^3.3.11"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".spec.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  }
+}

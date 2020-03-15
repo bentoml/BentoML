@@ -111,11 +111,8 @@ venv.bak/
 
 
 # NodeJS / Javascript
-package.json
 node_modules/
 yarn-error.log
-yarn.lock
-package-lock.json
 
 # MacOS X
 .DS_Store

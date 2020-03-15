@@ -14,62 +14,15 @@
 
 
 import logging
-import time
-from concurrent import futures
 
 import click
-import grpc
 
-from bentoml import config
-from bentoml.cli.click_utils import _echo
-from bentoml.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
-from bentoml.utils.usage_stats import track_cli, track_server
-from bentoml.yatai import get_yatai_service
+from bentoml.cli.click_utils import CLI_COLOR_ERROR, _echo
+from bentoml.exceptions import BentoMLException
+from bentoml.utils.usage_stats import track_cli
+from bentoml.yatai import start_yatai_service_grpc_server
 
 logger = logging.getLogger(__name__)
-
-
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
-
-
-def start_yatai_service_grpc_server(yatai_service, port):
-    track_server('yatai-service-grpc-server')
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    add_YataiServicer_to_server(yatai_service, server)
-    debug_mode = config().getboolean('core', 'debug')
-    if debug_mode:
-        try:
-            logger.debug('Enabling gRPC server reflection for debugging')
-            from grpc_reflection.v1alpha import reflection
-            from bentoml.proto import yatai_service_pb2
-
-            SERVICE_NAMES = (
-                yatai_service_pb2.DESCRIPTOR.services_by_name['Yatai'].full_name,
-                reflection.SERVICE_NAME,
-            )
-            reflection.enable_server_reflection(SERVICE_NAMES, server)
-        except ImportError:
-            logger.debug(
-                'Failed enabling gRPC server reflection, missing required package: '
-                '"pip install grpcio-reflection"'
-            )
-
-    server.add_insecure_port(f'[::]:{port}')
-    server.start()
-    _echo(
-        f'* Starting BentoML YataiService gRPC Server\n'
-        f'* Debug mode: { "on" if debug_mode else "off"}\n'
-        f'* Running on 127.0.0.1:{port} (Press CTRL+C to quit)\n'
-        f'* Usage: `bentoml config set yatai_service.url=127.0.0.1:{port}`\n'
-        f'* Help and instructions: '
-        f'https://docs.bentoml.org/en/latest/concepts/yatai_service.html'
-    )
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        _echo("Terminating YataiService gRPC server..")
-        server.stop(grace=None)
 
 
 def add_yatai_service_sub_command(cli):
@@ -90,9 +43,19 @@ def add_yatai_service_sub_command(cli):
         'filesystem path(POSIX/Windows), or a S3 URL, usually starts with "s3://"',
     )
     @click.option(
-        '--port', type=click.INT, default=50051, help='Port for Yatai server to use'
+        '--grpc-port', type=click.INT, default=50051, help='Port for Yatai server'
     )
-    def yatai_service_start(db_url, repo_base_url, port):
+    @click.option(
+        '--ui-port', type=click.INT, default=3000, help='Port for Yatai web UI'
+    )
+    @click.option(
+        '--ui/--no-ui', default=True, help='Start BentoML YataiService without Web UI'
+    )
+    def yatai_service_start(db_url, repo_base_url, grpc_port, ui_port, ui):
         track_cli('yatai-service-start')
-        yatai_service = get_yatai_service(db_url=db_url, repo_base_url=repo_base_url)
-        start_yatai_service_grpc_server(yatai_service, port)
+        try:
+            start_yatai_service_grpc_server(
+                db_url, repo_base_url, grpc_port, ui_port, ui
+            )
+        except BentoMLException as e:
+            _echo(f'Yatai gRPC server failed: {str(e)}', CLI_COLOR_ERROR)

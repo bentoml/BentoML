@@ -36,7 +36,6 @@ def get_logging_config_dict(logging_level, base_log_directory):
     FEEDBACK_LOG_FILENAME = conf.get("feedback_log_filename")
     FEEDBACK_LOG_JSON_FORMAT = conf.get("feedback_log_json_format")
 
-    YATAI_WEB_SERVER_LOG_FILENAME = conf.get("yatai_web_server_log_filename")
 
     return {
         "version": 1,
@@ -84,16 +83,6 @@ def get_logging_config_dict(logging_level, base_log_directory):
                 "maxBytes": 100 * 1000 * 1000,
                 "backupCount": 10,
             },
-            "yatai_web_server": {
-                "class": "logging.handlers.RotatingFileHandler",
-                "formatter": "console",
-                "level": logging_level,
-                "filename": os.path.join(
-                    base_log_directory, YATAI_WEB_SERVER_LOG_FILENAME
-                ),
-                "maxBytes": 100 * 1000 * 1000,
-                "backupCount": 10,
-            },
         },
         "loggers": {
             "bentoml": {
@@ -109,11 +98,6 @@ def get_logging_config_dict(logging_level, base_log_directory):
             "bentoml.feedback": {
                 "handlers": ["feedback"],
                 "level": "INFO",
-                "propagate": False,
-            },
-            "bentoml.yatai.web": {
-                "handlers": ["yatai_web_server"],
-                "level": logging_level,
                 "propagate": False,
             },
         },

@@ -33,7 +33,6 @@ from bentoml.utils.usage_stats import track_server
 from bentoml.yatai.utils import ensure_node_available_or_raise
 
 logger = logging.getLogger(__name__)
-yatai_web_logger = logging.getLogger('bentoml.yatai.web')
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
@@ -110,14 +109,17 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
     server.add_insecure_port(f'[::]:{grpc_port}')
     server.start()
     if with_ui:
-        ensure_node_available_or_raise()
-        yatai_grpc_server_addess = f'localhost:{grpc_port}'
-        async_start_yatai_service_web_ui(yatai_grpc_server_addess, ui_port, debug_mode)
-
         web_ui_log_path = os.path.join(
             config("logging").get("BASE_LOG_DIR"),
             config('logging').get("yatai_web_server_log_filename"),
         )
+
+        ensure_node_available_or_raise()
+        yatai_grpc_server_addess = f'localhost:{grpc_port}'
+        async_start_yatai_service_web_ui(
+            yatai_grpc_server_addess, ui_port, web_ui_log_path, debug_mode
+        )
+
     _echo(
         f'* Starting BentoML YataiService gRPC Server\n'
         f'* Debug mode: { "on" if debug_mode else "off"}\n'
@@ -145,19 +147,34 @@ def _is_web_server_debug_tools_available(root_dir):
     )
 
 
-def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
+def async_start_yatai_service_web_ui(
+    yatai_server_address, ui_port, base_log_path, debug_mode
+):
     if ui_port is not None:
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
     web_ui_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'web'))
     if debug_mode:
-
         # Only when src/index.ts exists, we will run dev (nodemon)
         if os.path.exists(
             os.path.join(web_ui_dir, 'src/index.ts')
         ) and _is_web_server_debug_tools_available(web_ui_dir):
-            web_ui_command = ['npm', 'run', 'dev', '--', yatai_server_address, ui_port]
+            web_ui_command = [
+                'npm',
+                'run',
+                'dev',
+                '--',
+                yatai_server_address,
+                ui_port,
+                base_log_path,
+            ]
         else:
-            web_ui_command = ['node', 'dist/bundle.js', yatai_server_address, ui_port]
+            web_ui_command = [
+                'node',
+                'dist/bundle.js',
+                yatai_server_address,
+                ui_port,
+                base_log_path,
+            ]
     else:
         if not os.path.isdir(os.path.join(web_ui_dir, 'dist')):
             raise BentoMLException(
@@ -169,8 +186,6 @@ def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
     web_proc = subprocess.Popen(
         web_ui_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=web_ui_dir,
     )
-    for line in iter(web_proc.stdout.readline, b''):
-        yatai_web_logger.info(line.decode('utf-8'))
     atexit.register(web_proc.terminate)
 
 

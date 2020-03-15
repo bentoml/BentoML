@@ -125,12 +125,12 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
         config("logging").get("BASE_LOG_DIR"),
         config('logging').get("yatai_web_server_log_filename"),
     )
-    logger.info(f'* Web server log can be found here: {web_server_log_path}')
-
     if with_ui:
         ensure_node_available_or_raise()
         yatai_grpc_server_addess = f'localhost:{grpc_port}'
         async_start_yatai_service_web_ui(yatai_grpc_server_addess, ui_port, debug_mode)
+    logger.info(f'* Web server log can be found here: {web_server_log_path}')
+
     try:
         while True:
             time.sleep(_ONE_DAY_IN_SECONDS)
@@ -172,7 +172,7 @@ def async_start_yatai_service_web_ui(yatai_server_address, ui_port, debug_mode):
         web_ui_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=web_ui_dir,
     )
     for line in iter(web_proc.stdout.readline, b''):
-        yatai_web_logger.debug(line.decode('utf-8'))
+        yatai_web_logger.info(line.decode('utf-8'))
     atexit.register(web_proc.terminate)
 
 

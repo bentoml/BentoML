@@ -4,14 +4,14 @@ from typing import NamedTuple, Iterable
 
 
 class SimpleRequest(NamedTuple):
-    data: str
     headers: tuple
+    data: str
 
 
 class SimpleResponse(NamedTuple):
-    data: str
-    headers: tuple
     status: int
+    headers: tuple
+    data: str
 
 
 class PlasmaDataLoader:
@@ -33,13 +33,13 @@ class PlasmaDataLoader:
         return plasma.connect(plasma_path)
 
     @classmethod
-    def merge_aio_requests(cls, reqs) -> bytes:
+    def merge_requests(cls, reqs) -> bytes:
         merged_reqs = tuple((b, h) for h, b in reqs)
         oid = cls.get_plasma().put(merged_reqs)
         return oid.binary()
 
     @classmethod
-    def split_aio_responses(cls, raw: bytes):
+    def split_responses(cls, raw: bytes):
         import pyarrow.plasma as plasma
 
         oid = plasma.ObjectID(raw)
@@ -48,7 +48,7 @@ class PlasmaDataLoader:
         return merged_responses
 
     @classmethod
-    def split_flask_requests(cls, raw: bytes):
+    def split_requests(cls, raw: bytes):
         import pyarrow.plasma as plasma
 
         oid = plasma.ObjectID(raw)
@@ -57,7 +57,7 @@ class PlasmaDataLoader:
         return info_list
 
     @classmethod
-    def merge_flask_responses(cls, resps) -> bytes:
+    def merge_responses(cls, resps) -> bytes:
         merged_resps = tuple((r, tuple()) for r in resps)
         oid = cls.get_plasma().put(merged_resps)
         return oid.binary()
@@ -65,19 +65,19 @@ class PlasmaDataLoader:
 
 class PickleDataLoader:
     @classmethod
-    def merge_aio_requests(cls, reqs: Iterable[SimpleRequest]) -> bytes:
+    def merge_requests(cls, reqs: Iterable[SimpleRequest]) -> bytes:
         return pickle.dumps(reqs)
 
     @classmethod
-    def split_flask_requests(cls, raw: bytes) -> Iterable[SimpleRequest]:
+    def split_requests(cls, raw: bytes) -> Iterable[SimpleRequest]:
         return pickle.loads(raw)
 
     @classmethod
-    def merge_flask_responses(cls, resps: Iterable[SimpleResponse]) -> bytes:
+    def merge_responses(cls, resps: Iterable[SimpleResponse]) -> bytes:
         return pickle.dumps(resps)
 
     @classmethod
-    def split_aio_responses(cls, raw: bytes) -> Iterable[SimpleResponse]:
+    def split_responses(cls, raw: bytes) -> Iterable[SimpleResponse]:
         try:
             return pickle.loads(raw)
         except pickle.UnpicklingError:

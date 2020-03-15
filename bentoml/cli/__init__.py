@@ -37,7 +37,7 @@ from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.bento import add_bento_sub_command
 from bentoml.cli.yatai_service import add_yatai_service_sub_command
 from bentoml.server import BentoAPIServer, get_docs
-from bentoml.server.marshal_server import MarshalServer, GunicornMarshalServer
+from bentoml.server.marshal_server import MarshalService, GunicornMarshalServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
@@ -258,15 +258,13 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             with reserve_free_port() as api_server_port:
                 # start server right after port released
                 #  to reduce potential race
-                bento_service_metadata_pb = load_bento_service_metadata(
-                    bento_service_bundle_path
+                marshal_server = MarshalService(
+                    bento_service_bundle_path,
+                    target_host="localhost",
+                    target_port=api_server_port,
                 )
-                marshal_server = MarshalServer(
-                    port=port, target_host="localhost", target_port=api_server_port
-                )
-                marshal_server.setup_routes_from_pb(bento_service_metadata_pb)
                 api_server = BentoAPIServer(bento_service, port=api_server_port)
-            marshal_server.async_start()
+            marshal_server.async_start(port=port)
             api_server.start()
         else:
             api_server = BentoAPIServer(bento_service, port=port)

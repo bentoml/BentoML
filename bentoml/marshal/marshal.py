@@ -128,7 +128,7 @@ class MarshalService:
         bento_bundle_path,
         outbound_host="localhost",
         outbound_port=None,
-        outbound_workers=2,
+        outbound_workers=1,
     ):
         self.outbound_host = outbound_host
         self.outbound_port = outbound_port
@@ -154,7 +154,7 @@ class MarshalService:
 
     def fetch_sema(self):
         if self._outbound_sema is None:
-            self._outbound_sema = asyncio.Semaphore(self.outbound_workers * 2)
+            self._outbound_sema = asyncio.Semaphore(self.outbound_workers)
         return self._outbound_sema
 
     def add_batch_handler(self, api_name, max_latency, max_batch_size):

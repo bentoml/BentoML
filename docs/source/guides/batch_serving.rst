@@ -1,5 +1,5 @@
-Batch Serving
-=============
+Offline Batch Serving
+=====================
 
 This part of the BentoML documentation is working in progress. If you have any questions
 related to this, please join

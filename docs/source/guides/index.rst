@@ -15,8 +15,7 @@ and ask in the bentoml-users channel.
   monitoring
   logging
   micro_batching
-  docker
-  multiple_models
   custom_artifact
   custom_handler
+  yatai_service
 

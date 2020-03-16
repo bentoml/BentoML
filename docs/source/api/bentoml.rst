@@ -16,7 +16,10 @@ BentoService
 
   .. automethod:: bentoml.BentoService.get_service_apis
 
-  .. automethod:: bentoml.BentoService.artifacts
+  .. method:: bentoml.BentoService.artifacts
+
+        returns a dictionary of packed artifacts from the artifact name to the artifact
+        model instance in its native form
 
   .. method:: pack(name, *args, *kwargs)
 
@@ -36,6 +39,8 @@ BentoService
 api
 +++
 .. autofunction:: bentoml.api
+
+.. _bentoml-env-label:
 
 env
 +++

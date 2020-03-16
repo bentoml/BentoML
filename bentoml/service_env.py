@@ -92,27 +92,27 @@ class BentoServiceEnv(object):
 
     Args:
         bento_service_name: name of the BentoService name bundled with this Env
-        setup_sh: user defined setup bash script, it is executed in docker build time
         pip_dependencies: list of pip_dependencies required, specified by package name
             or with specified version `{package_name}=={package_version}`
         auto_pip_dependencies: (Beta) whether to automatically find all the required
             pip dependencies and pin their version
-        conda_channels: extra conda channels to be used
-        conda_dependencies: list of conda dependencies required
         requirements_txt_file: pip dependencies in the form of a requirements.txt file,
             this can be a relative path to the requirements.txt file or the content
             of the file
+        conda_channels: extra conda channels to be used
+        conda_dependencies: list of conda dependencies required
+        setup_sh: user defined setup bash script, it is executed in docker build time
     """
 
     def __init__(
         self,
         bento_service_name,
-        setup_sh=None,
         pip_dependencies=None,
         auto_pip_dependencies=False,
+        requirements_txt_file=None,
         conda_channels=None,
         conda_dependencies=None,
-        requirements_txt_file=None,
+        setup_sh=None,
     ):
         self._python_version = PYTHON_VERSION
 

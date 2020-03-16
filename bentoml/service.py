@@ -285,33 +285,37 @@ def artifacts_decorator(artifacts):
 
 
 def env_decorator(
-    setup_sh=None,
     pip_dependencies=None,
     auto_pip_dependencies=False,
+    requirements_txt_file=None,
     conda_channels=None,
     conda_dependencies=None,
+    setup_sh=None,
 ):
     """Define environment and dependencies required for the BentoService being created
 
     Args:
-        setup_sh (str): bash script for initializing docker environment before loading
-            the BentoService for inferencing
-        pip_dependencies (list(str)): List of python PyPI package dependencies
-        auto_pip_dependencies (bool): Flag to tell bentoml auto seek package
-            dependencies for project or not
-        conda_channels (list(str)): List of conda channels required for conda
-            dependencies
-        conda_dependencies (list(str)): List of conda dependencies required
+        pip_dependencies: list of pip_dependencies required, specified by package name
+            or with specified version `{package_name}=={package_version}`
+        auto_pip_dependencies: (Beta) whether to automatically find all the required
+            pip dependencies and pin their version
+        requirements_txt_file: pip dependencies in the form of a requirements.txt file,
+            this can be a relative path to the requirements.txt file or the content
+            of the file
+        conda_channels: extra conda channels to be used
+        conda_dependencies: list of conda dependencies required
+        setup_sh: user defined setup bash script, it is executed in docker build time
     """
 
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv(
             bento_service_name=bento_service_cls.name(),
-            setup_sh=setup_sh,
             pip_dependencies=pip_dependencies,
             auto_pip_dependencies=auto_pip_dependencies,
+            requirements_txt_file=requirements_txt_file,
             conda_channels=conda_channels,
             conda_dependencies=conda_dependencies,
+            setup_sh=setup_sh,
         )
         return bento_service_cls
 
@@ -621,6 +625,10 @@ class BentoService(BentoServiceBase):
             args) pair for creating declared model artifacts
         :return: a new BentoService instance
         """
+        logger.warning(
+            "BentoService#pack class method is deprecated, use instance method `pack` "
+            "instead. e.g.: svc = MyBentoService(); svc.pack('model', model_object)"
+        )
         from bentoml.artifact import ArtifactCollection
 
         if args and isinstance(args[0], ArtifactCollection):

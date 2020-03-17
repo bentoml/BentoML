@@ -1,5 +1,13 @@
 import * as React from 'react';
 import axios from 'axios';
+import { Switch, Route } from 'react-router';
+import { BrowserRouter } from 'react-router-dom';
+import { Home } from './pages/home';
+import { DeploymentsList } from './pages/deployments_list';
+import { DeploymentDetails } from './pages/deployment_details';
+import { BentosList } from './pages/bentos_list';
+import { BentoServicesList } from './pages/bento_services_list';
+import { BentoServiceDetail } from './pages/bento_service_detail';
 
 interface IFetchContainerProps {
   url: string;
@@ -48,15 +56,29 @@ class FetchContainer extends React.Component<IFetchContainerProps> {
     )
   }
 }
+// <FetchContainer url='/api/listBento' method='get'>
+//   {({ data, error }) => (
+//     <div>
+//       <pre>{JSON.stringify(data, null , 2)}</pre>
+//     </div>
+//   )}
+// </FetchContainer>
 
 export const App = () => (
-  <div>
-    <FetchContainer url='/api/listBento' method='get'>
-      {({ data, error }) => (
-        <div>
-          <pre>{JSON.stringify(data, null , 2)}</pre>
-        </div>
-      )}
-    </FetchContainer>
-  </div>
+  <BrowserRouter>
+    <div className='app'>
+      <Switch>
+        <Route path='/deployments/:name' component={DeploymentDetails} />
+        <Route path='/deployments' component={DeploymentsList} />
+
+        <Route path='/bentos/:name/:version' component={BentoServiceDetail} />
+        <Route path='/bentos/:name' component={BentoServicesList} />
+        <Route path='/bentos' component={BentosList} />
+
+        <Route path='/about' component={Home} / >
+        <Route path='/config' component={Home} / >
+        <Route exact path='/' component={Home} />
+      </Switch>
+    </div>
+  </BrowserRouter>
 );

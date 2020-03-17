@@ -187,15 +187,15 @@ service.
 .. code-block:: python
 
   @bentoml.env(
-    auto_pip_dependencies=True,
-    setup_sh="./my_init_script.sh"
+      auto_pip_dependencies=True,
+      setup_sh="./my_init_script.sh"
   )
   class ExamplePredictionService(bentoml.BentoService):
-    ...
+      ...
 
   @bentoml.env(
-    auto_pip_dependencies=True,
-    setup_sh="""\n
+      auto_pip_dependencies=True,
+      setup_sh="""\
   #!/bin/bash
   set -e
 
@@ -204,7 +204,7 @@ service.
     """
   )
   class ExamplePredictionService(bentoml.BentoService):
-    ...
+      ...
 
 If you have a specific docker base image that you would like to use for your API server,
 `contact us <mailto:contact@bentoml.ai>`_ and let us know your use case and
@@ -242,10 +242,10 @@ prediction service that packs two trained models:
     ])
     class MyPredictionService(bentoml.BentoService):
 
-      @bentoml.api(DataframeHandler)
-      def predict(self, df):
-        # assume the output of model_a will be the input of model_b in this example:
-        df = self.artifacts.model_a.predict(df)
+        @bentoml.api(DataframeHandler)
+        def predict(self, df):
+            # assume the output of model_a will be the input of model_b in this example:
+            df = self.artifacts.model_a.predict(df)
 
         return self.artifacts.model_b.predict(df)
 
@@ -265,13 +265,126 @@ models are depending on each other, such as the example above.
 API Function and Handlers
 -------------------------
 
+BentoService API is the entry point for clients to access a prediction service. It is
+defined by writing the API handling function(a class method within the BentoService
+class) which gets called when client sent an inference request. User will need to
+annotate this method with :code:`@bentoml.api` docorator and pass in a Handler class,
+which defines the desired input format for the API function. For example, if your model
+is expecting tabluar data as input, you can use :code:`DataframeHandler` for your API,
+e.g.:
 
 
+.. code-block:: python
 
+
+  class ExamplePredictionService(bentoml.BentoService):
+
+      @bentoml.api(DataframeHandler)
+      def predict(self, df):
+          assert type(df) == pandas.core.frame.DataFrame
+          return postprocessing(model_output)
+
+
+When using DataframeHandler, BentoML will converts the inference request sent from
+client, either in the form of a JSON HTTP request or a CSV file, into a
+:code:`pandas.DataFrame` and pass it down to the user-defined API function.
+
+User can write arbitary python code within the API function that process the data.
+Besides passing the prediction input data to the model for inferencing, user can also
+write Python code for data fetching, data pre-processing and post-processing within the
+API function. For example:
+
+.. code-block:: python
+
+  from my_lib import preprocessing, postprocessing, fetch_user_profile_from_databasae
+
+  class ExamplePredictionService(bentoml.BentoService):
+
+      @bentoml.api(DataframeHandler)
+      def predict(self, df):
+          user_profile_column = fetch_user_profile_from_databasae(df['user_id'])
+          df['user_profile'] = user_profile_column
+          model_input = preprocessing(df)
+          model_output = self.artifacts.model.predict(model_input)
+          return postprocessing(model_output)
+
+.. note::
+
+    Check out the :doc:`list of API Handlers <api/handlers>` that BentoML provides.
+
+
+It is important to notice that in BentoML, the input variable passed into the
+user-defined API function **is always a list of inference inputs**. BentoML users
+must make sure their API function code is processing a batch of input data.
+
+This design made it possible for BentoML to do Micro-Batching in online serving
+setting, which is one of the most effective performance optimization technique used
+in model serving systems.
+
+
+API Function Return Value
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The output of an API function can be any of the follow types:
+
+.. code-block:: python
+
+    pandas.DataFrame
+    pandas.Series
+    numpy.ndarray
+
+    # JSON = t.Union[str, int, float, bool, None, t.Mapping[str, 'JSON'], t.List['JSON']]
+    List[JSON]
+
+
+It is user API function's responsibility to make sure the list of prediction results
+matches the order of input data sequence and have the exact same length.
+
+
+.. note::
+
+    It was possible for API function to handle and return a single inference request at
+    one time before BentoML 0.7.0, but it is no longer recommended after introducing
+    the adaptive micro batching feature.
+
+
+Service with Multiple APIs
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A BentoService can contain multiple APIs, which makes it easy to build prediction
+service that supports different access patterns for different clients, e.g.:
+
+.. code-block:: python
+
+  from my_lib import process_custom_json_format
+
+  class ExamplePredictionService(bentoml.BentoService):
+
+      @bentoml.api(DataframeHandler)
+      def predict(self, df: pandas.Dataframe):
+          return self.artifacts.model.predict(df)
+
+      @bentoml.api(JsonHandler)
+      def predict_json(self, json_arr):
+          df = processs_custom_json_format(json-arr)
+          return self.artifacts.model.predict(df)
+
+
+Make sure to give each API a different name. BentoML uses the method name as the API's
+name, which will become part the serving endpoint it generates.
+
+Operational API
+^^^^^^^^^^^^^^^
+
+User can also create APIs that, instead of handling an inference request, handles
+request for updating prediction service configs or retraining models with new arrived
+data. Operational API is still a beta feature, `contact us <mailto:contact@bentoml.ai>`_
+if you're interested in learning more.
 
 
 Saving BentoService
 -------------------
+
 
 Using BentoService SavedBundle
 ------------------------------

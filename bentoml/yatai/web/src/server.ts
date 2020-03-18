@@ -100,6 +100,7 @@ export const getExpressApp = (grpcAddress: string|null) => {
   createRoutes(app, yataiClient);
 
   app.get('/*', (req, res) => {
+    console.log('===', req.path);
     if (/.js$|.css$/.test(req.path)) {
       let filename = req.path.split('/').pop();
       res.sendFile(path.join(__dirname, `../dist/client/${filename}`));

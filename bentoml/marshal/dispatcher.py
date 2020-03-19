@@ -1,6 +1,5 @@
 import asyncio
 from typing import Callable
-from functools import lru_cache
 
 
 class Parade:
@@ -46,7 +45,7 @@ class Parade:
 
 
 class ParadeDispatcher:
-    def __init__(self, interval, max_size, task_concurrency=2):
+    def __init__(self, interval, max_size, shared_sema=None):
         """
         params:
             * interval: interval to wait for inbound tasks in milliseconds
@@ -55,17 +54,19 @@ class ParadeDispatcher:
         """
         self.interval = interval
         self.max_size = max_size
-        self.task_concurrency = task_concurrency
+        self.shared_sema = shared_sema
         self.callback = None
         self._current_parade = None
+        self._sema = None
 
     @property
-    @lru_cache(maxsize=1)
     def outbound_sema(self):
         '''
-        semaphore should be created after forked(in the current event loop)
+        semaphore should be created after process forked
         '''
-        return asyncio.Semaphore(self.task_concurrency)
+        if self._sema is None:
+            self._sema = self.shared_sema and self.shared_sema() or asyncio.Semaphore(1)
+        return self._sema
 
     def get_parade(self):
         if self._current_parade and self._current_parade.status == Parade.STATUS_OPEN:

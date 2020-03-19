@@ -38,6 +38,7 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         num_of_workers=1,
         timeout=None,
         prometheus_lock=None,
+        model_server_workers=1,
     ):
         self.bento_service_bundle_path = bundle_path
 
@@ -54,6 +55,7 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         if num_of_workers:
             self.options['workers'] = num_of_workers
         self.prometheus_lock = prometheus_lock
+        self.model_server_workers = model_server_workers
 
         super(GunicornMarshalServer, self).__init__()
 
@@ -73,7 +75,10 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
 
     def load(self):
         server = MarshalService(
-            self.bento_service_bundle_path, self.target_host, self.target_port,
+            self.bento_service_bundle_path,
+            self.target_host,
+            self.target_port,
+            target_count=self.model_server_workers,
         )
         return server.make_app()
 

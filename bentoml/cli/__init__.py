@@ -346,6 +346,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     port=port,
                     num_of_workers=microbatch_workers,
                     prometheus_lock=prometheus_lock,
+                    model_server_workers=workers or 3,
                 )
 
                 gunicorn_app = GunicornBentoServer(

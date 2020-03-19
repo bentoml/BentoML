@@ -122,10 +122,18 @@ class MarshalService:
     _DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
     _DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
 
-    def __init__(self, bento_bundle_path, target_host="localhost", target_port=None):
+    def __init__(
+        self,
+        bento_bundle_path,
+        target_host="localhost",
+        target_port=None,
+        target_count=2,
+    ):
         self.target_host = target_host
         self.target_port = target_port
+        self.target_count = target_count
         self.batch_handlers = dict()
+        self._target_sema = None
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
@@ -143,12 +151,17 @@ class MarshalService:
     def set_target_port(self, target_port):
         self.target_port = target_port
 
+    def fetch_sema(self):
+        if self._target_sema is None:
+            self._target_sema = asyncio.Semaphore(self.target_count * 2)
+        return self._target_sema
+
     def add_batch_handler(self, api_name, max_latency, max_batch_size):
 
         if api_name not in self.batch_handlers:
-            _func = ParadeDispatcher(max_latency, max_batch_size)(
-                partial(self._batch_handler_template, api_name=api_name)
-            )
+            _func = ParadeDispatcher(
+                max_latency, max_batch_size, shared_sema=self.fetch_sema
+            )(partial(self._batch_handler_template, api_name=api_name))
             self.batch_handlers[api_name] = _func
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):
@@ -220,7 +233,7 @@ class MarshalService:
                     ) as resp:
                         raw = await resp.read()
                 merged = DataLoader.split_responses(raw)
-            except aiohttp.ClientConnectorError:
+            except (aiohttp.ClientConnectorError, aiohttp.ServerDisconnectedError):
                 return (aiohttp.web.HTTPServiceUnavailable,) * len(requests)
 
         if merged is None:

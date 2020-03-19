@@ -14,8 +14,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os
-import shutil
 import logging
 import multiprocessing
 
@@ -24,6 +22,7 @@ from gunicorn.app.base import Application
 from bentoml import config
 from bentoml.marshal import MarshalService
 from bentoml.utils.usage_stats import track_server
+from bentoml.server.utils import setup_prometheus_multiproc_dir
 
 
 marshal_logger = logging.getLogger("bentoml.marshal")
@@ -38,6 +37,7 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         port=None,
         num_of_workers=1,
         timeout=None,
+        prometheus_lock=None,
     ):
         self.bento_service_bundle_path = bundle_path
 
@@ -53,6 +53,7 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         }
         if num_of_workers:
             self.options['workers'] = num_of_workers
+        self.prometheus_lock = prometheus_lock
 
         super(GunicornMarshalServer, self).__init__()
 
@@ -70,25 +71,6 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         for key, value in gunicorn_config.items():
             self.cfg.set(key.lower(), value)
 
-    def setup_prometheus_multiproc_dir(self):
-        """
-        Set up prometheus_multiproc_dir for prometheus to work in multiprocess mode,
-        which is required when working with Gunicorn server
-
-        Warning: for this to work, prometheus_client library must be imported after
-        this function is called. It relies on the os.environ['prometheus_multiproc_dir']
-        to properly setup for multiprocess mode
-        """
-
-        prometheus_multiproc_dir = config('instrument').get('prometheus_multiproc_dir')
-        marshal_logger.debug(
-            "Setting up prometheus_multiproc_dir: %s", prometheus_multiproc_dir
-        )
-        if os.path.isdir(prometheus_multiproc_dir):
-            shutil.rmtree(prometheus_multiproc_dir)
-        os.mkdir(prometheus_multiproc_dir)
-        os.environ['prometheus_multiproc_dir'] = prometheus_multiproc_dir
-
     def load(self):
         server = MarshalService(
             self.bento_service_bundle_path, self.target_host, self.target_port,
@@ -97,13 +79,13 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
 
     def run(self):
         track_server('gunicorn-microbatch', {"number_of_workers": self.cfg.workers})
-        self.setup_prometheus_multiproc_dir()
+        setup_prometheus_multiproc_dir(self.prometheus_lock)
         super(GunicornMarshalServer, self).run()
 
     def async_run(self):
         """
         Start an micro batch server.
         """
-        marshal_proc = multiprocessing.Process(target=self.run, daemon=True,)
+        marshal_proc = multiprocessing.Process(target=self.run, daemon=True)
         marshal_proc.start()
         marshal_logger.info("Running micro batch service on :%d", self.port)

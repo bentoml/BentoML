@@ -30,8 +30,7 @@ class Parade:
 
     async def start_wait(self, interval, call):
         try:
-            await asyncio.sleep(interval)
-            # await asyncio.sleep(0.02)
+            await asyncio.sleep(interval / 100)
             async with self.outbound_sema:
                 self.status = self.STATUS_CLOSED
                 self.batch_output = await call(self.batch_input[: self.cur])
@@ -47,7 +46,7 @@ class Parade:
 
 
 class ParadeDispatcher:
-    def __init__(self, interval, max_size, task_concurrency=3):
+    def __init__(self, interval, max_size, task_concurrency=2):
         """
         params:
             * interval: interval to wait for inbound tasks in milliseconds

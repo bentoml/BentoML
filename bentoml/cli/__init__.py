@@ -22,6 +22,7 @@ import json
 import click
 import tempfile
 import subprocess
+import multiprocessing
 from pathlib import Path
 
 from ruamel.yaml import YAML
@@ -335,6 +336,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         from bentoml.server.gunicorn_server import GunicornBentoServer
 
         if enable_microbatch:
+            prometheus_lock = multiprocessing.Lock()
             # avoid load model before gunicorn fork
             with reserve_free_port() as api_server_port:
                 marshal_server = GunicornMarshalServer(
@@ -343,10 +345,15 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     bundle_path=bento_service_bundle_path,
                     port=port,
                     num_of_workers=microbatch_workers,
+                    prometheus_lock=prometheus_lock,
                 )
 
                 gunicorn_app = GunicornBentoServer(
-                    bento_service_bundle_path, api_server_port, workers, timeout
+                    bento_service_bundle_path,
+                    api_server_port,
+                    workers,
+                    timeout,
+                    prometheus_lock,
                 )
             marshal_server.async_run()
             gunicorn_app.run()

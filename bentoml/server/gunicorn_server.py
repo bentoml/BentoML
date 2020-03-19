@@ -16,15 +16,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import logging
-import shutil
 from flask import Response
 from gunicorn.app.base import Application
 
 from bentoml import config
 from bentoml.bundler import load
 from bentoml.server import BentoAPIServer
+from bentoml.server.utils import setup_prometheus_multiproc_dir
 from bentoml.utils.usage_stats import track_server
 
 logger = logging.getLogger(__name__)
@@ -61,7 +60,14 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
     :param timeout: request timeout config
     """
 
-    def __init__(self, bundle_path, port=None, num_of_workers=None, timeout=None):
+    def __init__(
+        self,
+        bundle_path,
+        port=None,
+        num_of_workers=None,
+        timeout=None,
+        prometheus_lock=None,
+    ):
         self.bento_service_bundle_path = bundle_path
 
         self.port = port or config("apiserver").getint("default_port")
@@ -73,27 +79,9 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         }
         if num_of_workers:
             self.options['workers'] = num_of_workers
+        self.prometheus_lock = prometheus_lock
 
         super(GunicornBentoServer, self).__init__()
-
-    def setup_prometheus_multiproc_dir(self):
-        """
-        Set up prometheus_multiproc_dir for prometheus to work in multiprocess mode,
-        which is required when working with Gunicorn server
-
-        Warning: for this to work, prometheus_client library must be imported after
-        this function is called. It relies on the os.environ['prometheus_multiproc_dir']
-        to properly setup for multiprocess mode
-        """
-
-        prometheus_multiproc_dir = config('instrument').get('prometheus_multiproc_dir')
-        logger.debug(
-            "Setting up prometheus_multiproc_dir: %s", prometheus_multiproc_dir
-        )
-        if os.path.isdir(prometheus_multiproc_dir):
-            shutil.rmtree(prometheus_multiproc_dir)
-        os.mkdir(prometheus_multiproc_dir)
-        os.environ['prometheus_multiproc_dir'] = prometheus_multiproc_dir
 
     def load_config(self):
         self.load_config_from_file("python:bentoml.server.gunicorn_config")
@@ -116,5 +104,5 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
 
     def run(self):
         track_server('gunicorn', {"number_of_workers": self.cfg.workers})
-        self.setup_prometheus_multiproc_dir()
+        setup_prometheus_multiproc_dir(self.prometheus_lock)
         super(GunicornBentoServer, self).run()

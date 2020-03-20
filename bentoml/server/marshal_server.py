@@ -22,7 +22,10 @@ from gunicorn.app.base import Application
 from bentoml import config
 from bentoml.marshal import MarshalService
 from bentoml.utils.usage_stats import track_server
-from bentoml.server.utils import setup_prometheus_multiproc_dir
+from bentoml.server.utils import (
+    setup_prometheus_multiproc_dir,
+    get_gunicorn_num_of_workers,
+)
 
 
 marshal_logger = logging.getLogger("bentoml.marshal")
@@ -38,7 +41,7 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         num_of_workers=1,
         timeout=None,
         prometheus_lock=None,
-        model_server_workers=1,
+        model_server_workers=None,
     ):
         self.bento_service_bundle_path = bundle_path
 
@@ -55,6 +58,8 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         if num_of_workers:
             self.options['workers'] = num_of_workers
         self.prometheus_lock = prometheus_lock
+        if model_server_workers is None:
+            model_server_workers = get_gunicorn_num_of_workers()
         self.model_server_workers = model_server_workers
 
         super(GunicornMarshalServer, self).__init__()

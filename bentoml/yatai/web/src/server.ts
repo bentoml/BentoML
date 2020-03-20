@@ -9,6 +9,9 @@ const logger = getLogger();
 
 const createRoutes = (app, yataiClient) => {
   app.get('/api/ListBento', async(req: Request, res: Response) => {
+    if (req.query.limit && typeof(req.query.limit) == 'string') {
+      req.query.limit = Number(req.query.limit)
+    }
     let verifyError = bentoml.ListBentoRequest.verify(req.query);
     if (verifyError) {
       return res.status(400).json({error: verifyError})
@@ -100,7 +103,6 @@ export const getExpressApp = (grpcAddress: string|null) => {
   createRoutes(app, yataiClient);
 
   app.get('/*', (req, res) => {
-    console.log('===', req.path);
     if (/.js$|.css$/.test(req.path)) {
       let filename = req.path.split('/').pop();
       res.sendFile(path.join(__dirname, `../dist/client/${filename}`));

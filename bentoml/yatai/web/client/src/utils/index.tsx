@@ -1,5 +1,6 @@
 import * as React from 'react';
 import axios from 'axios';
+import * as moment from '../../node_modules/moment/moment';
 
 
 interface IFetchContainerProps {
@@ -11,14 +12,14 @@ interface IFetchContainerProps {
   children?: any;
 }
 
-class FetchContainer extends React.Component<IFetchContainerProps> {
+export class FetchContainer extends React.Component<IFetchContainerProps> {
   state = {
     response: undefined,
     data: undefined,
     error: undefined,
   };
 
-  componentDidMount() {
+  componentWillMount() {
     this.fetch();
   }
 
@@ -48,4 +49,9 @@ class FetchContainer extends React.Component<IFetchContainerProps> {
       })
     )
   }
-}
+};
+
+
+export const displayTimeInFromNowFormat = (seconds: number) => {
+  return moment.unix(seconds).fromNow();
+};

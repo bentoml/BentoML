@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "@types/moment": "^2.13.0",
     "@types/react": "^16.9.23",
     "@types/react-dom": "^16.9.5",
     "@types/react-router": "^5.1.4",
@@ -20,6 +21,7 @@
     "@blueprintjs/select": "^3.12.0",
     "@blueprintjs/table": "^3.8.3",
     "axios": "^0.19.2",
+    "moment": "^2.24.0",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
     "react-router": "^5.1.2",

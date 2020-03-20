@@ -7,8 +7,12 @@ def test_concat():
         [1, 2],
         [],
         [1, 2, 3],
+        None,
     ]
     datas, slices = concat_list(lst)
 
     for s, origin_data in zip(slices, lst):
-        assert origin_data == datas[s]
+        if s is None:
+            assert origin_data is None
+        else:
+            assert origin_data == datas[s]

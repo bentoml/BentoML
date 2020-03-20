@@ -29,6 +29,10 @@ from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
 from bentoml.handlers.utils import concat_list
 
 
+class BadResult:
+    pass
+
+
 class JsonHandler(BentoHandler):
     """JsonHandler parses REST API request or CLI command into parsed_json(a
     dict in python) and pass down to user defined API function
@@ -65,6 +69,7 @@ class JsonHandler(BentoHandler):
             except (json.JSONDecodeError, UnicodeDecodeError):
                 responses[i] = SimpleResponse(400, None, "not a valid json input")
             except Exception:  # pylint: disable=broad-except
+                responses[i] = SimpleResponse(500, None, "internal server error")
                 import traceback
 
                 traceback.print_exc()
@@ -79,10 +84,10 @@ class JsonHandler(BentoHandler):
                 "and have same length as the inputs."
             )
 
-        results = [merged_result[s] for s in slices]
-
-        for i, result in enumerate(results):
-            result_str = api_func_result_to_json(result)
+        for i, s in enumerate(slices):
+            if s is None:
+                continue
+            result_str = api_func_result_to_json(merged_result[s])
             responses[i] = SimpleResponse(200, dict(), result_str)
 
         return responses

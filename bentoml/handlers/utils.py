@@ -90,14 +90,18 @@ def concat_list(lst):
         [1],
         [1, 2],
         [1, 2, 3],
+        None,
         ]
     >>> concat_list(lst)
-    [1, 1, 2, 1, 2, 3], [slice(0, 1), slice(1, 3), slice(3, 6)]
+    [1, 1, 2, 1, 2, 3], [slice(0, 1), slice(1, 3), slice(3, 6), None]
     """
     slices = [slice(0)] * len(lst)
     datas = []
     row_flag = 0
     for i, r in enumerate(lst):
+        if r is None:
+            slices[i] = None
+            continue
         j = -1
         for j, d in enumerate(r):
             datas.append(d)

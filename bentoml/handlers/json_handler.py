@@ -19,11 +19,18 @@ from __future__ import print_function
 import os
 import json
 import argparse
+from typing import Iterable
 
 from flask import Response
 
 from bentoml.exceptions import BadInput
+from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
+from bentoml.handlers.utils import concat_list
+
+
+class BadResult:
+    pass
 
 
 class JsonHandler(BentoHandler):
@@ -31,6 +38,8 @@ class JsonHandler(BentoHandler):
     dict in python) and pass down to user defined API function
 
     """
+
+    BATCH_MODE_SUPPORTED = True
 
     def handle_request(self, request, func):
         if request.content_type == "application/json":
@@ -45,8 +54,43 @@ class JsonHandler(BentoHandler):
         json_output = api_func_result_to_json(result)
         return Response(response=json_output, status=200, mimetype="application/json")
 
-    def handle_batch_request(self, requests, func):
-        raise NotImplementedError
+    def handle_batch_request(
+        self, requests: Iterable[SimpleRequest], func
+    ) -> Iterable[SimpleResponse]:
+        bad_resp = SimpleResponse(400, None, "Bad Input")
+        instances_list = [None] * len(requests)
+        responses = [bad_resp] * len(requests)
+
+        for i, request in enumerate(requests):
+            try:
+                raw_str = request.data
+                parsed_json = json.loads(raw_str)
+                instances_list[i] = parsed_json
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                responses[i] = SimpleResponse(400, None, "not a valid json input")
+            except Exception:  # pylint: disable=broad-except
+                responses[i] = SimpleResponse(500, None, "internal server error")
+                import traceback
+
+                traceback.print_exc()
+
+        merged_instances, slices = concat_list(instances_list)
+        merged_result = func(merged_instances)
+        if not isinstance(merged_result, (list, tuple)) or len(merged_result) != len(
+            merged_instances
+        ):
+            raise ValueError(
+                "The return value with JsonHandler must be list of jsonable objects, "
+                "and have same length as the inputs."
+            )
+
+        for i, s in enumerate(slices):
+            if s is None:
+                continue
+            result_str = api_func_result_to_json(merged_result[s])
+            responses[i] = SimpleResponse(200, dict(), result_str)
+
+        return responses
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()

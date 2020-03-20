@@ -22,6 +22,7 @@ from typing import Iterable
 import pandas as pd
 import numpy as np
 
+from bentoml import config as bentoml_config
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
 PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS = [
@@ -41,10 +42,16 @@ class BentoHandler:
     """
 
     HTTP_METHODS = ["POST", "GET"]
+    _BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")
 
     BATCH_MODE_SUPPORTED = False
 
     def __init__(self, **base_config):
+        '''
+        base_configs:
+            - mb_max_latency
+            - is_batch_input
+        '''
         self._config = base_config
 
     @property

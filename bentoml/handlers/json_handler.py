@@ -41,6 +41,9 @@ class JsonHandler(BentoHandler):
 
     BATCH_MODE_SUPPORTED = True
 
+    def __init__(self, is_batch_input=False, **base_kwargs):
+        super(JsonHandler, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
+
     def handle_request(self, request, func):
         if request.content_type == "application/json":
             parsed_json = json.loads(request.data.decode("utf-8"))
@@ -60,11 +63,21 @@ class JsonHandler(BentoHandler):
         bad_resp = SimpleResponse(400, None, "Bad Input")
         instances_list = [None] * len(requests)
         responses = [bad_resp] * len(requests)
+        batch_flags = [None] * len(requests)
 
         for i, request in enumerate(requests):
+            batch_flags[i] = (
+                request.formated_headers.get(
+                    self._BATCH_REQUEST_HEADER.lower(),
+                    "true" if self.config.get('is_batch_input') else "false",
+                )
+                == "true"
+            )
             try:
                 raw_str = request.data
                 parsed_json = json.loads(raw_str)
+                if not batch_flags[i]:
+                    parsed_json = (parsed_json,)
                 instances_list[i] = parsed_json
             except (json.JSONDecodeError, UnicodeDecodeError):
                 responses[i] = SimpleResponse(400, None, "not a valid json input")
@@ -87,7 +100,10 @@ class JsonHandler(BentoHandler):
         for i, s in enumerate(slices):
             if s is None:
                 continue
-            result_str = api_func_result_to_json(merged_result[s])
+            result = merged_result[s]
+            if not batch_flags[i]:
+                result = result[0]
+            result_str = api_func_result_to_json(result)
             responses[i] = SimpleResponse(200, dict(), result_str)
 
         return responses

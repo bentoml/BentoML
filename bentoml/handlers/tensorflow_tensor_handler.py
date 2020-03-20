@@ -55,8 +55,10 @@ class TensorflowTensorHandler(BentoHandler):
     BATCH_MODE_SUPPORTED = True
     METHODS = (PREDICT, CLASSIFY, REGRESS) = ("predict", "classify", "regress")
 
-    def __init__(self, method=PREDICT, **base_kwargs):
-        super(TensorflowTensorHandler, self).__init__(**base_kwargs)
+    def __init__(self, method=PREDICT, is_batch_input=True, **base_kwargs):
+        super(TensorflowTensorHandler, self).__init__(
+            is_batch_input=is_batch_input, **base_kwargs
+        )
         self.method = method
 
     @property
@@ -121,18 +123,26 @@ class TensorflowTensorHandler(BentoHandler):
         bad_resp = SimpleResponse(400, None, "Bad Input")
         instances_list = [None] * len(requests)
         responses = [bad_resp] * len(requests)
+        batch_flags = [None] * len(requests)
 
         for i, request in enumerate(requests):
             try:
                 raw_str = request.data
+                batch_flags[i] = (
+                    request.formated_headers.get(
+                        self._BATCH_REQUEST_HEADER.lower(),
+                        "true" if self.config.get("is_batch_input") else "false",
+                    )
+                    == "true"
+                )
                 parsed_json = json.loads(raw_str)
                 if parsed_json.get("instances") is not None:
                     instances = parsed_json.get("instances")
                     if instances is None:
                         continue
                     instances = decode_b64_if_needed(instances)
-                    if not isinstance(instances, (list, tuple)):
-                        instances = [instances]
+                    if not batch_flags[i]:
+                        instances = (instances,)
                     instances_list[i] = instances
 
                 elif parsed_json.get("inputs"):
@@ -155,6 +165,8 @@ class TensorflowTensorHandler(BentoHandler):
         results = [merged_result[s] for s in slices]
 
         for i, result in enumerate(results):
+            if not batch_flags[i]:
+                result = result[0]
             result_str = api_func_result_to_json(result)
             responses[i] = SimpleResponse(200, dict(), result_str)
 

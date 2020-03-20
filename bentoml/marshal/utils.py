@@ -4,8 +4,18 @@ from typing import NamedTuple, Iterable
 
 
 class SimpleRequest(NamedTuple):
+    '''
+    headers: tuple of key value pairs in bytes
+    data: str
+    '''
+
     headers: tuple
     data: str
+
+    @property
+    @lru_cache()
+    def formated_headers(self):
+        return {hk.decode().lower(): hv.decode() for hk, hv in self.headers or tuple()}
 
 
 class SimpleResponse(NamedTuple):

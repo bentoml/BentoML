@@ -24,10 +24,10 @@ const HeaderComp = () => (
         <NavbarHeading>BentoML</NavbarHeading>
       </Link>
       <NavbarDivider />
-      <Link to='repository'>
+      <Link to='/repository'>
         <Button className={Classes.MINIMAL} icon="document" text="Repository" />
       </Link>
-      <Link to='deployments'>
+      <Link to='/deployments'>
         <Button className={Classes.MINIMAL} icon="document" text="Deployments" />
       </Link>
     </NavbarGroup>

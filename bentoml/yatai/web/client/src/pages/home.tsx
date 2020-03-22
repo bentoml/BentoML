@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { FetchContainer } from '../utils/index';
 import { DeploymentTable } from '../components/deployment_table';
-import { BentoTable } from '../components/bento_table';
+import { BentoTable } from '../components/bento_service_table';
 
 export const Home = () => (
   <div>

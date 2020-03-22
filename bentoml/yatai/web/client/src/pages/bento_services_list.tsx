@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { FetchContainer } from '../utils/index';
-import { BentoTable } from '../components/bento_table';
+import { BentoTable } from '../components/bento_service_table';
 
 export const BentoServicesList = (props) => {
   const params = props.match.params;

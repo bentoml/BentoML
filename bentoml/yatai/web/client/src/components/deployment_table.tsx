@@ -63,7 +63,7 @@ export const DeploymentTable = (props) => {
 
     return (
       <Cell>
-        <Link to={`deployments/${deployment.namespace}/${deployment.name}`}>
+        <Link to={`/deployments/${deployment.namespace}/${deployment.name}`}>
           Detail
         </Link>
       </Cell>

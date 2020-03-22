@@ -57,7 +57,7 @@ export const BentoTable = (props) => {
 
   const renderActions = (rowIndex: number) => {
     const bento = bentos[rowIndex];
-    const detailLink = `repository/${bento.name}/${bento.version}`;
+    const detailLink = `/repository/${bento.name}/${bento.version}`;
 
     return (
       <Cell>

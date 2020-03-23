@@ -61,12 +61,7 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
     """
 
     def __init__(
-        self,
-        bundle_path,
-        port=None,
-        num_of_workers=None,
-        timeout=None,
-        prometheus_lock=None,
+        self, bundle_path, port=None, workers=None, timeout=None, prometheus_lock=None,
     ):
         self.bento_service_bundle_path = bundle_path
 
@@ -77,8 +72,8 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
             "timeout": timeout,
             "loglevel": config("logging").get("LOGGING_LEVEL").upper(),
         }
-        if num_of_workers:
-            self.options['workers'] = num_of_workers
+        if workers:
+            self.options['workers'] = workers
         self.prometheus_lock = prometheus_lock
 
         super(GunicornBentoServer, self).__init__()

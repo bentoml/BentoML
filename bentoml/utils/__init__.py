@@ -21,6 +21,7 @@ import os
 from io import StringIO
 import socket
 from contextlib import contextmanager
+from functools import wraps
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 
@@ -132,3 +133,16 @@ def is_sqlite_db(db_url):
         return urlparse(db_url).scheme == 'sqlite'
     except ValueError:
         return False
+
+
+def cached_property(method):
+    @property
+    @wraps(method)
+    def _m(self, *args, **kwargs):
+        if not hasattr(self, '_cached_properties'):
+            setattr(self, '_cached_properties', dict())
+        if method.__name__ not in self._cached_properties:
+            self._cached_properties[method.__name__] = method(self, *args, **kwargs)
+        return self._cached_properties[method.__name__]
+
+    return _m

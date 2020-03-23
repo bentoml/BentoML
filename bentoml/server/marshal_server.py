@@ -31,18 +31,17 @@ marshal_logger = logging.getLogger("bentoml.marshal")
 class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
     def __init__(
         self,
-        target_host,
-        target_port,
+        outbound_host,
+        outbound_port,
         bundle_path,
         port=None,
-        num_of_workers=1,
+        workers=1,
         timeout=None,
         prometheus_lock=None,
+        outbound_workers=1,
     ):
         self.bento_service_bundle_path = bundle_path
 
-        self.target_port = target_port
-        self.target_host = target_host
         self.port = port or config("apiserver").getint("default_port")
         timeout = timeout or config("apiserver").getint("default_timeout")
         self.options = {
@@ -51,9 +50,13 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
             "loglevel": config("logging").get("LOGGING_LEVEL").upper(),
             "worker_class": "aiohttp.worker.GunicornWebWorker",
         }
-        if num_of_workers:
-            self.options['workers'] = num_of_workers
+        if workers:
+            self.options['workers'] = workers
         self.prometheus_lock = prometheus_lock
+
+        self.outbound_port = outbound_port
+        self.outbound_host = outbound_host
+        self.outbound_workers = outbound_workers
 
         super(GunicornMarshalServer, self).__init__()
 
@@ -73,7 +76,10 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
 
     def load(self):
         server = MarshalService(
-            self.bento_service_bundle_path, self.target_host, self.target_port,
+            self.bento_service_bundle_path,
+            self.outbound_host,
+            self.outbound_port,
+            outbound_workers=self.outbound_workers,
         )
         return server.make_app()
 

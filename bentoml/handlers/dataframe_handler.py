@@ -296,7 +296,7 @@ class DataframeHandler(BentoHandler):
         result_conc = func(df_conc)
         # TODO: check length
 
-        results = [s and result_conc[s] or BadResult for s in slices]
+        results = [result_conc[s] if s else BadResult for s in slices]
 
         responses = [SimpleResponse(400, None, "bad request")] * len(requests)
         for i, result in enumerate(results):

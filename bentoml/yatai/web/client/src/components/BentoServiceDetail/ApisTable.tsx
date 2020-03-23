@@ -43,7 +43,9 @@ const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => (
     <h2>APIs</h2>
     <TableContainer>
       <TableHeader>
-        <Cell maxWidth={150}>API name</Cell>
+        <Cell maxWidth={150} color="#137CBD">
+          API name
+        </Cell>
         <Cell maxWidth={250}>Handler type</Cell>
         <Cell>Handler Config</Cell>
         <Cell maxWidth={300}>Documentation</Cell>

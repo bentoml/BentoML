@@ -13,7 +13,9 @@ const ArtifactsTable: React.FC<{ artifacts: Array<IArtifactProps> }> = ({
     <h2>Artifacts</h2>
     <TableContainer>
       <TableHeader>
-        <Cell maxWidth={150}>Artifact name</Cell>
+        <Cell maxWidth={150} color="#137CBD">
+          Artifact name
+        </Cell>
         <Cell>Artifact type</Cell>
       </TableHeader>
       {artifacts.map((artifact, i) => (

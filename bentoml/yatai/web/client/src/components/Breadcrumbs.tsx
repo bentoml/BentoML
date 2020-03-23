@@ -19,7 +19,7 @@ const Breadcrumbs: React.FC = () => {
     setBreadcrumbs(parsedBreadcrumbs);
   }, [location]);
 
-  breadcrumbs.unshift(HOME_CRUMB);
+  breadcrumbs.length > 0 && breadcrumbs.unshift(HOME_CRUMB);
   return <BlueprintBreadcrumbs items={breadcrumbs} />;
 };
 

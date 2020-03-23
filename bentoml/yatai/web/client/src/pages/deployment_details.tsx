@@ -69,7 +69,7 @@ const DisplayDeploymentConfig = ({ config }) => {
   };
 
   return (
-    <Table numKeys={configKeys.length}>
+    <Table numRows={configKeys.length}>
       <Column cellRenderer={renderConfigName} />
       <Column cellRenderer={renderConfigValue} />
     </Table>

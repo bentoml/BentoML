@@ -20,6 +20,8 @@
     "@blueprintjs/icons": "^3.14.0",
     "@blueprintjs/select": "^3.12.0",
     "@blueprintjs/table": "^3.8.3",
+    "@emotion/core": "^10.0.28",
+    "@emotion/styled": "^10.0.27",
     "axios": "^0.19.2",
     "moment": "^2.24.0",
     "react": "^16.13.0",

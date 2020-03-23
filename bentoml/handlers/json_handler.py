@@ -80,12 +80,14 @@ class JsonHandler(BentoHandler):
                     parsed_json = (parsed_json,)
                 instances_list[i] = parsed_json
             except (json.JSONDecodeError, UnicodeDecodeError):
-                responses[i] = SimpleResponse(400, None, "not a valid json input")
+                responses[i] = SimpleResponse(400, None, "Not a valid json")
             except Exception:  # pylint: disable=broad-except
-                responses[i] = SimpleResponse(500, None, "internal server error")
                 import traceback
 
-                traceback.print_exc()
+                err = traceback.format_exc()
+                responses[i] = SimpleResponse(
+                    500, None, f"Internal Server Error: {err}"
+                )
 
         merged_instances, slices = concat_list(instances_list)
         merged_result = func(merged_instances)

@@ -1,10 +1,7 @@
 import atexit
 from multiprocessing.util import _exit_function
 
-from bentoml.server.utils import get_gunicorn_num_of_workers
 from bentoml.utils.usage_stats import track_server_stop
-
-workers = get_gunicorn_num_of_workers()
 
 
 def worker_exit(server, worker):  # pylint: disable=unused-argument

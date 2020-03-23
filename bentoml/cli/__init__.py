@@ -320,8 +320,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
-        if workers is None:
-            workers = get_gunicorn_num_of_workers()
 
         if with_conda:
             run_with_conda_env(
@@ -336,6 +334,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 ),
             )
             return
+
+        if workers is None:
+            workers = get_gunicorn_num_of_workers()
 
         from bentoml.server.gunicorn_server import GunicornBentoServer
 

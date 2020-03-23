@@ -1,5 +1,6 @@
 import asyncio
 from typing import Callable
+from bentoml.utils import cached_property
 
 
 class Parade:
@@ -36,37 +37,32 @@ class Parade:
                 self.status = self.STATUS_RETURNED
                 async with self.returned:
                     self.returned.notify_all()
-        except Exception as e:  # noqa TODO
-            raise e
         finally:
             # make sure parade is closed
-            if self.status != self.STATUS_OPEN:
+            if self.status == self.STATUS_OPEN:
                 self.status = self.STATUS_CLOSED
 
 
 class ParadeDispatcher:
-    def __init__(self, interval, max_size, shared_sema=None):
+    def __init__(self, interval, max_size, shared_sema: callable = None):
         """
         params:
             * interval: interval to wait for inbound tasks in milliseconds
             * max_size: inbound tasks buffer size
-            * task_concurrency: outbound tasks max concurrency
+            * shared_sema: semaphore to limit concurrent tasks
         """
         self.interval = interval
         self.max_size = max_size
         self.shared_sema = shared_sema
         self.callback = None
         self._current_parade = None
-        self._sema = None
 
-    @property
+    @cached_property
     def outbound_sema(self):
         '''
         semaphore should be created after process forked
         '''
-        if self._sema is None:
-            self._sema = self.shared_sema and self.shared_sema() or asyncio.Semaphore(1)
-        return self._sema
+        return self.shared_sema() if self.shared_sema else asyncio.Semaphore(1)
 
     def get_parade(self):
         if self._current_parade and self._current_parade.status == Parade.STATUS_OPEN:

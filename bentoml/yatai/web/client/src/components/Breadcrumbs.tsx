@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import * as React from "react";
 import { useLocation } from "react-router-dom";
 import {
   Breadcrumbs as BlueprintBreadcrumbs,
@@ -11,9 +11,11 @@ const HOME_CRUMB: IBreadcrumbProps = {
 };
 
 const Breadcrumbs: React.FC = () => {
-  const [breadcrumbs, setBreadcrumbs] = useState<Array<IBreadcrumbProps>>([]);
+  const [breadcrumbs, setBreadcrumbs] = React.useState<Array<IBreadcrumbProps>>(
+    []
+  );
   const location = useLocation();
-  useEffect(() => {
+  React.useEffect(() => {
     const parsedBreadcrumbs = getBreadcrumbs(location.pathname);
 
     setBreadcrumbs(parsedBreadcrumbs);

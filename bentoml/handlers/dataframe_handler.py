@@ -185,9 +185,14 @@ class DataframeHandler(BentoHandler):
         output_orient="records",
         typ="frame",
         input_dtypes=None,
+        is_batch_input=True,
         **base_kwargs,
     ):
-        super(DataframeHandler, self).__init__(**base_kwargs)
+        if not is_batch_input:
+            raise ValueError('dataframe handler can not accpept none batch inputs')
+        super(DataframeHandler, self).__init__(
+            is_batch_input=is_batch_input, **base_kwargs
+        )
 
         self.orient = orient
         self.output_orient = output_orient or orient
@@ -285,10 +290,9 @@ class DataframeHandler(BentoHandler):
     ) -> Iterable[SimpleResponse]:
 
         datas = [r.data for r in requests]
-        headers = [
-            {hk.lower(): hv for hk, hv in r.headers or tuple()} for r in requests
+        content_types = [
+            r.formated_headers.get('content-type', 'application/json') for r in requests
         ]
-        content_types = [h.get('content-type', 'application/json') for h in headers]
         # TODO: check content_type
 
         df_conc, slices = read_dataframes_from_json_n_csv(datas, content_types)

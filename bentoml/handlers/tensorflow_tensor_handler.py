@@ -55,8 +55,10 @@ class TensorflowTensorHandler(BentoHandler):
     BATCH_MODE_SUPPORTED = True
     METHODS = (PREDICT, CLASSIFY, REGRESS) = ("predict", "classify", "regress")
 
-    def __init__(self, method=PREDICT, **base_kwargs):
-        super(TensorflowTensorHandler, self).__init__(**base_kwargs)
+    def __init__(self, method=PREDICT, is_batch_input=True, **base_kwargs):
+        super(TensorflowTensorHandler, self).__init__(
+            is_batch_input=is_batch_input, **base_kwargs
+        )
         self.method = method
 
     @property
@@ -112,27 +114,34 @@ class TensorflowTensorHandler(BentoHandler):
     ) -> Iterable[SimpleResponse]:
         """
         TODO(hrmthw):
-        1. check content type
         1. specify batch dim
         1. output str fromat
         """
         import tensorflow as tf
 
-        bad_resp = SimpleResponse(400, None, "Bad Input")
+        bad_resp = SimpleResponse(400, None, "input format error")
         instances_list = [None] * len(requests)
         responses = [bad_resp] * len(requests)
+        batch_flags = [None] * len(requests)
 
         for i, request in enumerate(requests):
             try:
                 raw_str = request.data
+                batch_flags[i] = (
+                    request.formated_headers.get(
+                        self._BATCH_REQUEST_HEADER.lower(),
+                        "true" if self.config.get("is_batch_input") else "false",
+                    )
+                    == "true"
+                )
                 parsed_json = json.loads(raw_str)
                 if parsed_json.get("instances") is not None:
                     instances = parsed_json.get("instances")
                     if instances is None:
                         continue
                     instances = decode_b64_if_needed(instances)
-                    if not isinstance(instances, (list, tuple)):
-                        instances = [instances]
+                    if not batch_flags[i]:
+                        instances = (instances,)
                     instances_list[i] = instances
 
                 elif parsed_json.get("inputs"):
@@ -141,9 +150,14 @@ class TensorflowTensorHandler(BentoHandler):
                     )
 
             except (json.JSONDecodeError, UnicodeDecodeError):
+                pass
+            except Exception:  # pylint: disable=broad-except
                 import traceback
 
-                traceback.print_exc()
+                err = traceback.format_exc()
+                responses[i] = SimpleResponse(
+                    500, None, f"Internal Server Error: {err}"
+                )
 
         merged_instances, slices = concat_list(instances_list)
 
@@ -152,9 +166,12 @@ class TensorflowTensorHandler(BentoHandler):
         merged_result = decode_tf_if_needed(merged_result)
         assert isinstance(merged_result, (list, tuple))
 
-        results = [merged_result[s] for s in slices]
-
-        for i, result in enumerate(results):
+        for i, s in enumerate(slices):
+            if s is None:
+                continue
+            result = merged_result[s]
+            if not batch_flags[i]:
+                result = result[0]
             result_str = api_func_result_to_json(result)
             responses[i] = SimpleResponse(200, dict(), result_str)
 

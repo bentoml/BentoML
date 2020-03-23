@@ -38,6 +38,7 @@ from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.bento import add_bento_sub_command
 from bentoml.cli.yatai_service import add_yatai_service_sub_command
 from bentoml.server import BentoAPIServer, get_docs
+from bentoml.server.utils import get_gunicorn_num_of_workers
 from bentoml.server.marshal_server import MarshalService, GunicornMarshalServer
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import get_deployment_sub_command
@@ -49,6 +50,7 @@ from bentoml.yatai.client import YataiClient
 from bentoml.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.exceptions import BentoMLException
+
 
 try:
     import click_completion
@@ -261,8 +263,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 #  to reduce potential race
                 marshal_server = MarshalService(
                     bento_service_bundle_path,
-                    target_host="localhost",
-                    target_port=api_server_port,
+                    outbound_host="localhost",
+                    outbound_port=api_server_port,
                 )
                 api_server = BentoAPIServer(bento_service, port=api_server_port)
             marshal_server.async_start(port=port)
@@ -318,6 +320,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
+        if workers is None:
+            workers = get_gunicorn_num_of_workers()
 
         if with_conda:
             run_with_conda_env(
@@ -340,13 +344,13 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             # avoid load model before gunicorn fork
             with reserve_free_port() as api_server_port:
                 marshal_server = GunicornMarshalServer(
-                    target_host="localhost",
-                    target_port=api_server_port,
                     bundle_path=bento_service_bundle_path,
                     port=port,
-                    num_of_workers=microbatch_workers,
+                    workers=microbatch_workers,
                     prometheus_lock=prometheus_lock,
-                    model_server_workers=workers,
+                    outbound_host="localhost",
+                    outbound_port=api_server_port,
+                    outbound_workers=workers,
                 )
 
                 gunicorn_app = GunicornBentoServer(

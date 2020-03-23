@@ -125,15 +125,15 @@ class MarshalService:
     def __init__(
         self,
         bento_bundle_path,
-        target_host="localhost",
-        target_port=None,
-        target_count=2,
+        outbound_host="localhost",
+        outbound_port=None,
+        outbound_workers=2,
     ):
-        self.target_host = target_host
-        self.target_port = target_port
-        self.target_count = target_count
+        self.outbound_host = outbound_host
+        self.outbound_port = outbound_port
+        self.outbound_workers = outbound_workers
         self.batch_handlers = dict()
-        self._target_sema = None
+        self._outbound_sema = None  # the semaphore to limit outbound connections
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
@@ -148,13 +148,13 @@ class MarshalService:
             self.CONNECTION_LIMIT,
         )
 
-    def set_target_port(self, target_port):
-        self.target_port = target_port
+    def set_outbound_port(self, outbound_port):
+        self.outbound_port = outbound_port
 
     def fetch_sema(self):
-        if self._target_sema is None:
-            self._target_sema = asyncio.Semaphore(self.target_count * 2)
-        return self._target_sema
+        if self._outbound_sema is None:
+            self._outbound_sema = asyncio.Semaphore(self.outbound_workers * 2)
+        return self._outbound_sema
 
     def add_batch_handler(self, api_name, max_latency, max_batch_size):
 
@@ -198,7 +198,7 @@ class MarshalService:
     async def _relay_handler(self, request, api_name):
         data = await request.read()
         headers = dict(request.headers)
-        api_url = f"http://{self.target_host}:{self.target_port}/{api_name}"
+        api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_name}"
 
         with async_trace(
             ZIPKIN_API_URL,
@@ -217,7 +217,7 @@ class MarshalService:
 
     async def _batch_handler_template(self, requests, api_name):
         headers = {self._MARSHAL_FLAG: "true"}
-        api_url = f"http://{self.target_host}:{self.target_port}/{api_name}"
+        api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_name}"
 
         with async_trace(
             ZIPKIN_API_URL,

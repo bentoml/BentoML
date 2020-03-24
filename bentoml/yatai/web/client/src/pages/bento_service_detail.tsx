@@ -4,6 +4,7 @@ import { HttpRequestContainer } from "../utils/http_container";
 import EnvTable from "../components/BentoServiceDetail/EnvTable";
 import ApisTable from "../components/BentoServiceDetail/ApisTable";
 import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
+import * as moment from 'moment';
 
 export const BentoServiceDetail = props => {
   const params = props.match.params;
@@ -27,8 +28,13 @@ export const BentoServiceDetail = props => {
 
           displayBentoServiceDetail = (
             <div>
-              <h4>created at date</h4>
-              <h4>saved location</h4>
+              <h4>
+                Created at: {
+                  moment.unix(Number(bento.bento_service_metadata.created_at.seconds))
+                    .format('MM/DD/YYYY HH:mm:ss Z')
+                }
+              </h4>
+              <h4>Storage: {bento.uri.uri}</h4>
               <ApisTable apis={bento.bento_service_metadata.apis} />
               <ArtifactsTable
                 artifacts={bento.bento_service_metadata.artifacts}

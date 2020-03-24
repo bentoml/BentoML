@@ -20,7 +20,7 @@ export const BentoServiceDetail = props => {
         }
         let displayBentoServiceDetail;
         if (error) {
-          return <div>error</div>;
+          return <div>Error: {JSON.stringify(error)}</div>;
         }
 
         if (data && data && data.bento) {
@@ -43,7 +43,7 @@ export const BentoServiceDetail = props => {
             </div>
           );
         } else {
-          displayBentoServiceDetail = <div>grpc error</div>;
+        displayBentoServiceDetail = <div>{JSON.stringify(data)}</div>;
         }
 
         return (

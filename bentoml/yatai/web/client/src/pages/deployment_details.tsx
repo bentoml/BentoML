@@ -45,7 +45,7 @@ export const DeploymentDetails = props => {
             </div>
           );
         } else {
-          detailDisplay = <div>grpc error</div>;
+        detailDisplay = <div>{JSON.stringify(data)}</div>;
         }
         return (
           <div>

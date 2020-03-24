@@ -12,6 +12,9 @@ export const Home = () => (
             if (isLoading) {
               return <div>Loading...</div>
             }
+            if (error) {
+              return <div>Error: {JSON.stringify(error)}</div>
+            }
             let deploymentDisplay;
             let activeDeploymentCounts = 0;
             if (data && data.deployments) {

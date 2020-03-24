@@ -12,7 +12,13 @@ export const BentoServicesList = (props) => {
         params={{bento_name: params.name}}
       >
         {
-          ({data, error}) => {
+          ({data, isLoading, error}) => {
+            if (isLoading) {
+              return <div>Loading...</div>
+            }
+            if (error) {
+              return <div>Error: {JSON.stringify(error)}</div>
+            }
             if (data && data.bentos) {
               return (
                 <div>
@@ -21,7 +27,7 @@ export const BentoServicesList = (props) => {
                 </div>
               );
             } else {
-              return (<div>ok</div>)
+              return (<div>{JSON.stringify(data)}</div>)
             }
           }
         }

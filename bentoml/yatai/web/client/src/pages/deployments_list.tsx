@@ -20,7 +20,7 @@ export const DeploymentsList = () => (
             <DeploymentTable deployments={data.deployments} />
           )
         } else {
-          deploymentDisplay = (<div>Nop</div>)
+          deploymentDisplay = (<div>{JSON.stringify(data)}</div>)
         }
 
         return (

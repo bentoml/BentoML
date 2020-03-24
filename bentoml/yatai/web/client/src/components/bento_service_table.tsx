@@ -61,9 +61,8 @@ export const BentoTable = (props) => {
               <Cell maxWidth={200} >
                 <div>
                   <Link to={`/repository/${bento.name}/${bento.version}`}>
-                    <Button>Detail</Button>
+                    Detail
                   </Link>
-                  <Button>Download</Button>
                 </div>
               </Cell>
             </Row>

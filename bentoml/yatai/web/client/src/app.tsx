@@ -18,12 +18,13 @@ import { BentoServicesList } from "./pages/bento_services_list";
 import { BentoServiceDetail } from "./pages/bento_service_detail";
 import Layout from "./ui/Layout";
 import Breadcrumbs from "./components/Breadcrumbs";
+import logo from './assets/bentoml-logo.png';
 
 const HeaderComp = () => (
   <Navbar>
     <NavbarGroup align={Alignment.LEFT}>
       <Link to="/">
-        <NavbarHeading>BentoML</NavbarHeading>
+        <NavbarHeading><img src={logo} width={150} /></NavbarHeading>
       </Link>
       <NavbarDivider />
       <Link to="/repository">

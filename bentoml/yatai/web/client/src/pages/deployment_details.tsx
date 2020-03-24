@@ -7,7 +7,7 @@ import { HttpRequestContainer } from '../utils/http_container'
 import ConfigurationTable from '../components/DeploymentDetail/ConfigurationTable';
 import DeploymentApisTable from '../components/DeploymentDetail/ApisTable';
 import InfoTable from '../components/DeploymentDetail/InfoTable';
-import { Button } from '@blueprintjs/core';
+import { Tag } from '@blueprintjs/core';
 
 
 const DeploymentError = () => {
@@ -36,7 +36,7 @@ export const DeploymentDetails = props => {
           detailDisplay = (
             <div>
               <h1>
-                Deployment: {deployment.name} <Button>{deployment.state.state}</Button>
+                Deployment: {deployment.name} <Tag>{deployment.state.state}</Tag>
               </h1>
               {/* <DeploymentError /> */}
               <InfoTable deployment={deployment} />

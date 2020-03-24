@@ -15,16 +15,19 @@ const ConfigurationTable = ({spec}) => {
       config = {};
   }
   const configKeys = Object.keys(config);
-  // TODO make sure add unit to some of the value like memory size
   return (
     <div>
       <h2>Configuration</h2>
       <TableContainer>
+        <Row>
+          <Cell maxWidth={150}>Platform</Cell>
+          <Cell>{spec.operator}</Cell>
+        </Row>
         {
           configKeys.map((configKey, i) => {
             return (
               <Row key={i}>
-                <Cell maxWidth={150}>{configKey}</Cell>
+                <Cell maxWidth={150}>{configKey}:</Cell>
                 <Cell>{config[configKey]}</Cell>
               </Row>
             )

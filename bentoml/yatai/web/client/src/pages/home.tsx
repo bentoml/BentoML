@@ -2,65 +2,69 @@ import * as React from 'react';
 import { HttpRequestContainer } from '../utils/http_container';
 import { DeploymentTable } from '../components/deployment_table';
 import { BentoTable } from '../components/bento_service_table';
+import { Link } from 'react-router-dom';
 
 export const Home = () => (
   <div>
-    <div>
-      <HttpRequestContainer url='/api/ListDeployments' method='get'>
-        {
-          ({data, isLoading, error}) => {
-            if (isLoading) {
-              return <div>Loading...</div>
-            }
-            if (error) {
-              return <div>Error: {JSON.stringify(error)}</div>
-            }
-            let deploymentDisplay;
-            let activeDeploymentCounts = 0;
-            if (data && data.deployments) {
-              deploymentDisplay = <DeploymentTable deployments={data.deployments} />;
-              activeDeploymentCounts = data.deployments.length;
-            } else {
-              deploymentDisplay = (
-                <div>
-                  Learn about managing model serving deployments with BentoML
-                </div>
-              );
-            }
+    <HttpRequestContainer url='/api/ListDeployments' method='get'>
+      {
+        ({data, isLoading, error}) => {
+          if (isLoading) {
+            return <div>Loading...</div>
+          }
+          if (error) {
+            return <div>Error: {JSON.stringify(error)}</div>
+          }
+          let deploymentDisplay;
+          let activeDeploymentCounts = 0;
+          if (data && data.deployments) {
+            deploymentDisplay = <DeploymentTable deployments={data.deployments} />;
+            activeDeploymentCounts = data.deployments.length;
+          } else {
+            deploymentDisplay = (
+              <a href='https://docs.bentoml.org/en/latest' target="_blank">
+                Learn about managing model serving deployments with BentoML &#1f44b;
+              </a>
+            );
+          }
 
+          return (
+            <div>
+              <h2>Active Deployments: {activeDeploymentCounts}</h2>
+              {deploymentDisplay}
+            </div>
+          )
+        }
+      }
+    </HttpRequestContainer>
+    <HttpRequestContainer url='/api/ListBento' method='get' params={{limit: 5}}>
+      {
+        ({data, isLoading, error}) => {
+          if (isLoading) {
+            return <div>Loading...</div>
+          }
+          if (error) {
+            return <div>Error: {JSON.stringify(error)}</div>
+          }
+          if (data && data.bentos) {
             return (
               <div>
-                <h2>Active Deployments: {activeDeploymentCounts}</h2>
-                {deploymentDisplay}
+                <h2>Latest Models</h2>
+                <BentoTable bentos={data.bentos} />
+              </div>
+            );
+          } else {
+            return (
+              <div>
+                <h2>No model found</h2>
+                <a href='https://docs.bentoml.org/en/latest' target='_blank'>
+                  Learn about packaging ML model for serving with BentoML &#1f517;
+                </a>
               </div>
             )
           }
         }
-      </HttpRequestContainer>
-    </div>
-    <div>
-      <h2>Latest Models</h2>
-      <div>
-        <HttpRequestContainer url='/api/ListBento' method='get' params={{limit: 5}}>
-          {
-            ({data, isLoading, error}) => {
-              if (isLoading) {
-                return <div>Loading...</div>
-              }
-              if (error) {
-                return <div>Error: {JSON.stringify(error)}</div>
-              }
-              if (data && data.bentos) {
-                return (
-                  <BentoTable bentos={data.bentos} />
-                );
-              } else {
-                return (<div>grpc error</div>);
-              }
-            }
-          }
-        </HttpRequestContainer>
-      </div>
-    </div>
+      }
+    </HttpRequestContainer>
   </div>
 );

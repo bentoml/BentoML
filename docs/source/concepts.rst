@@ -332,9 +332,19 @@ The output of an API function can be any of the follow types:
     pandas.DataFrame
     pandas.Series
     numpy.ndarray
+    tensorflow.Tensor
 
+    # List of JSON Serializable
     # JSON = t.Union[str, int, float, bool, None, t.Mapping[str, 'JSON'], t.List['JSON']]
     List[JSON]
+
+
+    ?????
+    Bytes
+    Buffer
+    ByteArray
+    List[Bytes]
+
 
 
 It is user API function's responsibility to make sure the list of prediction results
@@ -343,7 +353,7 @@ matches the order of input data sequence and have the exact same length.
 
 .. note::
 
-    It was possible for API function to handle and return a single inference request at
+    It is possible for API function to handle and return a single inference request at
     one time before BentoML 0.7.0, but it is no longer recommended after introducing
     the adaptive micro batching feature.
 

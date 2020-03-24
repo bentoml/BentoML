@@ -20,6 +20,7 @@ import multiprocessing
 from functools import partial
 
 import aiohttp
+
 from bentoml import config
 from bentoml.utils.trace import async_trace, make_http_headers
 from bentoml.marshal.utils import DataLoader, SimpleRequest
@@ -74,9 +75,9 @@ def metrics_patch(cls):
                 labelnames=['endpoint', 'http_response_code'],
             )
 
-        async def request_dispatcher(self, request):
+        async def request_dispatcher(self, request: aiohttp.web.Request):
             func = super(_MarshalService, self).request_dispatcher
-            api_name = request.match_info["name"]
+            api_name = request.match_info.get("name", "/")
             _metrics_request_in_progress = self.metrics_request_in_progress.labels(
                 endpoint=api_name, http_method=request.method,
             )
@@ -187,28 +188,28 @@ class MarshalService:
             standalone=True,
             sample_rate=0.001,
         ):
-            api_name = request.match_info["name"]
+            api_name = request.match_info.get("name")
             if api_name in self.batch_handlers:
                 req = SimpleRequest(request.raw_headers, await request.read())
                 resp = await self.batch_handlers[api_name](req)
             else:
-                resp = await self._relay_handler(request, api_name)
+                resp = await self.relay_handler(request)
         return resp
 
-    async def _relay_handler(self, request, api_name):
+    async def relay_handler(self, request: aiohttp.web.Request):
         data = await request.read()
         headers = dict(request.headers)
-        api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_name}"
+        url = request.url.with_host(self.outbound_host).with_port(self.outbound_port)
 
         with async_trace(
             ZIPKIN_API_URL,
             service_name=self.__class__.__name__,
-            span_name=f"[2]{api_name} relay",
+            span_name=f"[2]{url.path} relay",
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
             async with aiohttp.ClientSession() as client:
                 async with client.request(
-                    request.method, api_url, data=data, headers=request.headers
+                    request.method, url, data=data, headers=request.headers
                 ) as resp:
                     body = await resp.read()
         return aiohttp.web.Response(
@@ -257,7 +258,9 @@ class MarshalService:
 
     def make_app(self):
         app = aiohttp.web.Application()
+        app.router.add_view("/", self.relay_handler)
         app.router.add_view("/{name}", self.request_dispatcher)
+        app.router.add_view("/{path:.*}", self.relay_handler)
         return app
 
     def fork_start_app(self, port):

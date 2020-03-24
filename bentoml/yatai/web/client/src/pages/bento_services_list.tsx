@@ -1,12 +1,12 @@
 import * as React from 'react';
-import { FetchContainer } from '../utils/index';
+import { HttpRequestContainer } from '../utils/http_container';
 import { BentoTable } from '../components/bento_service_table';
 
 export const BentoServicesList = (props) => {
   const params = props.match.params;
   return (
     <div>
-      <FetchContainer
+      <HttpRequestContainer
         url='/api/ListBento'
         method='get'
         params={{bento_name: params.name}}
@@ -25,7 +25,7 @@ export const BentoServicesList = (props) => {
             }
           }
         }
-      </FetchContainer>
+      </HttpRequestContainer>
     </div>
   );
 }

@@ -1,15 +1,21 @@
 import * as React from 'react';
-import { FetchContainer } from '../utils/index';
+import { HttpRequestContainer } from '../utils/http_container';
 import { DeploymentTable } from '../components/deployment_table';
 
 
 export const DeploymentsList = () => (
-  <FetchContainer url='/api/ListDeployments' method='get'>
+  <HttpRequestContainer url='/api/ListDeployments' method='get'>
     {
-      ({data, error}) => {
+      ({data, isLoading, error}) => {
         let activeDeploymentCount = 0;
         let deploymentDisplay;
-        if (data && data.Deployments) {
+        if (isLoading) {
+          return <div>Loading...</div>
+        }
+        if (error) {
+          return <div>Error: {JSON.stringify(error)}</div>
+        }
+        if (data && data.deployments) {
           deploymentDisplay = (
             <DeploymentTable deployments={data.deployments} />
           )
@@ -25,5 +31,5 @@ export const DeploymentsList = () => (
         );
       }
     }
-  </FetchContainer>
+  </HttpRequestContainer>
 );

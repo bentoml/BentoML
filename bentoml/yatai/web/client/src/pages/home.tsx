@@ -1,14 +1,17 @@
 import * as React from 'react';
-import { FetchContainer } from '../utils/index';
+import { HttpRequestContainer } from '../utils/http_container';
 import { DeploymentTable } from '../components/deployment_table';
 import { BentoTable } from '../components/bento_service_table';
 
 export const Home = () => (
   <div>
     <div>
-      <FetchContainer url='/api/ListDeployments' method='get'>
+      <HttpRequestContainer url='/api/ListDeployments' method='get'>
         {
-          ({data, error}) => {
+          ({data, isLoading, error}) => {
+            if (isLoading) {
+              return <div>Loading...</div>
+            }
             let deploymentDisplay;
             let activeDeploymentCounts = 0;
             if (data && data.deployments) {
@@ -30,24 +33,30 @@ export const Home = () => (
             )
           }
         }
-      </FetchContainer>
+      </HttpRequestContainer>
     </div>
     <div>
       <h2>Latest Models</h2>
       <div>
-        <FetchContainer url='/api/ListBento' method='get' params={{limit: 5}}>
+        <HttpRequestContainer url='/api/ListBento' method='get' params={{limit: 5}}>
           {
-            ({data, error}) => {
+            ({data, isLoading, error}) => {
+              if (isLoading) {
+                return <div>Loading...</div>
+              }
+              if (error) {
+                return <div>Error: {JSON.stringify(error)}</div>
+              }
               if (data && data.bentos) {
                 return (
                   <BentoTable bentos={data.bentos} />
                 );
               } else {
-                return (<div>ok</div>)
+                return (<div>grpc error</div>);
               }
             }
           }
-        </FetchContainer>
+        </HttpRequestContainer>
       </div>
     </div>
   </div>

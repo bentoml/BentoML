@@ -12,6 +12,9 @@ const createRoutes = (app, yataiClient) => {
     if (req.query.limit && typeof(req.query.limit) == 'string') {
       req.query.limit = Number(req.query.limit)
     }
+    if (req.query.offset && typeof(req.query.offset) == 'string') {
+      req.query.offset = Number(req.query.offset)
+    }
     let verifyError = bentoml.ListBentoRequest.verify(req.query);
     if (verifyError) {
       return res.status(400).json({error: verifyError})

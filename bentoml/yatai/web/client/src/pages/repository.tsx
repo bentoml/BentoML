@@ -1,8 +1,46 @@
 import * as React from 'react';
+import { getQueryObject } from '../utils';
+import { HttpRequestContainer} from '../utils/http_container';
+import { BentoTable } from '../components/bento_service_table';
+import { Button } from '@blueprintjs/core';
+import { Link } from 'react-router-dom';
 
 
-export const Repository = () => (
-  <div>
-    All bentos with next
-  </div>
-);
+export const Repository = (props) => {
+  const query = getQueryObject(props.location.search);
+  const offset = Number(query.offset) || 0;
+  return (
+    <div>
+      <HttpRequestContainer
+        url='/api/ListBento'
+        method='get'
+        params={{limit: 10, offset}}
+      >
+        {
+          ({data, isLoading, error}) => {
+            if (isLoading) {
+              return <div>Loading...</div>
+            }
+            if (error) {
+              return <div>Error: {JSON.stringify(error)}</div>
+            }
+            if (data && data.bentos) {
+              return (
+                <BentoTable bentos={data.bentos} />
+              );
+            } else {
+              return <div>{JSON.stringify(data)}</div>
+            }
+          }
+        }
+      </HttpRequestContainer>
+      <div>
+        {
+          offset > 0 && <Link to={`/repository?offset=${offset-10}`}>Previous</Link>
+        }
+
+        <Link to={`/repository?offset=${offset+10}`}>Next</Link>
+      </div>
+    </div>
+  )
+};

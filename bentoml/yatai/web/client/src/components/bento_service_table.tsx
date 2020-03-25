@@ -3,7 +3,7 @@ import * as moment from 'moment';
 import { Link } from 'react-router-dom';
 import { Button } from '@blueprintjs/core';
 import { displayTimeInFromNowFormat } from '../utils/index';
-import { TableContainer, TableHeader, Row, Cell } from '../ui/Table';
+import Table from '../ui/Table';
 
 const parseApisAsArrayString = (apis) => {
   let list = [];
@@ -29,46 +29,34 @@ const parseArtifactsAsArrayString = (artifacts) => {
   return list;
 }
 
+const BENTO_TABLE_HEADERS = ['BentoService(name:version)', 'Age', 'APIs', 'Artifacts', ''];
+const BENTO_TABLE_RATIO = [6, 2, 4, 4, 1];
 
 export const BentoTable = (props) => {
   const {bentos} = props;
+  const parsedBentoServices = bentos.map(bento => {
+    const metadata = bento.bento_service_metadata;
+    const apis = parseApisAsArrayString(metadata.apis);
+    const artifacts = parseArtifactsAsArrayString(metadata.artifacts);
+
+    return [
+      `${bento.name}:${bento.version}`,
+      displayTimeInFromNowFormat(Number(metadata.created_at.seconds)),
+      apis.join('\n'),
+      artifacts.join('\n'),
+      (
+        <Link to={`/repository/${bento.name}/${bento.version}`}>
+          Detail
+        </Link>
+      )
+    ];
+  });
 
   return (
-    <TableContainer>
-      <TableHeader>
-        <Cell maxWidth={450} >BentoService(name:version)</Cell>
-        <Cell maxWidth={150} >Age</Cell>
-        <Cell maxWidth={400} >APIs</Cell>
-        <Cell maxWidth={400} >Artifacts</Cell>
-        <Cell maxWidth={200} ></Cell>
-      </TableHeader>
-      {
-        bentos.map((bento, i) => {
-          const metadata = bento.bento_service_metadata;
-          const apis = parseApisAsArrayString(metadata.apis);
-          const artifacts = parseArtifactsAsArrayString(metadata.artifacts);
-
-          return (
-            <Row key={i}>
-              <Cell maxWidth={450} >{`${bento.name}:${bento.version}`}</Cell>
-              <Cell maxWidth={150} >
-                {
-                  displayTimeInFromNowFormat(Number(metadata.created_at.seconds))
-                }
-              </Cell>
-              <Cell maxWidth={400} >{apis.join('\n')}</Cell>
-              <Cell maxWidth={400} >{artifacts.join('\n')}</Cell>
-              <Cell maxWidth={200} >
-                <div>
-                  <Link to={`/repository/${bento.name}/${bento.version}`}>
-                    Detail
-                  </Link>
-                </div>
-              </Cell>
-            </Row>
-          )
-        })
-      }
-    </TableContainer>
+    <Table 
+      content={parsedBentoServices}
+      ratio={BENTO_TABLE_RATIO}
+      header={BENTO_TABLE_HEADERS}
+    />
   )
 };

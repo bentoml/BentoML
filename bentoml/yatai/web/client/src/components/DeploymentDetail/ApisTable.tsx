@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TableContainer, TableHeader, Row, Cell } from '../../ui/Table';
+import Table from '../../ui/Table';
 import { HttpRequestContainer } from '../../utils/http_container';
 import ApisTable from '../BentoServiceDetail/ApisTable';
 

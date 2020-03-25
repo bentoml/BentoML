@@ -1,30 +1,33 @@
 import * as React from "react";
-import { TableContainer, Row, Cell, TableHeader } from "../../ui/Table";
+import Table from "../../ui/Table";
 
 interface IArtifactProps {
   name: string;
   artifact_type: string;
 }
 
+const ARTIFACTS_TABLE_HEADER = ['Name', 'Type'];
+const ARTIFACTS_TABLE_RATIO = [1, 4];
+
 const ArtifactsTable: React.FC<{ artifacts: Array<IArtifactProps> }> = ({
   artifacts
-}) => (
-  <div>
-    <h2>Artifacts</h2>
-    <TableContainer>
-      <TableHeader>
-        <Cell maxWidth={150} color="#137CBD">
-          Artifact name
-        </Cell>
-        <Cell>Artifact type</Cell>
-      </TableHeader>
-      {artifacts.map((artifact, i) => (
-        <Row key={i}>
-          <Cell maxWidth={150}>{artifact.name}</Cell>
-          <Cell>{artifact.artifact_type}</Cell>
-        </Row>
-      ))}
-    </TableContainer>
-  </div>
-);
+}) => {
+  const parsedArtifacts = artifacts.map(artifact => {
+    return [
+      artifact.name,
+      artifact.artifact_type,
+    ];
+  });
+  return (
+    <div>
+      <h2>Artifacts</h2>
+      <Table
+        content={parsedArtifacts}
+        ratio={ARTIFACTS_TABLE_RATIO}
+        header={ARTIFACTS_TABLE_HEADER}
+      />
+    </div>
+  )
+};
+
 export default ArtifactsTable;

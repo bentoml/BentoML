@@ -2,24 +2,24 @@ import * as React from "react";
 import styled from "@emotion/styled";
 import { zip } from "lodash";
 
-export const TableContainer = styled.div({
+const TableContainer = styled.div({
   width: "100%",
   margin: "auto",
   backgroundColor: "#F5F8FA"
 });
 
-export const Row = styled.div<{ showBottomBorder?: boolean }>(props => ({
+const Row = styled.div<{ showBottomBorder?: boolean }>(props => ({
   display: "flex",
   flexWrap: "wrap",
   borderBottom: props.showBottomBorder ? "2px solid #D8E1E8" : "none"
 }));
 
-export const TableHeader = styled(Row)({
+const TableHeader = styled(Row)({
   borderBottom: "2px solid #D8E1E8",
   fontWeight: 500
 });
 
-export const Cell = styled.div<{
+const Cell = styled.div<{
   maxWidth?: number;
   color?: string;
   flex?: number;

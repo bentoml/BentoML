@@ -119,6 +119,8 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
         async_start_yatai_service_web_ui(
             yatai_grpc_server_addess, ui_port, web_ui_log_path, debug_mode
         )
+        # TODO we should use something like asyncio.eventloop to constantly check is
+        #  web ui running correctly or not.
 
     # We don't import _echo function from click_utils because of circular dep
     click.echo(
@@ -177,16 +179,28 @@ def async_start_yatai_service_web_ui(
                 base_log_path,
             ]
     else:
-        if not os.path.isdir(os.path.join(web_ui_dir, 'dist')):
+        if not os.path.exists(os.path.join(web_ui_dir, 'dist', 'bundle.js')):
             raise BentoMLException(
                 'Yatai web client built is missing. '
                 'Please run `npm run build` in the bentoml/yatai/web directory '
                 'and then try again'
             )
-        web_ui_command = ['node', 'dist/bundle.js', yatai_server_address, ui_port]
+        web_ui_command = [
+            'node',
+            'dist/bundle.js',
+            yatai_server_address,
+            ui_port,
+            base_log_path,
+        ]
+
     web_proc = subprocess.Popen(
-        web_ui_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=web_ui_dir,
+        web_ui_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=web_ui_dir
     )
+
+    is_web_proc_running = web_proc.poll() is None
+    if not is_web_proc_running:
+        raise BentoMLException('Yatai web ui did not start properly')
+
     atexit.register(web_proc.terminate)
 
 

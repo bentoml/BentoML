@@ -52,6 +52,7 @@ export const App = () => (
             path="/deployments/:namespace/:name"
             component={DeploymentDetails}
           />
+          <Route path="/deployments/:namespace" component={DeploymentsList} />
           <Route path="/deployments" component={DeploymentsList} />
 
           <Route

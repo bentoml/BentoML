@@ -57,7 +57,7 @@ class BentoRepositoryAPIClient:
             URI to where the BentoService is being saved to
         """
         with TempDirectory() as tmpdir:
-            save_to_dir(bento_service, tmpdir, version)
+            save_to_dir(bento_service, tmpdir, version, silent=True)
             return self._upload_bento_service(tmpdir)
 
     def _upload_bento_service(self, saved_bento_path):

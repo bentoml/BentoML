@@ -36,43 +36,50 @@ Installing BentoML with `pip`:
 pip install bentoml
 ```
 
-Creating a prediction service with BentoML:
+A minimal prediction service in BentoML looks something like this:
 
 ```python
-import bentoml
+from bentoml import env, artifacts, api, BentoService
 from bentoml.handlers import DataframeHandler
 from bentoml.artifact import SklearnModelArtifact
 
-@bentoml.env(pip_dependencies=["scikit-learn"]) # defining pip/conda dependencies to be packed
-@bentoml.artifacts([SklearnModelArtifact('model')]) # defining required artifacts, typically trained models
-class IrisClassifier(bentoml.BentoService):
+@env(auto_pip_dependencies=True)
+@artifacts([SklearnModelArtifact('model')])
+class IrisClassifier(BentoService):
 
-    @bentoml.api(DataframeHandler) # defining prediction service endpoint and expected input format
+    @api(DataframeHandler)
     def predict(self, df):
-        # Pre-processing logic and access to trained model artifacts in API function
         return self.artifacts.model.predict(df)
 ```
 
-Train a classifier model with default Iris dataset and pack the trained model
-with the BentoService `IrisClassifier` defined above:
+This code defines a prediction service that requires a scikit-learn model, and asks
+BentoML to figure out the required PyPI pip packages automatically. It also defined
+an API, which is the entry point for accessing this prediction service. And the API is
+expecting a `pandas.DataFrame` object as its input data.
+
+Now you are ready to train a model and serve the model with the `IrisClassifier` service
+defined above:
 
 ```python
 from sklearn import svm
 from sklearn import datasets
 
 if __name__ == "__main__":
-    clf = svm.SVC(gamma='scale')
+    # Load training data
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
+    
+    # Model Training
+    clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
 
-    # Create a iris classifier service
+    # Create a iris classifier service instance
     iris_classifier_service = IrisClassifier()
 
-    # Pack it with the newly trained model artifact
+    # Pack the newly trained model artifact
     iris_classifier_service.pack('model', clf)
 
-    # Save the prediction service to a BentoService bundle
+    # Save the prediction service to disk for model serving
     saved_path = iris_classifier_service.save()
 ```
 You've just created a BentoService SavedBundle, it's a versioned file archive that is

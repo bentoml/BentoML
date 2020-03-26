@@ -11,11 +11,11 @@ and ask in the bentoml-users channel.
 .. toctree::
   :glob:
 
+  batch_serving
   monitoring
   logging
   micro_batching
-  docker
-  multiple_models
   custom_artifact
   custom_handler
+  yatai_service
 

@@ -28,7 +28,7 @@ ___________
    :maxdepth: 2
 
    quickstart
-   concepts/index
+   concepts
    guides/index
    deployment/index
    api/index

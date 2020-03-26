@@ -46,14 +46,15 @@ to create this bundle, and save a new BentoService bundle.
 logger = logging.getLogger(__name__)
 
 
-def save_to_dir(bento_service, path, version=None):
+def save_to_dir(bento_service, path, version=None, silent=False):
     """Save given BentoService along with all its artifacts, source code and
     dependencies to target file path, assuming path exist and empty. If target path
     is not empty, this call may override existing files in the given path.
 
-    Args:
-        bento_service (bentoml.service.BentoService): a Bento Service instance
-        path (str): Destination of where the bento service will be saved
+    :param bento_service (bentoml.service.BentoService): a Bento Service instance
+    :param path (str): Destination of where the bento service will be saved
+    :param version (str): Override the service version with given version string
+    :param silent (boolean): whether to hide the log message showing target save path
     """
     track_save(bento_service)
 
@@ -65,6 +66,8 @@ def save_to_dir(bento_service, path, version=None):
         )
 
     if version is not None:
+        # If parameter version provided, set bento_service version
+        # Otherwise it will bet set the first time the `version` property get accessed
         bento_service.set_version(version)
 
     if not os.path.exists(path):
@@ -159,9 +162,10 @@ def save_to_dir(bento_service, path, version=None):
     if _is_bentoml_in_develop_mode():
         add_local_bentoml_package_to_repo(path)
 
-    logger.info(
-        "BentoService bundle '%s:%s' created at: %s",
-        bento_service.name,
-        bento_service.version,
-        path,
-    )
+    if not silent:
+        logger.info(
+            "BentoService bundle '%s:%s' created at: %s",
+            bento_service.name,
+            bento_service.version,
+            path,
+        )

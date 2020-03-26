@@ -6,17 +6,14 @@ interface IArtifactProps {
   artifact_type: string;
 }
 
-const ARTIFACTS_TABLE_HEADER = ['Name', 'Type'];
+const ARTIFACTS_TABLE_HEADER = ["Name", "Type"];
 const ARTIFACTS_TABLE_RATIO = [1, 4];
 
 const ArtifactsTable: React.FC<{ artifacts: Array<IArtifactProps> }> = ({
   artifacts
 }) => {
   const parsedArtifacts = artifacts.map(artifact => {
-    return [
-      artifact.name,
-      artifact.artifact_type,
-    ];
+    return [artifact.name, artifact.artifact_type];
   });
   return (
     <div>
@@ -27,7 +24,7 @@ const ArtifactsTable: React.FC<{ artifacts: Array<IArtifactProps> }> = ({
         header={ARTIFACTS_TABLE_HEADER}
       />
     </div>
-  )
+  );
 };
 
 export default ArtifactsTable;

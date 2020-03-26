@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@types/lodash": "^4.14.149",
     "express": "^4.17.1",
     "grpc": "^1.24.2",
     "lodash": "^4.17.15",

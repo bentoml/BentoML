@@ -1,48 +1,33 @@
-import * as React from 'react';
-import * as lodash from 'lodash';
+import * as React from "react";
+import * as lodash from "lodash";
 
-import Table from '../../ui/Table';
+import Table from "../../ui/Table";
 
 const parseKeyForDisplay = (key: string) => {
-  return lodash.capitalize(key).replace('_', ' ');
-}
+  return lodash.capitalize(key).replace("_", " ");
+};
 
-
-const ConfigurationTable = ({spec}) => {
-  let  config;
-  const parsedConfiguration = [
-    [
-      'Platform',
-      spec.operator,
-    ]
-  ]
+const ConfigurationTable = ({ spec }) => {
+  const parsedConfiguration = [["Platform", spec.operator]];
   switch (spec.operator) {
     case "AWS_LAMBDA":
       lodash.each(spec.aws_lambda_operator_config, (value, key) => {
-        if (key == 'memory_size') {
-          value = value + ' MB';
+        if (key == "memory_size") {
+          value = value + " MB";
         }
         switch (key) {
-          case 'memory_size':
-            value = value + ' MB';
-          case 'timeout':
-            value = value + ' seconds';
+          case "memory_size":
+            value = value + " MB";
+          case "timeout":
+            value = value + " seconds";
         }
 
-        parsedConfiguration.push(
-          [
-            parseKeyForDisplay(key),
-            value
-          ]
-        );
+        parsedConfiguration.push([parseKeyForDisplay(key), value]);
       });
       break;
     case "AWS_SAGEMAKER":
       lodash.each(spec.aws_lambda_operator_config, (value, key) => {
-        parsedConfiguration.push([
-          parseKeyForDisplay(key),
-          value
-        ]);
+        parsedConfiguration.push([parseKeyForDisplay(key), value]);
       });
       break;
   }
@@ -50,10 +35,7 @@ const ConfigurationTable = ({spec}) => {
   return (
     <div>
       <h2>Configuration</h2>
-      <Table
-         content={parsedConfiguration}
-         ratio={[1, 4]}
-      />
+      <Table content={parsedConfiguration} ratio={[1, 4]} />
     </div>
   );
 };

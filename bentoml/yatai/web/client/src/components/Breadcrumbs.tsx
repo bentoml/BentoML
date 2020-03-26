@@ -15,17 +15,15 @@ const Breadcrumbs: React.FC = () => {
     []
   );
   const location = useLocation();
+
   React.useEffect(() => {
     const parsedBreadcrumbs = getBreadcrumbs(location.pathname);
-
     setBreadcrumbs(parsedBreadcrumbs);
   }, [location]);
 
   breadcrumbs.length > 0 && breadcrumbs.unshift(HOME_CRUMB);
   return <BlueprintBreadcrumbs items={breadcrumbs} />;
 };
-
-export default Breadcrumbs;
 
 const getBreadcrumbs = (pathname: string): Array<IBreadcrumbProps> => {
   const pathSnippets = pathname.split("/").filter(i => i);
@@ -36,3 +34,5 @@ const getBreadcrumbs = (pathname: string): Array<IBreadcrumbProps> => {
     return isLastOne ? { text: name } : { text: name, href: url };
   });
 };
+
+export default Breadcrumbs;

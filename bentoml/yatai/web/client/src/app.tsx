@@ -11,20 +11,21 @@ import {
   Classes
 } from "@blueprintjs/core";
 import { Home } from "./pages/home";
-import { DeploymentsList } from "./pages/deployments_list";
-import { DeploymentDetails } from "./pages/deployment_details";
+import { DeploymentsList } from "./pages/DeploymentsList";
+import { DeploymentDetails } from "./pages/DeploymentDetails";
 import { Repository } from "./pages/repository";
-import { BentoServicesList } from "./pages/bento_services_list";
-import { BentoServiceDetail } from "./pages/bento_service_detail";
+import { BentoServicesList } from "./pages/BentoServiceList";
+import { BentoServiceDetail } from "./pages/BentoServiceDetail";
 import Layout from "./ui/Layout";
 import Breadcrumbs from "./components/Breadcrumbs";
-import logo from './assets/bentoml-logo.png';
 
 const HeaderComp = () => (
   <Navbar>
     <NavbarGroup align={Alignment.LEFT}>
       <Link to="/">
-        <NavbarHeading><img src={logo} width={150} /></NavbarHeading>
+        <NavbarHeading>
+          <img src="./assets/bentoml-logo.png" width={150} />
+        </NavbarHeading>
       </Link>
       <NavbarDivider />
       <Link to="/repository">

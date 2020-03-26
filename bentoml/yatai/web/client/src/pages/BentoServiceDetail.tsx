@@ -1,10 +1,10 @@
 import * as React from "react";
+import * as moment from "moment";
 
-import { HttpRequestContainer, DisplayHttpError } from "../utils/http_container";
+import HttpRequestContainer from "../utils/HttpRequestContainer";
 import EnvTable from "../components/BentoServiceDetail/EnvTable";
 import ApisTable from "../components/BentoServiceDetail/ApisTable";
 import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
-import * as moment from 'moment';
 
 export const BentoServiceDetail = props => {
   const params = props.match.params;
@@ -14,14 +14,8 @@ export const BentoServiceDetail = props => {
       url="/api/GetBento"
       params={{ bento_name: params.name, bento_version: params.version }}
     >
-      {({data, isLoading, error}) => {
-        if (isLoading) {
-          return <div>Loading...</div>
-        }
+      {({ data }) => {
         let displayBentoServiceDetail;
-        if (error) {
-          return <DisplayHttpError error={error} />
-        }
 
         if (data && data && data.bento) {
           const bento = data.bento;
@@ -29,10 +23,10 @@ export const BentoServiceDetail = props => {
           displayBentoServiceDetail = (
             <div>
               <h4>
-                Created at: {
-                  moment.unix(Number(bento.bento_service_metadata.created_at.seconds))
-                    .format('MM/DD/YYYY HH:mm:ss Z')
-                }
+                Created at:{" "}
+                {moment
+                  .unix(Number(bento.bento_service_metadata.created_at.seconds))
+                  .format("MM/DD/YYYY HH:mm:ss Z")}
               </h4>
               <h4>Storage: {bento.uri.uri}</h4>
               <ApisTable apis={bento.bento_service_metadata.apis} />
@@ -43,7 +37,7 @@ export const BentoServiceDetail = props => {
             </div>
           );
         } else {
-        displayBentoServiceDetail = <div>{JSON.stringify(data)}</div>;
+          displayBentoServiceDetail = <div>{JSON.stringify(data)}</div>;
         }
 
         return (

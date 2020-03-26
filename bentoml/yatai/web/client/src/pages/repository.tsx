@@ -21,7 +21,7 @@ export const Repository = (props) => {
             return <div>Loading...</div>
           }
           if (error) {
-            return <div>Error: {JSON.stringify(error)}</div>
+            return <DisplayHttpError error={error} />
           }
           let hasBento = false;
           let bentoDisplay;

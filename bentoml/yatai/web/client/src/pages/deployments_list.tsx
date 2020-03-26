@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { HttpRequestContainer } from '../utils/http_container';
+import { HttpRequestContainer, DisplayHttpError } from '../utils/http_container';
 import { DeploymentTable } from '../components/deployment_table';
 
 
@@ -13,14 +13,19 @@ export const DeploymentsList = () => (
           return <div>Loading...</div>
         }
         if (error) {
-          return <div>Error: {JSON.stringify(error)}</div>
+          return <DisplayHttpError error={error} />
         }
         if (data && data.deployments) {
+          activeDeploymentCount = data.deployments.length;
           deploymentDisplay = (
             <DeploymentTable deployments={data.deployments} />
           )
         } else {
-          deploymentDisplay = (<div>{JSON.stringify(data)}</div>)
+          deploymentDisplay = (
+            <a href='https://docs.bentoml.org/en/latest' target='_blank'>
+              Learn more about managing model serving deployments with BentoML
+            </div>
+          );
         }
 
         return (

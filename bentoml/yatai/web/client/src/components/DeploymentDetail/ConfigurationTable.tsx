@@ -1,32 +1,52 @@
 import * as React from 'react';
+import * as lodash from 'lodash';
+
 import Table from '../../ui/Table';
+
+const parseKeyForDisplay = (key: string) => {
+  return lodash.capitalize(key).replace('_', ' ');
+}
 
 
 const ConfigurationTable = ({spec}) => {
   let  config;
-  switch (spec.operator) {
-    case "AWS_LAMBDA":
-      config = spec.aws_lambda_operator_config;
-      break;
-    case "AWS_SAGEMAKER":
-      config = spec.sagemaker_operator_config;
-      break;
-    default:
-      config = {};
-  }
-  const configKeys = Object.keys(config);
   const parsedConfiguration = [
     [
       'Platform',
       spec.operator,
     ]
   ]
-  configKeys.forEach(key => {
-    parsedConfiguration.push([
-      key,
-      config[key]
-    ]);
-  });
+  switch (spec.operator) {
+    case "AWS_LAMBDA":
+      lodash.each(spec.aws_lambda_operator_config, (value, key) => {
+        if (key == 'memory_size') {
+          value = value + ' MB';
+        }
+        switch (key) {
+          case 'memory_size':
+            value = value + ' MB';
+          case 'timeout':
+            value = value + ' seconds';
+        }
+
+        parsedConfiguration.push(
+          [
+            parseKeyForDisplay(key),
+            value
+          ]
+        );
+      });
+      break;
+    case "AWS_SAGEMAKER":
+      lodash.each(spec.aws_lambda_operator_config, (value, key) => {
+        parsedConfiguration.push([
+          parseKeyForDisplay(key),
+          value
+        ]);
+      });
+      break;
+  }
+
   return (
     <div>
       <h2>Configuration</h2>

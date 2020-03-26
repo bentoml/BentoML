@@ -1,5 +1,6 @@
 import * as React from "react";
 import axios, { Method } from "axios";
+import { Card } from '@blueprintjs/core';
 
 
 interface IHttpRequestContainer {
@@ -53,7 +54,19 @@ export class HttpRequestContainer extends React.Component<IHttpRequestContainer>
     return this.props.children({
       isLoading: this.state.isLoading,
       data: this.state.data,
-      error: this.state.error
+      error: this.state.error,
     });
   }
 }
+
+
+export const DisplayHttpError = ({error}) => {
+  return (
+    <Card>
+      <h3>Encounter HTTP Request Error</h3>
+      <div>
+        {JSON.stringify(error)}
+      </div>
+    </Card>
+  );
+};

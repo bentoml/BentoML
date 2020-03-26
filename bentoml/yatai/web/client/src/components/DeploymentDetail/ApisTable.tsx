@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Table from '../../ui/Table';
-import { HttpRequestContainer } from '../../utils/http_container';
+import { HttpRequestContainer, DisplayHttpError } from '../../utils/http_container';
 import ApisTable from '../BentoServiceDetail/ApisTable';
 
 const DeploymentApisTable = ({deployment}) => {
@@ -29,7 +29,7 @@ const DeploymentApisTable = ({deployment}) => {
           return (
             <div>
               <h3>APIs</h3>
-              error
+              <DisplayHttpError error={error} />
             </div>
           );
         }
@@ -48,7 +48,7 @@ const DeploymentApisTable = ({deployment}) => {
           return (
             <div>
               <h3>APIs</h3>
-              grpc error
+              No APIs
             </div>
           );
         }

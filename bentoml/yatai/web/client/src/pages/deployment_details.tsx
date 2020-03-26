@@ -1,13 +1,12 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Table, Column, Cell } from "@blueprintjs/table";
+import { Tag, Intent } from '@blueprintjs/core';
 
 import { displayTimeInFromNowFormat } from "../utils/index";
-import { HttpRequestContainer } from '../utils/http_container'
+import { HttpRequestContainer, DisplayHttpError } from '../utils/http_container'
 import ConfigurationTable from '../components/DeploymentDetail/ConfigurationTable';
 import DeploymentApisTable from '../components/DeploymentDetail/ApisTable';
 import InfoTable from '../components/DeploymentDetail/InfoTable';
-import { Tag } from '@blueprintjs/core';
 
 
 const DeploymentError = () => {
@@ -27,16 +26,32 @@ export const DeploymentDetails = props => {
           return <div>Loading...</div>
         }
         if (error) {
-          return <div>error</div>;
+          return <DisplayHttpError error={error} />
         }
         let detailDisplay;
 
         if (data.data && data.data.deployment) {
           const deployment = data.data.deployment;
+          let statusColor;
+          switch (deployment.state.state) {
+            case 'RUNNING':
+            case 'SUCCESSED':
+              statusColor = Intent.SUCCESS;
+              break;
+            case 'FAILED':
+            case 'ERROR':
+            case 'CRASH_LOOP_BACK_OFF':
+              statusColor = Intent.DANGER;
+              break;
+            default:
+              statusColor = Intent.NONE;
+          }
+
+          const statusTag = <Tag intent={statusColor}>{deployment.state.state}</Tag>;
           detailDisplay = (
             <div>
               <h1>
-                Deployment: {deployment.name} <Tag>{deployment.state.state}</Tag>
+                Deployment: {deployment.name} {statusTag}
               </h1>
               {/* <DeploymentError /> */}
               <InfoTable deployment={deployment} />

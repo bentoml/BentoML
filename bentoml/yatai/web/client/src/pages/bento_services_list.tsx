@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { HttpRequestContainer } from '../utils/http_container';
+import { HttpRequestContainer, DisplayHttpError } from '../utils/http_container';
 import { BentoTable } from '../components/bento_service_table';
 
 export const BentoServicesList = (props) => {
@@ -17,7 +17,7 @@ export const BentoServicesList = (props) => {
               return <div>Loading...</div>
             }
             if (error) {
-              return <div>Error: {JSON.stringify(error)}</div>
+              return <DisplayHttpError error={error} />
             }
             if (data && data.bentos) {
               return (

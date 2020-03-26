@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { HttpRequestContainer } from '../utils/http_container';
+import { HttpRequestContainer, DisplayHttpError } from '../utils/http_container';
 import { DeploymentTable } from '../components/deployment_table';
 import { BentoTable } from '../components/bento_service_table';
 import { Link } from 'react-router-dom';
@@ -13,7 +13,7 @@ export const Home = () => (
             return <div>Loading...</div>
           }
           if (error) {
-            return <div>Error: {JSON.stringify(error)}</div>
+            return <DisplayHttpError error={error} />
           }
           let deploymentDisplay;
           let activeDeploymentCounts = 0;
@@ -44,7 +44,7 @@ export const Home = () => (
             return <div>Loading...</div>
           }
           if (error) {
-            return <div>Error: {JSON.stringify(error)}</div>
+            return <DisplayHttpError error={error} />
           }
           if (data && data.bentos) {
             return (

@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { HttpRequestContainer } from "../utils/http_container";
+import { HttpRequestContainer, DisplayHttpError } from "../utils/http_container";
 import EnvTable from "../components/BentoServiceDetail/EnvTable";
 import ApisTable from "../components/BentoServiceDetail/ApisTable";
 import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
@@ -20,7 +20,7 @@ export const BentoServiceDetail = props => {
         }
         let displayBentoServiceDetail;
         if (error) {
-          return <div>Error: {JSON.stringify(error)}</div>;
+          return <DisplayHttpError error={error} />
         }
 
         if (data && data && data.bento) {

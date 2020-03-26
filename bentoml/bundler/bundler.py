@@ -53,8 +53,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
 
     :param bento_service (bentoml.service.BentoService): a Bento Service instance
     :param path (str): Destination of where the bento service will be saved
-    :param version (str): Override the service version with given version string, when not
-            given,
+    :param version (str): Override the service version with given version string
     :param silent (boolean): whether to hide the log message showing target save path
     """
     track_save(bento_service)

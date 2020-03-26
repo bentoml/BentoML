@@ -11,7 +11,7 @@ interface IHttpRequestContainerProps {
   children?: any;
 }
 
-const HttpRequestContainer: React.FC = (props: IHttpRequestContainerProps) => {
+const HttpRequestContainer: React.FC<IHttpRequestContainerProps> = props => {
   const [info, setInfo] = React.useState({
     data: undefined,
     error: undefined,

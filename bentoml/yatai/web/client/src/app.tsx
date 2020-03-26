@@ -18,13 +18,14 @@ import { BentoServicesList } from "./pages/BentoServiceList";
 import { BentoServiceDetail } from "./pages/BentoServiceDetail";
 import Layout from "./ui/Layout";
 import Breadcrumbs from "./components/Breadcrumbs";
+import logo from "./assets/bentoml-logo.png";
 
-const HeaderComp = () => (
+const NavigationBar = () => (
   <Navbar>
     <NavbarGroup align={Alignment.LEFT}>
       <Link to="/">
         <NavbarHeading>
-          <img src="./assets/bentoml-logo.png" width={150} />
+          <img src={logo} width={150} />
         </NavbarHeading>
       </Link>
       <NavbarDivider />
@@ -44,8 +45,8 @@ const HeaderComp = () => (
 
 export const App = () => (
   <BrowserRouter>
-    <Layout className="app">
-      <HeaderComp />
+    <Layout>
+      <NavigationBar />
       <Breadcrumbs />
       <div>
         <Switch>

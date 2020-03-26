@@ -580,9 +580,27 @@ class BentoService(BentoServiceBase):
         return self._bento_service_version
 
     def save(self, base_path=None, version=None):
+        """
+        Save and register this BentoService via BentoML's built-in model management
+        system. BentoML by default keeps track of all the SavedBundle's files and
+        metadata in local file system under the $BENTOML_HOME(~/bentoml) directory.
+        Users can also configure BentoML to save their BentoService to a shared Database
+        and cloud object storage such as AWS S3.
+
+        :param base_path: optional - override repository base path
+        :param version: optional - save with version override
+        :return: saved_path: file path to where the BentoService is saved
+        """
         return save(self, base_path, version)
 
     def save_to_dir(self, path, version=None):
+        """Save this BentoService along with all its artifacts, source code and
+        dependencies to target file path, assuming path exist and empty. If target path
+        is not empty, this call may override existing files in the given path.
+
+        :param path (str): Destination of where the bento service will be saved
+        :param version: optional - save with version override
+        """
         return save_to_dir(self, path, version)
 
     @hybridmethod

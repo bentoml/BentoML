@@ -51,9 +51,11 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     dependencies to target file path, assuming path exist and empty. If target path
     is not empty, this call may override existing files in the given path.
 
-    Args:
-        bento_service (bentoml.service.BentoService): a Bento Service instance
-        path (str): Destination of where the bento service will be saved
+    :param bento_service (bentoml.service.BentoService): a Bento Service instance
+    :param path (str): Destination of where the bento service will be saved
+    :param version (str): Override the service version with given version string, when not
+            given,
+    :param silent (boolean): whether to hide the log message showing target save path
     """
     track_save(bento_service)
 
@@ -65,6 +67,8 @@ def save_to_dir(bento_service, path, version=None, silent=False):
         )
 
     if version is not None:
+        # If parameter version provided, set bento_service version
+        # Otherwise it will bet set the first time the `version` property get accessed
         bento_service.set_version(version)
 
     if not os.path.exists(path):

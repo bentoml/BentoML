@@ -21,6 +21,8 @@ BentoService
         returns a dictionary of packed artifacts from the artifact name to the artifact
         model instance in its native form
 
+  .. _bentoml-bentoservice-pack-label:
+
   .. method:: pack(name, *args, *kwargs)
 
         BentoService#pack method is used for packing trained model instances with a
@@ -33,7 +35,14 @@ BentoService
 
   .. automethod:: bentoml.BentoService.pack
 
+  .. _bentoml-bentoservice-save-label:
 
+  .. automethod:: bentoml.BentoService.save
+
+
+  .. _bentoml-bentoservice-save-to-dir-label:
+
+  .. automethod:: bentoml.BentoService.save_to_dir
 
 
 api
@@ -61,6 +70,9 @@ save
 save_to_dir
 +++++++++++
 .. autofunction:: bentoml.save_to_dir
+
+
+.. _bentoml-load-label:
 
 load
 ++++

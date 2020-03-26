@@ -29,12 +29,14 @@ commonly we see the use of :code:`DataframeHandler`, :code:`TensorHandler`, and
 :code:`JsonHandler`.
 
 
-Once you've trained an ML model, you can use the :code:`BentoService#pack` method to
-bundle it with a BentoService instance, and save the BentoService to a file directory.
-In the process of :code:`BentoService#save`, BentoML serializes the model based on the
-ML training framework you're using, automatically extracts all the pip dependencies
-required by your BentoService class, and saves all the code, serialized model files,
-and requirements.txt etc into a file directory, which we call it a SavedBundle.
+Once you've trained an ML model, you can use the
+:ref:`BentoService#pack <bentoml-bentoservice-pack-label>` method to bundle it with a
+BentoService instance, and save the BentoService to a file directory. In the process of
+:ref:`BentoService#save <bentoml-bentoservice-save-label>`, BentoML serializes the model
+based on the ML training framework you're using, automatically extracts all the pip
+dependencies required by your BentoService class, and saves all the code, serialized
+model files, and requirements.txt etc into a file directory, which we call it a
+SavedBundle.
 
 
 .. code-block:: python
@@ -339,14 +341,6 @@ The output of an API function can be any of the follow types:
     List[JSON]
 
 
-    ?????
-    Bytes
-    Buffer
-    ByteArray
-    List[Bytes]
-
-
-
 It is user API function's responsibility to make sure the list of prediction results
 matches the order of input data sequence and have the exact same length.
 
@@ -395,17 +389,217 @@ if you're interested in learning more.
 Saving BentoService
 -------------------
 
+After writing your model training/evaluation code and BentoService definition, here are
+the steps required to create a BentoService instance and save it for serving:
 
-Using BentoService SavedBundle
-------------------------------
+#. Model Training
+#. Create BentoService instance
+#. Pack trained model artifacts with :ref:`BentoService#pack <bentoml-bentoservice-pack-label>`
+#. Save with :ref:`BentoService#save <bentoml-bentoservice-save-label>`
 
+As illustrated in the previous example:
+
+.. code-block:: python
+
+  from sklearn import svm
+  from sklearn import datasets
+
+  # 1. Model training
+  clf = svm.SVC(gamma='scale')
+  iris = datasets.load_iris()
+  X, y = iris.data, iris.target
+  clf.fit(X, y)
+
+  # 2. Create BentoService instance
+  iris_classifier_service = IrisClassifier()
+
+  # 3. Pack trained model artifacts
+  iris_classifier_service.pack("model", clf)
+
+  # 4. Save
+  saved_path = iris_classifier_service.save()
+
+
+How Save Works
+^^^^^^^^^^^^^^
+
+:ref:`BentoService#save_to_dir(path) <bentoml-bentoservice-save-label>` is the primitive
+operation for saving the BentoService to a target directory. :code:`save_to_dir`
+serializes the model artifacts and saves all the related code, dependencies and configs
+into a the given path.
+
+Users can then use :ref:`bentoml.load(path) <bentoml-load-label>` to load the exact same
+BentoService instance back from the saved file path. This made it possible to easily
+distribute your prediction service to test and production environment in a consistent
+manner.
+
+:ref:`BentoService#save <bentoml-bentoservice-save-label>` essentailly calls
+:ref:`BentoService#save_to_dir(path) <bentoml-bentoservice-save-label>` under the hood,
+while keeping track of all the prediction services you've created and maintaining the
+file structures and metadata information of those saved bundle.
 
 Model Management
 ----------------
 
+By default, :ref:`BentoService#save <bentoml-bentoservice-save-label>` will save all the
+BentoService saved bundle files under :code:`~/bentoml/repository/` directory, following
+by the service name and service version as sub-directory name. And all the metadata of
+saved BentoService are stored in a local SQLite database file at
+:code:`~/bentoml/storage.db`.
 
-Deploying BentoService
-----------------------
+Users can easily query and use all the BentoService they have created, for example, to
+list all the BentoService created:
+
+.. code-block:: bash
+
+    > bentoml list
+    BENTO_SERVICE                                   AGE                  APIS                        ARTIFACTS
+    IrisClassifier:20200323212422_A1D30D            1 day and 22 hours   predict<DataframeHandler>   model<SklearnModelArtifact>
+    IrisClassifier:20200304143410_CD5F13            3 weeks and 4 hours  predict<DataframeHandler>   model<SklearnModelArtifact>
+    SentimentAnalysisService:20191219090607_189CFE  13 weeks and 6 days  predict<DataframeHandler>   model<SklearnModelArtifact>
+    TfModelService:20191216125343_06BCA3            14 weeks and 2 days  predict<JsonHandler>        model<TensorflowSavedModelArtifact>
+
+    > bentoml get IrisClassifier
+    BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
+    IrisClassifier:20200121114004_360ECB  2020-01-21 19:45  predict<DataframeHandler>  model<SklearnModelArtifact>
+    IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeHandler>  model<SklearnModelArtifact>
+
+    > bentoml get IrisClassifier:20200323212422_A1D30D
+    {
+      "name": "IrisClassifier",
+      "version": "20200323212422_A1D30D",
+      "uri": {
+        "type": "LOCAL",
+        "uri": "/Users/chaoyu/bentoml/repository/IrisClassifier/20200323212422_A1D30D"
+      },
+      "bentoServiceMetadata": {
+        "name": "IrisClassifier",
+        "version": "20200323212422_A1D30D",
+        "createdAt": "2020-03-24T04:24:39.517239Z",
+        "env": {
+          "condaEnv": "name: bentoml-IrisClassifier\nchannels:\n- defaults\ndependencies:\n- python=3.7.5\n- pip\n",
+          "pipDependencies": "bentoml==0.6.3\nscikit-learn",
+          "pythonVersion": "3.7.5"
+        },
+        "artifacts": [
+          {
+            "name": "model",
+            "artifactType": "SklearnModelArtifact"
+          }
+        ],
+        "apis": [
+          {
+            "name": "predict",
+            "handlerType": "DataframeHandler",
+            "docs": "BentoService API",
+            "handlerConfig": {
+              "output_orient": "records",
+              "orient": "records",
+              "typ": "frame",
+              "is_batch_input": true,
+              "input_dtypes": null
+            }
+          }
+        ]
+      }
+    }
+
+Similarly you can use the service name and version pair to load and run those models
+directly. For example:
+
+.. code-block:: bash
+
+    > bentoml serve IrisClassifier:latest
+    * Serving Flask app "IrisClassifier" (lazy loading)
+    * Environment: production
+      WARNING: This is a development server. Do not use it in a production deployment.
+      Use a production WSGI server instead.
+    * Debug mode: off
+    * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+
+    > bentoml run IrisClassifier:latest predict --input='[[5.1, 3.5, 1.4, 0.2]]'
+    [0]
+
+
+Customizing Model Repository
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+BentoML has a standalone component :code:`YataiService` that handles model storage and
+deployment. BentoML uses a local :code:`YataiService` instance by default, which saves
+BentoService files to :code:`~/bentoml/repository/` directory and other metadata to
+:code:`~/bentoml/storage.db`.
+
+Users can also customize this to make it work for team settings, making it possible
+for a team of data scientists to easily share, use and deploy models and prediction
+services created by each other. To do so, the user will need to setup a host server
+that runs :code:`YataiService`, from BentoML cli command `yatai-service-start`:
+
+.. code-block:: bash
+
+    > bentoml yatai-service-start --help
+    Usage: bentoml yatai-service-start [OPTIONS]
+
+      Start BentoML YataiService for model management and deployment
+
+    Options:
+      --db-url TEXT         Database URL following RFC-1738, and usually can
+                            include username, password, hostname, database name as
+                            well as optional keyword arguments for additional
+                            configuration
+      --repo-base-url TEXT  Base URL for storing saved BentoService bundle files,
+                            this can be a filesystem path(POSIX/Windows), or a S3
+                            URL, usually starts with "s3://"
+      --grpc-port INTEGER   Port for Yatai server
+      --ui-port INTEGER     Port for Yatai web UI
+      --ui / --no-ui        Start BentoML YataiService without Web UI
+      -q, --quiet           Hide process logs and errors
+      --verbose, --debug    Show additional details when running command
+      --help                Show this message and exit.
+
+The recommended way to deploy :code:`YataiService` for teams, is to back it by a
+remote PostgreSQL database and a S3 bucket. For example, run the following in your
+server to start the YataiService:
+
+.. code-block:: bash
+
+    > bentoml yatai-service-start \
+        --db-url postgresql://scott:tiger@localhost:5432/bentomldb \
+        --repo-base-url s3://my-bentoml-repo/
+
+    * Starting BentoML YataiService gRPC Server
+    * Debug mode: off
+    * Web UI: running on http://127.0.0.1:3000
+    * Running on 127.0.0.1:50051 (Press CTRL+C to quit)
+    * Usage: `bentoml config set yatai_service.url=127.0.0.1:50051`
+    * Help and instructions: https://docs.bentoml.org/en/latest/concepts/yatai_service.html
+    * Web server log can be found here: /Users/chaoyu/bentoml/logs/yatai_web_server.log
+
+
+And then, run the following command to configure BentoML to use this remote YataiService
+running in your server. You will need to replace :code:`127.0.0.1` with an IP address
+that is accessable for your team.
+
+.. code-block:: bash
+
+    bentoml config set yatai_service.url=127.0.0.1:50051
+
+Once you've run the command above, all the BentoML model management operations will be
+sent to the remote server, including saving BentoService, query saved BentoServices or
+creating model serving deployments.
+
+
+.. note::
+
+    BentoML's :code:`YataiService` does not provide any kind of authentication. To
+    secure your deployment, we recommend only make the server accessable within your
+    VPC.
+
+    BentoML team also provides hosted YataiService for enterprise teams, that has all
+    the security best practices built-in. `Contact us <mailto:contact@bentoml.ai>`_ if
+    you're interested in learning more.
+
+
+
 
 
 

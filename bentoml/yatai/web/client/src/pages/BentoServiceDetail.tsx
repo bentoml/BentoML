@@ -5,6 +5,7 @@ import HttpRequestContainer from "../utils/HttpRequestContainer";
 import EnvTable from "../components/BentoServiceDetail/EnvTable";
 import ApisTable from "../components/BentoServiceDetail/ApisTable";
 import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
+import { Section } from "../ui/Layout";
 
 export const BentoServiceDetail = props => {
   const params = props.match.params;
@@ -22,13 +23,15 @@ export const BentoServiceDetail = props => {
 
           displayBentoServiceDetail = (
             <div>
-              <h4>
-                Created at:{" "}
+              <p>
+                <b>Created at: </b>
                 {moment
                   .unix(Number(bento.bento_service_metadata.created_at.seconds))
                   .format("MM/DD/YYYY HH:mm:ss Z")}
-              </h4>
-              <h4>Storage: {bento.uri.uri}</h4>
+              </p>
+              <p>
+                <b>Storage: </b> {bento.uri.uri}
+              </p>
               <ApisTable apis={bento.bento_service_metadata.apis} />
               <ArtifactsTable
                 artifacts={bento.bento_service_metadata.artifacts}
@@ -41,12 +44,12 @@ export const BentoServiceDetail = props => {
         }
 
         return (
-          <div>
+          <Section>
             <h2>
               {params.name}:{params.version}
             </h2>
             {displayBentoServiceDetail}
-          </div>
+          </Section>
         );
       }}
     </HttpRequestContainer>

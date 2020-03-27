@@ -1,11 +1,12 @@
 import * as React from "react";
+import { Link } from "react-router-dom";
 
 import { getQueryObject } from "../utils";
 import HttpRequestContainer from "../utils/HttpRequestContainer";
 import BentoServiceTable from "../components/BentoServiceTable";
-import { Link } from "react-router-dom";
+import { Section } from "../ui/Layout";
 
-export const Repository = props => {
+const Repository = props => {
   const query = getQueryObject(props.location.search);
   const offset = Number(query.offset) || 0;
   return (
@@ -22,10 +23,10 @@ export const Repository = props => {
 
           bentoDisplay = <BentoServiceTable bentos={data.bentos} />;
         } else {
-          bentoDisplay = <div>No more models found</div>;
+          bentoDisplay = <Section>No more models found</Section>;
         }
         return (
-          <div>
+          <Section>
             {bentoDisplay}
             <div>
               {offset > 0 && (
@@ -35,9 +36,11 @@ export const Repository = props => {
                 <Link to={`/repository?offset=${offset + 10}`}>Next</Link>
               )}
             </div>
-          </div>
+          </Section>
         );
       }}
     </HttpRequestContainer>
   );
 };
+
+export default Repository;

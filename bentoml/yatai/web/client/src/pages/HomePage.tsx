@@ -3,8 +3,9 @@ import * as React from "react";
 import HttpRequestContainer from "../utils/HttpRequestContainer";
 import DeploymentsTable from "../components/DeploymentsTable";
 import BentoServiceTable from "../components/BentoServiceTable";
+import { Section } from "../ui/Layout";
 
-export const Home = () => (
+const HomePage = () => (
   <div>
     <HttpRequestContainer url="/api/ListDeployments" method="get">
       {({ data }) => {
@@ -18,17 +19,16 @@ export const Home = () => (
         } else {
           deploymentDisplay = (
             <a href="https://docs.bentoml.org/en/latest" target="_blank">
-              Learn about managing model serving deployments with BentoML
-              &#1f44b;
+              Learn about managing model serving deployments with BentoML 🔗
             </a>
           );
         }
 
         return (
-          <div>
+          <Section>
             <h2>Active Deployments: {activeDeploymentCounts}</h2>
             {deploymentDisplay}
-          </div>
+          </Section>
         );
       }}
     </HttpRequestContainer>
@@ -40,22 +40,24 @@ export const Home = () => (
       {({ data }) => {
         if (data && data.bentos) {
           return (
-            <div>
+            <Section>
               <h2>Latest Models</h2>
               <BentoServiceTable bentos={data.bentos} />
-            </div>
+            </Section>
           );
         } else {
           return (
-            <div>
+            <Section>
               <h2>No model found</h2>
               <a href="https://docs.bentoml.org/en/latest" target="_blank">
                 Learn about packaging ML model for serving with BentoML &#1f517;
               </a>
-            </div>
+            </Section>
           );
         }
       }}
     </HttpRequestContainer>
   </div>
 );
+
+export default HomePage;

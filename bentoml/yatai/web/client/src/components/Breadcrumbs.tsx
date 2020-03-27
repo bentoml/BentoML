@@ -1,9 +1,12 @@
 import * as React from "react";
 import { useLocation } from "react-router-dom";
+import { capitalize } from "lodash";
+
 import {
   Breadcrumbs as BlueprintBreadcrumbs,
   IBreadcrumbProps
 } from "@blueprintjs/core";
+import { Section } from "../ui/Layout";
 
 const HOME_CRUMB: IBreadcrumbProps = {
   text: "Home",
@@ -22,7 +25,14 @@ const Breadcrumbs: React.FC = () => {
   }, [location]);
 
   breadcrumbs.length > 0 && breadcrumbs.unshift(HOME_CRUMB);
-  return <BlueprintBreadcrumbs items={breadcrumbs} />;
+  if (breadcrumbs.length === 0) {
+    return null;
+  }
+  return (
+    <Section>
+      <BlueprintBreadcrumbs items={breadcrumbs} />
+    </Section>
+  );
 };
 
 const getBreadcrumbs = (pathname: string): Array<IBreadcrumbProps> => {
@@ -31,7 +41,10 @@ const getBreadcrumbs = (pathname: string): Array<IBreadcrumbProps> => {
   return pathSnippets.map((name, index) => {
     const isLastOne = index === pathSnippets.length - 1;
     const url = `/${pathSnippets.slice(0, index + 1).join("/")}`;
-    return isLastOne ? { text: name } : { text: name, href: url };
+    const formattedName = capitalize(name);
+    return isLastOne
+      ? { text: formattedName }
+      : { text: formattedName, href: url };
   });
 };
 

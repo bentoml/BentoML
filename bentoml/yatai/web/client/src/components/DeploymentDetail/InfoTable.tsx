@@ -2,6 +2,7 @@ import * as React from "react";
 import Table from "../../ui/Table";
 import { displayTimeInFromNowFormat } from "../../utils";
 import { Link } from "react-router-dom";
+import { Section } from "../../ui/Layout";
 
 const InfoTable = ({ deployment }) => {
   let endpointValues = "Not Available";
@@ -29,10 +30,10 @@ const InfoTable = ({ deployment }) => {
     ["Endpoint", endpointValues]
   ];
   return (
-    <div>
+    <Section>
       <h2>Info</h2>
       <Table content={parsedInfo} ratio={[1, 4]} />
-    </div>
+    </Section>
   );
 };
 

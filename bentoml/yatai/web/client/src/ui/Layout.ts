@@ -6,4 +6,8 @@ const Layout = styled.div({
   marginBottom: "100px"
 });
 
+export const Section = styled.section({
+  margin: "30px 0 0"
+});
+
 export default Layout;

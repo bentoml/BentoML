@@ -1,5 +1,6 @@
 import * as React from "react";
 import Table from "../../ui/Table";
+import { Section } from "../../ui/Layout";
 
 const parseHandlerConfigAsKeyValueArray = (config): Array<string> => {
   /*
@@ -57,14 +58,14 @@ const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
     api.docs
   ]);
   return (
-    <div>
+    <Section>
       <h2>APIs</h2>
       <Table
         content={parsedApis}
         header={APIS_TABLE_HEADER}
         ratio={APIS_TABLE_RATIO}
       />
-    </div>
+    </Section>
   );
 };
 export default ApisTable;

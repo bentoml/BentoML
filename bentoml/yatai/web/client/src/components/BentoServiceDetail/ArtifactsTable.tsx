@@ -1,5 +1,6 @@
 import * as React from "react";
 import Table from "../../ui/Table";
+import { Section } from "../../ui/Layout";
 
 interface IArtifactProps {
   name: string;
@@ -16,14 +17,14 @@ const ArtifactsTable: React.FC<{ artifacts: Array<IArtifactProps> }> = ({
     return [artifact.name, artifact.artifact_type];
   });
   return (
-    <div>
+    <Section>
       <h2>Artifacts</h2>
       <Table
         content={parsedArtifacts}
         ratio={ARTIFACTS_TABLE_RATIO}
         header={ARTIFACTS_TABLE_HEADER}
       />
-    </div>
+    </Section>
   );
 };
 

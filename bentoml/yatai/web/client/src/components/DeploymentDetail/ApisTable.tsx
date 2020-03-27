@@ -1,6 +1,7 @@
 import * as React from "react";
 import HttpRequestContainer from "../../utils/HttpRequestContainer";
 import ApisTable from "../BentoServiceDetail/ApisTable";
+import { Section } from "../../ui/Layout";
 
 const DeploymentApisTable = ({ deployment }) => {
   let apiName;
@@ -13,7 +14,7 @@ const DeploymentApisTable = ({ deployment }) => {
       break;
   }
   return (
-    <div>
+    <Section>
       <h3>APIs</h3>
       <HttpRequestContainer
         url="/api/GetBento"
@@ -38,7 +39,7 @@ const DeploymentApisTable = ({ deployment }) => {
           }
         }}
       </HttpRequestContainer>
-    </div>
+    </Section>
   );
 };
 

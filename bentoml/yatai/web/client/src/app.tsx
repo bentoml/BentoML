@@ -10,10 +10,10 @@ import {
   Button,
   Classes
 } from "@blueprintjs/core";
-import { Home } from "./pages/home";
+import HomePage from "./pages/HomePage";
 import { DeploymentsList } from "./pages/DeploymentsList";
 import { DeploymentDetails } from "./pages/DeploymentDetails";
-import { Repository } from "./pages/repository";
+import Repository from "./pages/Repository";
 import { BentoServicesList } from "./pages/BentoServiceList";
 import { BentoServiceDetail } from "./pages/BentoServiceDetail";
 import Layout from "./ui/Layout";
@@ -64,9 +64,9 @@ export const App = () => (
           <Route path="/repository/:name" component={BentoServicesList} />
           <Route path="/repository" component={Repository} />
 
-          <Route path="/about" component={Home} />
-          <Route path="/config" component={Home} />
-          <Route exact path="/" component={Home} />
+          <Route path="/about" component={HomePage} />
+          <Route path="/config" component={HomePage} />
+          <Route exact path="/" component={HomePage} />
         </Switch>
       </div>
     </Layout>

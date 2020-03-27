@@ -2,6 +2,7 @@ import * as React from "react";
 import * as lodash from "lodash";
 
 import Table from "../../ui/Table";
+import { Section } from "../../ui/Layout";
 
 const parseKeyForDisplay = (key: string) => {
   return lodash.capitalize(key).replace("_", " ");
@@ -33,10 +34,10 @@ const ConfigurationTable = ({ spec }) => {
   }
 
   return (
-    <div>
+    <Section>
       <h2>Configuration</h2>
       <Table content={parsedConfiguration} ratio={[1, 4]} />
-    </div>
+    </Section>
   );
 };
 

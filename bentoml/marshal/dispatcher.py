@@ -55,7 +55,7 @@ class Optimizer:
             w0 = now - parade.time_first
             wn = now - parade.time_last
             n = parade.length
-            a = self.outbound_a
+            a = max(self.outbound_a, 0)
 
             if w0 >= max_time:
                 print("warning: max latency reached")

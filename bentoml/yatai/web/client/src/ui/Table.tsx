@@ -11,12 +11,18 @@ const TableContainer = styled.div({
 const Row = styled.div<{ showBottomBorder?: boolean }>(props => ({
   display: "flex",
   flexWrap: "wrap",
-  borderBottom: props.showBottomBorder ? "2px solid #D8E1E8" : "none"
+  borderBottom: props.showBottomBorder ? "2px solid #D8E1E8" : "none",
+  ":hover": {
+    backgroundColor: "#EBF1F5"
+  }
 }));
 
 const TableHeader = styled(Row)({
   borderBottom: "2px solid #D8E1E8",
-  fontWeight: 500
+  fontWeight: 500,
+  ":hover": {
+    backgroundColor: "#F5F8FA"
+  }
 });
 
 const Cell = styled.div<{

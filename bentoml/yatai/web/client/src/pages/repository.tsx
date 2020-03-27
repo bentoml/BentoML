@@ -28,13 +28,23 @@ const Repository = props => {
         return (
           <Section>
             {bentoDisplay}
-            <div>
-              {offset > 0 && (
-                <Link to={`/repository?offset=${offset - 10}`}>Previous</Link>
-              )}
-              {hasBento && (
-                <Link to={`/repository?offset=${offset + 10}`}>Next</Link>
-              )}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: "10px"
+              }}
+            >
+              <div>
+                {offset > 0 && (
+                  <Link to={`/repository?offset=${offset - 10}`}>Previous</Link>
+                )}
+              </div>
+              <div>
+                {hasBento && (
+                  <Link to={`/repository?offset=${offset + 10}`}>Next</Link>
+                )}
+              </div>
             </div>
           </Section>
         );

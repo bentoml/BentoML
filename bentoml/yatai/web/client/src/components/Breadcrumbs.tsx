@@ -41,7 +41,11 @@ const getBreadcrumbs = (pathname: string): Array<IBreadcrumbProps> => {
   return pathSnippets.map((name, index) => {
     const isLastOne = index === pathSnippets.length - 1;
     const url = `/${pathSnippets.slice(0, index + 1).join("/")}`;
-    const formattedName = capitalize(name);
+
+    let formattedName = name;
+    if (["repository", "deployments"].includes(name)) {
+      formattedName = capitalize(name);
+    }
     return isLastOne
       ? { text: formattedName }
       : { text: formattedName, href: url };

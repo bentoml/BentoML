@@ -19,7 +19,7 @@ const Row = styled.div<{ showBottomBorder?: boolean }>(props => ({
 
 const TableHeader = styled(Row)({
   borderBottom: "2px solid #D8E1E8",
-  fontWeight: 500,
+  fontWeight: 600,
   ":hover": {
     backgroundColor: "#F5F8FA"
   }
@@ -28,7 +28,7 @@ const TableHeader = styled(Row)({
 const Cell = styled.div<{
   flex?: number;
 }>(props => ({
-  color: "#202B33",
+  color: "#394B59",
   textAlign: "left",
   padding: "20px",
   flex: props.flex ? props.flex : 1,

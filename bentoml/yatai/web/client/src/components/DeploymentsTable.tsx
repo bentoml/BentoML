@@ -1,9 +1,8 @@
 import * as React from "react";
 import * as moment from "moment";
-import { Link } from "react-router-dom";
 
 import { displayTimeInFromNowFormat } from "../utils/index";
-import Table from "../ui/Table";
+import { TableNew } from "../ui/Table";
 
 const DEPLOYMENTS_TABLE_HEADERS = [
   "Name",
@@ -12,33 +11,34 @@ const DEPLOYMENTS_TABLE_HEADERS = [
   "BentoService",
   "Status",
   "Age",
-  "Last updated at",
-  ""
+  "Last updated at"
 ];
-const DEPLOYMENTS_TABLE_RATIO = [3, 2, 2, 5, 1, 2, 4, 1];
+const DEPLOYMENTS_TABLE_RATIO = [3, 2, 2, 5, 2, 2, 4];
 
 const DeploymentsTable = props => {
   const { deployments } = props;
   const parsedDeployments = deployments.map(deployment => {
     const lastUpdatedAt = moment
-      .unix(Number(deployment.last_updated_at.seconds)).toDate().toLocaleString()
+      .unix(Number(deployment.last_updated_at.seconds))
+      .toDate()
+      .toLocaleString();
 
-    return [
-      deployment.name,
-      deployment.namespace,
-      deployment.spec.operator,
-      `${deployment.spec.bento_name}:${deployment.spec.bento_version}`,
-      deployment.state.state,
-      displayTimeInFromNowFormat(Number(deployment.created_at.seconds)),
-      lastUpdatedAt,
-      <Link to={`/deployments/${deployment.namespace}/${deployment.name}`}>
-        Detail
-      </Link>
-    ];
+    return {
+      content: [
+        deployment.name,
+        deployment.namespace,
+        deployment.spec.operator,
+        `${deployment.spec.bento_name}:${deployment.spec.bento_version}`,
+        deployment.state.state,
+        displayTimeInFromNowFormat(Number(deployment.created_at.seconds)),
+        lastUpdatedAt
+      ],
+      link: `/deployments/${deployment.namespace}/${deployment.name}`
+    };
   });
 
   return (
-    <Table
+    <TableNew
       content={parsedDeployments}
       ratio={DEPLOYMENTS_TABLE_RATIO}
       header={DEPLOYMENTS_TABLE_HEADERS}

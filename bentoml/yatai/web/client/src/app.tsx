@@ -21,7 +21,7 @@ import Breadcrumbs from "./components/Breadcrumbs";
 import logo from "./assets/bentoml-logo.png";
 
 const NavigationBar = () => (
-  <Navbar>
+  <Navbar style={{ paddingLeft: "10%", marginLeft: 0 }}>
     <NavbarGroup align={Alignment.LEFT}>
       <Link to="/">
         <NavbarHeading>
@@ -30,14 +30,10 @@ const NavigationBar = () => (
       </Link>
       <NavbarDivider />
       <Link to="/repository">
-        <Button className={Classes.MINIMAL} icon="document" text="Repository" />
+        <Button className={Classes.MINIMAL} text="Repository" />
       </Link>
       <Link to="/deployments">
-        <Button
-          className={Classes.MINIMAL}
-          icon="document"
-          text="Deployments"
-        />
+        <Button className={Classes.MINIMAL} text="Deployments" />
       </Link>
     </NavbarGroup>
   </Navbar>
@@ -45,8 +41,8 @@ const NavigationBar = () => (
 
 export const App = () => (
   <BrowserRouter>
+    <NavigationBar />
     <Layout>
-      <NavigationBar />
       <Breadcrumbs />
       <div>
         <Switch>

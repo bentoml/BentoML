@@ -26,11 +26,9 @@ const TableHeader = styled(Row)({
 });
 
 const Cell = styled.div<{
-  maxWidth?: number;
-  color?: string;
   flex?: number;
 }>(props => ({
-  color: props.color ? props.color : "#202B33",
+  color: "#202B33",
   textAlign: "left",
   padding: "20px",
   flex: props.flex ? props.flex : 1,
@@ -38,7 +36,7 @@ const Cell = styled.div<{
   position: "relative",
   whiteSpace: "pre-wrap",
   overflowWrap: "break-word",
-  maxWidth: props.maxWidth ? `${props.maxWidth}px` : null
+  minWidth: "100px"
 }));
 
 interface ITableProps {
@@ -75,6 +73,43 @@ const Table: React.FC<ITableProps> = props => {
       })}
     </TableContainer>
   );
+};
+
+export const TableNew: React.FC<ITableProps> = props => {
+  const { content, header, ratio } = props;
+  const finalHeader = ratio && header ? zip(header, ratio) : header;
+  return (
+    <TableContainer>
+      {finalHeader && (
+        <TableHeader>
+          {finalHeader.map((h, i) => (
+            <Cell key={i} flex={h[1]}>
+              {h[0]}
+            </Cell>
+          ))}
+        </TableHeader>
+      )}
+      {content.map((row, i) => {
+        const r = zip(row.content, ratio);
+
+        return (
+          <Row key={i} onClick={() => handleClick(row.link)}>
+            {r.map((cell, j) => (
+              <Cell key={j} flex={cell[1]}>
+                {cell[0]}
+              </Cell>
+            ))}
+          </Row>
+        );
+      })}
+    </TableContainer>
+  );
+};
+
+const handleClick = (path: string) => {
+  if (path) {
+    window.location.replace(path);
+  }
 };
 
 export default Table;

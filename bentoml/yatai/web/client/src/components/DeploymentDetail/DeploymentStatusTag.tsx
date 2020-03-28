@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Tag, Intent } from "@blueprintjs/core";
 
-const DeploymentStatusTag = ({state}) => {
+const DeploymentStatusTag = ({ state }) => {
   let statusColor;
   switch (state) {
     case "RUNNING":
@@ -18,7 +18,11 @@ const DeploymentStatusTag = ({state}) => {
       statusColor = Intent.NONE;
   }
 
-  return <Tag intent={statusColor}>{state}</Tag>
+  return (
+    <Tag intent={statusColor} style={{ verticalAlign: "middle" }}>
+      {state}
+    </Tag>
+  );
 };
 
 export default DeploymentStatusTag;

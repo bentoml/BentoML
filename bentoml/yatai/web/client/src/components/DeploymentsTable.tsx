@@ -3,6 +3,7 @@ import * as moment from "moment";
 
 import { displayTimeInFromNowFormat } from "../utils/index";
 import { TableNew } from "../ui/Table";
+import DeploymentStatusTag from "./DeploymentDetail/DeploymentStatusTag";
 
 const DEPLOYMENTS_TABLE_HEADERS = [
   "Name",
@@ -29,7 +30,7 @@ const DeploymentsTable = props => {
         deployment.namespace,
         deployment.spec.operator,
         `${deployment.spec.bento_name}:${deployment.spec.bento_version}`,
-        deployment.state.state,
+        <DeploymentStatusTag state={deployment.state.state} />,
         displayTimeInFromNowFormat(Number(deployment.created_at.seconds)),
         lastUpdatedAt
       ],

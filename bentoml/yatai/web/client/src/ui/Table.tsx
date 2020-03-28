@@ -108,7 +108,7 @@ export const TableNew: React.FC<ITableProps> = props => {
 
 const handleClick = (path: string) => {
   if (path) {
-    window.location.replace(path);
+    window.location.href = path;
   }
 };
 

@@ -5,6 +5,8 @@ import HttpRequestContainer from "../utils/HttpRequestContainer";
 import ConfigurationTable from "../components/DeploymentDetail/ConfigurationTable";
 import DeploymentApisTable from "../components/DeploymentDetail/ApisTable";
 import InfoTable from "../components/DeploymentDetail/InfoTable";
+import DeploymentStatusTag from '../components/DeploymentDetail/DeploymentStatusTag';
+import ErrorCard from '../components/DeploymentDetail/ErrorCard';
 
 export const DeploymentDetails = props => {
   const params = props.match.params;
@@ -18,30 +20,12 @@ export const DeploymentDetails = props => {
 
         if (data.data && data.data.deployment) {
           const deployment = data.data.deployment;
-          let statusColor;
-          switch (deployment.state.state) {
-            case "RUNNING":
-            case "SUCCESSED":
-              statusColor = Intent.SUCCESS;
-              break;
-            case "FAILED":
-            case "ERROR":
-            case "CRASH_LOOP_BACK_OFF":
-              statusColor = Intent.DANGER;
-              break;
-            default:
-              statusColor = Intent.NONE;
-          }
-
-          const statusTag = (
-            <Tag intent={statusColor}>{deployment.state.state}</Tag>
-          );
           detailDisplay = (
             <div>
               <h1>
-                Deployment: {deployment.name} {statusTag}
+                Deployment: {deployment.name} <DeploymentStatusTag state={deployment.state.state} />
               </h1>
-              {/* <DeploymentError /> */}
+              <ErrorCard state={deployment.state} />
               <InfoTable deployment={deployment} />
               <ConfigurationTable spec={deployment.spec} />
               <DeploymentApisTable deployment={deployment} />

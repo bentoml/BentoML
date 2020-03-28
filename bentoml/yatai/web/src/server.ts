@@ -51,6 +51,9 @@ const createRoutes = (app, yataiClient) => {
   });
 
   app.get('/api/ListDeployments', async(req: Request, res: Response) => {
+    if (req.query.limit && typeof(req.query.limit) == 'string') {
+      req.query.limit = Number(req.query.limit)
+    }
     let verifyError = bentoml.ListDeploymentsRequest.verify(req.query);
     if (verifyError) {
       logger.error({error: verifyError});

@@ -46,7 +46,7 @@ const APIS_TABLE_HEADER = [
   "Documentation"
 ];
 
-const APIS_TABLE_RATIO = [1, 1, 3, 1];
+const APIS_TABLE_RATIO = [1, 1, 1, 4];
 
 const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
   const parsedApis = apis.map(api => [

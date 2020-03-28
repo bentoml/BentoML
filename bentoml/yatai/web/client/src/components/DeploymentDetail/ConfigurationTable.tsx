@@ -13,14 +13,13 @@ const ConfigurationTable = ({ spec }) => {
   switch (spec.operator) {
     case "AWS_LAMBDA":
       lodash.each(spec.aws_lambda_operator_config, (value, key) => {
-        if (key == "memory_size") {
-          value = value + " MB";
-        }
         switch (key) {
           case "memory_size":
             value = value + " MB";
+            break;
           case "timeout":
             value = value + " seconds";
+            break;
         }
 
         parsedConfiguration.push([parseKeyForDisplay(key), value]);

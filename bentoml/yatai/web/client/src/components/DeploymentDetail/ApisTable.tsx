@@ -14,32 +14,34 @@ const DeploymentApisTable = ({ deployment }) => {
       break;
   }
   return (
-    <Section>
-      <h3>APIs</h3>
-      <HttpRequestContainer
-        url="/api/GetBento"
-        params={{
-          bento_name: deployment.spec.bento_name,
-          bento_version: deployment.spec.bento_version
-        }}
-      >
-        {data => {
-          if (data && data.data && data.data.bento) {
-            const bento = data.data.bento;
-            let { apis } = bento.bento_service_metadata;
-            if (apiName) {
-              const deployedApi = apis.find(api => {
-                return api.name == apiName;
-              });
-              apis = [deployedApi];
-            }
-            return <ApisTable apis={apis} />;
-          } else {
-            return <div>No APIs</div>;
+    <HttpRequestContainer
+      url="/api/GetBento"
+      params={{
+        bento_name: deployment.spec.bento_name,
+        bento_version: deployment.spec.bento_version
+      }}
+    >
+      {data => {
+        if (data && data.data && data.data.bento) {
+          const bento = data.data.bento;
+          let { apis } = bento.bento_service_metadata;
+          if (apiName) {
+            const deployedApi = apis.find(api => {
+              return api.name == apiName;
+            });
+            apis = [deployedApi];
           }
-        }}
-      </HttpRequestContainer>
-    </Section>
+          return <ApisTable apis={apis} />;
+        } else {
+          return (
+            <Section>
+              <h3>APIs</h3>
+              <div>No APIs</div>
+            </Section>
+          );
+        }
+      }}
+    </HttpRequestContainer>
   );
 };
 

@@ -27,7 +27,9 @@ export const BentoServiceDetail = props => {
                 <b>Created at: </b>
                 {moment
                   .unix(Number(bento.bento_service_metadata.created_at.seconds))
-                  .format("MM/DD/YYYY HH:mm:ss Z")}
+                  .toDate()
+                  .toLocaleString()
+                }
               </p>
               <p>
                 <b>Storage: </b> {bento.uri.uri}

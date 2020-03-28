@@ -21,8 +21,7 @@ const DeploymentsTable = props => {
   const { deployments } = props;
   const parsedDeployments = deployments.map(deployment => {
     const lastUpdatedAt = moment
-      .unix(Number(deployment.last_updated_at.seconds))
-      .format("MM/DD/YYYY HH:mm:ss Z");
+      .unix(Number(deployment.last_updated_at.seconds)).toDate().toLocaleString()
 
     return [
       deployment.name,

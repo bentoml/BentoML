@@ -119,8 +119,6 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
         async_start_yatai_service_web_ui(
             yatai_grpc_server_addess, ui_port, web_ui_log_path, debug_mode
         )
-        # TODO we should use something like asyncio.eventloop to constantly check is
-        #  web ui running correctly or not.
 
     # We don't import _echo function from click_utils because of circular dep
     click.echo(
@@ -199,6 +197,8 @@ def async_start_yatai_service_web_ui(
 
     is_web_proc_running = web_proc.poll() is None
     if not is_web_proc_running:
+        web_proc_output = web_proc.stdout.read().decode('utf-8')
+        logger.error(f'return code: {web_proc.returncode} {web_proc_output}')
         raise BentoMLException('Yatai web ui did not start properly')
 
     atexit.register(web_proc.terminate)

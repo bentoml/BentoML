@@ -1,6 +1,7 @@
 import * as React from "react";
 import styled from "@emotion/styled";
 import { zip } from "lodash";
+import { Link } from "react-router-dom";
 
 const TableContainer = styled.div({
   width: "100%",
@@ -91,9 +92,22 @@ export const TableNew: React.FC<ITableProps> = props => {
       )}
       {content.map((row, i) => {
         const r = zip(row.content, ratio);
+        if (row.link) {
+          return (
+            <Link to={row.link}>
+              <Row key={i}>
+                {r.map((cell, j) => (
+                  <Cell key={j} flex={cell[1]}>
+                    {cell[0]}
+                  </Cell>
+                ))}
+              </Row>
+            </Link>
+          );
+        }
 
         return (
-          <Row key={i} onClick={() => handleClick(row.link)}>
+          <Row key={i}>
             {r.map((cell, j) => (
               <Cell key={j} flex={cell[1]}>
                 {cell[0]}
@@ -104,12 +118,6 @@ export const TableNew: React.FC<ITableProps> = props => {
       })}
     </TableContainer>
   );
-};
-
-const handleClick = (path: string) => {
-  if (path) {
-    window.location.href = path;
-  }
 };
 
 export default Table;

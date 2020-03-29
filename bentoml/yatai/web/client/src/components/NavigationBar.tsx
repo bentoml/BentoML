@@ -26,7 +26,7 @@ const NavigationBar = () => {
       <NavbarGroup align={Alignment.LEFT}>
         <NavbarHeading>
           <Link to="/">
-            <img src={logo} width={150} />{" "}
+            <img src={`/${logo}`} width={150} />{" "}
           </Link>
         </NavbarHeading>
         <NavbarDivider />

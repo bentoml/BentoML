@@ -1,19 +1,22 @@
 import * as React from "react";
-import * as lodash from 'lodash';
+import * as lodash from "lodash";
 
 import HttpRequestContainer from "../utils/HttpRequestContainer";
 import DeploymentsTable from "../components/DeploymentsTable";
 
-
-const getActiveDeploymentCount = (deployments) => {
-  return lodash.filter(
-    deployments,
-    (deployment) => deployment.state && deployment.state.state && deployment.state.state == 'RUNNING'
-  ).length || 0;
+const getActiveDeploymentCount = deployments => {
+  return (
+    lodash.filter(
+      deployments,
+      deployment =>
+        deployment.state &&
+        deployment.state.state &&
+        deployment.state.state == "RUNNING"
+    ).length || 0
+  );
 };
 
-
-export const DeploymentsList = props => {
+const DeploymentsList = props => {
   const params = props.match.params;
   let requestParams;
   if (params.namespace) {
@@ -52,3 +55,5 @@ export const DeploymentsList = props => {
     </HttpRequestContainer>
   );
 };
+
+export default DeploymentsList;

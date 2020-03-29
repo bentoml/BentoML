@@ -1,14 +1,13 @@
 import * as React from "react";
-import { Tag, Intent } from "@blueprintjs/core";
 
 import HttpRequestContainer from "../utils/HttpRequestContainer";
 import ConfigurationTable from "../components/DeploymentDetail/ConfigurationTable";
 import DeploymentApisTable from "../components/DeploymentDetail/ApisTable";
 import InfoTable from "../components/DeploymentDetail/InfoTable";
-import DeploymentStatusTag from '../components/DeploymentDetail/DeploymentStatusTag';
-import ErrorCard from '../components/DeploymentDetail/ErrorCard';
+import DeploymentStatusTag from "../components/DeploymentDetail/DeploymentStatusTag";
+import ErrorCard from "../components/DeploymentDetail/ErrorCard";
 
-export const DeploymentDetails = props => {
+const DeploymentDetails = props => {
   const params = props.match.params;
   return (
     <HttpRequestContainer
@@ -23,7 +22,8 @@ export const DeploymentDetails = props => {
           detailDisplay = (
             <div>
               <h1>
-                Deployment: {deployment.name} <DeploymentStatusTag state={deployment.state.state} />
+                Deployment: {deployment.name}{" "}
+                <DeploymentStatusTag state={deployment.state.state} />
               </h1>
               <ErrorCard state={deployment.state} />
               <InfoTable deployment={deployment} />
@@ -39,3 +39,5 @@ export const DeploymentDetails = props => {
     </HttpRequestContainer>
   );
 };
+
+export default DeploymentDetails;

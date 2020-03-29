@@ -7,7 +7,7 @@ import ApisTable from "../components/BentoServiceDetail/ApisTable";
 import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
 import { Section } from "../ui/Layout";
 
-export const BentoServiceDetail = props => {
+const BentoServiceDetail = props => {
   const params = props.match.params;
 
   return (
@@ -28,8 +28,7 @@ export const BentoServiceDetail = props => {
                 {moment
                   .unix(Number(bento.bento_service_metadata.created_at.seconds))
                   .toDate()
-                  .toLocaleString()
-                }
+                  .toLocaleString()}
               </p>
               <p>
                 <b>Storage: </b> {bento.uri.uri}
@@ -57,3 +56,5 @@ export const BentoServiceDetail = props => {
     </HttpRequestContainer>
   );
 };
+
+export default BentoServiceDetail;

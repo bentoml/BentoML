@@ -6,6 +6,9 @@ import HttpRequestContainer from "../utils/HttpRequestContainer";
 import BentoServiceTable from "../components/BentoServiceTable";
 import { Section } from "../ui/Layout";
 
+
+const DEFAULT_BENTO_SERVICE_LIMIT_PER_PAGE = 30;
+
 const Repository = props => {
   const query = getQueryObject(props.location.search);
   const offset = Number(query.offset) || 0;
@@ -13,7 +16,7 @@ const Repository = props => {
     <HttpRequestContainer
       url="/api/ListBento"
       method="get"
-      params={{ limit: 10, offset }}
+      params={{ limit: DEFAULT_BENTO_SERVICE_LIMIT_PER_PAGE, offset }}
     >
       {({ data }) => {
         let hasBento = false;

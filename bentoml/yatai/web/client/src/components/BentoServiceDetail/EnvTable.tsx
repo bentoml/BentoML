@@ -8,7 +8,7 @@ const EnvTable: React.FC<{ env: { [key: string]: string } }> = ({ env }) => {
   const envKeys = Object.keys(env);
 
   const parsedEnv = envKeys.map(key => {
-    return [key, env[key]];
+    return {content: [key, env[key]]};
   });
 
   return (

@@ -11,23 +11,31 @@ const InfoTable = ({ deployment }) => {
     endpointValues = infoJson.endpoints.join("\n");
   }
   const parsedInfo = [
-    [
-      "Created at",
-      displayTimeInFromNowFormat(Number(deployment.created_at.seconds))
-    ],
-    [
-      "Updated at",
-      displayTimeInFromNowFormat(Number(deployment.last_updated_at.seconds))
-    ],
-    [
-      "BentoService",
-      <Link
-        to={`/repository/${deployment.spec.bento_name}/${deployment.spec.bento_version}`}
-      >
-        {`${deployment.spec.bento_name}:${deployment.spec.bento_version}`}
-      </Link>
-    ],
-    ["Endpoint", endpointValues]
+    {
+      content: [
+        "Created at",
+        displayTimeInFromNowFormat(Number(deployment.created_at.seconds), true)
+      ],
+    },
+    {
+      content: [
+        "Updated at",
+        displayTimeInFromNowFormat(Number(deployment.last_updated_at.seconds), true)
+      ],
+    },
+    {
+      content: [
+        "BentoService",
+        <Link
+          to={`/repository/${deployment.spec.bento_name}/${deployment.spec.bento_version}`}
+        >
+          {`${deployment.spec.bento_name}:${deployment.spec.bento_version}`}
+        </Link>
+      ],
+    },
+    {
+      content: ["Endpoint", endpointValues]
+    },
   ];
   return (
     <Section>

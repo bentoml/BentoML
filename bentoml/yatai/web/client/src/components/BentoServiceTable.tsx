@@ -44,13 +44,16 @@ const BentoServiceTable = props => {
     const apis = parseApisAsArrayString(metadata.apis);
     const artifacts = parseArtifactsAsArrayString(metadata.artifacts);
 
-    return [
-      `${bento.name}:${bento.version}`,
-      displayTimeInFromNowFormat(Number(metadata.created_at.seconds)),
-      apis.join("\n"),
-      artifacts.join("\n"),
-      <Link to={`/repository/${bento.name}/${bento.version}`}>Detail</Link>
-    ];
+    return {
+      content: [
+        `${bento.name}:${bento.version}`,
+        displayTimeInFromNowFormat(Number(metadata.created_at.seconds)),
+        apis.join("\n"),
+        artifacts.join("\n"),
+        <Link to={`/repository/${bento.name}/${bento.version}`}>Detail</Link>
+      ],
+      link: `/repository/${bento.name}/${bento.version}`
+    }
   });
 
   return (

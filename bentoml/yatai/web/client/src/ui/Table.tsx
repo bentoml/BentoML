@@ -40,43 +40,14 @@ const Cell = styled.div<{
   minWidth: "100px"
 }));
 
-interface ITableProps {
-  content: Array<any>;
+export interface ITableProps {
+  content: Array<{content: any[], link?: string}>;
   header?: Array<string>;
   ratio?: Array<number>;
 }
 
-const Table: React.FC<ITableProps> = props => {
-  const { content, header, ratio } = props;
-  const finalHeader = ratio && header ? zip(header, ratio) : header;
-  return (
-    <TableContainer>
-      {finalHeader && (
-        <TableHeader>
-          {finalHeader.map((h, i) => (
-            <Cell key={i} flex={h[1]}>
-              {h[0]}
-            </Cell>
-          ))}
-        </TableHeader>
-      )}
-      {content.map((row, i) => {
-        const r = zip(row, ratio);
-        return (
-          <Row key={i}>
-            {r.map((cell, j) => (
-              <Cell key={j} flex={cell[1]}>
-                {cell[0]}
-              </Cell>
-            ))}
-          </Row>
-        );
-      })}
-    </TableContainer>
-  );
-};
 
-export const TableNew: React.FC<ITableProps> = props => {
+const Table: React.FC<ITableProps> = props => {
   const { content, header, ratio } = props;
   const finalHeader = ratio && header ? zip(header, ratio) : header;
   return (

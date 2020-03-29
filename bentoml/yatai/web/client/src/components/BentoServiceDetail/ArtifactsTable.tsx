@@ -14,7 +14,7 @@ const ArtifactsTable: React.FC<{ artifacts: Array<IArtifactProps> }> = ({
   artifacts
 }) => {
   const parsedArtifacts = artifacts.map(artifact => {
-    return [artifact.name, artifact.artifact_type];
+    return {content:[artifact.name, artifact.artifact_type]};
   });
   return (
     <Section>

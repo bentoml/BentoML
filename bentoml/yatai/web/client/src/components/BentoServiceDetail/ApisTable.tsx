@@ -49,14 +49,18 @@ const APIS_TABLE_HEADER = [
 const APIS_TABLE_RATIO = [1, 1, 1, 4];
 
 const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
-  const parsedApis = apis.map(api => [
-    api.name,
-    api.handler_type,
-    parseHandlerConfigAsKeyValueArray(
-      api.handler_config.fields
-    ).map((field, i) => <p key={i}>{field}</p>),
-    api.docs
-  ]);
+  const parsedApis = apis.map(api => ({
+    content: [
+      api.name,
+      api.handler_type,
+      api.handler_config
+      ? parseHandlerConfigAsKeyValueArray(
+          api.handler_config.fields
+        ).map((field, i) => <p key={i}>{field}</p>)
+      : 'None',
+      api.docs
+    ]
+  }));
   return (
     <Section>
       <h2>APIs</h2>

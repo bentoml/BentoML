@@ -21,9 +21,8 @@ const createRoutes = (app, yataiClient) => {
       return res.status(400).json({error: verifyError})
     }
     let requestMessage = bentoml.ListBentoRequest.create(req.query)
-    logger.info({request: 'ListBento', data: requestMessage});
     let result = await yataiClient.listBento(requestMessage)
-    logger.info({request: 'ListBento', result: result});
+    logger.info({request: 'ListBento', data: requestMessage, result: result});
     if (result.status.status_code != 0) {
       return res.status(500).json({error: result.status.error_message});
     } else {
@@ -38,9 +37,8 @@ const createRoutes = (app, yataiClient) => {
       return res.status(400).json({error: verifyError})
     }
     let requestMessage = bentoml.GetBentoRequest.create(req.query)
-    logger.info({request: 'GetBento', data: requestMessage});
     let result = await yataiClient.getBento(requestMessage);
-    logger.info({request: 'GetBento', result: result});
+    logger.info({request: 'GetBento', data: requestMessage, result: result});
     return res.status(200).json(result);
   });
 
@@ -51,9 +49,8 @@ const createRoutes = (app, yataiClient) => {
       return res.status(400).json({error: verifyError})
     }
     let requestMessage = bentoml.GetDeploymentRequest.create(req.query)
-    logger.info({request: 'GetDeployment', data: requestMessage});
     let result = await yataiClient.getDeployment(requestMessage);
-    logger.info({request: 'GetDeployment', result: result});
+    logger.info({request: 'GetDeployment', data: requestMessage, result: result});
     return res.status(200).json(result);
   });
 
@@ -67,9 +64,8 @@ const createRoutes = (app, yataiClient) => {
       return res.status(400).json({error: verifyError})
     }
     let requestMessage = bentoml.ListDeploymentsRequest.create(req.query)
-    logger.info({request: 'ListDeployments', data: requestMessage});
     let result = await yataiClient.listDeployments(requestMessage);
-    logger.info({request: 'ListDeployments', result: result});
+    logger.info({request: 'ListDeployments', data: requestMessage, result: result});
     return res.status(200).json(result);
   });
 
@@ -80,9 +76,8 @@ const createRoutes = (app, yataiClient) => {
       return res.status(400).json({error: verifyError})
     }
     let requestMessage = bentoml.DeleteDeploymentRequest.create(req.body)
-    logger.info({request: 'DeleteDeployment', data: requestMessage});
     let result = await yataiClient.deleteDeployment(requestMessage);
-    logger.info({request: 'DeleteDeployment', result: result});
+    logger.info({request: 'DeleteDeployment', data: requestMessage, result: result});
     return res.status(200).json(result);
   });
 
@@ -93,9 +88,8 @@ const createRoutes = (app, yataiClient) => {
       return res.status(400).json({error: verifyError})
     }
     let requestMessage = bentoml.DangerouslyDeleteBentoRequest.create(req.body)
-    logger.info({request: 'DeleteBento', data: requestMessage});
     let result = await yataiClient.dangerouslyDeleteBento(requestMessage);
-    logger.info({request: 'DeleteBento', result: result});
+    logger.info({request: 'DeleteBento', data: requestMessage, result: result});
     return res.status(200).json(result);
   });
 
@@ -106,9 +100,8 @@ const createRoutes = (app, yataiClient) => {
       return res.status(400).json({error: verifyError})
     }
     let requestMessage = bentoml.ApplyDeploymentRequest.create(req.body)
-    logger.info({request: 'ApplyDeployment', data: requestMessage});
     let result = await yataiClient.applyDeployment(requestMessage);
-    logger.info({request: 'ApplyDeployment', result: result});
+    logger.info({request: 'ApplyDeployment', data: requestMessage, result: result});
     return res.status(200).json(result);
   });
 };

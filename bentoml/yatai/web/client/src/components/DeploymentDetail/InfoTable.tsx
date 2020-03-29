@@ -1,8 +1,13 @@
 import * as React from "react";
 import Table from "../../ui/Table";
-import { displayTimeInFromNowFormat } from "../../utils";
+import { displayTimeInFromNowFormat, displayTimeISOString } from "../../utils";
 import { Link } from "react-router-dom";
 import { Section } from "../../ui/Layout";
+
+const displayTimestampForDeployment = (seconds: number) => {
+  return `${displayTimeInFromNowFormat(seconds, true)} (${displayTimeISOString(seconds)})`
+}
+
 
 const InfoTable = ({ deployment }) => {
   let endpointValues = "Not Available";
@@ -14,13 +19,13 @@ const InfoTable = ({ deployment }) => {
     {
       content: [
         "Created at",
-        displayTimeInFromNowFormat(Number(deployment.created_at.seconds), true)
+        displayTimestampForDeployment(Number(deployment.created_at.seconds))
       ],
     },
     {
       content: [
         "Updated at",
-        displayTimeInFromNowFormat(Number(deployment.last_updated_at.seconds), true)
+        displayTimestampForDeployment(Number(deployment.last_updated_at.seconds))
       ],
     },
     {

@@ -57,11 +57,6 @@ const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
     content: [
       api.name,
       api.handler_type,
-      // api.handler_config
-      // ? handlerConfigToTableContent(
-      //     api.handler_config.fields
-      //   ).map((field, i) => <p key={i}>{field}</p>)
-      // : 'None',
       handlerConfigToTableContent(api.handler_config),
       api.docs
     ]

@@ -1,4 +1,5 @@
 import path from 'path';
+import morgan from 'morgan';
 import { Request, Response } from "express";
 import express from 'express'
 import { bentoml } from './generated/bentoml_grpc';
@@ -25,6 +26,7 @@ const createRoutes = (app, yataiClient) => {
       const result = await yataiClient.listBento(requestMessage)
       logger.info({request: 'ListBento', data: requestMessage, result: result});
       if (result.status.status_code != 0) {
+        logger.error({request: 'ListBento', error: result.status.error_message});
         return res.status(400).json({error: result.status.error_message});
       }
       return res.status(200).json(result);
@@ -45,6 +47,7 @@ const createRoutes = (app, yataiClient) => {
       const result = await yataiClient.getBento(requestMessage);
       logger.info({request: 'GetBento', data: requestMessage, result: result});
       if (result.status.status_code != 0) {
+        logger.error({request: 'GetBento', error: result.status.error_message});
         return res.status(400).json({error: result.status.error_message});
       }
       return res.status(200).json(result);
@@ -64,6 +67,7 @@ const createRoutes = (app, yataiClient) => {
     try {
       const result = await yataiClient.getDeployment(requestMessage);
       if (result.status.status_code != 0) {
+        logger.error({request: 'GetDeployment', error: result.status.error_message});
         return res.status(400).json({error: result.status.error_message});
       }
       logger.info({request: 'GetDeployment', data: requestMessage, result: result});
@@ -88,6 +92,7 @@ const createRoutes = (app, yataiClient) => {
       const result = await yataiClient.listDeployments(requestMessage);
       logger.info({request: 'ListDeployments', data: requestMessage, result: result});
       if (result.status.status_code != 0) {
+        logger.error({request: 'ListDeployments', error: result.status.error_message});
         return res.status(400).json({error: result.status.error_message});
       }
       return res.status(200).json(result);
@@ -108,6 +113,7 @@ const createRoutes = (app, yataiClient) => {
       const result = await yataiClient.deleteDeployment(requestMessage);
       logger.info({request: 'DeleteDeployment', data: requestMessage, result: result});
       if (result.status.status_code != 0) {
+        logger.error({request: 'DeleteDeployment', error: result.status.error_message});
         return res.status(400).json({error: result.status.error_message});
       }
       return res.status(200).json(result);
@@ -128,6 +134,7 @@ const createRoutes = (app, yataiClient) => {
       const result = await yataiClient.dangerouslyDeleteBento(requestMessage);
       logger.info({request: 'DeleteBento', data: requestMessage, result: result});
       if (result.status.status_code != 0) {
+        logger.error({request: 'DeleteBento', error: result.status.error_message});
         return res.status(400).json({error: result.status.error_message});
       }
       return res.status(200).json(result);
@@ -148,6 +155,7 @@ const createRoutes = (app, yataiClient) => {
       const result = await yataiClient.applyDeployment(requestMessage);
       logger.info({request: 'ApplyDeployment', data: requestMessage, result: result});
       if (result.status.status_code != 0) {
+        logger.error({request: 'ApplyDeployment', error: result.status.error_message});
         return res.status(400).json({error: result.status.error_message});
       }
       return res.status(200).json(result);
@@ -162,6 +170,10 @@ export const getExpressApp = (grpcAddress: string|null) => {
   const app = express()
 
   app.use(express.json())
+  app.use(morgan(
+    'combined',
+    {stream: {write: message => logger.info(message.trim())}})
+  );
   app.use(
     express.static(path.join(__dirname, '../dist/client'))
   )

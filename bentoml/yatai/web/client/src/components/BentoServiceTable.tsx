@@ -4,28 +4,20 @@ import { Link } from "react-router-dom";
 import { displayTimeInFromNowFormat } from "../utils/index";
 import Table from "../ui/Table";
 
-const parseApisAsArrayString = apis => {
-  let list = [];
-  if (apis) {
-    for (let index = 0; index < apis.length; index++) {
-      const api = apis[index];
-      list.push(`${api.name}<${api.handler_type}>`);
-    }
+const apisToDisplayFormat = apis => {
+  if (!apis) {
+    return '';
   }
+  return apis.map(api => `${api.name}<${api.handler_type}>`).join('\n');
+}
 
-  return list;
-};
-
-const parseArtifactsAsArrayString = artifacts => {
-  let list = [];
-  if (artifacts) {
-    for (let index = 0; index < artifacts.length; index++) {
-      const artifact = artifacts[index];
-      list.push(`${artifact.name}<${artifact.artifact_type}>`);
-    }
+const artifactsToDisplayFormat = artifacts => {
+  if (!artifacts) {
+    return '';
   }
-
-  return list;
+  return artifacts.map(artifact =>
+    `${artifact.name}<${artifact.artifact_type}>`
+  ).join('\n');
 };
 
 const BENTO_TABLE_HEADERS = [
@@ -41,15 +33,15 @@ const BentoServiceTable = props => {
   const { bentos } = props;
   const parsedBentoServices = bentos.map(bento => {
     const metadata = bento.bento_service_metadata;
-    const apis = parseApisAsArrayString(metadata.apis);
-    const artifacts = parseArtifactsAsArrayString(metadata.artifacts);
+    const apis = apisToDisplayFormat(metadata.apis);
+    const artifacts = artifactsToDisplayFormat(metadata.artifacts);
 
     return {
       content: [
         `${bento.name}:${bento.version}`,
         displayTimeInFromNowFormat(Number(metadata.created_at.seconds)),
-        apis.join("\n"),
-        artifacts.join("\n"),
+        apis,
+        artifacts,
         <Link to={`/repository/${bento.name}/${bento.version}`}>Detail</Link>
       ],
       link: `/repository/${bento.name}/${bento.version}`

@@ -26,7 +26,6 @@ const createRoutes = (app, yataiClient) => {
       const result = await yataiClient.listBento(requestMessage)
       logger.info({request: 'ListBento', data: requestMessage, result: result});
       if (result.status.status_code != 0) {
-        logger.error({request: 'ListBento', error: result.status.error_message});
         return res.status(400).json({error: result.status.error_message});
       }
       return res.status(200).json(result);

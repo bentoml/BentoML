@@ -7,13 +7,29 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "@types/moment": "^2.13.0",
+    "@types/qs": "^6.9.1",
     "@types/react": "^16.9.23",
     "@types/react-dom": "^16.9.5",
+    "@types/react-router": "^5.1.4",
+    "@types/react-router-dom": "^5.1.3",
     "typescript": "^3.8.3"
   },
   "dependencies": {
+    "@blueprintjs/core": "^3.24.0",
+    "@blueprintjs/datetime": "^3.15.2",
+    "@blueprintjs/icons": "^3.14.0",
+    "@blueprintjs/select": "^3.12.0",
+    "@blueprintjs/table": "^3.8.3",
+    "@emotion/core": "^10.0.28",
+    "@emotion/styled": "^10.0.27",
     "axios": "^0.19.2",
+    "lodash": "^4.17.15",
+    "moment": "^2.24.0",
+    "qs": "^6.9.2",
     "react": "^16.13.0",
-    "react-dom": "^16.13.0"
+    "react-dom": "^16.13.0",
+    "react-router": "^5.1.2",
+    "react-router-dom": "^5.1.2"
   }
 }

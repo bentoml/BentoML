@@ -1,7 +1,7 @@
-import * as React from 'react';
-import { render } from 'react-dom';
-import './index.css';
+import * as React from "react";
+import { render } from "react-dom";
+import "./index.css";
 
-import { App } from './app';
+import { App } from "./App";
 
-render(<App />, document.getElementById('root'));
+render(<App />, document.getElementById("root"));

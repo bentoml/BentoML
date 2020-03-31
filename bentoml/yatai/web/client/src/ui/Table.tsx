@@ -65,7 +65,7 @@ const Table: React.FC<ITableProps> = props => {
         const r = zip(row.content, ratio);
         if (row.link) {
           return (
-            <Link to={row.link} style={{ textDecoration: "none" }}>
+            <Link key={i} to={row.link} style={{ textDecoration: "none" }}>
               <Row key={i}>
                 {r.map((cell, j) => (
                   <Cell key={j} flex={cell[1]}>

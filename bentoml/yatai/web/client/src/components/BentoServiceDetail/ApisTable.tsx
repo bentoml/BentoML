@@ -2,7 +2,11 @@ import * as React from "react";
 import Table from "../../ui/Table";
 import { Section } from "../../ui/Layout";
 
-const parseHandlerConfigAsKeyValueArray = (config): Array<string> => {
+const handlerConfigToTableContent = (handler_config): Array<string>|null|undefined => {
+  if (!handler_config) {
+    return 'None';
+ }
+ const config = handler_config.fields
   /*
     grpc format for JSON:
     example
@@ -19,15 +23,15 @@ const parseHandlerConfigAsKeyValueArray = (config): Array<string> => {
   const displayHandlerList = [];
   const configureKeys = Object.keys(config);
   for (let index = 0; index < configureKeys.length; index++) {
-    let key = configureKeys[index];
-    let valueObject = config[key];
+    const key = configureKeys[index];
+    const valueObject = config[key];
+    const valueType = Object.keys(valueObject)[0];
     let value = Object.values(valueObject)[0];
-    let valueType = Object.keys(valueObject)[0];
     if (valueType == "nullValue") {
       value = "null";
     }
 
-    displayHandlerList.push(`${key}: ${value}`);
+    displayHandlerList.push(<p key={index}>{`${key}: ${value}`}</p>);
   }
   return displayHandlerList;
 };
@@ -49,15 +53,11 @@ const APIS_TABLE_HEADER = [
 const APIS_TABLE_RATIO = [1, 1, 1, 4];
 
 const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
-  const parsedApis = apis.map(api => ({
+  const apisTableContent = apis.map(api => ({
     content: [
       api.name,
       api.handler_type,
-      api.handler_config
-      ? parseHandlerConfigAsKeyValueArray(
-          api.handler_config.fields
-        ).map((field, i) => <p key={i}>{field}</p>)
-      : 'None',
+      handlerConfigToTableContent(api.handler_config),
       api.docs
     ]
   }));
@@ -65,7 +65,7 @@ const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
     <Section>
       <h2>APIs</h2>
       <Table
-        content={parsedApis}
+        content={apisTableContent}
         header={APIS_TABLE_HEADER}
         ratio={APIS_TABLE_RATIO}
       />

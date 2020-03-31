@@ -265,6 +265,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     bento_service_bundle_path,
                     outbound_host="localhost",
                     outbound_port=api_server_port,
+                    outbound_workers=1,
                 )
                 api_server = BentoAPIServer(bento_service, port=api_server_port)
             marshal_server.async_start(port=port)

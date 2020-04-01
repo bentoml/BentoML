@@ -17,7 +17,7 @@ def predict(image):
 
 @pytest.fixture()
 def img_file(tmpdir):
-    img_file = tmpdir.join("test_img.png")
+    img_file = tmpdir.join("test_img.jpg")
     imageio.imwrite(str(img_file), np.zeros((10, 10)))
     return img_file
 

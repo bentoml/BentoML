@@ -52,7 +52,6 @@ module.exports = (settings) => {
     },
     externals: {
       express: 'commonjs express',
-      grpc: 'commonjs grpc',
       protobufjs: 'commonjs protobufjs',
     },
     resolve: {

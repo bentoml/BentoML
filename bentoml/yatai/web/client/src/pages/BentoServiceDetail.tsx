@@ -7,7 +7,7 @@ import ApisTable from "../components/BentoServiceDetail/ApisTable";
 import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
 import { Section } from "../ui/Layout";
 
-const BentoServiceDetail = props => {
+const BentoServiceDetail = (props) => {
   const params = props.match.params;
 
   return (

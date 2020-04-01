@@ -6,29 +6,29 @@ import { Link } from "react-router-dom";
 const TableContainer = styled.div({
   width: "100%",
   margin: "auto",
-  backgroundColor: "#F5F8FA"
+  backgroundColor: "#F5F8FA",
 });
 
-const Row = styled.div<{ showBottomBorder?: boolean }>(props => ({
+const Row = styled.div<{ showBottomBorder?: boolean }>((props) => ({
   display: "flex",
   flexWrap: "wrap",
   borderBottom: props.showBottomBorder ? "2px solid #D8E1E8" : "none",
   ":hover": {
-    backgroundColor: "#EBF1F5"
-  }
+    backgroundColor: "#EBF1F5",
+  },
 }));
 
 const TableHeader = styled(Row)({
   borderBottom: "2px solid #D8E1E8",
   fontWeight: 600,
   ":hover": {
-    backgroundColor: "#F5F8FA"
-  }
+    backgroundColor: "#F5F8FA",
+  },
 });
 
 const Cell = styled.div<{
   flex?: number;
-}>(props => ({
+}>((props) => ({
   color: "#394B59",
   textAlign: "left",
   padding: "20px",
@@ -37,17 +37,16 @@ const Cell = styled.div<{
   position: "relative",
   whiteSpace: "pre-wrap",
   overflowWrap: "break-word",
-  minWidth: "100px"
+  minWidth: "100px",
 }));
 
 export interface ITableProps {
-  content: Array<{content: any[], link?: string}>;
+  content: Array<{ content: any[]; link?: string }>;
   header?: Array<string>;
   ratio?: Array<number>;
 }
 
-
-const Table: React.FC<ITableProps> = props => {
+const Table: React.FC<ITableProps> = (props) => {
   const { content, header, ratio } = props;
   const finalHeader = ratio && header ? zip(header, ratio) : header;
   return (

@@ -5,9 +5,10 @@ import { Link } from "react-router-dom";
 import { Section } from "../../ui/Layout";
 
 const displayTimestampForDeployment = (seconds: number) => {
-  return `${displayTimeInFromNowFormat(seconds, true)} (${displayTimeISOString(seconds)})`
-}
-
+  return `${displayTimeInFromNowFormat(seconds, true)} (${displayTimeISOString(
+    seconds
+  )})`;
+};
 
 const InfoTable = ({ deployment }) => {
   let endpointValues = "Not Available";
@@ -19,13 +20,15 @@ const InfoTable = ({ deployment }) => {
     {
       content: [
         "Created at",
-        displayTimestampForDeployment(Number(deployment.created_at.seconds))
+        displayTimestampForDeployment(Number(deployment.created_at.seconds)),
       ],
     },
     {
       content: [
         "Updated at",
-        displayTimestampForDeployment(Number(deployment.last_updated_at.seconds))
+        displayTimestampForDeployment(
+          Number(deployment.last_updated_at.seconds)
+        ),
       ],
     },
     {
@@ -35,11 +38,11 @@ const InfoTable = ({ deployment }) => {
           to={`/repository/${deployment.spec.bento_name}/${deployment.spec.bento_version}`}
         >
           {`${deployment.spec.bento_name}:${deployment.spec.bento_version}`}
-        </Link>
+        </Link>,
       ],
     },
     {
-      content: ["Endpoint", endpointValues]
+      content: ["Endpoint", endpointValues],
     },
   ];
   return (

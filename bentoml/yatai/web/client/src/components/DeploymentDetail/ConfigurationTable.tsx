@@ -9,7 +9,7 @@ const parseKeyForDisplay = (key: string) => {
 };
 
 const ConfigurationTable = ({ spec }) => {
-  const parsedConfiguration = [{content:["Platform", spec.operator]}];
+  const parsedConfiguration = [{ content: ["Platform", spec.operator] }];
   switch (spec.operator) {
     case "AWS_LAMBDA":
       lodash.each(spec.aws_lambda_operator_config, (value, key) => {
@@ -22,12 +22,12 @@ const ConfigurationTable = ({ spec }) => {
             break;
         }
 
-        parsedConfiguration.push({content:[parseKeyForDisplay(key), value]});
+        parsedConfiguration.push({ content: [parseKeyForDisplay(key), value] });
       });
       break;
     case "AWS_SAGEMAKER":
       lodash.each(spec.aws_lambda_operator_config, (value, key) => {
-        parsedConfiguration.push({content: [parseKeyForDisplay(key), value]});
+        parsedConfiguration.push({ content: [parseKeyForDisplay(key), value] });
       });
       break;
   }

@@ -7,7 +7,7 @@ from bentoml.server import BentoAPIServer
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
-def test_api_function_route(bento_service, tmpdir):
+def test_api_function_route(bento_service, tmpdir, img_file):
     import imageio
     import numpy as np
 
@@ -35,9 +35,6 @@ def test_api_function_route(bento_service, tmpdir):
     assert response.data.decode().strip() == '30'
 
     # Test Image handlers.
-    img_file = tmpdir.join("test_img.png")
-    imageio.imwrite(str(img_file), np.zeros((10, 10)))
-
     with open(str(img_file), "rb") as f:
         img = f.read()
 

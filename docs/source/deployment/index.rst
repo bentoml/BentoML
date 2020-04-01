@@ -39,6 +39,7 @@ Manual Deployment Tutorials:
   google_cloud_run
   azure_container_instance
   kubernetes
+  knative
 
 
 

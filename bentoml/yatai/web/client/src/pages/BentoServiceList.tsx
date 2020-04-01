@@ -3,7 +3,7 @@ import * as React from "react";
 import HttpRequestContainer from "../utils/HttpRequestContainer";
 import BentoServiceTable from "../components/BentoServiceTable";
 
-const BentoServicesList = props => {
+const BentoServicesList = (props) => {
   const params = props.match.params;
   return (
     <div>

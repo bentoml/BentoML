@@ -7,7 +7,7 @@ import {
   NavbarDivider,
   Alignment,
   AnchorButton,
-  Classes
+  Classes,
 } from "@blueprintjs/core";
 
 import logo from "../assets/bentoml-logo.png";
@@ -50,7 +50,7 @@ const NavigationBar = () => {
 };
 
 const getHighlightStyle = (highlight, path) => ({
-  fontWeight: highlight === path ? ("bold" as "bold") : ("normal" as "normal")
+  fontWeight: highlight === path ? ("bold" as "bold") : ("normal" as "normal"),
 });
 
 export default NavigationBar;

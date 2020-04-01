@@ -3,7 +3,7 @@ import { Tag, Intent } from "@blueprintjs/core";
 
 const DeploymentStatusTag = ({ state }) => {
   let statusColor;
-  state = state || 'PENDING';
+  state = state || "PENDING";
   switch (state) {
     case "RUNNING":
     case "SUCCESSED":

@@ -7,14 +7,14 @@ import InfoTable from "../components/DeploymentDetail/InfoTable";
 import DeploymentStatusTag from "../components/DeploymentDetail/DeploymentStatusTag";
 import ErrorCard from "../components/DeploymentDetail/ErrorCard";
 
-const DeploymentDetails = props => {
+const DeploymentDetails = (props) => {
   const params = props.match.params;
   return (
     <HttpRequestContainer
       url="/api/GetDeployment"
       params={{ deployment_name: params.name, namespace: params.namespace }}
     >
-      {data => {
+      {(data) => {
         let detailDisplay;
 
         if (data.data && data.data.deployment) {

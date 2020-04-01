@@ -4,13 +4,13 @@ import { capitalize } from "lodash";
 
 import {
   Breadcrumbs as BlueprintBreadcrumbs,
-  IBreadcrumbProps
+  IBreadcrumbProps,
 } from "@blueprintjs/core";
 import { Section } from "../ui/Layout";
 
 const HOME_CRUMB: IBreadcrumbProps = {
   text: "Home",
-  href: "/"
+  href: "/",
 };
 
 const Breadcrumbs: React.FC = () => {
@@ -36,7 +36,7 @@ const Breadcrumbs: React.FC = () => {
 };
 
 const getBreadcrumbs = (pathname: string): Array<IBreadcrumbProps> => {
-  const pathSnippets = pathname.split("/").filter(i => i);
+  const pathSnippets = pathname.split("/").filter((i) => i);
 
   return pathSnippets.map((name, index) => {
     const isLastOne = index === pathSnippets.length - 1;

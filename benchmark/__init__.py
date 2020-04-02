@@ -56,26 +56,26 @@ class Stat:
             return time.time() - self._sess_start_time
 
     def step(self):
-        return dict(
-            total_request=self.req_total,
-            failure_rate=self.req_fail / max(self.req_total, 1),
-            request_per_sec=self.req_total / max(self.sess_time, 1),
-            avg_request_time=self.req_time / max(self.req_total, 1),
-            client_health_rate=1 - self.client_busy / max(self.req_total, 1),
-        )
+        return {
+            "Reqs": self.req_total,
+            "Failure %": self.req_fail / max(self.req_total, 1) * 100,
+            "Reqs/s": self.req_total / max(self.sess_time, 1),
+            "Avg Resp Time": self.req_time / max(self.req_total, 1),
+            "Client Health %": 1 - self.client_busy / max(self.req_total, 1) * 100,
+        }
 
     def sumup(self):
-        r = dict(
-            total_request=self.req_total,
-            failure_rate=self.req_fail / max(self.req_total, 1),
-            request_per_sec=self.req_total / max(self.sess_time, 1),
-            avg_request_time=self.req_time / max(self.req_total, 1),
-            P50=percentile(self.req_times, 0.5),
-            P95=percentile(self.req_times, 0.95),
-            P99=percentile(self.req_times, 0.99),
-            client_health_rate=1 - self.client_busy / max(self.req_total, 1),
-        )
-        if r['client_health_rate'] < 0.9:
+        r = {
+            "Reqs": self.req_total,
+            "Failure %": self.req_fail / max(self.req_total, 1) * 100,
+            "Reqs/s": self.req_total / max(self.sess_time, 1),
+            "Avg Resp Time": self.req_time / max(self.req_total, 1),
+            "P50 Resp Time": percentile(self.req_times, 0.5),
+            "P95": percentile(self.req_times, 0.95),
+            "P99": percentile(self.req_times, 0.99),
+            "Client Health %": 1 - self.client_busy / max(self.req_total, 1) * 100,
+        }
+        if r["Client Health %"] < 90:
             print(
                 f'''
                 *** WARNNING ***

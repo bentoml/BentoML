@@ -1,7 +1,9 @@
 {
   "name": "yatai_web_ui_client",
   "version": "1.0.0",
+  "private": true,
   "description": "",
+  "license": "Apache-2.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

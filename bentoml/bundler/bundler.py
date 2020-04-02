@@ -59,7 +59,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     track_save(bento_service)
 
     from bentoml.service import BentoService
-
+    
     if not isinstance(bento_service, BentoService):
         raise BentoMLException(
             "save_to_dir only work with instance of custom BentoService class"
@@ -103,8 +103,9 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     # save all model artifacts to 'base_path/name/artifacts/' directory
     if bento_service.artifacts:
         bento_service.artifacts.save(module_base_path)
-
     # write conda environment, requirement.txt
+    print(path)
+    print(bento_service)
     bento_service.env.save(path, bento_service)
 
     # TODO: add bentoml.find_packages helper for more fine grained control over this

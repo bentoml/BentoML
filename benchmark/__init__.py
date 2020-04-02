@@ -129,6 +129,7 @@ class BenchmarkClient:
         url, method, headers, data = self.request_producer()
         async with aiohttp.ClientSession() as sess:
             while True:
+                flag_collect_time = True
                 req_start = time.time()
                 req_url = self.url_override or url
                 try:
@@ -140,25 +141,32 @@ class BenchmarkClient:
                         timeout=self.timeout,
                     ) as r:
                         msg = await r.text()
-                        if r.status == 200:
+                        if r.status % 100 == 2:
                             self.stat.req_done += 1
-                        else:
-                            self.stat.req_fail += 1
+                        elif r.status % 100 == 4:
                             self.stat.exceptions[msg] += 1
+                            self.stat.req_fail += 1
+                        else:
+                            flag_collect_time = False
+                            self.stat.exceptions[msg] += 1
+                            self.stat.req_fail += 1
+                except asyncio.CancelledError:
+                    raise
                 except (
                     aiohttp.client_exceptions.ServerDisconnectedError,
                     TimeoutError,
                 ) as e:
+                    flag_collect_time = False
                     self.stat.exceptions[repr(e)] += 1
                     self.stat.req_fail += 1
                 except Exception as e:  # pylint: disable=broad-except
-                    if isinstance(e, asyncio.CancelledError):
-                        raise
+                    flag_collect_time = False
                     self.stat.exceptions[repr(e)] += 1
                     self.stat.req_fail += 1
 
                 req_stop = time.time()
-                self.stat.req_times.append(req_stop - req_start)
+                if flag_collect_time:
+                    self.stat.req_times.append(req_stop - req_start)
 
                 url, method, headers, data = self.request_producer()
                 wait_time = self.gen_wait_time() + wait_time_suffix

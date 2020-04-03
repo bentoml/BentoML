@@ -123,15 +123,14 @@ setuptools.setup(
     cmdclass=versioneer.get_cmdclass(),
     author="bentoml.org",
     author_email="contact@bentoml.ai",
-    description="A platform for serving and deploying machine learning models in the "
-    "cloud",
+    description="An open-source platform for machine learning model serving.",
     long_description=long_description,
     license="Apache License 2.0",
     long_description_content_type="text/markdown",
     install_requires=install_requires,
     extras_require=extras_require,
     url="https://github.com/bentoml/BentoML",
-    packages=setuptools.find_packages(exclude=["tests*"]),
+    packages=setuptools.find_namespace_packages(include=["bentoml"]),
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

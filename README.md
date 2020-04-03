@@ -9,11 +9,16 @@
 
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
 
-BentoML makes it easy to __serve and deploy machine learning models__ in the cloud.
+BentoML is an open-source platform for __machine learning model serving__.
 
-It is an open source framework for building cloud-native model serving services.
-BentoML supports most popular ML training frameworks and deployment platforms, including
-major cloud providers and docker/kubernetes.
+What does BentoML do?
+
+* Turn your ML model into production API endpoint with just a few lines of code
+* Support all major machine learning training frameworks
+* High performance API serving system with adaptive micro-batching support
+* DevOps best practices baked in, simplify the transition from model development to production
+* Model management for teams, providing CLI and Web UI dashboard
+* Flexible model deployment orchestration with support for AWS Lambda, SageMaker, EC2, Docker, Kubernetes, KNative and more
 
 👉 [Join BentoML Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
  to hear about the latest development updates.
@@ -82,13 +87,16 @@ if __name__ == "__main__":
     # Save the prediction service to disk for model serving
     saved_path = iris_classifier_service.save()
 ```
-You've just created a BentoService SavedBundle, it's a versioned file archive that is
-ready for production deployment. It contains the BentoService you defined, as well as
-the packed trained model artifacts, pre-processing code, dependencies and other
-configurations in a single file directory.
 
-You can start a REST API server by specifying the BentoService's name and version, or
-provide the file path to the saved bundle:
+You've just created a BentoService SavedBundle, it's a versioned file archive that is
+ready for production deployment. It contains the BentoService class you defined, all its
+python code dependencies and PyPI dependencies, and the trained scikit-learn model. By
+default, BentoML saves those files and related metadata under `~/bentoml` directory, but 
+this is easily customizable to a different directory or cloud storage like
+[Amazon S3](https://aws.amazon.com/s3/).
+
+You can now start a REST API server by specifying the BentoService's name and version, 
+or provide the file path to the saved bundle:
 
 ```bash
 bentoml serve IrisClassifier:latest
@@ -111,14 +119,16 @@ curl -i \
 
 The BentoService SavedBundle directory is structured to work as a docker build context,
 that can be used to build a API server docker container image:
-build context directory:
+
 ```bash
-docker build -t my_api_server {saved_path}
+docker build -t my-org/iris-classifier:v1 {saved_path}
+
+docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True my-org/iris-classifier:v1
 ```
 
-You can also deploy your BentoService to cloud services such as AWS Lambda
-with `bentoml lambda` command. The deployment gives you a production-ready API endpoint
-hosting the BentoService you specified:
+You can also deploy your BentoService directly to cloud services such as AWS Lambda
+with bentoml CLI's deployment management commands:
+
 ```
 > bentoml get IrisClassifier
 BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
@@ -127,6 +137,11 @@ IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeHandler
 ...
 
 > bentoml lambda deploy test-deploy -b IrisClassifier:20200121114004_360ECB
+...
+
+> bentoml deployment list
+NAME           NAMESPACE    PLATFORM    BENTO_SERVICE                         STATUS    AGE
+test-deploy    dev          aws-lambda  IrisClassifier:20200121114004_360ECB  running   2 days and 11 hours
 ...
 ```
 

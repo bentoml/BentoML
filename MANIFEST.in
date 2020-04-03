@@ -38,3 +38,7 @@ graft bentoml/yatai/web/dist
 
 # include ".conf" file
 include bentoml/deployment/sagemaker/sagemaker_nginx.conf
+
+prune e2e_tests
+prune tests
+prune benchmark

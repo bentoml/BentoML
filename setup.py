@@ -130,7 +130,7 @@ setuptools.setup(
     install_requires=install_requires,
     extras_require=extras_require,
     url="https://github.com/bentoml/BentoML",
-    packages=setuptools.find_namespace_packages(include=["bentoml"]),
+    packages=setuptools.find_packages(exclude=["tests*", "benchmark*"]),
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

@@ -61,7 +61,7 @@ class Stat:
             "Failure %": self.req_fail / max(self.req_total, 1) * 100,
             "Reqs/s": self.req_total / max(self.sess_time, 1),
             "Avg Resp Time": self.req_time / max(self.req_total, 1),
-            "Client Health %": 1 - self.client_busy / max(self.req_total, 1) * 100,
+            "Client Health %": (1 - self.client_busy / max(self.req_total, 1)) * 100,
         }
 
     def sumup(self):
@@ -73,7 +73,7 @@ class Stat:
             "P50 Resp Time": percentile(self.req_times, 0.5),
             "P95": percentile(self.req_times, 0.95),
             "P99": percentile(self.req_times, 0.99),
-            "Client Health %": 1 - self.client_busy / max(self.req_total, 1) * 100,
+            "Client Health %": (1 - self.client_busy / max(self.req_total, 1)) * 100,
         }
         if r["Client Health %"] < 90:
             print(
@@ -141,9 +141,9 @@ class BenchmarkClient:
                         timeout=self.timeout,
                     ) as r:
                         msg = await r.text()
-                        if r.status % 100 == 2:
+                        if r.status // 100 == 2:
                             self.stat.req_done += 1
-                        elif r.status % 100 == 4:
+                        elif r.status // 100 == 4:
                             self.stat.exceptions[msg] += 1
                             self.stat.req_fail += 1
                         else:

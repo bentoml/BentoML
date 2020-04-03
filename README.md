@@ -13,7 +13,7 @@ BentoML is an open-source platform for __machine learning model serving__.
 
 What does BentoML do?
 
-* Turn your ML model into production-ready API endpoint with just a few lines of code
+* Turn your ML model into production API endpoint with just a few lines of code
 * Support all major machine learning training frameworks
 * High performance API serving system with adaptive micro-batching support
 * DevOps best practices baked in, simplify the transition from model development to production

@@ -62,9 +62,10 @@ function. Here is what a simple prediction service looks like:
           return self.artifacts.model.predict(df)
 
 
-The :code:`bentoml.api` and :code:`DataframeHandler` here tells BentoML, that following
-by it, is the service API callback function, and :code:`pandas.Dataframe` is its
-expected input format.
+The :code:`bentoml.api` decorator defines a service API, which is the entry point for
+sending prediction request. The function being decorated is user defined code for
+processing prediction requests. Lastly the :code:`DataframeHandler` here tells BentoML
+that this service API is expecting :code:`pandas.DataFrame` object as its input format.
 
 The :code:`bentoml.env` decorator allows specifying the dependencies and environment
 settings for this prediction service. Here we are using BentoML's
@@ -92,9 +93,9 @@ prediction service.
   from sklearn import svm
   from sklearn import datasets
 
-  clf = svm.SVC(gamma='scale')
   iris = datasets.load_iris()
   X, y = iris.data, iris.target
+  clf = svm.SVC(gamma='scale')
   clf.fit(X, y)
 
   # Create a iris classifier service with the newly trained model

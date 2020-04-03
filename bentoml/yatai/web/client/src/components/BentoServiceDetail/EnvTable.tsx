@@ -7,8 +7,8 @@ const ENV_TABLE_RATIO = [1, 4];
 const EnvTable: React.FC<{ env: { [key: string]: string } }> = ({ env }) => {
   const envKeys = Object.keys(env);
 
-  const parsedEnv = envKeys.map(key => {
-    return {content: [key, env[key]]};
+  const parsedEnv = envKeys.map((key) => {
+    return { content: [key, env[key]] };
   });
 
   return (

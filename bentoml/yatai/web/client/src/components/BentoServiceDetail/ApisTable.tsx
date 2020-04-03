@@ -2,11 +2,13 @@ import * as React from "react";
 import Table from "../../ui/Table";
 import { Section } from "../../ui/Layout";
 
-const handlerConfigToTableContent = (handler_config): Array<string>|null|undefined => {
+const handlerConfigToTableContent = (
+  handler_config
+): Array<string> | null | undefined => {
   if (!handler_config) {
-    return 'None';
- }
- const config = handler_config.fields
+    return "None";
+  }
+  const config = handler_config.fields;
   /*
     grpc format for JSON:
     example
@@ -47,19 +49,19 @@ const APIS_TABLE_HEADER = [
   "API name",
   "Handler type",
   "Handler Config",
-  "Documentation"
+  "Documentation",
 ];
 
 const APIS_TABLE_RATIO = [1, 1, 1, 4];
 
 const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
-  const apisTableContent = apis.map(api => ({
+  const apisTableContent = apis.map((api) => ({
     content: [
       api.name,
       api.handler_type,
       handlerConfigToTableContent(api.handler_config),
-      api.docs
-    ]
+      api.docs,
+    ],
   }));
   return (
     <Section>

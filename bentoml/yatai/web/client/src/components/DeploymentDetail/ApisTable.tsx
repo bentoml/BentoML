@@ -18,15 +18,15 @@ const DeploymentApisTable = ({ deployment }) => {
       url="/api/GetBento"
       params={{
         bento_name: deployment.spec.bento_name,
-        bento_version: deployment.spec.bento_version
+        bento_version: deployment.spec.bento_version,
       }}
     >
-      {data => {
+      {(data) => {
         if (data && data.data && data.data.bento) {
           const bento = data.data.bento;
           let { apis } = bento.bento_service_metadata;
           if (apiName) {
-            const deployedApi = apis.find(api => {
+            const deployedApi = apis.find((api) => {
               return api.name == apiName;
             });
             apis = [deployedApi];

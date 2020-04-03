@@ -7,7 +7,11 @@ import { Section } from "../ui/Layout";
 
 const HomePage = () => (
   <div>
-    <HttpRequestContainer url="/api/ListDeployments" method="get" params={{limit: 5}}>
+    <HttpRequestContainer
+      url="/api/ListDeployments"
+      method="get"
+      params={{ limit: 5 }}
+    >
       {({ data }) => {
         let deploymentDisplay;
         if (data && data.deployments) {

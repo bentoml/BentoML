@@ -3,9 +3,6 @@ import pytest
 import mock
 
 import flask
-import imageio
-import numpy as np
-
 
 from bentoml.exceptions import BadInput
 from bentoml.handlers import ImageHandler
@@ -13,13 +10,6 @@ from bentoml.handlers import ImageHandler
 
 def predict(image):
     return image.shape
-
-
-@pytest.fixture()
-def img_file(tmpdir):
-    img_file = tmpdir.join("test_img.png")
-    imageio.imwrite(str(img_file), np.zeros((10, 10)))
-    return img_file
 
 
 def test_image_handler_cli(capsys, img_file):

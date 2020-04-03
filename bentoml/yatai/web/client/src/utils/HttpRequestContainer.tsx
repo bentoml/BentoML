@@ -11,11 +11,11 @@ interface IHttpRequestContainerProps {
   children?: any;
 }
 
-const HttpRequestContainer: React.FC<IHttpRequestContainerProps> = props => {
+const HttpRequestContainer: React.FC<IHttpRequestContainerProps> = (props) => {
   const [info, setInfo] = React.useState({
     data: undefined,
     error: undefined,
-    isLoading: true
+    isLoading: true,
   });
 
   React.useEffect(() => {
@@ -29,7 +29,7 @@ const HttpRequestContainer: React.FC<IHttpRequestContainerProps> = props => {
     return <DisplayHttpError error={info.error} />;
   }
   return props.children({
-    data: info.data
+    data: info.data,
   });
 };
 
@@ -50,10 +50,10 @@ const fetch = (options = {}, props, callback) => {
   );
 
   return axios({ method, url, data, headers, params })
-    .then(response => {
+    .then((response) => {
       callback({ data: response.data, isLoading: false, error: false });
     })
-    .catch(error => {
+    .catch((error) => {
       callback({ error: error.response, isLoading: false, data: undefined });
     });
 };

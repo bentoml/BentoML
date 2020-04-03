@@ -6,10 +6,9 @@ import HttpRequestContainer from "../utils/HttpRequestContainer";
 import BentoServiceTable from "../components/BentoServiceTable";
 import { Section } from "../ui/Layout";
 
-
 const DEFAULT_BENTO_SERVICE_LIMIT_PER_PAGE = 30;
 
-const Repository = props => {
+const Repository = (props) => {
   const query = getQueryObject(props.location.search);
   const offset = Number(query.offset) || 0;
   return (
@@ -35,7 +34,7 @@ const Repository = props => {
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                marginTop: "10px"
+                marginTop: "10px",
               }}
             >
               <div>

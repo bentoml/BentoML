@@ -36,7 +36,6 @@ def get_logging_config_dict(logging_level, base_log_directory):
     FEEDBACK_LOG_FILENAME = conf.get("feedback_log_filename")
     FEEDBACK_LOG_JSON_FORMAT = conf.get("feedback_log_json_format")
 
-
     return {
         "version": 1,
         "disable_existing_loggers": False,

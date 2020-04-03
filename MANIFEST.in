@@ -26,7 +26,7 @@ global-exclude __pycache__
 # special files to include with PyPI distribution
 include versioneer.py
 include bentoml/_version.py
-recursive-include bentoml/server/static *
+graft bentoml/server/static
 graft bentoml/configuration
 
 # include migration files
@@ -34,7 +34,8 @@ graft bentoml/migrations
 include bentoml/alembic.ini
 
 # include yatai server UI distribution files
-recursive-include bentoml/yatai/web/dist *
+graft bentoml/yatai/web/dist
+prune bentoml/yatai/web/node_modules
 
 # include ".conf" file
 include bentoml/deployment/sagemaker/sagemaker_nginx.conf
@@ -42,3 +43,4 @@ include bentoml/deployment/sagemaker/sagemaker_nginx.conf
 # exclude e2e_tests files
 prune e2e_tests
 prune tests
+prune benchmark

@@ -14,13 +14,13 @@ const DEPLOYMENTS_TABLE_HEADERS = [
   "Status",
   "Age",
   "Last updated at",
-  ""
+  "",
 ];
 const DEPLOYMENTS_TABLE_RATIO = [3, 2, 2, 5, 2, 1, 2, 1];
 
-const DeploymentsTable = props => {
+const DeploymentsTable = (props) => {
   const { deployments } = props;
-  const parsedDeployments = deployments.map(deployment => ({
+  const parsedDeployments = deployments.map((deployment) => ({
     content: [
       deployment.name,
       deployment.namespace,
@@ -28,12 +28,15 @@ const DeploymentsTable = props => {
       `${deployment.spec.bento_name}:${deployment.spec.bento_version}`,
       <DeploymentStatusTag state={deployment.state.state} />,
       displayTimeInFromNowFormat(Number(deployment.created_at.seconds)),
-      displayTimeInFromNowFormat(Number(deployment.last_updated_at.seconds), true),
+      displayTimeInFromNowFormat(
+        Number(deployment.last_updated_at.seconds),
+        true
+      ),
       <Link to={`/deployments/${deployment.namespace}/${deployment.name}`}>
         Detail
-      </Link>
+      </Link>,
     ],
-    link: `/deployments/${deployment.namespace}/${deployment.name}`
+    link: `/deployments/${deployment.namespace}/${deployment.name}`,
   }));
 
   return (

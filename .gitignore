@@ -119,3 +119,7 @@ yarn-error.log
 
 # sqlite
 storage.db
+
+# benchmark
+benchmark/*/*.csv
+mlflow_tmp/

@@ -571,7 +571,7 @@ server to start the YataiService:
     * Web UI: running on http://127.0.0.1:3000
     * Running on 127.0.0.1:50051 (Press CTRL+C to quit)
     * Usage: `bentoml config set yatai_service.url=127.0.0.1:50051`
-    * Help and instructions: https://docs.bentoml.org/en/latest/concepts/yatai_service.html
+    * Help and instructions: https://docs.bentoml.org/en/latest/guides/yatai_service.html
     * Web server log can be found here: /Users/chaoyu/bentoml/logs/yatai_web_server.log
 
 

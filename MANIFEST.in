@@ -43,3 +43,4 @@ include bentoml/deployment/sagemaker/sagemaker_nginx.conf
 # exclude e2e_tests files
 prune e2e_tests
 prune tests
+prune benchmark

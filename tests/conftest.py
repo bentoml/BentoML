@@ -6,6 +6,7 @@ import numpy as np
 from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
 
+
 @pytest.fixture()
 def img_file(tmpdir):
     img_file = tmpdir.join("test_img.jpg")

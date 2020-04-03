@@ -128,7 +128,7 @@ def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, w
         f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
         f'* Usage: `bentoml config set yatai_service.url=127.0.0.1:{grpc_port}`\n'
         f'* Help and instructions: '
-        f'https://docs.bentoml.org/en/latest/concepts/yatai_service.html\n'
+        f'https://docs.bentoml.org/en/latest/guides/yatai_service.html\n'
         f'{f"* Web server log can be found here: {web_ui_log_path}" if with_ui else ""}'
     )
 

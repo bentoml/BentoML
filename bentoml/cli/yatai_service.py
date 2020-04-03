@@ -35,12 +35,14 @@ def add_yatai_service_sub_command(cli):
         help='Database URL following RFC-1738, and usually can include username, '
         'password, hostname, database name as well as optional keyword arguments '
         'for additional configuration',
+        envvar='BENTOML_DB_URL',
     )
     @click.option(
         '--repo-base-url',
         type=click.STRING,
         help='Base URL for storing saved BentoService bundle files, this can be a '
         'filesystem path(POSIX/Windows), or a S3 URL, usually starts with "s3://"',
+        envvar='BENTOML_REPO_BASE_URL',
     )
     @click.option(
         '--grpc-port', type=click.INT, default=50051, help='Port for Yatai server'
@@ -49,7 +51,10 @@ def add_yatai_service_sub_command(cli):
         '--ui-port', type=click.INT, default=3000, help='Port for Yatai web UI'
     )
     @click.option(
-        '--ui/--no-ui', default=True, help='Start BentoML YataiService without Web UI'
+        '--ui/--no-ui',
+        default=True,
+        help='Start BentoML YataiService without Web UI',
+        envvar='BENTOML_ENABLE_WEB_UI',
     )
     def yatai_service_start(db_url, repo_base_url, grpc_port, ui_port, ui):
         track_cli('yatai-service-start')

@@ -82,8 +82,6 @@ class CondaEnv(object):
 
     def write_to_yaml_file(self, filepath):
         output_yaml = Path(filepath)
-        print(self._conda_env)
-        print(output_yaml)
         self._yaml.dump(self._conda_env, output_yaml)
 
 

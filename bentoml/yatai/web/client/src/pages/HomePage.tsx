@@ -52,7 +52,7 @@ const HomePage = () => (
             <Section>
               <h2>No model found</h2>
               <a href="https://docs.bentoml.org/en/latest" target="_blank">
-                Learn about packaging ML model for serving with BentoML &#1f517;
+                Learn about packaging ML model for serving with BentoML 🔗
               </a>
             </Section>
           );

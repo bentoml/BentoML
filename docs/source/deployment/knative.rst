@@ -162,10 +162,11 @@ Validate prediction server with sample data
 
 For this guide, our kubernetes cluster run on minikube, we will get the appropriate ip from minikube and the port from istio
 
-.. code-block:: bash
+.. code-block::
 
     > minikube ip
     192.168.64.4
+
     > kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}
     31871
 

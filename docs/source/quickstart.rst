@@ -37,6 +37,8 @@ Alternatively, run the code in this guide here on Google's Colab:
     :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb
     :alt: Launch on Colab
 
+Or download the quickstart jupyter notebook and run it on your computer:
+[download notebook](https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bentoml-quick-start-guide.ipynb).
 
 
 Hello World
@@ -80,6 +82,9 @@ artifact for other frameworks such as :code:`PytorchModelArtifact`,
 :code:`KerasModelArtifact`, :code:`FastaiModelArtifact`, and
 :code:`XgboostModelArtifact` etc.
 
+Put the BentoService class definition to a separate file `iris_classifier.py`, and now
+you are ready to train a scikit-learn model and serve it.
+
 
 From Model Training To Serving
 ------------------------------
@@ -93,17 +98,25 @@ prediction service.
   from sklearn import svm
   from sklearn import datasets
 
-  iris = datasets.load_iris()
-  X, y = iris.data, iris.target
-  clf = svm.SVC(gamma='scale')
-  clf.fit(X, y)
+  from iris_classifier import IrisClassifier
 
-  # Create a iris classifier service with the newly trained model
-  iris_classifier_service = IrisClassifier()
-  iris_classifier_service.pack("model", clf)
+  if __name__ == "__main__":
+      # Load training data
+      iris = datasets.load_iris()
+      X, y = iris.data, iris.target
 
-  # Save the entire prediction service to file bundle
-  saved_path = iris_classifier_service.save()
+      # Model Training
+      clf = svm.SVC(gamma='scale')
+      clf.fit(X, y)
+
+      # Create a iris classifier service instance
+      iris_classifier_service = IrisClassifier()
+
+      # Pack the newly trained model artifact
+      iris_classifier_service.pack('model', clf)
+
+      # Save the prediction service to disk for model serving
+      saved_path = iris_classifier_service.save()
 
 With the :code:`BentoService#save` call, you've just created a BentoML SavedBundle. It
 is a versioned file archive that is ready for model serving deployment. The file archive

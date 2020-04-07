@@ -37,6 +37,8 @@ Alternatively, run the code in this guide here on Google's Colab:
     :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb
     :alt: Launch on Colab
 
+Or download the quickstart jupyter notebook and run it on your computer:
+`download notebook <https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
 
 
 Hello World
@@ -80,6 +82,9 @@ artifact for other frameworks such as :code:`PytorchModelArtifact`,
 :code:`KerasModelArtifact`, :code:`FastaiModelArtifact`, and
 :code:`XgboostModelArtifact` etc.
 
+Put the BentoService class definition to a separate file `iris_classifier.py`, and now
+you are ready to train a scikit-learn model and serve it.
+
 
 From Model Training To Serving
 ------------------------------
@@ -93,17 +98,25 @@ prediction service.
   from sklearn import svm
   from sklearn import datasets
 
-  iris = datasets.load_iris()
-  X, y = iris.data, iris.target
-  clf = svm.SVC(gamma='scale')
-  clf.fit(X, y)
+  from iris_classifier import IrisClassifier
 
-  # Create a iris classifier service with the newly trained model
-  iris_classifier_service = IrisClassifier()
-  iris_classifier_service.pack("model", clf)
+  if __name__ == "__main__":
+      # Load training data
+      iris = datasets.load_iris()
+      X, y = iris.data, iris.target
 
-  # Save the entire prediction service to file bundle
-  saved_path = iris_classifier_service.save()
+      # Model Training
+      clf = svm.SVC(gamma='scale')
+      clf.fit(X, y)
+
+      # Create a iris classifier service instance
+      iris_classifier_service = IrisClassifier()
+
+      # Pack the newly trained model artifact
+      iris_classifier_service.pack('model', clf)
+
+      # Save the prediction service to disk for model serving
+      saved_path = iris_classifier_service.save()
 
 With the :code:`BentoService#save` call, you've just created a BentoML SavedBundle. It
 is a versioned file archive that is ready for model serving deployment. The file archive
@@ -118,9 +131,9 @@ bundled in one place.
     value of :code:`iris_classifier_service.save()`.
     It is the file path where the BentoService saved bundle is stored.
     BentoML locally keeps track of all the BentoService SavedBundle you've created,
-    you can also find the saved_path of your BentoService via
-    :code:`bentoml list -o wide` or
-    :code:`bentoml get IrisClassifier -o wide` command.
+    you can also find the saved_path of your BentoService from the output of
+    :code:`bentoml list -o wide`, :code:`bentoml get IrisClassifier -o wide` and
+    :code:`bentoml get IrisClassifier:latest` command.
 
 
 Model Serving via REST API
@@ -131,9 +144,16 @@ provide the file path to the saved bundle:
 
 .. code-block:: bash
 
-  bentoml serve IrisClassifier:latest
-  # or
-  bentoml serve {saved_path}
+    bentoml serve IrisClassifier:latest
+
+.. code-block:: bash
+
+    # Assuming JQ(https://stedolan.github.io/jq/) was installed, you can also manually
+    # copy the uri field in `bentoml get` command's JSON output
+    saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+
+    bentoml serve $saved_path
+
 
 The REST API server provides web UI for testing and debugging the server. If you are
 running this command on your local machine, visit http://127.0.0.1:5000 in your browser
@@ -186,7 +206,7 @@ which can be used directly to build a API server docker container image:
 
 .. code-block:: bash
 
-  docker build -t my_api_server {saved_path}
+  docker build -t my_api_server $saved_path
 
   docker run -p 5000:5000 my_api_server
 
@@ -247,7 +267,7 @@ it as as a system-wide python package with :code:`pip`:
 
 .. code-block:: bash
 
-  pip install {saved_path}
+  pip install $saved_path
 
 .. code-block:: python
 
@@ -262,7 +282,7 @@ or to their organization's private PyPi index to share with other developers.
 
 .. code-block:: bash
 
-    cd {saved_path} & python setup.py sdist upload
+    cd $saved_path & python setup.py sdist upload
 
 .. note::
 
@@ -271,7 +291,8 @@ or to their organization's private PyPi index to share with other developers.
     https://docs.python.org/3.7/distributing/index.html#distributing-index
 
 Interested in learning more about BentoML? Check out the
-`Examples <https://github.com/bentoml/BentoML#examples>`_ on BentoML github repository.
+`BentoML Core Concepts and best practices walkthrough <https://github.com/bentoml/BentoML#examples>`_,
+a must-read for anyone who is looking to adopt BentoML.
 
-Be sure to `join BentoML slack channel <http://bit.ly/2N5IpbB>`_ to hear about the latest
-development updates.
+Be sure to `join BentoML slack channel <http://bit.ly/2N5IpbB>`_ to hear about the
+latest development updates and be part of the roadmap discussions.

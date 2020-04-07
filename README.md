@@ -9,7 +9,7 @@
 
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
 
-BentoML is an open-source platform for __machine learning model serving__.
+BentoML is an open-source platform for __high-performance ML model serving__.
 
 What does BentoML do?
 
@@ -63,11 +63,14 @@ an API, which is the entry point for accessing this prediction service. And the 
 expecting a `pandas.DataFrame` object as its input data.
 
 Now you are ready to train a model and serve the model with the `IrisClassifier` service
-defined above:
+defined above. Save the above code to a new file `iris_classifier.py` and run the
+following code:
 
 ```python
 from sklearn import svm
 from sklearn import datasets
+
+from iris_classifier import IrisClassifier
 
 if __name__ == "__main__":
     # Load training data
@@ -100,8 +103,13 @@ or provide the file path to the saved bundle:
 
 ```bash
 bentoml serve IrisClassifier:latest
-# or
-bentoml serve {saved_path}
+```
+
+Alternatively, in bash command line, you can get the absolute path to the saved
+BentoService from the JSON output of `bentoml get` command:
+```bash
+saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+bentoml serve $saved_path
 ```
 
 The REST API server provides web UI for testing and debugging the server. If you are
@@ -121,7 +129,9 @@ The BentoService SavedBundle directory is structured to work as a docker build c
 that can be used to build a API server docker container image:
 
 ```bash
-docker build -t my-org/iris-classifier:v1 {saved_path}
+
+
+docker build -t my-org/iris-classifier:v1 $saved_path
 
 docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True my-org/iris-classifier:v1
 ```
@@ -148,74 +158,59 @@ test-deploy    dev          aws-lambda  IrisClassifier:20200121114004_360ECB  ru
 More detailed code and walkthrough can be found in the [BentoML Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html).
 
 ## Documentation
-
 Full documentation and API references: [https://docs.bentoml.org/](https://docs.bentoml.org/)
 
 
 ## Examples
-
 Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
  examples and tutorials.
 
 #### FastAI
-
 * Pet Image Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb)
 * Salary Range Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb)
 
 
 #### Scikit-Learn
-
 * Sentiment Analysis - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb)
 
 
 #### PyTorch
-
 * Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb)
 * CIFAR-10 Image Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb)
 
 
 #### Tensorflow Keras
-
 * Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb)
 * Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb)
 * Toxic Comment Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb)
 
 #### Tensorflow 2.0
-
 * tf.Function model - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb)
 * Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb)
 
 
 #### XGBoost
-
 * Titanic Survival Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb)
 * League of Legend win Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb)
 
 #### LightGBM
-
 * Titanic Survival Prediction -  [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb)
 
-
 #### H2O
-
 * Loan Default Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb)
 * Prostate Cancer Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb)
 
-
-
 ### Deployment guides:
-
-* Automated end-to-end deployment workflow with BentoML
+* End-to-end deployment management with BentoML
   - [BentoML AWS Lambda Deployment Guide](https://docs.bentoml.org/en/latest/deployment/aws_lambda.html)
   - [BentoML AWS SageMaker Deployment Guide](https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html)
 
-* Clipper Deployment
+* Deployment guides
   - [BentoML Clipper.ai Deployment Guide](https://docs.bentoml.org/en/latest/deployment/clipper.html)
-
-* Mannual Deployment
   - [BentoML AWS ECS Deployment](https://docs.bentoml.org/en/latest/deployment/aws_ecs.html)
   - [BentoML Google Cloud Run Deployment](https://docs.bentoml.org/en/latest/deployment/google_cloud_run.html)
   - [BentoML Azure container instance Deployment](https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html)
+  - [BentoML Knative Deployment](https://docs.bentoml.org/en/latest/deployment/knative.html)
 
 
 ## Contributing

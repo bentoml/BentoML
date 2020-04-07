@@ -284,7 +284,8 @@ or to their organization's private PyPi index to share with other developers.
     https://docs.python.org/3.7/distributing/index.html#distributing-index
 
 Interested in learning more about BentoML? Check out the
-`Examples <https://github.com/bentoml/BentoML#examples>`_ on BentoML github repository.
+`BentoML Core Concepts and best practices walkthrough <https://github.com/bentoml/BentoML#examples>`_,
+a must-read for anyone who is looking to adopt BentoML.
 
-Be sure to `join BentoML slack channel <http://bit.ly/2N5IpbB>`_ to hear about the latest
-development updates.
+Be sure to `join BentoML slack channel <http://bit.ly/2N5IpbB>`_ to hear about the
+latest development updates and be part of the roadmap discussions.

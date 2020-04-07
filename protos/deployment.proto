@@ -40,6 +40,7 @@ message DeploymentSpec {
     // Optional. When user didn't define gunicorn worker count, service will find the
     // current system's cpu core count and set worker equal to half of that plus 1.
     int32 num_of_gunicorn_workers_per_instance = 5;
+    int32 timeout = 6;
   }
 
   message AwsLambdaOperatorConfig {

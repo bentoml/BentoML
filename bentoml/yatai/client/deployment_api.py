@@ -218,6 +218,7 @@ class DeploymentAPIClient:
         api_name,
         instance_type,
         instance_count,
+        timeout,
         num_of_gunicorn_workers_per_instance=None,
         region=None,
         namespace=None,
@@ -234,6 +235,7 @@ class DeploymentAPIClient:
             api_name:
             instance_type:
             instance_count:
+            timeout:
             num_of_gunicorn_workers_per_instance:
             region:
             namespace:
@@ -260,6 +262,7 @@ class DeploymentAPIClient:
         deployment_pb.spec.sagemaker_operator_config.api_name = api_name
         deployment_pb.spec.sagemaker_operator_config.instance_count = instance_count
         deployment_pb.spec.sagemaker_operator_config.instance_type = instance_type
+        deployment_pb.spec.sagemaker_operator_config.timeout = timeout
         if region:
             deployment_pb.spec.sagemaker_operator_config.region = region
         if num_of_gunicorn_workers_per_instance:
@@ -276,6 +279,7 @@ class DeploymentAPIClient:
         api_name=None,
         instance_type=None,
         instance_count=None,
+        timeout=None,
         num_of_gunicorn_workers_per_instance=None,
         bento_name=None,
         bento_version=None,
@@ -289,6 +293,7 @@ class DeploymentAPIClient:
             api_name:
             instance_type:
             instance_count:
+            timeout:
             num_of_gunicorn_workers_per_instance:
             bento_name:
             bento_version:
@@ -322,6 +327,8 @@ class DeploymentAPIClient:
             deployment_pb.spec.sagemaker_operator_config.num_of_gunicorn_workers_per_instance = (  # noqa E501
                 num_of_gunicorn_workers_per_instance
             )
+        if timeout:
+            deployment_pb.spec.sagemaker_operator_config.timeout = timeout
         if bento_name:
             deployment_pb.spec.bento_name = bento_name
         if bento_version:

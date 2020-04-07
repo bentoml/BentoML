@@ -379,7 +379,7 @@ def _create_sagemaker_model(
             "Image": ecr_image_path,
             "Environment": {
                 "API_NAME": spec.api_name,
-                "BENTO_SERVER_TIMEOUT": config().get('apiserver', 'default_timeout'),
+                'BENTOML_GUNICORN_TIMEOUT': spec.timeout,
             },
         },
         "ExecutionRoleArn": execution_role_arn,
@@ -389,7 +389,7 @@ def _create_sagemaker_model(
     # to be string instead of the int.
     if spec.num_of_gunicorn_workers_per_instance:
         sagemaker_model_info['PrimaryContainer']['Environment'][
-            'GUNICORN_WORKER_COUNT'
+            'BENTOML_GUNICORN_NUM_OF_WORKERS'
         ] = str(spec.num_of_gunicorn_workers_per_instance)
 
     try:

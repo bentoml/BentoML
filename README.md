@@ -9,7 +9,7 @@
 
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
 
-BentoML is an open-source platform for __machine learning model serving__.
+BentoML is an open-source platform for __high-performance ML model serving__.
 
 What does BentoML do?
 

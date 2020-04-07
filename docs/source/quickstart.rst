@@ -131,9 +131,9 @@ bundled in one place.
     value of :code:`iris_classifier_service.save()`.
     It is the file path where the BentoService saved bundle is stored.
     BentoML locally keeps track of all the BentoService SavedBundle you've created,
-    you can also find the saved_path of your BentoService via
-    :code:`bentoml list -o wide` or
-    :code:`bentoml get IrisClassifier -o wide` command.
+    you can also find the saved_path of your BentoService from the output of
+    :code:`bentoml list -o wide`, :code:`bentoml get IrisClassifier -o wide` and
+    :code:`bentoml get IrisClassifier:latest` command.
 
 
 Model Serving via REST API
@@ -144,9 +144,16 @@ provide the file path to the saved bundle:
 
 .. code-block:: bash
 
-  bentoml serve IrisClassifier:latest
-  # or
-  bentoml serve {saved_path}
+    bentoml serve IrisClassifier:latest
+
+.. code-block:: bash
+
+    # Assuming JQ(https://stedolan.github.io/jq/) was installed, you can also manually
+    # copy the uri field in `bentoml get` command's JSON output
+    saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+
+    bentoml serve $saved_path
+
 
 The REST API server provides web UI for testing and debugging the server. If you are
 running this command on your local machine, visit http://127.0.0.1:5000 in your browser
@@ -199,7 +206,7 @@ which can be used directly to build a API server docker container image:
 
 .. code-block:: bash
 
-  docker build -t my_api_server {saved_path}
+  docker build -t my_api_server $saved_path
 
   docker run -p 5000:5000 my_api_server
 
@@ -260,7 +267,7 @@ it as as a system-wide python package with :code:`pip`:
 
 .. code-block:: bash
 
-  pip install {saved_path}
+  pip install $saved_path
 
 .. code-block:: python
 
@@ -275,7 +282,7 @@ or to their organization's private PyPi index to share with other developers.
 
 .. code-block:: bash
 
-    cd {saved_path} & python setup.py sdist upload
+    cd $saved_path & python setup.py sdist upload
 
 .. note::
 

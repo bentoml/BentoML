@@ -38,7 +38,7 @@ Alternatively, run the code in this guide here on Google's Colab:
     :alt: Launch on Colab
 
 Or download the quickstart jupyter notebook and run it on your computer:
-[download notebook](https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bentoml-quick-start-guide.ipynb).
+`download notebook <https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
 
 
 Hello World

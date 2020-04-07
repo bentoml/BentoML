@@ -103,8 +103,13 @@ or provide the file path to the saved bundle:
 
 ```bash
 bentoml serve IrisClassifier:latest
-# or
-bentoml serve {saved_path}
+```
+
+Alternatively, in bash command line, you can get the absolute path to the saved
+BentoService from the JSON output of `bentoml get` command:
+```bash
+saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+bentoml serve $saved_path
 ```
 
 The REST API server provides web UI for testing and debugging the server. If you are
@@ -124,7 +129,9 @@ The BentoService SavedBundle directory is structured to work as a docker build c
 that can be used to build a API server docker container image:
 
 ```bash
-docker build -t my-org/iris-classifier:v1 {saved_path}
+
+
+docker build -t my-org/iris-classifier:v1 $saved_path
 
 docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True my-org/iris-classifier:v1
 ```

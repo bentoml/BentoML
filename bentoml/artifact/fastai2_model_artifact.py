@@ -68,7 +68,7 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
     def load(self, path):
         fastai2_module = _import_fastai2_module()
 
-        model = fastai2_module.basics.load_learner(path, self._file_name)
+        model = fastai2_module.basics.load_learner(path)
         return self.pack(model)
 
     @property

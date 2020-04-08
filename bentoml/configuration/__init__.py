@@ -166,8 +166,7 @@ def get_bentoml_deploy_version():
 
     bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{branch}
     """
-    bentoml_deploy_version = "git+https://github.com/HenryDashwood/bentoml.git@master"
-#     bentoml_deploy_version = config('core').get('bentoml_deploy_version')
+    bentoml_deploy_version = config('core').get('bentoml_deploy_version')
 
     if bentoml_deploy_version != __version__:
         logger.warning(

@@ -104,8 +104,6 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     if bento_service.artifacts:
         bento_service.artifacts.save(module_base_path)
     # write conda environment, requirement.txt
-    print(path)
-    print(bento_service)
     bento_service.env.save(path, bento_service)
 
     # TODO: add bentoml.find_packages helper for more fine grained control over this

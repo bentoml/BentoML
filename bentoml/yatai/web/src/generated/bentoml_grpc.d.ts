@@ -262,6 +262,9 @@ export namespace bentoml {
 
             /** SageMakerOperatorConfig num_of_gunicorn_workers_per_instance */
             num_of_gunicorn_workers_per_instance?: (number|null);
+
+            /** SageMakerOperatorConfig timeout */
+            timeout?: (number|null);
         }
 
         /** Represents a SageMakerOperatorConfig. */
@@ -287,6 +290,9 @@ export namespace bentoml {
 
             /** SageMakerOperatorConfig num_of_gunicorn_workers_per_instance. */
             public num_of_gunicorn_workers_per_instance: number;
+
+            /** SageMakerOperatorConfig timeout. */
+            public timeout: number;
 
             /**
              * Creates a new SageMakerOperatorConfig instance using the specified properties.

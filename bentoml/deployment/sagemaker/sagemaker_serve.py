@@ -13,9 +13,9 @@ import sys
 
 from bentoml.server.utils import get_gunicorn_num_of_workers
 
-bento_server_timeout = os.environ.get('BENTO_SERVER_TIMEOUT', 60)
+bento_server_timeout = os.environ.get('BENTOML_GUNICORN_TIMEOUT', 60)
 bento_server_workers = int(
-    os.environ.get('GUNICORN_WORKER_COUNT', get_gunicorn_num_of_workers())
+    os.environ.get('BENTOML_GUNICORN_NUM_OF_WORKERS', get_gunicorn_num_of_workers())
 )
 
 

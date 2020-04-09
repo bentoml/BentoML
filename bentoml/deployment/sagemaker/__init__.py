@@ -379,7 +379,7 @@ def _create_sagemaker_model(
             "Image": ecr_image_path,
             "Environment": {
                 "API_NAME": spec.api_name,
-                'BENTOML_GUNICORN_TIMEOUT': spec.timeout,
+                'BENTOML_GUNICORN_TIMEOUT': str(spec.timeout),
             },
         },
         "ExecutionRoleArn": execution_role_arn,

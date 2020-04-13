@@ -61,6 +61,7 @@ deployment_schema = {
                         'type': 'integer',
                         'min': 1,
                     },
+                    'timeout': {'type': 'integer', 'min': 1},
                 },
             },
             'aws_lambda_operator_config': {

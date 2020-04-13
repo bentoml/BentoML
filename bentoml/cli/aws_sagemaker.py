@@ -105,6 +105,12 @@ def get_aws_sagemaker_sub_command():
         'The formula is num_of_cpu/2 + 1',
         type=click.INT,
     )
+    @click.option(
+        '--timeout',
+        help="The amount of time Sagemaker will wait before return response",
+        type=click.INT,
+        default=60,
+    )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait/--no-wait',
@@ -122,6 +128,7 @@ def get_aws_sagemaker_sub_command():
         instance_count,
         num_of_gunicorn_workers_per_instance,
         api_name,
+        timeout,
         output,
         wait,
     ):
@@ -141,6 +148,7 @@ def get_aws_sagemaker_sub_command():
                     instance_type=instance_type,
                     num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
                     api_name=api_name,
+                    timeout=timeout,
                     region=region,
                     wait=wait,
                 )
@@ -205,6 +213,12 @@ def get_aws_sagemaker_sub_command():
     @click.option(
         '--api-name', help='User defined API function will be used for inference.',
     )
+    @click.option(
+        '--timeout',
+        help="The amount of time Sagemaker will wait before return response",
+        type=click.INT,
+        default=60,
+    )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait/--no-wait',
@@ -220,6 +234,7 @@ def get_aws_sagemaker_sub_command():
         instance_type,
         instance_count,
         num_of_gunicorn_workers_per_instance,
+        timeout,
         output,
         wait,
     ):
@@ -240,6 +255,7 @@ def get_aws_sagemaker_sub_command():
                     instance_count=instance_count,
                     instance_type=instance_type,
                     num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
+                    timeout=timeout,
                     api_name=api_name,
                     wait=wait,
                 )

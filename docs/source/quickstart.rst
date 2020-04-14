@@ -1,3 +1,5 @@
+.. _getting-started-page:
+
 Getting Started
 ===============
 
@@ -26,19 +28,17 @@ Download and run the code in this quickstart locally:
     git clone http://github.com/bentoml/bentoml
     jupyter notebook bentoml/guides/quick-start/bentoml-quick-start-guide.ipynb
 
-In order to build model server docker image, you will also need to install
+Or :download:`Download the notebook <https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`
+(Right-Click and then "Save Link As") to your notebook workspace.
+
+To build a model server docker image, you will also need to install
 :code:`docker` for your system, read more about how to install docker
 `here <https://docs.docker.com/install/>`_.
 
 
-Alternatively, run the code in this guide here on Google's Colab:
+Alternatively, play with the notebook on Google Colab:
+`BentoML Quickstart on Google Colab <https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
 
-.. image:: https://badgen.net/badge/Launch/on%20Google%20Colab/blue?icon=terminal
-    :target: https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb
-    :alt: Launch on Colab
-
-Or download the quickstart jupyter notebook and run it on your computer:
-`download notebook <https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
 
 
 Hello World
@@ -46,8 +46,8 @@ Hello World
 
 The first step of creating a prediction service with BentoML, is to write a prediction
 service class inheriting from :code:`bentoml.BentoService`, and describe the required
-model artifacts, environment dependencies and writing your service API call back
-function. Here is what a simple prediction service looks like:
+model artifacts, environment dependencies and writing your service API. Here is what a 
+simple prediction service looks like:
 
 .. code-block:: python
 
@@ -65,14 +65,16 @@ function. Here is what a simple prediction service looks like:
 
 
 The :code:`bentoml.api` decorator defines a service API, which is the entry point for
-sending prediction request. The function being decorated is user defined code for
-processing prediction requests. Lastly the :code:`DataframeHandler` here tells BentoML
-that this service API is expecting :code:`pandas.DataFrame` object as its input format.
+handling prediction requests. The :code:`DataframeHandler` here tells BentoML that this 
+service API is expecting :code:`pandas.DataFrame` object as its input format. And the
+user-defined function being decorated by :code:`bentoml.api`, gets called when this
+service receives a prediction request.
 
 The :code:`bentoml.env` decorator allows specifying the dependencies and environment
-settings for this prediction service. Here we are using BentoML's
-:code:`auto_pip_dependencies` fature which automatically extracts and bundles all pip
-packages that are required for your prediction service and pins down their version.
+settings for this prediction service. Here by turnning on the
+:code:`auto_pip_dependencies` flag, BentoML will automatically extracts and bundles all
+pip packages that are required in the prediction service code and pins down their
+version.
 
 
 Lastly :code:`bentoml.artifact` defines the required trained models to be
@@ -271,7 +273,7 @@ it as as a system-wide python package with :code:`pip`:
 
 .. code-block:: python
 
-  # Your bentoML model class name will become packaged name
+  # Your bentoML model class name will become the package name
   import IrisClassifier
 
   installed_svc = IrisClassifier.load()
@@ -291,7 +293,7 @@ or to their organization's private PyPi index to share with other developers.
     https://docs.python.org/3.7/distributing/index.html#distributing-index
 
 Interested in learning more about BentoML? Check out the
-`BentoML Core Concepts and best practices walkthrough <https://github.com/bentoml/BentoML#examples>`_,
+:ref:`BentoML Core Concepts and best practices walkthrough <core-concepts-page>`,
 a must-read for anyone who is looking to adopt BentoML.
 
 Be sure to `join BentoML slack channel <http://bit.ly/2N5IpbB>`_ to hear about the

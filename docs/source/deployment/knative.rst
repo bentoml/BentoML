@@ -34,6 +34,11 @@ Build and push docker image
 ===========================
 
 First, we need to build and push our BentoService to a docker registry.
+We will use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
+
+.. code-block:: bash
+    git clone git@github.com:bentoml/BentoML.git
+    python ./bentoml/guides/quick-start/main.py
 
 Use BentoML CLI tool to get the information about IrisClassifier.
 

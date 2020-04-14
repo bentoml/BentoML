@@ -70,14 +70,14 @@ class BentoMLCommandGroup(click.Group):
             '--quiet',
             is_flag=True,
             default=False,
-            help="Hide process logs and errors",
+            help="Hide all warnings and info logs",
         )
         @click.option(
             '--verbose',
             '--debug',
             is_flag=True,
             default=False,
-            help="Show additional details when running command",
+            help="Show debug logs when running the command",
         )
         @functools.wraps(func)
         def wrapper(quiet, verbose, *args, **kwargs):

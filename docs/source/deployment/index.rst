@@ -13,9 +13,9 @@ platforms, and we've created a few step by step tutorials for doing that.
 
 .. note::
 
-    This documentation is about deploying online serving workloads, enssentially deploy
-    API server that serves prediction calls via HTTP request. For offline serving (or
-    batch serving, batch inference), see :doc:`../guides/batch_serving`.
+    This documentation is about deploying online serving workloads, essentially deploy
+    API server that serves prediction calls via HTTP requests. For offline serving (or
+    batch serving, batch inference), see :ref:`Model Serving Guide <concepts-model-serving>`.
 
 
 Automated Deployment Management:

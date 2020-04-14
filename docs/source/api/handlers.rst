@@ -1,3 +1,5 @@
+.. _bentoml-api-handlers-label:
+
 API Handlers
 ================
 
@@ -24,7 +26,7 @@ FastaiImageHandler
 ClipperHandler
 ++++++++++++++
 
-A special group of handlers that are designed to be used when deploying BentoService with `Clipper <http://clipper.ai/>`_.
+A special group of handlers that are designed to be used when deploying with `Clipper <http://clipper.ai/>`_.
 
 .. autoclass:: bentoml.handlers.ClipperBytesHandler
 .. autoclass:: bentoml.handlers.ClipperFloatsHandler

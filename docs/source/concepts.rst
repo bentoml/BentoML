@@ -1,16 +1,22 @@
+.. _core-concepts-page:
+
 Core Concepts
 =============
 
-The main idea behind BentoML is that Data Science team should be shipping prediction
-services instead of shipping pickled models.
+The main idea of BentoML is that the Data Science team should be able to ship their 
+models in a way that is easy to test, easy to deploy, and easy to integrate with.
+And to do so, Data Scientists need tools that help them build and ship prediction
+services, instead of uploading pickled model files or Protobuf files to a server and
+hoping thing would work.
+
 :ref:`bentoml.BentoService <bentoml-bentoservice-label>` is the base component for
-building prediction services using BentoML. Here's the example BentoService defined in
-the :doc:`Getting Started Guide <quickstart>`:
+building such prediction services using BentoML. And here's a minimal BentoService 
+example found in the :doc:`Getting Started Guide <quickstart>`:
 
 .. code-block:: python
 
   import bentoml
-  from bentoml.handlers import DataframeHandler
+  from bentoml.Bandlers import DataframeHandler
   from bentoml.artifact import SklearnModelArtifact
 
   @bentoml.env(auto_pip_dependencies=True)
@@ -34,9 +40,11 @@ Once you've trained an ML model, you can use the
 BentoService instance, and save the BentoService to a file directory. In the process of
 :ref:`BentoService#save <bentoml-bentoservice-save-label>`, BentoML serializes the model
 based on the ML training framework you're using, automatically extracts all the pip
-dependencies required by your BentoService class, and saves all the code, serialized
-model files, and requirements.txt etc into a file directory, which we call it a
-SavedBundle.
+dependencies required by your BentoService class and put into a `requirements.txt` file,
+and saves all the code, serialized model files, and :code:`requirements.txt` etc into 
+a file directory, which we call it a Bento(the format representing a saved 
+BentoService).
+
 
 
 .. code-block:: python
@@ -56,14 +64,15 @@ SavedBundle.
   # Save the entire prediction service to file bundle
   saved_path = iris_classifier_service.save()
 
-A BentoService SavedBundle is a versioned file directory that contains all the
-information needed to run this prediction service. Think of it as a docker container
-image or a software binary for your ML model, which is generated in every training job,
-reflecting your newest code changes and training data, and at the end of the day, makes
-your model more easily testable and ready to be shipped to production.
+A Bento is a versioned file directory that contains all the information required to run 
+this prediction service. Think of it as a docker container image or a software binary,
+but for your ML model. A Bento can be  generated at the end of every training job, 
+reflecting your newest code changes and training data changes. You can then easily store
+the Bento files, test the prediction service saved, or update it to your model serving
+deployment.
 
 BentoML also makes it easy to do model management. It keeping track of all the
-BentoService SavedBundle you've created and provide web UI and CLI access. By default
+Bento you've created and provide web UI and CLI access. By default
 BentoML saves all the model files and metadata in your local file system. But it is
 recommended to run a shared BentoML server for your team which stores models files and
 metadata in the cloud(e.g. RDS, S3). This allows your ML team to easily share, find and
@@ -88,9 +97,9 @@ put the source code of your BentoService class into individual Python file and c
 into source control(e.g. git) along with your model training code.
 
 BentoML is designed to be easily inserted to the end of your model training workflow,
-where you can import your BentoService class and create a BentoService saved bundle.
-This makes it easy to manage, test and deploy all the models you and your team have
-created overtime.
+where you can import your BentoService class and create a Bento(a saved BentoService
+bundled with trained model artifacts). This makes it easy to manage, test and deploy all
+the models you and your team have created overtime.
 
 .. note::
 
@@ -263,6 +272,7 @@ For most model serving scenarios, we recommend one model per prediction service,
 decouple non-related models into separate services. The only exception is when multiple
 models are depending on each other, such as the example above.
 
+.. _concepts-api-func-and-handlers:
 
 API Function and Handlers
 -------------------------
@@ -395,7 +405,7 @@ the steps required to create a BentoService instance and save it for serving:
 #. Model Training
 #. Create BentoService instance
 #. Pack trained model artifacts with :ref:`BentoService#pack <bentoml-bentoservice-pack-label>`
-#. Save with :ref:`BentoService#save <bentoml-bentoservice-save-label>`
+#. Save to a Bento with :ref:`BentoService#save <bentoml-bentoservice-save-label>`
 
 As illustrated in the previous example:
 
@@ -437,6 +447,224 @@ manner.
 :ref:`BentoService#save_to_dir(path) <bentoml-bentoservice-save-label>` under the hood,
 while keeping track of all the prediction services you've created and maintaining the
 file structures and metadata information of those saved bundle.
+
+
+Model Serving
+-------------
+
+Once a BentoService is saved as a Bento, it is ready to be deployed for many different
+types of serving workloads.
+
+There are 3 main types of model serving - 
+
+* **Online Serving** - clients access predictions via API endpoints in near real-time
+* **Offline Batch Serving** - pre-compute predictions and save results in storage system
+* **Edge Serving** - distribute model and run it on mobile or IoT devices
+
+BentoML has great support for online serving and offline batch serving. It has a high
+performance API server that can load a saved Bento and expose a REST API for client
+access. It also provide tools to load the Bento and feed it with a batch of inputs
+for offline inferencing. Edge serving is only supported when the client has python
+environment, e.g. model serving in a router or a Raspberry Pi.
+
+Online API Serving
+^^^^^^^^^^^^^^^^^^
+
+Once a BentoService is saved, you can easily start the REST API server to test out
+sending request and interacting with the server. For example, after saving the 
+BentoSerivce in the :doc:`Getting Started Guide <quickstart>`, you can start a API
+server right away with:
+
+.. code-block:: bash
+
+    bentoml serve IrisClassifier:latest
+
+
+If you are using :ref:`save_to_dir <bentoml-bentoservice-save-label>` , or you have 
+directly copied the saved Bento file directory from other machine, the BentoService
+``IrisClassifier`` is not registered with your local BentoML repository. In that case,
+you can still start the server by providing the path to the saved BentoService:
+
+.. code-block:: bash
+
+    bentoml serve $saved_path
+
+The REST API request format is determined by each API's handler type and handler config.
+More details can be found in the :ref:`BentoML API Handlers References <bentoml-api-handlers-label>`.
+
+For running production API model server, make sure to run ``bentoml serve-gunicorn`` 
+command instead, or use docker container for deployment.
+
+... code-block:: bash
+
+    bentoml serve-gunicorn $saved_path --enable-microbatch --workers=2 --port=3000
+
+
+API Server Dockerisation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+When you are ready to deploy the service to production, a docker image containing your
+model API server can be easily created with BentoML. When saving a Bento, a
+``Dockerfile`` is also generated by BentoML in the same directory. ``Dockerfile`` is a 
+text document that contains all the commands required for creating a docker image, and
+``docker build`` command builds an image from a ``Dockerfile``.
+
+
+.. code-block:: bash
+
+    # Find the saved path of the latest version of IrisClassifier Bento
+    saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+
+    # Build docker image using saved_path directory as the build context, replace the
+    # {username} below to your docker hub account name
+    docker build -t {username}/iris_classifier_bento_service $saved_path
+
+    # Run a container with the docker image built and expose port 5000
+    docker run -p 5000:5000 {username}/iris_classifier_bento_service
+
+    # Push the docker image to dockerhub for deployment
+    docker push {username}/iris_classifier_bento_service 
+
+
+Here's an example deployment you can create in a kubernetes cluster using the docker
+image built above:
+
+.. code-block:: yaml
+
+  apiVersion: apps/v1 # for k8s versions before 1.9.0 use apps/v1beta2
+  kind: Deployment
+  metadata:
+    name: iris_classifier
+  spec:
+    selector:
+      matchLabels:
+        app: iris_classifier
+    replicas: 3
+    template:
+      metadata:
+        labels:
+          app: iris_classifier
+      spec:
+        containers:
+        - name: iris_classifier_bento_service
+          image: {username}/iris_classifier_bento_service:latest
+          ports:
+          - containerPort: 5000
+
+
+Adaptive Micro-Batching
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Micro batching is a technique where incoming prediction requests are grouped into samll 
+batches to achieve the performance advantage of batch processing in model inferencing
+tasks. BentoML implemented such a micro batching layer that is inspired by the paper
+`Clipper: A Low-Latency Online Prediction Serving System 
+<https://www.usenix.org/system/files/conference/nsdi17/nsdi17-crankshaw.pdf>`_.
+
+
+Given the mass performance boost a model serving system get from micro batching, BentoML
+APIs were designed to work with micro-batching without any code changes on the user 
+side. It is why all the API Handlers are designed to accept a list of input data, as
+described in the :ref:`concepts-api-func-and-handlers` section.
+
+Currently, micro-batching is still a beta feature, users can enable micro-batching by
+passing a flag when running BentoML API server:
+
+.. code-block:: bash
+
+    # Launch micro batching API server from CLI
+    bentoml serve-gunicorn $saved_path --enable-microbatch
+
+    # Launch model server docker image with micro batching enabled
+    docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True {username}/iris-classifier:latest
+
+
+Programmatic Access
+^^^^^^^^^^^^^^^^^^^
+
+A saved BentoService can also be loaded from saved Bento and access directly from 
+Python. There are two main ways this can be done:
+
+
+1. Load from a saved Bento directory with :ref:`bentoml.load(path) <bentoml-load-label>` API
+
+  .. code-block:: python
+
+      import bentoml
+
+      bento_service = bentoml.load(saved_path)
+      result = bento_service.predict(input_data)
+
+  The benefit of this approach is its flexibility. Users can easily invoke saved
+  BentoService in their backend applications, and programmtically choose which model to
+  load and how they are used for inference. 
+
+2. Install BentoService as a PyPI package
+
+  A Bento directory is also pip-installable as demonstrated in the 
+  :doc:`Getting Started Guide <quickstart>`:
+
+  .. code-block:: bash
+
+      pip install $saved_path
+
+  .. code-block:: python
+
+    # Your bentoML model class name will become the package name
+    import IrisClassifier
+
+    installed_svc = IrisClassifier.load()
+    installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
+
+  This approach made sure that all the required pip dependencies are installed for the 
+  BentoService when being installed. It is convenient when your Data Science team is
+  shipping the prediction service as a standalone python package that can be shared
+  by a variety of different developers to integrate with.
+
+3. Command-Line Access
+
+  Similarly, a Bento can be loaded for inferencing using the BentoML CLI tool. The CLI
+  command `bentoml` is available once you've installed BentoML via ``pip``. And to load
+  a saved Bento file, simply use the :code:`bentoml run` command and give it either the
+  name and version pair, or the Bento's path:
+
+  .. code-block:: bash
+      
+      # With BentoService name and version pair
+      bentoml run IrisClassifier:latest predict --input='[[5.1, 3.5, 1.4, 0.2]]'
+      bentoml run IrisClassifier:latest predict --input='./iris_test_data.csv'
+
+      # With BentoService's saved path
+      bentoml run $saved_path predict --input='[[5.1, 3.5, 1.4, 0.2]]'
+      bentoml run $saved_path predict --input='./iris_test_data.csv'
+
+  Or if you have already pip-install'd the BentoService, it provides a CLI command
+  specifically for this BentoService. The CLI command is the same as the BentoService
+  class name:
+
+  .. code-block:: bash
+      
+      IrisClassifier run predict --input='[[5.1, 3.5, 1.4, 0.2]]'
+      IrisClassifier run predict --input='./iris_test_data.csv'
+
+
+
+Offline Batch Serving
+^^^^^^^^^^^^^^^^^^^^^
+
+All three methods in the Programmatic Access section above, can be used for doing single 
+machine batch offline model serving. Depends on the format of input data, user can
+kick off an inferencing job using a Bento, either with BentoService's Python or Bash CLI
+access. The Python accesss especially made it very easy to integrate with Job scheduling
+tools such as `Apache Airflow <https://airflow.apache.org/>`_ and
+`Celery <http://www.celeryproject.org/>`_.
+
+
+For batch serving on large dataset running on a cluster, BentoML team is building a
+Apache Spark UDF loader for BentoService. This feature is still in beta testing phase. 
+`Contact us <mailto:contact@bentoml.ai>`_ if you are interested in helping to test or
+improve it.
+
 
 Model Management
 ----------------
@@ -556,13 +784,32 @@ that runs :code:`YataiService`, from BentoML cli command `yatai-service-start`:
       --verbose, --debug    Show additional details when running command
       --help                Show this message and exit.
 
-The recommended way to deploy :code:`YataiService` for teams, is to back it by a
-remote PostgreSQL database and a S3 bucket. For example, run the following in your
-server to start the YataiService:
+
+BentoML also provides docker image for running YataiService. For each BentoML release,
+a new image will be pushed to docker hub under :code:`bentoml/yatai-service` with the
+same version ID. You can run the following command and start a YataiService hosting
+your local BentoML repository:
 
 .. code-block:: bash
 
-    > bentoml yatai-service-start \
+    > docker run -v ~/bentoml:/bentoml \
+        -p 3000:3000 \
+        -p 50051:50051 \
+        bentoml/yatai-service:0.7.2 \
+        --db-url=sqlite:///bentoml/storage.db \
+        --repo-base-url=/bentoml/repository
+
+
+The recommended way to deploy :code:`YataiService` for teams, is to back it by a
+remote PostgreSQL database and a S3 bucket. For example, deploy the follow docker
+container to run a YataiService configured with remote database and S3 storage, as well
+as AWS credentials for managing deployments created on AWS: 
+
+.. code-block:: bash
+
+    > docker run -p 3000:3000 -p 50051:50051 \
+        -e AWS_SECRET_ACCESS_KEY=... -e AWS_ACCESS_KEY_ID=...  \
+        bentoml/yatai-service:0.7.2 \
         --db-url postgresql://scott:tiger@localhost:5432/bentomldb \
         --repo-base-url s3://my-bentoml-repo/
 
@@ -575,9 +822,10 @@ server to start the YataiService:
     * Web server log can be found here: /Users/chaoyu/bentoml/logs/yatai_web_server.log
 
 
-And then, run the following command to configure BentoML to use this remote YataiService
-running in your server. You will need to replace :code:`127.0.0.1` with an IP address
-that is accessable for your team.
+After deploying the YataiService server, get the server IP address and run the following 
+command to configure BentoML client to use this remote YataiService for model management
+and deployments. You will need to replace :code:`127.0.0.1` with an IP address or URL
+that is accessable for your team:
 
 .. code-block:: bash
 
@@ -592,14 +840,9 @@ creating model serving deployments.
 
     BentoML's :code:`YataiService` does not provide any kind of authentication. To
     secure your deployment, we recommend only make the server accessable within your
-    VPC.
+    VPC for you data science team to have access.
 
     BentoML team also provides hosted YataiService for enterprise teams, that has all
-    the security best practices built-in. `Contact us <mailto:contact@bentoml.ai>`_ if
-    you're interested in learning more.
-
-
-
-
-
-
+    the security best practices built-in, to bootstrap the end-to-end model mangement 
+    and model serving deployment workflow. `Contact us <mailto:contact@bentoml.ai>`_ to
+    learn more about our offerings.

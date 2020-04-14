@@ -59,7 +59,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     track_save(bento_service)
 
     from bentoml.service import BentoService
-    
+
     if not isinstance(bento_service, BentoService):
         raise BentoMLException(
             "save_to_dir only work with instance of custom BentoService class"

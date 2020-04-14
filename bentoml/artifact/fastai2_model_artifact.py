@@ -63,6 +63,7 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
             raise InvalidArgument(
                 "Expect `model` argument to be `fastai2.basics.Learner` instance"
             )
+            
         return _Fastai2ModelArtifactWrapper(self, model)
 
     def load(self, path):
@@ -80,7 +81,7 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
             "BentoService definition file or manually add them via "
             "`@env(pip_dependencies=['torchvision'])` when defining a BentoService"
         )
-        return ['torch', "fastai2"]
+        return ['torch', "fastcore", "fastai2"]
 
 
 class _Fastai2ModelArtifactWrapper(BentoServiceArtifactWrapper):
@@ -91,7 +92,7 @@ class _Fastai2ModelArtifactWrapper(BentoServiceArtifactWrapper):
 
     def save(self, dst):
         self._model.export(fname=self.spec._file_name)
-
+        
         shutil.copyfile(
             os.path.join(self._model.path, self.spec._file_name),
             self.spec._model_file_path(dst),

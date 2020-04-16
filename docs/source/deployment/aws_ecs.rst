@@ -33,6 +33,7 @@ We will walk through from deploying BentoService with ECS, validate result with 
 We will use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
 
 .. code-block:: bash
+
     git clone git@github.com:bentoml/BentoML.git
     python ./bentoml/guides/quick-start/main.py
 

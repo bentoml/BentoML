@@ -7,11 +7,6 @@ import os
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 from bentoml.exceptions import MissingDependencyException
 
-try:
-    import fasttext
-except MissingDependencyException as e:
-    raise e
-
 
 class FasttextModelArtifact(BentoServiceArtifact):
     """
@@ -35,6 +30,12 @@ class FasttextModelArtifact(BentoServiceArtifact):
         return _FasttextModelArtifactWrapper(self, fasttext_model)
 
     def load(self, path):
+        try:
+            import fasttext
+        except ImportError:
+            raise MissingDependencyException(
+                "fasttext package is required to use FasttextModelArtifact"
+            )
         model = fasttext.load_model(self._model_file_path(path))
         return self.pack(model)
 

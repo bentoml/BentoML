@@ -159,7 +159,7 @@ Copy the service URL from the screen
 
 .. code-block:: bash
 
-    > curl -i \                                                                                                                                         ✔  (dev-py3)  minikube/default ⎈
+    > curl -i \
       --header "Content-Type: application/json" \
       --request POST \
       -d '[[5.1, 3.5, 1.4, 0.2]]' \

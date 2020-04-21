@@ -2,17 +2,19 @@
 Deploying to Azure Container Instance
 =====================================
 
-Azure container instances allows you to run docker containers easily on Azure without managing servers.
-
+Microsoft Azure container instances is a service for running Docker container without
+managing servers. It is a great option for running BentoService that requires a lot of
+computing resources.
 
 
 Prerequisites
 -------------
 
 1. Azure CLI tool
-* install instruction: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
 
-2. Docker is installed and running on the machine.
+  * install instruction: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
+
+2. Docker is installed and running on your machine.
 
   * Install instruction: https://docs.docker.com/install
 
@@ -231,9 +233,9 @@ Build and push docker image to ACR
     ...
     latest: digest: sha256:4b747c7d4db55278feb20caac6a5cf0ca74fae998b808d5cf2e5a20b3cde4303 size: 2227
 
-===================================================
-Deploying docker in ACR as Azure container instance
-===================================================
+=========================================================
+Deploying docker image in ACR as Azure container instance
+=========================================================
 
 Retrieve registry username and password for container deployment
 

@@ -28,7 +28,13 @@ Prerequisites
 AWS Lambda deployment and management with BentoML
 -------------------------------------------------
 
-We will use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html).
+We will use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
+
+.. code-block:: bash
+
+    git clone git@github.com:bentoml/BentoML.git
+    python ./bentoml/guides/quick-start/main.py
+
 Use `bento list` to get the BentoService name:version tag.
 
 

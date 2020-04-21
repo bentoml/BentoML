@@ -35,7 +35,7 @@ install_requires = [
     "sqlalchemy>=1.3.0",
     "sqlalchemy-utils",
     "protobuf>=3.6.0",
-    "grpcio",
+    "grpcio<=1.27.2",
     "cerberus",
     "tabulate",
     "humanfriendly",

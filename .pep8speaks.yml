@@ -11,6 +11,7 @@ flake8:
     exclude:
       - proto
       - bentoml/_version.py
+      - guides
 
 only_mention_files_with_errors: True
 

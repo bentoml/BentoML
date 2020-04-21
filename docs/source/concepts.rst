@@ -7,11 +7,11 @@ The main idea of BentoML is that the Data Science team should be able to ship th
 models in a way that is easy to test, easy to deploy, and easy to integrate with.
 And to do so, Data Scientists need tools that help them build and ship prediction
 services, instead of uploading pickled model files or Protobuf files to a server and
-hoping thing would work.
+hoping things work out.
 
-:ref:`bentoml.BentoService <bentoml-bentoservice-label>` is the base component for
-building such prediction services using BentoML. And here's a minimal BentoService 
-example found in the :doc:`Getting Started Guide <quickstart>`:
+:ref:`bentoml.BentoService <bentoml-bentoservice-label>` is the base class for building
+such prediction services using BentoML. And here's the minimal BentoService example from
+the :doc:`Getting Started Guide <quickstart>`:
 
 .. code-block:: python
 
@@ -28,23 +28,34 @@ example found in the :doc:`Getting Started Guide <quickstart>`:
           return self.artifacts.model.predict(df)
 
 
-Each BentoService can contain multiple models via the BentoML :code:`Artifact` class,
-and can define multiple APIs for accessing this service. Each API should specify a type
-of :code:`Handler`, which defines the expected input data format for this API, most
-commonly we see the use of :code:`DataframeHandler`, :code:`TensorHandler`, and
-:code:`JsonHandler`.
+Each BentoService class can contain multiple models declared through the
+:code:`@bentoml.artifact` API, and multiple APIs for accessing this service. Each API
+definition requires a :code:`BentoHandler` type, which defines the expected input data
+format of this API. BentoML provides API handlers that covers most model serving use
+cases including :code:`DataframeHandler`, :code:`TensorHandler`, :code:`ImageHandler`
+and :code:`JsonHandler`.
 
 
-Once you've trained an ML model, you can use the
-:ref:`BentoService#pack <bentoml-bentoservice-pack-label>` method to bundle it with a
-BentoService instance, and save the BentoService to a file directory. In the process of
-:ref:`BentoService#save <bentoml-bentoservice-save-label>`, BentoML serializes the model
-based on the ML training framework you're using, automatically extracts all the pip
-dependencies required by your BentoService class and put into a `requirements.txt` file,
-and saves all the code, serialized model files, and :code:`requirements.txt` etc into 
-a file directory, which we call it a Bento(the format representing a saved 
-BentoService).
+Once an ML model is trained, a BentoService instance can bundle with the trained model
+with the :ref:`BentoService#pack <bentoml-bentoservice-pack-label>` method. This trained
+model is then accessible within the API function code via 
+:code:`self.artifacts.ARTIFACT_NAME`. In the example above, the artifact is initialized
+with the name ``"model"``, so the user code can get access to the model via 
+:code:`self.artifacts.model`.
 
+The BentoService instance is now ready to be used for
+inferencing. But more importantly, BentoML solves the problem of saving the entire
+BentoService to disk, distribute the saved file, and reproduce the exact same prediction
+service in testing and production environment.
+
+To save the BentoService instance, simply call the
+:ref:`BentoService#save <bentoml-bentoservice-save-label>` method. In this process, 
+BentoML will:
+
+#. Saves the model based on the ML training framework and artifact type used
+#. Automatically extracts all the pip dependencies required by your BentoService class and put into a `requirements.txt` file
+#. Saves all the local python code dependencies
+#. Put all the generated files into one file directory, which, by default, this is a location managed by BentoML
 
 
 .. code-block:: python
@@ -61,23 +72,31 @@ BentoService).
   iris_classifier_service = IrisClassifier()
   iris_classifier_service.pack("model", clf)
 
+  # Test invoking BentoService instance
+  iris_classifier_service.predict([[5.1, 3.5, 1.4, 0.2]])
+
   # Save the entire prediction service to file bundle
   saved_path = iris_classifier_service.save()
 
-A Bento is a versioned file directory that contains all the information required to run 
-this prediction service. Think of it as a docker container image or a software binary,
-but for your ML model. A Bento can be  generated at the end of every training job, 
-reflecting your newest code changes and training data changes. You can then easily store
-the Bento files, test the prediction service saved, or update it to your model serving
-deployment.
 
-BentoML also makes it easy to do model management. It keeping track of all the
-Bento you've created and provide web UI and CLI access. By default
-BentoML saves all the model files and metadata in your local file system. But it is
-recommended to run a shared BentoML server for your team which stores models files and
-metadata in the cloud(e.g. RDS, S3). This allows your ML team to easily share, find and
-use each others' models and model serving endpoints. :doc:`Read more about this
-<guides/yatai_service>`
+The saved BentoService file directory is called a Bento. It is a versioned file
+directory that contains all the information required to run this prediction service.
+
+Think of Bento as a docker container image or a software binary, but for an ML model. A
+Bento can be  generated at the end of every training job, reflecting your newest code
+changes and training data changes. You can then easily store and distribute the Bento
+file, test the prediction service, and then update it to production model serving
+endpoint.
+
+BentoML keeps track of all the Bentos saved and provides web UI and CLI commands for 
+model management. By default, BentoML saves all the model files and metadata in the
+local file system. For team settings, it is recommended to run a shared BentoML server 
+for the entire team, which stores all of their Bento files and metadata in the cloud
+(e.g. RDS, S3). This allows your ML team to easily share, find and use each others' 
+models and model serving endpoints. 
+:doc:`Read more about it here <guides/yatai_service>`.
+
+BentoML CLI Listing recent Bento:
 
 .. code-block:: bash
 
@@ -88,12 +107,21 @@ use each others' models and model serving endpoints. :doc:`Read more about this
     ...
 
 
+BentoML model management web UI:
+
+.. image:: ../_static/img/yatai-service-web-ui-repository.png
+    :alt: BentoML YataiService Bento Repository Page
+
+
+.. image:: ../_static/img/yatai-service-web-ui-repository-detail.png
+    :alt: BentoML YataiService Bento Details Page
+
 Creating BentoService
 ---------------------
 
 Users build their prediction service by subclassing
 :ref:`bentoml.BentoService <bentoml-bentoservice-label>`. It is recommended to always
-put the source code of your BentoService class into individual Python file and check it
+put the source code of your BentoService class into an individual Python file and check it
 into source control(e.g. git) along with your model training code.
 
 BentoML is designed to be easily inserted to the end of your model training workflow,
@@ -110,10 +138,11 @@ the models you and your team have created overtime.
     example in `BentoML quickstart notebook <https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
 
 
-BentoML only allow users to create prediction service in Python but you can use models
-trained with other languages/frameworks with BentoML and benefit from BentoML's model
-mangement and performance optimiziation such as micro batching in online serving. To do
-so, you will need to :doc:`create custom artifact <guides/custom_artifact>`.
+BentoService can only be created using Python as the programming language. But it is
+possible to use models trained with other languages/frameworks with BentoML and benefit
+from BentoML's model management, API server, dockerisation and performance 
+optimizations. To do so, you will need to :doc:`create custom artifact <guides/custom_artifact>`.
+Support for R and Spark MLlib models are on our roadmap.
 
 
 Defining Service Environment
@@ -121,12 +150,12 @@ Defining Service Environment
 
 The :ref:`bentoml.env <bentoml-env-label>` decorator is the API for defining the
 environment settings and dependencies of your prediction service. And here are the types
-of dependencies supported by BentoML
+of dependencies supported by BentoML:
 
 PyPI Packages
 ^^^^^^^^^^^^^
 
-Python PyPI package is the most common type of dependencies. BentoML provides a
+Python PyPI package is the most common type of dependencies. BentoML provides a 
 mechanism that automatically figures out the PyPI packages required by your BentoService
 python class, simply use the :code:`auto_pip_dependencies=True` option.
 
@@ -139,9 +168,9 @@ python class, simply use the :code:`auto_pip_dependencies=True` option.
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
-If you have specific versions of PyPI packages required for model serving that are
-different from your training environment, or the :code:`auto_pip_dependencies=True`
-option does not work for your case(bug report highly appreciated), you can also specify
+If you had specific versions of PyPI packages required for model serving that are
+different from your training environment, or if the :code:`auto_pip_dependencies=True`
+option did not work for your case(bug report highly appreciated), you can also specify
 the list of PyPI packages manually, e.g.:
 
 .. code-block:: python
@@ -164,8 +193,8 @@ Similarly, if you already have a list of PyPI packages required for model servin
 Conda Packages
 ^^^^^^^^^^^^^^
 
-Conda packages can be specified in a similar way, here's an example prediction service
-relying on an H2O model that requires the h2o conda packages:
+Conda packages can be specified similarly, here's an example prediction service relying 
+on an H2O model that requires the h2o conda packages:
 
 .. code-block:: python
 
@@ -183,17 +212,16 @@ relying on an H2O model that requires the h2o conda packages:
 
 
 .. note::
-    One caveat with Conda Packages is that it does not work with AWS Lambda deployment
-    due to the limitation of AWS Lambda platform.
+    One caveat with Conda Packages here, is that it does not work with AWS Lambda 
+    deployment due to the limitation of the AWS Lambda platform.
 
 
-Initial Setup Bash Script
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Init Bash Script
+^^^^^^^^^^^^^^^^
 
-Setup script is a way for customizing the API serving docker container. It allow user
-(and trusted the user) to insert arbitary bash script into the docker build process
-to install extra system dependencies or do other setups required by the prediction
-service.
+Init setup script is used for customizing the API serving docker container. Users can
+insert arbitrary bash script into the docker build process via init setup script, to 
+install extra system dependencies or do other setups required by the prediction service.
 
 .. code-block:: python
 
@@ -218,8 +246,9 @@ service.
       ...
 
 If you have a specific docker base image that you would like to use for your API server,
-`contact us <mailto:contact@bentoml.ai>`_ and let us know your use case and
-requirements there, as we are planning to build custom docker base image support.
+we are working on custom docker base image support. 
+`contact us <mailto:contact@bentoml.ai>`_ if you are interested in helping with beta
+testing this feature.
 
 
 Packaging Model Artifacts
@@ -280,9 +309,9 @@ API Function and Handlers
 BentoService API is the entry point for clients to access a prediction service. It is
 defined by writing the API handling function(a class method within the BentoService
 class) which gets called when client sent an inference request. User will need to
-annotate this method with :code:`@bentoml.api` docorator and pass in a Handler class,
+annotate this method with :code:`@bentoml.api` decorator and pass in a Handler class,
 which defines the desired input format for the API function. For example, if your model
-is expecting tabluar data as input, you can use :code:`DataframeHandler` for your API,
+is expecting tabular data as input, you can use :code:`DataframeHandler` for your API,
 e.g.:
 
 
@@ -297,11 +326,11 @@ e.g.:
           return postprocessing(model_output)
 
 
-When using DataframeHandler, BentoML will converts the inference request sent from
+When using DataframeHandler, BentoML will convert the inference requests sent from the
 client, either in the form of a JSON HTTP request or a CSV file, into a
-:code:`pandas.DataFrame` and pass it down to the user-defined API function.
+:code:`pandas.DataFrame` object and pass it down to the user-defined API function.
 
-User can write arbitary python code within the API function that process the data.
+User can write arbitrary python code within the API function that process the data.
 Besides passing the prediction input data to the model for inferencing, user can also
 write Python code for data fetching, data pre-processing and post-processing within the
 API function. For example:
@@ -329,9 +358,8 @@ It is important to notice that in BentoML, the input variable passed into the
 user-defined API function **is always a list of inference inputs**. BentoML users
 must make sure their API function code is processing a batch of input data.
 
-This design made it possible for BentoML to do Micro-Batching in online serving
-setting, which is one of the most effective performance optimization technique used
-in model serving systems.
+This design made it possible for BentoML to do Micro-Batching in online API serving, 
+which is one of the most effective optimization technique for model serving systems.
 
 
 API Function Return Value
@@ -352,7 +380,7 @@ The output of an API function can be any of the follow types:
 
 
 It is user API function's responsibility to make sure the list of prediction results
-matches the order of input data sequence and have the exact same length.
+matches the order of input sequence and have the exact same length.
 
 
 .. note::
@@ -443,11 +471,14 @@ BentoService instance back from the saved file path. This made it possible to ea
 distribute your prediction service to test and production environment in a consistent
 manner.
 
-:ref:`BentoService#save <bentoml-bentoservice-save-label>` essentailly calls
+:ref:`BentoService#save <bentoml-bentoservice-save-label>` essentially calls
 :ref:`BentoService#save_to_dir(path) <bentoml-bentoservice-save-label>` under the hood,
 while keeping track of all the prediction services you've created and maintaining the
 file structures and metadata information of those saved bundle.
 
+
+
+.. _concepts-model-serving:
 
 Model Serving
 -------------
@@ -458,14 +489,14 @@ types of serving workloads.
 There are 3 main types of model serving - 
 
 * **Online Serving** - clients access predictions via API endpoints in near real-time
-* **Offline Batch Serving** - pre-compute predictions and save results in storage system
+* **Offline Batch Serving** - pre-compute predictions and save results in a storage system
 * **Edge Serving** - distribute model and run it on mobile or IoT devices
 
-BentoML has great support for online serving and offline batch serving. It has a high
-performance API server that can load a saved Bento and expose a REST API for client
+BentoML has great support for online serving and offline batch serving. It has a 
+high-performance API server that can load a saved Bento and expose a REST API for client
 access. It also provide tools to load the Bento and feed it with a batch of inputs
-for offline inferencing. Edge serving is only supported when the client has python
-environment, e.g. model serving in a router or a Raspberry Pi.
+for offline inferencing. Edge serving is only supported when the client has the Python
+runtime, e.g. model serving in a router or a Raspberry Pi.
 
 Online API Serving
 ^^^^^^^^^^^^^^^^^^
@@ -492,10 +523,10 @@ you can still start the server by providing the path to the saved BentoService:
 The REST API request format is determined by each API's handler type and handler config.
 More details can be found in the :ref:`BentoML API Handlers References <bentoml-api-handlers-label>`.
 
-For running production API model server, make sure to run ``bentoml serve-gunicorn`` 
-command instead, or use docker container for deployment.
+For running production API server, make sure to run ``bentoml serve-gunicorn`` 
+command instead, or use Docker container for deployment.
 
-... code-block:: bash
+.. code-block:: bash
 
     bentoml serve-gunicorn $saved_path --enable-microbatch --workers=2 --port=3000
 
@@ -526,7 +557,7 @@ text document that contains all the commands required for creating a docker imag
     docker push {username}/iris_classifier_bento_service 
 
 
-Here's an example deployment you can create in a kubernetes cluster using the docker
+Here's an example deployment you can create in a Kubernetes cluster using the docker
 image built above:
 
 .. code-block:: yaml
@@ -562,10 +593,10 @@ tasks. BentoML implemented such a micro batching layer that is inspired by the p
 <https://www.usenix.org/system/files/conference/nsdi17/nsdi17-crankshaw.pdf>`_.
 
 
-Given the mass performance boost a model serving system get from micro batching, BentoML
-APIs were designed to work with micro-batching without any code changes on the user 
-side. It is why all the API Handlers are designed to accept a list of input data, as
-described in the :ref:`concepts-api-func-and-handlers` section.
+Given the mass performance improvement a model serving system get from micro-batching, 
+BentoML APIs were designed to work with micro-batching without any code changes on the 
+user side. It is why all the API Handlers are designed to accept a list of input data, 
+as described in the :ref:`concepts-api-func-and-handlers` section.
 
 Currently, micro-batching is still a beta feature, users can enable micro-batching by
 passing a flag when running BentoML API server:
@@ -596,7 +627,7 @@ Python. There are two main ways this can be done:
       result = bento_service.predict(input_data)
 
   The benefit of this approach is its flexibility. Users can easily invoke saved
-  BentoService in their backend applications, and programmtically choose which model to
+  BentoService in their backend applications, and programmatically choose which model to
   load and how they are used for inference. 
 
 2. Install BentoService as a PyPI package
@@ -652,16 +683,16 @@ Python. There are two main ways this can be done:
 Offline Batch Serving
 ^^^^^^^^^^^^^^^^^^^^^
 
-All three methods in the Programmatic Access section above, can be used for doing single 
-machine batch offline model serving. Depends on the format of input data, user can
-kick off an inferencing job using a Bento, either with BentoService's Python or Bash CLI
-access. The Python accesss especially made it very easy to integrate with Job scheduling
-tools such as `Apache Airflow <https://airflow.apache.org/>`_ and
+All three methods in the Programmatic Access section above, can be used for doing 
+single-machine batch offline model serving. Depends on the format of input data. An
+inferencing computation job can be started either with BentoService's Python API or Bash
+CLI command. This made it very easy to integrate with Job scheduling tools such as 
+`Apache Airflow <https://airflow.apache.org/>`_ and
 `Celery <http://www.celeryproject.org/>`_.
 
 
 For batch serving on large dataset running on a cluster, BentoML team is building a
-Apache Spark UDF loader for BentoService. This feature is still in beta testing phase. 
+Apache Spark UDF loader for BentoService. This feature is still in Beta testing phase. 
 `Contact us <mailto:contact@bentoml.ai>`_ if you are interested in helping to test or
 improve it.
 
@@ -732,8 +763,8 @@ list all the BentoService created:
       }
     }
 
-Similarly you can use the service name and version pair to load and run those models
-directly. For example:
+Similarly, the Bento name and version pair can be used to load and run those
+BentoService directly. For example:
 
 .. code-block:: bash
 
@@ -775,20 +806,21 @@ that runs :code:`YataiService`, from BentoML cli command `yatai-service-start`:
                             well as optional keyword arguments for additional
                             configuration
       --repo-base-url TEXT  Base URL for storing saved BentoService bundle files,
-                            this can be a filesystem path(POSIX/Windows), or a S3
+                            this can be a filesystem path(POSIX/Windows), or an S3
                             URL, usually starts with "s3://"
       --grpc-port INTEGER   Port for Yatai server
       --ui-port INTEGER     Port for Yatai web UI
       --ui / --no-ui        Start BentoML YataiService without Web UI
-      -q, --quiet           Hide process logs and errors
-      --verbose, --debug    Show additional details when running command
+      -q, --quiet           Hide all warnings and info logs
+      --verbose, --debug    Show debug logs when running the command
       --help                Show this message and exit.
 
 
-BentoML also provides docker image for running YataiService. For each BentoML release,
-a new image will be pushed to docker hub under :code:`bentoml/yatai-service` with the
-same version ID. You can run the following command and start a YataiService hosting
-your local BentoML repository:
+BentoML provides a pre-built docker image for running YataiService. For each BentoML 
+release, a new image will be pushed to docker hub under :code:`bentoml/yatai-service` 
+with the same image tag as the PyPI package version. For example, use the following 
+command to start a YataiService of BentoML version 0.7.2, loading data from your local
+BentoML repository under the local ``~/bentoml`` directory:
 
 .. code-block:: bash
 
@@ -801,7 +833,7 @@ your local BentoML repository:
 
 
 The recommended way to deploy :code:`YataiService` for teams, is to back it by a
-remote PostgreSQL database and a S3 bucket. For example, deploy the follow docker
+remote PostgreSQL database and an S3 bucket. For example, deploy the following docker
 container to run a YataiService configured with remote database and S3 storage, as well
 as AWS credentials for managing deployments created on AWS: 
 
@@ -824,8 +856,8 @@ as AWS credentials for managing deployments created on AWS:
 
 After deploying the YataiService server, get the server IP address and run the following 
 command to configure BentoML client to use this remote YataiService for model management
-and deployments. You will need to replace :code:`127.0.0.1` with an IP address or URL
-that is accessable for your team:
+and deployments. You will need to replace ``127.0.0.1`` with an IP address or URL
+that is accessible for your team:
 
 .. code-block:: bash
 
@@ -839,10 +871,10 @@ creating model serving deployments.
 .. note::
 
     BentoML's :code:`YataiService` does not provide any kind of authentication. To
-    secure your deployment, we recommend only make the server accessable within your
+    secure your deployment, we recommend only make the server accessible within your
     VPC for you data science team to have access.
 
     BentoML team also provides hosted YataiService for enterprise teams, that has all
-    the security best practices built-in, to bootstrap the end-to-end model mangement 
+    the security best practices built-in, to bootstrap the end-to-end model management 
     and model serving deployment workflow. `Contact us <mailto:contact@bentoml.ai>`_ to
     learn more about our offerings.

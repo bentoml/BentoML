@@ -141,7 +141,7 @@ class ParadeDispatcher:
             * shared_sema: semaphore to limit concurrent tasks
         """
         self.max_wait_time = max_wait_time
-        self.max_size = max_size
+        self.max_size = int(max_size)
         self.shared_sema = shared_sema
         self.callback = None
         self._current_parade = None

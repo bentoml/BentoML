@@ -17,6 +17,12 @@ Prerequisites
 
   * Install instruction: https://docs.docker.com/install
 
+3. Python 3.6 or above and required packages `bentoml` and `scikit-learn`:
+
+  * .. code-block:: bash
+
+        pip install bentoml scikit-learn
+
 ===========================
 Create Google cloud project
 ===========================
@@ -30,18 +36,19 @@ Create Google cloud project
 
 .. code-block:: bash
 
-    > gcloud projects create sentiment-gcloud-run
+    > gcloud projects create irisclassifier-gcloud-run
 
-    Create in progress for [https://cloudresourcemanager.googleapis.com/v1/projects/sentiment-gcloud-run].
-    Waiting for [operations/cp.7580966240072066179] to finish...done.
-    Enabling service [cloudapis.googleapis.com] on project [sentiment-gcloud-run]...
-    Operation "operations/acf.3d6ba408-4f5e-4859-923d-40a491b663a4" finished successfully.
+    # Sample ouput
+    Create in progress for [https://cloudresourcemanager.googleapis.com/v1/projects/irisclassifier-gcloud-run].
+    Waiting for [operations/cp.6403723248945195918] to finish...done.
+    Enabling service [cloudapis.googleapis.com] on project [irisclassifier-gcloud-run]...
+    Operation "operations/acf.15917ed1-662a-484b-b66a-03259041bf43" finished successfully.
 
 
 
 .. code-block:: bash
 
-    > gcloud config set project sentiment-gcloud-run
+    > gcloud config set project irisclassifier-gcloud-run
 
     Updated property [core/project]
 
@@ -50,41 +57,74 @@ Create Google cloud project
 Build and push docker image to GCP repository
 =============================================
 
+This guide uses the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
+
 .. code-block:: bash
 
-    > cd /Users/bozhaoyu/bentoml/repository/SentimentLRModel/20191216231343_AEA027
-    > gcloud builds submit --tag gcr.io/sentiment-gcloud-run/sentiment
+    git clone git@github.com:bentoml/BentoML.git
+    python ./bentoml/guides/quick-start/main.py
 
-    Creating temporary tarball archive of 80 file(s) totalling 8.8 MiB before compression.
-    Uploading tarball of [.] to [gs://sentiment-gcloud-run_cloudbuild/source/1576610370.18-1acde23d92024652b4d6c72df4b6a8e9.tgz]
-    Created [https://cloudbuild.googleapis.com/v1/projects/sentiment-gcloud-run/builds/12df8469-1242-4662-a858-e5f6b8809184].
-    Logs are available at [https://console.cloud.google.com/gcr/builds/12df8469-1242-4662-a858-e5f6b8809184?project=185885650434].
+
+.. code-block:: bash
+
+    > bentoml get IrisClassifier:latest
+
+    # Sample output
+    {
+      "name": "IrisClassifier",
+      "version": "20200121141808_FE78B5",
+      "uri": {
+        "type": "LOCAL",
+        "uri": "/Users/bozhaoyu/bentoml/repository/IrisClassifier/20200121141808_FE78B5"
+      },
+      "bentoServiceMetadata": {
+        "name": "IrisClassifier",
+        "version": "20200121141808_FE78B5",
+        "createdAt": "2020-01-21T22:18:25.079723Z",
+        "env": {
+          "condaEnv": "name: bentoml-IrisClassifier\nchannels:\n- defaults\ndependencies:\n- python=3.7.3\n- pip\n",
+          "pipDependencies": "bentoml==0.5.8\nscikit-learn",
+          "pythonVersion": "3.7.3"
+        },
+        "artifacts": [
+          {
+            "name": "model",
+            "artifactType": "SklearnModelArtifact"
+          }
+        ],
+        "apis": [
+          {
+            "name": "predict",
+            "handlerType": "DataframeHandler",
+            "docs": "BentoService API"
+          }
+        ]
+      }
+    }
+
+
+Use `gcloud` CLI to build the docker image
+
+.. code-block:: bash
+
+    > saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    > cd $saved_path
+    > gcloud builds submit --tag gcr.io/irisclassifier-gcloud-run/iris-classifier
+
+    # Sample output
+    Creating temporary tarball archive of 15 file(s) totalling 15.8 MiB before compression.
+    Uploading tarball of [.] to [gs://irisclassifier-gcloud-run_cloudbuild/source/1587430763.39-03422068242448efbcfc45f2aed218d3.tgz]
+    Created [https://cloudbuild.googleapis.com/v1/projects/irisclassifier-gcloud-run/builds/9c0f3ef4-11c0-4089-9406-1c7fb9c7e8e8].
+    Logs are available at [https://console.cloud.google.com/cloud-build/builds/9c0f3ef4-11c0-4089-9406-1c7fb9c7e8e8?project=349498001835]
     ----------------------------- REMOTE BUILD OUTPUT ------------------------------
-    starting build "12df8469-1242-4662-a858-e5f6b8809184"
-
-    FETCHSOURCE
-    Fetching storage object: gs://sentiment-gcloud-run_cloudbuild/source/1576610370.18-1acde23d92024652b4d6c72df4b6a8e9.tgz#1576610373095149
-    Copying gs://sentiment-gcloud-run_cloudbuild/source/1576610370.18-1acde23d92024652b4d6c72df4b6a8e9.tgz#1576610373095149...
-    / [1 files][  4.8 MiB/  4.8 MiB]
-    Operation completed over 1 objects/4.8 MiB.
-    BUILD
-    Already have image (with digest): gcr.io/cloud-builders/docker
-    Sending build context to Docker daemon   9.28MB
-    Step 1/12 : FROM continuumio/miniconda3:4.7.12
-    4.7.12: Pulling from continuumio/miniconda3
-    b8f262c62ec6: Pulling fs layer
-    0a43c0154f16: Pulling fs layer
     ...
     ...
     ...
-    3ee7190fd43a: Pushed
-    82142827bbb1: Pushed
-    latest: digest: sha256:eacca2a47d914da06c874f56efb84bb35ee08fb0c305850a4952f1bd1c7723cd size: 2225
     DONE
-    --------------------------------------------------------------------------------
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    ID                                    CREATE_TIME                DURATION  SOURCE                                                                                          IMAGES                                           STATUS
-    12df8469-1242-4662-a858-e5f6b8809184  2019-12-17T19:19:33+00:00  4M51S     gs://sentiment-gcloud-run_cloudbuild/source/1576610370.18-1acde23d92024652b4d6c72df4b6a8e9.tgz  gcr.io/sentiment-gcloud-run/sentiment (+1 more)  SUCCESS
+    ID                                    CREATE_TIME                DURATION  SOURCE                                                                                               IMAGES                                                      STATUS
+    9c0f3ef4-11c0-4089-9406-1c7fb9c7e8e8  2020-04-21T00:59:38+00:00  5M22S     gs://irisclassifier-gcloud-run_cloudbuild/source/1587430763.39-03422068242448efbcfc45f2aed218d3.tgz  gcr.io/irisclassifier-gcloud-run/iris-classifier (+1 more)  SUCCESS
 
 
 ====================================
@@ -99,7 +139,6 @@ Deploy the image to Google Cloud Run
 
 .. image:: ../_static/img/gcloud-start.png
     :alt: GCP project creation
-
 
 **Expand Show Optional Revision Settings and change COntainer Port from `8080` to `5000`**
 
@@ -120,12 +159,14 @@ Copy the service URL from the screen
 
 .. code-block:: bash
 
-    > curl -X \
-      POST "https://sentiment-h3wobs6d4a-uc.a.run.app/predict" \
+    > curl -i \
       --header "Content-Type: application/json" \
-      -d '["good movie", "bad food"]'
+      --request POST \
+      -d '[[5.1, 3.5, 1.4, 0.2]]' \
+      https://iris-classifier-7v6yobzlcq-uw.a.run.app/predict
 
-    [4, 0]
+    # Sample output
+    [0]
 
 
 =============================================

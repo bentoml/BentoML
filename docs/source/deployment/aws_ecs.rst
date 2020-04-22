@@ -3,9 +3,10 @@ Deploying to AWS ECS(Elastic Container Service)
 
 
 AWS ECS (elastic container service) is a fully managed container orchestration service.
-With AWS Fargate, a serverless compute engine for containers, ECS provides the benefit of AWS Lambda without sacrificing computing performance.
-It is great for running more advanced ML prediction service that require more computing power compare to AWS Lambda, while still want to take
-advantage of the benefits that AWS Lambda brings.
+With AWS Fargate, a serverless compute engine for containers, ECS provides the benefit
+of AWS Lambda without sacrificing computing performance. It is great for running more
+advanced ML prediction service that require more computing power compare to AWS Lambda,
+while still want to take advantage of the benefits that AWS Lambda brings.
 
 Prerequisites
 -------------
@@ -23,14 +24,23 @@ Prerequisites
 
   * Install instruction: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html
 
+4. Python 3.6 or above with `scikit-learn` and `bentoml` installed
+
+  *  .. code-block:: bash
+
+        pip install bentoml scikit-learn
+
+
+
 
 AWS ECS deployment with BentoML
 -------------------------------------------------
 
-We will walk through from deploying BentoService with ECS, validate result with sample data and removing service and clean up AWS resources.
+This guide will walk through from deploying BentoService with ECS, validate result with
+sample data and removing service and clean up AWS resources.
 
 
-We will use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
+Use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
 
 .. code-block:: bash
 
@@ -76,9 +86,9 @@ We will use the IrisClassifier BentoService from the getting started guide(https
     }
 
 
-===============================================================================================
-Build and push docker image to AWS ECR(elastic container registry)
-===============================================================================================
+==================================================================
+Build and push docker image to AWS ECR(Elastic Container Registry)
+==================================================================
 
 
 Docker login with AWS ECR

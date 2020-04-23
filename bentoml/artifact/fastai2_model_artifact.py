@@ -63,13 +63,13 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
             raise InvalidArgument(
                 "Expect `model` argument to be `fastai2.basics.Learner` instance"
             )
-            
+
         return _Fastai2ModelArtifactWrapper(self, model)
 
     def load(self, path):
         fastai2_module = _import_fastai2_module()
 
-        model = fastai2_module.basics.load_learner(path)
+        model = fastai2_module.basics.load_learner(path + '/' + self._file_name)
         return self.pack(model)
 
     @property

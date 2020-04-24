@@ -18,6 +18,7 @@ import logging
 import multiprocessing
 from functools import partial
 
+import psutil
 import aiohttp
 
 from bentoml import config
@@ -138,10 +139,10 @@ class MarshalService:
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
         self.setup_routes_from_pb(self.bento_service_metadata_pb)
-        try:
+        if psutil.POSIX:
             import resource
             self.CONNECTION_LIMIT = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
-        except ImportError:
+        else:
             self.CONNECTION_LIMIT = 1024
         logger.info(
             "Your system nofile limit is %d, which means each instance of microbatch "

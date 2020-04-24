@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import time
-import resource
 import asyncio
 import logging
 import multiprocessing
@@ -75,7 +74,7 @@ def metrics_patch(cls):
                 labelnames=['endpoint', 'http_response_code'],
             )
 
-        async def request_dispatcher(self, request: aiohttp.web.Request):
+        async def request_dispatcher(self, request):
             func = super(_MarshalService, self).request_dispatcher
             api_name = request.match_info.get("name", "/")
             _metrics_request_in_progress = self.metrics_request_in_progress.labels(
@@ -139,8 +138,11 @@ class MarshalService:
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
         self.setup_routes_from_pb(self.bento_service_metadata_pb)
-
-        self.CONNECTION_LIMIT = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+        try:
+            import resource
+            self.CONNECTION_LIMIT = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+        except ImportError:
+            self.CONNECTION_LIMIT = 1024
         logger.info(
             "Your system nofile limit is %d, which means each instance of microbatch "
             "service is able to hold this number of connections at same time. "
@@ -196,7 +198,7 @@ class MarshalService:
                 resp = await self.relay_handler(request)
         return resp
 
-    async def relay_handler(self, request: aiohttp.web.Request):
+    async def relay_handler(self, request):
         data = await request.read()
         headers = dict(request.headers)
         url = request.url.with_host(self.outbound_host).with_port(self.outbound_port)

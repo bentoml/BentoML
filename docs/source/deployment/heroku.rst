@@ -27,8 +27,8 @@ Prerequsities
 Heroku deployment with BentoML
 ------------------------------
 
-This example will build a BentoService using iris classifier model, and deploy the
-BentoService to Heroku.
+This example builds a BentoService with iris classifier model, and deploy the
+BentoService to Heroku as API server for inferencing.
 
 Use the IrisClassifier BentoService from the getting started guide()
 
@@ -43,7 +43,6 @@ Use the IrisClassifier BentoService from the getting started guide()
     > bentoml get IrisClassifier:latest
 
     # Sample output
-
     {
       "name": "IrisClassifier",
       "version": "20200121141808_FE78B5",

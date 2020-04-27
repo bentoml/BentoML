@@ -2,7 +2,8 @@ Deploying to Heroku
 ===================
 
 Heroku is a popular platform as a service based on managed container system. It provides
-an easy solution to quickly build, run and scale applications.
+an easy solution to quickly build, run and scale applications. BentoML works great with
+Heroku. BentoServices could quickly deploy to Heroku as API model server for production.
 
 
 Prerequsities

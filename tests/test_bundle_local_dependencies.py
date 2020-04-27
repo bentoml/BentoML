@@ -3,28 +3,26 @@ import subprocess
 from sklearn import svm
 from sklearn import datasets
 
-from tests.bento_service_examples.local_dependencies.my_test_bento_service import (
-    IrisClassifier,
-)
+
 from tests.conftest import delete_saved_bento_service
 
 
-def test_bundle_local_dependencies():
+def run_test_with_bento_service_class(bento_service_class):
     clf = svm.SVC(gamma='scale')
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
     clf.fit(X, y)
 
-    # Create a iris classifier service
-    iris_classifier_service = IrisClassifier()
+    # Create a bento service instance
+    bento_service = bento_service_class()
 
     # Pack it with the newly trained model artifact
-    iris_classifier_service.pack('model', clf)
+    bento_service.pack('model', clf)
 
     # Save the prediction service to a BentoService bundle
-    iris_classifier_service.save()
+    bento_service.save()
 
-    bento_name = f"{iris_classifier_service.name}:{iris_classifier_service.version}"
+    bento_name = f"{bento_service.name}:{bento_service.version}"
 
     run_command = [
         "bentoml",
@@ -43,6 +41,20 @@ def test_bundle_local_dependencies():
         output = proc.stdout.read().decode('utf-8')
         assert output == '[0]\n'
 
-    delete_saved_bento_service(
-        iris_classifier_service.name, iris_classifier_service.version
+    delete_saved_bento_service(bento_service.name, bento_service.version)
+
+
+def test_bundle_local_dependencies():
+    from tests.bento_service_examples.local_dependencies.my_test_bento_service import (
+        IrisClassifier,
     )
+
+    run_test_with_bento_service_class(IrisClassifier)
+
+
+def test_bundle_local_dependencies_with_modified_sys_path():
+    from tests.bento_service_examples.bento_service_with_modified_sys_path import (
+        IrisClassifier,
+    )
+
+    run_test_with_bento_service_class(IrisClassifier)

@@ -40,6 +40,7 @@ Manual Deployment Tutorials:
   azure_container_instance
   kubernetes
   knative
+  heroku
 
 
 

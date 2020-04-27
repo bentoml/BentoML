@@ -211,6 +211,7 @@ Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
   - [BentoML Google Cloud Run Deployment](https://docs.bentoml.org/en/latest/deployment/google_cloud_run.html)
   - [BentoML Azure container instance Deployment](https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html)
   - [BentoML Knative Deployment](https://docs.bentoml.org/en/latest/deployment/knative.html)
+  - [BentoML Heroku Deployment](https://docs.bentoml.org/en/latest/deployment/heroku.html)
 
 
 ## Contributing

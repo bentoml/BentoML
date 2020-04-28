@@ -179,7 +179,6 @@ class MarshalService:
                     if "mb_max_batch_size" in handler_config
                     else self._DEFAULT_MAX_BATCH_SIZE
                 )
-                print("=======", max_batch_size)
                 self.add_batch_handler(
                     api_config.name, max_latency, max_batch_size,
                 )

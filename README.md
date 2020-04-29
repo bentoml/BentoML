@@ -157,10 +157,15 @@ test-deploy    dev          aws-lambda  IrisClassifier:20200121114004_360ECB  ru
 ...
 ```
 
-More detailed code and walkthrough can be found in the [BentoML Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html).
 
 ## Documentation
-Full documentation and API references: [https://docs.bentoml.org/](https://docs.bentoml.org/)
+
+BentoML full documentation can be found here: [https://docs.bentoml.org/](https://docs.bentoml.org/)
+
+- Quick Start Guide: [https://docs.bentoml.org/en/latest/quickstart.html](https://docs.bentoml.org/en/latest/quickstart.html)
+- Core Concepts: [https://docs.bentoml.org/en/latest/concepts.html](https://docs.bentoml.org/en/latest/concepts.html)
+- Deployment Guides: https://docs.bentoml.org/en/latest/deployment/index.html
+- API References: [https://docs.bentoml.org/en/latest/api/index.html](https://docs.bentoml.org/en/latest/api/index.html)
 
 
 ## Examples

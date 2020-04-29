@@ -57,6 +57,7 @@ BentoML API model server, building docker image or creating cloud deployment.
 * Credit Default Prediction (Scikit-Learn) [Project Link](https://github.com/jakubczakon/credit-default-prediction/)
 * Sun or Rain Inference (fastai, torchvision, Image Recognition) - [Project Link](https://github.com/BestWillInTheWorld/sun-or-rain-inference)
 * AiSpace - deep learning platform with pre-trained models - [Project Link](https://github.com/yingyuankai/AiSpace)
+* Serving ResNet model with BentoML [Project Link](https://github.com/jjmachan/resnet-bentoml)
 
 
 If you have a project built with BentoML and would like to share with the community, feel free to create a Pull Request and add your project to the list above.

@@ -177,8 +177,13 @@ class MarshalService:
                     if "mb_max_latency" in handler_config
                     else self._DEFAULT_MAX_LATENCY
                 )
+                max_batch_size = (
+                    handler_config["mb_max_batch_size"]
+                    if "mb_max_batch_size" in handler_config
+                    else self._DEFAULT_MAX_BATCH_SIZE
+                )
                 self.add_batch_handler(
-                    api_config.name, max_latency, self._DEFAULT_MAX_BATCH_SIZE
+                    api_config.name, max_latency, max_batch_size,
                 )
                 logger.info("Micro batch enabled for API `%s`", api_config.name)
 

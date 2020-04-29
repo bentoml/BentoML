@@ -15,11 +15,11 @@ BentoML is an open-source platform for __high-performance ML model serving__.
 What does BentoML do?
 
 * Turn your ML model into production API endpoint with just a few lines of code
-* Support all major machine learning training frameworks, including Tensorflow, Keras, PyTorch, XGBoost, scikit-learn, fastai and more
+* Support all major machine learning training frameworks
 * End-to-end model serving solution with DevOps best practices baked in
-* Built-in adaptive micro-batching API server, bringing the performance advantage of batch processing to online model serving
+* Model server with Adaptive micro-batching support, bringing the advantage of batch processing to online serving
 * Model management for teams, providing CLI access and Web UI dashboard
-* Flexible model deployment orchestration with support for Docker, Kubernetes, AWS Lambda, SageMaker, Azure and more
+* Flexible model deployment orchestration with support for Docker, Kubernetes, KFserving, AWS Lambda, SageMaker, Azure and more
 
 
 👉 [Join BentoML Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
@@ -47,6 +47,10 @@ over to a software engineering team.
 BentoML is an end-to-end solution for model serving, making it possible for Data Science
 teams to build production-ready model serving endpoints, with common DevOps best
 practices and performance optimizations baked in.
+
+
+[![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-overview.png)](http://docs.bentoml.org/)
+
 
 👉 Check out [Frequently Asked Questions](https://docs.bentoml.org/en/latest/faq.html)
 

@@ -49,8 +49,7 @@ teams to build production-ready model serving endpoints, with common DevOps best
 practices and performance optimizations baked in.
 
 
-[![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-overview.png)](http://docs.bentoml.org/)
-
+<img src="https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-overview.png" width="600">
 
 👉 Check out [Frequently Asked Questions](https://docs.bentoml.org/en/latest/faq.html)
 

@@ -15,22 +15,51 @@ BentoML Documenation
 
 `BentoML <https://github.com/bentoml/BentoML>`_
 is an open-source platform for **high-performance machine learning model serving**.
+It makes it easy to build production API endpoint for your ML model and supports all 
+major machine learning frameworks, including Tensorflow, Keras, PyTorch, XGBoost, 
+scikit-learn, fastai and more.
+
+BentoML comes with a high-performance API model server with adaptive micro-batching 
+support, bringing the advantage of batch processing to online serving workloads. It also
+provides batch serving, model management and model deployment functionality, which gives
+ML teams an end-to-end model serving solution, with DevOps best practices baked in.
+
+
+💻 Get started with BentoML: :ref:`Quickstart Guide <getting-started-page>`.
+
+👩‍💻 Star/Watch/Fork the `BentoML Github Repository <https://github.com/bentoml/BentoML>`_.
+
+👉 Join the `BentoML Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_ to hear about the latest development updates.
+
 
 What does BentoML do?
+---------------------
+
+TLDR:
 
 * Turn your ML model into production API endpoint with just a few lines of code
 * Support all major machine learning training frameworks
-* High-performance API serving system with adaptive micro-batching support
-* DevOps best practices baked in, simplify the transition from model development to production
-* Model management for teams, providing CLI and Web UI dashboard
-* Flexible model deployment orchestration with support for AWS Lambda, SageMaker, EC2, Docker, Kubernetes, KNative and more
+* End-to-end model serving solution with DevOps best practices baked in
+* Model server with Adaptive micro-batching support, bringing the advantage of batch processing to online serving
+* Model management for teams, providing CLI access and Web UI dashboard
+* Flexible model deployment orchestration with support for Docker, Kubernetes, KFserving, AWS Lambda, SageMaker, Azure and more
 
 
-💻 Learn more about model serving with BentoML: :ref:`Quickstart Guide <getting-started-page>`.
+Why BentoML
+-----------
 
-👩‍💻 Check out `BentoML Source Code on Github <https://github.com/bentoml/BentoML>`_.
+Getting Machine Learning models into production is hard. Data Scientists are not experts
+in building production services and DevOps best practices. The trained models produced
+by a Data Science team are hard to test and hard to deploy. This often leads us to a 
+time consuming and error-prone workflow, where a pickled model or weights file is handed
+over to a software engineering team.
 
-👉 Join `BentoML Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_ to hear about the latest development updates.
+BentoML is an end-to-end solution for model serving, making it possible for Data Science
+teams to build production-ready model serving endpoints, with common DevOps best
+practices and performance optimizations baked in.
+
+.. image:: _static/img/bentoml-overview.png
+    :alt: BentoML Overview
 
 
 ___________
@@ -45,3 +74,4 @@ ___________
    deployment/index
    api/index
    cli
+   faq

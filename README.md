@@ -36,6 +36,20 @@ What does BentoML do?
 - [Blog](https://medium.com/bentoml)
 
 
+## Why BentoML
+
+Getting Machine Learning models into production is hard. Data Scientists are not experts
+in building production services and DevOps best practices. The trained models produced
+by a Data Science team are hard to test and hard to deploy. This often leads us to a 
+time consuming and error-prone workflow, where a pickled model or weights file is handed
+over to a software engineering team.
+
+BentoML is an end-to-end solution for model serving, making it possible for Data Science
+teams to build production-ready model serving endpoints, with common DevOps best
+practices and performance optimizations baked in.
+
+👉 Check out [Frequently Asked Questions](https://docs.bentoml.org/en/latest/faq.html)
+
 ## Getting Started
 
 Installing BentoML with `pip`:

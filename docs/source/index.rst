@@ -44,3 +44,4 @@ ___________
    deployment/index
    api/index
    cli
+   faq

@@ -18,11 +18,12 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     ).decode('utf-8')
 
     assert "Processing {}".format(bento_bundle_path) in stdout
-    assert "Building wheels for collected packages: ExampleBentoService" in stdout
+    assert "Collecting bentoml=={}".format(get_bentoml_deploy_version()) in stdout
     assert "Successfully built ExampleBentoService" in stdout
 
-    assert os.path.isfile(os.path.join(install_path, "bin/ExampleBentoService"))
-    assert os.path.isdir(os.path.join(install_path, "ExampleBentoService"))
+    # ensure BentoML is installed as dependency
+    assert os.path.isfile(os.path.join(install_path, "bin/bentoml"))
+    assert os.path.isdir(os.path.join(install_path, "bentoml"))
 
     sys.path.insert(0, install_path)
     ExampleBentoService = __import__("ExampleBentoService")

@@ -35,7 +35,14 @@ except ImportError:
 
 try:
     raw = parse_requirements('requirements.txt', session=PipSession())
-    install_reqs =  [str(i.req) for i in raw]
+    
+    # pip >= 20.1 changed ParsedRequirement attribute from `req` to `requirement`
+    install_reqs = []
+    for i in raw:
+        try:
+            install_reqs.append(str(i.requirement))
+        except AttributeError:
+            install_reqs.append(str(i.req))
 except Exception:
     install_reqs = []
 

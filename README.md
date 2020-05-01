@@ -9,7 +9,7 @@
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
 
 
-BentoML is an open-source platform for __high-performance ML model serving__. 
+BentoML is an open-source platform for __high-performance ML model serving__.
 
 
 What does BentoML do?
@@ -40,7 +40,7 @@ What does BentoML do?
 
 Getting Machine Learning models into production is hard. Data Scientists are not experts
 in building production services and DevOps best practices. The trained models produced
-by a Data Science team are hard to test and hard to deploy. This often leads us to a 
+by a Data Science team are hard to test and hard to deploy. This often leads us to a
 time consuming and error-prone workflow, where a pickled model or weights file is handed
 over to a software engineering team.
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     # Load training data
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
-    
+
     # Model Training
     clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
@@ -113,11 +113,11 @@ if __name__ == "__main__":
 You've just created a BentoService SavedBundle, it's a versioned file archive that is
 ready for production deployment. It contains the BentoService class you defined, all its
 python code dependencies and PyPI dependencies, and the trained scikit-learn model. By
-default, BentoML saves those files and related metadata under `~/bentoml` directory, but 
+default, BentoML saves those files and related metadata under `~/bentoml` directory, but
 this is easily customizable to a different directory or cloud storage like
 [Amazon S3](https://aws.amazon.com/s3/).
 
-You can now start a REST API server by specifying the BentoService's name and version, 
+You can now start a REST API server by specifying the BentoService's name and version,
 or provide the file path to the saved bundle:
 
 ```bash
@@ -231,12 +231,17 @@ Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
   - [BentoML AWS Lambda Deployment Guide](https://docs.bentoml.org/en/latest/deployment/aws_lambda.html)
   - [BentoML AWS SageMaker Deployment Guide](https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html)
 
-* Deployment guides
+* Deployment guides for open-source platforms:
+  - [BentoML Kubernetes Deployment](https://docs.bentoml.org/en/latest/deployment/kubernetes.html)
   - [BentoML Clipper.ai Deployment Guide](https://docs.bentoml.org/en/latest/deployment/clipper.html)
+  - [BentoML Knative Deployment](https://docs.bentoml.org/en/latest/deployment/knative.html)
+  - [BentoML Kubeflow Deployment](https://docs.bentoml.org/en/latest/deployment/kubeflow.html)
+  - [BentoML KFServing Deployment](https://docs.bentoml.org/en/latest/deployment/kfserving.html)
+
+* Deployment guides for Cloud service providers:
   - [BentoML AWS ECS Deployment](https://docs.bentoml.org/en/latest/deployment/aws_ecs.html)
   - [BentoML Google Cloud Run Deployment](https://docs.bentoml.org/en/latest/deployment/google_cloud_run.html)
   - [BentoML Azure container instance Deployment](https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html)
-  - [BentoML Knative Deployment](https://docs.bentoml.org/en/latest/deployment/knative.html)
   - [BentoML Heroku Deployment](https://docs.bentoml.org/en/latest/deployment/heroku.html)
 
 

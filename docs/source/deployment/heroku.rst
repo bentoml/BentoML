@@ -9,15 +9,15 @@ Heroku. BentoServices could quickly deploy to Heroku as API model server for pro
 Prerequsities
 -------------
 
-1. An active Heroku account and Heroku CLI tool installed in your system.
+* An active Heroku account and Heroku CLI tool installed in your system.
 
     * Install instruction: https://devcenter.heroku.com/articles/heroku-cli
 
-2. Docker is installed and running on your system
+* Docker is installed and running on your system
 
     * Install instruction: https://docs.docker.com/install
 
-3. Python 3.6 or above and required packages `bentoml` and `scikit-learn`:
+* Python 3.6 or above and required packages `bentoml` and `scikit-learn`:
 
     * .. code-block:: bash
 
@@ -31,7 +31,7 @@ Heroku deployment with BentoML
 This example builds a BentoService with iris classifier model, and deploy the
 BentoService to Heroku as API server for inferencing.
 
-Use the IrisClassifier BentoService from the getting started guide()
+Use the IrisClassifier BentoService from the quick start guide (TODO need link).
 
 .. code-block:: bash
 

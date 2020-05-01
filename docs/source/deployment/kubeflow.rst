@@ -1,46 +1,40 @@
-Deploying to Kubernetes Cluster
-===============================
-
-This guide demostrates how to deploy a model server built with BentoML to Kubernetes cluster.
-
-Kubernetes is an open-source system for automating deployment, scaling, and management of
-containerized applications. It is the de-facto solution for deploying applications today.
-Machine larning services also can take advantage of Kubernetes' ability to quickly deploy
-and scale base on demand.
+Deploying to Kubeflow
+=====================
 
 
-Prerequsities
--------------
+This guide demostrates how to deploy a BentoService to Kubernetes cluster with Kubeflow
+installed.
+
+Kubeflow is the machine learning toolkit for Kubernetes. It makes producing ML services
+as simple as possible from data preparation to service management.
+
+
+==============
+Prerequisities
+==============
 
 Before starting this guide, make sure you have the following:
 
-* A kubernetes installed cluster. `minikube` is used in this guide.
+* a Kubernetes cluster and kubectl installed on your local machine.
 
-    * Kubernetes guide: https://kubernetes.io/docs/setup/
+  * kubectl install instruction: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 
-    * `minikube` install instruction: https://kubernetes.io/docs/tasks/tools/install-minikube/
+* Docker and Docker Hub installed and configured in your local machine.
 
-* `kubectl` CLI tool
+  * Docker install instruction: https://docs.docker.com/get-docker/
 
-    * install instruction: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+* Python 3.6 or above and required PyPi packages: `bentoml` and `scikit-learn`
 
-* Docker and Docker Hus is properly configured on your system
+  * .. code-block:: bash
 
-    * Install instruction: https://docs.docker.com/install
-
-* Python 3.6 or above and required packages: `bentoml` and `scikit-learn`
-
-    * .. code-block:: bash
-
-            pip install bentoml scikit-learn
+          pip install bentoml scikit-learn
 
 
+Kubeflow deployment with BentoML
+--------------------------------
 
-Kubernetes deployment with BentoML
-----------------------------------
-
-This guide builds a BentoService with iris classifier model, and deploys the
-BentoService to Kubernetes as API model server.
+This guide builds a BentoService with iris classifier mode, and deploy BentoService to
+Kubeflow enabled Kubernetes cluster as API model server.
 
 
 Use the IrisClassifier BentoService from the quick start guide.
@@ -53,11 +47,13 @@ Use the IrisClassifier BentoService from the quick start guide.
 
 Use BentoML CLI tool to get the information of IrisClassifier created above
 
-.. code-block:: bash
+..code-block:: bash
 
     bentoml get IrisClassifier:latest
 
+
     # Sample output
+
     {
       "name": "IrisClassifier",
       "version": "20200121141808_FE78B5",
@@ -90,9 +86,10 @@ Use BentoML CLI tool to get the information of IrisClassifier created above
       }
     }
 
-=================================
-Deploy BentoService to Kubernetes
-=================================
+
+===============================
+Deploy BentoService to Kubeflow
+===============================
 
 BentoML provides a convenient way of containerizing the model API server with Docker. To
 create a docker container image for the sample model above:
@@ -126,6 +123,7 @@ your Docker Hub username and save it to iris-classifier.yaml
         labels:
             app: iris-classifier
         name: iris-classifier
+        namespace: kubeflow
     spec:
         ports:
         - name: predict
@@ -141,6 +139,7 @@ your Docker Hub username and save it to iris-classifier.yaml
         labels:
             app: iris-classifier
         name: iris-classifier
+        namespace: kubeflow
     spec:
         selector:
             matchLabels:
@@ -158,7 +157,7 @@ your Docker Hub username and save it to iris-classifier.yaml
                   - containerPort: 5000
 
 
-Use `kubectl` CLI to deploy model server to Kubernetes cluster.
+Use `kubectl` CLI to deploy model server to the cluster.
 
 .. code-block:: bash
 
@@ -179,6 +178,7 @@ Make prediction with `curl`:
 ============================================
 Monitor model server metrics with Prometheus
 ============================================
+
 
 Setup:
 
@@ -206,6 +206,7 @@ replace `{docker_username}` with your Docker Hub username:
       labels:
         app: pet-classifier
       name: pet-classifier
+      namespace: kubeflow
     spec:
       selector:
         matchLabels:

@@ -40,6 +40,8 @@ Manual Deployment Tutorials:
   azure_container_instance
   kubernetes
   knative
+  kubeflow
+  kfserving
   heroku
 
 

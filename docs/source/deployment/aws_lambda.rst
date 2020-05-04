@@ -4,7 +4,7 @@ Deploying to AWS Lambda
 
 AWS Lambda is a great service for quickly deploy service to the cloud for immediate
 access. It's ability to auto scale resources base on usage make it attractive to
-user who want to save cost and want to scale base on usage without adminstrative overhead.
+user who want to save cost and want to scale base on usage without administrative overhead.
 
 
 
@@ -28,7 +28,7 @@ Prerequisites
 AWS Lambda deployment and management with BentoML
 -------------------------------------------------
 
-We will use the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`:
+This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`:
 
 .. code-block:: bash
 
@@ -50,7 +50,7 @@ BentoML has great support for AWS Lambda. You can deploy, update and delete Lamb
 deployment with single command, and customize deployment to fit your needs with parameters
 such as `memory_size` and `timeout`
 
-To deloy BentoService to AWS Lambda, we will use `bentoml lambda deploy` command.
+To deloy BentoService to AWS Lambda, use `bentoml lambda deploy` command.
 Deployment name and bento service name:version tag is required.
 
 .. code-block:: bash
@@ -91,7 +91,7 @@ Deployment name and bento service name:version tag is required.
 
 
 BentoML helps you manage the entire process of deploying your BentoService bundle to Lambda.
-We can verify the deployed resources with AWS CLI tool.
+Verify the deployed resources with AWS CLI tool:
 
 .. code-block:: bash
 
@@ -132,7 +132,7 @@ We can verify the deployed resources with AWS CLI tool.
         ]
     }
 
-Now, let's test the deployed service with sample dataset to make sure our endpoint is running and returning the correct prediction result
+Tests the deployed service with sample dataset:
 
 .. code-block:: bash
 
@@ -157,7 +157,7 @@ Now, let's test the deployed service with sample dataset to make sure our endpoi
 
     [0]%
 
-We can get the latest state and deployment information such as endpoint and s3 bucket name by
+Get the latest state and deployment information such as endpoint and s3 bucket name by
 using `bentoml lambda get` command
 
 .. code-block:: bash

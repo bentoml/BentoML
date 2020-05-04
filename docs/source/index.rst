@@ -22,14 +22,15 @@ scikit-learn, fastai and more.
 BentoML comes with a high-performance API model server with adaptive micro-batching 
 support, bringing the advantage of batch processing to online serving workloads. It also
 provides batch serving, model management and model deployment functionality, which gives
-ML teams an end-to-end model serving solution, with DevOps best practices baked in.
+ML teams an end-to-end model serving solution with baked-in DevOps best practices.
 
 
 💻 Get started with BentoML: :ref:`Quickstart Guide <getting-started-page>`.
 
 👩‍💻 Star/Watch/Fork the `BentoML Github Repository <https://github.com/bentoml/BentoML>`_.
 
-👉 Join the `BentoML Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_ to hear about the latest development updates.
+👉 Join the `BentoML Slack <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_
+to follow the latest development updates and roadmap discussions.
 
 
 What does BentoML do?
@@ -37,12 +38,12 @@ What does BentoML do?
 
 TLDR:
 
-* Turn your ML model into production API endpoint with just a few lines of code
+* Turn trained ML model into production API endpoint with a few lines of code
 * Support all major machine learning training frameworks
-* End-to-end model serving solution with DevOps best practices baked in
-* Model server with Adaptive micro-batching support, bringing the advantage of batch processing to online serving
+* End-to-end model serving solution with DevOps best practices baked-in
+* Micro-batching support, bringing the advantage of batch processing to online serving
 * Model management for teams, providing CLI access and Web UI dashboard
-* Flexible model deployment orchestration with support for Docker, Kubernetes, KFserving, AWS Lambda, SageMaker, Azure and more
+* Flexible model deployment orchestration supporting Docker, Kubernetes, AWS Lambda, SageMaker, Azure ML and more
 
 
 Why BentoML

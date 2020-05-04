@@ -9,15 +9,15 @@ abstracts away infrastructure management, so you can focus on building service.
 Prerequisites
 -------------
 
-1. Google cloud CLI tool
+* Google cloud CLI tool
 
   * Install instruction: https://cloud.googl.com/sdk/install
 
-2. Docker is installed and running on the machine.
+* Docker is installed and running on the machine.
 
   * Install instruction: https://docs.docker.com/install
 
-3. Python 3.6 or above and required packages `bentoml` and `scikit-learn`:
+* Python 3.6 or above and required packages `bentoml` and `scikit-learn`:
 
   * .. code-block:: bash
 
@@ -57,7 +57,7 @@ Create Google cloud project
 Build and push docker image to GCP repository
 =============================================
 
-This guide uses the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
+This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`:
 
 .. code-block:: bash
 

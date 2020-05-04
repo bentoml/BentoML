@@ -9,12 +9,12 @@ users can enjoy the great system performance from Sagemaker with any popular ML 
 Prerequisits
 ------------
 
-1. An active AWS account configured on the machine with AWS CLI installed and configurated
+* An active AWS account configured on the machine with AWS CLI installed and configurated
 
   * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
   * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 
-2. Docker is installed and running on the machine.
+* Docker is installed and running on the machine.
 
   * Install instruction: https://docs.docker.com/install
 
@@ -23,7 +23,7 @@ Prerequisits
 AWS Sagemaker deployment and management with BentoML
 ----------------------------------------------------
 
-We will use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
+We will use the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`:
 
 .. code-block:: bash
 

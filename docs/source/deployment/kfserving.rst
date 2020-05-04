@@ -171,7 +171,10 @@ KFServing as part of Kubeflow install, and not independently.*
       --data '[[5.1, 3.5, 1.4, 0.2]]' \
       http://$CLUSTER_IP/model/predict
 
-### Delete deployment
+
+=================
+Delete deployment
+=================
 
 .. code-block:: bash
 

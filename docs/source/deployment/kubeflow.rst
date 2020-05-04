@@ -37,7 +37,7 @@ This guide builds a BentoService with iris classifier mode, and deploy BentoServ
 Kubeflow enabled Kubernetes cluster as API model server.
 
 
-Use the IrisClassifier BentoService from the quick start guide.
+Use the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
 
 .. code-block:: bash
 
@@ -47,13 +47,12 @@ Use the IrisClassifier BentoService from the quick start guide.
 
 Use BentoML CLI tool to get the information of IrisClassifier created above
 
-..code-block:: bash
+.. code-block:: bash
 
     bentoml get IrisClassifier:latest
 
 
     # Sample output
-
     {
       "name": "IrisClassifier",
       "version": "20200121141808_FE78B5",

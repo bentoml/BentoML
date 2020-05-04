@@ -9,15 +9,15 @@ infrastructure management and without worry about vendor lock.
 Prerequisites
 -------------
 
-1. kubernetes cluster version 1.15 or newer.
+* kubernetes cluster version 1.15 or newer.
 
-2. Knative with istio as network layer
+* Knative with istio as network layer
 
     * Knative install instruction: https://knative.dev/docs/install/any-kubernetes-cluster/
 
     * Install istio for knative: https://knative.dev/docs/install/installing-istio/
 
-3. Saved BentoService bundle
+* Saved BentoService bundle
 
     * for this guide, we are using the IrisClassifier that was created in the
       quick start guide: https://docs.bentoml.org/en/latest/quickstart.html
@@ -34,7 +34,8 @@ Build and push docker image
 ===========================
 
 First, we need to build and push our BentoService to a docker registry.
-We will use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
+We will use the IrisClassifier BentoService from the getting
+:doc:`Quick start guide<../quickstart>`.
 
 .. code-block:: bash
 

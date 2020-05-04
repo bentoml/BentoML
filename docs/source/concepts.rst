@@ -585,7 +585,7 @@ image built above:
 Adaptive Micro-Batching
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Micro batching is a technique where incoming prediction requests are grouped into samll 
+Micro batching is a technique where incoming prediction requests are grouped into small
 batches to achieve the performance advantage of batch processing in model inferencing
 tasks. BentoML implemented such a micro batching layer that is inspired by the paper
 `Clipper: A Low-Latency Online Prediction Serving System 

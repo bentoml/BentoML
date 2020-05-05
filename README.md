@@ -5,20 +5,22 @@
 [![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
 [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
-> From ML model to production API endpoint with a few lines of code
 
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
 
+
 BentoML is an open-source platform for __high-performance ML model serving__.
+
 
 What does BentoML do?
 
 * Turn your ML model into production API endpoint with just a few lines of code
 * Support all major machine learning training frameworks
-* High performance API serving system with adaptive micro-batching support
-* DevOps best practices baked in, simplify the transition from model development to production
-* Model management for teams, providing CLI and Web UI dashboard
-* Flexible model deployment orchestration with support for AWS Lambda, SageMaker, EC2, Docker, Kubernetes, KNative and more
+* End-to-end model serving solution with DevOps best practices baked in
+* Model server with Adaptive micro-batching support, bringing the advantage of batch processing to online serving
+* Model management for teams, providing CLI access and Web UI dashboard
+* Flexible model deployment orchestration with support for Docker, Kubernetes, KFserving, AWS Lambda, SageMaker, Azure and more
+
 
 👉 [Join BentoML Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
  to hear about the latest development updates.
@@ -33,6 +35,23 @@ What does BentoML do?
 - [License](https://github.com/bentoml/BentoML/blob/master/LICENSE)
 - [Blog](https://medium.com/bentoml)
 
+
+## Why BentoML
+
+Getting Machine Learning models into production is hard. Data Scientists are not experts
+in building production services and DevOps best practices. The trained models produced
+by a Data Science team are hard to test and hard to deploy. This often leads us to a
+time consuming and error-prone workflow, where a pickled model or weights file is handed
+over to a software engineering team.
+
+BentoML is an end-to-end solution for model serving, making it possible for Data Science
+teams to build production-ready model serving endpoints, with common DevOps best
+practices and performance optimizations baked in.
+
+
+<img src="https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-overview.png" width="600">
+
+👉 Check out [Frequently Asked Questions](https://docs.bentoml.org/en/latest/faq.html)
 
 ## Getting Started
 
@@ -76,7 +95,7 @@ if __name__ == "__main__":
     # Load training data
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
-    
+
     # Model Training
     clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
@@ -94,11 +113,11 @@ if __name__ == "__main__":
 You've just created a BentoService SavedBundle, it's a versioned file archive that is
 ready for production deployment. It contains the BentoService class you defined, all its
 python code dependencies and PyPI dependencies, and the trained scikit-learn model. By
-default, BentoML saves those files and related metadata under `~/bentoml` directory, but 
+default, BentoML saves those files and related metadata under `~/bentoml` directory, but
 this is easily customizable to a different directory or cloud storage like
 [Amazon S3](https://aws.amazon.com/s3/).
 
-You can now start a REST API server by specifying the BentoService's name and version, 
+You can now start a REST API server by specifying the BentoService's name and version,
 or provide the file path to the saved bundle:
 
 ```bash
@@ -155,10 +174,15 @@ test-deploy    dev          aws-lambda  IrisClassifier:20200121114004_360ECB  ru
 ...
 ```
 
-More detailed code and walkthrough can be found in the [BentoML Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html).
 
 ## Documentation
-Full documentation and API references: [https://docs.bentoml.org/](https://docs.bentoml.org/)
+
+BentoML full documentation can be found here: [https://docs.bentoml.org/](https://docs.bentoml.org/)
+
+- Quick Start Guide: [https://docs.bentoml.org/en/latest/quickstart.html](https://docs.bentoml.org/en/latest/quickstart.html)
+- Core Concepts: [https://docs.bentoml.org/en/latest/concepts.html](https://docs.bentoml.org/en/latest/concepts.html)
+- Deployment Guides: https://docs.bentoml.org/en/latest/deployment/index.html
+- API References: [https://docs.bentoml.org/en/latest/api/index.html](https://docs.bentoml.org/en/latest/api/index.html)
 
 
 ## Examples
@@ -184,9 +208,11 @@ Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
 * Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb)
 * Toxic Comment Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb)
 
+
 #### Tensorflow 2.0
 * tf.Function model - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb)
 * Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb)
+* Movie Review Sentiment with BERT - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb)
 
 
 #### XGBoost
@@ -205,12 +231,18 @@ Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
   - [BentoML AWS Lambda Deployment Guide](https://docs.bentoml.org/en/latest/deployment/aws_lambda.html)
   - [BentoML AWS SageMaker Deployment Guide](https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html)
 
-* Deployment guides
+* Deployment guides for open-source platforms:
+  - [BentoML Kubernetes Deployment](https://docs.bentoml.org/en/latest/deployment/kubernetes.html)
   - [BentoML Clipper.ai Deployment Guide](https://docs.bentoml.org/en/latest/deployment/clipper.html)
+  - [BentoML Knative Deployment](https://docs.bentoml.org/en/latest/deployment/knative.html)
+  - [BentoML Kubeflow Deployment](https://docs.bentoml.org/en/latest/deployment/kubeflow.html)
+  - [BentoML KFServing Deployment](https://docs.bentoml.org/en/latest/deployment/kfserving.html)
+
+* Deployment guides for Cloud service providers:
   - [BentoML AWS ECS Deployment](https://docs.bentoml.org/en/latest/deployment/aws_ecs.html)
   - [BentoML Google Cloud Run Deployment](https://docs.bentoml.org/en/latest/deployment/google_cloud_run.html)
   - [BentoML Azure container instance Deployment](https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html)
-  - [BentoML Knative Deployment](https://docs.bentoml.org/en/latest/deployment/knative.html)
+  - [BentoML Heroku Deployment](https://docs.bentoml.org/en/latest/deployment/heroku.html)
 
 
 ## Contributing

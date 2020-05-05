@@ -50,6 +50,7 @@ class BentoHandler:
         '''
         base_configs:
             - mb_max_latency
+            - mb_max_batch_size
             - is_batch_input
         '''
         self._config = base_config

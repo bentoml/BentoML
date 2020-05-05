@@ -109,11 +109,10 @@ BentoML CLI Listing recent Bento:
 
 BentoML model management web UI:
 
-.. image:: ../_static/img/yatai-service-web-ui-repository.png
+.. image:: _static/img/yatai-service-web-ui-repository.png
     :alt: BentoML YataiService Bento Repository Page
 
-
-.. image:: ../_static/img/yatai-service-web-ui-repository-detail.png
+.. image:: _static/img/yatai-service-web-ui-repository-detail.png
     :alt: BentoML YataiService Bento Details Page
 
 Creating BentoService
@@ -586,7 +585,7 @@ image built above:
 Adaptive Micro-Batching
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Micro batching is a technique where incoming prediction requests are grouped into samll 
+Micro batching is a technique where incoming prediction requests are grouped into small
 batches to achieve the performance advantage of batch processing in model inferencing
 tasks. BentoML implemented such a micro batching layer that is inspired by the paper
 `Clipper: A Low-Latency Online Prediction Serving System 

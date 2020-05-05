@@ -33,6 +33,7 @@ BentoML API model server, building docker image or creating cloud deployment.
 #### Tensorflow 2.0
 * tf.Function model - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb)
 * Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb)
+* Movie Review Sentiment with BERT - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb)
 
 
 #### XGBoost
@@ -57,6 +58,7 @@ BentoML API model server, building docker image or creating cloud deployment.
 * Credit Default Prediction (Scikit-Learn) [Project Link](https://github.com/jakubczakon/credit-default-prediction/)
 * Sun or Rain Inference (fastai, torchvision, Image Recognition) - [Project Link](https://github.com/BestWillInTheWorld/sun-or-rain-inference)
 * AiSpace - deep learning platform with pre-trained models - [Project Link](https://github.com/yingyuankai/AiSpace)
+* Serving ResNet model with BentoML [Project Link](https://github.com/jjmachan/resnet-bentoml)
 
 
 If you have a project built with BentoML and would like to share with the community, feel free to create a Pull Request and add your project to the list above.

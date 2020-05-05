@@ -11,20 +11,20 @@ while still want to take advantage of the benefits that AWS Lambda brings.
 Prerequisites
 -------------
 
-1. An active AWS account configured on the machine with AWS CLI installed and configurated
+* An active AWS account configured on the machine with AWS CLI installed and configurated
 
   * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
   * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 
-2. Docker is installed and running on the machine.
+* Docker is installed and running on the machine.
 
   * Install instruction: https://docs.docker.com/install
 
-3. AWS ECS CLI tool
+* AWS ECS CLI tool
 
   * Install instruction: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html
 
-4. Python 3.6 or above with `scikit-learn` and `bentoml` installed
+* Python 3.6 or above with `scikit-learn` and `bentoml` installed
 
   *  .. code-block:: bash
 
@@ -40,7 +40,7 @@ This guide will walk through from deploying BentoService with ECS, validate resu
 sample data and removing service and clean up AWS resources.
 
 
-Use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
+Use the IrisClassifier BentoService from the :doc:`Quick start guide<../quickstart>`:
 
 .. code-block:: bash
 

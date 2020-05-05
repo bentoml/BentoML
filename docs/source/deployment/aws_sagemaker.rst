@@ -9,12 +9,12 @@ users can enjoy the great system performance from Sagemaker with any popular ML 
 Prerequisits
 ------------
 
-1. An active AWS account configured on the machine with AWS CLI installed and configurated
+* An active AWS account configured on the machine with AWS CLI installed and configurated
 
   * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
   * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 
-2. Docker is installed and running on the machine.
+* Docker is installed and running on the machine.
 
   * Install instruction: https://docs.docker.com/install
 
@@ -23,7 +23,7 @@ Prerequisits
 AWS Sagemaker deployment and management with BentoML
 ----------------------------------------------------
 
-We will use the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
+This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`:
 
 .. code-block:: bash
 
@@ -115,7 +115,7 @@ BentoService bundle. We apply those values to  `bentoml sagemaker deploy`.
     }
 
 
-After we deploy to Sagemaker, we can use `bentoml sagemaker get` to return and display the latest status
+After deploy to Sagemaker, use `bentoml sagemaker get` to return and display the latest status
 and other information about the deployment
 
 .. code-block:: bash
@@ -180,7 +180,7 @@ and other information about the deployment
     }
 
 
-Using AWS CLI, we can verify that the BentoService is properly deployed to Sagemaker and is ready to inference
+Use AWS CLI to verify that the BentoService is properly deployed to Sagemaker and is ready to inference
 
 .. code-block:: bash
 
@@ -212,7 +212,7 @@ Using AWS CLI, we can verify that the BentoService is properly deployed to Sagem
     }
 
 
-We will use the same sample data to verify the predict result from the Sagemaker deployment
+Use the sample data to verify the predict result from the Sagemaker deployment
 
 .. code-block:: bash
 

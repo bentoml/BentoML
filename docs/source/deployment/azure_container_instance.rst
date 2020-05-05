@@ -10,15 +10,15 @@ computing resources.
 Prerequisites
 -------------
 
-1. Azure CLI tool
+* Azure CLI tool
 
   * install instruction: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
 
-2. Docker is installed and running on your machine.
+* Docker is installed and running on your machine.
 
   * Install instruction: https://docs.docker.com/install
 
-3. Python 3.6 or above and required packages: `bentoml` and `scikit-learn`:
+* Python 3.6 or above and required packages: `bentoml` and `scikit-learn`:
 
   * .. code-block:: bash
 
@@ -28,7 +28,7 @@ Prerequisites
 Deploying BentoService to Azure Container Instance
 --------------------------------------------------
 
-This guide uses the IrisClassifier BentoService from the getting started guide(https://docs.bentoml.org/en/latest/quickstart.html):
+This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`:
 
 .. code-block:: bash
 

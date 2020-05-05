@@ -46,14 +46,16 @@ BentoML is an end-to-end solution for model serving, making it possible for Data
 teams to build production-ready model serving endpoints, with common DevOps best
 practices and performance optimizations baked in.
 
+Check out [Frequently Asked Questions](https://docs.bentoml.org/en/latest/faq.html) page
+on how does BentoML compares to Tensorflow-serving, Clipper, AWS SageMaker, MLFlow, etc.
 
 <img src="https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-overview.png" width="600">
 
-👉 Check out [Frequently Asked Questions](https://docs.bentoml.org/en/latest/faq.html)
 
 ## Getting Started
 
-Installing BentoML with `pip`:
+Before starting, make sure Python version is 3.6 or above , and install BentoML with 
+`pip`:
 ```bash
 pip install bentoml
 ```
@@ -61,6 +63,7 @@ pip install bentoml
 A minimal prediction service in BentoML looks something like this:
 
 ```python
+# https://github.com/bentoml/BentoML/blob/master/guides/quick-start/iris_classifier.py
 from bentoml import env, artifacts, api, BentoService
 from bentoml.handlers import DataframeHandler
 from bentoml.artifact import SklearnModelArtifact
@@ -71,19 +74,22 @@ class IrisClassifier(BentoService):
 
     @api(DataframeHandler)
     def predict(self, df):
+        # Optional pre-processing, post-processing code goes here
         return self.artifacts.model.predict(df)
 ```
 
-This code defines a prediction service that requires a scikit-learn model, and asks
-BentoML to figure out the required PyPI pip packages automatically. It also defined
-an API, which is the entry point for accessing this prediction service. And the API is
-expecting a `pandas.DataFrame` object as its input data.
+This code defines a prediction service that bundles a scikit-learn model and provides an
+ API. The API here is the entry point for accessing this prediction service, and this 
+ API with `DataframeHandler` converts HTTP JSON request into `pandas.DataFrame` object
+ before passing it to the user-defined API function.
 
-Now you are ready to train a model and serve the model with the `IrisClassifier` service
-defined above. Save the above code to a new file `iris_classifier.py` and run the
-following code:
+The following code trains a scikit-learn model and bundles the trained model with an
+`IrisClassifier` instance. The `IrisClassifier` instance is then saved to disk in the
+BentoML SavedBundle format, which is a versioned file archive that is ready for 
+production models serving deployment.
 
 ```python
+# https://github.com/bentoml/BentoML/blob/master/guides/quick-start/main.py
 from sklearn import svm
 from sklearn import datasets
 
@@ -108,31 +114,19 @@ if __name__ == "__main__":
     saved_path = iris_classifier_service.save()
 ```
 
-You've just created a BentoService SavedBundle, it's a versioned file archive that is
-ready for production deployment. It contains the BentoService class you defined, all its
-python code dependencies and PyPI dependencies, and the trained scikit-learn model. By
-default, BentoML saves those files and related metadata under `~/bentoml` directory, but
-this is easily customizable to a different directory or cloud storage like
+By default, the BentoML SavedBundle files are stored under `~/bentoml` directory. User 
+can also customize BentoML to use a different directory or cloud storage like
 [Amazon S3](https://aws.amazon.com/s3/).
 
-You can now start a REST API server by specifying the BentoService's name and version,
-or provide the file path to the saved bundle:
+To start a REST API server with the saved `IrisClassifier` service, use `bentoml serve`
+command:
 
 ```bash
 bentoml serve IrisClassifier:latest
 ```
 
-Alternatively, in bash command line, you can get the absolute path to the saved
-BentoService from the JSON output of `bentoml get` command:
-```bash
-saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
-bentoml serve $saved_path
-```
-
-The REST API server provides web UI for testing and debugging the server. If you are
-running this command on your local machine, visit http://127.0.0.1:5000 in your browser
-and try out sending API request to the server. You can also send prediction request
-with `curl` from command line:
+The `IrisClassifier` model is now served at `localhost:5000`. Use `curl` command to send
+a prediction request:
 
 ```bash
 curl -i \
@@ -142,19 +136,38 @@ curl -i \
   http://localhost:5000/predict
 ```
 
-The BentoService SavedBundle directory is structured to work as a docker build context,
-that can be used to build a API server docker container image:
+The BentoML API server also provides a web UI for accessing predictions and debugging 
+the server. Visit http://localhost:5000 in the browser and use the Web UI to send
+prediction request:
+
+<img src="https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bento-api-server-web-ui.png" width="700">
+
+
+BentoML provides a convenient way to containerize the model API server with Docker:
+
+1. Find the SavedBundle directory with `bentoml get` command
+
+2. Run `docker build` with the SavedBundle directory which contains a generated Dockerfile
+
+3. Run the generated docker image to start a docker container serving the model
+
 
 ```bash
+saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
+docker build -t {docker_username}/iris-classifier $saved_path
 
-docker build -t my-org/iris-classifier:v1 $saved_path
-
-docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True my-org/iris-classifier:v1
+docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True {docker_username}/iris-classifier
 ```
 
-You can also deploy your BentoService directly to cloud services such as AWS Lambda
-with bentoml CLI's deployment management commands:
+This made it possible to deploy BentoML bundled ML models to platforms such as
+[Kubeflow](https://www.kubeflow.org/docs/components/serving/bentoml/),
+[Knative](https://knative.dev/community/samples/serving/machinelearning-python-bentoml/)
+and [Kubernetes](https://docs.bentoml.org/en/latest/deployment/kubernetes.html)
+
+
+BentoML can also deploy SavedBundle directly to cloud services such as AWS Lambda or 
+AWS SageMaker, with the bentoml CLI command:
 
 ```
 > bentoml get IrisClassifier
@@ -172,15 +185,18 @@ test-deploy    dev          aws-lambda  IrisClassifier:20200121114004_360ECB  ru
 ...
 ```
 
+Check out the deployment guides and other deployment options with BentoML [here](https://docs.bentoml.org/en/latest/deployment/index.html).
+
 
 ## Documentation
 
-BentoML full documentation can be found here: [https://docs.bentoml.org/](https://docs.bentoml.org/)
+BentoML full documentation: [https://docs.bentoml.org/](https://docs.bentoml.org/)
 
 - Quick Start Guide: [https://docs.bentoml.org/en/latest/quickstart.html](https://docs.bentoml.org/en/latest/quickstart.html)
 - Core Concepts: [https://docs.bentoml.org/en/latest/concepts.html](https://docs.bentoml.org/en/latest/concepts.html)
 - Deployment Guides: https://docs.bentoml.org/en/latest/deployment/index.html
 - API References: [https://docs.bentoml.org/en/latest/api/index.html](https://docs.bentoml.org/en/latest/api/index.html)
+- Frequently Asked Questions: [https://docs.bentoml.org/en/latest/faq.html](https://docs.bentoml.org/en/latest/faq.html)
 
 
 ## Examples

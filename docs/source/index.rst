@@ -43,7 +43,8 @@ TLDR:
 * End-to-end model serving solution with DevOps best practices baked-in
 * Micro-batching support, bringing the advantage of batch processing to online serving
 * Model management for teams, providing CLI access and Web UI dashboard
-* Flexible model deployment orchestration supporting Docker, Kubernetes, AWS Lambda, SageMaker, Azure ML and more
+* Flexible model deployment orchestration supporting Docker, Kubernetes, AWS Lambda, 
+SageMaker, Azure ML and more
 
 
 Why BentoML
@@ -58,6 +59,10 @@ over to a software engineering team.
 BentoML is an end-to-end solution for model serving, making it possible for Data Science
 teams to build production-ready model serving endpoints, with common DevOps best
 practices and performance optimizations baked in.
+
+Check out `Frequently Asked Questions <https://docs.bentoml.org/en/latest/faq.html>`_ 
+page on how does BentoML compares to Tensorflow-serving, Clipper, AWS SageMaker, MLFlow,
+etc.
 
 .. image:: _static/img/bentoml-overview.png
     :alt: BentoML Overview

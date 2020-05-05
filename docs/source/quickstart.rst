@@ -159,7 +159,7 @@ provide the file path to the saved bundle:
 
 The REST API server provides web UI for testing and debugging the server. If you are
 running this command on your local machine, visit http://127.0.0.1:5000 in your browser
-and try out sending API request to the server.
+and try out sending API requests to the server.
 
 .. image:: https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bento-api-server-web-ui.png
   :width: 600

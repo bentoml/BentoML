@@ -114,9 +114,16 @@ if __name__ == "__main__":
     saved_path = iris_classifier_service.save()
 ```
 
-By default, the BentoML SavedBundle files are stored under `~/bentoml` directory. User 
+By default, BentoML stores SavedBundle files under the `~/bentoml` directory. Users 
 can also customize BentoML to use a different directory or cloud storage like
-[Amazon S3](https://aws.amazon.com/s3/).
+[Amazon S3](https://aws.amazon.com/s3/). BentoML also comes with a model management
+component [YataiService](https://docs.bentoml.org/en/latest/concepts.html#customizing-model-repository),
+which provides advanced model management features including a dashboard web UI:
+
+![BentoML YataiService Bento Repository Page](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/yatai-service-web-ui-repository.png)
+
+![BentoML YataiService Bento Details Page](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/yatai-service-web-ui-repository-detail.png)
+
 
 To start a REST API server with the saved `IrisClassifier` service, use `bentoml serve`
 command:
@@ -160,10 +167,12 @@ docker build -t {docker_username}/iris-classifier $saved_path
 docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True {docker_username}/iris-classifier
 ```
 
-This made it possible to deploy BentoML bundled ML models to platforms such as
+This made it possible to deploy BentoML bundled ML models with platforms such as
 [Kubeflow](https://www.kubeflow.org/docs/components/serving/bentoml/),
-[Knative](https://knative.dev/community/samples/serving/machinelearning-python-bentoml/)
-and [Kubernetes](https://docs.bentoml.org/en/latest/deployment/kubernetes.html)
+[Knative](https://knative.dev/community/samples/serving/machinelearning-python-bentoml/),
+[Kubernetes](https://docs.bentoml.org/en/latest/deployment/kubernetes.html), which
+provides advanced model deployment features such as auto-scaling, A/B testing,
+scale-to-zero, canary rollout and multi-armed bandit.
 
 
 BentoML can also deploy SavedBundle directly to cloud services such as AWS Lambda or 

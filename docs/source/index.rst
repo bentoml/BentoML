@@ -15,9 +15,10 @@ BentoML Documenation
 
 `BentoML <https://github.com/bentoml/BentoML>`_
 is an open-source platform for **high-performance machine learning model serving**.
-It makes it easy to build production API endpoint for your ML model and supports all 
-major machine learning frameworks, including Tensorflow, Keras, PyTorch, XGBoost, 
-scikit-learn, fastai and more.
+It makes it easy to build production API endpoints for trained ML models and supports 
+all major machine learning frameworks, including Tensorflow, Keras, PyTorch, XGBoost,
+scikit-learn, fastai, etc.
+
 
 BentoML comes with a high-performance API model server with adaptive micro-batching 
 support, bringing the advantage of batch processing to online serving workloads. It also
@@ -43,8 +44,7 @@ TLDR:
 * End-to-end model serving solution with DevOps best practices baked-in
 * Micro-batching support, bringing the advantage of batch processing to online serving
 * Model management for teams, providing CLI access and Web UI dashboard
-* Flexible model deployment orchestration supporting Docker, Kubernetes, AWS Lambda, 
-SageMaker, Azure ML and more
+* Flexible model deployment orchestration supporting Docker, Kubernetes, AWS Lambda, SageMaker, Azure ML and more
 
 
 Why BentoML

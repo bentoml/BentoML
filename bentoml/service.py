@@ -407,7 +407,7 @@ def save(bento_service, base_path=None, version=None):
         yatai_client = YataiClient(yatai_service)
     else:
         yatai_client = YataiClient()
-    
+
     return yatai_client.repository.upload(bento_service, version)
 
 

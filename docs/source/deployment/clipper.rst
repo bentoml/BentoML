@@ -15,9 +15,9 @@ In this guide, we will demonstrate how to deploy a scikit-learn model to clipper
 Prerequisites
 -------------
 
-1. Clipper cluster http://clipper.ai
+* Clipper cluster http://clipper.ai
 
-2. Docker is installed and running on the machine.
+* Docker is installed and running on the machine.
 
   * Install instruction: https://docs.docker.com/install
 

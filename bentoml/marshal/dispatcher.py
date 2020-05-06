@@ -130,10 +130,13 @@ class ParadeDispatcher:
                 a = self.optimizer.o_a
                 b = self.optimizer.o_b
 
-                if (w0 + a * n + b + dt) >= self.max_expected_time:
+                if n > 1 and (w0 + a * n + b) >= self.max_expected_time:
                     self._queue.popleft()[2].cancel()
                     continue
                 if self._sema.is_locked():
+                    if n == 1 and w0 >= self.max_expected_time:
+                        self._queue.popleft()[2].cancel()
+                        continue
                     await asyncio.sleep(self.tick_interval)
                     continue
                 if n * (wn + dt + a) <= self.optimizer.o_w * decay:

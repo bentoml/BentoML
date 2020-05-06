@@ -25,7 +25,7 @@ def test_aws_lambda_deployment(iris_clf_service):
         '-b',
         iris_clf_service,
         '--region',
-        'us-west-2',
+        'us-east-1',
         '--verbose',
     ]
     try:

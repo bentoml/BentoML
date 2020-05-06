@@ -71,10 +71,23 @@ def create_s3_bucket_if_not_exists(bucket_name, region):
     except ClientError as error:
         if error.response and error.response['Error']['Code'] == 'NoSuchBucket':
             logger.debug('Creating s3 bucket: %s in region %s', bucket_name, region)
-            s3_client.create_bucket(
-                Bucket=bucket_name,
-                CreateBucketConfiguration={'LocationConstraint': region},
-            )
+            bucket_configuration = {}
+
+            # NOTE: boto3 will raise ClientError(InvalidLocationConstraint) if
+            # `LocationConstraint` is set to `us-east-1` region.
+            # https://github.com/boto/boto3/issues/125.
+            # This issue still show up in  boto3 1.13.4(May 6th 2020)
+            # solution is not specify a region, if the region is `us-east-1`
+
+            print(region)
+            if region != 'us-east-1':
+                s3_client.create_bucket(
+                    Bucket=bucket_name,
+                    # CreateBucketConfiguration=bucket_configuration
+                    CreateBucketConfiguration={'LocationConstraint': region},
+                )
+            else:
+                s3_client.create_bucket(Bucket=bucket_name)
         else:
             raise error
 

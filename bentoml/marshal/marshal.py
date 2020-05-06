@@ -141,6 +141,7 @@ class MarshalService:
         self.setup_routes_from_pb(self.bento_service_metadata_pb)
         if psutil.POSIX:
             import resource
+
             self.CONNECTION_LIMIT = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
         else:
             self.CONNECTION_LIMIT = 1024

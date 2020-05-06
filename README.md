@@ -79,9 +79,9 @@ class IrisClassifier(BentoService):
 ```
 
 This code defines a prediction service that bundles a scikit-learn model and provides an
- API. The API here is the entry point for accessing this prediction service, and this 
- API with `DataframeHandler` converts HTTP JSON request into `pandas.DataFrame` object
- before passing it to the user-defined API function.
+ API. The API here is the entry point for accessing this prediction service, and an API
+ with `DataframeHandler` will convert HTTP JSON request into `pandas.DataFrame` object
+ before passing it to the user-defined API function for inferencing.
 
 The following code trains a scikit-learn model and bundles the trained model with an
 `IrisClassifier` instance. The `IrisClassifier` instance is then saved to disk in the
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
 By default, BentoML stores SavedBundle files under the `~/bentoml` directory. Users 
 can also customize BentoML to use a different directory or cloud storage like
-[Amazon S3](https://aws.amazon.com/s3/). BentoML also comes with a model management
+[AWS S3](https://aws.amazon.com/s3/). BentoML also comes with a model management
 component [YataiService](https://docs.bentoml.org/en/latest/concepts.html#customizing-model-repository),
 which provides advanced model management features including a dashboard web UI:
 

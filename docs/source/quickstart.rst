@@ -45,12 +45,13 @@ Hello World
 -----------
 
 The first step of creating a prediction service with BentoML, is to write a prediction
-service class inheriting from :code:`bentoml.BentoService`, and describe the required
-model artifacts, environment dependencies and writing your service API. Here is what a 
-simple prediction service looks like:
+service class inheriting from :code:`bentoml.BentoService`, and specify the required
+model artifacts, PyPI dependencies and write the service API function. Here is a minimal 
+prediction service definition with BentoML:
 
 .. code-block:: python
 
+  # https://github.com/bentoml/BentoML/blob/master/guides/quick-start/iris_classifier.py
   import bentoml
   from bentoml.handlers import DataframeHandler
   from bentoml.artifact import SklearnModelArtifact
@@ -61,21 +62,20 @@ simple prediction service looks like:
 
       @bentoml.api(DataframeHandler)
       def predict(self, df):
+          # Optional pre-processing, post-processing code goes here
           return self.artifacts.model.predict(df)
 
 
 The :code:`bentoml.api` decorator defines a service API, which is the entry point for
-handling prediction requests. The :code:`DataframeHandler` here tells BentoML that this 
-service API is expecting :code:`pandas.DataFrame` object as its input format. And the
-user-defined function being decorated by :code:`bentoml.api`, gets called when this
-service receives a prediction request.
+accessing the prediction service. The :code:`DataframeHandler` here denotes that this 
+service API will convert HTTP JSON request into :code:`pandas.DataFrame` object before
+passing it to the user-defined API function code for inferencing. 
 
 The :code:`bentoml.env` decorator allows specifying the dependencies and environment
-settings for this prediction service. Here by turnning on the
-:code:`auto_pip_dependencies` flag, BentoML will automatically extracts and bundles all
-pip packages that are required in the prediction service code and pins down their
+settings for this prediction service. The example with 
+:code:`auto_pip_dependencies=True` flag, BentoML will automatically inference all the
+pip packages that are required by the prediction service code and pins down their
 version.
-
 
 Lastly :code:`bentoml.artifact` defines the required trained models to be
 bundled with this prediction service. Here it is using the built-in
@@ -84,16 +84,14 @@ artifact for other frameworks such as :code:`PytorchModelArtifact`,
 :code:`KerasModelArtifact`, :code:`FastaiModelArtifact`, and
 :code:`XgboostModelArtifact` etc.
 
-Put the BentoService class definition to a separate file `iris_classifier.py`, and now
-you are ready to train a scikit-learn model and serve it.
-
 
 From Model Training To Serving
 ------------------------------
 
-Next, we train a classifier model with Iris dataset, and pack the trained model with an
-instance of the :code:`IrisClassifier` BentoService defined above, and save the entire
-prediction service.
+The following code trains a scikit-learn model and bundles the trained model with an
+:code:`IrisClassifier` instance. The :code:`IrisClassifier` instance is then saved to 
+disk in the BentoML SavedBundle format, which is a versioned file archive that is ready 
+for production models serving deployment.
 
 .. code-block:: python
 
@@ -120,11 +118,18 @@ prediction service.
       # Save the prediction service to disk for model serving
       saved_path = iris_classifier_service.save()
 
-With the :code:`BentoService#save` call, you've just created a BentoML SavedBundle. It
-is a versioned file archive that is ready for model serving deployment. The file archive
-directory contains the BentoService you defined, the trained model artifact, all the
-local python code you imported and PyPI dependencies in a requirements.txt etc, all
-bundled in one place.
+By default, BentoML stores SavedBundle files under the `~/bentoml` directory. Users 
+can also customize BentoML to use a different directory or cloud storage like
+`AWS S3 <https://aws.amazon.com/s3/>`_. BentoML also comes with a model management
+component `YataiService <https://docs.bentoml.org/en/latest/concepts.html#customizing-model-repository>`_,
+which provides advanced model management features including a dashboard web UI:
+
+.. image:: _static/img/yatai-service-web-ui-repository.png
+    :alt: BentoML YataiService Bento Repository Page
+
+.. image:: _static/img/yatai-service-web-ui-repository-detail.png
+    :alt: BentoML YataiService Bento Details Page
+
 
 
 .. note::
@@ -136,6 +141,14 @@ bundled in one place.
     you can also find the saved_path of your BentoService from the output of
     :code:`bentoml list -o wide`, :code:`bentoml get IrisClassifier -o wide` and
     :code:`bentoml get IrisClassifier:latest` command.
+
+    A quick way of getting the :code:`saved_path` from the command line is piping the
+    output of :code:`bentoml get` to `jq command <https://stedolan.github.io/jq/>`_:
+
+    .. code-block:: bash
+
+        saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+
 
 
 Model Serving via REST API
@@ -156,16 +169,8 @@ provide the file path to the saved bundle:
 
     bentoml serve $saved_path
 
-
-The REST API server provides web UI for testing and debugging the server. If you are
-running this command on your local machine, visit http://127.0.0.1:5000 in your browser
-and try out sending API requests to the server.
-
-.. image:: https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bento-api-server-web-ui.png
-  :width: 600
-  :alt: BentoML API Server Web UI Screenshot
-
-You can also send prediction request with :code:`curl` from command line:
+The `IrisClassifier` model is now served at `localhost:5000`. Use `curl` command to send
+a prediction request:
 
 .. code-block:: bash
 
@@ -175,13 +180,23 @@ You can also send prediction request with :code:`curl` from command line:
     --data '[[5.1, 3.5, 1.4, 0.2]]' \
     http://localhost:5000/predict
 
-Or with :code:`python` and :code:`request` library:
+Similarly, with :code:`python` and 
+`request <https://requests.readthedocs.io/en/master/>`_:
 
 .. code-block:: python
 
     import requests
     response = requests.post("http://127.0.0.1:5000/predict", json=[[5.1, 3.5, 1.4, 0.2]])
     print(response.text)
+
+
+The BentoML API server also provides a web UI for accessing predictions and debugging 
+the server. Visit http://localhost:5000 in the browser and use the Web UI to send
+prediction request:
+
+.. image:: https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bento-api-server-web-ui.png
+  :width: 600
+  :alt: BentoML API Server Web UI Screenshot
 
 
 
@@ -202,21 +217,35 @@ the given input dataset. e.g.:
 Containerize Model API Server
 -----------------------------
 
-The BentoService SavedBundle directory is structured to work as a docker build context,
-which can be used directly to build a API server docker container image:
+BentoML provides a convenient way to containerize the model API server with Docker:
+
+1. Find the SavedBundle directory with `bentoml get` command
+
+2. Run `docker build` with the SavedBundle directory which contains a generated Dockerfile
+
+3. Run the generated docker image to start a docker container serving the model
 
 
 .. code-block:: bash
 
-  docker build -t my_api_server $saved_path
+  saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
-  docker run -p 5000:5000 my_api_server
+  docker build -t {docker_username}/iris-classifier $saved_path
 
+  docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True {docker_username}/iris-classifier
+
+
+This made it possible to deploy BentoML bundled ML models with platforms such as
+`Kubeflow <https://www.kubeflow.org/docs/components/serving/bentoml/>`_,
+`Knative <https://knative.dev/community/samples/serving/machinelearning-python-bentoml/>`_,
+`Kubernetes <https://docs.bentoml.org/en/latest/deployment/kubernetes.html>`_, which
+provides advanced model deployment features such as auto-scaling, A/B testing,
+scale-to-zero, canary rollout and multi-armed bandit.
 
 .. note::
 
-  You will need to install :code:`docker` before running this.
-  Follow instructions here: https://docs.docker.com/install
+  Ensure :code:`docker` is installed before running the command above.
+  Instructions on installing docker: https://docs.docker.com/install
 
 
 Deploy API server to the cloud
@@ -269,7 +298,10 @@ it as as a system-wide python package with :code:`pip`:
 
 .. code-block:: bash
 
+  saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+
   pip install $saved_path
+
 
 .. code-block:: python
 

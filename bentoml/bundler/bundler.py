@@ -25,9 +25,10 @@ from bentoml.bundler.py_module_utils import copy_used_py_modules
 from bentoml.bundler.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
-    BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE,
+    MODEL_SERVER_DOCKERFILE_CPU,
     INIT_PY_TEMPLATE,
     BENTO_INIT_SH_TEMPLATE,
+    DOCKER_ENTRYPOINT_SH,
 )
 from bentoml.bundler.utils import add_local_bentoml_package_to_repo
 from bentoml.utils import _is_bentoml_in_develop_mode
@@ -138,7 +139,15 @@ def save_to_dir(bento_service, path, version=None, silent=False):
 
     # write Dockerfile
     with open(os.path.join(path, "Dockerfile"), "w") as f:
-        f.write(BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE)
+        f.write(MODEL_SERVER_DOCKERFILE_CPU)
+
+    # write docker-entrypoint.sh
+    docker_entrypoint_sh_file = os.path.join(path, "docker-entrypoint.sh")
+    with open(docker_entrypoint_sh_file, "w") as f:
+        f.write(DOCKER_ENTRYPOINT_SH)
+    # chmod +x docker-entrypoint.sh
+    st = os.stat(docker_entrypoint_sh_file)
+    os.chmod(docker_entrypoint_sh_file, st.st_mode | stat.S_IEXEC)
 
     # write bento init sh for install targz bundles
     bentoml_init_script_file = os.path.join(path, 'bentoml_init.sh')

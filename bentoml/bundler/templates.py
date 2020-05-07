@@ -72,20 +72,16 @@ include {service_name}/bentoml.yml
 graft {service_name}/artifacts
 """
 
-BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE = """\
-FROM continuumio/miniconda3:4.7.12
+MODEL_SERVER_DOCKERFILE_CPU = """\
+FROM continuumio/miniconda3:4.8.2
 
-ENTRYPOINT [ "/bin/bash", "-c" ]
-
-EXPOSE 5000
-
-RUN set -x \\
-     && apt-get update \\
-     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential \\
+RUN set -x \
+     && apt-get update \
+     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential \
      && rm -rf /var/lib/apt/lists/*
 
 # pre-install BentoML base dependencies
-RUN conda install pip numpy scipy \\
+RUN conda install pip numpy scipy \
       && pip install gunicorn
 
 # copy over model files
@@ -97,17 +93,56 @@ RUN if [ -f /bento/setup.sh ]; then /bin/bash -c /bento/setup.sh; fi
 
 # update conda base env
 RUN conda env update -n base -f /bento/environment.yml
-ARG PIP_TRUSTED_HOST
-ARG PIP_INDEX_URL
+
+# Install pip dependencies
+ARG PIP_INDEX_URL=https://pypi.python.org/simple/
+ARG PIP_TRUSTED_HOST=pypi.python.org
+ENV PIP_INDEX_URL=${PIP_INDEX_URL}
+ENV PIP_TRUSTED_HOST=${PIP_TRUSTED_HOST}
 RUN pip install -r /bento/requirements.txt
 
 # Install additional pip dependencies inside bundled_pip_dependencies dir
 RUN if [ -f /bento/bentoml_init.sh ]; then /bin/bash -c /bento/bentoml_init.sh; fi
 
-# Run Gunicorn server with path to module.
-ENV FLAGS=""
-CMD ["bentoml serve-gunicorn /bento $FLAGS"]
+# the env var $PORT is required by heroku container runtime
+ENV PORT 5000
+EXPOSE $PORT
+
+COPY docker-entrypoint.sh /usr/local/bin/
+ENTRYPOINT [ "docker-entrypoint.sh" ]
+CMD ["bentoml", "serve-gunicorn", "/bento"]
 """  # noqa: E501
+
+DOCKER_ENTRYPOINT_SH = """\
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# check to see if this file is being run or sourced from another script
+_is_sourced() {
+  # https://unix.stackexchange.com/a/215279
+  [ "${#FUNCNAME[@]}" -ge 2 ] \
+    && [ "${FUNCNAME[0]}" = '_is_sourced' ] \
+    && [ "${FUNCNAME[1]}" = 'source' ]
+}
+
+_main() {
+  # if first arg looks like a flag, assume we want to start bentoml YataiService
+  if [ "${1:0:1}" = '-' ]; then
+    set -- bentoml serve-gunicorn "$@" /bento
+  fi
+
+  # Set BentoML API server port via env var
+  export BENTOML_PORT=$PORT \
+  # Backward compatibility for BentoML prior to 0.7.5
+  export BENTOML__APISERVER__DEFAULT_PORT=$PORT \
+
+  exec "$@"
+}
+
+if ! _is_sourced; then
+  _main "$@"
+fi
+"""
 
 
 INIT_PY_TEMPLATE = """\

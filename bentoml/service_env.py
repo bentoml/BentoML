@@ -81,8 +81,8 @@ class CondaEnv(object):
         self._conda_env["channels"] += channels
 
     def write_to_yaml_file(self, filepath):
-        output_yaml = Path(filepath)
-        self._yaml.dump(self._conda_env, output_yaml)
+        with open(filepath, 'wb') as output_yaml:
+            self._yaml.dump(self._conda_env, output_yaml)
 
 
 class BentoServiceEnv(object):

@@ -225,7 +225,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         "--port",
         type=click.INT,
         default=BentoAPIServer._DEFAULT_PORT,
-        help="The port to listen on for the REST api server, default is 5000.",
+        help=f"The port to listen on for the REST api server, "
+        f"default is ${BentoAPIServer._DEFAULT_PORT}",
+        envvar='BENTOML_PORT',
     )
     @click.option(
         '--with-conda',
@@ -282,7 +284,15 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         short_help="Start local gunicorn server",
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
-    @click.option("-p", "--port", type=click.INT, default=BentoAPIServer._DEFAULT_PORT)
+    @click.option(
+        "-p",
+        "--port",
+        type=click.INT,
+        default=BentoAPIServer._DEFAULT_PORT,
+        help=f"The port to listen on for the REST api server, "
+        f"default is ${BentoAPIServer._DEFAULT_PORT}",
+        envvar='BENTOML_PORT',
+    )
     @click.option(
         "-w",
         "--workers",

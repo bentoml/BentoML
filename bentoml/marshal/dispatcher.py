@@ -6,7 +6,7 @@ import collections
 from typing import Callable
 import numpy as np
 
-from bentoml.utils.alg import FixedBucket, TokenBucket
+from bentoml.utils.alg import TokenBucket
 
 
 logger = logging.getLogger(__name__)
@@ -31,42 +31,51 @@ class NonBlockSema:
 
 
 class Optimizer:
-    N_OUTBOUND_SAMPLE = 50
-    INTERVAL_REFRESH_PARAMS = 5
-    N_DATA_DROP_FIRST = 2
+    N_KEPT_SAMPLE = 50  # amount of outbound info kept for inferring params
+    N_SKIPPED_SAMPLE = 2  # amount of outbound info skipped after init
+    INTERVAL_REFRESH_PARAMS = 5  # seconds between each params refreshing
 
     def __init__(self):
-        self.o_stat = FixedBucket(self.N_OUTBOUND_SAMPLE)
+        '''
+        assume the outbound duration follows duration = o_a * n + o_b
+        (all in seconds)
+        '''
+        self.o_stat = collections.deque(
+            maxlen=self.N_KEPT_SAMPLE
+        )  # to store outbound stat data
         self.o_a = 2
         self.o_b = 0.1
-        self.o_w = 0.01
-        self._refresh_tb = TokenBucket(2)
-        self._outbound_init_counter = 0
+
+        self.wait = 0.01  # the avg wait time before outbound called
+
+        self._refresh_tb = TokenBucket(2)  # to limit params refresh interval
+        self._outbound_counter = 0
         self._o_a = self.o_a
         self._o_b = self.o_b
-        self._o_w = self.o_w
+        self._o_w = self.wait
 
     def log_outbound(self, n, wait, duration):
-        # drop first N_DATA_DROP_FIRST datas
-        if self._outbound_init_counter <= self.N_DATA_DROP_FIRST:
-            self._outbound_init_counter += 1
+        if (
+            self._outbound_counter <= self.N_SKIPPED_SAMPLE
+        ):  # skip inaccurate info at beginning
+            self._outbound_counter += 1
             return
 
-        self.o_stat.put((n, duration, wait))
+        self.o_stat.append((n, duration, wait))
 
         if self._refresh_tb.consume(1, 1.0 / self.INTERVAL_REFRESH_PARAMS, 1):
             self.trigger_refresh()
 
     def trigger_refresh(self):
-        x = tuple((i, 1) for i, _, _ in self.o_stat.data)
-        y = tuple(i for _, i, _ in self.o_stat.data)
+        x = tuple((i, 1) for i, _, _ in self.o_stat)
+        y = tuple(i for _, i, _ in self.o_stat)
         self._o_a, self._o_b = np.linalg.lstsq(x, y, rcond=None)[0]
         self._o_w = sum(w for _, _, w in self.o_stat) * 1.0 / len(self.o_stat)
 
         self.o_a, self.o_b = max(0.000001, self._o_a), max(0, self._o_b)
-        self.o_w = max(0, self._o_w)
+        self.wait = max(0, self._o_w)
         logger.info(
-            "optimizer params updated: o_a: %.6f, o_b: %.6f, o_w: %.6f",
+            "optimizer params updated: o_a: %.6f, o_b: %.6f, wait: %.6f",
             self._o_a,
             self._o_b,
             self._o_w,
@@ -76,19 +85,19 @@ class Optimizer:
 class ParadeDispatcher:
     def __init__(
         self,
-        max_expected_time: int,
+        max_latency_in_ms: int,
         max_batch_size: int,
         shared_sema: NonBlockSema = None,
         fallback: Callable = None,
     ):
         """
         params:
-            * max_expected_time: max_expected_time for inbound tasks in milliseconds
+            * max_latency_in_ms: max_latency_in_ms for inbound tasks in milliseconds
             * max_batch_size: max batch size of inbound tasks
             * shared_sema: semaphore to limit concurrent tasks
             * fallback: callable to return fallback result
         """
-        self.max_expected_time = max_expected_time / 1000.0
+        self.max_latency_in_ms = max_latency_in_ms / 1000.0
         self.callback = None
         self.fallback = fallback
         self.optimizer = Optimizer()
@@ -118,28 +127,28 @@ class ParadeDispatcher:
     async def controller(self):
         while True:
             try:
-                async with self._wake_event:  # block until request in queue
+                async with self._wake_event:  # block until there's any request in queue
                     await self._wake_event.wait_for(self._queue.__len__)
 
                 n = len(self._queue)
                 dt = self.tick_interval
-                decay = 0.95
+                decay = 0.95  # the decay rate of wait time
                 now = time.time()
                 w0 = now - self._queue[0][0]
                 wn = now - self._queue[-1][0]
                 a = self.optimizer.o_a
                 b = self.optimizer.o_b
 
-                if n > 1 and (w0 + a * n + b) >= self.max_expected_time:
+                if n > 1 and (w0 + a * n + b) >= self.max_latency_in_ms:
                     self._queue.popleft()[2].cancel()
                     continue
                 if self._sema.is_locked():
-                    if n == 1 and w0 >= self.max_expected_time:
+                    if n == 1 and w0 >= self.max_latency_in_ms:
                         self._queue.popleft()[2].cancel()
                         continue
                     await asyncio.sleep(self.tick_interval)
                     continue
-                if n * (wn + dt + a) <= self.optimizer.o_w * decay:
+                if n * (wn + dt + a) <= self.optimizer.wait * decay:
                     await asyncio.sleep(self.tick_interval)
                     continue
 

@@ -114,8 +114,9 @@ class MarshalService:
     """
     MarshalService creates a reverse proxy server in front of actual API server,
     implementing the micro batching feature.
-    Requests in a short period(mb_max_latency) are collected and sent to API server,
-    merged into a single request.
+    It wait a short period and packed multiple requests in a single batch
+    before sending to the API server.
+    It applied an optimized CORK algorithm to get best efficiency.
     """
 
     _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
@@ -162,6 +163,13 @@ class MarshalService:
         return self._outbound_sema
 
     def add_batch_handler(self, api_name, max_latency, max_batch_size):
+        '''
+        Params:
+        * max_latency: limit the max latency of overall request handling
+        * max_batch_size: limit the max batch size for handler
+
+        ** marshal server will give priority to meet these limits than efficiency
+        '''
 
         if api_name not in self.batch_handlers:
             _func = ParadeDispatcher(

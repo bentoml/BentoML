@@ -38,6 +38,41 @@ class PytorchModelArtifact(BentoServiceArtifact):
         MissingDependencyException: torch package is required for PytorchModelArtifact
         InvalidArgument: invalid argument type, model being packed must be instance of
             torch.nn.Module
+
+    Example usage:
+
+    >>> import torch.nn as nn
+    >>>
+    >>> class Net(nn.Module):
+    >>>     def __init__(self):
+    >>>         super(Net, self).__init__()
+    >>>         ...
+    >>>
+    >>>     def forward(self, x):
+    >>>         ...
+    >>>
+    >>> net = Net()
+    >>> # Train model with data
+    >>>
+    >>>
+    >>> import bentoml
+    >>> from bentoml.handlers import ImageHandler
+    >>> from bentoml.artifact import PytorchModelArtifact
+    >>>
+    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.artifacts([PytorchModelArtifact('net')])
+    >>> class PytorchModelService(bentoml.BentoService):
+    >>>
+    >>>     @bentoml.api(ImageHandler)
+    >>>     def predict(self, img):
+    >>>         outputs = self.artifacts.net(img)
+    >>>         return outputs
+    >>>
+    >>>
+    >>> svc = PytorchModelService()
+    >>>
+    >>> # Pytorch model can be packed directly.
+    >>> svc.pack('net', net)
     """
 
     def __init__(self, name, file_extension=".pt"):

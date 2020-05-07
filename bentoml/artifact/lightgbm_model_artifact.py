@@ -35,6 +35,29 @@ class LightGBMModelArtifact(BentoServiceArtifact):
             LightGBMModelArtifact
         InvalidArgument: invalid argument type, model being packed must be instance of
             lightgbm.Booster
+
+    Example usage:
+
+    >>> import lightgbm as lgb
+    >>> # Prepare data
+    >>> train_data = lgb.Dataset(...)
+    >>> # train model
+    >>> model = lgb.train(train_set=train_data, ...)
+    >>>
+    >>> import bentoml
+    >>> from bentoml.artifact import LightGBMModelArtifact
+    >>> from bentoml.handlers import DataframeHandler
+    >>>
+    >>> @bentoml.artifacts([LightGBMModelArtifact('model')])
+    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> class LgbModelService(bentoml.BentoService):
+    >>>
+    >>>     @bentoml.api(DataframeHandler)
+    >>>     def predict(self, df):
+    >>>         return self.artifacts.model.predict(df)
+    >>>
+    >>> svc = LgbModelService()
+    >>> svc.pack('model', model)
     """
 
     def __init__(self, name, model_extension=".txt"):

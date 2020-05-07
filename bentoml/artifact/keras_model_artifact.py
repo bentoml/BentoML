@@ -43,6 +43,30 @@ class KerasModelArtifact(BentoServiceArtifact):
             KerasModelArtifact
         InvalidArgument:  invalid argument type, model being packed must be instance of
             keras.engine.network.Network, tf.keras.models.Model, or their aliases
+
+    Example usage:
+
+    >>> from tensorflow import keras
+    >>> from tensorflow.keras.models import Sequential
+    >>> from tensorflow.keras.preprocessing import sequence, text
+    >>>
+    >>> model_to_save = Sequential()
+    >>> # traing model
+    >>> model_to_save.compile(...)
+    >>> model_to_save.fit(...)
+    >>>
+    >>> import bentoml
+    >>>
+    >>> @bentoml.env(pip_dependencies=['tensorflow==1.14.0', 'numpy', 'pandas'])
+    >>> @bentoml.artifacts([KerasModelArtifact('model')])
+    >>> class KerasModelService(bentoml.BentoService):
+    >>>     @bentoml.api(JsonHandler)
+    >>>     def predict(self, parsed_json):
+    >>>         input_data = text.text_to_word_sequence(parsed_json['text'])
+    >>>         return self.artifacts.model.predict_classes(input_data)
+    >>>
+    >>> svc = KerasModelService()
+    >>> svc.pack('model', model_to_save)
     """
 
     def __init__(

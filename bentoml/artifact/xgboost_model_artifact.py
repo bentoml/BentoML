@@ -33,6 +33,34 @@ class XgboostModelArtifact(BentoServiceArtifact):
         ImportError: xgboost package is required for using XgboostModelArtifact
         TypeError: invalid argument type, model being packed must be instance of
             xgboost.core.Booster
+
+    Example usage:
+
+    >>> import xgboost
+    >>>
+    >>> # prepare data
+    >>> params = {... params}
+    >>> dtrain = xgboost.DMatrix(...)
+    >>>
+    >>> # train model
+    >>> model_to_save = xgboost.train(params=params, dtrain=dtrain)
+    >>>
+    >>> import bentoml
+    >>> from bentoml.artifact import XgboostModelArtifact
+    >>> from bentoml.handlers import DataframeHandler
+    >>>
+    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.artifacts(XgboostModelArtifact('model'))
+    >>> class XGBoostModelService(bentoml.BentoService):
+    >>>
+    >>>     @bentoml.api(DataframeHandler)
+    >>>     def predict(self, df):
+    >>>         result = self.artifacts.model.predict(df)
+    >>>         return result
+    >>>
+    >>> svc = XGBoostModelService()
+    >>> # Pack xgboost model
+    >>> svc.pack('model', model_to_save)
     """
 
     def __init__(self, name, model_extension=".model"):

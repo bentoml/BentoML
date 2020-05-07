@@ -47,6 +47,36 @@ class FastaiModelArtifact(BentoServiceArtifact):
         MissingDependencyException: Require fastai package to use Fast ai model artifact
         InvalidArgument: invalid argument type, model being packed must be instance of
             fastai.basic_train.Learner
+
+    Example usage:
+
+    >>> from fastai.tabular import *
+    >>>
+    >>> # prepare data
+    >>> data = TabularList.from_df(...)
+    >>> learn = tabular_learner(data, ...)
+    >>> # train model
+    >>>
+    >>> import bentoml
+    >>> from bentoml.handlers import DataframeHandler
+    >>> from bentoml.artifact import FastaiModelArtifact
+    >>>
+    >>> @bentoml.artifacts([FastaiModelArtifact('model')])
+    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> class FastaiModelService(bentoml.BentoService):
+    >>>
+    >>>     @api(DataframeHandler)
+    >>>     def predict(self, df):
+    >>>         results = []
+    >>>         for _, row in df.iterrows():
+    >>>             prediction = self.artifacts.model.predict(row)
+    >>>             results.append(prediction[0].obj)
+    >>>         return results
+    >>>
+    >>> svc = FastaiModelService()
+    >>>
+    >>> # Pack fastai basic_learner directly
+    >>> svc.pack('model', learn)
     """
 
     def __init__(self, name):

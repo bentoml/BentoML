@@ -96,6 +96,10 @@ Example Projects:
 FastText
 ========
 
+Example Projects:
+
+* Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/fast-text/text-classification/text-classification.ipynb>`_
+
 .. autoclass:: bentoml.artifact.FasttextArtifact
 
 

@@ -31,6 +31,35 @@ class H2oModelArtifact(BentoServiceArtifact):
 
     Raises:
         MissingDependencyException: h2o package is required to use H2o model artifact
+
+    Example usage:
+
+    >>> import h2o
+    >>> h2o.init()
+    >>>
+    >>> from h2o.estimators.deeplearning import H2ODeepLearningEstimator
+    >>> model_to_save = H2ODeepLearningEstimator(...)
+    >>> # train model with data
+    >>> data = h2o.import_file(...)
+    >>> model_to_save.train(...)
+    >>>
+    >>> import bentoml
+    >>> from bentoml.artifact import H2oModelArtifact
+    >>> from bentoml.handlers import DataframeHandler
+    >>>
+    >>> @bentoml.artifacts([H2oModelArtifact('model')])
+    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> class H2oModelService(bentoml.BentoService):
+    >>>
+    >>>     @bentoml.api(DataframeHandler)
+    >>>     def predict(self, df):
+    >>>         hf = h2o.H2OFrame(df)
+    >>>         predictions = self.artifacts.model.predict(hf)
+    >>>         return predictions.as_data_frame()
+    >>>
+    >>> svc = H2oModelService()
+    >>>
+    >>> svc.pack('model', model_to_save)
     """
 
     @property

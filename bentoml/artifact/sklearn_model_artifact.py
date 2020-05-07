@@ -52,6 +52,31 @@ class SklearnModelArtifact(BentoServiceArtifact):
 
     Raises:
         MissingDependencyException: sklean package is required for SklearnModelArtifact
+
+    Example usage:
+
+    >>> from sklearn import svm
+    >>>
+    >>> model_to_save = svm.SVC(gamma='scale')
+    >>> # ... training model, etc.
+    >>>
+    >>> import bentoml
+    >>> from bentoml.artifact import SklearnModelArtifact
+    >>> from bentoml.handlers import DataframeHandler
+    >>>
+    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.artifacts([SklearnModelArtifact('model')])
+    >>> class SklearnModelService(bentoml.BentoService):
+    >>>
+    >>>     @bentoml.api(DataframeHandler)
+    >>>     def predict(self, df):
+    >>>         result = self.artifacts.model.predict(df)
+    >>>         return result
+    >>>
+    >>> svc = SklearnModelService()
+    >>>
+    >>> # Pack directly with sklearn model object
+    >>> svc.pack('model', model_to_save)
     """
 
     def __init__(self, name, pickle_extension=".pkl"):

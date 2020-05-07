@@ -17,6 +17,30 @@ class FasttextModelArtifact(BentoServiceArtifact):
 
     Raises:
         MissingDependencyError: fasttext package is required for FasttextModelArtifact
+
+    Example usage:
+
+    >>> import fasttext
+    >>> # prepare training data and store to file
+    >>> training_data_file = 'trainging-data-file.train'
+    >>> model = fasttext.train_supervised(input=training_data_file)
+    >>>
+    >>> import bentoml
+    >>> from bentoml.handlers import JsonHandler
+    >>> from bentoml.artifact import FasttextModelArtifact
+    >>>
+    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.artifacts([FasttextModelArtifact('model')])
+    >>> class FasttextModelService(bentoml.BentoService):
+    >>>
+    >>>     @bentoml.api(JsonHandler)
+    >>>     def predict(self, parsed_json):
+    >>>         # K is the number of labels that successfully were predicted,
+    >>>         # among all the real labels
+    >>>         return self.artifacts.model.predict(parsed_json['text'], k=5)
+    >>>
+    >>> svc = FasttextModelService()
+    >>> svc.pack('model', model)
     """
 
     @property

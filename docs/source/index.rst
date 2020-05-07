@@ -76,6 +76,7 @@ ___________
    quickstart
    concepts
    examples
+   frameworks
    guides/index
    deployment/index
    api/index

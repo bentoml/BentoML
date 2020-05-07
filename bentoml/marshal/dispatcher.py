@@ -94,8 +94,10 @@ class ParadeDispatcher:
         params:
             * max_latency_in_ms: max_latency_in_ms for inbound tasks in milliseconds
             * max_batch_size: max batch size of inbound tasks
-            * shared_sema: semaphore to limit concurrent tasks
+            * shared_sema: semaphore to limit concurrent outbound tasks
             * fallback: callable to return fallback result
+        raises:
+            * all possible exceptions the decorated function has
         """
         self.max_latency_in_ms = max_latency_in_ms / 1000.0
         self.callback = None
@@ -120,6 +122,8 @@ class ParadeDispatcher:
                 r = await self.inbound_call(data)
             except asyncio.CancelledError:
                 return None if self.fallback is None else self.fallback()
+            if isinstance(r, Exception):
+                raise r
             return r
 
         return _func
@@ -189,8 +193,11 @@ class ParadeDispatcher:
             )
         except asyncio.CancelledError:
             pass
-        except Exception:  # pylint: disable=broad-except
-            logger.error(traceback.format_exc())
+        except Exception as e:  # pylint: disable=broad-except
+            for _, _, fut in inputs_info:
+                if not fut.done():
+                    fut.set_result(e)
+            _done = True
         finally:
             if not _done:
                 for _, _, fut in inputs_info:

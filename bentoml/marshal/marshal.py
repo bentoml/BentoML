@@ -16,6 +16,7 @@ import time
 import asyncio
 import logging
 import multiprocessing
+import traceback
 from functools import partial
 
 import psutil
@@ -211,7 +212,11 @@ class MarshalService:
             api_name = request.match_info.get("name")
             if api_name in self.batch_handlers:
                 req = SimpleRequest(request.raw_headers, await request.read())
-                resp = await self.batch_handlers[api_name](req)
+                try:
+                    resp = await self.batch_handlers[api_name](req)
+                except Exception:  # pylint: disable=broad-except
+                    logger.error(traceback.format_exc())
+                    resp = aiohttp.web.InternalServerError()
             else:
                 resp = await self.relay_handler(request)
         return resp

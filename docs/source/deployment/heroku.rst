@@ -13,7 +13,7 @@ Prerequsities
 
     * Install instruction: https://devcenter.heroku.com/articles/heroku-cli
 
-* Docker is installed and running on your system
+* Docker is installed and docker deamon is running on your system
 
     * Install instruction: https://docs.docker.com/install
 
@@ -82,52 +82,54 @@ Build and deploy to Heroku
 ==========================
 
 
-Make sure you have working Docker installation (eg. `docker ps`) and that you're logged
-in to Heroku (`heroku login`)
+Follow the CLI instruction and login to a Heroku account:
 
-Log in to the Heroku Container Registry:
+.. code-block:: bash
+
+    $ heroku login
+
+Login to the Heroku Container Registry:
 
 .. code-block:: bash
 
     $ heroku container:login
 
 
-Navigate to IrisClassifier SavedBundle directory:
+Create a Heroku app:
+
+.. code-block:: bash
+
+    $ APP_NAME=bentoml-her0ku-$(date +%s | base64 | tr '[:upper:]' '[:lower:]' | tr -dc _a-z-0-9)
+    $ heroku create $APP_NAME
+
+
+Find the IrisClassifier SavedBundle directory:
 
 .. code-block:: bash
 
     $ cd $(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
 
-Heroku requires HTTP traffic must be liston on `$PORT`, which is set by Heroku.  Update
-the generated `Dockerfile` to meet this requirement. Better support for Heroku deployment
-is coming soon.
-
-Change the last line from `CMD ["bentoml serve-gunicorn /bento $FLAGS"]` to
-`CMD bentoml serve-gunicorn /bento --port $PORT`.
-
-Create Heroku app:
+Build and push API server container with the SavedBundle, and push to the Heroku app
+`bentoml-iris-classifier` created above:
 
 .. code-block:: bash
 
-    $ heroku create
-
-    #Sample output
-    Creating app... done, ⬢ guarded-fjord-49167
-    https://guarded-fjord-49167.herokuapp.com/ | https://git.heroku.com/guarded-fjord-49167.git
-
-Build and push BentoService to your Heroku app:
-
-.. code-block:: bash
-
-    $ heroku container:push web --app APP_NAME
+    $ heroku container:push web --app $APP_NAME
 
 
 Release the app:
 
 .. code-block:: bash
 
-    $ heroku container:release web --app APP_NAME
+    $ heroku container:release web --app $APP_NAME
+
+
+To view the deployment logs on heroku and verify the web server has been created:
+
+.. code-block:: bash
+
+    $ heroku logs --tail -a $APP_NAME
 
 Now, make prediction request with sample data:
 
@@ -137,12 +139,12 @@ Now, make prediction request with sample data:
       --header "Content-Type: application/json" \
       --request POST \
       --data '[[5.1, 3.5, 1.4, 0.2]]' \
-      ${heroku open --app APP_NAME}/predict
+      $(heroku apps:info --app $APP_NAME -j | jq -r ".app.web_url")/predict
 
 
 Remove deployment on Heroku
 
 .. code-block:: bash
 
-    $ heroku apps:destroy APP_NAME
+    $ heroku apps:destroy $APP_NAME
 

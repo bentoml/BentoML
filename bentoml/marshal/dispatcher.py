@@ -6,6 +6,7 @@ import collections
 from typing import Callable
 import numpy as np
 
+from bentoml.utils import cached_property
 from bentoml.utils.alg import TokenBucket
 
 
@@ -107,17 +108,25 @@ class ParadeDispatcher:
         self.max_batch_size = int(max_batch_size)
         self._controller = None
         self._queue = collections.deque()  # TODO(hrmthw): maxlen
-        self._loop = asyncio.get_event_loop()
-        self._wake_event = asyncio.Condition()
+        # self._wake_event = asyncio.Condition()
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
         self.tick_interval = 0.001
 
+    @cached_property
+    def _loop(self):
+        return asyncio.get_event_loop()
+
+    @cached_property
+    def _wake_event(self):
+        return asyncio.Condition()
+
     def __call__(self, callback):
         self.callback = callback
-        self._controller = self._loop.create_task(self.controller())
 
         async def _func(data):
+            if self._controller is None:
+                self._controller = self._loop.create_task(self.controller())
             try:
                 r = await self.inbound_call(data)
             except asyncio.CancelledError:

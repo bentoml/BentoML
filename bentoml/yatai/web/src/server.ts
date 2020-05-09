@@ -202,16 +202,16 @@ export const getExpressApp = (grpcAddress: string | null) => {
       stream: { write: (message) => logger.info(message.trim()) },
     })
   );
-  app.use(express.static(path.join(__dirname, "../dist/client")));
+  app.use(express.static("dist/client"));
   const yataiClient = createYataiClient(grpcAddress);
   createRoutes(app, yataiClient);
 
   app.get("/*", (req, res) => {
     if (/.js$|.css$/.test(req.path)) {
       let filename = req.path.split("/").pop();
-      res.sendFile(path.join(__dirname, `../dist/client/${filename}`));
+      res.sendFile(`dist/client/${filename}`);
     } else {
-      res.sendFile(path.join(__dirname, "../dist/client/index.html"));
+      res.sendFile("dist/client/index.html");
     }
   });
   return app;

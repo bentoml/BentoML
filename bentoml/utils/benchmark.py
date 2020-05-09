@@ -4,12 +4,22 @@ import time
 from collections import defaultdict
 
 import aiohttp
+from tabulate import tabulate
+
+
+def wrap_line(s, line_width=120, sep='\n'):
+    ls = s.split(sep)
+    outs = []
+    for line in ls:
+        while len(line) > line_width:
+            outs.append(line[:line_width])
+            line = line[line_width:]
+        outs.append(line)
+    return sep.join(outs)
 
 
 def dict_tab(d, in_row=False):
     try:
-        from tabulate import tabulate
-
         if in_row:
             return tabulate(
                 [(str(k), str(v)) for k, v in d.items()], tablefmt="fancy_grid"
@@ -26,13 +36,17 @@ def dict_tab(d, in_row=False):
 
 def percentile(data, pers):
     if not data:
-        return None
+        return [math.nan] * len(pers)
     size = len(data)
     sorted_data = sorted(data)
     return tuple(sorted_data[max(math.ceil(size * p) - 1, 0)] for p in pers)
 
 
 class DynamicBucketMerge:
+    '''
+    real time speed stat
+    '''
+
     def __init__(self, sample_range=1, bucket_num=10):
         self.bucket_num = bucket_num
         self.sample_range = sample_range
@@ -73,29 +87,28 @@ class DynamicBucketMerge:
         return (
             sum(n for n, _ in num_n_count) / sum(s for _, s in num_n_count)
             if num_n_count
-            else None
+            else math.nan
         )
 
 
 class Stat:
     def __init__(self):
-        self.req_done = 0
-        self.req_done_ps = DynamicBucketMerge(2, 10)
-        self.req_fail = 0
-        self.req_times = []
-        self.req_time_ps = DynamicBucketMerge(2, 10)
+        self.success = 0
+        self.fail = 0
+        self.succ_ps = DynamicBucketMerge(2, 10)
+        self.exec_ps = DynamicBucketMerge(2, 10)
+        self.succ_times = []
+        self.exec_times = []
+        self.succ_time_ps = DynamicBucketMerge(2, 10)
+        self.exec_time_ps = DynamicBucketMerge(2, 10)
         self.client_busy = 0
-        self.exceptions = defaultdict(lambda: 0)
+        self.exceptions = defaultdict(list)
         self._sess_start_time = 0
         self._sess_stop_time = 0
 
     @property
-    def req_time(self):
-        return sum(self.req_times)
-
-    @property
     def req_total(self):
-        return self.req_fail + self.req_done
+        return self.fail + self.success
 
     @property
     def sess_time(self):
@@ -104,41 +117,85 @@ class Stat:
         else:
             return time.time() - self._sess_start_time
 
-    def log_req_done(self, n=1):
-        self.req_done += n
-        self.req_done_ps.put(time.time(), 1)
+    def log_succeed(self, req_time, n=1):
+        self.success += n
+        self.succ_ps.put(time.time(), 1)
+        self.succ_times.append(req_time)
+        self.succ_time_ps.put(time.time(), req_time)
 
-    def log_req_time(self, req_time):
-        self.req_times.append(req_time)
-        self.req_time_ps.put(time.time(), req_time)
+    def log_exception(self, group, msg, req_time, n=1):
+        self.fail += n
+        self.exec_ps.put(time.time(), 1)
+        self.exec_times.append(req_time)
+        self.exec_time_ps.put(time.time(), req_time)
+        self.exceptions[group].append(msg)
 
-    def log_exception(self, msg, n=1):
-        self.exceptions[msg] += n
-        self.req_fail += n
-
-    def step(self):
+    def print_step(self):
         now = time.time()
-        return {
-            "Reqs/Fail": f"{self.req_done}/{self.req_fail}",
-            "Failure %": self.req_fail / max(self.req_total, 1) * 100,
-            "Reqs/s": self.req_done_ps.sum(now),
-            "Avg Resp Time": self.req_time_ps.mean(now),
-            "Client Health %": (1 - self.client_busy / max(self.req_total, 1)) * 100,
-        }
+        headers = (
+            "Result",
+            "Total",
+            "Reqs/s",
+            "Resp Time Avg",
+            "Client Health %",
+        )
+        r = (
+            (
+                f"succ",
+                f"{self.success}",
+                f"{self.succ_ps.sum(now)}",
+                f"{self.succ_time_ps.mean(now)}",
+                f"{(1 - self.client_busy / max(self.req_total, 1)) * 100}",
+            ),
+            (
+                f"fail",
+                f"{self.fail}",
+                f"{self.exec_ps.sum(now)}",
+                f"{self.exec_time_ps.mean(now)}",
+                "",
+            ),
+        )
 
-    def sumup(self):
-        ps = percentile(self.req_times, [0.5, 0.95, 0.99])
-        r = {
-            "Reqs/Fail": f"{self.req_done}/{self.req_fail}",
-            "Failure %": self.req_fail / max(self.req_total, 1) * 100,
-            "Reqs/s": self.req_done / max(self.sess_time, 1),
-            "Avg Resp Time": self.req_time / max(self.req_total, 1),
-            "P50 Resp Time": ps[0],
-            "P95": ps[1],
-            "P99": ps[2],
-            "Client Health %": (1 - self.client_busy / max(self.req_total, 1)) * 100,
-        }
-        if r["Client Health %"] < 90:
+        print(tabulate(r, headers=headers, tablefmt="fancy_grid"))
+
+    def print_sumup(self):
+        ps = percentile(self.succ_times, [0.5, 0.95, 0.99])
+        ps_fail = percentile(self.exec_times, [0.5, 0.95, 0.99])
+        health = (1 - self.client_busy / max(self.req_total, 1)) * 100
+        headers = (
+            "Result",
+            "Total",
+            "Reqs/s",
+            "Resp Time Avg",
+            "P50",
+            "P95",
+            "P99",
+        )
+        r = (
+            (
+                "succ",
+                self.success,
+                self.success / max(self.sess_time, 1),
+                sum(self.succ_times) / max(self.success, 1),
+                ps[0],
+                ps[1],
+                ps[2],
+            ),
+            (
+                "fail",
+                self.fail,
+                self.fail / max(self.sess_time, 1),
+                sum(self.exec_times) / max(self.fail, 1),
+                ps_fail[0],
+                ps_fail[1],
+                ps_fail[2],
+            ),
+        )
+
+        print(tabulate(r, headers=headers, tablefmt="fancy_grid"))
+
+        print(f"------ Client Health {health:.1f}% ------")
+        if health < 90:
             print(
                 f"""
                 *** WARNNING ***
@@ -152,7 +209,20 @@ class Stat:
                 """
             )
 
-        return r
+    def print_exec(self):
+        headers = ['exceptions', 'count']
+        rs = [
+            (wrap_line(str(v[0]), 50)[:1000], len(v),)
+            for k, v in self.exceptions.items()
+        ]
+        print(tabulate(rs, headers=headers, tablefmt='fancy_grid'))
+
+
+def default_verify_response(status, _):
+    if status // 100 == 2:
+        return True
+    else:
+        return False
 
 
 class BenchmarkClient:
@@ -177,9 +247,17 @@ class BenchmarkClient:
     STATUS_SPAWNED = 2
     STATUS_STOPPING = 3
 
-    def __init__(self, request_producer, gen_wait_time, url_override=None, timeout=10):
+    def __init__(
+        self,
+        request_producer: callable,
+        gen_wait_time: callable,
+        verify_response: callable = default_verify_response,
+        url_override=None,
+        timeout=10,
+    ):
         self.gen_wait_time = gen_wait_time
         self.request_producer = request_producer
+        self.verify_response = verify_response
         self.url_override = url_override
         self.user_pool = []
         self.status = self.STATUS_STOPPED
@@ -195,6 +273,8 @@ class BenchmarkClient:
                 flag_log_req_time = False
                 req_start = time.time()
                 req_url = self.url_override or url
+                err = ''
+                group = ''
                 try:
                     async with sess.request(
                         method,
@@ -204,27 +284,26 @@ class BenchmarkClient:
                         timeout=self.timeout,
                     ) as r:
                         msg = await r.text()
-                        if r.status // 100 == 2:
-                            self.stat.log_req_done(1)
-                            flag_log_req_time = True
-                        elif r.status // 100 == 4:
-                            flag_log_req_time = True
-                            self.stat.log_exception(msg)
-                        else:
-                            self.stat.log_exception(msg)
+                        if not self.verify_response(r.status, msg):
+                            group = f"{r.status}"
+                            err = f"<status: {r.status}>\n{msg}"
                 except asyncio.CancelledError:
                     raise
                 except (
                     aiohttp.client_exceptions.ServerDisconnectedError,
                     TimeoutError,
                 ) as e:
-                    self.stat.log_exception(repr(e))
+                    group = repr(e.__class__)
+                    err = repr(e)
                 except Exception as e:  # pylint: disable=broad-except
-                    self.stat.log_exception(repr(e))
+                    group = repr(e.__class__)
+                    err = repr(e)
 
                 req_stop = time.time()
-                if flag_log_req_time:
-                    self.stat.log_req_time(req_stop - req_start)
+                if err:
+                    self.stat.log_exception(group, err, req_stop - req_start)
+                else:
+                    self.stat.log_succeed(req_stop - req_start)
 
                 url, method, headers, data = self.request_producer()
                 wait_time = self.gen_wait_time() + wait_time_suffix
@@ -281,7 +360,7 @@ class BenchmarkClient:
     async def _start_output(self):
         while self.status in {self.STATUS_SPAWNING, self.STATUS_SPAWNED}:
             print("")
-            print(dict_tab(self.stat.step()))
+            self.stat.print_step()
             await asyncio.sleep(2)
 
     async def _start_session(self, session_time, total_user, spawn_speed):
@@ -295,11 +374,11 @@ class BenchmarkClient:
             self.killall()
             self.stat._sess_stop_time = time.time()
             print("======= Session stopped! =======")
-            print(dict_tab(self.stat.sumup()))
-
             if self.stat.exceptions:
                 print(f"------ Exceptions happened ------")
-                print(dict_tab(self.stat.exceptions, in_row=True))
+                self.stat.print_exec()
+
+            self.stat.print_sumup()
 
             if self._stop_loop_flag:
                 loop = asyncio.get_event_loop()

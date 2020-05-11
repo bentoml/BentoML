@@ -58,10 +58,12 @@ def setup_prometheus_multiproc_dir(lock: multiprocessing.Lock = None):
         logger.debug(
             "Setting up prometheus_multiproc_dir: %s", prometheus_multiproc_dir
         )
-        if not os.path.exists(prometheus_multiproc_dir):
-            os.mkdir(prometheus_multiproc_dir)
-        if os.listdir(prometheus_multiproc_dir):
-            shutil.rmtree(prometheus_multiproc_dir)
+        # Wipe prometheus metrics directory between runs
+        # https://github.com/prometheus/client_python#multiprocess-mode-gunicorn
+        # Ignore errors so it does not fail when directory does not exist
+        shutil.rmtree(prometheus_multiproc_dir, ignore_errors=True)
+        os.makedirs(prometheus_multiproc_dir, exist_ok=True)
+
         os.environ['prometheus_multiproc_dir'] = prometheus_multiproc_dir
     finally:
         if lock is not None:

@@ -54,6 +54,7 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
 # Build time argument - the BentoML version to be used in this image
 ARG version
 ENV BENTOML_VERSION=$version
+RUN pip install psycopg2 psycopg2-binary
 RUN pip install bentoml==$version
 
 ENTRYPOINT ["entrypoint.sh"]

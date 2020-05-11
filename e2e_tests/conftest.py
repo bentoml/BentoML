@@ -10,6 +10,8 @@ from sklearn import svm, datasets
 from bentoml.deployment.aws_lambda import _cleanup_s3_bucket_if_exist
 from bentoml.deployment.utils import ensure_docker_available_or_raise
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
+from bentoml.configuration import PREV_PYPI_RELEASE_VERSION
+
 from e2e_tests.iris_classifier_example import IrisClassifier
 from e2e_tests.cli_operations import delete_bento
 from e2e_tests.basic_bento_service_examples import (
@@ -60,6 +62,32 @@ def basic_bentoservice_v2():
     delete_bento(bento_name)
 
 
+def wait_for_docker_container_ready(container_name, check_message):
+    docker_client = docker.from_env()
+
+    start_time = time.time()
+    while True:
+        time.sleep(1)
+        container_list = docker_client.containers.list(
+            filters={'name': container_name, 'status': 'running'}
+        )
+        logger.info("Container list: " + str(container_list))
+        if not container_list:
+            # Raise timeout, if take more than 60 seconds
+            if time.time() - start_time > 60:
+                raise TimeoutError(f'Get container: {container_name} times out')
+            else:
+                continue
+
+        assert len(container_list) == 1, 'should be only one container running'
+
+        yatai_service_container = container_list[0]
+
+        logger.info('container_log' + str(yatai_service_container.logs()))
+        if check_message in yatai_service_container.logs():
+            break
+
+
 @pytest.fixture(scope='session')
 def temporary_docker_postgres_url():
     ensure_docker_available_or_raise()
@@ -81,25 +109,9 @@ def temporary_docker_postgres_url():
     docker_proc = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
-    # wait until postgres db is ready
-    docker_client = docker.from_env()
-    while True:
-        time.sleep(1)
-        container_list = docker_client.containers.list(
-            filters={'name': container_name, 'status': 'running'}
-        )
-        logger.info("container_list: " + str(container_list))
-        if not container_list:
-            continue
-        assert len(container_list) == 1, "should be only one container with name"
-
-        postgres_container = container_list[0]
-        logger.info("container_log:" + str(postgres_container.logs()))
-        if (
-            b'database system is ready to accept connections'
-            in postgres_container.logs()
-        ):
-            break
+    wait_for_docker_container_ready(
+        container_name, b'database system is ready to accept connections'
+    )
 
     from sqlalchemy_utils import create_database
 
@@ -115,3 +127,37 @@ def temporary_s3_bucket():
     create_s3_bucket_if_not_exists(bucket_name, 'us-west-2')
     yield f's3://{bucket_name}/repo'
     _cleanup_s3_bucket_if_exist(bucket_name, 'us-west-2')
+
+
+@pytest.fixture(scope='session')
+def temporary_yatai_service_url():
+    ensure_docker_available_or_raise()
+    container_name = f'e2e-test-yatai-service-container-{uuid.uuid4().hex[:6]}'
+    yatai_service_url = 'localhost:50051'
+
+    command = [
+        'docker',
+        'run',
+        '--rm',
+        '--name',
+        container_name,
+        '-p',
+        '50051:50051',
+        '-p',
+        '3000:3000',
+        f'bentoml/yatai-service:{PREV_PYPI_RELEASE_VERSION}',
+        '--repo-base-url',
+        '/tmp',
+    ]
+
+    logger.info(f'Running docker command {" ".join(command)}')
+
+    docker_proc = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    wait_for_docker_container_ready(
+        container_name, b'* Starting BentoML YataiService gRPC Server'
+    )
+
+    yield yatai_service_url
+    docker_proc.terminate()

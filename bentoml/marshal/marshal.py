@@ -16,6 +16,7 @@ import time
 import asyncio
 import logging
 import multiprocessing
+import traceback
 from functools import partial
 
 import psutil
@@ -27,7 +28,7 @@ from bentoml.marshal.utils import DataLoader, SimpleRequest
 from bentoml.handlers import HANDLER_TYPES_BATCH_MODE_SUPPORTED
 from bentoml.bundler import load_bento_service_metadata
 from bentoml.utils.usage_stats import track_server
-from bentoml.marshal.dispatcher import ParadeDispatcher
+from bentoml.marshal.dispatcher import ParadeDispatcher, NonBlockSema
 
 logger = logging.getLogger(__name__)
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
@@ -114,8 +115,9 @@ class MarshalService:
     """
     MarshalService creates a reverse proxy server in front of actual API server,
     implementing the micro batching feature.
-    Requests in a short period(mb_max_latency) are collected and sent to API server,
-    merged into a single request.
+    It wait a short period and packed multiple requests in a single batch
+    before sending to the API server.
+    It applied an optimized CORK algorithm to get best efficiency.
     """
 
     _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
@@ -158,14 +160,24 @@ class MarshalService:
 
     def fetch_sema(self):
         if self._outbound_sema is None:
-            self._outbound_sema = asyncio.Semaphore(self.outbound_workers)
+            self._outbound_sema = NonBlockSema(self.outbound_workers)
         return self._outbound_sema
 
     def add_batch_handler(self, api_name, max_latency, max_batch_size):
+        '''
+        Params:
+        * max_latency: limit the max latency of overall request handling
+        * max_batch_size: limit the max batch size for handler
+
+        ** marshal server will give priority to meet these limits than efficiency
+        '''
 
         if api_name not in self.batch_handlers:
             _func = ParadeDispatcher(
-                max_latency, max_batch_size, shared_sema=self.fetch_sema
+                max_latency,
+                max_batch_size,
+                shared_sema=self.fetch_sema(),
+                fallback=aiohttp.web.HTTPTooManyRequests,
             )(partial(self._batch_handler_template, api_name=api_name))
             self.batch_handlers[api_name] = _func
 
@@ -200,7 +212,11 @@ class MarshalService:
             api_name = request.match_info.get("name")
             if api_name in self.batch_handlers:
                 req = SimpleRequest(request.raw_headers, await request.read())
-                resp = await self.batch_handlers[api_name](req)
+                try:
+                    resp = await self.batch_handlers[api_name](req)
+                except Exception:  # pylint: disable=broad-except
+                    logger.error(traceback.format_exc())
+                    resp = aiohttp.web.InternalServerError()
             else:
                 resp = await self.relay_handler(request)
         return resp
@@ -244,10 +260,10 @@ class MarshalService:
                         raw = await resp.read()
                 merged = DataLoader.split_responses(raw)
             except (aiohttp.ClientConnectorError, aiohttp.ServerDisconnectedError):
-                return (aiohttp.web.HTTPServiceUnavailable,) * len(requests)
+                return (aiohttp.web.HTTPServiceUnavailable(),) * len(requests)
 
         if merged is None:
-            return (aiohttp.web.HTTPInternalServerError,) * len(requests)
+            return (aiohttp.web.HTTPInternalServerError(),) * len(requests)
         return tuple(
             aiohttp.web.Response(body=i.data, headers=i.headers, status=i.status)
             for i in merged
@@ -261,7 +277,6 @@ class MarshalService:
         marshal_proc = multiprocessing.Process(
             target=self.fork_start_app, kwargs=dict(port=port), daemon=True,
         )
-        # TODO: make sure child process dies when parent process is killed.
         marshal_proc.start()
         logger.info("Running micro batch service on :%d", port)
 

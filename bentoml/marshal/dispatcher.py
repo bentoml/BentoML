@@ -1,176 +1,215 @@
 import asyncio
+import logging
+import traceback
 import time
-import random
+import collections
 from typing import Callable
-from bentoml.utils import cached_property
 import numpy as np
 
+from bentoml.utils import cached_property
+from bentoml.utils.alg import TokenBucket
 
-class Bucket:
-    '''
-    Fixed size container.
-    '''
 
-    def __init__(self, size):
-        self._data = [None] * size
-        self._cur = 0
-        self._size = size
-        self._flag_full = False
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
-    def put(self, v):
-        self._data[self._cur] = v
-        self._cur += 1
-        if self._cur == self._size:
-            self._cur = 0
-            self._flag_full = True
 
-    @property
-    def data(self):
-        if not self._flag_full:
-            return self._data[: self._cur]
-        return self._data
+class NonBlockSema:
+    def __init__(self, count):
+        self.sema = count
 
-    def __len__(self):
-        if not self._flag_full:
-            return self._cur
-        return self._size
+    def aquire(self):
+        if self.sema < 1:
+            return False
+        self.sema -= 1
+        return True
+
+    def is_locked(self):
+        return self.sema < 1
+
+    def release(self):
+        self.sema += 1
 
 
 class Optimizer:
-    N_OUTBOUND_SAMPLE = 500
-    N_OUTBOUND_WAIT_SAMPLE = 20
+    N_KEPT_SAMPLE = 50  # amount of outbound info kept for inferring params
+    N_SKIPPED_SAMPLE = 2  # amount of outbound info skipped after init
+    INTERVAL_REFRESH_PARAMS = 5  # seconds between each params refreshing
 
     def __init__(self):
-        self.outbound_stat = Bucket(self.N_OUTBOUND_SAMPLE)
-        self.outbound_wait_stat = Bucket(self.N_OUTBOUND_WAIT_SAMPLE)
-        self.outbound_a = 0.0001
-        self.outbound_b = 0
-        self.outbound_wait = 0.01
+        '''
+        assume the outbound duration follows duration = o_a * n + o_b
+        (all in seconds)
+        '''
+        self.o_stat = collections.deque(
+            maxlen=self.N_KEPT_SAMPLE
+        )  # to store outbound stat data
+        self.o_a = 2
+        self.o_b = 0.1
 
-    async def adaptive_wait(self, parade, max_time):
-        dt = 0.001
-        decay = 0.9
-        while True:
-            now = time.time()
-            w0 = now - parade.time_first
-            wn = now - parade.time_last
-            n = parade.length
-            a = max(self.outbound_a, 0)
+        self.wait = 0.01  # the avg wait time before outbound called
 
-            if w0 >= max_time:
-                print("warning: max latency reached")
-                break
-            if max(n - 1, 1) * (wn + dt + a) <= self.outbound_wait * decay:
-                await asyncio.sleep(dt)
-                continue
-            break
+        self._refresh_tb = TokenBucket(2)  # to limit params refresh interval
+        self._outbound_counter = 0
+        self._o_a = self.o_a
+        self._o_b = self.o_b
+        self._o_w = self.wait
 
-    def log_outbound_time(self, info):
-        if info[0] < 5:  # skip all small batch
+    def log_outbound(self, n, wait, duration):
+        if (
+            self._outbound_counter <= self.N_SKIPPED_SAMPLE
+        ):  # skip inaccurate info at beginning
+            self._outbound_counter += 1
             return
-        self.outbound_stat.put(info)
-        if random.random() < 0.05:
-            x = tuple((i, 1) for i, _ in self.outbound_stat.data)
-            y = tuple(i for _, i in self.outbound_stat.data)
-            self.outbound_a, self.outbound_b = np.linalg.lstsq(x, y, rcond=None)[0]
 
-    def log_outbound_wait(self, info):
-        self.outbound_wait_stat.put(info)
-        self.outbound_wait = (
-            sum(self.outbound_wait_stat.data) * 1.0 / len(self.outbound_wait_stat)
+        self.o_stat.append((n, duration, wait))
+
+        if self._refresh_tb.consume(1, 1.0 / self.INTERVAL_REFRESH_PARAMS, 1):
+            self.trigger_refresh()
+
+    def trigger_refresh(self):
+        x = tuple((i, 1) for i, _, _ in self.o_stat)
+        y = tuple(i for _, i, _ in self.o_stat)
+        self._o_a, self._o_b = np.linalg.lstsq(x, y, rcond=None)[0]
+        self._o_w = sum(w for _, _, w in self.o_stat) * 1.0 / len(self.o_stat)
+
+        self.o_a, self.o_b = max(0.000001, self._o_a), max(0, self._o_b)
+        self.wait = max(0, self._o_w)
+        logger.info(
+            "optimizer params updated: o_a: %.6f, o_b: %.6f, wait: %.6f",
+            self._o_a,
+            self._o_b,
+            self._o_w,
         )
-
-
-class Parade:
-    STATUSES = (STATUS_OPEN, STATUS_CLOSED, STATUS_RETURNED,) = range(3)
-
-    def __init__(self, max_size, outbound_sema, optimizer):
-        self.max_size = max_size
-        self.outbound_sema = outbound_sema
-        self.batch_input = [None] * max_size
-        self.batch_output = [None] * max_size
-        self.length = 0
-        self.returned = asyncio.Condition()
-        self.status = self.STATUS_OPEN
-        self.optimizer = optimizer
-        self.time_first = None
-        self.time_last = None
-
-    def feed(self, data) -> Callable:
-        '''
-        feed data into this parade.
-        return:
-            the output index in parade.batch_output
-        '''
-        self.batch_input[self.length] = data
-        self.length += 1
-        if self.length == self.max_size:
-            self.status = self.STATUS_CLOSED
-        self.time_last = time.time()
-        return self.length - 1
-
-    async def start_wait(self, max_wait_time, call):
-        now = time.time()
-        self.time_first = now
-        self.time_last = now
-        try:
-            await self.optimizer.adaptive_wait(self, max_wait_time)
-            async with self.outbound_sema:
-                self.status = self.STATUS_CLOSED
-                _time_start = time.time()
-                self.optimizer.log_outbound_wait(_time_start - self.time_first)
-                self.batch_output = await call(self.batch_input[: self.length])
-                self.optimizer.log_outbound_time(
-                    (self.length, time.time() - _time_start)
-                )
-                self.status = self.STATUS_RETURNED
-        finally:
-            # make sure parade is closed
-            if self.status == self.STATUS_OPEN:
-                self.status = self.STATUS_CLOSED
-            async with self.returned:
-                self.returned.notify_all()
 
 
 class ParadeDispatcher:
-    def __init__(self, max_wait_time, max_size, shared_sema: callable = None):
+    def __init__(
+        self,
+        max_latency_in_ms: int,
+        max_batch_size: int,
+        shared_sema: NonBlockSema = None,
+        fallback: Callable = None,
+    ):
         """
         params:
-            * max_wait_time: max_wait_time to wait for inbound tasks in milliseconds
-            * max_size: inbound tasks buffer size
-            * shared_sema: semaphore to limit concurrent tasks
+            * max_latency_in_ms: max_latency_in_ms for inbound tasks in milliseconds
+            * max_batch_size: max batch size of inbound tasks
+            * shared_sema: semaphore to limit concurrent outbound tasks
+            * fallback: callable to return fallback result
+        raises:
+            * all possible exceptions the decorated function has
         """
-        self.max_wait_time = max_wait_time
-        self.max_size = int(max_size)
-        self.shared_sema = shared_sema
+        self.max_latency_in_ms = max_latency_in_ms / 1000.0
         self.callback = None
-        self._current_parade = None
+        self.fallback = fallback
         self.optimizer = Optimizer()
 
-    @cached_property
-    def outbound_sema(self):
-        '''
-        semaphore should be created after process forked
-        '''
-        return self.shared_sema() if self.shared_sema else asyncio.Semaphore(1)
+        self.max_batch_size = int(max_batch_size)
+        self._controller = None
+        self._queue = collections.deque()  # TODO(hrmthw): maxlen
+        # self._wake_event = asyncio.Condition()
+        self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
-    def get_parade(self):
-        if self._current_parade and self._current_parade.status == Parade.STATUS_OPEN:
-            return self._current_parade
-        self._current_parade = Parade(self.max_size, self.outbound_sema, self.optimizer)
-        asyncio.get_event_loop().create_task(
-            self._current_parade.start_wait(self.max_wait_time / 1000.0, self.callback)
-        )
-        return self._current_parade
+        self.tick_interval = 0.001
+
+    @cached_property
+    def _loop(self):
+        return asyncio.get_event_loop()
+
+    @cached_property
+    def _wake_event(self):
+        return asyncio.Condition()
 
     def __call__(self, callback):
         self.callback = callback
 
-        async def _func(inputs):
-            parade = self.get_parade()
-            _id = parade.feed(inputs)
-            async with parade.returned:
-                await parade.returned.wait()
-            return parade.batch_output[_id]
+        async def _func(data):
+            if self._controller is None:
+                self._controller = self._loop.create_task(self.controller())
+            try:
+                r = await self.inbound_call(data)
+            except asyncio.CancelledError:
+                return None if self.fallback is None else self.fallback()
+            if isinstance(r, Exception):
+                raise r
+            return r
 
         return _func
+
+    async def controller(self):
+        while True:
+            try:
+                async with self._wake_event:  # block until there's any request in queue
+                    await self._wake_event.wait_for(self._queue.__len__)
+
+                n = len(self._queue)
+                dt = self.tick_interval
+                decay = 0.95  # the decay rate of wait time
+                now = time.time()
+                w0 = now - self._queue[0][0]
+                wn = now - self._queue[-1][0]
+                a = self.optimizer.o_a
+                b = self.optimizer.o_b
+
+                if n > 1 and (w0 + a * n + b) >= self.max_latency_in_ms:
+                    self._queue.popleft()[2].cancel()
+                    continue
+                if self._sema.is_locked():
+                    if n == 1 and w0 >= self.max_latency_in_ms:
+                        self._queue.popleft()[2].cancel()
+                        continue
+                    await asyncio.sleep(self.tick_interval)
+                    continue
+                if n * (wn + dt + a) <= self.optimizer.wait * decay:
+                    await asyncio.sleep(self.tick_interval)
+                    continue
+
+                n_call_out = min(self.max_batch_size, n,)
+                # call
+                self._sema.aquire()
+                inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
+                self._loop.create_task(self.outbound_call(inputs_info))
+            except asyncio.CancelledError:
+                break
+            except Exception:  # pylint: disable=broad-except
+                logger.error(traceback.format_exc())
+
+    async def inbound_call(self, data) -> asyncio.Future:
+        t = time.time()
+        future = self._loop.create_future()
+        input_info = (t, data, future)
+        self._queue.append(input_info)
+        async with self._wake_event:
+            self._wake_event.notify_all()
+        return await future
+
+    async def outbound_call(self, inputs_info):
+        _time_start = time.time()
+        _done = False
+        logger.info("outbound function called: %d", len(inputs_info))
+        try:
+            outputs = await self.callback(tuple(d for _, d, _ in inputs_info))
+            assert len(outputs) == len(inputs_info)
+            for (_, _, fut), out in zip(inputs_info, outputs):
+                if not fut.done():
+                    fut.set_result(out)
+            _done = True
+            self.optimizer.log_outbound(
+                n=len(inputs_info),
+                wait=_time_start - inputs_info[-1][0],
+                duration=time.time() - _time_start,
+            )
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:  # pylint: disable=broad-except
+            for _, _, fut in inputs_info:
+                if not fut.done():
+                    fut.set_result(e)
+            _done = True
+        finally:
+            if not _done:
+                for _, _, fut in inputs_info:
+                    if not fut.done():
+                        fut.cancel()
+            self._sema.release()

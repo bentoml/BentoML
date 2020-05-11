@@ -30,7 +30,7 @@ from bentoml import config
 from bentoml.exceptions import BentoMLException
 from bentoml.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
 from bentoml.utils.usage_stats import track_server
-from bentoml.yatai.utils import ensure_node_available_or_raise
+from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 logger = logging.getLogger(__name__)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -40,6 +40,7 @@ def get_yatai_service(
     channel_address=None, db_url=None, repo_base_url=None, default_namespace=None
 ):
     channel_address = channel_address or config().get('yatai_service', 'url')
+    channel_address = channel_address.strip()
     if channel_address:
         from bentoml.proto.yatai_service_pb2_grpc import YataiStub
 
@@ -64,7 +65,16 @@ def get_yatai_service(
             )
         logger.debug("Using BentoML with remote Yatai server: %s", channel_address)
 
-        channel = grpc.insecure_channel(channel_address)
+        scheme, addr = parse_grpc_url(channel_address)
+
+        if scheme == 'grpcs':
+            import certifi
+
+            ca_cert = open(certifi.where(), 'rb').read()  # use Mozilla ca cert
+            credentials = grpc.ssl_channel_credentials(ca_cert, None, None)
+            channel = grpc.secure_channel(addr, credentials)
+        else:
+            channel = grpc.insecure_channel(addr)
         return YataiStub(channel)
     else:
         from bentoml.yatai.yatai_service_impl import YataiService

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import subprocess
+import urllib3
 
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
@@ -29,3 +30,14 @@ def ensure_node_available_or_raise():
             'Node is required for Yatai web UI. Please visit '
             'www.nodejs.org for instructions'
         )
+
+
+def parse_grpc_url(url):
+    '''
+    >>> parse_grpc_url("grpcs://yatai.com:43/query")
+    ('grpcs', 'yatai.com:43/query')
+    >>> parse_grpc_url("yatai.com:43/query")
+    (None, 'yatai.com:43/query')
+    '''
+    parts = urllib3.util.parse_url(url)
+    return parts.scheme, url.replace(f"{parts.scheme}://", "", 1)

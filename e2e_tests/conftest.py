@@ -1,7 +1,9 @@
 import logging
+import os
 import subprocess
 import uuid
 import time
+import io
 
 import docker
 import pytest
@@ -11,7 +13,8 @@ from bentoml.deployment.aws_lambda import _cleanup_s3_bucket_if_exist
 from bentoml.deployment.utils import ensure_docker_available_or_raise
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.configuration import PREV_PYPI_RELEASE_VERSION
-
+from bentoml import __version__
+from bentoml.utils.tempdir import TempDirectory
 from e2e_tests.iris_classifier_example import IrisClassifier
 from e2e_tests.cli_operations import delete_bento
 from e2e_tests.basic_bento_service_examples import (
@@ -132,32 +135,57 @@ def temporary_s3_bucket():
 @pytest.fixture(scope='session')
 def temporary_yatai_service_url():
     ensure_docker_available_or_raise()
-    container_name = f'e2e-test-yatai-service-container-{uuid.uuid4().hex[:6]}'
-    yatai_service_url = 'localhost:50051'
+    docker_api = docker.APIClient()
+    docker_client = docker.from_env()
+    local_bentoml_repo_path = os.path.abspath(os.path.join(__file__, '..', '..'))
+    docker_tag = f'bentoml/yatai-service:local-bentoml-{uuid.uuid4().hex[:6]}'
 
-    command = [
-        'docker',
-        'run',
-        '--rm',
-        '--name',
-        container_name,
-        '-p',
-        '50051:50051',
-        '-p',
-        '3000:3000',
-        f'bentoml/yatai-service:{PREV_PYPI_RELEASE_VERSION}',
-        '--repo-base-url',
-        '/tmp',
-    ]
+    # Note: When set both `custom_context` and `fileobj`, docker api will not use the
+    #       `path` provide... docker/api/build.py L138. The solution is create an actual
+    #       Dockerfile along with path, instead of fileobj and custom_context.
+    with TempDirectory() as temp_dir:
+        temp_docker_file_path = os.path.join(temp_dir, 'Dockerfile')
+        temp_docker_file = open(temp_docker_file_path, 'w')
+        temp_docker_file.write(
+            f'FROM bentoml/yatai-service:{PREV_PYPI_RELEASE_VERSION}\n'
+        )
+        temp_docker_file.write('ADD . /bentoml-local-repo\n')
+        temp_docker_file.write('RUN pip install /bentoml-local-repo\n')
+        temp_docker_file.close()
+        logger.info('building docker image')
+        result = docker_client.images.build(
+            path=local_bentoml_repo_path,
+            dockerfile=temp_docker_file_path,
+            tag=docker_tag,
+        )
+        logger.info('complete build docker image')
 
-    logger.info(f'Running docker command {" ".join(command)}')
+        container_name = f'e2e-test-yatai-service-container-{uuid.uuid4().hex[:6]}'
+        yatai_service_url = 'localhost:50051'
 
-    docker_proc = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    wait_for_docker_container_ready(
-        container_name, b'* Starting BentoML YataiService gRPC Server'
-    )
+        command = [
+            'docker',
+            'run',
+            '--rm',
+            '--name',
+            container_name,
+            '-p',
+            '50051:50051',
+            '-p',
+            '3000:3000',
+            docker_tag,
+            '--repo-base-url',
+            '/tmp',
+        ]
 
-    yield yatai_service_url
-    docker_proc.terminate()
+        logger.info(f'Running docker command {" ".join(command)}')
+
+        docker_proc = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        wait_for_docker_container_ready(
+            container_name, b'* Starting BentoML YataiService gRPC Server'
+        )
+
+        yield yatai_service_url
+        docker_proc.terminate()

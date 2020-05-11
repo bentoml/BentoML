@@ -90,7 +90,7 @@ def create_s3_bucket_if_not_exists(bucket_name, region):
                     logger.debug(
                         'Special s3 region: %s, will attempt create bucket without '
                         '`LocationConstraint`',
-                        region
+                        region,
                     )
                     s3_client.create_bucket(Bucket=bucket_name)
                 else:

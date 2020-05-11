@@ -31,7 +31,8 @@ def _import_fastai2_module():
         import fastai2.basics
     except ImportError:
         raise MissingDependencyException(
-            "fastai2 package is required to use " "bentoml.artifacts.Fastai2ModelArtifact"
+            "fastai2 package is required to use "
+            "bentoml.artifacts.Fastai2ModelArtifact"
         )
 
     return fastai2
@@ -92,7 +93,7 @@ class _Fastai2ModelArtifactWrapper(BentoServiceArtifactWrapper):
 
     def save(self, dst):
         self._model.export(fname=self.spec._file_name)
-        
+
         shutil.copyfile(
             os.path.join(self._model.path, self.spec._file_name),
             self.spec._model_file_path(dst),

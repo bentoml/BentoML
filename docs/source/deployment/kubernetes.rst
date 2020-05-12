@@ -105,6 +105,7 @@ API server
 
 .. code-block:: bash
 
+    # Download and install jq, the JSON processor: https://stedolan.github.io/jq/download/
     saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
     # Replace {docker_username} with your Docker Hub username

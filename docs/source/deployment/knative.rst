@@ -26,16 +26,7 @@ Prerequisites
 Knative deployment with BentoML
 -------------------------------
 
-In this guide, we will build BentoService with docker and then deploy a
-prediction services on Knative with the docker image.
-
-===========================
-Build and push docker image
-===========================
-
-First, we need to build and push our BentoService to a docker registry.
-We will use the IrisClassifier BentoService from the getting
-:doc:`Quick start guide<../quickstart>`.
+This guide use the IrisClassifier BentoService from the :doc:`Quick start guide<../quickstart>`.
 
 .. code-block:: bash
 
@@ -81,22 +72,49 @@ Use BentoML CLI tool to get the information about IrisClassifier.
     }
 
 
-Navigate to the BentoService archive bundle location. Build and push docker image to docker hub.
+After saving the BentoService instance, you can now start a REST API server with the
+model trained and test the API server locally:
+
+.. code-block:: bash
+
+    # Start BentoML API server:
+    bentoml serve IrisClassifier:latest
 
 
 .. code-block:: bash
 
-    > cd /Users/bozhaoyu/bentoml/repository/IrisClassifier/20200121141808_FE78B
-    > docker build . -t yubozhao/iris-classifier
-    > docker push yubozhao/iris-classifier
+    # Send test request:
+    curl -i \
+      --header "Content-Type: application/json" \
+      --request POST \
+      --data '[[5.1, 3.5, 1.4, 0.2]]' \
+      http://localhost:5000/predict
 
 
-=================
-Deploy to Knative
-=================
+==============================
+Deploy BentoService to Knative
+==============================
+
+BentoML provides a convenient way of containerizing the model API server with Docker. To
+create a docker container image for the sample model above:
+
+1. Find the file directory of the SavedBundle with bentoml get command, which is directory
+structured as a docker build context.
+
+2. Running docker build with this directory produces a docker image containing the model
+API server
+
+.. code-block:: bash
+
+    # Download and install jq, the JSON processor: https://stedolan.github.io/jq/download/
+    saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+
+    # Replace {docker_username} with your Docker Hub username
+    docker build -t {docker_username}/iris-classifier $saved_path
+    docker push {docker_username}/iris-classifier
 
 
-Make sure Knative serving component and its pods are running.
+Make sure Knative serving components are running.
 
 .. code-block:: bash
 
@@ -109,9 +127,9 @@ Make sure Knative serving component and its pods are running.
     webhook-8597865965-9vp25            2/2     Running   1          4h33m
 
 
-Create a service.yaml file and copy the following service definition into the file. We are pointing
-livenessProbe and readyinessProbe to the /healthz endpoint on BentoService.
-
+Copy the following service definition into `service.yaml` and replace `{docker_username}`
+with your docker hub username. The Knative service is directing livenessProbe and
+readyinessProbe to the /healthz endpoint on BentoService.
 
 
 .. code-block:: yaml
@@ -125,7 +143,7 @@ livenessProbe and readyinessProbe to the /healthz endpoint on BentoService.
       template:
         spec:
           containers:
-            - image: docker.io/yubozhao/iris-classifier
+            - image: docker.io/{docker_username}/iris-classifier
               ports:
               - containerPort: 5000
               livenessProbe:
@@ -153,7 +171,7 @@ Create bentoml namespace and then deploy BentoService to Knative with kubectl ap
 
 
 
-We can monitor the status with kubectl get ksvc command.
+Monitor the status with kubectl get ksvc command.
 
 .. code-block:: bash
 
@@ -167,7 +185,8 @@ Validate prediction server with sample data
 ===========================================
 
 
-For this guide, our kubernetes cluster run on minikube, we will get the appropriate ip from minikube and the port from istio
+For this guide, the kubernetes cluster run on minikube, Get the appropriate ip from
+minikube and the port from istio
 
 .. code-block::
 
@@ -178,7 +197,7 @@ For this guide, our kubernetes cluster run on minikube, we will get the appropri
     31871
 
 
-With the ip address and port, we can make a curl request to the prediction result from Knative
+With the ip address and port, makes a curl request to the prediction result from Knative
 
 .. code-block:: bash
 

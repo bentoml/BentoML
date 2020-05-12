@@ -67,7 +67,7 @@ This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide
 
 .. code-block:: bash
 
-    > bentoml get IrisClassifier:latest
+    bentoml get IrisClassifier:latest
 
     # Sample output
     {
@@ -103,13 +103,33 @@ This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide
     }
 
 
+After saving the BentoService instance, you can now start a REST API server with the
+model trained and test the API server locally:
+
+.. code-block:: bash
+
+    # Start BentoML API server:
+    bentoml serve IrisClassifier:latest
+
+
+.. code-block:: bash
+
+    # Send test request:
+    curl -i \
+      --header "Content-Type: application/json" \
+      --request POST \
+      --data '[[5.1, 3.5, 1.4, 0.2]]' \
+      http://localhost:5000/predict
+
+
 Use `gcloud` CLI to build the docker image
 
 .. code-block:: bash
 
-    > saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
-    > cd $saved_path
-    > gcloud builds submit --tag gcr.io/irisclassifier-gcloud-run/iris-classifier
+    # Download and install jq, the JSON processor: https://stedolan.github.io/jq/download/
+    saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    cd $saved_path
+    gcloud builds submit --tag gcr.io/irisclassifier-gcloud-run/iris-classifier
 
     # Sample output
     Creating temporary tarball archive of 15 file(s) totalling 15.8 MiB before compression.
@@ -159,11 +179,11 @@ Copy the service URL from the screen
 
 .. code-block:: bash
 
-    > curl -i \
-      --header "Content-Type: application/json" \
-      --request POST \
-      -d '[[5.1, 3.5, 1.4, 0.2]]' \
-      https://iris-classifier-7v6yobzlcq-uw.a.run.app/predict
+    curl -i \
+    --header "Content-Type: application/json" \
+    --request POST \
+    -d '[[5.1, 3.5, 1.4, 0.2]]' \
+    https://iris-classifier-7v6yobzlcq-uw.a.run.app/predict
 
     # Sample output
     [0]

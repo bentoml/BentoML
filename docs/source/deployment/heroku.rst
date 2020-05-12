@@ -107,6 +107,7 @@ Find the IrisClassifier SavedBundle directory:
 
 .. code-block:: bash
 
+    # Download and install jq, the JSON processor: https://stedolan.github.io/jq/download/
     $ cd $(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
 

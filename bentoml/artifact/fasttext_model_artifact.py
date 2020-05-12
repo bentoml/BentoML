@@ -11,7 +11,7 @@ from bentoml.exceptions import MissingDependencyException
 class FasttextModelArtifact(BentoServiceArtifact):
     """
     Abstraction for saving/loading fasttext models
-    
+
     Args:
         name (str): Name for the artifact
 

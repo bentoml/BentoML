@@ -135,20 +135,20 @@ def temporary_yatai_service_url():
     ensure_docker_available_or_raise()
     docker_client = docker.from_env()
     local_bentoml_repo_path = os.path.abspath(os.path.join(__file__, '..', '..'))
-    docker_tag = f'bentoml/yatai-service:local-bentoml-{uuid.uuid4().hex[:6]}'
+    docker_tag = f'bentoml/yatai-service:e2e-test-{uuid.uuid4().hex[:6]}'
 
     # Note: When set both `custom_context` and `fileobj`, docker api will not use the
     #       `path` provide... docker/api/build.py L138. The solution is create an actual
     #       Dockerfile along with path, instead of fileobj and custom_context.
     with TempDirectory() as temp_dir:
         temp_docker_file_path = os.path.join(temp_dir, 'Dockerfile')
-        temp_docker_file = open(temp_docker_file_path, 'w')
-        temp_docker_file.write(
-            f'FROM bentoml/yatai-service:{PREV_PYPI_RELEASE_VERSION}\n'
-        )
-        temp_docker_file.write('ADD . /bentoml-local-repo\n')
-        temp_docker_file.write('RUN pip install /bentoml-local-repo\n')
-        temp_docker_file.close()
+        with open(temp_docker_file_path, 'w') as f:
+            f.write(f"""\
+        FROM bentoml/yatai-service:{PREV_PYPI_RELEASE_VERSION}
+        ADD . /bentoml-local-repo
+        RUN pip install /bentoml-local-repo
+            """
+            )
         logger.info('building docker image')
         docker_client.images.build(
             path=local_bentoml_repo_path,

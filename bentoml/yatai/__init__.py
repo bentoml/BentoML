@@ -23,6 +23,7 @@ import subprocess
 import time
 from concurrent import futures
 
+import certifi
 import click
 import grpc
 
@@ -40,6 +41,10 @@ def get_yatai_service(
     channel_address=None, db_url=None, repo_base_url=None, default_namespace=None
 ):
     channel_address = channel_address or config().get('yatai_service', 'url')
+    client_cacert_path = (
+        config().get('yatai_service', 'client_certificate_file')
+        or certifi.where()  # default: Mozilla ca cert
+    )
     channel_address = channel_address.strip()
     if channel_address:
         from bentoml.proto.yatai_service_pb2_grpc import YataiStub
@@ -67,10 +72,9 @@ def get_yatai_service(
 
         scheme, addr = parse_grpc_url(channel_address)
 
-        if scheme == 'grpcs':
-            import certifi
-
-            ca_cert = open(certifi.where(), 'rb').read()  # use Mozilla ca cert
+        if scheme in ('grpcs', 'https'):
+            with open(client_cacert_path, 'rb') as ca_cert_file:
+                ca_cert = ca_cert_file.read()
             credentials = grpc.ssl_channel_credentials(ca_cert, None, None)
             channel = grpc.secure_channel(addr, credentials)
         else:

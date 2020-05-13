@@ -49,7 +49,7 @@ Use BentoML CLI tool to get the information of IrisClassifier created above
 
 .. code-block:: bash
 
-    bentoml get IrisClassifier:latest
+    $ bentoml get IrisClassifier:latest
 
 
     # Sample output

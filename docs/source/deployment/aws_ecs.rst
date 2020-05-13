@@ -41,10 +41,8 @@ AWS ECS deployment with BentoML
 -------------------------------------------------
 
 This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
-The IrisClassifier has an endpoint, `/predict`, as its entry point for accessing the prediction
-service. The predict endpoint expects `pandas.DataFrame` as input.
 
-Build the IrisClassifier BentoService from the :doc:`quick start guide <../quickstart>`.
+Build the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
 
 
 .. code-block:: bash
@@ -55,7 +53,7 @@ Build the IrisClassifier BentoService from the :doc:`quick start guide <../quick
 
 .. code-block:: bash
 
-    > bentoml get IrisClassifier:latest
+    $ bentoml get IrisClassifier:latest
 
     # sample output
     {
@@ -109,16 +107,20 @@ BentoService and available for sending test request:
       --data '[[5.1, 3.5, 1.4, 0.2]]' \
       http://localhost:5000/predict
 
-==================================================================
-Build BentoML model server for AWS ECR(Elastic Container Registry)
-==================================================================
+======================================================================
+Dockerize BentoML model server for AWS ECR(Elastic Container Registry)
+======================================================================
 
+In order to create ECS deployment, the model server need to be containerized and push to
+a container registry such as AWS ECR.
 
 Docker login with AWS ECR
 
 .. code-block:: bash
 
-    > aws ecr get-login --region us-west-2 --no-include-email
+    $ aws ecr get-login --region us-west-2 --no-include-email
+
+    # Sample output
 
     docker login -u AWS -p eyJ.................OOH https://account_id.dkr.ecr.us-west-2.amazonaws.com
 
@@ -126,7 +128,9 @@ Copy the output from previous step and run it in the terminal
 
 .. code-block:: bash
 
-    > docker login -u AWS -p eyJ.................OOH https://account_id.dkr.ecr.us-west-2.amazonaws.com
+    $ docker login -u AWS -p eyJ.................OOH https://account_id.dkr.ecr.us-west-2.amazonaws.com
+
+    # Sample output
 
     Login Succeeded
 
@@ -134,7 +138,9 @@ Create AWS ECR repository
 
 .. code-block:: bash
 
-    > aws ecr create-repository --repository-name irisclassifier-ecs
+    $ aws ecr create-repository --repository-name irisclassifier-ecs
+
+    # Sample output
 
     {
         "repository": {
@@ -153,8 +159,11 @@ Create AWS ECR repository
 
 .. code-block:: bash
 
-    > cd /Users/bozhaoyu/bentoml/repository/IrisClassifier/20200121141808_FE78B5
-    > docker build . --tag=192023623294.dkr.ecr.us-west-2.amazonaws.com/irisclassifier-ecs
+    # Download and install jq, the JSON processor: https://stedolan.github.io/jq/download/
+    $ saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    $ docker build --tag=192023623294.dkr.ecr.us-west-2.amazonaws.com/irisclassifier-ecs $saved_path
+
+    # Sample output
 
     Step 1/12 : FROM continuumio/miniconda3:4.7.12
     ...
@@ -167,7 +176,9 @@ Push the built docker image to AWS ECR
 
 .. code-block:: bash
 
-    > docker push 192023623294.dkr.ecr.us-west-2.amazonaws.com/irisclassifier-ecs
+    $ docker push 192023623294.dkr.ecr.us-west-2.amazonaws.com/irisclassifier-ecs
+
+    # Sample output
 
     The push refers to repository [192023623294.dkr.ecr.us-west-2.amazonaws.com/irisclassifier-ecs]
     ...
@@ -187,7 +198,9 @@ Create `task-execution-assume-role.json`
 
 .. code-block::
 
-    > cat task-execution-assume-role.json
+    $ cat task-execution-assume-role.json
+
+    # Sample output
 
     {
       "Version": "2012-10-17",
@@ -208,8 +221,10 @@ Create IAM role
 
 .. code-block::
 
-    > aws iam --region us-west-2 create-role --role-name ecsTaskExecutionRole \
+    $ aws iam --region us-west-2 create-role --role-name ecsTaskExecutionRole \
       --assume-role-policy-document file://task-execution-assume-role.json
+
+    # Sample output
 
     {
         "Role": {
@@ -237,7 +252,7 @@ Create IAM role
 
 .. code-block:: bash
 
-    > aws iam --region us-west-2 attach-role-policy --role-name ecsTaskExecutionRole \
+    aws iam --region us-west-2 attach-role-policy --role-name ecsTaskExecutionRole \
       --policy-arn arn:aws:iam:aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 
 
@@ -249,7 +264,7 @@ Create ECR CLI profile
 
 .. code-block:: bash
 
-  ecs-cli configure profile --access-key AWS_ACCESS_KEY_ID --secret-key AWS_SECRET_ACCESS_KEY --profile-name tutorial-profile
+    ecs-cli configure profile --access-key AWS_ACCESS_KEY_ID --secret-key AWS_SECRET_ACCESS_KEY --profile-name tutorial-profile
 
 
 Create ECR cluster profile configuration
@@ -267,7 +282,9 @@ Start ECR cluster with the ecr profile we created in the earlier step
 
 .. code-block:: bash
 
-    > ecs-cli up --cluster-config tutorial --ecs-profile tutorial-profile
+    $ ecs-cli up --cluster-config tutorial --ecs-profile tutorial-profile
+
+    # Sample output
 
     INFO[0001] Created cluster                               cluster=tutorial region=us-west-2
     INFO[0002] Waiting for your cluster resources to be created...
@@ -282,8 +299,10 @@ Use the VPC id from previous command to get secruity group ID
 
 .. code-block:: bash
 
-    > aws ec2 describe-security-groups --filters Name=vpc-id,Values=vpc-0465d14ba04402f80 \
+    $ aws ec2 describe-security-groups --filters Name=vpc-id,Values=vpc-0465d14ba04402f80 \
       --region us-west-2
+
+    # Sample output
 
     {
         "SecurityGroups": [
@@ -328,8 +347,8 @@ Use security group ID from previous command
 
 .. code-block:: bash
 
-    > aws ec2 authorize-security-group-ingress --group-id sg-0258b891f053e077b --protocol tcp \
-      --port 5000 --cidr 0.0.0.0/0 --region us-west-2
+    aws ec2 authorize-security-group-ingress --group-id sg-0258b891f053e077b --protocol tcp \
+    --port 5000 --cidr 0.0.0.0/0 --region us-west-2
 
 
 =====================================
@@ -380,9 +399,10 @@ After create `ecs-params.yaml`, we can deploy our BentoService to the ECS cluste
 
 .. code-block:: bash
 
-    > ecs-cli compose --project-name tutorial-bentoml-ecs service up --create-log-groups \
+    $ ecs-cli compose --project-name tutorial-bentoml-ecs service up --create-log-groups \
       --cluster-config tutorial --ecs-profile tutorial-profile
 
+    # Sample output
 
     INFO[0000] Using ECS task definition                     TaskDefinition="tutorial-bentoml-ecs:1"
     WARN[0001] Failed to create log group sentiment-aws-ecs in us-west-2: The specified log group already exists
@@ -397,8 +417,10 @@ Now, after creating the service, we can use `ecs-cli service ps` command to chec
 
 .. code-block:: bash
 
-    > ecs-cli compose --project-name tutorial-bentoml-ecs service ps \
+    $ ecs-cli compose --project-name tutorial-bentoml-ecs service ps \
       --cluster-config tutorial --ecs-profile tutorial-profile
+
+    # Sample output
 
     Name                                      State    Ports                        TaskDefinition          Health
     ecd119f0-b159-42e6-b86c-e6a62242ce7a/web  RUNNING  34.212.49.46:5000->5000/tcp  tutorial-bentoml-ecs:1  UNKNOWN
@@ -410,7 +432,7 @@ Testing ECS service with sample data
 
 .. code-block:: bash
 
-    > curl -i \
+    $ curl -i \
       --request POST \
       --header "Content-Type: application/json" \
       --data '[[5.1, 3.5, 1.4, 0.2]]' \
@@ -427,8 +449,10 @@ Delete the service on AWS ECS
 
 .. code-block:: bash
 
-    > ecs-cli compose --project-name tutorial-bentoml-ecs service down --cluster-config tutorial \
+    $ ecs-cli compose --project-name tutorial-bentoml-ecs service down --cluster-config tutorial \
       --ecs-profile tutorial-profile
+
+    # Sample output
 
     INFO[0000] Updated ECS service successfully              desiredCount=0 force-deployment=false service=tutorial-bentoml-ecs
     INFO[0000] Service status                                desiredCount=0 runningCount=1 serviceName=tutorial-bentoml-ecs
@@ -443,7 +467,9 @@ Shutting down the AWS ECS cluster
 
 .. code-block:: bash
 
-    > ecs-cli down --force --cluster-config tutorial --ecs-profile tutorial-profile
+    $ ecs-cli down --force --cluster-config tutorial --ecs-profile tutorial-profile
+
+    # Sample output
 
     INFO[0001] Waiting for your cluster resources to be deleted...
     INFO[0001] Cloudformation stack status                   stackStatus=DELETE_IN_PROGRESS

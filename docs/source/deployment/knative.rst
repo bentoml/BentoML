@@ -49,7 +49,9 @@ Use BentoML CLI tool to get the information about IrisClassifier.
 
 .. code-block:: bash
 
-    > bentoml get IrisClassifier:20200121141808_FE78B5
+    $ bentoml get IrisClassifier:20200121141808_FE78B5
+
+    # Sample output
 
     {
       "name": "IrisClassifier",
@@ -129,7 +131,10 @@ Make sure Knative serving components are running.
 
 .. code-block:: bash
 
-    > kubectl get pods --namespace knative-serving
+    $ kubectl get pods --namespace knative-serving
+
+    # Sample output
+
     NAME                                READY   STATUS    RESTARTS   AGE
     activator-845b77cbb5-thpcw          2/2     Running   0          4h33m
     autoscaler-7fc56894f5-f2vqc         2/2     Running   0          4h33m
@@ -176,8 +181,11 @@ Create bentoml namespace and then deploy BentoService to Knative with kubectl ap
 
 .. code-block:: bash
 
-    > kubectl create namespace bentoml
-    > kubectl apply -f service.yaml
+    $ kubectl create namespace bentoml
+    $ kubectl apply -f service.yaml
+
+    # Sample output
+
     service.serving.knative.dev/iris-classifier created
 
 
@@ -186,7 +194,10 @@ View the status of the deployment with `kubectl get ksvc` command:
 
 .. code-block:: bash
 
-    > kubectl get ksvc --all-namespaces
+    $ kubectl get ksvc --all-namespaces
+
+    # Sample output
+
     NAMESPACE   NAME              URL                                          LATESTCREATED           LATESTREADY             READY   REASON
     bentoml     iris-classifier   http://iris-classifier.bentoml.example.com   iris-classifier-7k2dv   iris-classifier-7k2dv   True
 
@@ -200,10 +211,16 @@ Find the cluster IP address and exposed port of the deployed Knative service, in
 
 .. code-block::
 
-    > minikube ip
+    $ minikube ip
+
+    # Sample output
+
     192.168.64.4
 
-    > kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}
+    $ kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}
+
+    # Sample output
+
     31871
 
 
@@ -211,12 +228,14 @@ With the IP address and port, Use `curl` to make an HTTP request to the deployme
 
 .. code-block:: bash
 
-    > curl -v -i \
+    $ curl -v -i \
         --header "Content-Type: application/json" \
         --header "Host: iris-classifier.bentoml.example.com" \
         --request POST \
         --data '[[5.1, 3.5, 1.4, 0.2]]' \
         http://192.168.64.4:31871/predict
+
+    # Sample output
 
     Note: Unnecessary use of -X or --request, POST is already inferred.
     *   Trying 192.168.64.4...
@@ -256,4 +275,4 @@ Clean up deployment
 
 .. code-block:: bash
 
-    > kubectl delete namespace bentoml
+    kubectl delete namespace bentoml

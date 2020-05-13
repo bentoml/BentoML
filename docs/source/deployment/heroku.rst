@@ -45,9 +45,10 @@ Build the IrisClassifier BentoService from the :doc:`quick start guide <../quick
 
 .. code-block:: bash
 
-    > bentoml get IrisClassifier:latest
+    $ bentoml get IrisClassifier:latest
 
     # Sample output
+
     {
       "name": "IrisClassifier",
       "version": "20200121141808_FE78B5",
@@ -109,21 +110,21 @@ Follow the CLI instruction and login to a Heroku account:
 
 .. code-block:: bash
 
-    $ heroku login
+    heroku login
 
 Login to the Heroku Container Registry:
 
 .. code-block:: bash
 
-    $ heroku container:login
+    heroku container:login
 
 
 Create a Heroku app:
 
 .. code-block:: bash
 
-    $ APP_NAME=bentoml-her0ku-$(date +%s | base64 | tr '[:upper:]' '[:lower:]' | tr -dc _a-z-0-9)
-    $ heroku create $APP_NAME
+    APP_NAME=bentoml-her0ku-$(date +%s | base64 | tr '[:upper:]' '[:lower:]' | tr -dc _a-z-0-9)
+    heroku create $APP_NAME
 
 
 Find the IrisClassifier SavedBundle directory:
@@ -131,7 +132,7 @@ Find the IrisClassifier SavedBundle directory:
 .. code-block:: bash
 
     # Download and install jq, the JSON processor: https://stedolan.github.io/jq/download/
-    $ cd $(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    cd $(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
 
 Build and push API server container with the SavedBundle, and push to the Heroku app
@@ -139,27 +140,27 @@ Build and push API server container with the SavedBundle, and push to the Heroku
 
 .. code-block:: bash
 
-    $ heroku container:push web --app $APP_NAME
+    heroku container:push web --app $APP_NAME
 
 
 Release the app:
 
 .. code-block:: bash
 
-    $ heroku container:release web --app $APP_NAME
+    heroku container:release web --app $APP_NAME
 
 
 To view the deployment logs on heroku and verify the web server has been created:
 
 .. code-block:: bash
 
-    $ heroku logs --tail -a $APP_NAME
+    heroku logs --tail -a $APP_NAME
 
 Now, make prediction request with sample data:
 
 .. code-block:: bash
 
-    $ curl -i \
+    curl -i \
       --header "Content-Type: application/json" \
       --request POST \
       --data '[[5.1, 3.5, 1.4, 0.2]]' \
@@ -170,5 +171,5 @@ Remove deployment on Heroku
 
 .. code-block:: bash
 
-    $ heroku apps:destroy $APP_NAME
+    heroku apps:destroy $APP_NAME
 

@@ -16,11 +16,11 @@ Prerequsities
 
 Before starting this guide, make sure you have the following:
 
-* A kubernetes installed cluster. `minikube` is used in this guide.
+* A kubernetes cluster.
+
+    * `minikube` is the recommended way to run Kubernetes locally:: https://kubernetes.io/docs/tasks/tools/install-minikube/
 
     * Kubernetes guide: https://kubernetes.io/docs/setup/
-
-    * `minikube` install instruction: https://kubernetes.io/docs/tasks/tools/install-minikube/
 
 * `kubectl` CLI tool
 
@@ -41,11 +41,8 @@ Before starting this guide, make sure you have the following:
 Kubernetes deployment with BentoML
 ----------------------------------
 
-This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
-The IrisClassifier has an endpoint, `/predict`, as its entry point for accessing the prediction
-service. The predict endpoint expects `pandas.DataFrame` as input.
-
-Build the IrisClassifier BentoService from the :doc:`quick start guide <../quickstart>`.
+Run the example project from the :doc:`quick start guide <../quickstart>` to create the
+BentoML saved bundle for deployment:
 
 .. code-block:: bash
 
@@ -53,7 +50,7 @@ Build the IrisClassifier BentoService from the :doc:`quick start guide <../quick
     python ./bentoml/guides/quick-start/main.py
 
 
-Use BentoML CLI tool to get the information of IrisClassifier created above
+Verify the saved bundle created:
 
 .. code-block:: bash
 
@@ -126,7 +123,7 @@ BentoML provides a convenient way to containerize the model API server with Dock
 
 .. code-block:: bash
 
-    # Download and install jq, the JSON processor: https://stedolan.github.io/jq/download/
+    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
     saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
     # Replace {docker_username} with your Docker Hub username

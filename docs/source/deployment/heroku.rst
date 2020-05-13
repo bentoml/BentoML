@@ -31,17 +31,16 @@ Prerequsities
 Heroku deployment with BentoML
 ------------------------------
 
-This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
-The IrisClassifier has an endpoint, `/predict`, as its entry point for accessing the prediction
-service. The predict endpoint expects `pandas.DataFrame` as input.
+Run the example project from the :doc:`quick start guide <../quickstart>` to create the
+BentoML saved bundle for deployment:
 
-Build the IrisClassifier BentoService from the :doc:`quick start guide <../quickstart>`.
 
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
     python ./bentoml/guides/quick-start/main.py
 
+Verify the saved bundle created:
 
 .. code-block:: bash
 
@@ -131,7 +130,7 @@ Find the IrisClassifier SavedBundle directory:
 
 .. code-block:: bash
 
-    # Download and install jq, the JSON processor: https://stedolan.github.io/jq/download/
+    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
     cd $(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
 

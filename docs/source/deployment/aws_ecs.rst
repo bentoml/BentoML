@@ -40,9 +40,8 @@ Prerequisites
 AWS ECS deployment with BentoML
 -------------------------------------------------
 
-This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
-
-Build the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
+Run the example project from the :doc:`quick start guide <../quickstart>` to create the
+BentoML saved bundle for deployment:
 
 
 .. code-block:: bash
@@ -50,6 +49,7 @@ Build the IrisClassifier BentoService from the :doc:`Quick start guide <../quick
     git clone git@github.com:bentoml/BentoML.git
     python ./bentoml/guides/quick-start/main.py
 
+Verify the saved bundle created:
 
 .. code-block:: bash
 
@@ -107,12 +107,14 @@ BentoService and available for sending test request:
       --data '[[5.1, 3.5, 1.4, 0.2]]' \
       http://localhost:5000/predict
 
-======================================================================
-Dockerize BentoML model server for AWS ECR(Elastic Container Registry)
-======================================================================
+=============================================
+Dockerize BentoML model server for deployment
+=============================================
 
 In order to create ECS deployment, the model server need to be containerized and push to
-a container registry such as AWS ECR.
+a container registry. Amazon Elastic Container Registry (ECR) is a fully-managed Docker
+container registry that makes it easy for developers to store, manage, and deploy Docker
+container images.
 
 Docker login with AWS ECR
 
@@ -159,7 +161,7 @@ Create AWS ECR repository
 
 .. code-block:: bash
 
-    # Download and install jq, the JSON processor: https://stedolan.github.io/jq/download/
+    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
     $ saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
     $ docker build --tag=192023623294.dkr.ecr.us-west-2.amazonaws.com/irisclassifier-ecs $saved_path
 

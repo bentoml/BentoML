@@ -5,6 +5,10 @@ Google Cloud Run is a fully manged compute platform that automatically scales. I
 alternative to run BentoService that requires more computing power. Cloud Run is serverless. It
 abstracts away infrastructure management, so you can focus on building service.
 
+This guide demonstrates how to deploy a scikit-learn based iris classifier model with
+BentoML to Google Cloud Run. The same deployment steps are also applicable for models
+trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
+
 
 Prerequisites
 -------------
@@ -53,11 +57,16 @@ Create Google cloud project
     Updated property [core/project]
 
 
-=============================================
-Build and push docker image to GCP repository
-=============================================
+============================================================
+Build and push BentoML model service image to GCP repository
+============================================================
 
-This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`:
+This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
+The IrisClassifier has an endpoint, `/predict`, as its entry point for accessing the prediction
+service. The predict endpoint expects `pandas.DataFrame` as input.
+
+Build the IrisClassifier BentoService from the :doc:`quick start guide <../quickstart>`.
+
 
 .. code-block:: bash
 
@@ -103,8 +112,8 @@ This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide
     }
 
 
-After saving the BentoService instance, you can now start a REST API server with the
-model trained and test the API server locally:
+The BentoML saved bundle created can now be used to start a REST API Server hosting the
+BentoService and available for sending test request:
 
 .. code-block:: bash
 

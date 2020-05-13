@@ -5,6 +5,9 @@ Heroku is a popular platform as a service based on managed container system. It 
 an easy solution to quickly build, run and scale applications. BentoML works great with
 Heroku. BentoServices could quickly deploy to Heroku as API model server for production.
 
+This guide demonstrates how to deploy a scikit-learn based iris classifier model with
+BentoML to Heroku. The same deployment steps are also applicable for models
+trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
 
 Prerequsities
 -------------
@@ -28,10 +31,11 @@ Prerequsities
 Heroku deployment with BentoML
 ------------------------------
 
-This example builds a BentoService with iris classifier model, and deploy the
-BentoService to Heroku as API server for inferencing.
+This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
+The IrisClassifier has an endpoint, `/predict`, as its entry point for accessing the prediction
+service. The predict endpoint expects `pandas.DataFrame` as input.
 
-Use the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
+Build the IrisClassifier BentoService from the :doc:`quick start guide <../quickstart>`.
 
 .. code-block:: bash
 
@@ -75,6 +79,25 @@ Use the IrisClassifier BentoService from the :doc:`Quick start guide <../quickst
         ]
       }
     }
+
+
+The BentoML saved bundle created can now be used to start a REST API Server hosting the
+BentoService and available for sending test request:
+
+.. code-block:: bash
+
+    # Start BentoML API server:
+    bentoml serve IrisClassifier:latest
+
+
+.. code-block:: bash
+
+    # Send test request:
+    curl -i \
+      --header "Content-Type: application/json" \
+      --request POST \
+      --data '[[5.1, 3.5, 1.4, 0.2]]' \
+      http://localhost:5000/predict
 
 
 ==========================

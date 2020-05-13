@@ -1,15 +1,22 @@
-Deploying to Knative
+Deploying to KNative
 ====================
 
 Knative is kubernetes based platform to deploy and manage serverless workloads. It is a
 solution for deploying ML workload that requires more computing power that abstracts away
 infrastructure management and without worry about vendor lock.
 
+This guide demonstrates how to serve a scikit-learn based iris classifier model with
+BentoML on a KNative cluster. The same deployment steps are also applicable for models
+trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
 
 Prerequisites
 -------------
 
-* kubernetes cluster version 1.15 or newer.
+* A kubernetes installed cluster. `minikube` is used in this guide.
+
+    * Kubernetes guide: https://kubernetes.io/docs/setup/
+
+    * `minikube` install instruction: https://kubernetes.io/docs/tasks/tools/install-minikube/
 
 * Knative with istio as network layer
 
@@ -17,16 +24,21 @@ Prerequisites
 
     * Install istio for knative: https://knative.dev/docs/install/installing-istio/
 
-* Saved BentoService bundle
+* Python 3.6 or above and install required packages: `bentoml` and `scikit-learn`
 
-    * for this guide, we are using the IrisClassifier that was created in the
-      quick start guide: https://docs.bentoml.org/en/latest/quickstart.html
+    * .. code-block:: bash
+
+            pip install bentoml scikit-learn
 
 
 Knative deployment with BentoML
 -------------------------------
 
-This guide use the IrisClassifier BentoService from the :doc:`Quick start guide<../quickstart>`.
+This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
+The IrisClassifier has an endpoint, `/predict`, as its entry point for accessing the prediction
+service. The predict endpoint expects `pandas.DataFrame` as input.
+
+Build the IrisClassifier BentoService from the :doc:`quick start guide <../quickstart>`.
 
 .. code-block:: bash
 
@@ -72,8 +84,8 @@ Use BentoML CLI tool to get the information about IrisClassifier.
     }
 
 
-After saving the BentoService instance, you can now start a REST API server with the
-model trained and test the API server locally:
+The BentoML saved bundle created can now be used to start a REST API Server hosting the
+BentoService and available for sending test request:
 
 .. code-block:: bash
 
@@ -91,18 +103,17 @@ model trained and test the API server locally:
       http://localhost:5000/predict
 
 
-==============================
-Deploy BentoService to Knative
-==============================
+======================================
+Deploy BentoML model server to KNative
+======================================
 
-BentoML provides a convenient way of containerizing the model API server with Docker. To
-create a docker container image for the sample model above:
+BentoML provides a convenient way to containerize the model API server with Docker:
 
-1. Find the file directory of the SavedBundle with bentoml get command, which is directory
-structured as a docker build context.
+    1. Find the SavedBundle directory with `bentoml get` command
 
-2. Running docker build with this directory produces a docker image containing the model
-API server
+    2. Run docker build with the SavedBundle directory which contains a generated Dockerfile
+
+    3. Run the generated docker image to start a docker container serving the model
 
 .. code-block:: bash
 
@@ -171,7 +182,7 @@ Create bentoml namespace and then deploy BentoService to Knative with kubectl ap
 
 
 
-Monitor the status with kubectl get ksvc command.
+View the status of the deployment with `kubectl get ksvc` command:
 
 .. code-block:: bash
 
@@ -185,8 +196,7 @@ Validate prediction server with sample data
 ===========================================
 
 
-For this guide, the kubernetes cluster run on minikube, Get the appropriate ip from
-minikube and the port from istio
+Find the cluster IP address and exposed port of the deployed Knative service, in the context of minikube:
 
 .. code-block::
 
@@ -197,7 +207,7 @@ minikube and the port from istio
     31871
 
 
-With the ip address and port, makes a curl request to the prediction result from Knative
+With the IP address and port, Use `curl` to make an HTTP request to the deployment in Knative:
 
 .. code-block:: bash
 

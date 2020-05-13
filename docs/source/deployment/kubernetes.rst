@@ -1,12 +1,14 @@
 Deploying to Kubernetes Cluster
 ===============================
 
-This guide demostrates how to deploy a model server built with BentoML to Kubernetes cluster.
-
 Kubernetes is an open-source system for automating deployment, scaling, and management of
 containerized applications. It is the de-facto solution for deploying applications today.
-Machine larning services also can take advantage of Kubernetes' ability to quickly deploy
+Machine learning services also can take advantage of Kubernetes' ability to quickly deploy
 and scale base on demand.
+
+This guide demonstrates how to serve a scikit-learn based iris classifier model with
+BentoML on a Kubernetes cluster. The same deployment steps are also applicable for models
+trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
 
 
 Prerequsities
@@ -39,11 +41,11 @@ Before starting this guide, make sure you have the following:
 Kubernetes deployment with BentoML
 ----------------------------------
 
-This guide builds a BentoService with iris classifier model, and deploys the
-BentoService to Kubernetes as API model server.
+This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
+The IrisClassifier has an endpoint, `/predict`, as its entry point for accessing the prediction
+service. The predict endpoint expects `pandas.DataFrame` as input.
 
-
-Use the IrisClassifier BentoService from the quick start guide.
+Build the IrisClassifier BentoService from the :doc:`quick start guide <../quickstart>`.
 
 .. code-block:: bash
 
@@ -90,18 +92,37 @@ Use BentoML CLI tool to get the information of IrisClassifier created above
       }
     }
 
+
+The BentoML saved bundle created can now be used to start a REST API Server hosting the
+BentoService and available for sending test request:
+
+.. code-block:: bash
+
+    # Start BentoML API server:
+    bentoml serve IrisClassifier:latest
+
+
+.. code-block:: bash
+
+    # Send test request:
+    curl -i \
+      --header "Content-Type: application/json" \
+      --request POST \
+      --data '[[5.1, 3.5, 1.4, 0.2]]' \
+      http://localhost:5000/predict
+
+
 =================================
 Deploy BentoService to Kubernetes
 =================================
 
-BentoML provides a convenient way of containerizing the model API server with Docker. To
-create a docker container image for the sample model above:
+BentoML provides a convenient way to containerize the model API server with Docker:
 
-1. Find the file directory of the SavedBundle with bentoml get command, which is directory
-structured as a docker build context.
+    1. Find the SavedBundle directory with `bentoml get` command
 
-2. Running docker build with this directory produces a docker image containing the model
-API server
+    2. Run docker build with the SavedBundle directory which contains a generated Dockerfile
+
+    3. Run the generated docker image to start a docker container serving the model
 
 .. code-block:: bash
 

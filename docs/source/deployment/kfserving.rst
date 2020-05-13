@@ -2,12 +2,13 @@ Deploying to KFServing
 ======================
 
 
-This guide demostrates how to deploy a BentoService to a KFServing cluster.
-
 KFServing enables serverless inferencing on Kubernetes cluster for common machine learning
 frameworks like Tensorflow, XGBoost, scikit-learn and etc. BentoServices can easily
 deploy to KFServing and take advantage of what KFServing offers.
 
+This guide demonstrates how to serve a scikit-learn based iris classifier model with
+BentoML on a KFServing cluster. The same deployment steps are also applicable for models
+trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
 
 =============
 Prerequisites
@@ -31,7 +32,12 @@ Before starting this guide, make sure you have the following:
 KFServing deployment with BentoML
 ---------------------------------
 
-This guide use the IrisClassifier BentoService from the quick start guide:
+This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
+The IrisClassifier has an endpoint, `/predict`, as its entry point for accessing the prediction
+service. The predict endpoint expects `pandas.DataFrame` as input.
+
+Build the IrisClassifier BentoService from the :doc:`quick start guide <../quickstart>`.
+
 
 .. code-block:: bash
 
@@ -78,8 +84,8 @@ Use BentoML CLI tool to get the information of IrisClassifier created above:
       }
     }
 
-After saving the BentoService instance, you can now start a REST API server with the
-model trained and test the API server locally:
+The BentoML saved bundle created can now be used to start a REST API Server hosting the
+BentoService and available for sending test request:
 
 .. code-block:: bash
 
@@ -100,14 +106,13 @@ model trained and test the API server locally:
 Deploy BentoService to KFServing
 ================================
 
-BentoML provides a convenient way of containerizing the model API server with Docker. To
-create a docker container image for the sample model above:
+BentoML provides a convenient way to containerize the model API server with Docker:
 
-  1. Find the file directory of the SavedBundle with `bentoml get` command, which is
-  directory structured as a docker build context.
+    1. Find the SavedBundle directory with `bentoml get` command
 
-  2. Running docker build with this directory produces a docker image containing the API
-  model server.
+    2. Run docker build with the SavedBundle directory which contains a generated Dockerfile
+
+    3. Run the generated docker image to start a docker container serving the model
 
 .. code-block:: bash
 

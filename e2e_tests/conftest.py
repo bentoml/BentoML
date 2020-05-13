@@ -143,10 +143,11 @@ def temporary_yatai_service_url():
     with TempDirectory() as temp_dir:
         temp_docker_file_path = os.path.join(temp_dir, 'Dockerfile')
         with open(temp_docker_file_path, 'w') as f:
-            f.write(f"""\
-        FROM bentoml/yatai-service:{PREV_PYPI_RELEASE_VERSION}
-        ADD . /bentoml-local-repo
-        RUN pip install /bentoml-local-repo
+            f.write(
+                f"""\
+FROM bentoml/yatai-service:{PREV_PYPI_RELEASE_VERSION}
+ADD . /bentoml-local-repo
+RUN pip install /bentoml-local-repo
             """
             )
         logger.info('building docker image')

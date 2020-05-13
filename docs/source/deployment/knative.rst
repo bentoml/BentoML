@@ -1,15 +1,22 @@
-Deploying to Knative
+Deploying to KNative
 ====================
 
 Knative is kubernetes based platform to deploy and manage serverless workloads. It is a
 solution for deploying ML workload that requires more computing power that abstracts away
 infrastructure management and without worry about vendor lock.
 
+This guide demonstrates how to serve a scikit-learn based iris classifier model with
+BentoML on a KNative cluster. The same deployment steps are also applicable for models
+trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
 
 Prerequisites
 -------------
 
-* kubernetes cluster version 1.15 or newer.
+* A kubernetes cluster.
+
+    * `minikube` is the recommended way to run Kubernetes locally:: https://kubernetes.io/docs/tasks/tools/install-minikube/
+
+    * Kubernetes guide: https://kubernetes.io/docs/setup/
 
 * Knative with istio as network layer
 
@@ -17,36 +24,32 @@ Prerequisites
 
     * Install istio for knative: https://knative.dev/docs/install/installing-istio/
 
-* Saved BentoService bundle
+* Python 3.6 or above and install required packages: `bentoml` and `scikit-learn`
 
-    * for this guide, we are using the IrisClassifier that was created in the
-      quick start guide: https://docs.bentoml.org/en/latest/quickstart.html
+    * .. code-block:: bash
+
+            pip install bentoml scikit-learn
 
 
 Knative deployment with BentoML
 -------------------------------
 
-In this guide, we will build BentoService with docker and then deploy a
-prediction services on Knative with the docker image.
+Run the example project from the :doc:`quick start guide <../quickstart>` to create the
+BentoML saved bundle for deployment:
 
-===========================
-Build and push docker image
-===========================
-
-First, we need to build and push our BentoService to a docker registry.
-We will use the IrisClassifier BentoService from the getting
-:doc:`Quick start guide<../quickstart>`.
 
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
     python ./bentoml/guides/quick-start/main.py
 
-Use BentoML CLI tool to get the information about IrisClassifier.
+Verify the saved bundle created:
 
 .. code-block:: bash
 
-    > bentoml get IrisClassifier:20200121141808_FE78B5
+    $ bentoml get IrisClassifier:20200121141808_FE78B5
+
+    # Sample output
 
     {
       "name": "IrisClassifier",
@@ -81,26 +84,55 @@ Use BentoML CLI tool to get the information about IrisClassifier.
     }
 
 
-Navigate to the BentoService archive bundle location. Build and push docker image to docker hub.
+The BentoML saved bundle created can now be used to start a REST API Server hosting the
+BentoService and available for sending test request:
+
+.. code-block:: bash
+
+    # Start BentoML API server:
+    bentoml serve IrisClassifier:latest
 
 
 .. code-block:: bash
 
-    > cd /Users/bozhaoyu/bentoml/repository/IrisClassifier/20200121141808_FE78B
-    > docker build . -t yubozhao/iris-classifier
-    > docker push yubozhao/iris-classifier
+    # Send test request:
+    curl -i \
+      --header "Content-Type: application/json" \
+      --request POST \
+      --data '[[5.1, 3.5, 1.4, 0.2]]' \
+      http://localhost:5000/predict
 
 
-=================
-Deploy to Knative
-=================
+======================================
+Deploy BentoML model server to KNative
+======================================
 
+BentoML provides a convenient way to containerize the model API server with Docker:
 
-Make sure Knative serving component and its pods are running.
+    1. Find the SavedBundle directory with `bentoml get` command
+
+    2. Run docker build with the SavedBundle directory which contains a generated Dockerfile
+
+    3. Run the generated docker image to start a docker container serving the model
 
 .. code-block:: bash
 
-    > kubectl get pods --namespace knative-serving
+    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
+    saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+
+    # Replace {docker_username} with your Docker Hub username
+    docker build -t {docker_username}/iris-classifier $saved_path
+    docker push {docker_username}/iris-classifier
+
+
+Make sure Knative serving components are running.
+
+.. code-block:: bash
+
+    $ kubectl get pods --namespace knative-serving
+
+    # Sample output
+
     NAME                                READY   STATUS    RESTARTS   AGE
     activator-845b77cbb5-thpcw          2/2     Running   0          4h33m
     autoscaler-7fc56894f5-f2vqc         2/2     Running   0          4h33m
@@ -109,9 +141,9 @@ Make sure Knative serving component and its pods are running.
     webhook-8597865965-9vp25            2/2     Running   1          4h33m
 
 
-Create a service.yaml file and copy the following service definition into the file. We are pointing
-livenessProbe and readyinessProbe to the /healthz endpoint on BentoService.
-
+Copy the following service definition into `service.yaml` and replace `{docker_username}`
+with your docker hub username. The Knative service is directing livenessProbe and
+readyinessProbe to the /healthz endpoint on BentoService.
 
 
 .. code-block:: yaml
@@ -125,7 +157,7 @@ livenessProbe and readyinessProbe to the /healthz endpoint on BentoService.
       template:
         spec:
           containers:
-            - image: docker.io/yubozhao/iris-classifier
+            - image: docker.io/{docker_username}/iris-classifier
               ports:
               - containerPort: 5000
               livenessProbe:
@@ -147,17 +179,23 @@ Create bentoml namespace and then deploy BentoService to Knative with kubectl ap
 
 .. code-block:: bash
 
-    > kubectl create namespace bentoml
-    > kubectl apply -f service.yaml
+    $ kubectl create namespace bentoml
+    $ kubectl apply -f service.yaml
+
+    # Sample output
+
     service.serving.knative.dev/iris-classifier created
 
 
 
-We can monitor the status with kubectl get ksvc command.
+View the status of the deployment with `kubectl get ksvc` command:
 
 .. code-block:: bash
 
-    > kubectl get ksvc --all-namespaces
+    $ kubectl get ksvc --all-namespaces
+
+    # Sample output
+
     NAMESPACE   NAME              URL                                          LATESTCREATED           LATESTREADY             READY   REASON
     bentoml     iris-classifier   http://iris-classifier.bentoml.example.com   iris-classifier-7k2dv   iris-classifier-7k2dv   True
 
@@ -167,27 +205,35 @@ Validate prediction server with sample data
 ===========================================
 
 
-For this guide, our kubernetes cluster run on minikube, we will get the appropriate ip from minikube and the port from istio
+Find the cluster IP address and exposed port of the deployed Knative service, in the context of minikube:
 
 .. code-block::
 
-    > minikube ip
+    $ minikube ip
+
+    # Sample output
+
     192.168.64.4
 
-    > kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}
+    $ kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}
+
+    # Sample output
+
     31871
 
 
-With the ip address and port, we can make a curl request to the prediction result from Knative
+With the IP address and port, Use `curl` to make an HTTP request to the deployment in Knative:
 
 .. code-block:: bash
 
-    > curl -v -i \
+    $ curl -v -i \
         --header "Content-Type: application/json" \
         --header "Host: iris-classifier.bentoml.example.com" \
         --request POST \
         --data '[[5.1, 3.5, 1.4, 0.2]]' \
         http://192.168.64.4:31871/predict
+
+    # Sample output
 
     Note: Unnecessary use of -X or --request, POST is already inferred.
     *   Trying 192.168.64.4...
@@ -227,4 +273,4 @@ Clean up deployment
 
 .. code-block:: bash
 
-    > kubectl delete namespace bentoml
+    kubectl delete namespace bentoml

@@ -6,6 +6,10 @@ Microsoft Azure container instances is a service for running Docker container wi
 managing servers. It is a great option for running BentoService that requires a lot of
 computing resources.
 
+This guide demonstrates how to deploy a scikit-learn based iris classifier model with
+BentoML to Azure Container Instances. The same deployment steps are also applicable for models
+trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
+
 
 Prerequisites
 -------------
@@ -28,17 +32,20 @@ Prerequisites
 Deploying BentoService to Azure Container Instance
 --------------------------------------------------
 
-This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`:
+Run the example project from the :doc:`quick start guide <../quickstart>` to create the
+BentoML saved bundle for deployment:
+
 
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
     python ./bentoml/guides/quick-start/main.py
 
+Verify the saved bundle created:
 
 .. code-block:: bash
 
-    > bentoml get IrisClassifier:latest
+    $ bentoml get IrisClassifier:latest
 
     # sample output
     {
@@ -74,13 +81,34 @@ This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide
     }
 
 
+The BentoML saved bundle created can now be used to start a REST API Server hosting the
+BentoService and available for sending test request:
+
+.. code-block:: bash
+
+    # Start BentoML API server:
+    bentoml serve IrisClassifier:latest
+
+
+.. code-block:: bash
+
+    # Send test request:
+    curl -i \
+      --header "Content-Type: application/json" \
+      --request POST \
+      --data '[[5.1, 3.5, 1.4, 0.2]]' \
+      http://localhost:5000/predict
+
+
 ===================
 Configure Azure CLI
 ===================
 
 .. code-block:: bash
 
-    > az login
+    $ az login
+
+    # Sample output
 
     You have logged in. Now let us find all the subscriptions to which you have access...
     [
@@ -101,7 +129,7 @@ Configure Azure CLI
 
 .. code-block:: bash
 
-    > az group create --name iris-classifier --location eastus
+    $ az group create --name iris-classifier --location eastus
 
     # Sample output
     {
@@ -122,7 +150,7 @@ Create and configure Azure ACR (Azure Container Registry)
 
 .. code-block:: bash
 
-    > az acr create --resource-group iris-classifier --name bentomlirisclassifier --sku Basic --admin-enabled true
+    $ az acr create --resource-group iris-classifier --name bentomlirisclassifier --sku Basic --admin-enabled true
 
     # Sample output
 
@@ -171,14 +199,14 @@ Create and configure Azure ACR (Azure Container Registry)
 
 .. code-block:: bash
 
-    > az acr login --name bentomlirisclassifier
+    $ az acr login --name bentomlirisclassifier
 
     Login Succeeded
 
 
 .. code-block:: bash
 
-    > az acr show --name BentoMLIrisClassifier --query loginServer --output table
+    $ az acr show --name BentoMLIrisClassifier --query loginServer --output table
 
     # Sample output
 
@@ -193,9 +221,11 @@ Build and push docker image to ACR
 
 .. code-block:: bash
 
-    > saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
-    > cd $saved_path
-    > docker build -t bentomlirisclassifier.azurecr.io/iris-classifier .
+    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
+    $ saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    $ docker build -t bentomlirisclassifier.azurecr.io/iris-classifier $saved_path
+
+    # Sample output
 
     Sending build context to Docker daemon  8.314MB
     Step 1/12 : FROM continuumio/miniconda3:4.7.12
@@ -225,7 +255,7 @@ Build and push docker image to ACR
 
 .. code-block:: bash
 
-    > docker push bentomlirisclassifier.azurecr.io/iris-classifier
+    $ docker push bentomlirisclassifier.azurecr.io/iris-classifier
 
     # Sample output
 
@@ -241,7 +271,7 @@ Retrieve registry username and password for container deployment
 
 .. code-block:: bash
 
-    > az acr repository list --name bentomlirisclassifier --output table
+    $ az acr repository list --name bentomlirisclassifier --output table
 
     # Sample output
 
@@ -252,7 +282,7 @@ Retrieve registry username and password for container deployment
 
 .. code-block:: bash
 
-    > az acr credential show -n bentomlirisclassifier
+    $ az acr credential show -n bentomlirisclassifier
 
     # Sample output
 
@@ -274,16 +304,16 @@ Deploying image as Azure container. `registry-username` and `registry-password` 
 
 .. code-block:: bash
 
-    > az container create --resource-group iris-classifier \
-      --name bentomlirisclassifier \
-      --image bentomlirisclassifier.azurecr.io/iris-classifier \
-      --cpu 1 \
-      --memory 1 \
-      --registry-login-server bentomlirisclassifier.azurecr.io \
-      --registry-username bentomlirisclassifier \
-      --registry-password i/qE2Eu/Ngv344HjfOEPjNKkN9hHre+k \
-      --dns-name-label bentomlirisclassifier777 \
-      --ports 5000
+    $ az container create --resource-group iris-classifier \
+        --name bentomlirisclassifier \
+        --image bentomlirisclassifier.azurecr.io/iris-classifier \
+        --cpu 1 \
+        --memory 1 \
+        --registry-login-server bentomlirisclassifier.azurecr.io \
+        --registry-username bentomlirisclassifier \
+        --registry-password i/qE2Eu/Ngv344HjfOEPjNKkN9hHre+k \
+        --dns-name-label bentomlirisclassifier777 \
+        --ports 5000
 
     # Sample output
 
@@ -401,7 +431,7 @@ Use `az container show` command to fetch container instace state
 
 .. code-block:: bash
 
-    > az container show --resource-group iris-classifier --name bentomlirisclassifier --query instanceView.state
+    $ az container show --resource-group iris-classifier --name bentomlirisclassifier --query instanceView.state
 
     "Running"
 
@@ -410,7 +440,7 @@ We can use the same `az container show` command to retreive endpoint address
 
 .. code-block:: bash
 
-    > az container show --resource-group iris-classifier --name bentomlirisclassifier --query ipAddress.fqdn
+    $ az container show --resource-group iris-classifier --name bentomlirisclassifier --query ipAddress.fqdn
 
     "bentomlirisclassifier777.eastus.azurecontainer.io"
 
@@ -421,10 +451,10 @@ Validate Azure container instance with sample data POST request
 
 .. code-block:: bash
 
-    > curl -X \
-      POST "http://bentomlirisclassifier777.eastus.azurecontainer.io:5000/predict" \
-      --header "Content-Type: application/json" \
-      -d '[[5.1, 3.5, 1.4, 0.2]]'
+    $ curl -X \
+        POST "http://bentomlirisclassifier777.eastus.azurecontainer.io:5000/predict" \
+        --header "Content-Type: application/json" \
+        -d '[[5.1, 3.5, 1.4, 0.2]]'
 
     [0]
 
@@ -435,4 +465,4 @@ Clean up Azure container instance
 
 .. code-block:: bash
 
-    > az group delete --name sentiment_azure
+    az group delete --name sentiment_azure

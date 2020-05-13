@@ -1,12 +1,12 @@
 Deploying to Kubeflow
 =====================
 
-
-This guide demostrates how to deploy a BentoService to Kubernetes cluster with Kubeflow
-installed.
-
 Kubeflow is the machine learning toolkit for Kubernetes. It makes producing ML services
 as simple as possible from data preparation to service management.
+
+This guide demonstrates how to serve a scikit-learn based iris classifier model with
+BentoML on a Kubernetes cluster. The same deployment steps are also applicable for models
+trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
 
 
 ==============
@@ -33,11 +33,8 @@ Before starting this guide, make sure you have the following:
 Kubeflow deployment with BentoML
 --------------------------------
 
-This guide builds a BentoService with iris classifier mode, and deploy BentoService to
-Kubeflow enabled Kubernetes cluster as API model server.
-
-
-Use the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`.
+Run the example project from the :doc:`quick start guide <../quickstart>` to create the
+BentoML saved bundle for deployment:
 
 .. code-block:: bash
 
@@ -49,7 +46,7 @@ Use BentoML CLI tool to get the information of IrisClassifier created above
 
 .. code-block:: bash
 
-    bentoml get IrisClassifier:latest
+    $ bentoml get IrisClassifier:latest
 
 
     # Sample output
@@ -90,17 +87,17 @@ Use BentoML CLI tool to get the information of IrisClassifier created above
 Deploy BentoService to Kubeflow
 ===============================
 
-BentoML provides a convenient way of containerizing the model API server with Docker. To
-create a docker container image for the sample model above:
+BentoML provides a convenient way to containerize the model API server with Docker:
 
-1. Find the file directory of the SavedBundle with bentoml get command, which is directory
-structured as a docker build context.
+    1. Find the SavedBundle directory with `bentoml get` command
 
-2. Running docker build with this directory produces a docker image containing the model
-API server
+    2. Run docker build with the SavedBundle directory which contains a generated Dockerfile
+
+    3. Run the generated docker image to start a docker container serving the model
 
 .. code-block:: bash
 
+    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
     saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
     # Replace {docker_username} with your Docker Hub username

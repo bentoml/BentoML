@@ -5,6 +5,10 @@ Google Cloud Run is a fully manged compute platform that automatically scales. I
 alternative to run BentoService that requires more computing power. Cloud Run is serverless. It
 abstracts away infrastructure management, so you can focus on building service.
 
+This guide demonstrates how to deploy a scikit-learn based iris classifier model with
+BentoML to Google Cloud Run. The same deployment steps are also applicable for models
+trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
+
 
 Prerequisites
 -------------
@@ -29,16 +33,17 @@ Create Google cloud project
 
 .. code-block:: bash
 
-    > glcoud components update
+    $ glcoud components update
 
     All components are up to date.
 
 
 .. code-block:: bash
 
-    > gcloud projects create irisclassifier-gcloud-run
+    $ gcloud projects create irisclassifier-gcloud-run
 
     # Sample ouput
+
     Create in progress for [https://cloudresourcemanager.googleapis.com/v1/projects/irisclassifier-gcloud-run].
     Waiting for [operations/cp.6403723248945195918] to finish...done.
     Enabling service [cloudapis.googleapis.com] on project [irisclassifier-gcloud-run]...
@@ -48,26 +53,29 @@ Create Google cloud project
 
 .. code-block:: bash
 
-    > gcloud config set project irisclassifier-gcloud-run
+    $ gcloud config set project irisclassifier-gcloud-run
 
     Updated property [core/project]
 
 
-=============================================
-Build and push docker image to GCP repository
-=============================================
+============================================================
+Build and push BentoML model service image to GCP repository
+============================================================
 
-This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`:
+Run the example project from the :doc:`quick start guide <../quickstart>` to create the
+BentoML saved bundle for deployment:
+
 
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
     python ./bentoml/guides/quick-start/main.py
 
+Verify the saved bundle created:
 
 .. code-block:: bash
 
-    > bentoml get IrisClassifier:latest
+    $ bentoml get IrisClassifier:latest
 
     # Sample output
     {
@@ -103,15 +111,36 @@ This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide
     }
 
 
+The BentoML saved bundle created can now be used to start a REST API Server hosting the
+BentoService and available for sending test request:
+
+.. code-block:: bash
+
+    # Start BentoML API server:
+    bentoml serve IrisClassifier:latest
+
+
+.. code-block:: bash
+
+    # Send test request:
+    curl -i \
+      --header "Content-Type: application/json" \
+      --request POST \
+      --data '[[5.1, 3.5, 1.4, 0.2]]' \
+      http://localhost:5000/predict
+
+
 Use `gcloud` CLI to build the docker image
 
 .. code-block:: bash
 
-    > saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
-    > cd $saved_path
-    > gcloud builds submit --tag gcr.io/irisclassifier-gcloud-run/iris-classifier
+    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
+    $ saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    $ cd $saved_path
+    $ gcloud builds submit --tag gcr.io/irisclassifier-gcloud-run/iris-classifier
 
     # Sample output
+
     Creating temporary tarball archive of 15 file(s) totalling 15.8 MiB before compression.
     Uploading tarball of [.] to [gs://irisclassifier-gcloud-run_cloudbuild/source/1587430763.39-03422068242448efbcfc45f2aed218d3.tgz]
     Created [https://cloudbuild.googleapis.com/v1/projects/irisclassifier-gcloud-run/builds/9c0f3ef4-11c0-4089-9406-1c7fb9c7e8e8].
@@ -159,11 +188,11 @@ Copy the service URL from the screen
 
 .. code-block:: bash
 
-    > curl -i \
-      --header "Content-Type: application/json" \
-      --request POST \
-      -d '[[5.1, 3.5, 1.4, 0.2]]' \
-      https://iris-classifier-7v6yobzlcq-uw.a.run.app/predict
+    $ curl -i \
+        --header "Content-Type: application/json" \
+        --request POST \
+        -d '[[5.1, 3.5, 1.4, 0.2]]' \
+        https://iris-classifier-7v6yobzlcq-uw.a.run.app/predict
 
     # Sample output
     [0]

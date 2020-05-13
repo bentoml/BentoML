@@ -38,41 +38,33 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 def get_yatai_service(
-    channel_address=None, db_url=None, repo_base_url=None, default_namespace=None
+    channel_address=None,
+    db_url=None,
+    repo_base_url=None,
+    s3_endpoint_url=None,
+    default_namespace=None,
 ):
-    channel_address = channel_address or config().get('yatai_service', 'url')
-    client_cacert_path = (
-        config().get('yatai_service', 'client_certificate_file')
-        or certifi.where()  # default: Mozilla ca cert
-    )
+    channel_address = channel_address or config('yatai_service').get('url')
     channel_address = channel_address.strip()
     if channel_address:
         from bentoml.proto.yatai_service_pb2_grpc import YataiStub
 
-        if db_url is not None:
+        if any([db_url, repo_base_url, s3_endpoint_url, default_namespace]):
             logger.warning(
-                "Config 'db_url' is ignored in favor of remote YataiService at `%s`",
+                "Using remote YataiService at `%s`, local YataiService configs "
+                "including db_url, repo_base_url, s3_endpoint_url and default_namespace"
+                "will all be ignored.",
                 channel_address,
             )
-        if repo_base_url is not None:
-            logger.warning(
-                "Config 'repo_base_url:%s' is ignored in favor of remote YataiService "
-                "at `%s`",
-                repo_base_url,
-                channel_address,
-            )
-        if default_namespace is not None:
-            logger.warning(
-                "Config 'default_namespace:%s' is ignored in favor of remote "
-                "YataiService at `%s`",
-                default_namespace,
-                channel_address,
-            )
-        logger.debug("Using BentoML with remote Yatai server: %s", channel_address)
 
+        logger.debug("Connecting YataiService gRPC server at: %s", channel_address)
         scheme, addr = parse_grpc_url(channel_address)
 
         if scheme in ('grpcs', 'https'):
+            client_cacert_path = (
+                config().get('yatai_service', 'client_certificate_file')
+                or certifi.where()  # default: Mozilla ca cert
+            )
             with open(client_cacert_path, 'rb') as ca_cert_file:
                 ca_cert = ca_cert_file.read()
             credentials = grpc.ssl_channel_credentials(ca_cert, None, None)
@@ -83,24 +75,25 @@ def get_yatai_service(
     else:
         from bentoml.yatai.yatai_service_impl import YataiService
 
-        logger.debug("Using BentoML with local Yatai server")
-
-        default_namespace = default_namespace or config().get(
-            'deployment', 'default_namespace'
-        )
-        repo_base_url = repo_base_url or config().get('default_repository_base_url')
-        db_url = db_url or config().get('db', 'url')
-
+        logger.debug("Creating local YataiService instance")
         return YataiService(
             db_url=db_url,
             repo_base_url=repo_base_url,
+            s3_endpoint_url=s3_endpoint_url,
             default_namespace=default_namespace,
         )
 
 
-def start_yatai_service_grpc_server(db_url, repo_base_url, grpc_port, ui_port, with_ui):
+def start_yatai_service_grpc_server(
+    db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url
+):
     track_server('yatai-service-grpc-server')
-    yatai_service = get_yatai_service(db_url=db_url, repo_base_url=repo_base_url)
+    from bentoml.yatai.yatai_service_impl import YataiService
+    yatai_service = YataiService(
+        db_url=db_url,
+        repo_base_url=repo_base_url,
+        s3_endpoint_url=s3_endpoint_url,
+    )
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     add_YataiServicer_to_server(yatai_service, server)
     debug_mode = config().getboolean('core', 'debug')

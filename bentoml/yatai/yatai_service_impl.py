@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import logging
 
+from bentoml import config
 from bentoml.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,
@@ -57,9 +58,15 @@ class YataiService(YataiServicer):
 
     # pylint: disable=unused-argument
 
-    def __init__(self, db_url, repo_base_url, default_namespace):
+    def __init__(self, db_url, repo_base_url, s3_endpoint_url, default_namespace):
+        cfg = config('yatai_service')
+        repo_base_url = repo_base_url or cfg.get('repository_base_url')
+        db_url = db_url or cfg.get('db_url')
+        s3_endpoint_url = s3_endpoint_url or cfg.get('s3_endpoint_url')
+        default_namespace = default_namespace or cfg.get('default_namespace')
+
         self.default_namespace = default_namespace
-        self.repo = BentoRepository(repo_base_url)
+        self.repo = BentoRepository(repo_base_url, s3_endpoint_url)
         self.sess_maker = init_db(db_url)
         self.deployment_store = DeploymentStore(self.sess_maker)
         self.bento_metadata_store = BentoMetadataStore(self.sess_maker)

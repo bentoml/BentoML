@@ -40,27 +40,45 @@ def add_yatai_service_sub_command(cli):
     @click.option(
         '--repo-base-url',
         type=click.STRING,
-        help='Base URL for storing saved BentoService bundle files, this can be a '
-        'filesystem path(POSIX/Windows), or a S3 URL, usually starts with "s3://"',
+        help='Base URL for storing BentoML saved bundle files, this can be a filesystem'
+        'path(POSIX/Windows), or a S3 URL, usually starting with "s3://"',
         envvar='BENTOML_REPO_BASE_URL',
     )
     @click.option(
-        '--grpc-port', type=click.INT, default=50051, help='Port for Yatai server'
+        '--grpc-port',
+        type=click.INT,
+        default=50051,
+        help='Port to run YataiService gRPC server',
+        envvar='BENTOML_GRPC_PORT',
     )
     @click.option(
-        '--ui-port', type=click.INT, default=3000, help='Port for Yatai web UI'
+        '--ui-port',
+        type=click.INT,
+        default=3000,
+        help='Port to run YataiService Web UI server',
+        envvar='BENTOML_WEB_UI_PORT',
     )
     @click.option(
         '--ui/--no-ui',
         default=True,
-        help='Start BentoML YataiService without Web UI',
+        help='Run YataiService with or without Web UI, when running with --no-ui, it '
+        'will only run the gRPC server',
         envvar='BENTOML_ENABLE_WEB_UI',
     )
-    def yatai_service_start(db_url, repo_base_url, grpc_port, ui_port, ui):
+    @click.option(
+        '--s3-endpoint-url',
+        type=click.STRING,
+        help='S3 Endpoint URL is used for deploying with storage services that are '
+        'compatible with Amazon S3, such as MinIO',
+        envvar='BENTOML_S3_ENDPOINT_URL',
+    )
+    def yatai_service_start(
+        db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url
+    ):
         track_cli('yatai-service-start')
         try:
             start_yatai_service_grpc_server(
-                db_url, repo_base_url, grpc_port, ui_port, ui
+                db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url
             )
         except BentoMLException as e:
             _echo(f'Yatai gRPC server failed: {str(e)}', CLI_COLOR_ERROR)

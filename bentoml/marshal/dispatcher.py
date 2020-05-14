@@ -32,6 +32,9 @@ class NonBlockSema:
 
 
 class Optimizer:
+    '''
+    Analyse historical data to optimize CorkDispatcher.
+    '''
     N_KEPT_SAMPLE = 50  # amount of outbound info kept for inferring params
     N_SKIPPED_SAMPLE = 2  # amount of outbound info skipped after init
     INTERVAL_REFRESH_PARAMS = 5  # seconds between each params refreshing
@@ -83,7 +86,14 @@ class Optimizer:
         )
 
 
-class ParadeDispatcher:
+class CorkDispatcher:
+    '''
+    A decorator that:
+        * wrap batch function
+        * implement CORK algorithm to cork & release calling of wrapped function
+    The wrapped function should be an async function.
+    '''
+
     def __init__(
         self,
         max_latency_in_ms: int,
@@ -104,14 +114,12 @@ class ParadeDispatcher:
         self.callback = None
         self.fallback = fallback
         self.optimizer = Optimizer()
-
         self.max_batch_size = int(max_batch_size)
+        self.tick_interval = 0.001
+
         self._controller = None
         self._queue = collections.deque()  # TODO(hrmthw): maxlen
-        # self._wake_event = asyncio.Condition()
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
-
-        self.tick_interval = 0.001
 
     @cached_property
     def _loop(self):
@@ -138,6 +146,9 @@ class ParadeDispatcher:
         return _func
 
     async def controller(self):
+        '''
+        A standalone coroutine to wait/dispatch calling.
+        '''
         while True:
             try:
                 async with self._wake_event:  # block until there's any request in queue

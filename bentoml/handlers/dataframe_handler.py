@@ -115,7 +115,7 @@ def _dataframe_csv_from_input(raws, content_types):
                     yield f"{str(n_row_sum)},{row_str.strip()}", i
                     n_row_sum += 1
         else:
-            raise ValueError()
+            raise BadInput(f'Invalid content_type for DataframeHandler: {content_type}')
 
 
 def _gen_slice(ids):
@@ -141,7 +141,11 @@ def read_dataframes_from_json_n_csv(datas, content_types):
     no matter how many lines it contains. Concat jsons/csvs before read_json/read_csv
     to improve performance.
     '''
-    rows_csv_with_id = [r for r in _dataframe_csv_from_input(datas, content_types)]
+    try:
+        rows_csv_with_id = [r for r in _dataframe_csv_from_input(datas, content_types)]
+    except TypeError:
+        raise BadInput(f'Invalid input format for DataframeHandler') from None
+
     str_csv = [r for r, _ in rows_csv_with_id]
     df_str_csv = '\n'.join(str_csv)
     df_merged = pd.read_csv(StringIO(df_str_csv), index_col=0)

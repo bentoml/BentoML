@@ -1,7 +1,7 @@
 import asyncio
 import time
 import random
-from bentoml.marshal.dispatcher import ParadeDispatcher
+from bentoml.marshal.dispatcher import CorkDispatcher
 
 
 class Session:
@@ -17,7 +17,7 @@ class Session:
         self._result_fut = asyncio.get_event_loop().create_future()
         self._users = []
 
-        @ParadeDispatcher(config.MAX_EXPECTED_TIME, config.MAX_BATCH_SIZE)
+        @CorkDispatcher(config.MAX_EXPECTED_TIME, config.MAX_BATCH_SIZE)
         async def _work(xs):
             x = len(xs)
             await asyncio.sleep(config.A * x + config.B)

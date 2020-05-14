@@ -1,12 +1,12 @@
 import pytest
 import time
 import asyncio
-from bentoml.marshal.dispatcher import ParadeDispatcher
+from bentoml.marshal.dispatcher import CorkDispatcher
 
 
 @pytest.mark.asyncio
 async def test_dispatcher_raise_error():
-    @ParadeDispatcher(max_batch_size=10, max_latency_in_ms=100)
+    @CorkDispatcher(max_batch_size=10, max_latency_in_ms=100)
     async def f(x):
         if x == 1:
             raise ValueError()
@@ -29,7 +29,7 @@ async def test_dispatcher():
     def _test_func(i):
         return i * 2
 
-    @ParadeDispatcher(MAX_LATENCY, 1000)
+    @CorkDispatcher(MAX_LATENCY, 1000)
     async def _do_sth_slow(input_list):
         await asyncio.sleep(0.1)
         return [_test_func(i) for i in input_list]

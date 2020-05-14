@@ -23,12 +23,14 @@ import psutil
 import aiohttp
 
 from bentoml import config
+from bentoml.exceptions import RemoteException
 from bentoml.utils.trace import async_trace, make_http_headers
 from bentoml.marshal.utils import DataLoader, SimpleRequest
 from bentoml.handlers import HANDLER_TYPES_BATCH_MODE_SUPPORTED
 from bentoml.bundler import load_bento_service_metadata
 from bentoml.utils.usage_stats import track_server
-from bentoml.marshal.dispatcher import ParadeDispatcher, NonBlockSema
+from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
+from bentoml.marshal.utils import SimpleResponse
 
 logger = logging.getLogger(__name__)
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
@@ -173,7 +175,7 @@ class MarshalService:
         '''
 
         if api_name not in self.batch_handlers:
-            _func = ParadeDispatcher(
+            _func = CorkDispatcher(
                 max_latency,
                 max_batch_size,
                 shared_sema=self.fetch_sema(),
@@ -214,6 +216,14 @@ class MarshalService:
                 req = SimpleRequest(request.raw_headers, await request.read())
                 try:
                     resp = await self.batch_handlers[api_name](req)
+                except RemoteException as e:
+                    # known remote exception
+                    logger.error(traceback.format_exc())
+                    resp = aiohttp.web.Response(
+                        status=e.payload.status,
+                        headers=e.payload.headers,
+                        body=e.payload.data,
+                    )
                 except Exception:  # pylint: disable=broad-except
                     logger.error(traceback.format_exc())
                     resp = aiohttp.web.InternalServerError()
@@ -242,6 +252,15 @@ class MarshalService:
         )
 
     async def _batch_handler_template(self, requests, api_name):
+        '''
+        batch request handler
+        params:
+            * requests: list of aiohttp request
+            * api_name: called API name
+        raise:
+            * RemoteException: known exceptions from model server
+            * Exception: other exceptions
+        '''
         headers = {self._MARSHAL_FLAG: "true"}
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_name}"
 
@@ -252,22 +271,19 @@ class MarshalService:
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
             reqs_s = DataLoader.merge_requests(requests)
-            try:
-                async with aiohttp.ClientSession() as client:
-                    async with client.post(
-                        api_url, data=reqs_s, headers=headers
-                    ) as resp:
-                        raw = await resp.read()
-                merged = DataLoader.split_responses(raw)
-            except (aiohttp.ClientConnectorError, aiohttp.ServerDisconnectedError):
-                return (aiohttp.web.HTTPServiceUnavailable(),) * len(requests)
-
-        if merged is None:
-            return (aiohttp.web.HTTPInternalServerError(),) * len(requests)
-        return tuple(
-            aiohttp.web.Response(body=i.data, headers=i.headers, status=i.status)
-            for i in merged
-        )
+            async with aiohttp.ClientSession() as client:
+                async with client.post(api_url, data=reqs_s, headers=headers) as resp:
+                    raw = await resp.read()
+            if resp.status != 200:
+                raise RemoteException(
+                    f"Bad response status from model server:\n{resp.status}\n{raw}",
+                    payload=SimpleResponse(resp.status, resp.headers, raw),
+                )
+            merged = DataLoader.split_responses(raw)
+            return tuple(
+                aiohttp.web.Response(body=i.data, headers=i.headers, status=i.status)
+                for i in merged
+            )
 
     def async_start(self, port):
         """

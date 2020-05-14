@@ -14,6 +14,10 @@ logger = logging.getLogger('bentoml.test')
 
 
 def test_yatai_server_with_sqlite_and_s3():
+    # Note: Use pre-existing bucket instead of newly created bucket, because the
+    # bucket's global DNS needs time to get set up.
+    # https://github.com/boto/boto3/issues/1982#issuecomment-511947643
+
     s3_bucket_name = 's3://bentoml-e2e-test-repo/'
 
     with start_yatai_server(repo_base_url=s3_bucket_name) as yatai_server_url:

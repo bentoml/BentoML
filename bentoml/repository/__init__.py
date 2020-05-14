@@ -129,21 +129,27 @@ class _LocalBentoRepository(BentoRepositoryBase):
 
 
 class _S3BentoRepository(BentoRepositoryBase):
-    def __init__(self, base_url):
+    def __init__(self, base_url, s3_endpoint_url=None):
         self.uri_type = BentoUri.S3
 
         parse_result = urlparse(base_url)
         self.bucket = parse_result.netloc
         self.base_path = parse_result.path.lstrip('/')
 
-        self.s3_client = boto3.client("s3")
+        s3_client_args = {}
+        if s3_endpoint_url is not None:
+            s3_client_args['endpoint_url'] = s3_endpoint_url
+        self.s3_client = boto3.client("s3", **s3_client_args)
 
     @property
     def _expiration(self):
         return config('yatai').getint('bento_uri_default_expiration')
 
     def _get_object_name(self, bento_name, bento_version):
-        return "/".join([self.base_path, bento_name, bento_version]) + '.tar.gz'
+        if self.base_path:
+            return "/".join([self.base_path, bento_name, bento_version]) + '.tar.gz'
+        else:
+            return "/".join([bento_name, bento_version]) + '.tar.gz'
 
     def add(self, bento_name, bento_version):
         # Generate pre-signed s3 path for upload
@@ -206,12 +212,12 @@ class _S3BentoRepository(BentoRepositoryBase):
 
 
 class BentoRepository(BentoRepositoryBase):
-    def __init__(self, base_url=None):
+    def __init__(self, base_url=None, s3_endpoint_url=None):
         if base_url is None:
             base_url = config().get('default_repository_base_url')
 
         if is_s3_url(base_url):
-            self._repo = _S3BentoRepository(base_url)
+            self._repo = _S3BentoRepository(base_url, s3_endpoint_url)
         else:
             self._repo = _LocalBentoRepository(base_url)
 

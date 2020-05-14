@@ -160,6 +160,7 @@ BentoML provides a convenient way to containerize the model API server with Dock
 
 
 ```bash
+# If jq command not found, install jq (the command-line JSON processor) here: https://stedolan.github.io/jq/download/
 saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
 docker build -t {docker_username}/iris-classifier $saved_path
@@ -178,17 +179,17 @@ scale-to-zero, canary rollout and multi-armed bandit.
 BentoML can also deploy SavedBundle directly to cloud services such as AWS Lambda or 
 AWS SageMaker, with the bentoml CLI command:
 
-```
-> bentoml get IrisClassifier
+```bash
+$ bentoml get IrisClassifier
 BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
 IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeHandler>  model<SklearnModelArtifact>
 IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeHandler>  clf<PickleArtifact>
 ...
 
-> bentoml lambda deploy test-deploy -b IrisClassifier:20200121114004_360ECB
+$ bentoml lambda deploy test-deploy -b IrisClassifier:20200121114004_360ECB
 ...
 
-> bentoml deployment list
+$ bentoml deployment list
 NAME           NAMESPACE    PLATFORM    BENTO_SERVICE                         STATUS    AGE
 test-deploy    dev          aws-lambda  IrisClassifier:20200121114004_360ECB  running   2 days and 11 hours
 ...

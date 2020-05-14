@@ -50,6 +50,16 @@ class BentoMLException(Exception):
         return _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE.get(self.proto_status_code, 500)
 
 
+class RemoteException(BentoMLException):
+    """
+    Raise when known exceptions happend in remote server(a model server normally)
+    """
+
+    def __init__(self, *args, payload, **kwargs):
+        super(RemoteException, self).__init__(*args, **kwargs)
+        self.payload = payload
+
+
 class Unauthenticated(BentoMLException):
     """
     Raise when a BentoML operation is not authenticated properly, either against 3rd

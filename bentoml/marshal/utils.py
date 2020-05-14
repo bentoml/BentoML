@@ -91,7 +91,9 @@ class PickleDataLoader:
         try:
             return pickle.loads(raw)
         except pickle.UnpicklingError:
-            return None
+            raise ValueError(
+                f"Batching result unpacking error: \n {raw[:1000]}"
+            ) from None
 
 
 DataLoader = PickleDataLoader

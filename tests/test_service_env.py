@@ -5,6 +5,7 @@ import bentoml
 from bentoml.handlers import DataframeHandler
 from bentoml.artifact import SklearnModelArtifact
 
+
 def test_pip_dependencies_env():
     @bentoml.env(pip_dependencies=["numpy"])
     class ServiceWithString(bentoml.BentoService):
@@ -62,6 +63,7 @@ def test_artifact_pip_dependencies(tmpdir):
         saved_requirements = f.read()
         module_list = saved_requirements.decode('utf-8').split('\n')
         assert 'scikit-learn==0.23.0' in module_list
+
 
 def test_can_instantiate_setup_sh_from_file(tmpdir):
     script_path = os.path.join(tmpdir, 'script.sh')

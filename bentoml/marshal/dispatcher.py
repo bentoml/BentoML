@@ -35,6 +35,7 @@ class Optimizer:
     '''
     Analyse historical data to optimize CorkDispatcher.
     '''
+
     N_KEPT_SAMPLE = 50  # amount of outbound info kept for inferring params
     N_SKIPPED_SAMPLE = 2  # amount of outbound info skipped after init
     INTERVAL_REFRESH_PARAMS = 5  # seconds between each params refreshing

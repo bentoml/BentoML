@@ -58,11 +58,17 @@ class YataiService(YataiServicer):
 
     # pylint: disable=unused-argument
 
-    def __init__(self, db_url, repo_base_url, s3_endpoint_url, default_namespace):
+    def __init__(
+        self,
+        db_url=None,
+        repo_base_url=None,
+        s3_endpoint_url=None,
+        default_namespace=None,
+    ):
         cfg = config('yatai_service')
         repo_base_url = repo_base_url or cfg.get('repository_base_url')
         db_url = db_url or cfg.get('db_url')
-        s3_endpoint_url = s3_endpoint_url or cfg.get('s3_endpoint_url')
+        s3_endpoint_url = s3_endpoint_url or cfg.get('s3_endpoint_url') or None
         default_namespace = default_namespace or cfg.get('default_namespace')
 
         self.default_namespace = default_namespace

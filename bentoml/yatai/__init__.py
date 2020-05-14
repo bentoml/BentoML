@@ -89,10 +89,9 @@ def start_yatai_service_grpc_server(
 ):
     track_server('yatai-service-grpc-server')
     from bentoml.yatai.yatai_service_impl import YataiService
+
     yatai_service = YataiService(
-        db_url=db_url,
-        repo_base_url=repo_base_url,
-        s3_endpoint_url=s3_endpoint_url,
+        db_url=db_url, repo_base_url=repo_base_url, s3_endpoint_url=s3_endpoint_url,
     )
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     add_YataiServicer_to_server(yatai_service, server)
@@ -133,7 +132,9 @@ def start_yatai_service_grpc_server(
         f'* Debug mode: { "on" if debug_mode else "off"}\n'
         f'* Web UI: {f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'
         f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
-        f'* Usage: `bentoml config set yatai_service.url=127.0.0.1:{grpc_port}`\n'
+        f'* Usage:\n'
+        f'*  Set config: `bentoml config set yatai_service.url=127.0.0.1:{grpc_port}`\n'
+        f'*  Set env var: `export BENTOML__YATAI_SERVICE__URL=127.0.0.1:{grpc_port}`\n'
         f'* Help and instructions: '
         f'https://docs.bentoml.org/en/latest/guides/yatai_service.html\n'
         f'{f"* Web server log can be found here: {web_ui_log_path}" if with_ui else ""}'

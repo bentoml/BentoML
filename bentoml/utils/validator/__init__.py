@@ -23,7 +23,9 @@ from bentoml.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 
 deployment_schema = {
     'name': {'type': 'string', 'required': True, 'minlength': 4},
-    'namespace': {'type': 'string', 'required': True, 'minlength': 3},
+    # namespace is optional - YataiService will fill-in the default namespace configured
+    # when it is missing in the apply deployment request
+    'namespace': {'type': 'string', 'required': False, 'minlength': 3},
     'labels': {'type': 'dict', 'allow_unknown': True},
     'annotations': {'type': 'dict', 'allow_unknown': True},
     'created_at': {'type': 'string'},

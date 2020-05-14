@@ -88,17 +88,11 @@ class DeploymentAPIClient:
         )
 
     def get(self, namespace, name):
-        namespace = (
-            namespace if namespace else config().get('deployment', 'default_namespace')
-        )
         return self.yatai_service.GetDeployment(
             GetDeploymentRequest(deployment_name=name, namespace=namespace)
         )
 
     def describe(self, namespace, name):
-        namespace = (
-            namespace if namespace else config().get('deployment', 'default_namespace')
-        )
         return self.yatai_service.DescribeDeployment(
             DescribeDeploymentRequest(deployment_name=name, namespace=namespace)
         )
@@ -249,10 +243,6 @@ class DeploymentAPIClient:
         Raises:
             BentoMLException
         """
-        namespace = (
-            namespace if namespace else config().get('deployment', 'default_namespace')
-        )
-
         deployment_pb = Deployment(
             name=name, namespace=namespace, labels=labels, annotations=annotations
         )
@@ -408,9 +398,6 @@ class DeploymentAPIClient:
             BentoMLException
 
         """
-        namespace = (
-            namespace if namespace else config().get('deployment', 'default_namespace')
-        )
         deployment_pb = Deployment(
             name=name, namespace=namespace, labels=labels, annotations=annotations
         )

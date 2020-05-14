@@ -66,10 +66,11 @@ def get_aws_sagemaker_sub_command():
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
+        '-n',
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration file',
+        'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
         '-l',
@@ -188,6 +189,7 @@ def get_aws_sagemaker_sub_command():
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
+        '-n',
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
@@ -282,10 +284,10 @@ def get_aws_sagemaker_sub_command():
     @aws_sagemaker.command(help='Delete AWS Sagemaker deployment')
     @click.argument('name', type=click.STRING)
     @click.option(
-        '--namespace',
+        '-n' '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration file',
+        'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
         '--force',
@@ -342,10 +344,11 @@ def get_aws_sagemaker_sub_command():
     @aws_sagemaker.command(help='Get AWS Sagemaker deployment information')
     @click.argument('name', type=click.STRING)
     @click.option(
+        '-n',
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration file',
+        'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='json'
@@ -392,7 +395,7 @@ def get_aws_sagemaker_sub_command():
         '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration file',
+        'can be changed in BentoML configuration yatai_service/default_namespace',
         default=ALL_NAMESPACE_TAG,
     )
     @click.option(

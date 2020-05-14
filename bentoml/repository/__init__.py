@@ -146,7 +146,10 @@ class _S3BentoRepository(BentoRepositoryBase):
         return config('yatai').getint('bento_uri_default_expiration')
 
     def _get_object_name(self, bento_name, bento_version):
-        return "/".join([self.base_path, bento_name, bento_version]) + '.tar.gz'
+        if self.base_path:
+            return "/".join([self.base_path, bento_name, bento_version]) + '.tar.gz'
+        else:
+            return "/".join([bento_name, bento_version]) + '.tar.gz'
 
     def add(self, bento_name, bento_version):
         # Generate pre-signed s3 path for upload

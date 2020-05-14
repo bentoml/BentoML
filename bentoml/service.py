@@ -482,10 +482,10 @@ class BentoService(BentoServiceBase):
         self._env = self.__class__._env or BentoServiceEnv(self.name)
 
         for api in self._service_apis:
-            self._env._add_pip_dependencies(api.handler.pip_dependencies)
+            self._env._add_pip_dependencies_if_missing(api.handler.pip_dependencies)
 
         for artifact in self._artifacts:
-            self._env._add_pip_dependencies(artifact.pip_dependencies)
+            self._env._add_pip_dependencies_if_missing(artifact.pip_dependencies)
 
     @property
     def artifacts(self):

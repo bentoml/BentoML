@@ -3,6 +3,7 @@ import stat
 
 import bentoml
 from bentoml.handlers import DataframeHandler
+from bentoml.artifact import SklearnModelArtifact
 
 
 def test_pip_dependencies_env():
@@ -44,6 +45,24 @@ def test_service_env_pip_dependencies(tmpdir):
         assert 'numpy' in module_list
         assert 'pandas' in module_list
         assert 'torch' in module_list
+
+
+def test_artifact_pip_dependencies(tmpdir):
+    @bentoml.artifacts([SklearnModelArtifact('model')])
+    @bentoml.env(pip_dependencies=['scikit-learn==0.23.0'])
+    class ServiceWithList(bentoml.BentoService):
+        @bentoml.api(DataframeHandler)
+        def predict(self, df):
+            return df
+
+    service_with_list = ServiceWithList()
+    service_with_list.save_to_dir(str(tmpdir))
+
+    requirements_txt_path = os.path.join(str(tmpdir), 'requirements.txt')
+    with open(requirements_txt_path, 'rb') as f:
+        saved_requirements = f.read()
+        module_list = saved_requirements.decode('utf-8').split('\n')
+        assert 'scikit-learn==0.23.0' in module_list
 
 
 def test_can_instantiate_setup_sh_from_file(tmpdir):

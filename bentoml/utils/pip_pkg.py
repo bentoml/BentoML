@@ -137,7 +137,8 @@ class DepSeekWork(object):
         self.seek_in_file(self.target_py_file_path)
 
     def seek_in_file(self, file_path):
-        # ast解析py file，获取其依赖的modules
+        # Extract all dependency modules by searching through the trees of the Python
+        # abstract syntax grammar with Python's built-in ast module
         with open(file_path) as f:
             content = f.read()
             tree = ast.parse(content)
@@ -157,7 +158,7 @@ class DepSeekWork(object):
                 if module_name in self.module_manager.searched_modules:
                     m = self.module_manager.searched_modules[module_name]
                     if m.is_local:
-                        # 递归解析
+                        # Recursively search dependencies in sub-modules
                         if m.is_pkg:
                             self.seek_in_dir(os.path.join(m.path, m.name))
                         else:
@@ -165,7 +166,7 @@ class DepSeekWork(object):
                                 os.path.join(m.path, "{}.py".format(m.name))
                             )
                     else:
-                        # 判断是否在pip安装包中
+                        # check if the package has already been added to the list
                         if (
                             module_name in self.module_manager.pip_module_map
                             and module_name not in self.dependencies
@@ -178,7 +179,8 @@ class DepSeekWork(object):
                 else:
                     if module_name in self.module_manager.pip_module_map:
                         if module_name not in self.dependencies:
-                            # 某些特殊情况下，pip安装的module不存在searched_modules中
+                            # In some special cases, the pip-installed module can not
+                            # be located in the searched_modules
                             self.dependencies[
                                 module_name
                             ] = self.module_manager.pip_module_map[module_name]

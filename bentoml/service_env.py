@@ -189,6 +189,14 @@ class BentoServiceEnv(object):
             pip_dependencies = [pip_dependencies]
         self._pip_dependencies += pip_dependencies
 
+    def _add_pip_dependencies_if_missing(self, pip_dependencies):
+        # Insert dependencies to the beginning of self.dependencies, so that user
+        # specified dependency version could overwrite this. This is used by BentoML
+        # to inject ModelArtifact or Handler's optional pip dependencies
+        if not isinstance(pip_dependencies, list):
+            pip_dependencies.insert(0, pip_dependencies)
+        self._pip_dependencies = pip_dependencies + self._pip_dependencies
+
     def _set_setup_sh(self, setup_sh_path_or_content):
         self._setup_sh = None
 

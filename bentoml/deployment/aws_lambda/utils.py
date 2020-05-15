@@ -235,12 +235,7 @@ def init_sam_project(
         with open(
             os.path.join(function_path, 'requirements.txt'), 'r+'
         ) as requirement_file:
-            required_modules = requirement_file.readlines()
-            if has_bentoml_bundle:
-                # Assuming bentoml is always the first one in requirements.txt.
-                # We are removing it
-                required_modules = required_modules[1:]
-            required_modules = required_modules + bundled_files
+            required_modules = requirement_file.readlines() + bundled_files
             # Write from beginning of the file, instead of appending to the end.
             requirement_file.seek(0)
             requirement_file.writelines(required_modules)

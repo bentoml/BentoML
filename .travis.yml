@@ -10,11 +10,23 @@ python:
 
 install:
   - "pip install --upgrade pip"
+  - "pip install protobuf==3.6.0"
   - "pip install ."
   - "pip install --upgrade .[test]"
+
+matrix:
+  include:
+    - os: windows
+      language: sh
+      python: "3.6"
+      before_install:
+        - choco install python --version 3.6.8
+        - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
+        - python -m pip install -U pip --user
 
 script:
   - pytest tests --cov=bentoml
 
 after_success:
   - codecov
+

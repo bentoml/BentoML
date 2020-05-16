@@ -2,19 +2,33 @@ language: python
 
 dist: xenial
 
-cache: pip
+cache:
+  pip: true
 
 python:
   - 3.6
   - 3.7
 
 install:
-  - "pip install --upgrade pip"
+  - "python -m pip install --upgrade pip"
+  - "pip install protobuf==3.6.0"
   - "pip install ."
   - "pip install --upgrade .[test]"
+
+matrix:
+  include:
+    - os: windows
+      language: sh
+      python: "3.6"
+      cache:
+        - pip: true
+      before_install:
+        - choco install python --version 3.6.8
+        - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
 
 script:
   - pytest tests --cov=bentoml
 
 after_success:
   - codecov
+

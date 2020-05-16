@@ -16,15 +16,21 @@ from __future__ import absolute_import
 
 import os
 import sys
+import logging
 import pkg_resources
 import pkgutil
 import ast
+import zipimport
+
 
 EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1
 EPP_PKG_VERSION_MISMATCH = 2
 
 __mm = None
+
+
+logger = logging.getLogger(__name__)
 
 
 def parse_requirement_string(rs):
@@ -75,6 +81,9 @@ class ModuleManager(object):
 
         self.searched_modules = {}
         for m in pkgutil.iter_modules():
+            if isinstance(m.module_finder, zipimport.zipimporter):
+                logger.warning(f"Skipped unsupported zipimporter {m.module_finder}")
+                continue
             if m.name not in self.searched_modules:
                 path = m.module_finder.path
                 is_local = self.is_local_path(path)
@@ -139,54 +148,59 @@ class DepSeekWork(object):
     def seek_in_file(self, file_path):
         # Extract all dependency modules by searching through the trees of the Python
         # abstract syntax grammar with Python's built-in ast module
-        with open(file_path) as f:
-            content = f.read()
-            tree = ast.parse(content)
-            import_set = set()
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    for name in node.names:
-                        import_set.add(name.name.partition(".")[0])
-                elif isinstance(node, ast.ImportFrom):
-                    if node.module is not None and node.level == 0:
-                        import_set.add(node.module.partition(".")[0])
-            for module_name in import_set:
-                if module_name in self.parsed_module_set:
-                    continue
-                self.parsed_module_set.add(module_name)
+        try:
+            with open(file_path) as f:
+                content = f.read()
+        except UnicodeDecodeError:
+            with open(file_path, encoding='utf-8') as f:
+                content = f.read()
 
-                if module_name in self.module_manager.searched_modules:
-                    m = self.module_manager.searched_modules[module_name]
-                    if m.is_local:
-                        # Recursively search dependencies in sub-modules
-                        if m.is_pkg:
-                            self.seek_in_dir(os.path.join(m.path, m.name))
-                        else:
-                            self.seek_in_file(
-                                os.path.join(m.path, "{}.py".format(m.name))
-                            )
+        tree = ast.parse(content)
+        import_set = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for name in node.names:
+                    import_set.add(name.name.partition(".")[0])
+            elif isinstance(node, ast.ImportFrom):
+                if node.module is not None and node.level == 0:
+                    import_set.add(node.module.partition(".")[0])
+        for module_name in import_set:
+            if module_name in self.parsed_module_set:
+                continue
+            self.parsed_module_set.add(module_name)
+
+            if module_name in self.module_manager.searched_modules:
+                m = self.module_manager.searched_modules[module_name]
+                if m.is_local:
+                    # Recursively search dependencies in sub-modules
+                    if m.is_pkg:
+                        self.seek_in_dir(os.path.join(m.path, m.name))
                     else:
-                        # check if the package has already been added to the list
-                        if (
-                            module_name in self.module_manager.pip_module_map
-                            and module_name not in self.dependencies
-                            and module_name
-                            not in self.module_manager.setuptools_module_set
-                        ):
-                            self.dependencies[
-                                module_name
-                            ] = self.module_manager.pip_module_map[module_name]
+                        self.seek_in_file(
+                            os.path.join(m.path, "{}.py".format(m.name))
+                        )
                 else:
-                    if module_name in self.module_manager.pip_module_map:
-                        if module_name not in self.dependencies:
-                            # In some special cases, the pip-installed module can not
-                            # be located in the searched_modules
-                            self.dependencies[
-                                module_name
-                            ] = self.module_manager.pip_module_map[module_name]
-                    else:
-                        if module_name not in sys.builtin_module_names:
-                            self.unknown_module_set.add(module_name)
+                    # check if the package has already been added to the list
+                    if (
+                        module_name in self.module_manager.pip_module_map
+                        and module_name not in self.dependencies
+                        and module_name
+                        not in self.module_manager.setuptools_module_set
+                    ):
+                        self.dependencies[
+                            module_name
+                        ] = self.module_manager.pip_module_map[module_name]
+            else:
+                if module_name in self.module_manager.pip_module_map:
+                    if module_name not in self.dependencies:
+                        # In some special cases, the pip-installed module can not
+                        # be located in the searched_modules
+                        self.dependencies[
+                            module_name
+                        ] = self.module_manager.pip_module_map[module_name]
+                else:
+                    if module_name not in sys.builtin_module_names:
+                        self.unknown_module_set.add(module_name)
 
     def seek_in_dir(self, dir_path):
         for path, dir_list, file_list in os.walk(dir_path):

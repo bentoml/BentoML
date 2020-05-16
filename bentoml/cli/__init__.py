@@ -25,6 +25,7 @@ import subprocess
 import multiprocessing
 from pathlib import Path
 
+import psutil
 from ruamel.yaml import YAML
 
 from bentoml.bundler import (
@@ -39,7 +40,7 @@ from bentoml.cli.bento import add_bento_sub_command
 from bentoml.cli.yatai_service import add_yatai_service_sub_command
 from bentoml.server import BentoAPIServer, get_docs
 from bentoml.server.utils import get_gunicorn_num_of_workers
-from bentoml.server.marshal_server import MarshalService, GunicornMarshalServer
+from bentoml.marshal import MarshalService
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
@@ -332,6 +333,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         microbatch_workers=1,
     ):
         track_cli('serve_gunicorn')
+        if not psutil.POSIX:
+            _echo("The `bentoml server-gunicon` command is only supported on POSIX. "
+                  "On windows platform, use `bentoml serve` for local API testing and "
+                  "docker for running production API endpoint: "
+                  "https://docs.docker.com/docker-for-windows/ ")
+            return
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
@@ -353,7 +360,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         if workers is None:
             workers = get_gunicorn_num_of_workers()
 
+        # Gunicorn only supports POSIX platforms
         from bentoml.server.gunicorn_server import GunicornBentoServer
+        from bentoml.server.marshal_server import GunicornMarshalServer
 
         if enable_microbatch:
             prometheus_lock = multiprocessing.Lock()

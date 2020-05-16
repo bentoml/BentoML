@@ -1,5 +1,8 @@
 import os
 import stat
+import pytest
+
+import psutil  # noqa # pylint: disable=unused-import
 
 import bentoml
 from bentoml.handlers import DataframeHandler
@@ -65,6 +68,7 @@ def test_artifact_pip_dependencies(tmpdir):
         assert 'scikit-learn==0.23.0' in module_list
 
 
+@pytest.mark.skipif('not psutil.POSIX')
 def test_can_instantiate_setup_sh_from_file(tmpdir):
     script_path = os.path.join(tmpdir, 'script.sh')
     with open(script_path, 'w') as f:
@@ -89,6 +93,7 @@ def test_can_instantiate_setup_sh_from_file(tmpdir):
         assert f.read() == 'ls'
 
 
+@pytest.mark.skipif('not psutil.POSIX')
 def test_can_instantiate_setup_sh_from_txt(tmpdir):
     @bentoml.env(setup_sh='ls')
     class ServiceWithSetup(bentoml.BentoService):

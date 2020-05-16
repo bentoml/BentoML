@@ -97,8 +97,9 @@ class SavedBundleConfig(object):
         with open(filepath, "rb") as config_file:
             yml_content = config_file.read()
         conf.config = conf._yaml.load(yml_content)
+        ver = str(conf["version"])
 
-        if conf["version"] != BENTOML_VERSION:
+        if ver != BENTOML_VERSION:
             msg = (
                 "Saved BentoService bundle version mismatch: loading BentoServie "
                 "bundle create with BentoML version {},  but loading from BentoML "
@@ -107,7 +108,7 @@ class SavedBundleConfig(object):
 
             # If major version is different, then there could be incompatible API
             # changes. Raise error in this case.
-            if conf["version"].split(".")[0] != BENTOML_VERSION.split(".")[0]:
+            if ver.split(".")[0] != BENTOML_VERSION.split(".")[0]:
                 if not BENTOML_VERSION.startswith('0+untagged'):
                     raise BentoMLConfigException(msg)
                 else:

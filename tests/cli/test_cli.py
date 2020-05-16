@@ -1,8 +1,10 @@
 import os
 import tempfile
 
+import pytest
 import mock
 from click.testing import CliRunner
+import psutil  # noqa # pylint: disable=unused-import
 
 from bentoml.cli import create_bento_service_cli
 
@@ -42,6 +44,7 @@ def test_run_command_with_input_file(bento_bundle_path):
     assert result.output.strip() == '3'
 
 
+@pytest.mark.skipif('not psutil.POSIX')
 def test_gunicorn_serve_command():
     runner = CliRunner()
 

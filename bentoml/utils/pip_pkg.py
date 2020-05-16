@@ -16,15 +16,20 @@ from __future__ import absolute_import
 
 import os
 import sys
+import logging
 import pkg_resources
 import pkgutil
 import ast
+import zipimport
 
 EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1
 EPP_PKG_VERSION_MISMATCH = 2
 
 __mm = None
+
+
+logger = logging.getLogger(__name__)
 
 
 def parse_requirement_string(rs):
@@ -75,6 +80,9 @@ class ModuleManager(object):
 
         self.searched_modules = {}
         for m in pkgutil.iter_modules():
+            if isinstance(m.module_finder, zipimport.zipimporter):
+                logger.warning(f"Skipped unsupported zipimporter {m.module_finder}")
+                continue
             if m.name not in self.searched_modules:
                 path = m.module_finder.path
                 is_local = self.is_local_path(path)

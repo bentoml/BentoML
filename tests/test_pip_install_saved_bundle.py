@@ -3,8 +3,15 @@ import sys
 import json
 
 import pandas as pd
+import psutil
 
 from bentoml.configuration import get_bentoml_deploy_version
+
+
+def format_path(path_str):
+    if psutil.WINDOWS:
+        return path_str.lower().replace('/', '\\')
+    return path_str
 
 
 def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
@@ -17,12 +24,18 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
         ["pip", "install", "-U", "--target={}".format(install_path), bento_bundle_path]
     ).decode('utf-8')
 
-    assert "Processing {}".format(bento_bundle_path) in stdout
+    assert format_path("Processing {}".format(bento_bundle_path)) in format_path(
+        format_path(stdout)
+    )
     assert "Collecting bentoml=={}".format(get_bentoml_deploy_version()) in stdout
     assert "Successfully built ExampleBentoService" in stdout
 
     # ensure BentoML is installed as dependency
-    assert os.path.isfile(os.path.join(install_path, "bin/bentoml"))
+    if psutil.WINDOWS:
+        assert os.path.isfile(os.path.join(install_path, "bin", "bentoml.exe"))
+    else:
+        assert os.path.isfile(os.path.join(install_path, "bin", "bentoml"))
+
     assert os.path.isdir(os.path.join(install_path, "bentoml"))
 
     sys.path.insert(0, install_path)
@@ -34,7 +47,10 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     assert res == 1
 
     # pip install should place cli entry script under target/bin directory
-    cli_bin_path = os.path.join(install_path, "bin", "ExampleBentoService")
+    if psutil.WINDOWS:
+        cli_bin_path = os.path.join(install_path, "bin", "ExampleBentoService.exe")
+    else:
+        cli_bin_path = os.path.join(install_path, "bin", "ExampleBentoService")
     assert os.path.isfile(cli_bin_path)
 
     # add install_path and local bentoml module to PYTHONPATH to make them

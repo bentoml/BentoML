@@ -39,7 +39,7 @@ def run_test_with_bento_service_class(bento_service_class):
         run_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
         output = proc.stdout.read().decode('utf-8')
-        assert output == '[0]\n'
+        assert output.replace('\r\n', '\n') == '[0]\n'
 
     delete_saved_bento_service(bento_service.name, bento_service.version)
 

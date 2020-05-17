@@ -27,8 +27,11 @@ from bentoml.exceptions import MissingDependencyException, InvalidArgument
 logger = logging.getLogger(__name__)
 
 
-def _is_path_like(p):
-    return isinstance(p, (str, bytes, pathlib.PurePath, os.PathLike))
+def _is_file_like(p):
+    return (
+        isinstance(p, (str, bytes, pathlib.PurePath, os.PathLike))
+        and os.path.isfile(p)
+    )
 
 
 def _load_onnx_saved_model(path):
@@ -46,9 +49,60 @@ class OnnxModelArtifact(BentoServiceArtifact):
     """Abstraction for saving/loading onnx model
 
     Args:
-        name (string): name of the artifact
+        name (string): Name of the artifact
+        backend (string): Name of ONNX inference runtime. [onnx]
     Raises:
-        MissingDependencyException: onnx package is required for OnnxModelArtifact
+        MissingDependencyException: onnx package is required for packing a ModelProto object
+        NotImplementedError: {backend} as onnx runtime is not supported at the moment
+
+    Example usage:
+
+    >>>
+    >>>
+    >>>
+    >>> # Train a model.
+    >>> from sklearn.datasets import load_iris
+    >>> from sklearn.model_selection import train_test_split
+    >>> from sklearn.ensemble import RandomForestClassifier
+    >>> iris = load_iris()
+    >>> X, y = iris.data, iris.target
+    >>> X_train, X_test, y_train, y_test = train_test_split(X, y)
+    >>> clr = RandomForestClassifier()
+    >>> clr.fit(X_train, y_train)
+
+    >>> # Convert into ONNX format
+    >>> from skl2onnx import convert_sklearn
+    >>> from skl2onnx.common.data_types import FloatTensorType
+    >>> initial_type = [('float_input', FloatTensorType([None, 4]))]
+    >>>
+    >>> onnx_model = convert_sklearn(clr, initial_types=initial_type)
+    >>> with open("rf_iris.onnx", "wb") as f:
+    >>>     f.write(onnx_model.SerializeToString())
+    >>>
+    >>>
+    >>> import bentoml
+    >>> from bentoml.artifact import OnnxModelArtifact
+    >>> from bentoml.handlers import DataframeHandler
+    >>>
+    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.artifact([OnnxModelArtifact('model')])
+    >>> class OnnxIrisClassifierService(bentoml.BentoService):
+    >>>     @bentoml.api(DataframeHandler)
+    >>>     def predict(self, df):
+    >>>         input_name = self.artifacts.model.get_inputs()[0].name
+    >>>         output_name = self.artifacts.model.get_outputs()[0].name
+    >>>         return self.artifacts.model.run([output_name], {input_name: df})[0]
+    >>>
+    >>> svc = OnnxIrisClassifierService()
+    >>>
+    >>> # Option one: pack with path to model on local system
+    >>> svc.pack('model', './rf_iris.onnx')
+    >>>
+    >>> # Option two: pack with ONNX model object
+    >>> # svc.pack('model', onnx_model)
+    >>>
+    >>> # Save BentoService
+    >>> svc.save()
     """
 
     def __init__(self, name, backend='onnx'):
@@ -59,15 +113,26 @@ class OnnxModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + '.onnx')
 
     def pack(self, obj):  # pylint:disable=arguments-differ
-        if _is_path_like(obj):
+        if _is_file_like(obj):
             return _ExportedOnnxModelArtifact(self, obj)
-        return _OnnxModelArtifactWrapper(self, obj)
+        else:
+            try:
+                import onnx
+            except ImportError:
+                raise MissingDependencyException(
+                    'onnx package is required for packing a ModelProto object'
+                )
+            if not isinstance(self._model, onnx.ModelProto):
+                raise InvalidArgument('Object is not an instance of onnx.ModelProto')
+            return _OnnxModelArtifactWrapper(self, obj)
 
     def load(self, path):
         if self.backend == 'onnx':
             inference_model = _load_onnx_saved_model(self._model_file_path(path))
         else:
-            raise NotImplementedError('not now bro')
+            raise NotImplementedError(
+                f'{self.backend} as onnx runtime is not supported at the moment'
+            )
         return self.pack(inference_model)
 
     @property
@@ -90,9 +155,11 @@ class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
         try:
             import onnx
         except ImportError:
-            raise MissingDependencyException('TODO')
+            raise MissingDependencyException(
+                'onnx package is required to save onnx.ModelProto object'
+            )
         if not isinstance(self._model, onnx.ModelProto):
-            raise InvalidArgument('TODO')
+            raise InvalidArgument('Object is not an instance of onnx.ModelProto')
         return onnx.save(self._model, self.spec._model_file_path(dst))
 
 
@@ -110,21 +177,3 @@ class _ExportedOnnxModelArtifact(BentoServiceArtifactWrapper):
         if not self.model:
             self.model = _load_onnx_saved_model(self.spec._model_file_path(self.path))
         return self.model
-
-
-# class OnnxRuntimeSession:
-#     def __init__(self, model_path):
-#         try:
-#             import onnxruntime
-#         except ImportError:
-#             raise MissingDependencyException(
-#                 'onnxruntime package is required for inferencing using ONNX runtime'
-#             )
-#
-#         self.model_path = model_path
-#         self.session = onnxruntime.InferenceSession(self.model_path)
-#         self.input_name = self.session.get_inputs()[0].name
-#         self.output_name = self.session.get_outputs()[0].name
-#
-#     def predict(self, input_data):
-#         return self.session.run([self.output_name], {self.input_name: input_data})

@@ -81,6 +81,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
     >>>     f.write(onnx_model.SerializeToString())
     >>>
     >>>
+    >>> import numpy
     >>> import bentoml
     >>> from bentoml.artifact import OnnxModelArtifact
     >>> from bentoml.handlers import DataframeHandler
@@ -90,9 +91,12 @@ class OnnxModelArtifact(BentoServiceArtifact):
     >>> class OnnxIrisClassifierService(bentoml.BentoService):
     >>>     @bentoml.api(DataframeHandler)
     >>>     def predict(self, df):
+    >>>         input_data = df.to_numpy().astype(numpy.float32
     >>>         input_name = self.artifacts.model.get_inputs()[0].name
     >>>         output_name = self.artifacts.model.get_outputs()[0].name
-    >>>         return self.artifacts.model.run([output_name], {input_name: df})[0]
+    >>>         return self.artifacts.model.run(
+    >>>                     [output_name], {input_name: input_data}
+    >>>                )[0]
     >>>
     >>> svc = OnnxIrisClassifierService()
     >>>
@@ -130,10 +134,9 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
     @property
     def pip_dependencies(self):
-        dependencies = []
         if self.backend == 'onnx':
-            dependencies.append('onnxruntime')
-        return dependencies
+            return ['onnxruntime']
+        return []
 
 
 class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):

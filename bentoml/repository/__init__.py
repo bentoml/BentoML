@@ -137,6 +137,10 @@ class _S3BentoRepository(BentoRepositoryBase):
         self.base_path = parse_result.path.lstrip('/')
 
         s3_client_args = {}
+        signature_version = os.environ.get('BENTOML_S3_SIGNATURE_VERSION', 's3v4')
+        s3_client_args['config'] = boto3.session.Config(
+            signature_version=signature_version
+        )
         if s3_endpoint_url is not None:
             s3_client_args['endpoint_url'] = s3_endpoint_url
         self.s3_client = boto3.client("s3", **s3_client_args)
@@ -157,11 +161,9 @@ class _S3BentoRepository(BentoRepositoryBase):
         object_name = self._get_object_name(bento_name, bento_version)
 
         try:
-            response = self.s3_client.generate_presigned_post(
-                self.bucket,
-                object_name,
-                Fields=None,
-                Conditions=None,
+            response = self.s3_client.generate_presigned_url(
+                'put_object',
+                Params={'Bucket': self.bucket, 'Key': object_name},
                 ExpiresIn=self._expiration,
             )
         except Exception as e:
@@ -169,13 +171,7 @@ class _S3BentoRepository(BentoRepositoryBase):
                 "Not able to get pre-signed URL on S3. Error: {}".format(e)
             )
 
-        additional_fields = response['fields']
-        additional_fields['url'] = response['url']
-        return BentoUri(
-            type=self.uri_type,
-            uri='s3://{}/{}'.format(self.bucket, object_name),
-            additional_fields=json.dumps(additional_fields),
-        )
+        return BentoUri(type=self.uri_type, uri=response)
 
     def get(self, bento_name, bento_version):
         # Return s3 path containing uploaded Bento files

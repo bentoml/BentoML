@@ -16,7 +16,7 @@ the :doc:`Getting Started Guide <quickstart>`:
 .. code-block:: python
 
   import bentoml
-  from bentoml.Bandlers import DataframeHandler
+  from bentoml.handlers import DataframeHandler
   from bentoml.artifact import SklearnModelArtifact
 
   @bentoml.env(auto_pip_dependencies=True)

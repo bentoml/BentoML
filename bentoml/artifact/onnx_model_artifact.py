@@ -117,14 +117,6 @@ class OnnxModelArtifact(BentoServiceArtifact):
         if _is_file_like(obj):
             return _ExportedOnnxModelArtifact(self, obj)
         else:
-            try:
-                import onnx
-            except ImportError:
-                raise MissingDependencyException(
-                    'onnx package is required for packing a ModelProto object'
-                )
-            if not isinstance(self._model, onnx.ModelProto):
-                raise InvalidArgument('Object is not an instance of onnx.ModelProto')
             return _OnnxModelArtifactWrapper(self, obj)
 
     def load(self, path):

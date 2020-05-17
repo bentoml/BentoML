@@ -33,8 +33,8 @@ def test_yatai_server_with_sqlite_and_s3():
             get_svc_result = get_bento_service(svc.name, svc.version)
             logger.info(get_svc_result)
             assert (
-                get_svc_result.bento.uri.type == BentoUri.LOCAL
-            ), 'BentoService storage type mismatched, expect LOCAL'
+                get_svc_result.bento.uri.type == BentoUri.S3
+            ), 'BentoService storage type mismatched, expect S3'
 
             logger.info('Validate BentoService prediction result')
             run_result = run_bento_service_prediction(bento_tag, '[]')

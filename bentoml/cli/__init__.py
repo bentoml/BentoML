@@ -133,7 +133,11 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     f'BentoService {name}:{version} not found - '
                     f'{error_code}:{error_message}'
                 )
-            return get_bento_result.bento.uri.uri
+            if get_bento_result.bento.uri.s3_presigned_url:
+                # Use s3 presigned URL for downloading the repository if it is presented
+                return get_bento_result.bento.uri.s3_presigned_url
+            else:
+                return get_bento_result.bento.uri.uri
         else:
             raise BentoMLException(
                 f'BentoService "{bento}" not found - either specify the file path of '

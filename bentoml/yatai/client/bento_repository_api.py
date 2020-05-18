@@ -16,7 +16,6 @@
 
 import io
 import os
-import json
 import logging
 import tarfile
 import requests
@@ -125,13 +124,12 @@ class BentoRepositoryAPIClient:
                 tar.add(saved_bento_path, arcname=bento_service_metadata.name)
             fileobj.seek(0, 0)
 
-            http_response = requests.put(response.uri.additional_fields, data=fileobj)
+            http_response = requests.put(response.uri.s3_presigned_url, data=fileobj)
 
             if http_response.status_code != 200:
                 self._update_bento_upload_progress(
                     bento_service_metadata, UploadStatus.ERROR
                 )
-
                 raise BentoMLException(
                     f"Error saving BentoService bundle to S3. "
                     f"{http_response.status_code}: {http_response.text}"

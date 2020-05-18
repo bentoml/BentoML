@@ -17,7 +17,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import json
 import shutil
 import boto3
 import logging
@@ -159,7 +158,6 @@ class _S3BentoRepository(BentoRepositoryBase):
         # Generate pre-signed s3 path for upload
 
         object_name = self._get_object_name(bento_name, bento_version)
-
         try:
             response = self.s3_client.generate_presigned_url(
                 'put_object',
@@ -174,7 +172,7 @@ class _S3BentoRepository(BentoRepositoryBase):
         return BentoUri(
             type=self.uri_type,
             uri='s3://{}/{}'.format(self.bucket, object_name),
-            additional_fields=response,
+            s3_presigned_url=response,
         )
 
     def get(self, bento_name, bento_version):
@@ -188,11 +186,14 @@ class _S3BentoRepository(BentoRepositoryBase):
                 Params={'Bucket': self.bucket, 'Key': object_name},
                 ExpiresIn=self._expiration,
             )
-        except Exception as e:
-            raise YataiRepositoryException(
-                "Not able to get pre-signed URL on S3. Error: {}".format(e)
+            return response
+        except Exception:
+            logger.error(
+                "Failed generating presigned URL for downloading saved bundle from s3,"
+                f"falling back to using s3 path and client side credential for"
+                "downloading with boto3"
             )
-        return response
+            return 's3://{}/{}'.format(self.bucket, object_name)
 
     def dangerously_delete(self, bento_name, bento_version):
         # Remove s3 path containing related Bento files

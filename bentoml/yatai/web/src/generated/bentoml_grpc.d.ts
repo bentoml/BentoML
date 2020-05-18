@@ -2147,8 +2147,8 @@ export namespace bentoml {
         /** BentoUri uri */
         uri?: (string|null);
 
-        /** BentoUri additional_fields */
-        additional_fields?: (string|null);
+        /** BentoUri s3_presigned_url */
+        s3_presigned_url?: (string|null);
     }
 
     /** Represents a BentoUri. */
@@ -2166,8 +2166,8 @@ export namespace bentoml {
         /** BentoUri uri. */
         public uri: string;
 
-        /** BentoUri additional_fields. */
-        public additional_fields: string;
+        /** BentoUri s3_presigned_url. */
+        public s3_presigned_url: string;
 
         /**
          * Creates a new BentoUri instance using the specified properties.

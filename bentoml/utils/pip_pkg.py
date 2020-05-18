@@ -176,16 +176,13 @@ class DepSeekWork(object):
                     if m.is_pkg:
                         self.seek_in_dir(os.path.join(m.path, m.name))
                     else:
-                        self.seek_in_file(
-                            os.path.join(m.path, "{}.py".format(m.name))
-                        )
+                        self.seek_in_file(os.path.join(m.path, "{}.py".format(m.name)))
                 else:
                     # check if the package has already been added to the list
                     if (
                         module_name in self.module_manager.pip_module_map
                         and module_name not in self.dependencies
-                        and module_name
-                        not in self.module_manager.setuptools_module_set
+                        and module_name not in self.module_manager.setuptools_module_set
                     ):
                         self.dependencies[
                             module_name

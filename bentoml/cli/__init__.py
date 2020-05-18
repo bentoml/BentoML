@@ -133,7 +133,11 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     f'BentoService {name}:{version} not found - '
                     f'{error_code}:{error_message}'
                 )
-            return get_bento_result.bento.uri.uri
+            if get_bento_result.bento.uri.s3_presigned_url:
+                # Use s3 presigned URL for downloading the repository if it is presented
+                return get_bento_result.bento.uri.s3_presigned_url
+            else:
+                return get_bento_result.bento.uri.uri
         else:
             raise BentoMLException(
                 f'BentoService "{bento}" not found - either specify the file path of '
@@ -334,10 +338,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     ):
         track_cli('serve_gunicorn')
         if not psutil.POSIX:
-            _echo("The `bentoml server-gunicon` command is only supported on POSIX. "
-                  "On windows platform, use `bentoml serve` for local API testing and "
-                  "docker for running production API endpoint: "
-                  "https://docs.docker.com/docker-for-windows/ ")
+            _echo(
+                "The `bentoml server-gunicon` command is only supported on POSIX. "
+                "On windows platform, use `bentoml serve` for local API testing and "
+                "docker for running production API endpoint: "
+                "https://docs.docker.com/docker-for-windows/ "
+            )
             return
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path

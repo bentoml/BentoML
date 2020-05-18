@@ -350,7 +350,7 @@ def _init_sagemaker_project(sagemaker_project_dir, bento_path, docker_base_image
 
     with open(os.path.join(sagemaker_project_dir, 'Dockerfile-sagemaker'), "w") as f:
         f.write(BENTO_SERVICE_SAGEMAKER_DOCKERFILE.format(
-            docker_base_image=docker_base_image
+            docker_base_image=docker_base_image)
         )
 
     nginx_conf_path = os.path.join(os.path.dirname(__file__), 'sagemaker_nginx.conf')

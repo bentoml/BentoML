@@ -19,7 +19,7 @@ message BentoUri {
 
   StorageType type = 1;
   string uri = 2;
-  string additional_fields = 3;
+  string s3_presigned_url = 3;
 }
 
 message BentoServiceMetadata {

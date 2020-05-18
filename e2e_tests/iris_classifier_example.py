@@ -1,10 +1,10 @@
 from bentoml import BentoService, api, env, artifacts
-from bentoml.artifact import PickleArtifact
+from bentoml.artifact import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler
 
 
-@env(pip_dependencies=['scikit-learn==0.22'])
-@artifacts([PickleArtifact('clf')])
+@env(auto_pip_dependencies=True)
+@artifacts([SklearnModelArtifact('clf')])
 class IrisClassifier(BentoService):
     @api(DataframeHandler)
     def predict(self, df):

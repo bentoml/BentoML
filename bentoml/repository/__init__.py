@@ -171,7 +171,11 @@ class _S3BentoRepository(BentoRepositoryBase):
                 "Not able to get pre-signed URL on S3. Error: {}".format(e)
             )
 
-        return BentoUri(type=self.uri_type, uri=response)
+        return BentoUri(
+            type=self.uri_type,
+            uri='s3://{}/{}'.format(self.bucket, object_name),
+            additional_fields=response,
+        )
 
     def get(self, bento_name, bento_version):
         # Return s3 path containing uploaded Bento files

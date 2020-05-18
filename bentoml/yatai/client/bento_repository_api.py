@@ -125,9 +125,7 @@ class BentoRepositoryAPIClient:
                 tar.add(saved_bento_path, arcname=bento_service_metadata.name)
             fileobj.seek(0, 0)
 
-            files = {'file': ('dummy', fileobj)}  # dummy file name because file name
-            # has been generated when getting the pre-signed signature.
-            http_response = requests.put(response.uri.uri, files=files)
+            http_response = requests.put(response.uri.additional_fields, data=fileobj)
 
             if http_response.status_code != 200:
                 self._update_bento_upload_progress(

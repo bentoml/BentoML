@@ -127,11 +127,9 @@ class BentoRepositoryAPIClient:
 
             files = {'file': ('dummy', fileobj)}  # dummy file name because file name
             # has been generated when getting the pre-signed signature.
-            data = json.loads(response.uri.additional_fields)
-            uri = data.pop('url')
-            http_response = requests.post(uri, data=data, files=files)
+            http_response = requests.put(response.uri.uri, files=files)
 
-            if http_response.status_code != 204:
+            if http_response.status_code != 200:
                 self._update_bento_upload_progress(
                     bento_service_metadata, UploadStatus.ERROR
                 )

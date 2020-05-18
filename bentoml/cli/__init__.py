@@ -338,10 +338,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     ):
         track_cli('serve_gunicorn')
         if not psutil.POSIX:
-            _echo("The `bentoml server-gunicon` command is only supported on POSIX. "
-                  "On windows platform, use `bentoml serve` for local API testing and "
-                  "docker for running production API endpoint: "
-                  "https://docs.docker.com/docker-for-windows/ ")
+            _echo(
+                "The `bentoml server-gunicon` command is only supported on POSIX. "
+                "On windows platform, use `bentoml serve` for local API testing and "
+                "docker for running production API endpoint: "
+                "https://docs.docker.com/docker-for-windows/ "
+            )
             return
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path

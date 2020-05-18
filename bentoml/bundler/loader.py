@@ -49,6 +49,7 @@ def _is_remote_path(bundle_path):
 def _resolve_remote_bundle_path(bundle_path):
     if is_s3_url(bundle_path):
         import boto3
+
         parsed_url = urlparse(bundle_path)
         bucket_name = parsed_url.netloc
         object_name = parsed_url.path.lstrip('/')
@@ -59,6 +60,7 @@ def _resolve_remote_bundle_path(bundle_path):
         fileobj.seek(0, 0)
     elif _is_http_url(bundle_path):
         import requests
+
         response = requests.get(bundle_path)
         fileobj = io.BytesIO()
         fileobj.write(response.content)

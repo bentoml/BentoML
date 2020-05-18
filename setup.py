@@ -94,8 +94,8 @@ dev_requires = [
     "twine",
     "setuptools",
     "gitpython>=2.0.2",
-    "grpcio-tools",
-    "grpcio-reflection",
+    "grpcio-tools<=1.27.2",
+    "grpcio-reflection<=1.27.2",
     "pylint>=2.3.1",
     "black",
 ]

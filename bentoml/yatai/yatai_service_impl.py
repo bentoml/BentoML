@@ -294,11 +294,10 @@ class YataiService(YataiServicer):
     def AddBento(self, request, context=None):
         try:
             # TODO: validate request
-
-            bento_metadata_pb = self.bento_metadata_store.get(
+            bento_pb = self.bento_metadata_store.get(
                 request.bento_name, request.bento_version
             )
-            if bento_metadata_pb:
+            if bento_pb:
                 error_message = "BentoService bundle: {}:{} already exist".format(
                     request.bento_name, request.bento_version
                 )
@@ -343,10 +342,10 @@ class YataiService(YataiServicer):
     def DangerouslyDeleteBento(self, request, context=None):
         try:
             # TODO: validate request
-            bento_metadata_pb = self.bento_metadata_store.get(
+            bento_pb = self.bento_metadata_store.get(
                 request.bento_name, request.bento_version
             )
-            if not bento_metadata_pb:
+            if not bento_pb:
                 msg = (
                     f"BentoService {request.bento_name}:{request.bento_version} "
                     f"has already been deleted"
@@ -371,18 +370,21 @@ class YataiService(YataiServicer):
     def GetBento(self, request, context=None):
         try:
             # TODO: validate request
-            bento_metadata_pb = self.bento_metadata_store.get(
+            bento_pb = self.bento_metadata_store.get(
                 request.bento_name, request.bento_version
             )
             if request.bento_version.lower() == 'latest':
                 logger.info(
                     'Getting latest version %s:%s',
                     request.bento_name,
-                    bento_metadata_pb.version,
+                    bento_pb.version,
                 )
 
-            if bento_metadata_pb:
-                return GetBentoResponse(status=Status.OK(), bento=bento_metadata_pb)
+            if bento_pb:
+                bento_pb.uri.s3_presigned_url = self.repo.get(
+                    bento_pb.name, bento_pb.version
+                )
+                return GetBentoResponse(status=Status.OK(), bento=bento_pb)
             else:
                 return GetBentoResponse(
                     status=Status.NOT_FOUND(

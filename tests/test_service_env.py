@@ -112,3 +112,14 @@ def test_can_instantiate_setup_sh_from_txt(tmpdir):
 
     with open(setup_sh_path, 'r') as f:
         assert f.read() == 'ls'
+
+
+def test_docker_base_image_env():
+    @bentoml.env(docker_base_image='continuumio/miniconda3:4.8.0')
+    class ServiceWithSetup(bentoml.BentoService):
+        @bentoml.api(DataframeHandler)
+        def predict(self, df):
+            return df
+
+    service_with_setup = ServiceWithSetup()
+    assert 'continuumio/miniconda3:4.8.0' in service_with_setup.env._docker_base_image

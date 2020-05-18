@@ -25,6 +25,7 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
+from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.utils.pip_pkg import (
     EPP_PKG_NOT_EXIST,
@@ -102,6 +103,7 @@ class BentoServiceEnv(object):
         conda_channels: extra conda channels to be used
         conda_dependencies: list of conda dependencies required
         setup_sh: user defined setup bash script, it is executed in docker build time
+        docker_base_image: used when generating Dockerfile in saved bundle
     """
 
     def __init__(
@@ -113,6 +115,7 @@ class BentoServiceEnv(object):
         conda_channels=None,
         conda_dependencies=None,
         setup_sh=None,
+        docker_base_image=None,
     ):
         self._python_version = PYTHON_VERSION
 
@@ -152,6 +155,11 @@ class BentoServiceEnv(object):
             self._add_conda_channels(conda_channels)
         if conda_dependencies:
             self._add_conda_dependencies(conda_dependencies)
+
+        if docker_base_image:
+            self._docker_base_image = docker_base_image
+        else:
+            self._docker_base_image = config('core').get('docker_base_image')
 
     @staticmethod
     def check_dependency(dependency):
@@ -287,4 +295,6 @@ class BentoServiceEnv(object):
         env_dict["conda_env"] = self._conda_env._conda_env
 
         env_dict["python_version"] = self._python_version
+
+        env_dict["docker_base_image"] = self._docker_base_image
         return env_dict

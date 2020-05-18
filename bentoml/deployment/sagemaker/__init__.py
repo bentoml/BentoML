@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 
 # This should be kept in sync with BENTO_SERVICE_DOCKERFILE_CPU_TEMPLATE
 BENTO_SERVICE_SAGEMAKER_DOCKERFILE = """\
-FROM continuumio/miniconda3:4.7.12
+FROM {docker_base_image}
 
 EXPOSE 8080
 
@@ -86,7 +86,7 @@ RUN if [ -f /bento/bentoml_init.sh ]; then /bin/bash -c /bento/bentoml_init.sh; 
 # run user defined setup script
 RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
 
-ENV PATH="/opt/program:${PATH}"
+ENV PATH="/opt/program:$PATH"
 """  # noqa: E501
 
 
@@ -345,11 +345,13 @@ def delete_sagemaker_deployment_resources_if_exist(deployment_pb):
     _delete_sagemaker_endpoint_if_exist(sagemaker_client, sagemaker_endpoint_name)
 
 
-def _init_sagemaker_project(sagemaker_project_dir, bento_path):
+def _init_sagemaker_project(sagemaker_project_dir, bento_path, docker_base_image):
     shutil.copytree(bento_path, sagemaker_project_dir)
 
     with open(os.path.join(sagemaker_project_dir, 'Dockerfile-sagemaker'), "w") as f:
-        f.write(BENTO_SERVICE_SAGEMAKER_DOCKERFILE)
+        f.write(BENTO_SERVICE_SAGEMAKER_DOCKERFILE.format(
+            docker_base_image=docker_base_image)
+        )
 
     nginx_conf_path = os.path.join(os.path.dirname(__file__), 'sagemaker_nginx.conf')
     shutil.copy(nginx_conf_path, os.path.join(sagemaker_project_dir, 'nginx.conf'))
@@ -506,7 +508,11 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         with TempDirectory() as temp_dir:
             sagemaker_project_dir = os.path.join(temp_dir, deployment_spec.bento_name)
-            _init_sagemaker_project(sagemaker_project_dir, bento_path)
+            _init_sagemaker_project(
+                sagemaker_project_dir,
+                bento_path,
+                bento_pb.bento.bento_service_metadata.env.docker_base_image,
+            )
             ecr_image_path = create_and_push_docker_image_to_ecr(
                 sagemaker_config.region,
                 deployment_spec.bento_name,
@@ -607,7 +613,11 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     sagemaker_project_dir = os.path.join(
                         temp_dir, updated_deployment_spec.bento_name
                     )
-                    _init_sagemaker_project(sagemaker_project_dir, bento_path)
+                    _init_sagemaker_project(
+                        sagemaker_project_dir,
+                        bento_path,
+                        bento_pb.bento.bento_service_metadata.env.docker_base_image,
+                    )
                     ecr_image_path = create_and_push_docker_image_to_ecr(
                         updated_sagemaker_config.region,
                         updated_deployment_spec.bento_name,

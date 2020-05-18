@@ -73,7 +73,7 @@ graft {service_name}/artifacts
 """
 
 MODEL_SERVER_DOCKERFILE_CPU = """\
-FROM continuumio/miniconda3:4.8.2
+FROM {docker_base_image}
 
 RUN set -x \
      && apt-get update \
@@ -97,8 +97,8 @@ RUN conda env update -n base -f /bento/environment.yml
 # Install pip dependencies
 ARG PIP_INDEX_URL=https://pypi.python.org/simple/
 ARG PIP_TRUSTED_HOST=pypi.python.org
-ENV PIP_INDEX_URL=${PIP_INDEX_URL}
-ENV PIP_TRUSTED_HOST=${PIP_TRUSTED_HOST}
+ENV PIP_INDEX_URL $PIP_INDEX_URL
+ENV PIP_TRUSTED_HOST $PIP_TRUSTED_HOST
 RUN pip install -r /bento/requirements.txt
 
 # Install additional pip dependencies inside bundled_pip_dependencies dir

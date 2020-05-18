@@ -8,9 +8,7 @@ import docker
 import pytest
 from sklearn import svm, datasets
 
-from bentoml.deployment.aws_lambda import _cleanup_s3_bucket_if_exist
 from bentoml.deployment.utils import ensure_docker_available_or_raise
-from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.configuration import PREV_PYPI_RELEASE_VERSION
 from bentoml.utils.tempdir import TempDirectory
 from e2e_tests.iris_classifier_example import IrisClassifier
@@ -119,15 +117,6 @@ def temporary_docker_postgres_url():
     create_database(db_url)
     yield db_url
     docker_proc.terminate()
-
-
-@pytest.fixture()
-def temporary_s3_bucket():
-    random_hash = uuid.uuid4().hex[:6]
-    bucket_name = f'e2e-yatai-server-{random_hash}'
-    create_s3_bucket_if_not_exists(bucket_name, 'us-west-2')
-    yield f's3://{bucket_name}/repo'
-    _cleanup_s3_bucket_if_exist(bucket_name, 'us-west-2')
 
 
 @pytest.fixture(scope='session')

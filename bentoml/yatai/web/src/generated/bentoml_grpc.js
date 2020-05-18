@@ -5318,7 +5318,7 @@ export const bentoml = $root.bentoml = (() => {
          * @interface IBentoUri
          * @property {bentoml.BentoUri.StorageType|null} [type] BentoUri type
          * @property {string|null} [uri] BentoUri uri
-         * @property {string|null} [additional_fields] BentoUri additional_fields
+         * @property {string|null} [s3_presigned_url] BentoUri s3_presigned_url
          */
 
         /**
@@ -5353,12 +5353,12 @@ export const bentoml = $root.bentoml = (() => {
         BentoUri.prototype.uri = "";
 
         /**
-         * BentoUri additional_fields.
-         * @member {string} additional_fields
+         * BentoUri s3_presigned_url.
+         * @member {string} s3_presigned_url
          * @memberof bentoml.BentoUri
          * @instance
          */
-        BentoUri.prototype.additional_fields = "";
+        BentoUri.prototype.s3_presigned_url = "";
 
         /**
          * Creates a new BentoUri instance using the specified properties.
@@ -5388,8 +5388,8 @@ export const bentoml = $root.bentoml = (() => {
                 writer.uint32(/* id 1, wireType 0 =*/8).int32(message.type);
             if (message.uri != null && message.hasOwnProperty("uri"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.uri);
-            if (message.additional_fields != null && message.hasOwnProperty("additional_fields"))
-                writer.uint32(/* id 3, wireType 2 =*/26).string(message.additional_fields);
+            if (message.s3_presigned_url != null && message.hasOwnProperty("s3_presigned_url"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.s3_presigned_url);
             return writer;
         };
 
@@ -5431,7 +5431,7 @@ export const bentoml = $root.bentoml = (() => {
                     message.uri = reader.string();
                     break;
                 case 3:
-                    message.additional_fields = reader.string();
+                    message.s3_presigned_url = reader.string();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -5483,9 +5483,9 @@ export const bentoml = $root.bentoml = (() => {
             if (message.uri != null && message.hasOwnProperty("uri"))
                 if (!$util.isString(message.uri))
                     return "uri: string expected";
-            if (message.additional_fields != null && message.hasOwnProperty("additional_fields"))
-                if (!$util.isString(message.additional_fields))
-                    return "additional_fields: string expected";
+            if (message.s3_presigned_url != null && message.hasOwnProperty("s3_presigned_url"))
+                if (!$util.isString(message.s3_presigned_url))
+                    return "s3_presigned_url: string expected";
             return null;
         };
 
@@ -5529,8 +5529,8 @@ export const bentoml = $root.bentoml = (() => {
             }
             if (object.uri != null)
                 message.uri = String(object.uri);
-            if (object.additional_fields != null)
-                message.additional_fields = String(object.additional_fields);
+            if (object.s3_presigned_url != null)
+                message.s3_presigned_url = String(object.s3_presigned_url);
             return message;
         };
 
@@ -5550,14 +5550,14 @@ export const bentoml = $root.bentoml = (() => {
             if (options.defaults) {
                 object.type = options.enums === String ? "UNSET" : 0;
                 object.uri = "";
-                object.additional_fields = "";
+                object.s3_presigned_url = "";
             }
             if (message.type != null && message.hasOwnProperty("type"))
                 object.type = options.enums === String ? $root.bentoml.BentoUri.StorageType[message.type] : message.type;
             if (message.uri != null && message.hasOwnProperty("uri"))
                 object.uri = message.uri;
-            if (message.additional_fields != null && message.hasOwnProperty("additional_fields"))
-                object.additional_fields = message.additional_fields;
+            if (message.s3_presigned_url != null && message.hasOwnProperty("s3_presigned_url"))
+                object.s3_presigned_url = message.s3_presigned_url;
             return object;
         };
 

@@ -148,6 +148,9 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR ApplyDeployment: %s", e)
             return ApplyDeploymentResponse(status=e.status_proto)
+        except Exception as e:
+            logger.error("URPC ERROR ApplyDeployment: %s", e)
+            return ApplyDeploymentResponse(status=status_pb2.Status.INTERNAL)
 
     def DeleteDeployment(self, request, context=None):
         try:
@@ -202,6 +205,9 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR DeleteDeployment: %s", e)
             return DeleteDeploymentResponse(status=e.status_proto)
+        except Exception as e:
+            logger.error("RPC ERROR DeleteDeployment: %s", e)
+            return DeleteDeploymentResponse(status=status_pb2.Status.INTERNAL)
 
     def GetDeployment(self, request, context=None):
         try:
@@ -224,6 +230,9 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR GetDeployment: %s", e)
             return GetDeploymentResponse(status=e.status_proto)
+        except Exception as e:
+            logger.error("RPC ERROR GetDeployment: %s", e)
+            return GetDeploymentResponse(status=status_pb2.Status.INTERNAL)
 
     def DescribeDeployment(self, request, context=None):
         try:
@@ -255,6 +264,9 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR DescribeDeployment: %s", e)
             return DeleteDeploymentResponse(status=e.status_proto)
+        except Exception as e:
+            logger.error("RPC ERROR DescribeDeployment: %s", e)
+            return DeleteDeploymentResponse(status=status_pb2.Status.INTERNAL)
 
     def ListDeployments(self, request, context=None):
         try:
@@ -275,6 +287,9 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR ListDeployments: %s", e)
             return DeleteDeploymentResponse(status=e.status_proto)
+        except Exception as e:
+            logger.error("RPC ERROR ListDeployments: %s", e)
+            return DeleteDeploymentResponse(status=status_pb2.Status.INTERNAL)
 
     def AddBento(self, request, context=None):
         try:
@@ -302,6 +317,9 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR AddBento: %s", e)
             return DeleteDeploymentResponse(status=e.status_proto)
+        except Exception as e:
+            logger.error("URPC ERROR AddBento: %s", e)
+            return DeleteDeploymentResponse(status=status_pb2.Status.INTERNAL)
 
     def UpdateBento(self, request, context=None):
         try:
@@ -318,6 +336,9 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR UpdateBento: %s", e)
             return UpdateBentoResponse(status=e.status_proto)
+        except Exception as e:
+            logger.error("RPC ERROR UpdateBento: %s", e)
+            return UpdateBentoResponse(status=status_pb2.Status.INTERNAL)
 
     def DangerouslyDeleteBento(self, request, context=None):
         try:
@@ -343,6 +364,9 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR DangerouslyDeleteBento: %s", e)
             return DangerouslyDeleteBentoResponse(status=e.status_proto)
+        except Exception as e:
+            logger.error("RPC ERROR DangerouslyDeleteBento: %s", e)
+            return DangerouslyDeleteBentoResponse(status=status_pb2.Status.INTERNAL)
 
     def GetBento(self, request, context=None):
         try:
@@ -370,6 +394,9 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR GetBento: %s", e)
             return GetBentoResponse(status=e.status_proto)
+        except Exception as e:
+            logger.error("RPC ERROR GetBento: %s", e)
+            return GetBentoResponse(status=status_pb2.Status.INTERNAL)
 
     def ListBento(self, request, context=None):
         try:
@@ -386,5 +413,8 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR ListBento: %s", e)
             return ListBentoResponse(status=e.status_proto)
+        except Exception as e:
+            logger.error("RPC ERROR ListBento: %s", e)
+            return ListBentoResponse(status=status_pb2.Status.INTERNAL)
 
     # pylint: enable=unused-argument

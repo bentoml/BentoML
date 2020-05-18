@@ -16,7 +16,7 @@ logger = logging.getLogger('bentoml.test')
 def test_sagemaker_deployment(iris_clf_service):
 
     random_hash = uuid.uuid4().hex[:6]
-    deployment_name = f'tests-lambda-e2e-{random_hash}'
+    deployment_name = f'tests-sagemaker-e2e-{random_hash}'
     region = 'us-west-2'
     create_deployment_command = [
         'bentoml',

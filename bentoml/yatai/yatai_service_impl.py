@@ -32,6 +32,7 @@ from bentoml.proto.repository_pb2 import (
     GetBentoResponse,
     UpdateBentoResponse,
     ListBentoResponse,
+    BentoUri,
 )
 from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
 from bentoml.proto.yatai_service_pb2 import (
@@ -381,9 +382,10 @@ class YataiService(YataiServicer):
                 )
 
             if bento_pb:
-                bento_pb.uri.s3_presigned_url = self.repo.get(
-                    bento_pb.name, bento_pb.version
-                )
+                if bento_pb.uri.type == BentoUri.S3:
+                    bento_pb.uri.s3_presigned_url = self.repo.get(
+                        bento_pb.name, bento_pb.version
+                    )
                 return GetBentoResponse(status=Status.OK(), bento=bento_pb)
             else:
                 return GetBentoResponse(

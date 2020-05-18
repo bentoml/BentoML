@@ -143,6 +143,10 @@ class SavedBundleConfig(object):
                 bento_service_metadata.env.python_version = self.config["env"][
                     "python_version"
                 ]
+            if "docker_base_image" in self.config["env"]:
+                bento_service_metadata.env.docker_base_image = self.config["env"][
+                    "docker_base_image"
+                ]
 
         if "apis" in self.config:
             for api_config in self.config["apis"]:

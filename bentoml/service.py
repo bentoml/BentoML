@@ -127,7 +127,7 @@ class BentoServiceAPI(object):
 
 class BentoServiceBase(object):
     """
-    BentoServiceBase is an abstraction class that defines the interface for accesing a
+    BentoServiceBase is an abstraction class that defines the interface for accessing a
     list of BentoServiceAPI for BentoAPIServer and BentoCLI to execute on
     """
 
@@ -291,6 +291,7 @@ def env_decorator(
     conda_channels=None,
     conda_dependencies=None,
     setup_sh=None,
+    docker_base_image=None,
 ):
     """Define environment and dependencies required for the BentoService being created
 
@@ -305,6 +306,7 @@ def env_decorator(
         conda_channels: extra conda channels to be used
         conda_dependencies: list of conda dependencies required
         setup_sh: user defined setup bash script, it is executed in docker build time
+        docker_base_image: used when generating Dockerfile in saved bundle
     """
 
     def decorator(bento_service_cls):
@@ -316,6 +318,7 @@ def env_decorator(
             conda_channels=conda_channels,
             conda_dependencies=conda_dependencies,
             setup_sh=setup_sh,
+            docker_base_image=docker_base_image,
         )
         return bento_service_cls
 

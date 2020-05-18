@@ -28,6 +28,7 @@ message BentoServiceMetadata {
     string conda_env = 2;
     string pip_dependencies = 3;
     string python_version = 4;
+    string docker_base_image = 5;
   }
 
   message BentoArtifact {

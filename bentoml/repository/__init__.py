@@ -137,7 +137,7 @@ class _S3BentoRepository(BentoRepositoryBase):
         self.base_path = parse_result.path.lstrip('/')
 
         s3_client_args = {}
-        signature_version = os.environ.get('BENTOML_S3_SIGNATURE_VERSION', 's3v4')
+        signature_version = config('yatai_service').get('S3_SIGNATURE_VERSION')
         s3_client_args['config'] = boto3.session.Config(
             signature_version=signature_version
         )

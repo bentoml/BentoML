@@ -159,7 +159,7 @@ class BentoServiceEnv(object):
         if docker_base_image:
             self._docker_base_image = docker_base_image
         else:
-            self._docker_base_image = config('core').get('docker_base_image')
+            self._docker_base_image = config('core').get('default_docker_base_image')
 
     @staticmethod
     def check_dependency(dependency):

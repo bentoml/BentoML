@@ -24,6 +24,8 @@ from pathlib import Path
 from abc import abstractmethod, ABCMeta
 from urllib.parse import urlparse
 
+from botocore.exceptions import ClientError
+
 from bentoml import config
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.utils.s3 import is_s3_url
@@ -202,14 +204,57 @@ class _S3BentoRepository(BentoRepositoryBase):
 
         try:
             response = self.s3_client.delete_object(Bucket=self.bucket, Key=object_name)
-
             DELETE_MARKER = 'DeleteMarker'  # whether object is successfully deleted.
+
+            # Note: as of boto3 v1.13.13. delete_object returns an incorrect format as
+            # expected from documentation.
+            # Expected format:
+            # {
+            #   'DeleteMarker': True|False,
+            #   'VersionId': 'string',
+            #   'RequestCharged': 'requester'
+            # }
+            # Current return:
+            # {
+            #   'ResponseMetadata': {
+            #     'RequestId': '****************',
+            #     'HostId': '*****/******',
+            #     'HTTPStatusCode': 204,
+            #     'HTTPHeaders': {
+            #       'x-amz-id-2': '*****/xxxxx',
+            #       'x-amz-request-id': '332EE9F7AB555D2B',
+            #        'date': 'Tue, 19 May 2020 19:46:57 GMT',
+            #        'server': 'AmazonS3'
+            #     },
+            #     'RetryAttempts': 0
+            #   }
+            # }
+            # An open issue on github: https://github.com/boto/boto3/issues/759
+            if DELETE_MARKER in response:
+                return response[DELETE_MARKER]
+            elif 'ResponseMetadata' in response:
+                # Note: Use head_object to 'check' is the object deleted or not.
+                # head_object only try to retrieve the metadata without returning
+                # the object itself.
+                try:
+                    self.s3_client.head_object(Bucket=self.bucket, Key=object_name)
+                    raise YataiRepositoryException(
+                        f'Fail to delete {bento_name}:{bento_version} in bucket: '
+                        f'{self.bucket}'
+                    )
+                except ClientError as e:
+                    error_response = e.response.get('Error', {})
+                    error_code = error_response.get('Code', 'Unknown')
+                    if error_code != '404':
+                        raise e
+            else:
+                raise YataiRepositoryException(
+                    'Unrecognized response format from s3 delete_object'
+                )
         except Exception as e:
             raise YataiRepositoryException(
                 "Not able to delete object on S3. Error: {}".format(e)
             )
-
-        return response[DELETE_MARKER]
 
 
 class BentoRepository(BentoRepositoryBase):

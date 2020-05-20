@@ -237,7 +237,7 @@ class _S3BentoRepository(BentoRepositoryBase):
                     logger.warning(
                         f"BentoML has deleted service '{bento_name}:{bento_version}' "
                         f"from YataiService records, but it failed to delete the saved "
-                        f"bundle files stored in s3: // {self.bucket} / {object_name}, "
+                        f"bundle files stored in s3://{self.bucket}/{object_name}, "
                         f"the files may have already been deleted by the user."
                     )
                     return

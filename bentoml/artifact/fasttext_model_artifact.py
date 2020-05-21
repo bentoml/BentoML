@@ -55,7 +55,7 @@ class FasttextModelArtifact(BentoServiceArtifact):
 
     def load(self, path):
         try:
-            import fasttext
+            import fasttext  # noqa # pylint: disable=unused-import
         except ImportError:
             raise MissingDependencyException(
                 "fasttext package is required to use FasttextModelArtifact"
@@ -68,7 +68,7 @@ class _FasttextModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model):
         super(_FasttextModelArtifactWrapper, self).__init__(spec)
         try:
-            import fasttext
+            import fasttext  # noqa # pylint: disable=unused-import
         except ImportError:
             raise MissingDependencyException(
                 "fasttext package is required to use FasttextModelArtifact"

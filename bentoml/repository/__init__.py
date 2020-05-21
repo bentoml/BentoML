@@ -187,10 +187,10 @@ class _S3BentoRepository(BentoRepositoryBase):
                 ExpiresIn=self._expiration,
             )
             return response
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             logger.error(
                 "Failed generating presigned URL for downloading saved bundle from s3,"
-                f"falling back to using s3 path and client side credential for"
+                "falling back to using s3 path and client side credential for"
                 "downloading with boto3"
             )
             return 's3://{}/{}'.format(self.bucket, object_name)

@@ -82,7 +82,7 @@ class ModuleManager(object):
         self.searched_modules = {}
         for m in pkgutil.iter_modules():
             if isinstance(m.module_finder, zipimport.zipimporter):
-                logger.warning("Skipped unsupported zipimporter %s", m.module_finder)
+                logger.warning(f"Skipped unsupported zipimporter {m.module_finder}")
                 continue
             if m.name not in self.searched_modules:
                 path = m.module_finder.path

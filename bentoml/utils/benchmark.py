@@ -141,14 +141,14 @@ class Stat:
         )
         r = (
             (
-                f"succ",
+                "succ",
                 f"{self.success}",
                 f"{self.succ_ps.sum(now)}",
                 f"{self.succ_time_ps.mean(now)}",
                 f"{(1 - self.client_busy / max(self.req_total, 1)) * 100}",
             ),
             (
-                f"fail",
+                "fail",
                 f"{self.fail}",
                 f"{self.exec_ps.sum(now)}",
                 f"{self.exec_time_ps.mean(now)}",
@@ -197,7 +197,7 @@ class Stat:
         print(f"------ Client Health {health:.1f}% ------")
         if health < 90:
             print(
-                f"""
+                """
                 *** WARNNING ***
                 The client health rate is low. The benchmark result is not reliable.
                 Possible solutions:
@@ -270,7 +270,7 @@ class BenchmarkClient:
         url, method, headers, data = self.request_producer()
         async with aiohttp.ClientSession() as sess:
             while True:
-                flag_log_req_time = False
+                # flag_log_req_time = False  # pylint: disable=unused-variable
                 req_start = time.time()
                 req_url = self.url_override or url
                 err = ''
@@ -375,7 +375,7 @@ class BenchmarkClient:
             self.stat._sess_stop_time = time.time()
             print("======= Session stopped! =======")
             if self.stat.exceptions:
-                print(f"------ Exceptions happened ------")
+                print("------ Exceptions happened ------")
                 self.stat.print_exec()
 
             self.stat.print_sumup()

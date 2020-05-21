@@ -134,6 +134,7 @@ disable=print-statement,
         deprecated-sys-function,
         exception-escape,
         comprehension-escape,
+        logging-fstring-interpolation,
 
         # Ignore "(C) Convention"
         C,

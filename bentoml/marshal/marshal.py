@@ -206,7 +206,7 @@ class MarshalService:
         with async_trace(
             ZIPKIN_API_URL,
             service_name=self.__class__.__name__,
-            span_name=f"[1]http request",
+            span_name="[1]http request",
             is_root=True,
             standalone=True,
             sample_rate=0.001,

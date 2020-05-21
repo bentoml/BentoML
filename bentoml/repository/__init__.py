@@ -24,6 +24,8 @@ from pathlib import Path
 from abc import abstractmethod, ABCMeta
 from urllib.parse import urlparse
 
+from botocore.exceptions import ClientError
+
 from bentoml import config
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.utils.s3 import is_s3_url
@@ -202,14 +204,75 @@ class _S3BentoRepository(BentoRepositoryBase):
 
         try:
             response = self.s3_client.delete_object(Bucket=self.bucket, Key=object_name)
-
             DELETE_MARKER = 'DeleteMarker'  # whether object is successfully deleted.
+
+            # Note: as of boto3 v1.13.13. delete_object returns an incorrect format as
+            # expected from documentation.
+            # Expected format:
+            # {
+            #   'DeleteMarker': True|False,
+            #   'VersionId': 'string',
+            #   'RequestCharged': 'requester'
+            # }
+            # Current return:
+            # {
+            #   'ResponseMetadata': {
+            #     'RequestId': '****************',
+            #     'HostId': '*****/******',
+            #     'HTTPStatusCode': 204,
+            #     'HTTPHeaders': {
+            #       'x-amz-id-2': '*****/xxxxx',
+            #       'x-amz-request-id': '332EE9F7AB555D2B',
+            #        'date': 'Tue, 19 May 2020 19:46:57 GMT',
+            #        'server': 'AmazonS3'
+            #     },
+            #     'RetryAttempts': 0
+            #   }
+            # }
+            # An open issue on github: https://github.com/boto/boto3/issues/759
+            if DELETE_MARKER in response:
+                if response[DELETE_MARKER]:
+                    return
+                else:
+                    logger.warning(
+                        f"BentoML has deleted service '{bento_name}:{bento_version}' "
+                        f"from YataiService records, but it failed to delete the saved "
+                        f"bundle files stored in s3://{self.bucket}/{object_name}, "
+                        f"the files may have already been deleted by the user."
+                    )
+                    return
+            elif 'ResponseMetadata' in response:
+                # Note: Use head_object to 'check' is the object deleted or not.
+                # head_object only try to retrieve the metadata without returning
+                # the object itself.
+                try:
+                    self.s3_client.head_object(Bucket=self.bucket, Key=object_name)
+                    logger.warning(
+                        f"BentoML has deleted service '{bento_name}:{bento_version}' "
+                        f"from YataiService records, but it failed to delete the saved "
+                        f"bundle files stored in s3://{self.bucket}/{object_name}, "
+                        f"the files may have already been deleted by the user."
+                    )
+                except ClientError as e:
+                    # expected ClientError with Code 404, as target object should be
+                    # deleted and 'head_object' should raise
+                    error_response = e.response.get('Error', {})
+                    error_code = error_response.get('Code', None)
+                    if error_code == '404':
+                        # Error code 404 means target file object does not exist, as
+                        # expected after delete_object call
+                        return
+                    else:
+                        # unexpected boto3 ClientError
+                        raise e
+            else:
+                raise YataiRepositoryException(
+                    'Unrecognized response format from s3 delete_object'
+                )
         except Exception as e:
             raise YataiRepositoryException(
                 "Not able to delete object on S3. Error: {}".format(e)
             )
-
-        return response[DELETE_MARKER]
 
 
 class BentoRepository(BentoRepositoryBase):

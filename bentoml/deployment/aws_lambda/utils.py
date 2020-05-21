@@ -221,7 +221,7 @@ def init_sam_project(
         bundled_files = os.listdir(
             os.path.join(function_path, 'bundled_pip_dependencies')
         )
-        has_bentoml_bundle = False
+        has_bentoml_bundle = False  # noqa # pylint: disable=unused-variable
         for index, bundled_file_name in enumerate(bundled_files):
             bundled_files[index] = '\n./bundled_pip_dependencies/{}'.format(
                 bundled_file_name
@@ -229,7 +229,7 @@ def init_sam_project(
             # If file name start with `BentoML-`, assuming it is a
             # bentoml targz bundle
             if bundled_file_name.startswith('BentoML-'):
-                has_bentoml_bundle = True
+                has_bentoml_bundle = True  # noqa # pylint: disable=unused-variable
 
         logger.debug('Updating requirements.txt')
         with open(

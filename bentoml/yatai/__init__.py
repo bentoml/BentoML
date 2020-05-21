@@ -206,7 +206,7 @@ def async_start_yatai_service_web_ui(
     is_web_proc_running = web_proc.poll() is None
     if not is_web_proc_running:
         web_proc_output = web_proc.stdout.read().decode('utf-8')
-        logger.error(f'return code: {web_proc.returncode} {web_proc_output}')
+        logger.error('return code: %s %s', web_proc.returncode, web_proc_output)
         raise BentoMLException('Yatai web ui did not start properly')
 
     atexit.register(web_proc.terminate)

@@ -58,6 +58,7 @@ logger = logging.getLogger(__name__)
 class YataiService(YataiServicer):
 
     # pylint: disable=unused-argument
+    # pylint: disable=broad-except
 
     def __init__(
         self,
@@ -149,7 +150,7 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR ApplyDeployment: %s", e)
             return ApplyDeploymentResponse(status=e.status_proto)
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as e:
             logger.error("URPC ERROR ApplyDeployment: %s", e)
             return ApplyDeploymentResponse(status=status_pb2.Status.INTERNAL)
 

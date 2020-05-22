@@ -45,7 +45,7 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
         name (str): Name for the fastai2 model
 
     Raises:
-        MissingDependencyException: Require fastai2 package to use Fastai2 model artifact
+        MissingDependencyException: Require fastai2 package for Fastai2 model artifact
         InvalidArgument: invalid argument type, model being packed must be instance of
             fastai2.basics.Learner
     """

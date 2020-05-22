@@ -270,7 +270,6 @@ class BenchmarkClient:
         url, method, headers, data = self.request_producer()
         async with aiohttp.ClientSession() as sess:
             while True:
-                # flag_log_req_time = False  # pylint: disable=unused-variable
                 req_start = time.time()
                 req_url = self.url_override or url
                 err = ''

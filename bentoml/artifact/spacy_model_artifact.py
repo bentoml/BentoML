@@ -27,7 +27,8 @@ logger = logging.getLogger(__name__)
 
 class SpacyModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading spacy models with to_disk and spacy.util.load_model methods.
+    Abstraction for saving/loading spacy models
+    with to_disk and spacy.util.load_model methods.
     Args:
         name (string): name of the artifact
     Raises:

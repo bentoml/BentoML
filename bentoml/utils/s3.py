@@ -23,6 +23,7 @@ from urllib.parse import urlparse
 import boto3
 from botocore.exceptions import ClientError
 
+from bentoml import config
 from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,14 @@ def is_s3_url(url):
 
 
 def create_s3_bucket_if_not_exists(bucket_name, region):
-    s3_client = boto3.client('s3', region)
+    s3_client_args = {'region_name': region}
+    signature_version = config('yatai_service').get('S3_SIGNATURE_VERSION')
+    s3_client_args['config'] = boto3.session.Config(signature_version=signature_version)
+    s3_endpoint_url = config('yatai_service').get('s3_endpoint_url')
+    if s3_endpoint_url is not None:
+        s3_client_args['endpoint_url'] = s3_endpoint_url
+    s3_client = boto3.client("s3", **s3_client_args)
+
     try:
         s3_client.get_bucket_acl(Bucket=bucket_name)
         logger.debug("Found bucket %s in region %s already exist", bucket_name, region)
@@ -72,4 +80,3 @@ def create_s3_bucket_if_not_exists(bucket_name, region):
                     raise s3_error
         else:
             raise error
-

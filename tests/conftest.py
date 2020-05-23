@@ -9,9 +9,9 @@ from tests.bento_service_examples.example_bento_service import ExampleBentoServi
 
 @pytest.fixture()
 def img_file(tmpdir):
-    img_file = tmpdir.join("test_img.jpg")
-    imageio.imwrite(str(img_file), np.zeros((10, 10)))
-    return img_file
+    img_file_ = tmpdir.join("test_img.jpg")
+    imageio.imwrite(str(img_file_), np.zeros((10, 10)))
+    return img_file_
 
 
 class TestModel(object):

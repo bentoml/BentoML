@@ -118,10 +118,16 @@ class OnnxModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + '.onnx')
 
     def pack(self, obj):  # pylint:disable=arguments-differ
-        if _is_file_like(obj):
-            return _ExportedOnnxModelArtifact(self, obj)
-        else:
+        try:
+            import onnx
+        except ImportError:
+            raise MissingDependencyException(
+                'onnx package is required for packing OnnxModelArtifact'
+            )
+        if isinstance(obj, onnx.ModelProto):
             return _OnnxModelArtifactWrapper(self, obj)
+        else:
+            return _ExportedOnnxModelArtifact(self, obj)
 
     def load(self, path):
         if self.backend == 'onnx':
@@ -134,9 +140,10 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
     @property
     def pip_dependencies(self):
+        dependencies = ['onnx']
         if self.backend == 'onnx':
-            return ['onnxruntime']
-        return []
+            dependencies.append('onnxruntime')
+        return dependencies
 
 
 class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):

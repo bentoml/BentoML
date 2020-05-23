@@ -75,7 +75,7 @@ def _dataframe_csv_from_input(raws, content_types):
                     ), None
                     n_row_sum += 1
 
-                for n_row, datas_row in enumerate(od):
+                for _, datas_row in enumerate(od):
                     yield ','.join(
                         itertools.chain((str(n_row_sum),), map(_to_csv_cell, datas_row))
                     ), i
@@ -85,7 +85,7 @@ def _dataframe_csv_from_input(raws, content_types):
                     yield ",".join(itertools.chain(('',), map(_to_csv_cell, od))), None
                     n_row_sum += 1
 
-                for n_row, name_row in enumerate(next(iter(od.values()))):
+                for _, name_row in enumerate(next(iter(od.values()))):
                     datas_row = (
                         od[name_col][name_row] for n_col, name_col in enumerate(od)
                     )
@@ -144,7 +144,7 @@ def read_dataframes_from_json_n_csv(datas, content_types):
     try:
         rows_csv_with_id = [r for r in _dataframe_csv_from_input(datas, content_types)]
     except TypeError:
-        raise BadInput(f'Invalid input format for DataframeHandler') from None
+        raise BadInput('Invalid input format for DataframeHandler') from None
 
     str_csv = [r for r, _ in rows_csv_with_id]
     df_str_csv = '\n'.join(str_csv)

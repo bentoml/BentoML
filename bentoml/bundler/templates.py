@@ -35,7 +35,7 @@ except ImportError:
 
 try:
     raw = parse_requirements('requirements.txt', session=PipSession())
-    
+
     # pip >= 20.1 changed ParsedRequirement attribute from `req` to `requirement`
     install_reqs = []
     for i in raw:

@@ -39,14 +39,14 @@ def parse_requirement_string(rs):
 
 
 def verify_pkg(pkg_name, pkg_version):
-    global __mm
+    global __mm  # pylint: disable=global-statement
     if __mm is None:
         __mm = ModuleManager()
     return __mm.verify_pkg(pkg_name, pkg_version)
 
 
 def seek_pip_dependencies(target_py_file_path):
-    global __mm
+    global __mm  # pylint: disable=global-statement
     if __mm is None:
         __mm = ModuleManager()
     return __mm.seek_pip_dependencies(target_py_file_path)
@@ -68,7 +68,7 @@ class ModuleManager(object):
         self.pip_module_map = {}
         self.setuptools_module_set = set()
         self.nonlocal_package_path = set()
-        for dist in pkg_resources.working_set:
+        for dist in pkg_resources.working_set:  # pylint: disable=not-an-iterable
             self.nonlocal_package_path.add(dist.module_path)
             self.pip_pkg_map[dist._key] = dist._version
             for mn in dist._get_metadata("top_level.txt"):

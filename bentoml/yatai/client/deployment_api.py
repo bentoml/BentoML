@@ -18,7 +18,6 @@
 import logging
 import time
 
-from bentoml import config
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.proto.deployment_pb2 import (

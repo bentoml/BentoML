@@ -58,6 +58,7 @@ logger = logging.getLogger(__name__)
 class YataiService(YataiServicer):
 
     # pylint: disable=unused-argument
+    # pylint: disable=broad-except
 
     def __init__(
         self,
@@ -206,7 +207,7 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR DeleteDeployment: %s", e)
             return DeleteDeploymentResponse(status=e.status_proto)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR DeleteDeployment: %s", e)
             return DeleteDeploymentResponse(status=status_pb2.Status.INTERNAL)
 
@@ -231,7 +232,7 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR GetDeployment: %s", e)
             return GetDeploymentResponse(status=e.status_proto)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR GetDeployment: %s", e)
             return GetDeploymentResponse(status=Status.INTERNAL())
 
@@ -265,7 +266,7 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR DescribeDeployment: %s", e)
             return DeleteDeploymentResponse(status=e.status_proto)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR DescribeDeployment: %s", e)
             return DeleteDeploymentResponse(status=Status.INTERNAL())
 
@@ -288,7 +289,7 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR ListDeployments: %s", e)
             return DeleteDeploymentResponse(status=e.status_proto)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR ListDeployments: %s", e)
             return DeleteDeploymentResponse(status=Status.INTERNAL())
 
@@ -317,7 +318,7 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR AddBento: %s", e)
             return DeleteDeploymentResponse(status=e.status_proto)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("URPC ERROR AddBento: %s", e)
             return DeleteDeploymentResponse(status=Status.INTERNAL())
 
@@ -336,7 +337,7 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR UpdateBento: %s", e)
             return UpdateBentoResponse(status=e.status_proto)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR UpdateBento: %s", e)
             return UpdateBentoResponse(status=Status.INTERNAL())
 
@@ -364,7 +365,7 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR DangerouslyDeleteBento: %s", e)
             return DangerouslyDeleteBentoResponse(status=e.status_proto)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR DangerouslyDeleteBento: %s", e)
             return DangerouslyDeleteBentoResponse(status=Status.INTERNAL())
 
@@ -398,7 +399,7 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR GetBento: %s", e)
             return GetBentoResponse(status=e.status_proto)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR GetBento: %s", e)
             return GetBentoResponse(status=Status.INTERNAL())
 
@@ -417,7 +418,7 @@ class YataiService(YataiServicer):
         except BentoMLException as e:
             logger.error("RPC ERROR ListBento: %s", e)
             return ListBentoResponse(status=e.status_proto)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR ListBento: %s", e)
             return ListBentoResponse(status=Status.INTERNAL())
 

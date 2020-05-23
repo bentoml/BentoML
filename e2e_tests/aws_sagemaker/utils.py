@@ -21,7 +21,7 @@ def run_sagemaker_create_or_update_command(deploy_command):
     ) or deployment_stdout.startswith('Failed to update AWS Sagemaker deployment'):
         return False, None
     deployment_stdout_list = deployment_stdout.split('\n')
-    for index, message in enumerate(deployment_stdout_list):
+    for _, message in enumerate(deployment_stdout_list):
         if '"EndpointName":' in message:
             endpoint_name = message.split(':')[1].strip(',').replace('"', '')
             return True, endpoint_name
@@ -47,7 +47,8 @@ def send_test_data_to_endpoint(endpoint_name, sample_data=None):
     ]
     logger.info('Testing command: %s', ' '.join(test_command))
     result = subprocess.run(
-        ' '.join(test_command), capture_output=True, shell=True, executable='/bin/bash',
+        ' '.join(test_command), capture_output=True, shell=True,
+        check=True, executable='/bin/bash',
     )
     logger.info(result)
     if result.stderr.decode('utf-8'):

@@ -30,11 +30,11 @@ def iris_clf_service():
     clf.fit(X, y)
 
     logger.debug('Creating iris classifier BentoService bundle..')
-    iris_clf_service = IrisClassifier()
-    iris_clf_service.pack('clf', clf)
-    iris_clf_service.save()
+    iris_clf_service_ = IrisClassifier()
+    iris_clf_service_.pack('clf', clf)
+    iris_clf_service_.save()
 
-    bento_name = f'{iris_clf_service.name}:{iris_clf_service.version}'
+    bento_name = f'{iris_clf_service_.name}:{iris_clf_service_.version}'
     yield bento_name
     delete_bento(bento_name)
 

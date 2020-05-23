@@ -15,7 +15,7 @@ GRPC_CHANNEL_ADDRESS = f'127.0.0.1:{GRPC_PORT}'
 
 class BentoServiceForYataiTest(BentoService):
     @api(DataframeHandler)
-    def predict(self, df):
+    def predict(self, df):  # pylint: disable=unused-argument
         return 'cat'
 
 
@@ -58,11 +58,11 @@ def modified_environ(*remove, **update):
 
     try:
         env.update(update)
-        [env.pop(k, None) for k in remove]
+        [env.pop(k, None) for k in remove]  # pylint: disable=expression-not-assigned
         yield
     finally:
         env.update(update_after)
-        [env.pop(k) for k in remove_after]
+        [env.pop(k) for k in remove_after]  # pylint: disable=expression-not-assigned
 
 
 @contextlib.contextmanager

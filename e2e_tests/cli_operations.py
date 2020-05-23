@@ -23,6 +23,7 @@ def delete_deployment(deployment_type, deployment_name):
     ) as proc:
         delete_deployment_stdout = proc.stdout.read().decode('utf-8')
     logger.info(delete_deployment_stdout)
+    return delete_deployment_stdout
 
 
 def delete_bento(bento_name):
@@ -36,3 +37,4 @@ def delete_bento(bento_name):
     ) as proc:
         delete_bento_stdout = proc.stdout.read().decode('utf-8')
     logger.info(delete_bento_stdout)
+    return delete_bento_stdout

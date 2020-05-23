@@ -8,8 +8,8 @@ CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_api_function_route(bento_service, tmpdir, img_file):
-    import imageio
-    import numpy as np
+    import imageio  # noqa # pylint: disable=unused-import
+    import numpy as np  # noqa # pylint: disable=unused-import
 
     rest_server = BentoAPIServer(bento_service)
     test_client = rest_server.app.test_client()

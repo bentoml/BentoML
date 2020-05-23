@@ -18,20 +18,12 @@ from __future__ import print_function
 
 import logging
 import os
-import pathlib
 import shutil
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
 from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
 logger = logging.getLogger(__name__)
-
-
-def _is_file_like(p):
-    return (
-        isinstance(p, (str, bytes, pathlib.PurePath, os.PathLike))
-        and os.path.isfile(p)
-    )
 
 
 def _load_onnx_saved_model(path):

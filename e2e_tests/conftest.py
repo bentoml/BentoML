@@ -2,20 +2,26 @@ import logging
 import os
 import subprocess
 import uuid
-import time
 
 import docker
 import pytest
+from boto3 import Session
 from sklearn import svm, datasets
 
 from bentoml.deployment.utils import ensure_docker_available_or_raise
 from bentoml.configuration import PREV_PYPI_RELEASE_VERSION
+from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.tempdir import TempDirectory
 from e2e_tests.iris_classifier_example import IrisClassifier
 from e2e_tests.cli_operations import delete_bento
 from e2e_tests.basic_bento_service_examples import (
     BasicBentoService,
     UpdatedBasicBentoService,
+)
+from e2e_tests.utils import (
+    cleanup_docker_containers,
+    wait_for_docker_container_ready,
+    modified_environ,
 )
 
 logger = logging.getLogger('bentoml.test')
@@ -61,66 +67,8 @@ def basic_bentoservice_v2():
     delete_bento(bento_name)
 
 
-def wait_for_docker_container_ready(container_name, check_message):
-    docker_client = docker.from_env()
-
-    start_time = time.time()
-    while True:
-        time.sleep(1)
-        container_list = docker_client.containers.list(
-            filters={'name': container_name, 'status': 'running'}
-        )
-        logger.info("Container list: " + str(container_list))
-        if not container_list:
-            # Raise timeout, if take more than 60 seconds
-            if time.time() - start_time > 60:
-                raise TimeoutError(f'Get container: {container_name} times out')
-            else:
-                continue
-
-        assert len(container_list) == 1, 'should be only one container running'
-
-        yatai_service_container = container_list[0]
-
-        logger.info('container_log' + str(yatai_service_container.logs()))
-        if check_message in yatai_service_container.logs():
-            break
-
-
-@pytest.fixture(scope='session')
-def temporary_docker_postgres_url():
-    ensure_docker_available_or_raise()
-    container_name = f'e2e-test-yatai-service-postgres-db-{uuid.uuid4().hex[:6]}'
-    db_url = 'postgresql://postgres:postgres@localhost:5432/bentoml'
-
-    command = [
-        'docker',
-        'run',
-        '--rm',
-        '--name',
-        container_name,
-        '-e',
-        'POSTGRES_PASSWORD=postgres',
-        '-p',
-        '5432:5432',
-        'postgres',
-    ]
-    docker_proc = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    wait_for_docker_container_ready(
-        container_name, b'database system is ready to accept connections'
-    )
-
-    from sqlalchemy_utils import create_database
-
-    create_database(db_url)
-    yield db_url
-    docker_proc.terminate()
-
-
-@pytest.fixture(scope='session')
-def temporary_yatai_service_url():
+@pytest.fixture(scope="session")
+def yatai_service_docker_image_tag():
     ensure_docker_available_or_raise()
     docker_client = docker.from_env()
     local_bentoml_repo_path = os.path.abspath(os.path.join(__file__, '..', '..'))
@@ -134,45 +82,102 @@ def temporary_yatai_service_url():
         with open(temp_docker_file_path, 'w') as f:
             f.write(
                 f"""\
-FROM bentoml/yatai-service:{PREV_PYPI_RELEASE_VERSION}
-ADD . /bentoml-local-repo
-RUN pip install /bentoml-local-repo
-            """
+    FROM bentoml/yatai-service:{PREV_PYPI_RELEASE_VERSION}
+    ADD . /bentoml-local-repo
+    RUN pip install /bentoml-local-repo
+                """
             )
-        logger.info('building docker image')
         docker_client.images.build(
             path=local_bentoml_repo_path,
             dockerfile=temp_docker_file_path,
             tag=docker_tag,
         )
-        logger.info('complete build docker image')
+        logger.info(f'complete build docker image {docker_tag}')
+    return docker_tag
 
-        container_name = f'e2e-test-yatai-service-container-{uuid.uuid4().hex[:6]}'
-        yatai_service_url = 'localhost:50051'
 
-        command = [
-            'docker',
-            'run',
-            '--rm',
-            '--name',
-            container_name,
-            '-p',
-            '50051:50051',
-            '-p',
-            '3000:3000',
-            docker_tag,
-            '--repo-base-url',
-            '/tmp',
-        ]
+@pytest.fixture(scope='session')
+def temporary_yatai_service_url(yatai_service_docker_image_tag):
+    ensure_docker_available_or_raise()
 
-        logger.info(f'Running docker command {" ".join(command)}')
+    container_name = f'bentoml-e2e-test-yatai-service-container-{uuid.uuid4().hex[:6]}'
+    yatai_service_url = 'localhost:50051'
 
-        docker_proc = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        wait_for_docker_container_ready(
-            container_name, b'* Starting BentoML YataiService gRPC Server'
-        )
+    cleanup_docker_containers()
+    command = [
+        'docker',
+        'run',
+        '--rm',
+        '--name',
+        container_name,
+        '-p',
+        '50051:50051',
+        '-p',
+        '3000:3000',
+        yatai_service_docker_image_tag,
+        '--repo-base-url',
+        '/tmp',
+    ]
 
-        yield yatai_service_url
-        docker_proc.terminate()
+    logger.info(f'Running docker command {" ".join(command)}')
+
+    docker_proc = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    wait_for_docker_container_ready(
+        container_name, b'* Starting BentoML YataiService gRPC Server'
+    )
+    yield yatai_service_url
+    docker_proc.terminate()
+
+
+@pytest.fixture(scope='session')
+def minio_server_url():
+    ensure_docker_available_or_raise()
+
+    container_name = f'bentoml-e2e-test-minio-container-{uuid.uuid4().hex[:6]}'
+    minio_server_uri = 'http://127.0.0.1:9000'
+    cleanup_docker_containers()
+    command = [
+        'docker',
+        'run',
+        '--rm',
+        '--name',
+        container_name,
+        '-p',
+        '9000:9000',
+        'minio/minio',
+        'server',
+        '/data',
+    ]
+    logger.info(f'Running docker command {" ".join(command)}')
+
+    docker_proc = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    wait_for_docker_container_ready(
+        container_name, b'Endpoint:  http://172.17.0.2:9000  http://127.0.0.1:9000'
+    )
+    bucket_name = 'yatai-e2e-test'
+    with modified_environ(
+        AWS_ACCESS_KEY_ID='minioadmin',
+        AWS_SECRET_ACCESS_KEY='minioadmin',
+        AWS_REGION='us-east-1',
+        BENTOML__YATAI_SERVICE__S3_ENDPOINT_URL=minio_server_uri,
+    ):
+        create_s3_bucket_if_not_exists(bucket_name, 'us-east-1')
+
+    yield minio_server_uri, bucket_name
+    docker_proc.terminate()
+
+
+@pytest.fixture(scope='session')
+def aws_credential_env():
+    session = Session()
+    credentials = session.get_credentials()
+    current_credentials = credentials.get_frozen_credentials()
+
+    return {
+        'AWS_ACCESS_KEY_ID': current_credentials.access_key,
+        'AWS_SECRET_ACCESS_KEY': current_credentials.secret_key,
+    }

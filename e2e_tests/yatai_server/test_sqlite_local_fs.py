@@ -2,11 +2,10 @@ import logging
 
 from bentoml.proto.repository_pb2 import BentoUri
 from e2e_tests.cli_operations import delete_bento
+from e2e_tests.utils import start_yatai_server, modified_environ
 from e2e_tests.yatai_server.utils import (
     get_bento_service,
     run_bento_service_prediction,
-    start_yatai_server,
-    modified_environ,
     BentoServiceForYataiTest,
 )
 
@@ -14,8 +13,15 @@ from e2e_tests.yatai_server.utils import (
 logger = logging.getLogger('bentoml.test')
 
 
-def test_yatai_server_with_sqlite_and_local_storage():
-    with start_yatai_server() as yatai_service_url:
+def test_yatai_server_with_sqlite_and_local_storage(yatai_service_docker_image_tag):
+    grpc_port = 50052
+    ui_port = 3001
+
+    with start_yatai_server(
+        docker_image=yatai_service_docker_image_tag,
+        grpc_port=grpc_port,
+        ui_port=ui_port,
+    ) as yatai_service_url:
         logger.info(f'Setting config yatai_service.url to: {yatai_service_url}')
         with modified_environ(BENTOML__YATAI_SERVICE__URL=yatai_service_url):
             logger.info('Saving bento service')

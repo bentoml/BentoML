@@ -2,9 +2,8 @@ import logging
 
 from bentoml.proto.repository_pb2 import BentoUri
 from e2e_tests.cli_operations import delete_bento
+from e2e_tests.utils import start_yatai_server, modified_environ
 from e2e_tests.yatai_server.utils import (
-    start_yatai_server,
-    modified_environ,
     BentoServiceForYataiTest,
     get_bento_service,
     run_bento_service_prediction,
@@ -13,14 +12,30 @@ from e2e_tests.yatai_server.utils import (
 logger = logging.getLogger('bentoml.test')
 
 
-def test_yatai_server_with_sqlite_and_s3():
+def test_yatai_server_with_sqlite_and_s3(
+    yatai_service_docker_image_tag, minio_server_url
+):
     # Note: Use pre-existing bucket instead of newly created bucket, because the
     # bucket's global DNS needs time to get set up.
     # https://github.com/boto/boto3/issues/1982#issuecomment-511947643
 
-    s3_bucket_name = 's3://bentoml-e2e-test-repo/'
+    s3_bucket_name = f's3://{minio_server_url[1]}/'
+    grpc_port = 50054
+    ui_port = 3003
+    minio_env = {
+        'AWS_ACCESS_KEY_ID': 'minioadmin',
+        'AWS_SECRET_ACCESS_KEY': 'minioadmin',
+        'AWS_REGION': 'us-east-1',
+    }
 
-    with start_yatai_server(repo_base_url=s3_bucket_name) as yatai_server_url:
+    with start_yatai_server(
+        docker_image=yatai_service_docker_image_tag,
+        repo_base_url=s3_bucket_name,
+        grpc_port=grpc_port,
+        ui_port=ui_port,
+        env=minio_env,
+        s3_endpoint_url=minio_server_url[0],
+    ) as yatai_server_url:
         logger.info(f'Setting config yatai_service.url to: {yatai_server_url}')
         with modified_environ(BENTOML__YATAI_SERVICE__URL=yatai_server_url):
             logger.info('Saving bento service')

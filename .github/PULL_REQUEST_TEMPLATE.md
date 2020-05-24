@@ -36,7 +36,8 @@
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 <!--- If you plan to update documentation or tests in follow-up, please note -->
 - [ ] My code follows the bentoml code style, both `./dev/format.sh` and
-  `./dev/lint.sh` script have passed.
+  `./dev/lint.sh` script have passed
+  ([instructions](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md#style-check-and-auto-formatting-your-code)).
 - [ ] My change requires a change to the documentation.
 - [ ] I have updated the documentation accordingly.
 - [ ] My change requires a change in existing test.

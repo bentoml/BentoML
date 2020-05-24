@@ -27,6 +27,7 @@ matrix:
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
 
 script:
+  - ./dev/lint.sh
   - pytest tests --cov=bentoml
 
 after_success:

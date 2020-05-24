@@ -139,8 +139,10 @@ def save_to_dir(bento_service, path, version=None, silent=False):
 
     # write Dockerfile
     with open(os.path.join(path, "Dockerfile"), "w") as f:
-        f.write(MODEL_SERVER_DOCKERFILE_CPU.format(
-            docker_base_image=bento_service._env._docker_base_image)
+        f.write(
+            MODEL_SERVER_DOCKERFILE_CPU.format(
+                docker_base_image=bento_service._env._docker_base_image
+            )
         )
 
     # write docker-entrypoint.sh

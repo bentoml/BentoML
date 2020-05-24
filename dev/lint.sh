@@ -3,16 +3,39 @@
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd $GIT_ROOT
 
+# The first line of the tests are  
+# always empty if there are no linting errors
+
 echo "Running flake8 on bentoml module.."
-flake8 --config=.flake8 bentoml
+output=$( flake8 --config=.flake8 bentoml )
+firstline=`echo "${output}" | head -1`
+echo "$output"
+if ! [ -z "$firstline" ]; then
+    exit 1
+fi
 
 echo "Running flake8 on test module.."
-flake8 --config=.flake8 tests e2e_tests
+output=$( flake8 --config=.flake8 tests e2e_tests )
+firstline=`echo "${output}" | head -1`
+echo "$output"
+if ! [ -z "$firstline" ]; then
+    exit 1
+fi
 
 echo "Running pylint on bentoml module.."
-pylint --rcfile="./pylintrc" bentoml
+output=$( pylint --rcfile="./pylintrc" bentoml )
+firstline=`echo "${output}" | head -1`
+echo "$output"
+if ! [ -z "$firstline" ]; then
+    exit 1
+fi
 
 echo "Running pylint on test module.."
-pylint --rcfile="./pylintrc" tests e2e_tests
+output=$( pylint --rcfile="./pylintrc" tests e2e_tests )
+firstline=`echo "${output}" | head -1`
+echo "$output"
+if ! [ -z "$firstline" ]; then
+    exit 1
+fi
 
 echo "Done"

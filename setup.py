@@ -90,14 +90,14 @@ test_requires = (
 dev_requires = [
     "tox>=3.12.1",
     "tox-conda>=0.2.0",
-    "flake8",
+    "flake8>=3.8.2",
     "twine",
     "setuptools",
     "gitpython>=2.0.2",
     "grpcio-tools<=1.27.2",
     "grpcio-reflection<=1.27.2",
-    "pylint>=2.3.1",
-    "black",
+    "pylint>=2.5.2",
+    "black>=19.0",
 ]
 
 

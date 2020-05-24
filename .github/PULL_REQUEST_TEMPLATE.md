@@ -40,5 +40,5 @@
   ([instructions](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md#style-check-and-auto-formatting-your-code)).
 - [ ] My change requires a change to the documentation.
 - [ ] I have updated the documentation accordingly.
-- [ ] My change requires a change in existing test.
-- [ ] I have updated the test accordingly.
+- [ ] My change requires a change in [bentoml/gallery](https://github.com/bentoml/gallery) example notebooks
+- [ ] I have sent a pull request to [bentoml/gallery](https://github.com/bentoml/gallery) to make that change

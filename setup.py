@@ -82,6 +82,8 @@ test_requires = (
         "moto",
         "numpy",
         "scikit-learn",
+        "pylint>=2.5.2",
+        "flake8>=3.8.2",
     ]
     + imageio
     + aws_sam_cli

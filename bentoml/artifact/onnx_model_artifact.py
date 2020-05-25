@@ -21,20 +21,16 @@ import os
 import shutil
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
-from bentoml.exceptions import MissingDependencyException, InvalidArgument
+from bentoml.exceptions import (
+    MissingDependencyException,
+    InvalidArgument,
+    BentoMLException,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def _load_onnx_saved_model(path):
-    try:
-        import onnxruntime
-    except ImportError:
-        raise MissingDependencyException(
-            'onnxruntime package is required for inferencing using ONNX runtime'
-        )
-    model = onnxruntime.InferenceSession(path)
-    return model
+SUPPORTED_ONNX_BACKEND = ['onnxruntime']
 
 
 class OnnxModelArtifact(BentoServiceArtifact):
@@ -49,9 +45,6 @@ class OnnxModelArtifact(BentoServiceArtifact):
         NotImplementedError: {backend} as onnx runtime is not supported at the moment
 
     Example usage:
-
-    >>>
-    >>>
     >>>
     >>> # Train a model.
     >>> from sklearn.datasets import load_iris
@@ -79,7 +72,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
     >>> from bentoml.handlers import DataframeHandler
     >>>
     >>> @bentoml.env(auto_pip_dependencies=True)
-    >>> @bentoml.artifact([OnnxModelArtifact('model')])
+    >>> @bentoml.artifact([OnnxModelArtifact('model', backend='onnxruntime')])
     >>> class OnnxIrisClassifierService(bentoml.BentoService):
     >>>     @bentoml.api(DataframeHandler)
     >>>     def predict(self, df):
@@ -102,8 +95,12 @@ class OnnxModelArtifact(BentoServiceArtifact):
     >>> svc.save()
     """
 
-    def __init__(self, name, backend='onnx'):
+    def __init__(self, name, backend='onnxruntime'):
         super(OnnxModelArtifact, self).__init__(name)
+        if backend not in SUPPORTED_ONNX_BACKEND:
+            raise BentoMLException(
+                f'{backend} runtime is currently not supported for OnnxModelArtifact'
+            )
         self.backend = backend
 
     def _model_file_path(self, base_path):
@@ -117,17 +114,22 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
         if isinstance(obj, onnx.ModelProto):
             return _OnnxModelArtifactWrapper(self, obj)
-        else:
+        elif os.path.isfile(obj):
             return _ExportedOnnxModelArtifact(self, obj)
+        else:
+            raise InvalidArgument(
+                'Onnx.ModelProto or a model file path is required to pack an '
+                'OnnxModelArtifact'
+            )
 
     def load(self, path):
-        if self.backend == 'onnx':
-            inference_model = _load_onnx_saved_model(self._model_file_path(path))
+        # Each backend runtime has its own artifact implementation
+        if self.backend == 'onnxruntime':
+            return _OnnxruntimeBackendModelArtifact(self, path)
         else:
             raise NotImplementedError(
-                f'{self.backend} as onnx runtime is not supported at the moment'
+                f'{self.backend} runtime is not supported at the moment'
             )
-        return self.pack(inference_model)
 
     @property
     def pip_dependencies(self):
@@ -140,17 +142,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
 class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model):
         super(_OnnxModelArtifactWrapper, self).__init__(spec)
-        if not self._model:
-            if self.spec.backend == 'onnxruntime':
-                self._model = _load_onnx_saved_model(model)
-            else:
-                raise NotImplementedError(
-                    f'{self.spec.backend} as onnx runtime is not supported '
-                    f'at the moment'
-                )
-
-    def get(self):
-        return self._model
+        self._model = model
 
     def save(self, dst):
         try:
@@ -165,22 +157,26 @@ class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
 class _ExportedOnnxModelArtifact(BentoServiceArtifactWrapper):
     def __init__(self, spec, path):
         super(_ExportedOnnxModelArtifact, self).__init__(spec)
-
         self.path = path
-        self.model = None
 
     def save(self, dst):
         shutil.copyfile(self.path, self.spec._model_file_path(dst))
 
+
+class _OnnxruntimeBackendModelArtifact(BentoServiceArtifactWrapper):
+    def __init__(self, spec, path):
+        super(_OnnxruntimeBackendModelArtifact, self).__init__(spec)
+        self.path = path
+        self.model = None
+
     def get(self):
-        if not self.model:
-            if self.spec.backend == 'onnxruntime':
-                self.model = _load_onnx_saved_model(
-                    self.spec._model_file_path(self.path)
-                )
-            else:
-                raise NotImplementedError(
-                    f'{self.spec.backend} as onnx runtime is not supported '
-                    f'at the moment'
-                )
+        try:
+            import onnxruntime
+        except ImportError:
+            raise MissingDependencyException('')
+        self.model = onnxruntime.InferenceSession(self.spec._model_file_path(self.path))
+
         return self.model
+
+    def save(self, dst):
+        raise NotImplementedError('_OnnxruntimeBackendModelArtifact does not save')

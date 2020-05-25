@@ -24,7 +24,8 @@ import importlib
 import logging
 from pathlib import Path
 from shutil import copyfile
-from modulefinder import ModuleFinder
+import modulefinder
+import mock
 
 from bentoml.exceptions import BentoMLException
 
@@ -114,7 +115,7 @@ def copy_used_py_modules(target_module, destination):
         )
 
     # Find all modules must be imported for target module to run
-    finder = ModuleFinder()
+    finder = modulefinder.ModuleFinder()
     # NOTE: This method could take a few seconds to run
     try:
         logger.debug(
@@ -122,7 +123,26 @@ def copy_used_py_modules(target_module, destination):
             target_module_name,
             target_module_file,
         )
-        finder.run_script(target_module_file)
+        if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
+            _find_module = modulefinder._find_module
+            _PKG_DIRECTORY = modulefinder._PKG_DIRECTORY
+
+            def _patch_find_module(name, path=None):
+                """ref issue: https://bugs.python.org/issue40350"""
+
+                importlib.machinery.PathFinder.invalidate_caches()
+
+                spec = importlib.machinery.PathFinder.find_spec(name, path)
+
+                if spec is not None and spec.loader is None:
+                    return None, None, ("", "", _PKG_DIRECTORY)
+
+                return _find_module(name, path)
+
+            with mock.patch.object(modulefinder, '_find_module', _patch_find_module):
+                finder.run_script(target_module_file)
+        else:
+            finder.run_script(target_module_file)
     except SyntaxError:
         # For package with conditional import that may only work with py2
         # or py3, ModuleFinder#run_script will try to compile the source

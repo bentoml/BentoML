@@ -113,9 +113,8 @@ class OnnxModelArtifact(BentoServiceArtifact):
         try:
             import onnx
         except ImportError:
-            raise MissingDependencyException(
-                'onnx package is required for packing OnnxModelArtifact'
-            )
+            return _ExportedOnnxModelArtifact(self, obj)
+
         if isinstance(obj, onnx.ModelProto):
             return _OnnxModelArtifactWrapper(self, obj)
         else:
@@ -132,7 +131,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
     @property
     def pip_dependencies(self):
-        dependencies = ['onnx']
+        dependencies = []
         if self.backend == 'onnx':
             dependencies.append('onnxruntime')
         return dependencies
@@ -141,7 +140,14 @@ class OnnxModelArtifact(BentoServiceArtifact):
 class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, model):
         super(_OnnxModelArtifactWrapper, self).__init__(spec)
-        self._model = model
+        if not self._model:
+            if self.spec.backend == 'onnxruntime':
+                self._model = _load_onnx_saved_model(model)
+            else:
+                raise NotImplementedError(
+                    f'{self.spec.backend} as onnx runtime is not supported '
+                    f'at the moment'
+                )
 
     def get(self):
         return self._model
@@ -153,8 +159,6 @@ class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
             raise MissingDependencyException(
                 'onnx package is required to save onnx.ModelProto object'
             )
-        if not isinstance(self._model, onnx.ModelProto):
-            raise InvalidArgument('Object is not an instance of onnx.ModelProto')
         return onnx.save(self._model, self.spec._model_file_path(dst))
 
 
@@ -170,5 +174,13 @@ class _ExportedOnnxModelArtifact(BentoServiceArtifactWrapper):
 
     def get(self):
         if not self.model:
-            self.model = _load_onnx_saved_model(self.spec._model_file_path(self.path))
+            if self.spec.backend == 'onnxruntime':
+                self.model = _load_onnx_saved_model(
+                    self.spec._model_file_path(self.path)
+                )
+            else:
+                raise NotImplementedError(
+                    f'{self.spec.backend} as onnx runtime is not supported '
+                    f'at the moment'
+                )
         return self.model

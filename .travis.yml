@@ -26,8 +26,11 @@ matrix:
         - choco install python --version 3.6.8
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
 
+    - python: "3.6"
+      script:
+        - ./dev/lint.sh
+
 script:
-  - ./dev/lint.sh
   - pytest tests --cov=bentoml
 
 after_success:

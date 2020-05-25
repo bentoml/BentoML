@@ -72,7 +72,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
     >>> from bentoml.handlers import DataframeHandler
     >>>
     >>> @bentoml.env(auto_pip_dependencies=True)
-    >>> @bentoml.artifact([OnnxModelArtifact('model', backend='onnxruntime')])
+    >>> @bentoml.artifacts([OnnxModelArtifact('model', backend='onnxruntime')])
     >>> class OnnxIrisClassifierService(bentoml.BentoService):
     >>>     @bentoml.api(DataframeHandler)
     >>>     def predict(self, df):

@@ -135,7 +135,7 @@ def start_postgres_docker():
     container_name = (
         f'bentoml-e2e-test-yatai-service-postgres-db-{uuid.uuid4().hex[:6]}'
     )
-    db_url = f'postgresql://postgres:postgres@postgres-container:5432/bentoml'
+    db_url = 'postgresql://postgres:postgres@postgres-container:5432/bentoml'
 
     command = [
         'docker',
@@ -159,8 +159,6 @@ def start_postgres_docker():
 
     from sqlalchemy_utils import create_database
 
-    create_database(
-        f'postgresql://postgres:postgres@localhost:5432/bentoml'
-    )
+    create_database('postgresql://postgres:postgres@localhost:5432/bentoml')
     yield {'url': db_url, 'container_name': container_name}
     docker_proc.terminate()

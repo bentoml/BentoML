@@ -28,6 +28,7 @@ matrix:
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
 
     - python: "3.6"
+      name: "Linting check"
       script:
         - ./dev/lint.sh
 

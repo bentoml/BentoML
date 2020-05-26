@@ -35,12 +35,12 @@ SUPPORTED_ONNX_BACKEND = ['onnxruntime']
 
 
 def _is_path_like(path):
-    return isinstance(path, (str, pathlib.Path, os.PathLike))
+    return isinstance(path, (str, bytes, pathlib.Path, os.PathLike))
 
 
-def _is_onnx_model_file_path_like(path):
+def _is_onnx_model_file(path):
     return (
-        isinstance(path, (str, pathlib.Path, os.PathLike))
+        _is_path_like(path)
         and os.path.isfile(path)
         and str(path).lower().endswith('.onnx')
     )
@@ -116,14 +116,14 @@ class OnnxModelArtifact(BentoServiceArtifact):
             )
         self.backend = backend
 
-    def _model_file_path(self, base_path):
+    def _saved_model_file_path(self, base_path):
         return os.path.join(base_path, self.name + '.onnx')
 
     def pack(self, obj):  # pylint:disable=arguments-differ
         return _OnnxModelArtifactWrapper(self, obj)
 
     def load(self, path):
-        return self.pack(self._model_file_path(path))
+        return self.pack(self._saved_model_file_path(path))
 
     @property
     def pip_dependencies(self):
@@ -135,52 +135,82 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
 class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, path_or_model_proto):
+        """
+        :param spec: parent OnnxModelArtifact
+        :param path_or_model_proto: .onnx file path or onnx.ModelProto object
+        """
         super(_OnnxModelArtifactWrapper, self).__init__(spec)
+
+        self._inference_session = None
 
         self._onnx_model_path = None
         self._model_proto = None
-        self._inference_session = None
-
-        if _is_onnx_model_file_path_like(path_or_model_proto):
+        if _is_onnx_model_file(path_or_model_proto):
             self._onnx_model_path = path_or_model_proto
         else:
             try:
                 import onnx
+
                 if isinstance(path_or_model_proto, onnx.ModelProto):
                     self._model_proto = path_or_model_proto
                 else:
                     raise InvalidArgument(
-                        'onnx.ModelProto or a model file path is required to pack an '
-                        'OnnxModelArtifact'
+                        'onnx.ModelProto or a .onnx model file path is required to pack '
+                        'an OnnxModelArtifact'
                     )
             except ImportError:
-                raise MissingDependencyException(
-                    '"onnx" package is required to pack an OnnxModelArtifact'
+                raise InvalidArgument(
+                    'onnx.ModelProto or a .onnx model file path is required to pack '
+                    'an OnnxModelArtifact'
                 )
+
+        assert self._onnx_model_path or self._model_proto, (
+            "Either self._onnx_model_path or self._model_proto has to be initilaized "
+            "after initializing _OnnxModelArtifactWrapper"
+        )
+
+    def _get_onnx_inference_session(self):
+        if self.spec.backend == "onnxruntime":
+            try:
+                import onnxruntime
+            except ImportError:
+                raise MissingDependencyException(
+                    '"onnxruntime" package is required for inferencing with onnx '
+                    'runtime as backend'
+                )
+
+            if self._model_proto:
+                logger.info(
+                    "Initializing onnxruntime InferenceSession with onnx.ModelProto "
+                    "instance"
+                )
+                return onnxruntime.InferenceSession(
+                    self._model_proto.SerializeToString()
+                )
+            elif self._onnx_model_path:
+                logger.info(
+                    "Initializing onnxruntime InferenceSession from onnx file:"
+                    f"'{self._onnx_model_path}'"
+                )
+                return onnxruntime.InferenceSession(self._onnx_model_path)
+            else:
+                raise BentoMLException("OnnxModelArtifact in bad state")
+        else:
+            raise BentoMLException(
+                f'"{self.spec.backend}" runtime is currently not supported for '
+                f'OnnxModelArtifact'
+            )
 
     def get(self):
         if not self._inference_session:
-            if self.spec.backend == "onnxruntime":
-                try:
-                    import onnxruntime
-                except ImportError:
-                    raise MissingDependencyException(
-                        '"onnxruntime" package is required for inferencing with onnx '
-                        'runtime as backend'
-                    )
-                self._inference_session = onnxruntime.InferenceSession(
-                    self._onnx_model_path
-                )
-            else:
-                raise BentoMLException(
-                    f'"{self.spec.backend}" runtime is currently not supported for '
-                    f'OnnxModelArtifact'
-                )
+            self._inference_session = self._get_onnx_inference_session()
         return self._inference_session
 
     def save(self, dst):
         if self._onnx_model_path:
-            shutil.copyfile(self._onnx_model_path, self.spec._model_file_path(dst))
+            shutil.copyfile(
+                self._onnx_model_path, self.spec._saved_model_file_path(dst)
+            )
         elif self._model_proto:
             try:
                 import onnx
@@ -188,7 +218,7 @@ class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
                 raise MissingDependencyException(
                     '"onnx" package is required for packing with OnnxModelArtifact'
                 )
-            onnx.save_model(self._model_proto, self.spec._model_file_path(dst))
+            onnx.save_model(self._model_proto, self.spec._saved_model_file_path(dst))
         else:
             raise InvalidArgument(
                 'onnx.ModelProto or a model file path is required to pack an '

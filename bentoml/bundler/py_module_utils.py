@@ -25,7 +25,7 @@ import logging
 from pathlib import Path
 from shutil import copyfile
 import modulefinder
-import mock
+from unittest.mock import patch
 
 from bentoml.exceptions import BentoMLException
 
@@ -139,7 +139,7 @@ def copy_used_py_modules(target_module, destination):
 
                 return _find_module(name, path)
 
-            with mock.patch.object(modulefinder, '_find_module', _patch_find_module):
+            with patch.object(modulefinder, '_find_module', _patch_find_module):
                 finder.run_script(target_module_file)
         else:
             finder.run_script(target_module_file)

@@ -83,7 +83,8 @@ def modified_environ(*remove, **update):
 def start_yatai_server(
     docker_image,
     db_url=None,
-    db_host_name=None,
+    db_container_name=None,
+    s3_container_name=None,
     s3_endpoint_url=None,
     repo_base_url='/tmp',
     grpc_port=50051,
@@ -108,8 +109,10 @@ def start_yatai_server(
     if env:
         for key in env:
             command.extend(['-e', f'{key}={env[key]}'])
-    if db_host_name:
-        command.extend(['--link', f'{db_host_name}:postgres-container'])
+    if db_container_name:
+        command.extend(['--link', f'{db_container_name}:postgres-container'])
+    if s3_container_name:
+        command.extend(['--link', f'{s3_container_name}:s3-container'])
     command.extend([docker_image, '--repo-base-url', repo_base_url])
     if db_url:
         command.extend(['--db-url', db_url])
@@ -125,40 +128,4 @@ def start_yatai_server(
         container_name, b'* Starting BentoML YataiService gRPC Server'
     )
     yield yatai_service_url
-    docker_proc.terminate()
-
-
-@contextlib.contextmanager
-def start_postgres_docker():
-    ensure_docker_available_or_raise()
-    cleanup_docker_containers()
-    container_name = (
-        f'bentoml-e2e-test-yatai-service-postgres-db-{uuid.uuid4().hex[:6]}'
-    )
-    db_url = 'postgresql://postgres:postgres@postgres-container:5432/bentoml'
-
-    command = [
-        'docker',
-        'run',
-        '--rm',
-        '--name',
-        container_name,
-        '-e',
-        'POSTGRES_PASSWORD=postgres',
-        '-p',
-        '5432:5432',
-        'postgres',
-    ]
-    logger.debug(f'Docker command: {" ".join(command)}')
-    docker_proc = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    wait_for_docker_container_ready(
-        container_name, b'database system is ready to accept connections'
-    )
-
-    from sqlalchemy_utils import create_database
-
-    create_database('postgresql://postgres:postgres@localhost:5432/bentoml')
-    yield {'url': db_url, 'container_name': container_name}
     docker_proc.terminate()

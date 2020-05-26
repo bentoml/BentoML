@@ -97,42 +97,7 @@ def yatai_service_docker_image_tag():
 
 
 @pytest.fixture(scope='session')
-def temporary_yatai_service_url(yatai_service_docker_image_tag):
-    ensure_docker_available_or_raise()
-
-    container_name = f'bentoml-e2e-test-yatai-service-container-{uuid.uuid4().hex[:6]}'
-    yatai_service_url = 'localhost:50051'
-
-    cleanup_docker_containers()
-    command = [
-        'docker',
-        'run',
-        '--rm',
-        '--name',
-        container_name,
-        '-p',
-        '50051:50051',
-        '-p',
-        '3000:3000',
-        yatai_service_docker_image_tag,
-        '--repo-base-url',
-        '/tmp',
-    ]
-
-    logger.info(f'Running docker command {" ".join(command)}')
-
-    docker_proc = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    wait_for_docker_container_ready(
-        container_name, b'* Starting BentoML YataiService gRPC Server'
-    )
-    yield yatai_service_url
-    docker_proc.terminate()
-
-
-@pytest.fixture(scope='session')
-def minio_server_url():
+def minio_container_service():
     ensure_docker_available_or_raise()
 
     container_name = f'bentoml-e2e-test-minio-container-{uuid.uuid4().hex[:6]}'
@@ -167,17 +132,48 @@ def minio_server_url():
     ):
         create_s3_bucket_if_not_exists(bucket_name, 'us-east-1')
 
-    yield minio_server_uri, bucket_name
+    yield {
+        'url': minio_server_uri,
+        'bucket_name': bucket_name,
+        'container_name': container_name,
+    }
     docker_proc.terminate()
 
 
 @pytest.fixture(scope='session')
-def aws_credential_env():
-    session = Session()
-    credentials = session.get_credentials()
-    current_credentials = credentials.get_frozen_credentials()
+def postgres_docker_container():
+    ensure_docker_available_or_raise()
+    cleanup_docker_containers()
+    container_name = (
+        f'bentoml-e2e-test-yatai-service-postgres-db-{uuid.uuid4().hex[:6]}'
+    )
 
-    return {
-        'AWS_ACCESS_KEY_ID': current_credentials.access_key,
-        'AWS_SECRET_ACCESS_KEY': current_credentials.secret_key,
-    }
+    command = [
+        'docker',
+        'run',
+        '--rm',
+        '--name',
+        container_name,
+        '-e',
+        'POSTGRES_PASSWORD=postgres',
+        '-p',
+        '5432:5432',
+        'postgres',
+    ]
+    logger.debug(f'Docker command: {" ".join(command)}')
+    docker_proc = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    wait_for_docker_container_ready(
+        container_name, b'database system is ready to accept connections'
+    )
+
+    from sqlalchemy_utils import create_database
+
+    # Note: The host of postgres in create_database is different from the db_url that
+    # an YataiService container will use. Using `--link` option on docker run to map
+    # the network ports on postgres to yatai service container
+    create_database(f'postgresql://postgres:postgres@localhost:5432/bentoml')
+    db_url = 'postgresql://postgres:postgres@postgres-container:5432/bentoml'
+    yield {'url': db_url, 'container_name': container_name}
+    docker_proc.terminate()

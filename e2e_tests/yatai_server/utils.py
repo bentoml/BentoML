@@ -1,5 +1,4 @@
 import subprocess
-import contextlib
 import logging
 import os
 
@@ -8,9 +7,6 @@ from bentoml.handlers import DataframeHandler
 from bentoml.yatai.client import YataiClient
 
 logger = logging.getLogger('bentoml.test')
-
-GRPC_PORT = '50051'
-GRPC_CHANNEL_ADDRESS = f'127.0.0.1:{GRPC_PORT}'
 
 
 class BentoServiceForYataiTest(BentoService):

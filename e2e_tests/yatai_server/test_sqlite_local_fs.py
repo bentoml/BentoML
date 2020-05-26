@@ -13,10 +13,11 @@ from e2e_tests.yatai_server.utils import (
 logger = logging.getLogger('bentoml.test')
 
 
-def test_yatai_server_with_sqlite_and_local_storage(yatai_service_docker_image_tag):
-    grpc_port = 50052
-    ui_port = 3001
+grpc_port = 50052
+ui_port = 3001
 
+
+def test_yatai_server_with_sqlite_and_local_storage(yatai_service_docker_image_tag):
     with start_yatai_server(
         docker_image=yatai_service_docker_image_tag,
         grpc_port=grpc_port,
@@ -45,4 +46,7 @@ def test_yatai_server_with_sqlite_and_local_storage(yatai_service_docker_image_t
             logger.info('Delete BentoService for testing')
             delete_svc_result = delete_bento(bento_tag)
             logger.info(delete_svc_result)
-            assert delete_svc_result is None, 'Unexpected delete BentoService message.'
+            expect_delete_message = f'BentoService {svc.name}:{svc.version} deleted\n'
+            assert (
+                expect_delete_message == delete_svc_result
+            ), 'Unexpected delete BentoService message'

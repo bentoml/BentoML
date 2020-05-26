@@ -123,12 +123,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
         return _OnnxModelArtifactWrapper(self, obj)
 
     def load(self, path):
-        if self.backend == 'onnxruntime':
-            return _OnnxModelArtifactWrapper(self, path)
-        else:
-            raise NotImplementedError(
-                f'"{self.backend}" runtime is not supported at the moment'
-            )
+        return self.pack(self._model_file_path(path))
 
     @property
     def pip_dependencies(self):
@@ -143,17 +138,11 @@ class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
         super(_OnnxModelArtifactWrapper, self).__init__(spec)
 
         self._onnx_model_path = None
-        self._model_dir = None
         self._model_proto = None
-        self._inference_model = None
+        self._inference_session = None
 
-        if _is_path_like(path_or_model_proto):
-            # During packing, user pass in a path to model file, and during loading the
-            # model for inference, bentoml pass in a path to the artifact directory.
-            if _is_onnx_model_file_path_like(path_or_model_proto):
-                self._onnx_model_path = path_or_model_proto
-            else:
-                self._model_dir = path_or_model_proto
+        if _is_onnx_model_file_path_like(path_or_model_proto):
+            self._onnx_model_path = path_or_model_proto
         else:
             try:
                 import onnx
@@ -170,7 +159,7 @@ class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
                 )
 
     def get(self):
-        if not self._inference_model:
+        if not self._inference_session:
             if self.spec.backend == "onnxruntime":
                 try:
                     import onnxruntime
@@ -179,15 +168,15 @@ class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
                         '"onnxruntime" package is required for inferencing with onnx '
                         'runtime as backend'
                     )
-                self._inference_model = onnxruntime.InferenceSession(
-                    self.spec._model_file_path(self._model_dir)
+                self._inference_session = onnxruntime.InferenceSession(
+                    self._onnx_model_path
                 )
             else:
                 raise BentoMLException(
                     f'"{self.spec.backend}" runtime is currently not supported for '
                     f'OnnxModelArtifact'
                 )
-        return self._inference_model
+        return self._inference_session
 
     def save(self, dst):
         if self._onnx_model_path:

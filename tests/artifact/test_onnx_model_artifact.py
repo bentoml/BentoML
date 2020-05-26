@@ -55,7 +55,7 @@ def test_onnx_model_artifact_pack_modelproto_with_onnxruntime_backend(
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
-    assert loaded_svc.predict(test_df)[0] == [1], f'Run inference after save onnx model'
+    assert loaded_svc.predict(test_df)[0] == [1], 'Run inference after save onnx model'
 
     # clean up saved bundle
     yc = YataiClient()
@@ -79,7 +79,7 @@ def test_onnx_model_artifact_pack_model_file_path_with_onnxruntime_backend(
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
-    assert loaded_svc.predict(test_df)[0] == [1], f'Run inference after save onnx model'
+    assert loaded_svc.predict(test_df)[0] == [1], 'Run inference after save onnx model'
 
     # clean up saved bundle
     yc = YataiClient()

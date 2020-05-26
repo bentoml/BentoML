@@ -155,8 +155,8 @@ class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
                     self._model_proto = path_or_model_proto
                 else:
                     raise InvalidArgument(
-                        'onnx.ModelProto or a .onnx model file path is required to pack '
-                        'an OnnxModelArtifact'
+                        'onnx.ModelProto or a .onnx model file path is required to '
+                        'pack an OnnxModelArtifact'
                     )
             except ImportError:
                 raise InvalidArgument(

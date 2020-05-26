@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import logging
 import os
+import pathlib
 import shutil
 
 from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
@@ -31,6 +32,14 @@ logger = logging.getLogger(__name__)
 
 
 SUPPORTED_ONNX_BACKEND = ['onnxruntime']
+
+
+def _is_onnx_model_file_path_like(path):
+    return (
+        isinstance(path, str, pathlib.Path, os.PathLike)
+        and os.path.isfile(path)
+        and str(path).lower().endswith('.onnx')
+    )
 
 
 class OnnxModelArtifact(BentoServiceArtifact):
@@ -107,25 +116,11 @@ class OnnxModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + '.onnx')
 
     def pack(self, obj):  # pylint:disable=arguments-differ
-        try:
-            import onnx
-        except ImportError:
-            return _ExportedOnnxModelArtifact(self, obj)
-
-        if isinstance(obj, onnx.ModelProto):
-            return _OnnxModelArtifactWrapper(self, obj)
-        elif os.path.isfile(obj):
-            return _ExportedOnnxModelArtifact(self, obj)
-        else:
-            raise InvalidArgument(
-                'Onnx.ModelProto or a model file path is required to pack an '
-                'OnnxModelArtifact'
-            )
+        return _OnnxModelArtifactWrapper(self, obj)
 
     def load(self, path):
-        # Each backend runtime has its own artifact implementation
         if self.backend == 'onnxruntime':
-            return _OnnxruntimeBackendModelArtifact(self, path)
+            return _OnnxModelArtifactWrapper(self, path)
         else:
             raise NotImplementedError(
                 f'{self.backend} runtime is not supported at the moment'
@@ -134,49 +129,50 @@ class OnnxModelArtifact(BentoServiceArtifact):
     @property
     def pip_dependencies(self):
         dependencies = []
-        if self.backend == 'onnx':
+        if self.backend == 'onnxruntime':
             dependencies.append('onnxruntime')
         return dependencies
 
 
 class _OnnxModelArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, model):
+    def __init__(self, spec, path):
         super(_OnnxModelArtifactWrapper, self).__init__(spec)
-        self._model = model
 
-    def save(self, dst):
-        try:
-            import onnx
-        except ImportError:
-            raise MissingDependencyException(
-                'onnx package is required to save onnx.ModelProto object'
-            )
-        return onnx.save(self._model, self.spec._model_file_path(dst))
-
-
-class _ExportedOnnxModelArtifact(BentoServiceArtifactWrapper):
-    def __init__(self, spec, path):
-        super(_ExportedOnnxModelArtifact, self).__init__(spec)
         self.path = path
-
-    def save(self, dst):
-        shutil.copyfile(self.path, self.spec._model_file_path(dst))
-
-
-class _OnnxruntimeBackendModelArtifact(BentoServiceArtifactWrapper):
-    def __init__(self, spec, path):
-        super(_OnnxruntimeBackendModelArtifact, self).__init__(spec)
-        self.path = path
-        self.model = None
+        self._model = None
 
     def get(self):
         try:
             import onnxruntime
         except ImportError:
-            raise MissingDependencyException('')
-        self.model = onnxruntime.InferenceSession(self.spec._model_file_path(self.path))
+            raise MissingDependencyException(
+                '"onnxruntime" package is required for inferencing with onnx runtime '
+                'as backend'
+            )
+        self._model = onnxruntime.InferenceSession(
+            self.spec._model_file_path(self.path)
+        )
 
-        return self.model
+        return self._model
 
     def save(self, dst):
-        raise NotImplementedError('_OnnxruntimeBackendModelArtifact does not save')
+        try:
+            import onnx
+        except ImportError:
+            if _is_onnx_model_file_path_like(self.path):
+                shutil.copyfile(self.path, self.spec._model_file_path(dst))
+            else:
+                raise InvalidArgument(
+                    'Onnx.ModelProto or a model file path is required to pack an '
+                    'OnnxModelArtifact'
+                )
+
+        if isinstance(self.path, onnx.ModelProto):
+            return onnx.save(self.path, self.spec._model_file_path(dst))
+        elif _is_onnx_model_file_path_like(self.path):
+            shutil.copyfile(self.path, self.spec._model_file_path(dst))
+        else:
+            raise InvalidArgument(
+                'Onnx.ModelProto or a model file path is required to pack an '
+                'OnnxModelArtifact'
+            )

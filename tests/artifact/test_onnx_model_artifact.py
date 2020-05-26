@@ -72,7 +72,7 @@ def test_onnx_model_artifact_pack_model_file_path_with_onnxruntime_backend(tmpdi
     expect_result = [1]
     result = api.func(test_df)[0]
     assert (
-            expect_result == result
+        expect_result == result
     ), f'Expected value {expect_result} is not equal to prediction result {result}'
     yc = YataiClient()
     yc.repository.dangerously_delete_bento(svc.name, svc.version)

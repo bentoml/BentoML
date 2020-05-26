@@ -48,6 +48,7 @@ install_requires = [
     # works for both
     "python-dateutil>=2.1,<2.8.1",
     "certifi",
+    "mock>=2.0.0",
 ]
 
 imageio = ["imageio>=2.5.0"]
@@ -76,7 +77,6 @@ test_requires = (
     [
         "pytest>=4.1.0",
         "pytest-cov>=2.7.1",
-        "mock>=2.0.0",
         "coverage>=4.4",
         "codecov",
         "moto",

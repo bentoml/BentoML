@@ -139,7 +139,7 @@ the models you and your team have created overtime.
 
 BentoService can only be created using Python as the programming language. But it is
 possible to use models trained with other languages/frameworks with BentoML and benefit
-from BentoML's model management, API server, dockerisation and performance 
+from BentoML's model management, API server, dockerization and performance 
 optimizations. To do so, you will need to :doc:`create custom artifact <guides/custom_artifact>`.
 Support for R and Spark MLlib models are on our roadmap.
 
@@ -530,7 +530,7 @@ command instead, or use Docker container for deployment.
     bentoml serve-gunicorn $saved_path --enable-microbatch --workers=2 --port=3000
 
 
-API Server Dockerisation
+API Server Dockerization
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 When you are ready to deploy the service to production, a docker image containing your

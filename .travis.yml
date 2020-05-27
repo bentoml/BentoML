@@ -32,10 +32,10 @@ matrix:
       script:
         - ./dev/lint.sh
 
-    - name: "Artifacts"
+    - name: "ONNX model artifact"
       python: "3.6"
       script:
-        - ./travis/run_model_artifacts_tests.sh
+        - ./travis/run_onnx_model_artifact_tests.sh
 
 script:
   - ./travis/run_python_tests.sh

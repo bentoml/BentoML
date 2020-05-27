@@ -11,7 +11,7 @@ cd $GIT_ROOT
 
 # Install required packages for onnx model artifacts test
 pip install onnx onnxruntime skl2onnx
-pytest $GIT_ROOT/tests/artifact/test_onnx_model_artifact.py
+pytest $GIT_ROOT/tests/artifact/test_onnx_model_artifact.py --cov=bentoml
 
 
 test $error = 0 # Return non-zero if pytest failed

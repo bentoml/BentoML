@@ -65,7 +65,7 @@ Both BentoML and MLflow can expose a trained model as a REST API server, but the
 
 - MLFlow focuses on loading and running a model, while BentoML provides an abstraction to build a prediction service, which includes the necessary pre-processing and post-processing logic in addition to the model itself
 
-- BentoML is more feature-rich in terms of serving, it supports many essential model serving features that are missing in MLflow, including multi-model inferencing, API server dockerisation, built-in Prometheus metrics endpoint, Swagger/OpenAPI endpoint for API client library generation, serverless endpoint deployment, prediction/feedback logging and many more
+- BentoML is more feature-rich in terms of serving, it supports many essential model serving features that are missing in MLflow, including multi-model inferencing, API server dockerization, built-in Prometheus metrics endpoint, Swagger/OpenAPI endpoint for API client library generation, serverless endpoint deployment, prediction/feedback logging and many more
 
 MLflow API server requires the user to also use MLFlow's own "MLflow Project" framework, while BentoML works with any model development and model training workflow - users can use BentoML with MLflow, Kubeflow, Floydhub, AWS SageMaker, local jupyter notebook, etc
 

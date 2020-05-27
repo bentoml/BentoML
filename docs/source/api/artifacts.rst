@@ -29,6 +29,10 @@ LightGBMModelArtifact
 +++++++++++++++++++++
 .. autoclass:: bentoml.artifact.LightGBMModelArtifact
 
+OnnxModelArtifact
++++++++++++++++++
+.. autoclass:: bentoml.artifact.OnnxModelArtifact
+
 H2oModelArtifact
 ++++++++++++++++
 .. autoclass:: bentoml.artifact.H2oModelArtifact

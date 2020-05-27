@@ -18,9 +18,10 @@ class TestModel(object):
     def predict_dataframe(self, df):
         return df["col1"].sum()
 
-    def predict_image(self, input_data):
-        assert input_data is not None
-        return input_data.shape
+    def predict_image(self, input_datas):
+        for input_data in input_datas:
+            assert input_data is not None
+        return [input_data.shape for input_data in input_datas]
 
     def predict_json(self, input_data):
         assert input_data is not None

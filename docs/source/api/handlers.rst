@@ -19,6 +19,10 @@ ImageHandler
 ++++++++++++
 .. autoclass:: bentoml.handlers.ImageHandler
 
+LegacyImageHandler
+++++++++++++
+.. autoclass:: bentoml.handlers.LegacyImageHandler
+
 FastaiImageHandler
 ++++++++++++++++++
 .. autoclass:: bentoml.handlers.FastaiImageHandler

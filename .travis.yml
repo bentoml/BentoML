@@ -32,8 +32,13 @@ matrix:
       script:
         - ./dev/lint.sh
 
+    - name: "Artifacts"
+      python: "3.6"
+      script:
+        - ./travis/run_model_artifacts_tests.sh
+
 script:
-  - pytest tests --cov=bentoml
+  - ./travis/run_python_tests.sh
 
 after_success:
   - codecov

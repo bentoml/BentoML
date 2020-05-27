@@ -42,10 +42,6 @@ def sklearn_onnx_model():
 test_df = pandas.DataFrame([[5.0, 4.0, 3.0, 1.0]])
 
 
-@pytest.mark.skipif(
-    "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-    reason="Skipping this test on Travis CI.",
-)
 def test_onnx_model_artifact_pack_modelproto_with_onnxruntime_backend(
     onnx_iris_classifier_class, sklearn_onnx_model
 ):
@@ -62,10 +58,6 @@ def test_onnx_model_artifact_pack_modelproto_with_onnxruntime_backend(
     yc.repository.dangerously_delete_bento(svc.name, svc.version)
 
 
-@pytest.mark.skipif(
-    "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-    reason="Skipping this test on Travis CI.",
-)
 def test_onnx_model_artifact_pack_model_file_path_with_onnxruntime_backend(
     tmpdir, onnx_iris_classifier_class, sklearn_onnx_model
 ):

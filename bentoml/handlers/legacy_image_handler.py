@@ -34,7 +34,7 @@ def _import_imageio_imread():
         from imageio import imread
     except ImportError:
         raise MissingDependencyException(
-            "imageio package is required to use ImageHandler"
+            "imageio package is required to use LegacyImageHandler"
         )
 
     return imread
@@ -85,7 +85,7 @@ class LegacyImageHandler(BentoHandler):
             https://imageio.readthedocs.io/en/stable/format_png-pil.html
 
     Raises:
-        ImportError: imageio package is required to use ImageHandler
+        ImportError: imageio package is required to use LegacyImageHandler
     """
 
     HTTP_METHODS = ["POST"]
@@ -149,8 +149,8 @@ class LegacyImageHandler(BentoHandler):
             response object
         """
         if len(self.input_names) == 1 and len(request.files) == 1:
-            # Ignore multipart form input name when ImageHandler is intended to accept
-            # only one image file at a time
+            # Ignore multipart form input name when LegacyImageHandler is intended
+            # to accept only one image file at a time
             input_files = [file for _, file in request.files.items()]
         else:
             input_files = [
@@ -169,7 +169,9 @@ class LegacyImageHandler(BentoHandler):
             if data:
                 input_streams = (data,)
             else:
-                raise BadInput("BentoML#ImageHandler unexpected HTTP request format")
+                raise BadInput(
+                    "BentoML#LegacyImageHandler unexpected HTTP request format"
+                )
 
         input_data = tuple(
             self.imread(input_stream, pilmode=self.pilmode)

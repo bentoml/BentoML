@@ -78,8 +78,8 @@ def test_invalid_api_handler():
 def test_image_handler_pip_dependencies():
     class TestImageService(bentoml.BentoService):
         @bentoml.api(ImageHandler)
-        def test(self, image):
-            return image
+        def test(self, images):
+            return images
 
     service = TestImageService()
     assert 'imageio' in service._env._pip_dependencies

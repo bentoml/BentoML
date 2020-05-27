@@ -5,12 +5,11 @@ import mock
 import flask
 
 from bentoml.exceptions import BadInput
-from bentoml.handlers import ImageHandler
-from bentoml.marshal.utils import SimpleRequest
+from bentoml.handlers import LegacyImageHandler as ImageHandler
 
 
-def predict(images):
-    return [image.shape for image in images]
+def predict(image):
+    return image.shape
 
 
 def test_image_handler_cli(capsys, img_file):
@@ -47,33 +46,25 @@ def test_image_handler_http_request_post_binary(img_file):
     request.method = "POST"
     request.files = {}
     request.headers = {}
-    request.get_data.return_value = open(str(img_file), 'rb').read()
+    request.get_data.return_value = open(str(img_file), 'rb')
 
     response = test_image_handler.handle_request(request, predict)
 
     assert response.status_code == 200
     assert "[10, 10, 3]" in str(response.response)
 
-    simple_request = SimpleRequest(request.headers, request.get_data())
-    responses = test_image_handler.handle_batch_request([simple_request], predict)
-
-    assert responses[0].status == 200
-    assert "[10, 10, 3]" in str(responses[0].data)
-
 
 def test_image_handler_http_request_multipart_form(img_file):
-    test_image_handler = ImageHandler()
+    test_image_handler = ImageHandler(input_names=("my_image",))
     request = mock.MagicMock(spec=flask.Request)
-    file_bytes = open(str(img_file), 'rb').read()
     file_attr = {
         'filename': 'test_img.png',
-        'read.return_value': file_bytes,
-        'stream': file_bytes,
+        'read.return_value': open(str(img_file), 'rb').read(),
     }
     file = mock.Mock(**file_attr)
 
     request.method = "POST"
-    request.files = {"image_file": file}
+    request.files = {"my_image": file}
     request.headers = {}
     request.get_data.return_value = None
 
@@ -84,13 +75,11 @@ def test_image_handler_http_request_multipart_form(img_file):
 
 
 def test_image_handler_http_request_single_image_different_name(img_file):
-    test_image_handler = ImageHandler()
+    test_image_handler = ImageHandler(input_names=("my_image",))
     request = mock.MagicMock(spec=flask.Request)
-    file_bytes = open(str(img_file), 'rb').read()
     file_attr = {
         'filename': 'test_img.png',
-        'read.return_value': file_bytes,
-        'stream': file_bytes,
+        'read.return_value': open(str(img_file), 'rb').read(),
     }
     file = mock.Mock(**file_attr)
 
@@ -106,7 +95,7 @@ def test_image_handler_http_request_single_image_different_name(img_file):
 
 
 def test_image_handler_http_request_malformatted_input_missing_image_file():
-    test_image_handler = ImageHandler()
+    test_image_handler = ImageHandler(input_names=("my_image",))
     request = mock.MagicMock(spec=flask.Request)
 
     request.method = "POST"
@@ -121,7 +110,7 @@ def test_image_handler_http_request_malformatted_input_missing_image_file():
 
 
 def test_image_handler_http_request_malformatted_input_wrong_input_name():
-    test_image_handler = ImageHandler()
+    test_image_handler = ImageHandler(input_names=("my_image", "my_image2"))
     request = mock.MagicMock(spec=flask.Request)
 
     request.method = "POST"

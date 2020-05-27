@@ -64,8 +64,8 @@ class PytorchModelArtifact(BentoServiceArtifact):
     >>> class PytorchModelService(bentoml.BentoService):
     >>>
     >>>     @bentoml.api(ImageHandler)
-    >>>     def predict(self, img):
-    >>>         outputs = self.artifacts.net(img)
+    >>>     def predict(self, imgs):
+    >>>         outputs = self.artifacts.net(imgs)
     >>>         return outputs
     >>>
     >>>

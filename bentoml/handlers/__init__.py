@@ -21,6 +21,7 @@ from bentoml.handlers.dataframe_handler import DataframeHandler
 from bentoml.handlers.tensorflow_tensor_handler import TensorflowTensorHandler
 from bentoml.handlers.json_handler import JsonHandler
 from bentoml.handlers.image_handler import ImageHandler
+from bentoml.handlers.legacy_image_handler import LegacyImageHandler
 from bentoml.handlers.fastai_image_handler import FastaiImageHandler
 from bentoml.handlers.clipper_handler import (
     ClipperBytesHandler,
@@ -43,6 +44,7 @@ __all__ = [
     "TensorflowTensorHandler",
     "JsonHandler",
     "ImageHandler",
+    "LegacyImageHandler",
     "FastaiImageHandler",
     "ClipperBytesHandler",
     "ClipperDoublesHandler",

@@ -8,8 +8,9 @@ def test_get_bento_service_event_properties(bento_service):
     assert 'PickleArtifact' in properties["artifact_types"]
     assert 'DataframeHandler' in properties["handler_types"]
     assert 'ImageHandler' in properties["handler_types"]
+    assert 'LegacyImageHandler' in properties["handler_types"]
     assert 'JsonHandler' in properties["handler_types"]
-    assert len(properties["handler_types"]) == 3
+    assert len(properties["handler_types"]) == 4
 
     # Disabling fastai related tests to fix travis build
     # assert 'FastaiImageHandler' in properties["handler_types"]

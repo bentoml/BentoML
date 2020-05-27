@@ -137,11 +137,12 @@ class ImageHandler(BentoHandler):
                     "if you just upgraded from bentoml 0.7, you may need to use "
                     "MultiImageHandler or LegacyImageHandler instead"
                 )
-            else:
-                input_file = next(iter(request.files.values()))
-                file_name = secure_filename(input_file.filename)
-                verify_image_format_or_raise(file_name, self.accept_image_formats)
-                input_stream = input_file.stream
+            input_file = next(iter(request.files.values()))
+            if not input_file:
+                raise BadInput("BentoML#ImageHandler unexpected HTTP request format")
+            file_name = secure_filename(input_file.filename)
+            verify_image_format_or_raise(file_name, self.accept_image_formats)
+            input_stream = input_file.stream
         else:
             data = request.get_data()
             if not data:
@@ -164,6 +165,8 @@ class ImageHandler(BentoHandler):
         input_datas = []
         ids = []
         for i, req in enumerate(requests):
+            if not req.data:
+                continue
             request = Request.from_values(
                 input_stream=BytesIO(req.data),
                 content_length=len(req.data),

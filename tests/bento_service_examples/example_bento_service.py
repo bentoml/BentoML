@@ -2,6 +2,7 @@ import bentoml
 from bentoml.handlers import (
     DataframeHandler,
     ImageHandler,
+    LegacyImageHandler,
     JsonHandler,
     # FastaiImageHandler,
 )
@@ -28,10 +29,10 @@ class ExampleBentoService(bentoml.BentoService):
         return self.artifacts.model.predict_dataframe(df)
 
     @bentoml.api(ImageHandler)
-    def predict_image(self, image):
-        return self.artifacts.model.predict_image(image)
+    def predict_image(self, images):
+        return self.artifacts.model.predict_image(images)
 
-    @bentoml.api(ImageHandler, input_names=('original', 'compared'))
+    @bentoml.api(LegacyImageHandler, input_names=('original', 'compared'))
     def predict_images(self, original, compared):
         return original[0, 0] == compared[0, 0]
 

@@ -2,6 +2,9 @@ language: python
 
 dist: xenial
 
+services:
+  - docker
+
 cache:
   pip: true
 
@@ -31,6 +34,11 @@ matrix:
       name: "Linting check"
       script:
         - ./dev/lint.sh
+
+    - python: "3.6"
+      name: "Yatai Service"
+      script:
+        - ./travis/run_yatai_service_e2e_tests.sh
 
     - name: "ONNX model artifact"
       python: "3.6"

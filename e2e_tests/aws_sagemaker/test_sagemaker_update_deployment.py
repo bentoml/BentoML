@@ -38,7 +38,7 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
 
         request_success, prediction_result = send_test_data_to_endpoint(endpoint_name)
         assert request_success, 'Failed to make successful Sagemaker request'
-        assert prediction_result == "cat", 'Sagemaker prediction result mismatch'
+        assert prediction_result == '"cat"\n', 'Sagemaker prediction result mismatch'
 
         update_bento_version_deployment_command = [
             'bentoml',
@@ -63,6 +63,6 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
 
         request_success, prediction_result = send_test_data_to_endpoint(endpoint_name)
         assert request_success, 'Failed to make successful Sagemaker request'
-        assert prediction_result == "dog", 'Sagemaker prediction result mismatch'
+        assert prediction_result == '"dog"\n', 'Sagemaker prediction result mismatch'
     finally:
         delete_deployment('sagemaker', deployment_name)

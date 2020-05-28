@@ -208,23 +208,26 @@ class ImageHandler(BentoHandler):
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
-        parser.add_argument("--input", required=True)
+        parser.add_argument("--input", required=True, nargs='+')
         parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
         parsed_args = parser.parse_args(args)
-        file_path = parsed_args.input
+        file_paths = parsed_args.input
 
-        verify_image_format_or_raise(file_path, self.accept_image_formats)
-        if not os.path.isabs(file_path):
-            file_path = os.path.abspath(file_path)
+        image_arrays = []
+        for file_path in file_paths:
+            verify_image_format_or_raise(file_path, self.accept_image_formats)
+            if not os.path.isabs(file_path):
+                file_path = os.path.abspath(file_path)
 
-        image_array = self.imread(file_path, pilmode=self.pilmode)
+            image_arrays.append(self.imread(file_path, pilmode=self.pilmode))
 
-        result = func((image_array,))[0]
-        if parsed_args.output == "json":
-            result = api_func_result_to_json(result)
-        else:
-            result = str(result)
-        print(result)
+        results = func(image_arrays)
+        for result in results:
+            if parsed_args.output == "json":
+                result = api_func_result_to_json(result)
+            else:
+                result = str(result)
+            print(result)
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):

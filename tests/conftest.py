@@ -11,7 +11,15 @@ from tests.bento_service_examples.example_bento_service import ExampleBentoServi
 def img_file(tmpdir):
     img_file_ = tmpdir.join("test_img.jpg")
     imageio.imwrite(str(img_file_), np.zeros((10, 10)))
-    return img_file_
+    return str(img_file_)
+
+
+@pytest.fixture()
+def img_files(tmpdir):
+    for i in range(10):
+        img_file_ = tmpdir.join(f"test_img_{i}.jpg")
+        imageio.imwrite(str(img_file_), np.zeros((10, 10)))
+    return str(tmpdir.join("*.jpg"))
 
 
 class TestModel(object):

@@ -65,7 +65,13 @@ def get_default_accept_image_formats():
 
 
 class LegacyImageHandler(BentoHandler):
-    """Transform incoming image data from http request, cli or lambda event into numpy
+    """
+    *** This LegacyImageHandler is identical to the ImageHandler prior to
+    BentoML version 0.8.0, it was kept here to make it easier for users to upgrade.
+    If you are starting a new model serving project, use the ImageHandler instead.
+    LegacyImageHandler will be deprecated in release 1.0.0. ***
+
+    Transform incoming image data from http request, cli or lambda event into numpy
     array.
 
     Handle incoming image data from different sources, transform them into numpy array

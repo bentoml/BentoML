@@ -1,4 +1,5 @@
 import base64
+import glob
 import pytest
 import mock
 
@@ -16,10 +17,21 @@ def predict(images):
 def test_image_handler_cli(capsys, img_file):
     test_image_handler = ImageHandler()
 
-    test_args = ["--input={}".format(img_file)]
+    test_args = ["--input", img_file]
     test_image_handler.handle_cli(test_args, predict)
     out, err = capsys.readouterr()
     assert out.strip().endswith("(10, 10, 3)")
+
+
+def test_image_handler_cli_list(capsys, img_files):
+    test_image_handler = ImageHandler()
+
+    test_args = ["--input"] + glob.glob(img_files)
+    test_image_handler.handle_cli(test_args, predict)
+    out, err = capsys.readouterr()
+    lines = out.strip().split('\n')
+    for line in lines[-10:]:
+        assert line.strip().endswith("(10, 10, 3)")
 
 
 def test_image_handler_aws_lambda_event(img_file):

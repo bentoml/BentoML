@@ -96,6 +96,12 @@ class ImageHandler(BentoHandler):
         self, accept_image_formats=None, pilmode="RGB", **base_kwargs,
     ):
         super(ImageHandler, self).__init__(**base_kwargs)
+        if 'input_names' in base_kwargs:
+            raise TypeError(
+                "ImageHandler doesn't take input_names as parameters since bentoml 0.8."
+                "Update your Service definition "
+                "or use LegacyImageHandler instead(not recommended)."
+            )
         self.imread = _import_imageio_imread()
 
         self.pilmode = pilmode

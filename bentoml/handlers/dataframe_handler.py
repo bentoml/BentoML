@@ -219,6 +219,10 @@ class DataframeHandler(BentoHandler):
             )
 
     @property
+    def pip_dependencies(self):
+        return ['pandas']
+
+    @property
     def config(self):
         base_config = super(self.__class__, self).config
         return dict(

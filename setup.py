@@ -24,7 +24,6 @@ install_requires = [
     "flask",
     "gunicorn",
     "click>=7.0",
-    "pandas",
     "prometheus_client",
     "python-json-logger",
     "boto3",

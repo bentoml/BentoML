@@ -25,7 +25,10 @@ import itertools
 import argparse
 from io import StringIO
 
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 from flask import Response
 
 from bentoml.handlers.base_handlers import (
@@ -36,7 +39,7 @@ from bentoml.handlers.base_handlers import (
 from bentoml.utils import is_url
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.utils.s3 import is_s3_url
-from bentoml.exceptions import BadInput
+from bentoml.exceptions import BadInput, MissingDependencyException
 
 
 def _check_dataframe_column_contains(required_column_names, df):
@@ -198,6 +201,17 @@ class DataframeHandler(BentoHandler):
             is_batch_input=is_batch_input, **base_kwargs
         )
 
+        # Verify pandas imported properly and retry import if it has failed initially
+        global pd  # pylint: disable=global-statement
+        if pd is None:
+            try:
+                import pandas as pd  # pylint: disable=redefined-outer-name
+            except ImportError:
+                raise MissingDependencyException(
+                    "Missing required dependency 'pandas' for DataframeHandler, install"
+                    "with `pip install pandas`"
+                )
+
         self.orient = orient
         self.output_orient = output_orient or orient
 
@@ -217,6 +231,10 @@ class DataframeHandler(BentoHandler):
             self.input_dtypes = dict(
                 (str(index), dtype) for index, dtype in enumerate(self.input_dtypes)
             )
+
+    @property
+    def pip_dependencies(self):
+        return ['pandas']
 
     @property
     def config(self):

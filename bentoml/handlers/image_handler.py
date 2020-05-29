@@ -216,24 +216,32 @@ class ImageHandler(BentoHandler):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True, nargs='+')
         parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
+        parser.add_argument("--batch-size", default=None, type=int)
         parsed_args = parser.parse_args(args)
         file_paths = parsed_args.input
 
-        image_arrays = []
-        for file_path in file_paths:
-            verify_image_format_or_raise(file_path, self.accept_image_formats)
-            if not os.path.isabs(file_path):
-                file_path = os.path.abspath(file_path)
+        batch_size = (
+            parsed_args.batch_size if parsed_args.batch_size else len(file_paths)
+        )
 
-            image_arrays.append(self.imread(file_path, pilmode=self.pilmode))
+        for i in range(0, len(file_paths), batch_size):
+            step_file_paths = file_paths[i : i + batch_size]
+            image_arrays = []
+            for file_path in step_file_paths:
+                verify_image_format_or_raise(file_path, self.accept_image_formats)
+                if not os.path.isabs(file_path):
+                    file_path = os.path.abspath(file_path)
 
-        results = func(image_arrays)
-        for result in results:
-            if parsed_args.output == "json":
-                result = api_func_result_to_json(result)
-            else:
-                result = str(result)
-            print(result)
+                image_arrays.append(self.imread(file_path, pilmode=self.pilmode))
+
+            results = func(image_arrays)
+
+            for result in results:
+                if parsed_args.output == "json":
+                    result = api_func_result_to_json(result)
+                else:
+                    result = str(result)
+                print(result)
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):

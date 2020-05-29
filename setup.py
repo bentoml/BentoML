@@ -79,10 +79,10 @@ test_requires = (
         "coverage>=4.4",
         "codecov",
         "moto",
-        "numpy",
-        "scikit-learn",
         "pylint>=2.5.2",
         "flake8>=3.8.2",
+        "pandas",
+        "scikit-learn",
     ]
     + imageio
     + aws_sam_cli

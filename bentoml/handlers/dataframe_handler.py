@@ -205,7 +205,7 @@ class DataframeHandler(BentoHandler):
         global pd  # pylint: disable=global-statement
         if pd is None:
             try:
-                import pandas as pd
+                import pandas as pd  # pylint: disable=redefined-outer-name
             except ImportError:
                 raise MissingDependencyException(
                     "Missing required dependency 'pandas' for DataframeHandler, install"

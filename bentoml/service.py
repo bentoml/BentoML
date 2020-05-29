@@ -189,7 +189,9 @@ class BentoServiceBase(object):
             raise NotFound("Can't find default API for service '{}'".format(self.name))
 
 
-def api_decorator(handler_cls, *args, **kwargs):
+def api_decorator(
+    *args, input=None, output=None, api_name=None, api_doc=None, **kwargs
+):
     """Decorator for adding api to a BentoService
 
     Args:
@@ -213,6 +215,19 @@ def api_decorator(handler_cls, *args, **kwargs):
     >>>     def fraud_detect(self, parsed_json):
     >>>         # do something
     >>>
+    >>>     @api(input=DataframeHandler(input_json_orient='records'))
+    >>>     def identity(self, df):
+    >>>         # do something
+
+    >>> from bentoml import BentoService, api
+    >>> from bentoml.handlers import JsonHandler, DataframeHandler
+    >>>
+    >>> class FraudDetectionAndIdentityService(BentoService):
+    >>>
+    >>>     @api(JsonHandler)
+    >>>     def fraud_detect(self, parsed_json):
+    >>>         # do something
+    >>>
     >>>     @api(DataframeHandler, input_json_orient='records')
     >>>     def identity(self, df):
     >>>         # do something
@@ -223,22 +238,29 @@ def api_decorator(handler_cls, *args, **kwargs):
 
     from bentoml.handlers.base_handlers import BentoHandler
 
-    if not (inspect.isclass(handler_cls) and issubclass(handler_cls, BentoHandler)):
-        raise InvalidArgument(
-            "BentoService @api decorator first parameter must "
-            "be class derived from bentoml.handlers.BentoHandler"
-        )
-
     def decorator(func):
-        api_name = kwargs.pop("api_name", func.__name__)
-        api_doc = kwargs.pop("api_doc", func.__doc__ or DEFAULT_API_DOC).strip()
+        if api_name is None:
+            api_name = func.__name__
+        if api_doc is None:
+            api_doc = (func.__doc__ or DEFAULT_API_DOC).strip()
 
-        handler = handler_cls(
-            *args, **kwargs
-        )  # create handler instance and attach to api method
+        if input is None:
+            # support bentoml<=0.7
+            if not args or not (
+                inspect.isclass(args[0]) and issubclass(args[0], BentoHandler)
+            ):
+                raise InvalidArgument(
+                    "BentoService @api decorator first parameter must "
+                    "be class derived from bentoml.handlers.BentoHandler"
+                )
+
+            handler = args[0](*args[1:], **kwargs)
+        else:
+            handler = input
 
         setattr(func, "_is_api", True)
         setattr(func, "_handler", handler)
+        setattr(func, "_output_adapter", output)
         if not isidentifier(api_name):
             raise InvalidArgument(
                 "Invalid API name: '{}', a valid identifier must contains only letters,"

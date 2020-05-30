@@ -41,7 +41,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx_click.ext",
-    "recommonmark",
+    "recommonmark"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -64,7 +64,7 @@ html_theme_options = {
     "navigation_depth": 4,
     "display_version": True,
     "includehidden": False,
-    "titles_only": False,
+    "titles_only": False
 }
 
 

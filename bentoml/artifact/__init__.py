@@ -22,6 +22,7 @@ from bentoml.artifact.artifact import (
     ArtifactCollection,
 )
 from bentoml.artifact.text_file_artifact import TextFileArtifact
+from bentoml.artifact.json_artifact import JSONArtifact
 from bentoml.artifact.pickle_artifact import PickleArtifact
 from bentoml.artifact.pytorch_model_artifact import PytorchModelArtifact
 from bentoml.artifact.keras_model_artifact import KerasModelArtifact
@@ -42,6 +43,7 @@ __all__ = [
     "PickleArtifact",
     "PytorchModelArtifact",
     "TextFileArtifact",
+    "JSONArtifact",
     "KerasModelArtifact",
     "XgboostModelArtifact",
     "H2oModelArtifact",

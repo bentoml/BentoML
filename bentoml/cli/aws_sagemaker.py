@@ -284,7 +284,8 @@ def get_aws_sagemaker_sub_command():
     @aws_sagemaker.command(help='Delete AWS Sagemaker deployment')
     @click.argument('name', type=click.STRING)
     @click.option(
-        '-n' '--namespace',
+        '-n',
+        '--namespace',
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration yatai_service/default_namespace',

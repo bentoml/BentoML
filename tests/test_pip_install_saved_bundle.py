@@ -48,6 +48,9 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     res = svc.predict_dataframe(pd.DataFrame(pd.DataFrame([1], columns=["col1"])))
     assert res == 1
 
+    res = svc.predict_dataframe_v1(pd.DataFrame(pd.DataFrame([1], columns=["col1"])))
+    assert res == 1
+
     # pip install should place cli entry script under target/bin directory
     if psutil.WINDOWS:
         cli_bin_path = os.path.join(install_path, "bin", "ExampleBentoService.exe")

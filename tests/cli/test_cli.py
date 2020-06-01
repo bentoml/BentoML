@@ -43,6 +43,22 @@ def test_run_command_with_input_file(bento_bundle_path):
     assert result.exit_code == 0
     assert result.output.strip() == '3'
 
+    result = runner.invoke(
+        run_cmd,
+        [
+            bento_bundle_path,
+            "predict_dataframe_v1",
+            "--input",
+            input_path,
+            "-o",
+            "json",
+            "--quiet",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.output.strip() == '3'
+
 
 @pytest.mark.skipif('not psutil.POSIX')
 def test_gunicorn_serve_command():

@@ -34,6 +34,13 @@ def test_api_function_route(bento_service, tmpdir, img_file):
     )
     assert response.data.decode().strip() == '30'
 
+    assert "predict_dataframe_v1" in index_list
+    data = [{"col1": 10}, {"col1": 20}]
+    response = test_client.post(
+        "/predict_dataframe_v1", data=json.dumps(data), content_type="application/json"
+    )
+    assert response.data.decode().strip() == '30'
+
     # Test Image handlers.
     with open(str(img_file), "rb") as f:
         img = f.read()

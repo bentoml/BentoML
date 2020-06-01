@@ -8,7 +8,7 @@ pytestmark = pytest.mark.skip("skipping entire test file to debug travis build i
 
 def test_fastai_image_handler(capsys, tmpdir):
     class ImageHandlerModelForFastai(bentoml.BentoService):
-        @bentoml.api(FastaiImageHandler)
+        @bentoml.api(input=FastaiImageHandler())
         def predict(self, image):
             return list(image.shape)
 

@@ -9,28 +9,30 @@ from bentoml.exceptions import InvalidArgument
 
 def test_custom_api_name():
     # these names should work:
-    bentoml.api(DataframeHandler, api_name="a_valid_name")(lambda x: x)
-    bentoml.api(DataframeHandler, api_name="AValidName")(lambda x: x)
-    bentoml.api(DataframeHandler, api_name="_AValidName")(lambda x: x)
-    bentoml.api(DataframeHandler, api_name="a_valid_name_123")(lambda x: x)
+    bentoml.api(input=DataframeHandler(), api_name="a_valid_name")(lambda x: x)
+    bentoml.api(input=DataframeHandler(), api_name="AValidName")(lambda x: x)
+    bentoml.api(input=DataframeHandler(), api_name="_AValidName")(lambda x: x)
+    bentoml.api(input=DataframeHandler(), api_name="a_valid_name_123")(lambda x: x)
 
     with pytest.raises(InvalidArgument) as e:
-        bentoml.api(DataframeHandler, api_name="a invalid name")(lambda x: x)
+        bentoml.api(input=DataframeHandler(), api_name="a invalid name")(lambda x: x)
     assert str(e.value).startswith("Invalid API name")
 
     with pytest.raises(InvalidArgument) as e:
-        bentoml.api(DataframeHandler, api_name="123_a_invalid_name")(lambda x: x)
+        bentoml.api(input=DataframeHandler(), api_name="123_a_invalid_name")(
+            lambda x: x
+        )
     assert str(e.value).startswith("Invalid API name")
 
     with pytest.raises(InvalidArgument) as e:
-        bentoml.api(DataframeHandler, api_name="a-invalid-name")(lambda x: x)
+        bentoml.api(input=DataframeHandler(), api_name="a-invalid-name")(lambda x: x)
     assert str(e.value).startswith("Invalid API name")
 
 
 @pytest.mark.skip("skip fastai tests to fix travis build")
 def test_fastai_image_handler_pip_dependencies():
     class TestFastAiImageService(bentoml.BentoService):
-        @bentoml.api(FastaiImageHandler)
+        @bentoml.api(input=FastaiImageHandler())
         def test(self, image):
             return image
 
@@ -77,7 +79,7 @@ def test_invalid_api_handler():
 
 def test_image_handler_pip_dependencies():
     class TestImageService(bentoml.BentoService):
-        @bentoml.api(ImageHandler)
+        @bentoml.api(input=ImageHandler())
         def test(self, images):
             return images
 

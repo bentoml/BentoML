@@ -49,6 +49,10 @@ class JSONArtifact(BentoServiceArtifact):
 
 class _JSONArtifactWrapper(BentoServiceArtifactWrapper):
     def __init__(self, spec, content, **json_dumps_kwargs):
+        """
+        Args:
+              **json_dumps_kwargs: keyword args forwarded to call to json.dumps().
+        """
         super().__init__(spec)
         self._content = content
         self._json_dumps_kwargs = json_dumps_kwargs

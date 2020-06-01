@@ -191,7 +191,7 @@ class BentoServiceBase(object):
 
 def api_decorator(
     *args, input=None, output=None, api_name=None, api_doc=None, **kwargs
-):
+):  # pylint: disable=redefined-builtin
     """Decorator for adding api to a BentoService
 
     Args:
@@ -200,18 +200,20 @@ def api_decorator(
 
         api_name (:obj:`str`, optional): API name to replace function name
         api_doc (:obj:`str`, optional): Docstring for API function
+
         **kwargs: Additional keyword arguments for handler class. Please reference
             to what arguments are available for the particular handler
 
     Raises:
         InvalidArgument: API name must contains only letters
 
+    after version 0.8
     >>> from bentoml import BentoService, api
     >>> from bentoml.handlers import JsonHandler, DataframeHandler
     >>>
     >>> class FraudDetectionAndIdentityService(BentoService):
     >>>
-    >>>     @api(JsonHandler)
+    >>>     @api(input=JsonHandler())
     >>>     def fraud_detect(self, parsed_json):
     >>>         # do something
     >>>
@@ -219,6 +221,7 @@ def api_decorator(
     >>>     def identity(self, df):
     >>>         # do something
 
+    before version 0.8
     >>> from bentoml import BentoService, api
     >>> from bentoml.handlers import JsonHandler, DataframeHandler
     >>>
@@ -239,10 +242,10 @@ def api_decorator(
     from bentoml.handlers.base_handlers import BentoHandler
 
     def decorator(func):
-        if api_name is None:
-            api_name = func.__name__
-        if api_doc is None:
-            api_doc = (func.__doc__ or DEFAULT_API_DOC).strip()
+        _api_name = func.__name__ if api_name is None else api_name
+        _api_doc = (
+            (func.__doc__ or DEFAULT_API_DOC).strip() if api_doc is None else api_doc
+        )
 
         if input is None:
             # support bentoml<=0.7
@@ -261,13 +264,15 @@ def api_decorator(
         setattr(func, "_is_api", True)
         setattr(func, "_handler", handler)
         setattr(func, "_output_adapter", output)
-        if not isidentifier(api_name):
+        if not isidentifier(_api_name):
             raise InvalidArgument(
                 "Invalid API name: '{}', a valid identifier must contains only letters,"
-                " numbers, underscores and not starting with a number.".format(api_name)
+                " numbers, underscores and not starting with a number.".format(
+                    _api_name
+                )
             )
-        setattr(func, "_api_name", api_name)
-        setattr(func, "_api_doc", api_doc)
+        setattr(func, "_api_name", _api_name)
+        setattr(func, "_api_doc", _api_doc)
 
         return func
 

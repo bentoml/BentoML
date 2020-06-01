@@ -19,105 +19,82 @@ with open("README.md", "r", encoding="utf8") as f:
     long_description = f.read()
 
 install_requires = [
-    "ruamel.yaml>=0.15.0",
-    "numpy",
-    "flask",
-    "gunicorn",
-    "click>=7.0",
-    "prometheus_client",
-    "python-json-logger",
-    "boto3",
-    "requests",
-    "packaging",
-    "docker",
-    "configparser",
-    "sqlalchemy>=1.3.0",
-    "sqlalchemy-utils",
-    "protobuf>=3.6.0",
-    "grpcio<=1.27.2",
-    "cerberus",
-    "tabulate",
-    "humanfriendly",
-    "alembic",
     "aiohttp",
-    "py_zipkin",
-    'contextvars;python_version < "3.7"',
+    "alembic",
+    "boto3",
+    "cerberus",
+    "certifi",
+    "click>=7.0",
+    "configparser",
+    "docker",
+    "flask",
+    "grpcio<=1.27.2",
+    "gunicorn",
+    "humanfriendly",
+    "numpy",
+    "packaging",
+    "prometheus_client",
+    "protobuf>=3.6.0",
     "psutil",
+    "py_zipkin",
     # python-dateutil required by pandas and boto3, this makes sure the version
     # works for both
     "python-dateutil>=2.1,<2.8.1",
-    "certifi",
+    "python-json-logger",
+    "requests",
+    "ruamel.yaml>=0.15.0",
+    "sqlalchemy-utils",
+    "sqlalchemy>=1.3.0",
+    "tabulate",
+    'contextvars;python_version < "3.7"',
 ]
 
-imageio = ["imageio>=2.5.0"]
-pytorch = ["torch", "torchvision"]
-fastai = ["fastai", "matplotlib"]
-tensorflow = ["tensorflow"]
-xgboost = ["xgboost"]
-h2o = ["h2o"]
-api_server = ["gunicorn", "prometheus_client"]
 aws_sam_cli = ["aws-sam-cli==0.33.1"]
 postgres = ['psycopg2', 'psycopg2-binary']
 
-optional_requires = (
-    api_server
-    + imageio
-    + pytorch
-    + tensorflow
-    + fastai
-    + xgboost
-    + h2o
-    + aws_sam_cli
-    + postgres
-)
-
-test_requires = (
-    [
-        "pytest>=4.1.0",
-        "pytest-cov>=2.7.1",
-        "mock>=2.0.0",
-        "coverage>=4.4",
-        "codecov",
-        "moto",
-        "pylint>=2.5.2",
-        "flake8>=3.8.2",
-        "pandas",
-        "scikit-learn",
-    ]
-    + imageio
-    + aws_sam_cli
-)
+test_requires = [
+    "codecov",
+    "coverage>=4.4",
+    "flake8>=3.8.2",
+    "imageio>=2.5.0",
+    "mock>=2.0.0",
+    "moto",
+    "pandas" "scikit-learn",
+    "pylint>=2.5.2",
+    "pytest-cov>=2.7.1",
+    "pytest>=4.1.0",
+] + aws_sam_cli
 
 dev_requires = [
-    "tox>=3.12.1",
-    "tox-conda>=0.2.0",
-    "flake8>=3.8.2",
-    "twine",
-    "setuptools",
-    "gitpython>=2.0.2",
-    "grpcio-tools<=1.27.2",
-    "grpcio-reflection<=1.27.2",
-    "pylint>=2.5.2",
     "black>=19.0",
+    "flake8>=3.8.2",
+    "gitpython>=2.0.2",
+    "grpcio-reflection<=1.27.2",
+    "grpcio-tools<=1.27.2",
+    "pylint>=2.5.2",
+    "setuptools",
+    "tox-conda>=0.2.0",
+    "tox>=3.12.1",
+    "twine",
 ]
 
-
 docs_requires = [
+    "recommonmark",
     "sphinx",
     "sphinx-click",
     "sphinx_rtd_theme",
     "sphinxcontrib-fulltoc",
-    "recommonmark",
 ]
 
-dev_all = install_requires + dev_requires + optional_requires + docs_requires
+dev_all = install_requires + dev_requires + docs_requires
+
+yatai_service = install_requires + aws_sam_cli + postgres
 
 extras_require = {
-    "all": dev_all,
-    "dev": dev_requires,
-    "api_server": api_server,
-    "test": test_requires,
+    "dev": dev_all,
     "doc_builder": docs_requires + install_requires,  # required by readthedocs.io
+    "test": test_requires,
+    "yatai_service": yatai_service,
 }
 
 setuptools.setup(
@@ -126,7 +103,7 @@ setuptools.setup(
     cmdclass=versioneer.get_cmdclass(),
     author="bentoml.org",
     author_email="contact@bentoml.ai",
-    description="An open-source platform for machine learning model serving.",
+    description="An open-source platform for machine learning model serving",
     long_description=long_description,
     license="Apache License 2.0",
     long_description_content_type="text/markdown",
@@ -135,18 +112,20 @@ setuptools.setup(
     url="https://github.com/bentoml/BentoML",
     packages=setuptools.find_packages(exclude=["tests*", "benchmark*"]),
     classifiers=[
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: Implementation :: CPython",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
-    python_requires=">=3.4",
+    python_requires=">=3.6.1",
     entry_points={"console_scripts": ["bentoml=bentoml.cli:cli"]},
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",
+        "BentoML User Slack Group": "https://bit.ly/2N5IpbB",
         "Source Code": "https://github.com/bentoml/BentoML",
-        "Slack User Group": "https://bit.ly/2N5IpbB",
     },
     include_package_data=True,  # Required for '.cfg' files under bentoml/config
 )

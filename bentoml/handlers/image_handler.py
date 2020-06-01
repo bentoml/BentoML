@@ -89,8 +89,14 @@ class ImageHandler(BentoHandler):
     BATCH_MODE_SUPPORTED = True
 
     def __init__(
-        self, accept_image_formats=None, pilmode="RGB", **base_kwargs,
+        self,
+        accept_image_formats=None,
+        pilmode="RGB",
+        is_batch_input=False,
+        **base_kwargs,
     ):
+        if is_batch_input:
+            raise ValueError('ImageHandler can not accpept batch inputs')
         super(ImageHandler, self).__init__(**base_kwargs)
         if 'input_names' in base_kwargs:
             raise TypeError(

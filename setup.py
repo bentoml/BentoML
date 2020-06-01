@@ -59,10 +59,11 @@ test_requires = [
     "imageio>=2.5.0",
     "mock>=2.0.0",
     "moto",
-    "pandas" "scikit-learn",
+    "pandas",
     "pylint>=2.5.2",
     "pytest-cov>=2.7.1",
     "pytest>=4.1.0",
+    "scikit-learn",
 ] + aws_sam_cli
 
 dev_requires = [

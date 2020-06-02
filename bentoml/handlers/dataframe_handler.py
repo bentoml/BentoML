@@ -178,6 +178,9 @@ class DataframeHandler(BentoHandler):
         input_dtypes ({str:str}): describing expected input data types of the input
             dataframe, it must be either a dict of column name and data type, or a list
             of data types listed by column index in the dataframe
+        cors (str): The value of the Access-Control-Allow-Origin header set in the
+            AWS Lambda response object. Default is "*". If set to None,
+            the header will not be set.
 
     Raises:
         ValueError: Incoming data is missing required columns in input_dtypes
@@ -193,6 +196,7 @@ class DataframeHandler(BentoHandler):
         typ="frame",
         input_dtypes=None,
         is_batch_input=True,
+        cors="*",
         **base_kwargs,
     ):
         if not is_batch_input:
@@ -232,6 +236,8 @@ class DataframeHandler(BentoHandler):
                 (str(index), dtype) for index, dtype in enumerate(self.input_dtypes)
             )
 
+        self.cors = cors
+
     @property
     def pip_dependencies(self):
         return ['pandas']
@@ -245,6 +251,7 @@ class DataframeHandler(BentoHandler):
             output_orient=self.output_orient,
             typ=self.typ,
             input_dtypes=self.input_dtypes,
+            cors=self.cors,
         )
 
     def _get_type(self, item):
@@ -410,4 +417,13 @@ class DataframeHandler(BentoHandler):
         result = api_func_result_to_json(
             result, pandas_dataframe_orient=self.output_orient
         )
+
+        # Allow disabling CORS by setting it to None
+        if self.cors:
+            return {
+                "statusCode": 200,
+                "body": result,
+                "headers": {"Access-Control-Allow-Origin": self.cors},
+            }
+
         return {"statusCode": 200, "body": result}

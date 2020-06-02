@@ -30,6 +30,7 @@ class JSONArtifact(BentoServiceArtifact):
             self.json_module = json_module
         else:
             import json
+
             self.json_module = json
 
     def _file_path(self, base_path):

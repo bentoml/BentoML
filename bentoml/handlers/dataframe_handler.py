@@ -193,6 +193,7 @@ class DataframeHandler(BentoHandler):
         typ="frame",
         input_dtypes=None,
         is_batch_input=True,
+        cors="*",
         **base_kwargs,
     ):
         if not is_batch_input:
@@ -232,6 +233,8 @@ class DataframeHandler(BentoHandler):
                 (str(index), dtype) for index, dtype in enumerate(self.input_dtypes)
             )
 
+        self.cors = cors
+
     @property
     def pip_dependencies(self):
         return ['pandas']
@@ -245,6 +248,7 @@ class DataframeHandler(BentoHandler):
             output_orient=self.output_orient,
             typ=self.typ,
             input_dtypes=self.input_dtypes,
+            cors=self.cors,
         )
 
     def _get_type(self, item):
@@ -410,4 +414,13 @@ class DataframeHandler(BentoHandler):
         result = api_func_result_to_json(
             result, pandas_dataframe_orient=self.output_orient
         )
+
+        # Allow disabling CORS by setting it to None
+        if self.cors:
+            return {
+                "statusCode": 200,
+                "body": result,
+                "headers": {"Access-Control-Allow-Origin": self.cors},
+            }
+
         return {"statusCode": 200, "body": result}

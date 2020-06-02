@@ -144,7 +144,7 @@ class JsonHandler(BentoHandler):
         json_output = api_func_result_to_json(result)
         if self.cors:
             return {
-                "statsCode": 200,
+                "statusCode": 200,
                 "body": json_output,
                 "headers": {"Access-Control-Allow-Origin": self.cors, },
             }

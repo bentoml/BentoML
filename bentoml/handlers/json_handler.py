@@ -42,9 +42,7 @@ class JsonHandler(BentoHandler):
     BATCH_MODE_SUPPORTED = True
 
     def __init__(self, is_batch_input=False, cors="*", **base_kwargs):
-        super(JsonHandler, self).__init__(
-            is_batch_input=is_batch_input, **base_kwargs
-        )
+        super(JsonHandler, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
         self.cors = cors
 
     def handle_request(self, request, func):
@@ -148,6 +146,6 @@ class JsonHandler(BentoHandler):
             return {
                 "statsCode": 200,
                 "body": json_output,
-                "headers": {"Access-Control-Allow-Origin": self.cors,},
+                "headers": {"Access-Control-Allow-Origin": self.cors, },
             }
         return {"statusCode": 200, "body": json_output}

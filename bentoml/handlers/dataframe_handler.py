@@ -178,6 +178,9 @@ class DataframeHandler(BentoHandler):
         input_dtypes ({str:str}): describing expected input data types of the input
             dataframe, it must be either a dict of column name and data type, or a list
             of data types listed by column index in the dataframe
+        cors (str): The value of the Access-Control-Allow-Origin header set in the
+            AWS Lambda response object. Default is "*". If set to None,
+            the header will not be set.
 
     Raises:
         ValueError: Incoming data is missing required columns in input_dtypes

@@ -142,6 +142,6 @@ class JsonHandler(BentoHandler):
             return {
                 "statusCode": 200,
                 "body": json_output,
-                "headers": {"Access-Control-Allow-Origin": self.cors, },
+                "headers": {"Access-Control-Allow-Origin": self.cors},
             }
         return {"statusCode": 200, "body": json_output}

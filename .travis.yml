@@ -35,10 +35,10 @@ matrix:
     - name: "ONNX model artifact"
       python: "3.6"
       script:
-        - ./travis/run_onnx_model_artifact_tests.sh
+        - ./travis/onnx_integration_tests.sh
 
 script:
-  - ./travis/run_python_tests.sh
+  - ./travis/unit_tests.sh
 
 after_success:
   - codecov

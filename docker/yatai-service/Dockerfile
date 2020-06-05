@@ -52,10 +52,9 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   && npm --version
 
 # Build time argument - the BentoML version to be used in this image
-ARG version
-ENV BENTOML_VERSION=$version
-RUN pip install psycopg2 psycopg2-binary
-RUN pip install bentoml==$version
+ARG BENTOML_VERSION
+ENV BENTOML_VERSION=$BENTOML_VERSION
+RUN pip install bentoml[yatai_service]==$BENTOML_VERSION
 
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["bentoml", "yatai-service-start"]

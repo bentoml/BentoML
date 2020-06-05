@@ -55,31 +55,22 @@ logger = logging.getLogger(__name__)
 BENTO_SERVICE_SAGEMAKER_DOCKERFILE = """\
 FROM {docker_base_image}
 
-EXPOSE 8080
+# the env var $PORT is required by heroku container runtime
+ENV PORT 8080
+EXPOSE $PORT
 
-RUN set -x \\
-     && apt-get update \\
-     && apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential\\
-     && apt-get install -y nginx \\
-     && rm -rf /var/lib/apt/lists/*
+RUN apt-get update --fix-missing && \
+    apt-get install -y nginx && \
+    apt-get clean
 
-# pre-install BentoML base dependencies
-RUN conda install pip numpy scipy \\
-      && pip install gunicorn gevent
+# gevent required by AWS Sagemaker
+RUN pip install gevent
 
 # copy over model files
 COPY . /opt/program
 WORKDIR /opt/program
 
-# update conda base env
-RUN conda env update -n base -f /opt/program/environment.yml
-RUN pip install -r /opt/program/requirements.txt
-
-# Install additional pip dependencies inside bundled_pip_dependencies dir
-RUN if [ -f /bento/bentoml_init.sh ]; then /bin/bash -c /bento/bentoml_init.sh; fi
-
-# run user defined setup script
-RUN if [ -f /opt/program/setup.sh ]; then /bin/bash -c /opt/program/setup.sh; fi
+RUN if [ -f /opt/program/bentoml_init.sh ]; then /bin/bash -c /opt/program/bentoml_init.sh; fi
 
 ENV PATH="/opt/program:$PATH"
 """  # noqa: E501

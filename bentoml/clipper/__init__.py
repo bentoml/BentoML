@@ -77,7 +77,7 @@ if __name__ == "__main__":
     rpc_service = rpc.RPCService()
 
     try:
-        model = BentoServiceContainer('/container/bento', '{api_name}')
+        model = BentoServiceContainer('/container', '{api_name}')
         sys.stdout.flush()
         sys.stderr.flush()
     except ImportError:
@@ -91,26 +91,23 @@ CLIPPER_DOCKERFILE = """\
 FROM {base_image}
 
 # copy over model files
+# use /container to have access to python files in clipper base image such as rpc.py
 COPY . /container
 WORKDIR /container
 
 # Install pip dependencies
-ENV PIP_INDEX_URL={pip_index_url}
-ENV PIP_TRUSTED_HOST={pip_trusted_url}
-RUN pip install --upgrade numpy && pip install -r /container/bento/requirements.txt
+ARG PIP_INDEX_URL=https://pypi.python.org/simple/
+ARG PIP_TRUSTED_HOST=pypi.python.org
+ENV PIP_INDEX_URL $PIP_INDEX_URL
+ENV PIP_TRUSTED_HOST $PIP_TRUSTED_HOST
 
-# Install additional pip dependencies inside bundled_pip_dependencies dir
-RUN if [ -f /container/bento/bentoml_init.sh ]; then cd /container/bento && /bin/bash -c /container/bento/bentoml_init.sh; fi
-
-# run user defined setup script
-RUN if [ -f /container/bento/setup.sh ]; then cd /container/bento && /bin/bash -c /container/bento/setup.sh; fi
+# Install conda, pip dependencies and run user defined setup script
+RUN if [ -f /container/bentoml_init.sh ]; then bash -c /container/bentoml_init.sh; fi
 
 ENV CLIPPER_MODEL_NAME={model_name}
 ENV CLIPPER_MODEL_VERSION={model_version}
 
-# Stop running entry point from base image
 ENTRYPOINT []
-# Run BentoML bundle for clipper
 CMD ["python", "/container/clipper_entry.py"]
 """  # noqa: E501
 
@@ -185,10 +182,10 @@ def deploy_bentoml(
 
     with TempDirectory() as tempdir:
         entry_py_content = CLIPPER_ENTRY.format(api_name=api_name)
-        model_path = os.path.join(tempdir, "bento")
-        shutil.copytree(bundle_path, model_path)
+        build_path = os.path.join(tempdir, "bento")
+        shutil.copytree(bundle_path, build_path)
 
-        with open(os.path.join(tempdir, "clipper_entry.py"), "w") as f:
+        with open(os.path.join(build_path, "clipper_entry.py"), "w") as f:
             f.write(entry_py_content)
 
         if bento_service_metadata.env.python_version.startswith("3.6"):
@@ -209,7 +206,7 @@ def deploy_bentoml(
             pip_index_url=build_envs.get("PIP_INDEX_URL", ""),
             pip_trusted_url=build_envs.get("PIP_TRUSTED_HOST", ""),
         )
-        with open(os.path.join(tempdir, "Dockerfile-clipper"), "w") as f:
+        with open(os.path.join(build_path, "Dockerfile-clipper"), "w") as f:
             f.write(docker_content)
 
         docker_api = docker.APIClient()
@@ -217,7 +214,7 @@ def deploy_bentoml(
             bento_service_metadata.name.lower(), bento_service_metadata.version
         )
         for line in docker_api.build(
-            path=tempdir,
+            path=build_path,
             dockerfile="Dockerfile-clipper",
             tag=clipper_model_docker_image_tag,
         ):

@@ -37,6 +37,11 @@ matrix:
       script:
         - ./travis/onnx_integration_tests.sh
 
+    - name: "Pytorch Artifact"
+      python: "3.6"
+      script:
+        - ./travis/run-keras-tests.sh
+
 script:
   - ./travis/unit_tests.sh
 

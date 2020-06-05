@@ -9,7 +9,7 @@ import pytest
 from sklearn import svm, datasets
 
 from bentoml.deployment.utils import ensure_docker_available_or_raise
-from bentoml.configuration import PREV_PYPI_RELEASE_VERSION
+from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 from bentoml.utils.tempdir import TempDirectory
 from e2e_tests.iris_classifier_example import IrisClassifier
 from e2e_tests.cli_operations import delete_bento
@@ -134,7 +134,7 @@ def temporary_yatai_service_url():
         with open(temp_docker_file_path, 'w') as f:
             f.write(
                 f"""\
-FROM bentoml/yatai-service:{PREV_PYPI_RELEASE_VERSION}
+FROM bentoml/yatai-service:{LAST_PYPI_RELEASE_VERSION}
 ADD . /bentoml-local-repo
 RUN pip install /bentoml-local-repo
             """

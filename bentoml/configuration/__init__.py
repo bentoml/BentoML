@@ -67,15 +67,14 @@ BENTOML_HOME = DEFAULT_BENTOML_HOME
 # This is useful when using customized BentoML fork/branch or when working with
 # development branches of BentoML
 BENTOML_VERSION = __version__
-
 # e.g. from '0.4.2+5.g6cac97f.dirty' to '0.4.2'
-PREV_PYPI_RELEASE_VERSION = __version__.split('+')[0]
+LAST_PYPI_RELEASE_VERSION = __version__.split('+')[0]
 
 
 if not _is_pypi_release():
     # Reset to LAST_PYPI_RELEASE_VERSION if bentoml module is 'dirty'
-    # This will be used as default value of 'core/deploy_bentoml_version' config
-    BENTOML_VERSION = PREV_PYPI_RELEASE_VERSION
+    # This will be used as default value of 'core/bentoml_deploy_version' config
+    BENTOML_VERSION = LAST_PYPI_RELEASE_VERSION
 
 
 def get_local_config_file():
@@ -175,6 +174,6 @@ def get_bentoml_deploy_version():
             "or your custom BentoML on github, e.g.:"
             "'bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{"
             "branch}'",
-            PREV_PYPI_RELEASE_VERSION,
+            LAST_PYPI_RELEASE_VERSION,
         )
     return bentoml_deploy_version

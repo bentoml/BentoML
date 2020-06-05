@@ -8,6 +8,7 @@ import bentoml
 from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.pytorch_classifier import PytorchClassifier
 
+
 class PytorchModel(nn.Module):
     def __init__(self):
         super().__init__()
@@ -20,6 +21,7 @@ class PytorchModel(nn.Module):
 
         return x
 
+
 @pytest.fixture()
 def pytorch_classifier_class():
     # When the ExampleBentoService got saved and loaded again in the test, the two class
@@ -29,7 +31,9 @@ def pytorch_classifier_class():
     PytorchClassifier._bento_service_bundle_version = None
     return PytorchClassifier
 
+
 test_df = pandas.DataFrame([[1, 1, 1, 1, 1]])
+
 
 def test_pytorch_artifact_pack(pytorch_classifier_class):
     svc = pytorch_classifier_class()
@@ -39,7 +43,7 @@ def test_pytorch_artifact_pack(pytorch_classifier_class):
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
-    assert svc.predict(test_df) == 5.0, 'Run inference from saved artifact'
+    assert loaded_svc.predict(test_df) == 5.0, 'Run inference from saved artifact'
 
     # clean up saved bundle
     yc = YataiClient()

@@ -5,6 +5,7 @@ import bentoml
 from bentoml.artifact import PytorchModelArtifact
 from bentoml.handlers import DataframeHandler
 
+
 @bentoml.env(auto_pip_dependencies=True)
 @bentoml.artifacts([PytorchModelArtifact('model')])
 class PytorchClassifier(bentoml.BentoService):

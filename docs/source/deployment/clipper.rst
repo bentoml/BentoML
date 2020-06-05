@@ -48,6 +48,7 @@ Other than using Clipper specific handler, the rest are the same as defining a r
 
 .. code-block:: python
 
+    >>> # save this to a separate iris_classifier.py file
     >>> from bentoml import BentoService, api, env, artifacts
     >>> from bentoml.artifact import PickleArtifact
     >>> from bentoml.handlers import DataframeHandler, ClipperFloatsHandler
@@ -137,7 +138,9 @@ which will first build a clipper model docker image that containing your BentoSe
 
     >>> from bentoml.clipper import deploy_bentoml
 
-    >>> clipper_model_name, clipper_model_version = deploy_bentoml(cl, saved_path), 'predict_clipper')
+    >>> saved_path = "/Users/chaoyuyang/bentoml/repository/IrisClassifier/20191113154121_E7D3CE"
+
+    >>> clipper_model_name, clipper_model_version = deploy_bentoml(cl, saved_path, 'predict_clipper')
 
     [2019-11-13 15:45:49,422] WARNING - BentoML local changes detected - Local BentoML repository including all code changes will be bundled together with the BentoService archive. When used with docker, the base docker image will be default to same version as last PyPI release at version: 0.4.9. You can also force bentoml to use a specific version for deploying your BentoService archive, by setting the config 'core/bentoml_deploy_version' to a pinned version or your custom BentoML on github, e.g.:'bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{branch}'
     [2019-11-13 15:45:49,444] WARNING - BentoArchive version mismatch: loading archive bundled in version 0.4.9,  but loading from version 0.4.9+7.g429b9ec.dirty
@@ -176,7 +179,7 @@ Link the deployed model with the `bentoml-test` application created above
 
 .. code-block:: python
 
-    >>> cli.link_model_to_app('bentoml-test', clipper_model_name)
+    >>> cl.link_model_to_app('bentoml-test', clipper_model_name)
 
 
     19-11-13:15:47:05 INFO     [clipper_admin.py:303] [default-cluster] Model irisclassifier-predict-clipper is now linked to application bentoml-test

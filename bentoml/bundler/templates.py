@@ -75,13 +75,13 @@ FROM {docker_base_image}
 COPY . /bento
 WORKDIR /bento
 
-# Install pip dependencies
+# Configuring PyPI index
 ARG PIP_INDEX_URL=https://pypi.python.org/simple/
 ARG PIP_TRUSTED_HOST=pypi.python.org
 ENV PIP_INDEX_URL $PIP_INDEX_URL
 ENV PIP_TRUSTED_HOST $PIP_TRUSTED_HOST
 
-# Initialize conda, pip dependencies and user defined setup script
+# Install conda, pip dependencies and run user defined setup script
 RUN if [ -f /bento/bentoml_init.sh ]; then bash -c /bento/bentoml_init.sh; fi
 
 # the env var $PORT is required by heroku container runtime

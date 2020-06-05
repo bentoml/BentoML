@@ -55,11 +55,16 @@ logger = logging.getLogger(__name__)
 BENTO_SERVICE_SAGEMAKER_DOCKERFILE = """\
 FROM {docker_base_image}
 
-EXPOSE 8080
+# the env var $PORT is required by heroku container runtime
+ENV PORT 8080
+EXPOSE $PORT
 
 RUN apt-get update --fix-missing && \
     apt-get install -y nginx && \
     apt-get clean
+
+# gevent required by AWS Sagemaker
+RUN pip install gevent
 
 # copy over model files
 COPY . /opt/program

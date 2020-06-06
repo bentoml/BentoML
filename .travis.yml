@@ -40,7 +40,7 @@ matrix:
     - name: "Pytorch Artifact"
       python: "3.6"
       script:
-        - ./travis/run-keras-tests.sh
+        - ./travis/run-pytorch-tests.sh
 
 script:
   - ./travis/unit_tests.sh

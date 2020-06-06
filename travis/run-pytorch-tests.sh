@@ -9,7 +9,6 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd $GIT_ROOT
 
 # Install tensorflow
-pip install tensorflow
 pip install torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 pytest $GIT_ROOT/tests/integration_tests/test_pytorch_model_artifact.py --cov=bentoml
 

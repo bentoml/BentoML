@@ -1,5 +1,5 @@
 import numpy
-import torch
+import torch #pylint: disable=import-error
 
 import bentoml
 from bentoml.artifact import PytorchModelArtifact

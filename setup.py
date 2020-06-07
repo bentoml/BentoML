@@ -64,7 +64,7 @@ test_requires = [
     "pytest-cov>=2.7.1",
     "pytest>=4.1.0",
     "scikit-learn",
-    "protobuf==3.6.0"
+    "protobuf==3.6.0",
 ] + aws_sam_cli
 
 dev_requires = [

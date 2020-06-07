@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -x
 
 # https://stackoverflow.com/questions/42218009/how-to-tell-if-any-command-in-bash-script-failed-non-zero-exit-status/42219754#42219754
 # Set err to 1 if pytest failed.
@@ -11,6 +12,5 @@ cd $GIT_ROOT
 # Install tensorflow
 pip install torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 pytest $GIT_ROOT/tests/integration_tests/test_pytorch_model_artifact.py --cov=bentoml
-
 
 test $error = 0 # Return non-zero if pytest failed

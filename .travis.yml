@@ -26,10 +26,10 @@ matrix:
         - choco install python --version 3.6.8
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
 
-    - name: "Linting check"
+    - name: "Linting & formatting check"
       python: "3.6"
       script:
-        - ./dev/lint.sh
+        - ./travis/linter.sh
 
     - name: "ONNX artifact"
       python: "3.6"

@@ -53,7 +53,7 @@ aws_sam_cli = ["aws-sam-cli==0.33.1"]
 postgres = ['psycopg2', 'psycopg2-binary']
 
 test_requires = [
-    "black>=19.0",
+    "black==19.10b0",
     "codecov",
     "coverage>=4.4",
     "flake8>=3.8.2",

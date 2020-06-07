@@ -12,7 +12,6 @@ python:
 
 install:
   - "python -m pip install --upgrade pip"
-  - "pip install protobuf==3.6.0"
   - "pip install ."
   - "pip install --upgrade .[test]"
 
@@ -27,12 +26,12 @@ matrix:
         - choco install python --version 3.6.8
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
 
-    - python: "3.6"
-      name: "Linting check"
+    - name: "Linting check"
+      python: "3.6"
       script:
         - ./dev/lint.sh
 
-    - name: "ONNX model artifact"
+    - name: "ONNX artifact"
       python: "3.6"
       script:
         - ./travis/onnx_integration_tests.sh
@@ -40,7 +39,7 @@ matrix:
     - name: "Pytorch Artifact"
       python: "3.6"
       script:
-        - ./travis/run-pytorch-tests.sh
+        - ./travis/pytorch_integration_tests.sh
 
 script:
   - ./travis/unit_tests.sh

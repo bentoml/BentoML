@@ -4,6 +4,8 @@ set -e
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd $GIT_ROOT
 
+has_errors=0
+
 # Code auto formatting check with black
 black -S .
 GIT_STATUS="$(git status --porcelain)"
@@ -20,8 +22,6 @@ fi
 
 # The first line of the tests are  
 # always empty if there are no linting errors
-
-has_errors=0
 
 echo "Running flake8 on bentoml module.."
 output=$( flake8 --config=.flake8 bentoml )

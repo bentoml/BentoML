@@ -5,7 +5,6 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd $GIT_ROOT
 
 # Code auto formatting check with black
-pip install "black>=19.0"
 black -S .
 GIT_STATUS="$(git status --porcelain)"
 if [ "$GIT_STATUS" ];

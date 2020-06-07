@@ -53,6 +53,7 @@ aws_sam_cli = ["aws-sam-cli==0.33.1"]
 postgres = ['psycopg2', 'psycopg2-binary']
 
 test_requires = [
+    "black>=19.0",
     "codecov",
     "coverage>=4.4",
     "flake8>=3.8.2",
@@ -68,7 +69,6 @@ test_requires = [
 ] + aws_sam_cli
 
 dev_requires = [
-    "black>=19.0",
     "flake8>=3.8.2",
     "gitpython>=2.0.2",
     "grpcio-reflection<=1.27.2",
@@ -78,7 +78,7 @@ dev_requires = [
     "tox-conda>=0.2.0",
     "tox>=3.12.1",
     "twine",
-]
+] + test_requires
 
 docs_requires = [
     "recommonmark",

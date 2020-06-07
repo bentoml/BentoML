@@ -6,7 +6,7 @@ $ git clone https://github.com/bentoml/BentoML.git
 $ cd BentoML
 ```
 
-Ensure you have python and pip installed, BentoML supports python _3.6_, and _3.7_
+Ensure you have python and pip installed, BentoML supports python 3.6, 3.7, and 3.8
 ```bash
 $ python --version
 ```
@@ -31,16 +31,13 @@ $ bentoml --version
 ## How to run unit tests
 
 1. Install all test dependencies:
-```bash
-pip install .[test]
-
-# For zsh users, use:
-$ pip install -e .\[test\]
+```
+$ pip install -e ".[test]"
 ```
 
 2. Run all unit tests with current python version and environment
 ```bash
-$ pytest tests
+$ ./travis/unit_tests.sh
 ```
 
 ## Optional: Run unit test with all supported python versions
@@ -103,10 +100,7 @@ pip install git+https://github.com/{your_github_username}/BentoML.git@{branch_na
 
 Make sure to install all dev dependencies:
 ```bash
-$ pip install -e .[dev]
-
-# For zsh users, use:
-$ pip install -e .\[dev\]
+$ pip install -e ".[dev]"
 ```
 
 Run linter/format script:
@@ -120,7 +114,7 @@ Run linter/format script:
 
 Install all dev dependencies:
 ```bash
-$ pip install -e .[dev]
+$ pip install -e ".[dev]"
 ```
 
 To build documentation for locally:
@@ -155,7 +149,7 @@ $ ./docs/watch.sh
 
 Instll all dev dependenci:
 ```bash
-$ pip install -e .[dev]
+$ pip install -e ".[dev]"
 ```
 
 Install grpcui:

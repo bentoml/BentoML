@@ -240,7 +240,7 @@ class DataframeHandler(BentoHandler):
 
     @property
     def config(self):
-        base_config = super(self.__class__, self).config
+        base_config = super(DataframeHandler, self).config
         return dict(
             base_config,
             orient=self.orient,

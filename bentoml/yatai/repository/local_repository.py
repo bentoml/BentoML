@@ -14,11 +14,15 @@
 
 import os
 import shutil
+import logging
 from pathlib import Path
 
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.yatai.proto.repository_pb2 import BentoUri
-from bentoml.yatai.repository.repository import BentoRepositoryBase, logger
+from bentoml.yatai.repository.base_repository import BentoRepositoryBase
+
+
+logger = logging.getLogger(__name__)
 
 
 class LocalBentoRepository(BentoRepositoryBase):

@@ -74,8 +74,8 @@ def create_all_or_upgrade_db(engine, db_url):
     from alembic.config import Config
     from sqlalchemy import inspect
 
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    alembic_config = Config(os.path.join(current_dir, 'alembic.ini'))
+    alembic_config_file = os.path.join(os.path.dirname(__file__), 'alembic.ini')
+    alembic_config = Config(alembic_config_file)
     alembic_config.set_main_option('sqlalchemy.url', db_url)
 
     inspector = inspect(engine)

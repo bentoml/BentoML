@@ -76,7 +76,10 @@ def start_yatai_server(db_url=None, repo_base_url=None, port=50051):
         proc = subprocess.Popen(
             yatai_server_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        yield f"localhost:{port}"
+        yatai_service_url = f"localhost:{port}"
+        logger.info(f'Setting config yatai_service.url to: {yatai_service_url}')
+        with modified_environ(BENTOML__YATAI_SERVICE__URL=yatai_service_url):
+            yield yatai_service_url
     finally:
         logger.info('Shutting down YataiServer')
         proc.terminate()

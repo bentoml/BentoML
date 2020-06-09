@@ -16,8 +16,11 @@ import os
 import logging
 from pathlib import Path
 
-from bentoml import __version__, _version as version_mod, \
-    __version__ as VERSIONEER_VERSION
+from bentoml import (
+    __version__,
+    _version as version_mod,
+    __version__ as VERSIONEER_VERSION,
+)
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
 

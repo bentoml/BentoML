@@ -27,11 +27,13 @@ Base = declarative_base()
 
 logger = logging.getLogger(__name__)
 
+
 def is_sqlite_db(db_url):
     try:
         return urlparse(db_url).scheme == 'sqlite'
     except ValueError:
         return False
+
 
 def init_db(db_url):
     from sqlalchemy_utils import database_exists

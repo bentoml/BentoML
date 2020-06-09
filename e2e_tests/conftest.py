@@ -61,29 +61,26 @@ def basic_bentoservice_v2():
     delete_bento(bento_name)
 
 
-def wait_for_docker_container_ready(container_name, check_message):
+def wait_until_container_ready(container_name, check_message, timeout_seconds=60):
     docker_client = docker.from_env()
 
     start_time = time.time()
     while True:
         time.sleep(1)
-        container_list = docker_client.containers.list(
-            filters={'name': container_name, 'status': 'running'}
-        )
+        container_list = docker_client.containers.list(filters={'name': container_name})
         logger.info("Container list: " + str(container_list))
         if not container_list:
-            # Raise timeout, if take more than 60 seconds
-            if time.time() - start_time > 60:
-                raise TimeoutError(f'Get container: {container_name} times out')
+            # Raise timeout, if exceeds timeout limit
+            if time.time() - start_time > timeout_seconds:
+                raise TimeoutError(f'Get container: {container_name} timed out')
             else:
                 continue
 
-        assert len(container_list) == 1, 'should be only one container running'
+        assert (
+            len(container_list) == 1
+        ), f'should be exact one container with name {container_name}'
 
-        yatai_service_container = container_list[0]
-
-        logger.info('container_log' + str(yatai_service_container.logs()))
-        if check_message in yatai_service_container.logs():
+        if check_message in container_list[0].logs():
             break
 
 
@@ -108,7 +105,7 @@ def temporary_docker_postgres_url():
     docker_proc = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
-    wait_for_docker_container_ready(
+    wait_until_container_ready(
         container_name, b'database system is ready to accept connections'
     )
 
@@ -124,7 +121,7 @@ def temporary_yatai_service_url():
     ensure_docker_available_or_raise()
     docker_client = docker.from_env()
     local_bentoml_repo_path = os.path.abspath(os.path.join(__file__, '..', '..'))
-    docker_tag = f'bentoml/yatai-service:e2e-test-{uuid.uuid4().hex[:6]}'
+    yatai_docker_image_tag = f'bentoml/yatai-service:e2e-test-{uuid.uuid4().hex[:6]}'
 
     # Note: When set both `custom_context` and `fileobj`, docker api will not use the
     #       `path` provide... docker/api/build.py L138. The solution is create an actual
@@ -139,17 +136,15 @@ ADD . /bentoml-local-repo
 RUN pip install /bentoml-local-repo
             """
             )
-        logger.info('building docker image')
+        logger.info(f'building docker image {yatai_docker_image_tag}')
         docker_client.images.build(
             path=local_bentoml_repo_path,
             dockerfile=temp_docker_file_path,
-            tag=docker_tag,
+            tag=yatai_docker_image_tag,
         )
-        logger.info('complete build docker image')
 
         container_name = f'e2e-test-yatai-service-container-{uuid.uuid4().hex[:6]}'
         yatai_service_url = 'localhost:50051'
-
         command = [
             'docker',
             'run',
@@ -160,19 +155,20 @@ RUN pip install /bentoml-local-repo
             '50051:50051',
             '-p',
             '3000:3000',
-            docker_tag,
+            yatai_docker_image_tag,
             '--repo-base-url',
             '/tmp',
         ]
 
-        logger.info(f'Running docker command {" ".join(command)}')
-
+        logger.info(f"Starting docker container: {command}")
         docker_proc = subprocess.Popen(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        wait_for_docker_container_ready(
+        wait_until_container_ready(
             container_name, b'* Starting BentoML YataiService gRPC Server'
         )
 
         yield yatai_service_url
+
+        logger.info(f"Shutting down docker container: {container_name}")
         docker_proc.terminate()

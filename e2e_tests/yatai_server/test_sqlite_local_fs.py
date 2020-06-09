@@ -38,5 +38,4 @@ def test_yatai_server_with_sqlite_and_local_storage():
 
             logger.info('Delete BentoService for testing')
             delete_svc_result = delete_bento(bento_tag)
-            logger.info(delete_svc_result)
-            assert delete_svc_result is None, 'Unexpected delete BentoService message.'
+            assert f"{bento_tag} deleted" in delete_svc_result

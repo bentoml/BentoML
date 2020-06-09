@@ -35,5 +35,4 @@ def test_docker_yatai_server_with_postgres(temporary_yatai_service_url):
 
         logger.info('Delete BentoService for testing')
         delete_svc_result = delete_bento(bento_tag)
-        logger.info(delete_svc_result)
-        assert delete_svc_result is None, 'Unexpected delete BentoService message.'
+        assert f"{bento_tag} deleted" in delete_svc_result

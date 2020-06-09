@@ -102,7 +102,7 @@ ENV PIP_INDEX_URL $PIP_INDEX_URL
 ENV PIP_TRUSTED_HOST $PIP_TRUSTED_HOST
 
 # Install conda, pip dependencies and run user defined setup script
-RUN if [ -f /container/bentoml_init.sh ]; then bash -c /container/bentoml_init.sh; fi
+RUN if [ -f /container/bentoml-init.sh ]; then bash -c /container/bentoml-init.sh; fi
 
 ENV CLIPPER_MODEL_NAME={model_name}
 ENV CLIPPER_MODEL_VERSION={model_version}

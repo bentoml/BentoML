@@ -70,7 +70,7 @@ RUN pip install gevent
 COPY . /opt/program
 WORKDIR /opt/program
 
-RUN if [ -f /opt/program/bentoml_init.sh ]; then /bin/bash -c /opt/program/bentoml_init.sh; fi
+RUN if [ -f /opt/program/bentoml-init.sh ]; then /bin/bash -c /opt/program/bentoml-init.sh; fi
 
 ENV PATH="/opt/program:$PATH"
 """  # noqa: E501

@@ -28,8 +28,6 @@ from bentoml.bundler.templates import (
     MANIFEST_IN_TEMPLATE,
     MODEL_SERVER_DOCKERFILE_CPU,
     INIT_PY_TEMPLATE,
-    BENTO_INIT_SH_TEMPLATE,
-    DOCKER_ENTRYPOINT_SH,
 )
 from bentoml.utils.usage_stats import track_save
 from bentoml.bundler.config import SavedBundleConfig
@@ -144,21 +142,25 @@ def save_to_dir(bento_service, path, version=None, silent=False):
             )
         )
 
-    # write docker-entrypoint.sh
-    docker_entrypoint_sh_file = os.path.join(path, "docker-entrypoint.sh")
-    with open(docker_entrypoint_sh_file, "w") as f:
-        f.write(DOCKER_ENTRYPOINT_SH)
+    # Copy docker-entrypoint.sh
+    docker_entrypoint_sh_file_src = os.path.join(
+        os.path.dirname(__file__), "docker-entrypoint.sh"
+    )
+    docker_entrypoint_sh_file_dst = os.path.join(path, "docker-entrypoint.sh")
+    shutil.copyfile(docker_entrypoint_sh_file_src, docker_entrypoint_sh_file_dst)
     # chmod +x docker-entrypoint.sh
-    st = os.stat(docker_entrypoint_sh_file)
-    os.chmod(docker_entrypoint_sh_file, st.st_mode | stat.S_IEXEC)
+    st = os.stat(docker_entrypoint_sh_file_dst)
+    os.chmod(docker_entrypoint_sh_file_dst, st.st_mode | stat.S_IEXEC)
 
-    # write bento init sh for install targz bundles
-    bentoml_init_script_file = os.path.join(path, 'bentoml_init.sh')
-    with open(bentoml_init_script_file, 'w') as f:
-        f.write(BENTO_INIT_SH_TEMPLATE)
+    # copy bentoml-init.sh for install targz bundles
+    bentoml_init_sh_file_src = os.path.join(
+        os.path.dirname(__file__), "bentoml-init.sh"
+    )
+    bentoml_init_sh_file_dst = os.path.join(path, "bentoml-init.sh")
+    shutil.copyfile(bentoml_init_sh_file_src, bentoml_init_sh_file_dst)
     # chmod +x bentoml_init_script file
-    st = os.stat(bentoml_init_script_file)
-    os.chmod(bentoml_init_script_file, st.st_mode | stat.S_IEXEC)
+    st = os.stat(bentoml_init_sh_file_dst)
+    os.chmod(bentoml_init_sh_file_dst, st.st_mode | stat.S_IEXEC)
 
     # write bentoml.yml
     config = SavedBundleConfig(bento_service)

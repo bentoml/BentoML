@@ -82,7 +82,7 @@ ENV PIP_INDEX_URL $PIP_INDEX_URL
 ENV PIP_TRUSTED_HOST $PIP_TRUSTED_HOST
 
 # Install conda, pip dependencies and run user defined setup script
-RUN if [ -f /bento/bentoml_init.sh ]; then bash -c /bento/bentoml_init.sh; fi
+RUN if [ -f /bento/bentoml-init.sh ]; then bash -c /bento/bentoml-init.sh; fi
 
 # the env var $PORT is required by heroku container runtime
 ENV PORT 5000
@@ -92,38 +92,6 @@ COPY docker-entrypoint.sh /usr/local/bin/
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 CMD ["bentoml", "serve-gunicorn", "/bento"]
 """  # noqa: E501
-
-DOCKER_ENTRYPOINT_SH = """\
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
-# check to see if this file is being run or sourced from another script
-_is_sourced() {
-  # https://unix.stackexchange.com/a/215279
-  [ "${#FUNCNAME[@]}" -ge 2 ] \
-    && [ "${FUNCNAME[0]}" = '_is_sourced' ] \
-    && [ "${FUNCNAME[1]}" = 'source' ]
-}
-
-_main() {
-  # if first arg looks like a flag, assume we want to start bentoml YataiService
-  if [ "${1:0:1}" = '-' ]; then
-    set -- bentoml serve-gunicorn "$@" /bento
-  fi
-
-  # Set BentoML API server port via env var
-  export BENTOML_PORT=$PORT \
-  # Backward compatibility for BentoML prior to 0.7.5
-  export BENTOML__APISERVER__DEFAULT_PORT=$PORT \
-
-  exec "$@"
-}
-
-if ! _is_sourced; then
-  _main "$@"
-fi
-"""
-
 
 INIT_PY_TEMPLATE = """\
 import os
@@ -152,29 +120,4 @@ def load():
 
 
 __all__ = ['__version__', '{service_name}', 'load']
-"""
-
-
-BENTO_INIT_SH_TEMPLATE = """\
-#!/usr/bin/env bash
-set -ex
-
-SAVED_BUNDLE_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)
-cd $SAVED_BUNDLE_PATH
-
-# run user defined setup script
-if [ -f ./setup.sh ]; then chmod +x ./setup.sh && bash -c ./setup.sh; fi
-
-# update conda base env if conda command is available in base image
-command -v conda >/dev/null && conda env update -n base -f ./environment.yml \
-  || echo "conda command not found, ignoring environment.yml"
-
-# install pip dependencies
-pip install -r ./requirements.txt
-
-# install bundled_pip_dependencies
-for filename in ./bundled_pip_dependencies/*.tar.gz; do
-  [ -e "$filename" ] || continue
-  pip install -U "$filename"
-done
 """

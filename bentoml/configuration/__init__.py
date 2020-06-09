@@ -16,8 +16,7 @@ import os
 import logging
 from pathlib import Path
 
-from bentoml import __version__
-from bentoml.utils import _is_pypi_release
+from bentoml import __version__, _version as version_mod
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
 
@@ -69,6 +68,13 @@ BENTOML_HOME = DEFAULT_BENTOML_HOME
 BENTOML_VERSION = __version__
 # e.g. from '0.4.2+5.g6cac97f.dirty' to '0.4.2'
 LAST_PYPI_RELEASE_VERSION = __version__.split('+')[0]
+
+
+def _is_pypi_release():
+    is_installed_package = hasattr(version_mod, 'version_json')
+    is_tagged = not __version__.startswith('0+untagged')
+    is_clean = not version_mod.get_versions()['dirty']
+    return is_installed_package and is_tagged and is_clean
 
 
 if not _is_pypi_release():
@@ -129,7 +135,7 @@ def _reset_bentoml_home(new_bentoml_home_directory):
     _config = load_config()
 
     # re-config logging
-    from bentoml.utils.log import configure_logging
+    from bentoml import configure_logging
 
     root = logging.getLogger()
     map(root.removeHandler, root.handlers[:])
@@ -177,3 +183,15 @@ def get_bentoml_deploy_version():
             LAST_PYPI_RELEASE_VERSION,
         )
     return bentoml_deploy_version
+
+
+# this is for BentoML developer to create BentoService containing custom develop
+# branches of BentoML library, it gets triggered when BentoML module is installed
+# via "pip install --editable ."
+def _is_bentoml_in_develop_mode():
+    import importlib
+
+    (module_location,) = importlib.util.find_spec('bentoml').submodule_search_locations
+
+    setup_py_path = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
+    return not _is_pypi_release() and os.path.isfile(setup_py_path)

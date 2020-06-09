@@ -15,17 +15,24 @@
 import logging
 import os
 from contextlib import contextmanager
+from urllib.parse import urlparse
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from bentoml.exceptions import BentoMLException
-from bentoml.utils import is_sqlite_db
 
 Base = declarative_base()
 
 logger = logging.getLogger(__name__)
+
+
+def is_sqlite_db(db_url):
+    try:
+        return urlparse(db_url).scheme == 'sqlite'
+    except ValueError:
+        return False
 
 
 def init_db(db_url):

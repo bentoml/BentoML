@@ -19,7 +19,7 @@ from gunicorn.app.base import Application
 from bentoml import config
 from bentoml.bundler import load
 from bentoml.server import BentoAPIServer
-from bentoml.server.utils import setup_prometheus_multiproc_dir
+from bentoml.server.instruments import setup_prometheus_multiproc_dir
 from bentoml.utils.usage_stats import track_server
 
 logger = logging.getLogger(__name__)

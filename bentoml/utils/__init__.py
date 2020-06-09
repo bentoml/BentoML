@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import re
-import os
 from io import StringIO
 import socket
 from contextlib import contextmanager
@@ -24,19 +23,10 @@ from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 from google.protobuf.json_format import MessageToDict
 from ruamel.yaml import YAML
 
-from bentoml import __version__ as BENTOML_VERSION, _version as version_mod
 from bentoml.proto import status_pb2
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
-
-
-def detect_free_port(host='localhost'):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind((host, 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
 
 
 @contextmanager
@@ -90,45 +80,12 @@ def ProtoMessageToDict(protobuf_msg, **kwargs):
     return MessageToDict(protobuf_msg, **kwargs)
 
 
-def _is_pypi_release():
-    is_installed_package = hasattr(version_mod, 'version_json')
-    is_tagged = not BENTOML_VERSION.startswith('0+untagged')
-    is_clean = not version_mod.get_versions()['dirty']
-    return is_installed_package and is_tagged and is_clean
-
-
-# this is for BentoML developer to create BentoService containing custom develop
-# branches of BentoML library, it gets triggered when BentoML module is installed
-# via "pip install --editable ."
-def _is_bentoml_in_develop_mode():
-    import importlib
-
-    (module_location,) = importlib.util.find_spec('bentoml').submodule_search_locations
-
-    setup_py_path = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
-    return not _is_pypi_release() and os.path.isfile(setup_py_path)
-
-
 # This function assume the status is not status.OK
 def status_pb_to_error_code_and_message(pb_status):
     assert pb_status.status_code != status_pb2.Status.OK
     error_code = status_pb2.Status.Code.Name(pb_status.status_code)
     error_message = pb_status.error_message
     return error_code, error_message
-
-
-def is_postgres_db(db_url):
-    try:
-        return urlparse(db_url).schema.startswith('postgresql')
-    except ValueError:
-        return False
-
-
-def is_sqlite_db(db_url):
-    try:
-        return urlparse(db_url).scheme == 'sqlite'
-    except ValueError:
-        return False
 
 
 def cached_property(method):

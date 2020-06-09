@@ -24,7 +24,7 @@ import aiohttp
 
 from bentoml import config
 from bentoml.exceptions import RemoteException
-from bentoml.utils.trace import async_trace, make_http_headers
+from bentoml.server.trace import async_trace, make_http_headers
 from bentoml.marshal.utils import DataLoader, SimpleRequest
 from bentoml.handlers import HANDLER_TYPES_BATCH_MODE_SUPPORTED
 from bentoml.bundler import load_bento_service_metadata

@@ -48,9 +48,9 @@ def setup_routes(app, bento_service, api_name):
 AWS_SAGEMAKER_SERVE_PORT = 8080
 
 
-class BentoSagemakerServer:
+class BentomlSagemakerServer:
     """
-    BentoSagemakerServer create an AWS Sagemaker compatibility rest API server.
+    BentomlSagemakerServer create an AWS Sagemaker compatibility REST API model server
     """
 
     def __init__(self, bento_service, api_name, app_name=None):

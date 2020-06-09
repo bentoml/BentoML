@@ -20,8 +20,7 @@ from gunicorn.app.base import Application
 from bentoml import config
 from bentoml.marshal import MarshalService
 from bentoml.utils.usage_stats import track_server
-from bentoml.server.utils import setup_prometheus_multiproc_dir
-
+from bentoml.server.instruments import setup_prometheus_multiproc_dir
 
 marshal_logger = logging.getLogger("bentoml.marshal")
 

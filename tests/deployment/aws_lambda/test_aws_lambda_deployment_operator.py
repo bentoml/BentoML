@@ -83,7 +83,6 @@ def test_aws_lambda_app_py(monkeypatch):
 
     def mock_lambda_app(func):
         @mock_s3
-        @patch('bentoml.utils.s3.download_directory_from_s3', return_value=None)
         def mock_wrapper(*args, **kwargs):
             conn = boto3.client('s3', region_name='us-west-2')
             conn.create_bucket(Bucket=mock_s3_bucket_name)
@@ -97,7 +96,7 @@ def test_aws_lambda_app_py(monkeypatch):
 
     @mock_lambda_app
     @patch('bentoml.load', return_value=mock_bento_service)
-    def return_predict_func(mock_load_service, mock_download_artifacts):
+    def return_predict_func(mock_load_service):
         from bentoml.deployment.aws_lambda.lambda_app import predict
 
         return predict

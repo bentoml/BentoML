@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.server.bento_api_server import BentoAPIServer, get_docs
+from bentoml.server.bento_api_server import BentoAPIServer
 
-__all__ = ["BentoAPIServer", "get_docs"]
+__all__ = ["BentoAPIServer"]

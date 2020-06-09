@@ -1,4 +1,4 @@
-from bentoml.utils.validator import validate_deployment_pb_schema
+from bentoml.yatai.validator import validate_deployment_pb_schema
 from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
 
 

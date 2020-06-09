@@ -27,7 +27,7 @@ from bentoml.bundler.templates import (
     DOCKER_ENTRYPOINT_SH,
 )
 from bentoml.bundler.utils import add_local_bentoml_package_to_repo
-from bentoml.utils import _is_bentoml_in_develop_mode
+from bentoml.configuration import _is_bentoml_in_develop_mode
 from bentoml.utils.usage_stats import track_save
 from bentoml.bundler.config import SavedBundleConfig
 

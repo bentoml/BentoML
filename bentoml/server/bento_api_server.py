@@ -19,7 +19,6 @@ import json
 import time
 import logging
 from functools import partial
-from collections import OrderedDict
 
 from flask import Flask, jsonify, Response, request, make_response
 from werkzeug.utils import secure_filename
@@ -28,7 +27,8 @@ from bentoml import config
 from bentoml.utils.usage_stats import track_server
 from bentoml.utils.trace import trace
 from bentoml.exceptions import BentoMLException
-from .middlewares import InstrumentMiddleware
+from bentoml.server.middlewares import InstrumentMiddleware
+from bentoml.server.open_api import get_open_api_spec_json
 
 
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
@@ -64,69 +64,6 @@ def _request_to_json(req):
         return req.get_json()
 
     return {}
-
-
-def get_docs(bento_service):
-    """
-    The docs for all endpoints in Open API format.
-    """
-    docs = OrderedDict(
-        openapi="3.0.0",
-        info=OrderedDict(
-            version=bento_service.version,
-            title=bento_service.name,
-            description="To get a client SDK, copy all content from <a "
-            "href=\"/docs.json\">docs</a> and paste into "
-            "<a href=\"https://editor.swagger.io\">editor.swagger.io</a> then click "
-            "the tab <strong>Generate Client</strong> and choose the language.",
-        ),
-        tags=[{"name": "infra"}, {"name": "app"}],
-    )
-
-    paths = OrderedDict()
-    default_response = {"200": {"description": "success"}}
-
-    paths["/healthz"] = OrderedDict(
-        get=OrderedDict(
-            tags=["infra"],
-            description="Health check endpoint. Expecting an empty response with status"
-            " code 200 when the service is in health state",
-            responses=default_response,
-        )
-    )
-    if config("apiserver").getboolean("enable_metrics"):
-        paths["/metrics"] = OrderedDict(
-            get=OrderedDict(
-                tags=["infra"],
-                description="Prometheus metrics endpoint",
-                responses=default_response,
-            )
-        )
-    if config("apiserver").getboolean("enable_feedback"):
-        paths["/feedback"] = OrderedDict(
-            get=OrderedDict(
-                tags=["infra"],
-                description="Predictions feedback endpoint. Expecting feedback request "
-                "in JSON format and must contain a `request_id` field, which can be "
-                "obtained from any BentoService API response header",
-                responses=default_response,
-            )
-        )
-        paths["/feedback"]["post"] = paths["/feedback"]["get"]
-
-    for api in bento_service.get_service_apis():
-        path = "/{}".format(api.name)
-        paths[path] = OrderedDict(
-            post=OrderedDict(
-                tags=["app"],
-                description=api.doc,
-                requestBody=OrderedDict(required=True, content=api.request_schema),
-                responses=default_response,
-            )
-        )
-
-    docs["paths"] = paths
-    return docs
 
 
 class BentoAPIServer:
@@ -182,7 +119,7 @@ class BentoAPIServer:
 
     @staticmethod
     def docs_view_func(bento_service):
-        docs = get_docs(bento_service)
+        docs = get_open_api_spec_json(bento_service)
         return jsonify(docs)
 
     @staticmethod

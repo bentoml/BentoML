@@ -34,7 +34,8 @@ from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
 from bentoml.cli.bento import add_bento_sub_command
 from bentoml.cli.yatai_service import add_yatai_service_sub_command
-from bentoml.server import BentoAPIServer, get_docs
+from bentoml.server import BentoAPIServer
+from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.server.utils import get_gunicorn_num_of_workers
 from bentoml.marshal import MarshalService
 from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _echo
@@ -214,7 +215,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
 
         bento_service = load(bento_service_bundle_path)
 
-        _echo(json.dumps(get_docs(bento_service), indent=2))
+        _echo(json.dumps(get_open_api_spec_json(bento_service), indent=2))
 
     # Example Usage: bentoml serve {BUNDLE_PATH} --port={PORT}
     @bentoml_cli.command(

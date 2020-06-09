@@ -50,7 +50,10 @@ def tf_tensor_2_serializable(obj):
                 continue
             break
         else:
-            obj = np.vectorize(bytes_2_tf_b64)(obj)
+            try:
+                obj = np.vectorize(bytes_2_tf_b64)(obj)
+            except ValueError:
+                pass
         obj = obj.tolist()
     elif isinstance(obj, bytes):
         # tensor.numpy() will return single value directly

@@ -2,6 +2,7 @@ import sys
 import json
 import base64
 import math
+import numbers
 import numpy as np
 
 try:
@@ -45,11 +46,32 @@ STR_B64 = base64.b64encode(STR_BYTES).decode()
 BIN_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
 BIN_B64 = base64.b64encode(BIN_BYTES).decode()
 
-COMMON_TEST_CASES = [
+TEST_CASES = [
     {'instances': [[[1, 2]], [[3, 4]]]},
     {"instances": [[1.0, -float('inf'), float('inf')]]},
     {"instances": float('nan')},
+    {"instances": {"b64": STR_B64}},
+    {"instances": [{"b64": STR_B64}]},
+    {"instances": {"b64": BIN_B64}},
+    {"instances": [{"b64": BIN_B64}]},
 ]
+
+EXPECTED_RESULTS = [
+    [[[1, 2]], [[3, 4]]],
+    [[1.0, -float('inf'), float('inf')]],
+    float('nan'),
+    STR,
+    [STR],
+    {"b64": BIN_B64},
+    [{"b64": BIN_B64}],
+]
+
+
+def assert_eq_or_both_nan(x, y):
+    if isinstance(x, numbers.Number) and isinstance(y, numbers.Number):
+        assert math.isnan(x) and math.isnan(y) or math.isclose(x, y)
+    else:
+        assert x == y
 
 
 def test_tf_tensor_handle_request():
@@ -64,41 +86,27 @@ def test_tf_tensor_handle_request():
 
     handler = TensorflowTensorHandler()
 
-    for input_data in COMMON_TEST_CASES:
+    for input_data, except_result in zip(TEST_CASES, EXPECTED_RESULTS):
         request.data = json.dumps(input_data).encode('utf-8')
-        result = handler.handle_request(request, lambda i: i)
-        predictions = json.loads(result.get_data().decode('utf-8'))
-        assert (
-            input_data['instances'] == predictions
-            or math.isnan(input_data['instances'])
-            and math.isnan(predictions)
-        )
+        response = handler.handle_request(request, lambda i: i)
 
-    # test str b64
-    input_data = {"instances": {"b64": STR_B64}}
-    request.data = json.dumps(input_data).encode("utf8")
-    result = handler.handle_request(request, lambda i: i)
-    predictions = json.loads(result.get_data().decode('utf-8'))
-    assert STR == predictions
-
-    input_data = {"instances": [{"b64": STR_B64}]}
-    request.data = json.dumps(input_data).encode("utf8")
-    result = handler.handle_request(request, lambda i: i)
-    predictions = json.loads(result.get_data().decode('utf-8'))
-    assert [STR] == predictions
-
-    # test bin b64
-    input_data = {"instances": {"b64": BIN_B64}}
-    request.data = json.dumps(input_data).encode("utf8")
-    result = handler.handle_request(request, lambda i: i)
-    predictions = json.loads(result.get_data().decode('utf-8'))
-    assert {"b64": BIN_B64} == predictions
-
-    input_data = {"instances": [{"b64": BIN_B64}]}
-    request.data = json.dumps(input_data).encode("utf8")
-    result = handler.handle_request(request, lambda i: i)
-    predictions = json.loads(result.get_data().decode('utf-8'))
-    assert [{"b64": BIN_B64}] == predictions
+        prediction = json.loads(response.get_data())
+        assert_eq_or_both_nan(except_result, prediction)
 
 
-test_tf_tensor_handle_request()
+def test_tf_tensor_handle_batch_request():
+    '''
+    ref: https://www.tensorflow.org/tfx/serving/api_rest#request_format_2
+    '''
+    from bentoml.handlers import TensorflowTensorHandler
+
+    handler = TensorflowTensorHandler()
+    request = Mock()
+
+    for input_data, except_result in zip(TEST_CASES, EXPECTED_RESULTS):
+        request.data = json.dumps(input_data).encode('utf-8')
+        responses = handler.handle_batch_request([request] * 3, lambda i: i)
+
+        for response in responses:
+            prediction = json.loads(response.data)
+            assert_eq_or_both_nan(except_result, prediction)

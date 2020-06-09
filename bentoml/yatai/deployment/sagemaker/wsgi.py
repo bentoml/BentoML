@@ -18,6 +18,6 @@ from bentoml.saved_bundle import load
 from bentoml.yatai.deployment.sagemaker.model_server import BentomlSagemakerServer
 
 api_name = os.environ.get('API_NAME', None)
-model_service = load('/opt/program')
+model_service = load('/bento')
 server = BentomlSagemakerServer(model_service, api_name)
 app = server.app

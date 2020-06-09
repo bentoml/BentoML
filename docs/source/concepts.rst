@@ -286,7 +286,7 @@ prediction service that packs two trained models:
             # assume the output of model_a will be the input of model_b in this example:
             df = self.artifacts.model_a.predict(df)
 
-        return self.artifacts.model_b.predict(df)
+            return self.artifacts.model_b.predict(df)
 
 
 .. code-block:: python

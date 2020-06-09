@@ -14,14 +14,14 @@ from bentoml.deployment.sagemaker import (
     get_arn_role_from_current_aws_user,
     SageMakerDeploymentOperator,
 )
-from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
-from bentoml.proto.repository_pb2 import (
+from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentSpec
+from bentoml.yatai.proto.repository_pb2 import (
     Bento,
     BentoServiceMetadata,
     GetBentoResponse,
     BentoUri,
 )
-from bentoml.proto.status_pb2 import Status
+from bentoml.yatai.proto.status_pb2 import Status
 from bentoml.exceptions import AWSServiceError
 from tests.deployment.sagemaker.sagemaker_moto import moto_mock_sagemaker
 

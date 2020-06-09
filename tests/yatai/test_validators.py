@@ -1,5 +1,5 @@
 from bentoml.yatai.validator import validate_deployment_pb_schema
-from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
+from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentSpec
 
 
 def _get_test_sagemaker_deployment_pb():

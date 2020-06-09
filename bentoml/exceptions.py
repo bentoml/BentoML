@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.proto import status_pb2
-
+from bentoml.yatai.proto import status_pb2
 
 _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE = {
     status_pb2.Status.INTERNAL: 500,  # Internal Server Error

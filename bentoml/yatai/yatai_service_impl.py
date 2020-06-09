@@ -15,14 +15,14 @@
 import logging
 
 from bentoml import config
-from bentoml.proto.deployment_pb2 import (
+from bentoml.yatai.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,
     ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
 )
-from bentoml.proto.repository_pb2 import (
+from bentoml.yatai.proto.repository_pb2 import (
     AddBentoResponse,
     DangerouslyDeleteBentoResponse,
     GetBentoResponse,
@@ -30,8 +30,8 @@ from bentoml.proto.repository_pb2 import (
     ListBentoResponse,
     BentoUri,
 )
-from bentoml.proto.yatai_service_pb2_grpc import YataiServicer
-from bentoml.proto.yatai_service_pb2 import (
+from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiServicer
+from bentoml.yatai.proto.yatai_service_pb2 import (
     HealthCheckResponse,
     GetYataiServiceVersionResponse,
 )
@@ -42,7 +42,7 @@ from bentoml.yatai.repository import BentoRepository
 from bentoml.yatai.repository.metadata_store import BentoMetadataStore
 from bentoml.yatai.db import init_db
 from bentoml.yatai.status import Status
-from bentoml.proto import status_pb2
+from bentoml.yatai.proto import status_pb2
 from bentoml.utils import ProtoMessageToDict
 from bentoml.yatai.validator import validate_deployment_pb_schema
 from bentoml import __version__ as BENTOML_VERSION

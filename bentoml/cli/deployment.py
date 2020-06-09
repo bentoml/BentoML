@@ -26,8 +26,8 @@ from bentoml.cli.click_utils import (
 )
 from bentoml.yatai.client import YataiClient
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.proto.deployment_pb2 import DeploymentSpec
-from bentoml.proto import status_pb2
+from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
+from bentoml.yatai.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
 from bentoml.exceptions import BentoMLException

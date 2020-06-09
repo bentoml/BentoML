@@ -15,7 +15,7 @@
 from cerberus import Validator
 
 from bentoml.utils import ProtoMessageToDict
-from bentoml.proto.deployment_pb2 import DeploymentSpec, DeploymentState
+from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 
 deployment_schema = {
     'name': {'type': 'string', 'required': True, 'minlength': 4},

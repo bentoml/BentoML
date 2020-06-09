@@ -8,7 +8,7 @@ cd $GIT_ROOT
 # pip install grpcio-tools
 
 PROTO_PATH=$GIT_ROOT/protos
-PYOUT_PATH=$GIT_ROOT/bentoml/proto
+PYOUT_PATH=$GIT_ROOT/bentoml/yatai/proto
 
 echo "Cleaning up existing proto generated py code.."
 rm -rf $PYOUT_PATH
@@ -33,11 +33,11 @@ python -m grpc_tools.protoc \
 
 echo "Fix imports in generated GRPC service code.."
 find $PYOUT_PATH/ -name '*_pb2*.py' | while read pyfile; do
-sed -i '.old' 's/^import \([^ ]*\)_pb2 \(.*\)$/import bentoml.proto.\1_pb2 \2/' $pyfile
-sed -i '.old' 's/^from \([^ ]*\) import \([^ ]*\)_pb2\(.*\)$/from bentoml.proto.\1 import \2_pb2\3/' $pyfile
+sed -i '.old' 's/^import \([^ ]*\)_pb2 \(.*\)$/import bentoml.yatai.proto.\1_pb2 \2/' $pyfile
+sed -i '.old' 's/^from \([^ ]*\) import \([^ ]*\)_pb2\(.*\)$/from bentoml.yatai.proto.\1 import \2_pb2\3/' $pyfile
 # Fix google.protobuf package imports
-sed -i '.old' 's/^import bentoml.proto.google.\([^ ]*\)_pb2 as \([^ ]*\)$/import google.\1_pb2 as \2/' $pyfile
-sed -i '.old' 's/^from bentoml.proto.google.\([^ ]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from google.\1 import \2_pb2 as \3/' $pyfile
+sed -i '.old' 's/^import bentoml.yatai.proto.google.\([^ ]*\)_pb2 as \([^ ]*\)$/import google.\1_pb2 as \2/' $pyfile
+sed -i '.old' 's/^from bentoml.yatai.proto.google.\([^ ]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from google.\1 import \2_pb2 as \3/' $pyfile
 rm $pyfile.old
 done
 

@@ -23,7 +23,7 @@ from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 from google.protobuf.json_format import MessageToDict
 from ruamel.yaml import YAML
 
-from bentoml.proto import status_pb2
+from bentoml.yatai.proto import status_pb2
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")

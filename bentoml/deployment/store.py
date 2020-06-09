@@ -30,8 +30,8 @@ from google.protobuf.json_format import ParseDict
 
 from bentoml.exceptions import YataiDeploymentException, BadInput
 from bentoml.yatai.db import Base, create_session
-from bentoml.proto import deployment_pb2
-from bentoml.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
+from bentoml.yatai.proto import deployment_pb2
+from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
 from bentoml.utils import ProtoMessageToDict
 
 

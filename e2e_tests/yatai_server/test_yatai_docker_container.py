@@ -1,6 +1,6 @@
 import logging
 
-from bentoml.proto.repository_pb2 import BentoUri
+from bentoml.yatai.proto.repository_pb2 import BentoUri
 from e2e_tests.cli_operations import delete_bento
 from e2e_tests.yatai_server.utils import (
     modified_environ,

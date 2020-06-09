@@ -25,7 +25,7 @@ import grpc
 
 from bentoml import config
 from bentoml.exceptions import BentoMLException
-from bentoml.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
+from bentoml.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
 from bentoml.utils.usage_stats import track_server
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
@@ -43,7 +43,7 @@ def get_yatai_service(
     channel_address = channel_address or config('yatai_service').get('url')
     channel_address = channel_address.strip()
     if channel_address:
-        from bentoml.proto.yatai_service_pb2_grpc import YataiStub
+        from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
 
         if any([db_url, repo_base_url, s3_endpoint_url, default_namespace]):
             logger.warning(
@@ -96,7 +96,7 @@ def start_yatai_service_grpc_server(
         try:
             logger.debug('Enabling gRPC server reflection for debugging')
             from grpc_reflection.v1alpha import reflection
-            from bentoml.proto import yatai_service_pb2
+            from bentoml.yatai.proto import yatai_service_pb2
 
             SERVICE_NAMES = (
                 yatai_service_pb2.DESCRIPTOR.services_by_name['Yatai'].full_name,

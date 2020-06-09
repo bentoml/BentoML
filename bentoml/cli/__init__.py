@@ -45,7 +45,7 @@ from bentoml.utils import ProtoMessageToDict, reserve_free_port
 from bentoml.utils.usage_stats import track_cli
 from bentoml.utils.s3 import is_s3_url
 from bentoml.yatai.client import YataiClient
-from bentoml.proto import status_pb2
+from bentoml.yatai.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.exceptions import BentoMLException
 

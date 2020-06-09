@@ -14,7 +14,7 @@
 
 from abc import abstractmethod, ABCMeta
 
-from bentoml.proto.deployment_pb2 import DeploymentSpec
+from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.exceptions import YataiDeploymentException
 
 

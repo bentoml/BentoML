@@ -20,7 +20,7 @@ import time
 
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.proto.deployment_pb2 import (
+from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentRequest,
     DescribeDeploymentRequest,
     GetDeploymentRequest,
@@ -31,7 +31,7 @@ from bentoml.proto.deployment_pb2 import (
     DeploymentState,
 )
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
-from bentoml.proto import status_pb2
+from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.validator import validate_deployment_pb_schema
 from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,

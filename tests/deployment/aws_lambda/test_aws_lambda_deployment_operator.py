@@ -11,14 +11,14 @@ from bentoml.deployment.aws_lambda import (
     _create_aws_lambda_cloudformation_template_file,
     init_sam_project,
 )
-from bentoml.proto.deployment_pb2 import Deployment, DeploymentState
-from bentoml.proto.repository_pb2 import (
+from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentState
+from bentoml.yatai.proto.repository_pb2 import (
     Bento,
     BentoUri,
     BentoServiceMetadata,
     GetBentoResponse,
 )
-from bentoml.proto import status_pb2
+from bentoml.yatai.proto import status_pb2
 
 mock_s3_bucket_name = 'test_deployment_bucket'
 mock_s3_prefix = 'prefix'

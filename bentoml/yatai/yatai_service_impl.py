@@ -38,7 +38,7 @@ from bentoml.yatai.proto.yatai_service_pb2 import (
 from bentoml.yatai.deployment.operator import get_deployment_operator
 from bentoml.yatai.deployment.store import DeploymentStore
 from bentoml.exceptions import BentoMLException, InvalidArgument
-from bentoml.yatai.repository import BentoRepository
+from bentoml.yatai.repository.repository import BentoRepository
 from bentoml.yatai.repository.metadata_store import BentoMetadataStore
 from bentoml.yatai.db import init_db
 from bentoml.yatai.status import Status

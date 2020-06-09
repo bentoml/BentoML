@@ -10,21 +10,21 @@ fi
 
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd $GIT_ROOT/docker/model-server
+cd "$GIT_ROOT"/docker/model-server
 
 echo "Releasing debian based docker base image.."
 docker build --pull \
-    --build-arg BENTOML_VERSION=$BENTOML_VERSION \
-    -t bentoml/model-server:$BENTOML_VERSION \
+    --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
+    -t bentoml/model-server:"$BENTOML_VERSION" \
     .
-docker push bentoml/model-server:$BENTOML_VERSION
+docker push bentoml/model-server:"$BENTOML_VERSION"
 
 echo "Releasing alpine based docker base image.."
 docker build --pull \
-    --build-arg BENTOML_VERSION=$BENTOML_VERSION \
-    -t bentoml/model-server:$BENTOML_VERSION-alpine \
+    --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
+    -t bentoml/model-server:"$BENTOML_VERSION"-alpine \
     -f Dockerfile-alpine \
     .
-docker push bentoml/model-server:$BENTOML_VERSION-alpine
+docker push bentoml/model-server:"$BENTOML_VERSION"-alpine
 
 echo "Done"

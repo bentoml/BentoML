@@ -16,11 +16,7 @@ import os
 import logging
 from pathlib import Path
 
-from bentoml import (
-    __version__,
-    _version as version_mod,
-    __version__ as VERSIONEER_VERSION,
-)
+from bentoml import __version__, _version as version_mod
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
 
@@ -76,7 +72,7 @@ LAST_PYPI_RELEASE_VERSION = __version__.split('+')[0]
 
 def _is_pypi_release():
     is_installed_package = hasattr(version_mod, 'version_json')
-    is_tagged = not VERSIONEER_VERSION.startswith('0+untagged')
+    is_tagged = not __version__.startswith('0+untagged')
     is_clean = not version_mod.get_versions()['dirty']
     return is_installed_package and is_tagged and is_clean
 

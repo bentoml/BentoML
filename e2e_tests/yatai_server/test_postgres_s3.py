@@ -5,23 +5,22 @@ from e2e_tests.cli_operations import delete_bento
 from e2e_tests.yatai_server.utils import (
     get_bento_service,
     run_bento_service_prediction,
-    start_yatai_server,
-    modified_environ,
+    local_yatai_server,
     BentoServiceForYataiTest,
 )
 
 logger = logging.getLogger('bentoml.test')
 
 
-def test_yatai_server_with_postgres_and_s3(temporary_docker_postgres_url):
+def test_yatai_server_with_postgres_and_s3(postgres_db_container_url):
     # Note: Use pre-existing bucket instead of newly created bucket, because the
     # bucket's global DNS needs time to get set up.
     # https://github.com/boto/boto3/issues/1982#issuecomment-511947643
 
     s3_bucket_name = 's3://bentoml-e2e-test-repo/'
 
-    with start_yatai_server(
-        db_url=temporary_docker_postgres_url, repo_base_url=s3_bucket_name
+    with local_yatai_server(
+        db_url=postgres_db_container_url, repo_base_url=s3_bucket_name
     ):
         logger.info('Saving bento service')
         svc = BentoServiceForYataiTest()
@@ -38,9 +37,8 @@ def test_yatai_server_with_postgres_and_s3(temporary_docker_postgres_url):
 
         logger.info('Validate BentoService prediction result')
         run_result = run_bento_service_prediction(bento_tag, '[]')
-        logger.info(run_result)
         assert 'cat' in run_result, 'Unexpected BentoService prediction result'
 
-        logger.info('Delete BentoService for testing')
+        logger.info(f'Deleting saved bundle {bento_tag}')
         delete_svc_result = delete_bento(bento_tag)
         assert f"{bento_tag} deleted" in delete_svc_result

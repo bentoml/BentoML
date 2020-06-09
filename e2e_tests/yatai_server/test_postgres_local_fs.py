@@ -5,16 +5,15 @@ from e2e_tests.cli_operations import delete_bento
 from e2e_tests.yatai_server.utils import (
     get_bento_service,
     run_bento_service_prediction,
-    start_yatai_server,
-    modified_environ,
+    local_yatai_server,
     BentoServiceForYataiTest,
 )
 
 logger = logging.getLogger('bentoml.test')
 
 
-def test_yatai_server_with_postgres_and_local_storage(temporary_docker_postgres_url):
-    with start_yatai_server(temporary_docker_postgres_url):
+def test_yatai_server_with_postgres_and_local_storage(postgres_db_container_url):
+    with local_yatai_server(postgres_db_container_url):
         logger.info('Saving bento service')
         svc = BentoServiceForYataiTest()
         svc.save()
@@ -33,6 +32,6 @@ def test_yatai_server_with_postgres_and_local_storage(temporary_docker_postgres_
         logger.info(run_result)
         assert 'cat' in run_result, 'Unexpected BentoService prediction result'
 
-        logger.info('Delete BentoService for testing')
+        logger.info(f'Deleting saved bundle {bento_tag}')
         delete_svc_result = delete_bento(bento_tag)
         assert f"{bento_tag} deleted" in delete_svc_result

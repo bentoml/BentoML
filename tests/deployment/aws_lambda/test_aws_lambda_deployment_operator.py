@@ -83,7 +83,6 @@ def test_aws_lambda_app_py(monkeypatch):
 
     def mock_lambda_app(func):
         @mock_s3
-        @patch('bentoml.utils.s3.download_directory_from_s3', return_value=None)
         def mock_wrapper(*args, **kwargs):
             conn = boto3.client('s3', region_name='us-west-2')
             conn.create_bucket(Bucket=mock_s3_bucket_name)

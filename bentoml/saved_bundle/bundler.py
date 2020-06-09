@@ -183,7 +183,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
         )
 
 
-def _bundle_local_bentoml_if_installed_from_source(bundle_path):
+def _bundle_local_bentoml_if_installed_from_source(target_path):
     """
     if bentoml is installed in editor mode(pip install -e), this will build a source
     distribution with the local bentoml fork and add it to saved BentoService bundle
@@ -222,8 +222,7 @@ def _bundle_local_bentoml_if_installed_from_source(bundle_path):
 
         # copy the generated targz to saved bundle directory and remove it from
         # bentoml module directory
-        dest_dir = os.path.join(bundle_path, 'bundled_pip_dependencies')
-        shutil.copytree(source_dir, dest_dir)
+        shutil.copytree(source_dir, target_path)
 
         # clean up sdist build files
         shutil.rmtree(source_dir)

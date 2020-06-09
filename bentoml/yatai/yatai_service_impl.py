@@ -44,7 +44,7 @@ from bentoml.yatai.db import init_db
 from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import ProtoMessageToDict
-from bentoml.yatai.validator import validate_deployment_pb_schema
+from bentoml.yatai.validator import validate_deployment_pb
 from bentoml import __version__ as BENTOML_VERSION
 
 
@@ -88,7 +88,7 @@ class YataiService(YataiServicer):
                 request.deployment.namespace or self.default_namespace
             )
 
-            validation_errors = validate_deployment_pb_schema(request.deployment)
+            validation_errors = validate_deployment_pb(request.deployment)
             if validation_errors:
                 raise InvalidArgument(
                     'Failed to validate deployment. {errors}'.format(

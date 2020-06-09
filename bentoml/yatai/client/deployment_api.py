@@ -32,7 +32,7 @@ from bentoml.yatai.proto.deployment_pb2 import (
 )
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
 from bentoml.yatai.proto import status_pb2
-from bentoml.yatai.validator import validate_deployment_pb_schema
+from bentoml.yatai.validator import validate_deployment_pb
 from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,
     deployment_dict_to_pb,
@@ -120,7 +120,7 @@ class DeploymentAPIClient:
                 )
             )
 
-        validation_errors = validate_deployment_pb_schema(deployment_pb)
+        validation_errors = validate_deployment_pb(deployment_pb)
         if validation_errors:
             raise YataiDeploymentException(
                 f'Failed to validate deployment {deployment_pb.name}: '
@@ -168,7 +168,7 @@ class DeploymentAPIClient:
                 )
             )
 
-        validation_errors = validate_deployment_pb_schema(deployment_pb)
+        validation_errors = validate_deployment_pb(deployment_pb)
         if validation_errors:
             raise YataiDeploymentException(
                 f'Failed to validate deployment {deployment_pb.name}: '

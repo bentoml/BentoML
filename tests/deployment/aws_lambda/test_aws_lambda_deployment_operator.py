@@ -236,7 +236,8 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
     MagicMock(return_value=249000001),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.reduce_bundle_size_and_upload_extra_resources_to_s3',
+    'bentoml.yatai.deployment.aws_lambda.'
+    'reduce_bundle_size_and_upload_extra_resources_to_s3',
     MagicMock(),
 )
 def test_aws_lambda_apply_over_bundle_size_limit_success():

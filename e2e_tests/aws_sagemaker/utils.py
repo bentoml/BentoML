@@ -1,6 +1,8 @@
 import logging
 import subprocess
 
+from e2e_tests.yatai_server.utils import modified_environ
+
 logger = logging.getLogger('bentoml.test')
 
 
@@ -28,7 +30,7 @@ def run_sagemaker_create_or_update_command(deploy_command):
     return False, None
 
 
-def send_test_data_to_endpoint(endpoint_name, sample_data=None):
+def send_test_data_to_endpoint(endpoint_name, sample_data=None, region="us-west-2"):
     logger.info(f'Test deployment with sample request for {endpoint_name}')
     sample_data = sample_data or '"[0]"'
     test_command = [
@@ -46,13 +48,15 @@ def send_test_data_to_endpoint(endpoint_name, sample_data=None):
         'jq .',
     ]
     logger.info('Testing command: %s', ' '.join(test_command))
-    result = subprocess.run(
-        ' '.join(test_command),
-        capture_output=True,
-        shell=True,
-        check=True,
-        executable='/bin/bash',
-    )
+
+    with modified_environ(AWS_REGION=region):
+        result = subprocess.run(
+            ' '.join(test_command),
+            capture_output=True,
+            shell=True,
+            check=True,
+            executable='/bin/bash',
+        )
     logger.info(result)
     if result.stderr.decode('utf-8'):
         return False, None

@@ -9,11 +9,11 @@ from botocore.exceptions import ClientError
 import boto3
 from moto import mock_ecr, mock_iam, mock_sts
 
-from bentoml.yatai.deployment.sagemaker import (
+from bentoml.yatai.deployment.sagemaker.operator import (
     _aws_client_error_to_bentoml_exception,
     get_arn_role_from_current_aws_user,
-    SageMakerDeploymentOperator,
 )
+from bentoml.yatai.deployment.sagemaker.operator import SageMakerDeploymentOperator
 from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentSpec
 from bentoml.yatai.proto.repository_pb2 import (
     Bento,

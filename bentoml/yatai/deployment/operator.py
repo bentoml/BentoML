@@ -22,7 +22,9 @@ def get_deployment_operator(yatai_service, deployment_pb):
     operator = deployment_pb.spec.operator
 
     if operator == DeploymentSpec.AWS_SAGEMAKER:
-        from bentoml.yatai.deployment.sagemaker import SageMakerDeploymentOperator
+        from bentoml.yatai.deployment.sagemaker.operator import (
+            SageMakerDeploymentOperator,
+        )
 
         return SageMakerDeploymentOperator(yatai_service)
     elif operator == DeploymentSpec.AWS_LAMBDA:

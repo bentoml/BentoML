@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import re
-import os
 from io import StringIO
 import socket
 from contextlib import contextmanager
@@ -24,7 +23,6 @@ from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 from google.protobuf.json_format import MessageToDict
 from ruamel.yaml import YAML
 
-from bentoml import __version__ as VERSIONEER_VERSION, _version as version_mod
 from bentoml.proto import status_pb2
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
@@ -80,25 +78,6 @@ def ProtoMessageToDict(protobuf_msg, **kwargs):
         kwargs['preserving_proto_field_name'] = True
 
     return MessageToDict(protobuf_msg, **kwargs)
-
-
-def _is_pypi_release():
-    is_installed_package = hasattr(version_mod, 'version_json')
-    is_tagged = not VERSIONEER_VERSION.startswith('0+untagged')
-    is_clean = not version_mod.get_versions()['dirty']
-    return is_installed_package and is_tagged and is_clean
-
-
-# this is for BentoML developer to create BentoService containing custom develop
-# branches of BentoML library, it gets triggered when BentoML module is installed
-# via "pip install --editable ."
-def _is_bentoml_in_develop_mode():
-    import importlib
-
-    (module_location,) = importlib.util.find_spec('bentoml').submodule_search_locations
-
-    setup_py_path = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
-    return not _is_pypi_release() and os.path.isfile(setup_py_path)
 
 
 # This function assume the status is not status.OK

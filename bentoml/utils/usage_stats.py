@@ -24,7 +24,8 @@ import uuid
 import requests
 from ruamel.yaml import YAML
 
-from bentoml.utils import _is_pypi_release, ProtoMessageToDict
+from bentoml.utils import ProtoMessageToDict
+from bentoml.configuration import _is_pypi_release
 from bentoml import config
 from bentoml import __version__ as BENTOML_VERSION
 

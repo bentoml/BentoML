@@ -85,6 +85,8 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
 
 
 class TestBentoWithOutArtifact(bentoml.BentoService):
+    __test__ = False
+
     @bentoml.api(DataframeHandler)
     def test(self, df):
         return df

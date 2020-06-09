@@ -44,7 +44,7 @@ with the name ``"model"``, so the user code can get access to the model via
 :code:`self.artifacts.model`.
 
 The BentoService instance is now ready to be used for
-inferencing. But more importantly, BentoML solves the problem of saving the entire
+inference. But more importantly, BentoML solves the problem of saving the entire
 BentoService to disk, distribute the saved file, and reproduce the exact same prediction
 service in testing and production environment.
 
@@ -88,7 +88,7 @@ changes and training data changes. You can then easily store and distribute the 
 file, test the prediction service, and then update it to production model serving
 endpoint.
 
-BentoML keeps track of all the Bentos saved and provides web UI and CLI commands for 
+BentoML keeps track of all the services saved and provides web UI and CLI commands for
 model management. By default, BentoML saves all the model files and metadata in the
 local file system. For team settings, it is recommended to run a shared BentoML server 
 for the entire team, which stores all of their Bento files and metadata in the cloud
@@ -330,19 +330,19 @@ client, either in the form of a JSON HTTP request or a CSV file, into a
 :code:`pandas.DataFrame` object and pass it down to the user-defined API function.
 
 User can write arbitrary python code within the API function that process the data.
-Besides passing the prediction input data to the model for inferencing, user can also
+Besides passing the prediction input data to the model for inference, user can also
 write Python code for data fetching, data pre-processing and post-processing within the
 API function. For example:
 
 .. code-block:: python
 
-  from my_lib import preprocessing, postprocessing, fetch_user_profile_from_databasae
+  from my_lib import preprocessing, postprocessing, fetch_user_profile_from_database
 
   class ExamplePredictionService(bentoml.BentoService):
 
       @bentoml.api(DataframeHandler)
       def predict(self, df):
-          user_profile_column = fetch_user_profile_from_databasae(df['user_id'])
+          user_profile_column = fetch_user_profile_from_database(df['user_id'])
           df['user_profile'] = user_profile_column
           model_input = preprocessing(df)
           model_output = self.artifacts.model.predict(model_input)
@@ -407,7 +407,7 @@ service that supports different access patterns for different clients, e.g.:
 
       @bentoml.api(JsonHandler)
       def predict_json(self, json_arr):
-          df = processs_custom_json_format(json-arr)
+          df = process_custom_json_format(json-arr)
           return self.artifacts.model.predict(df)
 
 
@@ -494,7 +494,7 @@ There are 3 main types of model serving -
 BentoML has great support for online serving and offline batch serving. It has a 
 high-performance API server that can load a saved Bento and expose a REST API for client
 access. It also provide tools to load the Bento and feed it with a batch of inputs
-for offline inferencing. Edge serving is only supported when the client has the Python
+for offline inference. Edge serving is only supported when the client has the Python
 runtime, e.g. model serving in a router or a Raspberry Pi.
 
 Online API Serving
@@ -502,7 +502,7 @@ Online API Serving
 
 Once a BentoService is saved, you can easily start the REST API server to test out
 sending request and interacting with the server. For example, after saving the 
-BentoSerivce in the :doc:`Getting Started Guide <quickstart>`, you can start a API
+BentoService in the :doc:`Getting Started Guide <quickstart>`, you can start a API
 server right away with:
 
 .. code-block:: bash
@@ -552,7 +552,7 @@ text document that contains all the commands required for creating a docker imag
     # Run a container with the docker image built and expose port 5000
     docker run -p 5000:5000 {username}/iris_classifier_bento_service
 
-    # Push the docker image to dockerhub for deployment
+    # Push the docker image to docker hub for deployment
     docker push {username}/iris_classifier_bento_service 
 
 
@@ -586,7 +586,7 @@ Adaptive Micro-Batching
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Micro batching is a technique where incoming prediction requests are grouped into small
-batches to achieve the performance advantage of batch processing in model inferencing
+batches to achieve the performance advantage of batch processing in model inference
 tasks. BentoML implemented such a micro batching layer that is inspired by the paper
 `Clipper: A Low-Latency Online Prediction Serving System 
 <https://www.usenix.org/system/files/conference/nsdi17/nsdi17-crankshaw.pdf>`_.
@@ -653,7 +653,7 @@ Python. There are two main ways this can be done:
 
 3. Command-Line Access
 
-  Similarly, a Bento can be loaded for inferencing using the BentoML CLI tool. The CLI
+  Similarly, a Bento can be loaded for inference using the BentoML CLI tool. The CLI
   command `bentoml` is available once you've installed BentoML via ``pip``. And to load
   a saved Bento file, simply use the :code:`bentoml run` command and give it either the
   name and version pair, or the Bento's path:
@@ -684,7 +684,7 @@ Offline Batch Serving
 
 All three methods in the Programmatic Access section above, can be used for doing 
 single-machine batch offline model serving. Depends on the format of input data. An
-inferencing computation job can be started either with BentoService's Python API or Bash
+inference computation job can be started either with BentoService's Python API or Bash
 CLI command. This made it very easy to integrate with Job scheduling tools such as 
 `Apache Airflow <https://airflow.apache.org/>`_ and
 `Celery <http://www.celeryproject.org/>`_.

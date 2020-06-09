@@ -27,7 +27,7 @@ from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import isidentifier
 from bentoml.utils.hybridmethod import hybridmethod
 from bentoml.marshal.utils import DataLoader
-from bentoml.utils.trace import trace
+from bentoml.server.trace import trace
 from bentoml.exceptions import NotFound, InvalidArgument
 
 ARTIFACTS_DIR_NAME = "artifacts"

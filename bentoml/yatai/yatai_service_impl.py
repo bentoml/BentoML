@@ -35,8 +35,8 @@ from bentoml.yatai.proto.yatai_service_pb2 import (
     HealthCheckResponse,
     GetYataiServiceVersionResponse,
 )
-from bentoml.deployment.operator import get_deployment_operator
-from bentoml.deployment.store import DeploymentStore
+from bentoml.yatai.deployment.operator import get_deployment_operator
+from bentoml.yatai.deployment.store import DeploymentStore
 from bentoml.exceptions import BentoMLException, InvalidArgument
 from bentoml.yatai.repository import BentoRepository
 from bentoml.yatai.repository.metadata_store import BentoMetadataStore

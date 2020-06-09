@@ -8,7 +8,7 @@ import docker
 import pytest
 from sklearn import svm, datasets
 
-from bentoml.deployment.utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 from bentoml.utils.tempdir import TempDirectory
 from e2e_tests.iris_classifier_example import IrisClassifier

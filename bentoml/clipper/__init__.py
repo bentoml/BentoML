@@ -22,7 +22,7 @@ import docker
 
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.deployment.utils import (
+from bentoml.yatai.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
 )

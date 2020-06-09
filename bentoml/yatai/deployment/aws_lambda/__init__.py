@@ -25,7 +25,7 @@ import boto3
 from ruamel.yaml import YAML
 
 from bentoml.saved_bundle import loader
-from bentoml.deployment.aws_lambda.utils import (
+from bentoml.yatai.deployment.aws_lambda.utils import (
     ensure_sam_available_or_raise,
     init_sam_project,
     lambda_deploy,
@@ -37,8 +37,8 @@ from bentoml.deployment.aws_lambda.utils import (
     LAMBDA_FUNCTION_MAX_LIMIT,
     FAILED_CLOUDFORMATION_STACK_STATUS,
 )
-from bentoml.deployment.operator import DeploymentOperatorBase
-from bentoml.deployment.utils import (
+from bentoml.yatai.deployment.operator import DeploymentOperatorBase
+from bentoml.yatai.deployment.utils import (
     ensure_docker_available_or_raise,
     generate_aws_compatible_string,
     raise_if_api_names_not_found_in_bento_service_metadata,

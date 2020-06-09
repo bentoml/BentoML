@@ -25,7 +25,7 @@ import docker
 from botocore.exceptions import ClientError
 
 from bentoml.saved_bundle import loader
-from bentoml.deployment.utils import (
+from bentoml.yatai.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
     generate_aws_compatible_string,
@@ -41,7 +41,7 @@ from bentoml.exceptions import (
     AWSServiceError,
     InvalidArgument,
 )
-from bentoml.deployment.operator import DeploymentOperatorBase
+from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,

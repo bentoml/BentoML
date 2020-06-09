@@ -25,7 +25,7 @@ from bentoml.cli.click_utils import (
     validate_labels_query_callback,
 )
 from bentoml.yatai.client import YataiClient
-from bentoml.deployment.store import ALL_NAMESPACE_TAG
+from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message

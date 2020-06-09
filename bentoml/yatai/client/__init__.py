@@ -17,7 +17,7 @@
 
 import logging
 
-from bentoml.yatai import get_yatai_service
+from bentoml.yatai.yatai_service import get_yatai_service
 from bentoml.yatai.client.bento_repository_api import BentoRepositoryAPIClient
 from bentoml.yatai.client.deployment_api import DeploymentAPIClient
 

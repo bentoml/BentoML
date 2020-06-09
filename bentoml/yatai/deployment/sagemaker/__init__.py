@@ -67,12 +67,12 @@ RUN apt-get update --fix-missing && \
 RUN pip install gevent
 
 # copy over model files
-COPY . /opt/program
-WORKDIR /opt/program
+COPY . /bento
+WORKDIR /bento
 
-RUN if [ -f /opt/program/bentoml-init.sh ]; then /bin/bash -c /opt/program/bentoml-init.sh; fi
+RUN if [ -f /bento/bentoml-init.sh ]; then bash -c /bento/bentoml-init.sh; fi
 
-ENV PATH="/opt/program:$PATH"
+ENV PATH="/bento:$PATH"
 """  # noqa: E501
 
 

@@ -19,7 +19,7 @@ __version__ = get_versions()['version']
 del get_versions
 
 from bentoml.configuration import config
-from bentoml.configuration.logging import configure_logging
+from bentoml.utils.log import configure_logging
 
 # Configuring logging properly before loading other modules
 configure_logging()

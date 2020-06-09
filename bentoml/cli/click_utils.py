@@ -19,7 +19,7 @@ import logging
 
 from ruamel.yaml import YAML
 
-from bentoml.utils.log import configure_logging
+from bentoml.configuration.logging import configure_logging
 
 # Available CLI colors for _echo:
 #

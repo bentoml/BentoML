@@ -30,7 +30,7 @@ Add the following lines to your Python code before invoking BentoML:
 import bentoml
 import logging
 bentoml.config().set('core', 'debug', 'true')
-bentoml.utils.log.configure_logging(logging.DEBUG)
+bentoml.configure_logging(logging.DEBUG)
 ```
 
 And use the `--verbose` option when running `bentoml` CLI command, e.g.:

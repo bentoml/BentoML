@@ -139,7 +139,7 @@ def _reset_bentoml_home(new_bentoml_home_directory):
     _config = load_config()
 
     # re-config logging
-    from bentoml.utils.log import configure_logging
+    from bentoml.configuration.logging import configure_logging
 
     root = logging.getLogger()
     map(root.removeHandler, root.handlers[:])

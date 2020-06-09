@@ -22,15 +22,15 @@ from setuptools import sandbox
 from bentoml.configuration import _is_pypi_release
 
 from bentoml.exceptions import BentoMLException
-from bentoml.bundler.py_module_utils import copy_used_py_modules
-from bentoml.bundler.templates import (
+from bentoml.saved_bundle.py_module_utils import copy_used_py_modules
+from bentoml.saved_bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
     MODEL_SERVER_DOCKERFILE_CPU,
     INIT_PY_TEMPLATE,
 )
 from bentoml.utils.usage_stats import track_save
-from bentoml.bundler.config import SavedBundleConfig
+from bentoml.saved_bundle.config import SavedBundleConfig
 
 
 DEFAULT_SAVED_BUNDLE_README = """\

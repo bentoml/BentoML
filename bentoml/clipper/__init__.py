@@ -21,7 +21,7 @@ import logging
 import docker
 
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.bundler import load_bento_service_metadata
+from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
@@ -40,7 +40,7 @@ import rpc # this is clipper's rpc.py module
 import os
 import sys
 
-from bentoml.bundler import load_bento_service_api
+from bentoml.saved_bundle import load_bento_service_api
 
 IMPORT_ERROR_RETURN_CODE = 3
 

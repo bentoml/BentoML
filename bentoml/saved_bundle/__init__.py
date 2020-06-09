@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.bundler.bundler import save_to_dir
-from bentoml.bundler.loader import (
+from bentoml.saved_bundle.bundler import save_to_dir
+from bentoml.saved_bundle.loader import (
     load,
     load_saved_bundle_config,
     load_bento_service_metadata,

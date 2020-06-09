@@ -24,7 +24,7 @@ import docker
 
 from botocore.exceptions import ClientError
 
-from bentoml.bundler import loader
+from bentoml.saved_bundle import loader
 from bentoml.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,

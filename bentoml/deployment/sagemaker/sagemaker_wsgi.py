@@ -14,7 +14,7 @@
 
 import os
 
-from bentoml.bundler import load
+from bentoml.saved_bundle import load
 from bentoml.deployment.sagemaker.model_server import BentomlSagemakerServer
 
 api_name = os.environ.get('API_NAME', None)

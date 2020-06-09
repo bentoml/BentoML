@@ -21,8 +21,8 @@ from datetime import datetime
 from abc import abstractmethod, ABCMeta
 
 from bentoml import config
-from bentoml.bundler import save_to_dir
-from bentoml.bundler.config import SavedBundleConfig
+from bentoml.saved_bundle import save_to_dir
+from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import isidentifier
 from bentoml.utils.hybridmethod import hybridmethod

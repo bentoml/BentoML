@@ -23,7 +23,7 @@ from ruamel.yaml import YAML
 
 from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version
-from bentoml.bundler.pip_pkg import (
+from bentoml.saved_bundle.pip_pkg import (
     EPP_PKG_NOT_EXIST,
     EPP_PKG_VERSION_MISMATCH,
     parse_requirement_string,

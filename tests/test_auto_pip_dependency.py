@@ -3,7 +3,7 @@ import os
 from sklearn import svm
 from sklearn import datasets
 
-from bentoml.bundler import load_bento_service_metadata
+from bentoml.saved_bundle import load_bento_service_metadata
 from tests.bento_service_examples.iris_classifier import IrisClassifier
 from tests.conftest import delete_saved_bento_service
 

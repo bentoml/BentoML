@@ -24,7 +24,7 @@ from botocore.exceptions import ClientError
 import boto3
 from ruamel.yaml import YAML
 
-from bentoml.bundler import loader
+from bentoml.saved_bundle import loader
 from bentoml.deployment.aws_lambda.utils import (
     ensure_sam_available_or_raise,
     init_sam_project,

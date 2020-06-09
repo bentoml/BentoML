@@ -98,7 +98,7 @@ import os
 import sys
 import logging
 
-from bentoml import bundler, configure_logging
+from bentoml import saved_bundle, configure_logging
 from bentoml.cli import create_bento_service_cli
 
 # By default, ignore warnings when loading BentoService installed as PyPI distribution
@@ -110,13 +110,13 @@ __VERSION__ = "{pypi_package_version}"
 
 __module_path = os.path.abspath(os.path.dirname(__file__))
 
-{service_name} = bundler.load_bento_service_class(__module_path)
+{service_name} = saved_bundle.load_bento_service_class(__module_path)
 
 cli=create_bento_service_cli(__module_path)
 
 
 def load():
-    return bundler.load(__module_path)
+    return saved_bundle.load(__module_path)
 
 
 __all__ = ['__version__', '{service_name}', 'load']

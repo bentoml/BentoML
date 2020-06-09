@@ -24,7 +24,7 @@ from urllib.parse import urlparse
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
 from bentoml.exceptions import BentoMLException
-from bentoml.bundler.config import SavedBundleConfig
+from bentoml.saved_bundle.config import SavedBundleConfig
 
 
 logger = logging.getLogger(__name__)

@@ -6,7 +6,7 @@ from mock import patch
 
 import bentoml
 from bentoml.handlers import DataframeHandler
-from bentoml.bundler import load_bento_service_metadata
+from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.exceptions import BentoMLException
 
 from tests.conftest import delete_saved_bento_service
@@ -48,7 +48,7 @@ def test_warning_when_save_without_decalred_artifact(
 ):
     svc = example_bento_service_class()
 
-    with mock.patch('bentoml.bundler.bundler.logger') as log_mock:
+    with mock.patch('bentoml.saved_bundle.bundler.logger') as log_mock:
         svc.save_to_dir(str(tmpdir))
         log_mock.warning.assert_called_once_with(
             "Missing declared artifact '%s' for BentoService '%s'",

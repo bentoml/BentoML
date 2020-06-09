@@ -24,7 +24,7 @@ from pathlib import Path
 import psutil
 from ruamel.yaml import YAML
 
-from bentoml.bundler import (
+from bentoml.saved_bundle import (
     load,
     load_bento_service_api,
     load_saved_bundle_config,
@@ -114,7 +114,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             return pip_installed_bundle_path
 
         if os.path.isdir(bento) or is_s3_url(bento):
-            # bundler already support loading local and s3 path
+            # saved_bundle already support loading local and s3 path
             return bento
 
         elif ":" in bento:

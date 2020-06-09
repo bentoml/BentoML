@@ -13,3 +13,5 @@
 # limitations under the License.
 
 from bentoml.yatai.validator.deployment_pb_validator import validate_deployment_pb
+
+__all__ = ["validate_deployment_pb"]

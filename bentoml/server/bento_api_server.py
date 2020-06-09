@@ -27,7 +27,7 @@ from bentoml import config
 from bentoml.utils.usage_stats import track_server
 from bentoml.utils.trace import trace
 from bentoml.exceptions import BentoMLException
-from bentoml.server.middlewares import InstrumentMiddleware
+from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 
 

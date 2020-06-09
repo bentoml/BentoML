@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import shutil
 import multiprocessing
 import logging
 
@@ -35,32 +33,3 @@ def get_gunicorn_num_of_workers():
         )
 
     return num_of_workers
-
-
-def setup_prometheus_multiproc_dir(lock: multiprocessing.Lock = None):
-    """
-    Set up prometheus_multiproc_dir for prometheus to work in multiprocess mode,
-    which is required when working with Gunicorn server
-
-    Warning: for this to work, prometheus_client library must be imported after
-    this function is called. It relies on the os.environ['prometheus_multiproc_dir']
-    to properly setup for multiprocess mode
-    """
-    if lock is not None:
-        lock.acquire()
-
-    try:
-        prometheus_multiproc_dir = config('instrument').get('prometheus_multiproc_dir')
-        logger.debug(
-            "Setting up prometheus_multiproc_dir: %s", prometheus_multiproc_dir
-        )
-        # Wipe prometheus metrics directory between runs
-        # https://github.com/prometheus/client_python#multiprocess-mode-gunicorn
-        # Ignore errors so it does not fail when directory does not exist
-        shutil.rmtree(prometheus_multiproc_dir, ignore_errors=True)
-        os.makedirs(prometheus_multiproc_dir, exist_ok=True)
-
-        os.environ['prometheus_multiproc_dir'] = prometheus_multiproc_dir
-    finally:
-        if lock is not None:
-            lock.release()

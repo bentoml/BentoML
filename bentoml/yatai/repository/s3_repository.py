@@ -21,12 +21,12 @@ from botocore.exceptions import ClientError
 from bentoml import config
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.yatai.proto.repository_pb2 import BentoUri
-from bentoml.yatai.repository.base_repository import BentoRepositoryBase
+from bentoml.yatai.repository.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
 
-class S3BentoRepository(BentoRepositoryBase):
+class S3Repository(BaseRepository):
     def __init__(self, base_url, s3_endpoint_url=None):
         self.uri_type = BentoUri.S3
 

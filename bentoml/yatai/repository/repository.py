@@ -12,25 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-
 from bentoml import config
 from bentoml.utils.s3 import is_s3_url
-from bentoml.yatai.repository.base_repository import BentoRepositoryBase
-from bentoml.yatai.repository.local_repository import LocalBentoRepository
-from bentoml.yatai.repository.s3_repository import S3BentoRepository
+from bentoml.yatai.repository.base_repository import BaseRepository
+from bentoml.yatai.repository.local_repository import LocalRepository
+from bentoml.yatai.repository.s3_repository import S3Repository
 
 
-class BentoRepository(BentoRepositoryBase):
+class Repository(BaseRepository):
     def __init__(self, base_url=None, s3_endpoint_url=None):
+        """
+        :param base_url: either a local file system path or a s3-compatible path such as
+            s3://my-bucket/some-prefix/
+        :param s3_endpoint_url: configuring S3Repository to talk to a specific s3
+            endpoint
+        """
 
         if base_url is None:
             base_url = config().get('default_repository_base_url')
 
         if is_s3_url(base_url):
-            self._repo = S3BentoRepository(base_url, s3_endpoint_url)
+            self._repo = S3Repository(base_url, s3_endpoint_url)
         else:
-            self._repo = LocalBentoRepository(base_url)
+            self._repo = LocalRepository(base_url)
 
     def add(self, bento_name, bento_version):
         return self._repo.add(bento_name, bento_version)

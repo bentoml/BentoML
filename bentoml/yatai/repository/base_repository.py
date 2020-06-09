@@ -16,14 +16,14 @@
 from abc import ABCMeta, abstractmethod
 
 
-class BentoRepositoryBase(object):
+class BaseRepository(object):
     """
-    BentoRepository is the interface for managing saved Bentos over file system or
-    cloud storage systems.
+    BaseRepository is the interface for managing BentoML saved bundle files over either
+     a file system or a cloud blob storage systems such as AWS S3 or MinIO
 
-    A Bento is a BentoService serialized into a standard file format that can be
-    easily load back to a Python session, installed as PyPI package, or run in Conda
-    or docker environment with all dependencies configured automatically
+    A BentoML saved bundle is a standard file format that contains trained model files
+    as well as serving endpoint code, input/output spec, dependency specs and deployment
+    configs.
     """
 
     __metaclass__ = ABCMeta

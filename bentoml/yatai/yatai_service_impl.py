@@ -38,13 +38,13 @@ from bentoml.yatai.proto.yatai_service_pb2 import (
 from bentoml.yatai.deployment.operator import get_deployment_operator
 from bentoml.yatai.deployment.store import DeploymentStore
 from bentoml.exceptions import BentoMLException, InvalidArgument
-from bentoml.yatai.repository import BentoRepository
+from bentoml.yatai.repository.repository import Repository
 from bentoml.yatai.repository.metadata_store import BentoMetadataStore
 from bentoml.yatai.db import init_db
 from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import ProtoMessageToDict
-from bentoml.yatai.validator import validate_deployment_pb_schema
+from bentoml.yatai.validator import validate_deployment_pb
 from bentoml import __version__ as BENTOML_VERSION
 
 
@@ -70,7 +70,7 @@ class YataiService(YataiServicer):
         default_namespace = default_namespace or cfg.get('default_namespace')
 
         self.default_namespace = default_namespace
-        self.repo = BentoRepository(repo_base_url, s3_endpoint_url)
+        self.repo = Repository(repo_base_url, s3_endpoint_url)
         self.sess_maker = init_db(db_url)
         self.deployment_store = DeploymentStore(self.sess_maker)
         self.bento_metadata_store = BentoMetadataStore(self.sess_maker)
@@ -88,7 +88,7 @@ class YataiService(YataiServicer):
                 request.deployment.namespace or self.default_namespace
             )
 
-            validation_errors = validate_deployment_pb_schema(request.deployment)
+            validation_errors = validate_deployment_pb(request.deployment)
             if validation_errors:
                 raise InvalidArgument(
                     'Failed to validate deployment. {errors}'.format(

@@ -17,7 +17,7 @@ from flask import Response
 from gunicorn.app.base import Application
 
 from bentoml import config
-from bentoml.bundler import load
+from bentoml.saved_bundle import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
 from bentoml.utils.usage_stats import track_server

@@ -24,15 +24,15 @@ import docker
 
 from botocore.exceptions import ClientError
 
-from bentoml.bundler import loader
-from bentoml.deployment.utils import (
+from bentoml.saved_bundle import loader
+from bentoml.yatai.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
     generate_aws_compatible_string,
     raise_if_api_names_not_found_in_bento_service_metadata,
     get_default_aws_region,
 )
-from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
+from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.yatai.status import Status
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.exceptions import (
@@ -41,8 +41,8 @@ from bentoml.exceptions import (
     AWSServiceError,
     InvalidArgument,
 )
-from bentoml.deployment.operator import DeploymentOperatorBase
-from bentoml.proto.deployment_pb2 import (
+from bentoml.yatai.deployment.operator import DeploymentOperatorBase
+from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
     DescribeDeploymentResponse,
@@ -70,7 +70,7 @@ RUN pip install gevent
 COPY . /opt/program
 WORKDIR /opt/program
 
-RUN if [ -f /opt/program/bentoml_init.sh ]; then /bin/bash -c /opt/program/bentoml_init.sh; fi
+RUN if [ -f /opt/program/bentoml-init.sh ]; then /bin/bash -c /opt/program/bentoml-init.sh; fi
 
 ENV PATH="/opt/program:$PATH"
 """  # noqa: E501

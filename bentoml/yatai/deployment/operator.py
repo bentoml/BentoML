@@ -14,7 +14,7 @@
 
 from abc import abstractmethod, ABCMeta
 
-from bentoml.proto.deployment_pb2 import DeploymentSpec
+from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.exceptions import YataiDeploymentException
 
 
@@ -22,11 +22,11 @@ def get_deployment_operator(yatai_service, deployment_pb):
     operator = deployment_pb.spec.operator
 
     if operator == DeploymentSpec.AWS_SAGEMAKER:
-        from bentoml.deployment.sagemaker import SageMakerDeploymentOperator
+        from bentoml.yatai.deployment.sagemaker import SageMakerDeploymentOperator
 
         return SageMakerDeploymentOperator(yatai_service)
     elif operator == DeploymentSpec.AWS_LAMBDA:
-        from bentoml.deployment.aws_lambda import AwsLambdaDeploymentOperator
+        from bentoml.yatai.deployment.aws_lambda import AwsLambdaDeploymentOperator
 
         return AwsLambdaDeploymentOperator(yatai_service)
     elif operator == DeploymentSpec.GCP_FUNCTION:

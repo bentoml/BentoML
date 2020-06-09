@@ -24,8 +24,8 @@ from botocore.exceptions import ClientError
 import boto3
 from ruamel.yaml import YAML
 
-from bentoml.bundler import loader
-from bentoml.deployment.aws_lambda.utils import (
+from bentoml.saved_bundle import loader
+from bentoml.yatai.deployment.aws_lambda.utils import (
     ensure_sam_available_or_raise,
     init_sam_project,
     lambda_deploy,
@@ -37,8 +37,8 @@ from bentoml.deployment.aws_lambda.utils import (
     LAMBDA_FUNCTION_MAX_LIMIT,
     FAILED_CLOUDFORMATION_STACK_STATUS,
 )
-from bentoml.deployment.operator import DeploymentOperatorBase
-from bentoml.deployment.utils import (
+from bentoml.yatai.deployment.operator import DeploymentOperatorBase
+from bentoml.yatai.deployment.utils import (
     ensure_docker_available_or_raise,
     generate_aws_compatible_string,
     raise_if_api_names_not_found_in_bento_service_metadata,
@@ -49,14 +49,14 @@ from bentoml.exceptions import (
     InvalidArgument,
     YataiDeploymentException,
 )
-from bentoml.proto import status_pb2
-from bentoml.proto.deployment_pb2 import (
+from bentoml.yatai.proto import status_pb2
+from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DeploymentState,
     DescribeDeploymentResponse,
     DeleteDeploymentResponse,
 )
-from bentoml.proto.repository_pb2 import GetBentoRequest, BentoUri
+from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.tempdir import TempDirectory

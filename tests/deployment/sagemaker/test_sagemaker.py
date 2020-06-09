@@ -9,19 +9,19 @@ from botocore.exceptions import ClientError
 import boto3
 from moto import mock_ecr, mock_iam, mock_sts
 
-from bentoml.deployment.sagemaker import (
+from bentoml.yatai.deployment.sagemaker import (
     _aws_client_error_to_bentoml_exception,
     get_arn_role_from_current_aws_user,
     SageMakerDeploymentOperator,
 )
-from bentoml.proto.deployment_pb2 import Deployment, DeploymentSpec
-from bentoml.proto.repository_pb2 import (
+from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentSpec
+from bentoml.yatai.proto.repository_pb2 import (
     Bento,
     BentoServiceMetadata,
     GetBentoResponse,
     BentoUri,
 )
-from bentoml.proto.status_pb2 import Status
+from bentoml.yatai.proto.status_pb2 import Status
 from bentoml.exceptions import AWSServiceError
 from tests.deployment.sagemaker.sagemaker_moto import moto_mock_sagemaker
 
@@ -139,9 +139,9 @@ def mock_sagemaker_deployment_wrapper(func):
     @patch('subprocess.check_output', MagicMock())
     @patch('docker.APIClient.build', MagicMock())
     @patch('docker.APIClient.push', MagicMock())
-    @patch('bentoml.deployment.sagemaker._init_sagemaker_project', MagicMock())
+    @patch('bentoml.yatai.deployment.sagemaker._init_sagemaker_project', MagicMock())
     @patch(
-        'bentoml.deployment.sagemaker.get_default_aws_region',
+        'bentoml.yatai.deployment.sagemaker.get_default_aws_region',
         MagicMock(return_value='mock_region'),
     )
     def mock_wrapper(*args, **kwargs):

@@ -21,8 +21,8 @@ from datetime import datetime
 from abc import abstractmethod, ABCMeta
 
 from bentoml import config
-from bentoml.bundler import save_to_dir
-from bentoml.bundler.config import SavedBundleConfig
+from bentoml.saved_bundle import save_to_dir
+from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import isidentifier
 from bentoml.utils.hybridmethod import hybridmethod
@@ -426,7 +426,7 @@ def save(bento_service, base_path=None, version=None):
     """
 
     from bentoml.yatai.client import YataiClient
-    from bentoml.yatai import get_yatai_service
+    from bentoml.yatai.yatai_service import get_yatai_service
 
     if base_path:
         yatai_service = get_yatai_service(repo_base_url=base_path)

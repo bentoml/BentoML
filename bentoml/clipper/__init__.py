@@ -21,8 +21,8 @@ import logging
 import docker
 
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.bundler import load_bento_service_metadata
-from bentoml.deployment.utils import (
+from bentoml.saved_bundle import load_bento_service_metadata
+from bentoml.yatai.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
 )
@@ -40,7 +40,7 @@ import rpc # this is clipper's rpc.py module
 import os
 import sys
 
-from bentoml.bundler import load_bento_service_api
+from bentoml.saved_bundle import load_bento_service_api
 
 IMPORT_ERROR_RETURN_CODE = 3
 
@@ -102,7 +102,7 @@ ENV PIP_INDEX_URL $PIP_INDEX_URL
 ENV PIP_TRUSTED_HOST $PIP_TRUSTED_HOST
 
 # Install conda, pip dependencies and run user defined setup script
-RUN if [ -f /container/bentoml_init.sh ]; then bash -c /container/bentoml_init.sh; fi
+RUN if [ -f /container/bentoml-init.sh ]; then bash -c /container/bentoml-init.sh; fi
 
 ENV CLIPPER_MODEL_NAME={model_name}
 ENV CLIPPER_MODEL_VERSION={model_version}

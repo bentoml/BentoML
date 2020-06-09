@@ -183,15 +183,3 @@ def get_bentoml_deploy_version():
             LAST_PYPI_RELEASE_VERSION,
         )
     return bentoml_deploy_version
-
-
-# this is for BentoML developer to create BentoService containing custom develop
-# branches of BentoML library, it gets triggered when BentoML module is installed
-# via "pip install --editable ."
-def _is_bentoml_in_develop_mode():
-    import importlib
-
-    (module_location,) = importlib.util.find_spec('bentoml').submodule_search_locations
-
-    setup_py_path = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
-    return not _is_pypi_release() and os.path.isfile(setup_py_path)

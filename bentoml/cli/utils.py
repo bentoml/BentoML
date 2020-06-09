@@ -25,7 +25,7 @@ from google.protobuf.json_format import MessageToDict
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import _echo
-from bentoml.proto.deployment_pb2 import DeploymentState, DeploymentSpec
+from bentoml.yatai.proto.deployment_pb2 import DeploymentState, DeploymentSpec
 from bentoml.utils import pb_to_yaml
 
 logger = logging.getLogger(__name__)

@@ -21,7 +21,7 @@ from bentoml.cli.click_utils import (
     parse_bento_tag_list_callback,
 )
 from bentoml.cli.utils import humanfriendly_age_from_datetime
-from bentoml.proto import status_pb2
+from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient

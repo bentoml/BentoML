@@ -4,7 +4,7 @@ import pytest
 
 from mock import patch
 
-from bentoml.deployment.utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.exceptions import MissingDependencyException
 
 

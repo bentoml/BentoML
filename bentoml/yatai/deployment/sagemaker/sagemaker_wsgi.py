@@ -12,20 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.bundler.bundler import save_to_dir
-from bentoml.bundler.loader import (
-    load,
-    load_saved_bundle_config,
-    load_bento_service_metadata,
-    load_bento_service_class,
-    load_bento_service_api,
-)
+import os
 
-__all__ = [
-    "save_to_dir",
-    "load",
-    "load_saved_bundle_config",
-    "load_bento_service_metadata",
-    "load_bento_service_class",
-    "load_bento_service_api",
-]
+from bentoml.saved_bundle import load
+from bentoml.yatai.deployment.sagemaker.model_server import BentomlSagemakerServer
+
+api_name = os.environ.get('API_NAME', None)
+model_service = load('/opt/program')
+server = BentomlSagemakerServer(model_service, api_name)
+app = server.app

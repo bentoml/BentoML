@@ -30,14 +30,14 @@ graft bentoml/server/static
 graft bentoml/configuration
 
 # include migration files
-graft bentoml/migrations
-include bentoml/alembic.ini
+graft bentoml/yatai/migrations
+include bentoml/yatai/alembic.ini
 
 # include yatai server UI distribution files
 graft bentoml/yatai/web/dist
 
 # include ".conf" file
-include bentoml/deployment/sagemaker/sagemaker_nginx.conf
+include bentoml/yatai/deployment/sagemaker/sagemaker_nginx.conf
 
 prune e2e_tests
 prune tests

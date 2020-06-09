@@ -27,7 +27,7 @@ from bentoml.exceptions import RemoteException
 from bentoml.server.trace import async_trace, make_http_headers
 from bentoml.marshal.utils import DataLoader, SimpleRequest
 from bentoml.handlers import HANDLER_TYPES_BATCH_MODE_SUPPORTED
-from bentoml.bundler import load_bento_service_metadata
+from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.utils.usage_stats import track_server
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
 from bentoml.marshal.utils import SimpleResponse

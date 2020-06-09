@@ -1,7 +1,7 @@
 import pytest
 
 from bentoml.exceptions import YataiDeploymentException, BentoMLException
-from bentoml.proto.deployment_pb2 import Deployment
+from bentoml.yatai.proto.deployment_pb2 import Deployment
 from bentoml.yatai.deployment_utils import deployment_dict_to_pb
 
 

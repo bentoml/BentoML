@@ -78,7 +78,7 @@ def _get_bento_service_event_properties(bento_service, properties=None):
 
 
 def _get_bento_service_event_properties_from_bundle_path(bundle_path, properties=None):
-    from bentoml.bundler import load_bento_service_metadata
+    from bentoml.saved_bundle import load_bento_service_metadata
 
     bento_service_metadata = load_bento_service_metadata(bundle_path)
     return _bento_service_metadata_to_event_properties(

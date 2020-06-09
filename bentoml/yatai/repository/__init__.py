@@ -25,7 +25,7 @@ from botocore.exceptions import ClientError
 from bentoml import config
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.utils.s3 import is_s3_url
-from bentoml.proto.repository_pb2 import BentoUri
+from bentoml.yatai.proto.repository_pb2 import BentoUri
 
 
 logger = logging.getLogger(__name__)

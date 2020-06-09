@@ -36,7 +36,9 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
         assert deployment_success, 'Sagemaker deployment was unsuccessful'
         assert endpoint_name, 'Sagemaker deployment endpoint name is missing'
 
-        request_success, prediction_result = send_test_data_to_endpoint(endpoint_name)
+        request_success, prediction_result = send_test_data_to_endpoint(
+            endpoint_name, region=region
+        )
         assert request_success, 'Failed to make successful Sagemaker request'
         assert (
             prediction_result.strip() == '"cat"'
@@ -63,7 +65,9 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
         ), 'Sagemaker update deployment was unsuccessful'
         assert endpoint_name, 'Sagemaker deployment endpoint name is missing'
 
-        request_success, prediction_result = send_test_data_to_endpoint(endpoint_name)
+        request_success, prediction_result = send_test_data_to_endpoint(
+            endpoint_name, region=region
+        )
         assert request_success, 'Failed to make successful Sagemaker request'
         assert (
             prediction_result.strip() == '"dog"'

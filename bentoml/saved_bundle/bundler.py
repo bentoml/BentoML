@@ -11,25 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import importlib
 import os
+import shutil
 import stat
 import logging
 
+from setuptools import sandbox
+
+from bentoml.configuration import _is_pypi_release
+
 from bentoml.exceptions import BentoMLException
-from bentoml.bundler.py_module_utils import copy_used_py_modules
-from bentoml.bundler.templates import (
+from bentoml.saved_bundle.py_module_utils import copy_used_py_modules
+from bentoml.saved_bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
     MODEL_SERVER_DOCKERFILE_CPU,
     INIT_PY_TEMPLATE,
-    BENTO_INIT_SH_TEMPLATE,
-    DOCKER_ENTRYPOINT_SH,
 )
-from bentoml.bundler.utils import add_local_bentoml_package_to_repo
-from bentoml.configuration import _is_bentoml_in_develop_mode
 from bentoml.utils.usage_stats import track_save
-from bentoml.bundler.config import SavedBundleConfig
+from bentoml.saved_bundle.config import SavedBundleConfig
 
 
 DEFAULT_SAVED_BUNDLE_README = """\
@@ -141,21 +142,25 @@ def save_to_dir(bento_service, path, version=None, silent=False):
             )
         )
 
-    # write docker-entrypoint.sh
-    docker_entrypoint_sh_file = os.path.join(path, "docker-entrypoint.sh")
-    with open(docker_entrypoint_sh_file, "w") as f:
-        f.write(DOCKER_ENTRYPOINT_SH)
+    # Copy docker-entrypoint.sh
+    docker_entrypoint_sh_file_src = os.path.join(
+        os.path.dirname(__file__), "docker-entrypoint.sh"
+    )
+    docker_entrypoint_sh_file_dst = os.path.join(path, "docker-entrypoint.sh")
+    shutil.copyfile(docker_entrypoint_sh_file_src, docker_entrypoint_sh_file_dst)
     # chmod +x docker-entrypoint.sh
-    st = os.stat(docker_entrypoint_sh_file)
-    os.chmod(docker_entrypoint_sh_file, st.st_mode | stat.S_IEXEC)
+    st = os.stat(docker_entrypoint_sh_file_dst)
+    os.chmod(docker_entrypoint_sh_file_dst, st.st_mode | stat.S_IEXEC)
 
-    # write bento init sh for install targz bundles
-    bentoml_init_script_file = os.path.join(path, 'bentoml_init.sh')
-    with open(bentoml_init_script_file, 'w') as f:
-        f.write(BENTO_INIT_SH_TEMPLATE)
+    # copy bentoml-init.sh for install targz bundles
+    bentoml_init_sh_file_src = os.path.join(
+        os.path.dirname(__file__), "bentoml-init.sh"
+    )
+    bentoml_init_sh_file_dst = os.path.join(path, "bentoml-init.sh")
+    shutil.copyfile(bentoml_init_sh_file_src, bentoml_init_sh_file_dst)
     # chmod +x bentoml_init_script file
-    st = os.stat(bentoml_init_script_file)
-    os.chmod(bentoml_init_script_file, st.st_mode | stat.S_IEXEC)
+    st = os.stat(bentoml_init_sh_file_dst)
+    os.chmod(bentoml_init_sh_file_dst, st.st_mode | stat.S_IEXEC)
 
     # write bentoml.yml
     config = SavedBundleConfig(bento_service)
@@ -166,10 +171,8 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     # as package data after pip installed as a python package
     config.write_to_path(module_base_path)
 
-    # if bentoml package in editor mode(pip install -e), will include
-    # that bentoml package to saved BentoService bundle
-    if _is_bentoml_in_develop_mode():
-        add_local_bentoml_package_to_repo(path)
+    bundled_pip_dependencies_path = os.path.join(path, 'bundled_pip_dependencies')
+    _bundle_local_bentoml_if_installed_from_source(bundled_pip_dependencies_path)
 
     if not silent:
         logger.info(
@@ -178,3 +181,48 @@ def save_to_dir(bento_service, path, version=None, silent=False):
             bento_service.version,
             path,
         )
+
+
+def _bundle_local_bentoml_if_installed_from_source(target_path):
+    """
+    if bentoml is installed in editor mode(pip install -e), this will build a source
+    distribution with the local bentoml fork and add it to saved BentoService bundle
+    path under bundled_pip_dependencies directory
+    """
+
+    # Find bentoml module path
+    (module_location,) = importlib.util.find_spec('bentoml').submodule_search_locations
+
+    bentoml_setup_py = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
+
+    # this is for BentoML developer to create BentoService containing custom develop
+    # branches of BentoML library, it is True only when BentoML module is installed in
+    # development mode via "pip install --editable ."
+    if not _is_pypi_release() and os.path.isfile(bentoml_setup_py):
+        logger.info(
+            "Detect BentoML installed in development model, copying local BentoML "
+            "module file to target saved bundle path"
+        )
+
+        # Create tmp directory inside bentoml module for storing the bundled
+        # targz file. Since dist-dir can only be inside of the module directory
+        bundle_dir_name = '__bentoml_tmp_sdist_build'
+        source_dir = os.path.abspath(
+            os.path.join(module_location, '..', bundle_dir_name)
+        )
+
+        if os.path.isdir(source_dir):
+            shutil.rmtree(source_dir, ignore_errors=True)
+        os.mkdir(source_dir)
+
+        sandbox.run_setup(
+            bentoml_setup_py,
+            ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name],
+        )
+
+        # copy the generated targz to saved bundle directory and remove it from
+        # bentoml module directory
+        shutil.copytree(source_dir, target_path)
+
+        # clean up sdist build files
+        shutil.rmtree(source_dir)

@@ -341,19 +341,17 @@ def _init_sagemaker_project(sagemaker_project_dir, bento_path, docker_base_image
             )
         )
 
-    nginx_conf_path = os.path.join(os.path.dirname(__file__), 'sagemaker_nginx.conf')
+    nginx_conf_path = os.path.join(os.path.dirname(__file__), 'nginx.conf')
     shutil.copy(nginx_conf_path, os.path.join(sagemaker_project_dir, 'nginx.conf'))
 
-    wsgi_py_path = os.path.join(os.path.dirname(__file__), 'sagemaker_wsgi.py')
+    wsgi_py_path = os.path.join(os.path.dirname(__file__), 'wsgi.py')
     shutil.copy(wsgi_py_path, os.path.join(sagemaker_project_dir, 'wsgi.py'))
 
-    serve_file_path = os.path.join(os.path.dirname(__file__), 'sagemaker_serve.py')
+    serve_file_path = os.path.join(os.path.dirname(__file__), 'serve')
     shutil.copy(serve_file_path, os.path.join(sagemaker_project_dir, 'serve'))
 
     # permission 755 is required for entry script 'serve'
-    permission = "755"
-    octal_permission = int(permission, 8)
-    os.chmod(os.path.join(sagemaker_project_dir, "serve"), octal_permission)
+    os.chmod(os.path.join(sagemaker_project_dir, "serve"), 0o755)
     return sagemaker_project_dir
 
 

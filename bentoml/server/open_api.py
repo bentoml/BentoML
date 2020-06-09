@@ -16,6 +16,7 @@ from collections import OrderedDict
 
 from bentoml import config
 
+
 def get_open_api_spec_json(bento_service):
     """
     The docs for all endpoints in Open API format.

@@ -6,10 +6,10 @@ from mock import MagicMock, patch, Mock
 from moto import mock_s3
 from ruamel.yaml import YAML
 
-from bentoml.yatai.deployment.aws_lambda import (
-    AwsLambdaDeploymentOperator,
+from bentoml.yatai.deployment.aws_lambda.utils import init_sam_project
+from bentoml.yatai.deployment.aws_lambda.operator import (
     _create_aws_lambda_cloudformation_template_file,
-    init_sam_project,
+    AwsLambdaDeploymentOperator,
 )
 from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentState
 from bentoml.yatai.proto.repository_pb2 import (
@@ -176,7 +176,7 @@ def mock_lambda_related_operations(func):
     @patch('subprocess.check_output', MagicMock())
     @mock_s3
     @patch(
-        'bentoml.yatai.deployment.aws_lambda.get_default_aws_region',
+        'bentoml.yatai.deployment.aws_lambda.operator.get_default_aws_region',
         MagicMock(return_value='mock_region'),
     )
     def mock_wrapper(*args, **kwargs):
@@ -192,17 +192,18 @@ def mock_lambda_related_operations(func):
 @patch('shutil.copytree', MagicMock())
 @patch('shutil.copy', MagicMock())
 @patch('os.listdir', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.init_sam_project', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.lambda_package', MagicMock())
+@patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
+@patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.validate_lambda_template',
+    'bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template',
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.lambda_deploy', MagicMock(return_value=None)
+    'bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy',
+    MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.total_file_or_directory_size',
+    'bentoml.yatai.deployment.aws_lambda.operator.total_file_or_directory_size',
     MagicMock(return_value=250),
 )
 @patch('os.remove', MagicMock())
@@ -222,21 +223,22 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 @patch('shutil.copytree', MagicMock())
 @patch('shutil.copy', MagicMock())
 @patch('os.listdir', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.init_sam_project', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.lambda_package', MagicMock())
+@patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
+@patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.validate_lambda_template',
+    'bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template',
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.lambda_deploy', MagicMock(return_value=None)
+    'bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy',
+    MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.total_file_or_directory_size',
+    'bentoml.yatai.deployment.aws_lambda.operator.total_file_or_directory_size',
     MagicMock(return_value=249000001),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.'
+    'bentoml.yatai.deployment.aws_lambda.operator.'
     'reduce_bundle_size_and_upload_extra_resources_to_s3',
     MagicMock(),
 )
@@ -261,7 +263,7 @@ def test_aws_lambda_describe_still_in_progress():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     with patch(
-        'bentoml.yatai.deployment.aws_lambda.get_default_aws_region',
+        'bentoml.yatai.deployment.aws_lambda.operator.get_default_aws_region',
         MagicMock(return_value='mock_region'),
     ):
         with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
@@ -294,7 +296,7 @@ def test_aws_lambda_describe_success():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     with patch(
-        'bentoml.yatai.deployment.aws_lambda.get_default_aws_region',
+        'bentoml.yatai.deployment.aws_lambda.operator.get_default_aws_region',
         MagicMock(return_value='mock_region'),
     ):
         with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):

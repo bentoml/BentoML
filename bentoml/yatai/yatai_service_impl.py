@@ -40,7 +40,7 @@ from bentoml.deployment.store import DeploymentStore
 from bentoml.exceptions import BentoMLException, InvalidArgument
 from bentoml.yatai.repository import BentoRepository
 from bentoml.yatai.repository.metadata_store import BentoMetadataStore
-from bentoml.db import init_db
+from bentoml.yatai.db import init_db
 from bentoml.yatai.status import Status
 from bentoml.proto import status_pb2
 from bentoml.utils import ProtoMessageToDict

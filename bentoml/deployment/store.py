@@ -29,7 +29,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
 from bentoml.exceptions import YataiDeploymentException, BadInput
-from bentoml.db import Base, create_session
+from bentoml.yatai.db import Base, create_session
 from bentoml.proto import deployment_pb2
 from bentoml.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
 from bentoml.utils import ProtoMessageToDict

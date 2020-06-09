@@ -31,7 +31,7 @@ from google.protobuf.json_format import ParseDict
 
 from bentoml.utils import ProtoMessageToDict
 from bentoml.exceptions import YataiRepositoryException
-from bentoml.db import Base, create_session
+from bentoml.yatai.db import Base, create_session
 from bentoml.proto.repository_pb2 import (
     UploadStatus,
     BentoUri,

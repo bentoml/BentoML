@@ -2,9 +2,9 @@ import logging
 
 from bentoml.yatai.proto.repository_pb2 import BentoUri
 from e2e_tests.cli_operations import delete_bento
+from e2e_tests.sample_bento_service import SampleBentoService
 from e2e_tests.yatai_server.utils import (
-    BentoServiceForYataiTest,
-    get_bento_service,
+    get_bento_service_info,
     yatai_server_container,
 )
 
@@ -13,12 +13,12 @@ logger = logging.getLogger('bentoml.test')
 
 def test_docker_yatai_server_with_postgres():
     with yatai_server_container():
-        svc = BentoServiceForYataiTest()
+        svc = SampleBentoService()
         bento_tag = f'{svc.name}:{svc.version}'
         logger.info(f'Saving BentoML saved bundle {bento_tag}')
         svc.save()
 
-        get_svc_result = get_bento_service(svc.name, svc.version)
+        get_svc_result = get_bento_service_info(svc.name, svc.version)
         logger.info(f'Retrived BentoML saved bundle {bento_tag} info: {get_svc_result}')
         assert (
             get_svc_result.bento.uri.type == BentoUri.LOCAL

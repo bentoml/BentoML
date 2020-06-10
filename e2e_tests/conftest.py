@@ -2,6 +2,8 @@ import logging
 import subprocess
 import uuid
 import time
+import os
+import signal
 
 import docker
 import pytest
@@ -10,9 +12,9 @@ from sklearn import svm, datasets
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from e2e_tests.iris_classifier_example import IrisClassifier
 from e2e_tests.cli_operations import delete_bento
-from e2e_tests.basic_bento_service_examples import (
-    BasicBentoService,
-    UpdatedBasicBentoService,
+from e2e_tests.sample_bento_service import (
+    SampleBentoService,
+    UpdatedSampleBentoService,
 )
 
 logger = logging.getLogger('bentoml.test')
@@ -39,7 +41,7 @@ def iris_clf_service():
 @pytest.fixture()
 def basic_bentoservice_v1():
     logger.debug('Creating iris classifier BentoService bundle..')
-    bento_svc = BasicBentoService()
+    bento_svc = SampleBentoService()
     bento_svc.save()
 
     bento_name = f'{bento_svc.name}:{bento_svc.version}'
@@ -50,7 +52,7 @@ def basic_bentoservice_v1():
 @pytest.fixture()
 def basic_bentoservice_v2():
     logger.debug('Creating iris classifier BentoService bundle..')
-    bento_svc = UpdatedBasicBentoService()
+    bento_svc = UpdatedSampleBentoService()
     bento_svc.save()
 
     bento_name = f'{bento_svc.name}:{bento_svc.version}'
@@ -113,4 +115,4 @@ def postgres_db_container_url():
     yield db_url
 
     logger.info(f"Shutting down Postgres Server container: {container_name}")
-    docker_proc.terminate()
+    os.kill(docker_proc.pid, signal.SIGINT)

@@ -1,12 +1,12 @@
 import logging
 
 from bentoml.yatai.proto.repository_pb2 import BentoUri
+from e2e_tests.sample_bento_service import SampleBentoService
 from e2e_tests.cli_operations import delete_bento
 from e2e_tests.yatai_server.utils import (
-    get_bento_service,
-    run_bento_service_prediction,
+    get_bento_service_info,
+    execute_bentoml_run_command,
     local_yatai_server,
-    BentoServiceForYataiTest,
 )
 
 logger = logging.getLogger('bentoml.test')
@@ -15,20 +15,20 @@ logger = logging.getLogger('bentoml.test')
 def test_yatai_server_with_postgres_and_local_storage(postgres_db_container_url):
     with local_yatai_server(postgres_db_container_url):
         logger.info('Saving bento service')
-        svc = BentoServiceForYataiTest()
+        svc = SampleBentoService()
         svc.save()
         bento_tag = f'{svc.name}:{svc.version}'
         logger.info('BentoService saved')
 
         logger.info("Display bentoservice info")
-        get_svc_result = get_bento_service(svc.name, svc.version)
+        get_svc_result = get_bento_service_info(svc.name, svc.version)
         logger.info(get_svc_result)
         assert (
             get_svc_result.bento.uri.type == BentoUri.LOCAL
         ), 'BentoService storage type mismatched, expect LOCAL'
 
         logger.info('Validate BentoService prediction result')
-        run_result = run_bento_service_prediction(bento_tag, '[]')
+        run_result = execute_bentoml_run_command(bento_tag, '[]')
         assert 'cat' in run_result, 'Unexpected BentoService prediction result'
 
         logger.info(f'Deleting saved bundle {bento_tag}')

@@ -3,13 +3,12 @@ import contextlib
 import logging
 import os
 import uuid
+import signal
 
 import psutil
 import docker
 
-from bentoml import BentoService, api
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
-from bentoml.handlers import DataframeHandler
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.client import YataiClient
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
@@ -21,20 +20,14 @@ GRPC_PORT = '50051'
 GRPC_CHANNEL_ADDRESS = f'127.0.0.1:{GRPC_PORT}'
 
 
-class BentoServiceForYataiTest(BentoService):
-    @api(DataframeHandler)
-    def predict(self, df):  # pylint: disable=unused-argument
-        return 'cat'
-
-
-def get_bento_service(bento_name, bento_version):
+def get_bento_service_info(bento_name, bento_version):
     yatai_client = YataiClient()
     get_result = yatai_client.repository.get(bento_name, bento_version)
     return get_result
 
 
-def run_bento_service_prediction(bento_tag, data):
-    command = ['bentoml', 'run', bento_tag, 'predict', '--input', data, "-q"]
+def execute_bentoml_run_command(bento_tag, data, api="predict"):
+    command = ['bentoml', 'run', bento_tag, api, '--input', data, "-q"]
     proc = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ,
     )
@@ -135,6 +128,8 @@ RUN pip install /bentoml-local-repo
             '--rm',
             '--name',
             container_name,
+            '-e',
+            'BENTOML_HOME=/tmp',
             '-p',
             '50051:50051',
             '-p',
@@ -154,4 +149,4 @@ RUN pip install /bentoml-local-repo
             yield yatai_service_url
 
         logger.info(f"Shutting down docker container: {container_name}")
-        docker_proc.terminate()
+        os.kill(docker_proc.pid, signal.SIGINT)

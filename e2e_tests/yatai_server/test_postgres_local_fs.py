@@ -29,7 +29,6 @@ def test_yatai_server_with_postgres_and_local_storage(postgres_db_container_url)
 
         logger.info('Validate BentoService prediction result')
         run_result = run_bento_service_prediction(bento_tag, '[]')
-        logger.info(run_result)
         assert 'cat' in run_result, 'Unexpected BentoService prediction result'
 
         logger.info(f'Deleting saved bundle {bento_tag}')

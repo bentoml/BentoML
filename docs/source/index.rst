@@ -10,7 +10,7 @@
     :target: https://github.com/bentoml/BentoML
 
 
-BentoML Documenation
+BentoML Documentation
 ====================
 
 `BentoML <https://github.com/bentoml/BentoML>`_

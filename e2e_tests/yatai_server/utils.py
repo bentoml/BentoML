@@ -4,6 +4,7 @@ import logging
 import os
 import uuid
 
+import psutil
 import docker
 
 from bentoml import BentoService, api
@@ -72,6 +73,13 @@ def modified_environ(*remove, **update):
         [env.pop(k) for k in remove_after]  # pylint: disable=expression-not-assigned
 
 
+def kill_process(proc_pid):
+    process = psutil.Process(proc_pid)
+    for proc in process.children(recursive=True):
+        proc.kill()
+    process.kill()
+
+
 @contextlib.contextmanager
 def local_yatai_server(db_url=None, repo_base_url=None, port=50051):
     yatai_server_command = ['bentoml', 'yatai-service-start']
@@ -88,11 +96,8 @@ def local_yatai_server(db_url=None, repo_base_url=None, port=50051):
         with modified_environ(BENTOML__YATAI_SERVICE__URL=yatai_service_url):
             yield yatai_service_url
     finally:
-        logger.info('Shutting down YataiServer')
-        proc.terminate()
-        logger.info('Printing YataiServer log:')
-        server_std_out = proc.stdout.read().decode('utf-8')
-        logger.info(server_std_out)
+        logger.info('Shutting down YataiServer gRPC server and node web server')
+        kill_process(proc.pid)
 
 
 @contextlib.contextmanager

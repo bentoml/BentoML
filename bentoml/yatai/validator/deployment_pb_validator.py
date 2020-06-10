@@ -71,15 +71,6 @@ deployment_schema = {
                     'timeout': {'type': 'integer', 'min': 1, 'max': 900},
                 },
             },
-            'kubernetes_operator_config': {
-                'type': 'dict',
-                'schema': {
-                    'kube_namespace': {'type': 'string'},
-                    'replicas': {'type': 'integer', 'min': 1},
-                    'service_name': {'type': 'string'},
-                    'service_type': {'type': 'string'},
-                },
-            },
         },
     },
     'state': {

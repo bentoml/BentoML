@@ -28,8 +28,6 @@ export const bentoml = $root.bentoml = (() => {
          * @property {bentoml.DeploymentSpec.ICustomOperatorConfig|null} [custom_operator_config] DeploymentSpec custom_operator_config
          * @property {bentoml.DeploymentSpec.ISageMakerOperatorConfig|null} [sagemaker_operator_config] DeploymentSpec sagemaker_operator_config
          * @property {bentoml.DeploymentSpec.IAwsLambdaOperatorConfig|null} [aws_lambda_operator_config] DeploymentSpec aws_lambda_operator_config
-         * @property {bentoml.DeploymentSpec.IGcpFunctionOperatorConfig|null} [gcp_function_operator_config] DeploymentSpec gcp_function_operator_config
-         * @property {bentoml.DeploymentSpec.IKubernetesOperatorConfig|null} [kubernetes_operator_config] DeploymentSpec kubernetes_operator_config
          * @property {bentoml.DeploymentSpec.IAzureFunctionOperatorConfig|null} [azure_function_operator_config] DeploymentSpec azure_function_operator_config
          */
 
@@ -97,22 +95,6 @@ export const bentoml = $root.bentoml = (() => {
         DeploymentSpec.prototype.aws_lambda_operator_config = null;
 
         /**
-         * DeploymentSpec gcp_function_operator_config.
-         * @member {bentoml.DeploymentSpec.IGcpFunctionOperatorConfig|null|undefined} gcp_function_operator_config
-         * @memberof bentoml.DeploymentSpec
-         * @instance
-         */
-        DeploymentSpec.prototype.gcp_function_operator_config = null;
-
-        /**
-         * DeploymentSpec kubernetes_operator_config.
-         * @member {bentoml.DeploymentSpec.IKubernetesOperatorConfig|null|undefined} kubernetes_operator_config
-         * @memberof bentoml.DeploymentSpec
-         * @instance
-         */
-        DeploymentSpec.prototype.kubernetes_operator_config = null;
-
-        /**
          * DeploymentSpec azure_function_operator_config.
          * @member {bentoml.DeploymentSpec.IAzureFunctionOperatorConfig|null|undefined} azure_function_operator_config
          * @memberof bentoml.DeploymentSpec
@@ -125,12 +107,12 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * DeploymentSpec deployment_operator_config.
-         * @member {"custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"gcp_function_operator_config"|"kubernetes_operator_config"|"azure_function_operator_config"|undefined} deployment_operator_config
+         * @member {"custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"azure_function_operator_config"|undefined} deployment_operator_config
          * @memberof bentoml.DeploymentSpec
          * @instance
          */
         Object.defineProperty(DeploymentSpec.prototype, "deployment_operator_config", {
-            get: $util.oneOfGetter($oneOfFields = ["custom_operator_config", "sagemaker_operator_config", "aws_lambda_operator_config", "gcp_function_operator_config", "kubernetes_operator_config", "azure_function_operator_config"]),
+            get: $util.oneOfGetter($oneOfFields = ["custom_operator_config", "sagemaker_operator_config", "aws_lambda_operator_config", "azure_function_operator_config"]),
             set: $util.oneOfSetter($oneOfFields)
         });
 
@@ -170,12 +152,8 @@ export const bentoml = $root.bentoml = (() => {
                 $root.bentoml.DeploymentSpec.SageMakerOperatorConfig.encode(message.sagemaker_operator_config, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
             if (message.aws_lambda_operator_config != null && message.hasOwnProperty("aws_lambda_operator_config"))
                 $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.encode(message.aws_lambda_operator_config, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-            if (message.gcp_function_operator_config != null && message.hasOwnProperty("gcp_function_operator_config"))
-                $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig.encode(message.gcp_function_operator_config, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
-            if (message.kubernetes_operator_config != null && message.hasOwnProperty("kubernetes_operator_config"))
-                $root.bentoml.DeploymentSpec.KubernetesOperatorConfig.encode(message.kubernetes_operator_config, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
             if (message.azure_function_operator_config != null && message.hasOwnProperty("azure_function_operator_config"))
-                $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig.encode(message.azure_function_operator_config, writer.uint32(/* id 9, wireType 2 =*/74).fork()).ldelim();
+                $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig.encode(message.azure_function_operator_config, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
             return writer;
         };
 
@@ -229,12 +207,6 @@ export const bentoml = $root.bentoml = (() => {
                     message.aws_lambda_operator_config = $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.decode(reader, reader.uint32());
                     break;
                 case 7:
-                    message.gcp_function_operator_config = $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig.decode(reader, reader.uint32());
-                    break;
-                case 8:
-                    message.kubernetes_operator_config = $root.bentoml.DeploymentSpec.KubernetesOperatorConfig.decode(reader, reader.uint32());
-                    break;
-                case 9:
                     message.azure_function_operator_config = $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig.decode(reader, reader.uint32());
                     break;
                 default:
@@ -288,8 +260,6 @@ export const bentoml = $root.bentoml = (() => {
                 case 2:
                 case 3:
                 case 4:
-                case 5:
-                case 6:
                     break;
                 }
             if (message.custom_operator_config != null && message.hasOwnProperty("custom_operator_config")) {
@@ -318,26 +288,6 @@ export const bentoml = $root.bentoml = (() => {
                     let error = $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.verify(message.aws_lambda_operator_config);
                     if (error)
                         return "aws_lambda_operator_config." + error;
-                }
-            }
-            if (message.gcp_function_operator_config != null && message.hasOwnProperty("gcp_function_operator_config")) {
-                if (properties.deployment_operator_config === 1)
-                    return "deployment_operator_config: multiple values";
-                properties.deployment_operator_config = 1;
-                {
-                    let error = $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig.verify(message.gcp_function_operator_config);
-                    if (error)
-                        return "gcp_function_operator_config." + error;
-                }
-            }
-            if (message.kubernetes_operator_config != null && message.hasOwnProperty("kubernetes_operator_config")) {
-                if (properties.deployment_operator_config === 1)
-                    return "deployment_operator_config: multiple values";
-                properties.deployment_operator_config = 1;
-                {
-                    let error = $root.bentoml.DeploymentSpec.KubernetesOperatorConfig.verify(message.kubernetes_operator_config);
-                    if (error)
-                        return "kubernetes_operator_config." + error;
                 }
             }
             if (message.azure_function_operator_config != null && message.hasOwnProperty("azure_function_operator_config")) {
@@ -386,17 +336,9 @@ export const bentoml = $root.bentoml = (() => {
             case 3:
                 message.operator = 3;
                 break;
-            case "GCP_FUNCTION":
+            case "AZURE_FUNCTION":
             case 4:
                 message.operator = 4;
-                break;
-            case "KUBERNETES":
-            case 5:
-                message.operator = 5;
-                break;
-            case "AZURE_FUNCTION":
-            case 6:
-                message.operator = 6;
                 break;
             }
             if (object.custom_operator_config != null) {
@@ -413,16 +355,6 @@ export const bentoml = $root.bentoml = (() => {
                 if (typeof object.aws_lambda_operator_config !== "object")
                     throw TypeError(".bentoml.DeploymentSpec.aws_lambda_operator_config: object expected");
                 message.aws_lambda_operator_config = $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.fromObject(object.aws_lambda_operator_config);
-            }
-            if (object.gcp_function_operator_config != null) {
-                if (typeof object.gcp_function_operator_config !== "object")
-                    throw TypeError(".bentoml.DeploymentSpec.gcp_function_operator_config: object expected");
-                message.gcp_function_operator_config = $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig.fromObject(object.gcp_function_operator_config);
-            }
-            if (object.kubernetes_operator_config != null) {
-                if (typeof object.kubernetes_operator_config !== "object")
-                    throw TypeError(".bentoml.DeploymentSpec.kubernetes_operator_config: object expected");
-                message.kubernetes_operator_config = $root.bentoml.DeploymentSpec.KubernetesOperatorConfig.fromObject(object.kubernetes_operator_config);
             }
             if (object.azure_function_operator_config != null) {
                 if (typeof object.azure_function_operator_config !== "object")
@@ -471,16 +403,6 @@ export const bentoml = $root.bentoml = (() => {
                 if (options.oneofs)
                     object.deployment_operator_config = "aws_lambda_operator_config";
             }
-            if (message.gcp_function_operator_config != null && message.hasOwnProperty("gcp_function_operator_config")) {
-                object.gcp_function_operator_config = $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig.toObject(message.gcp_function_operator_config, options);
-                if (options.oneofs)
-                    object.deployment_operator_config = "gcp_function_operator_config";
-            }
-            if (message.kubernetes_operator_config != null && message.hasOwnProperty("kubernetes_operator_config")) {
-                object.kubernetes_operator_config = $root.bentoml.DeploymentSpec.KubernetesOperatorConfig.toObject(message.kubernetes_operator_config, options);
-                if (options.oneofs)
-                    object.deployment_operator_config = "kubernetes_operator_config";
-            }
             if (message.azure_function_operator_config != null && message.hasOwnProperty("azure_function_operator_config")) {
                 object.azure_function_operator_config = $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig.toObject(message.azure_function_operator_config, options);
                 if (options.oneofs)
@@ -508,9 +430,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {number} CUSTOM=1 CUSTOM value
          * @property {number} AWS_SAGEMAKER=2 AWS_SAGEMAKER value
          * @property {number} AWS_LAMBDA=3 AWS_LAMBDA value
-         * @property {number} GCP_FUNCTION=4 GCP_FUNCTION value
-         * @property {number} KUBERNETES=5 KUBERNETES value
-         * @property {number} AZURE_FUNCTION=6 AZURE_FUNCTION value
+         * @property {number} AZURE_FUNCTION=4 AZURE_FUNCTION value
          */
         DeploymentSpec.DeploymentOperator = (function() {
             const valuesById = {}, values = Object.create(valuesById);
@@ -518,9 +438,7 @@ export const bentoml = $root.bentoml = (() => {
             values[valuesById[1] = "CUSTOM"] = 1;
             values[valuesById[2] = "AWS_SAGEMAKER"] = 2;
             values[valuesById[3] = "AWS_LAMBDA"] = 3;
-            values[valuesById[4] = "GCP_FUNCTION"] = 4;
-            values[valuesById[5] = "KUBERNETES"] = 5;
-            values[valuesById[6] = "AZURE_FUNCTION"] = 6;
+            values[valuesById[4] = "AZURE_FUNCTION"] = 4;
             return values;
         })();
 
@@ -1289,470 +1207,6 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             return AwsLambdaOperatorConfig;
-        })();
-
-        DeploymentSpec.GcpFunctionOperatorConfig = (function() {
-
-            /**
-             * Properties of a GcpFunctionOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @interface IGcpFunctionOperatorConfig
-             * @property {string|null} [region] GcpFunctionOperatorConfig region
-             * @property {string|null} [api_name] GcpFunctionOperatorConfig api_name
-             */
-
-            /**
-             * Constructs a new GcpFunctionOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @classdesc Represents a GcpFunctionOperatorConfig.
-             * @implements IGcpFunctionOperatorConfig
-             * @constructor
-             * @param {bentoml.DeploymentSpec.IGcpFunctionOperatorConfig=} [properties] Properties to set
-             */
-            function GcpFunctionOperatorConfig(properties) {
-                if (properties)
-                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
-            }
-
-            /**
-             * GcpFunctionOperatorConfig region.
-             * @member {string} region
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @instance
-             */
-            GcpFunctionOperatorConfig.prototype.region = "";
-
-            /**
-             * GcpFunctionOperatorConfig api_name.
-             * @member {string} api_name
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @instance
-             */
-            GcpFunctionOperatorConfig.prototype.api_name = "";
-
-            /**
-             * Creates a new GcpFunctionOperatorConfig instance using the specified properties.
-             * @function create
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IGcpFunctionOperatorConfig=} [properties] Properties to set
-             * @returns {bentoml.DeploymentSpec.GcpFunctionOperatorConfig} GcpFunctionOperatorConfig instance
-             */
-            GcpFunctionOperatorConfig.create = function create(properties) {
-                return new GcpFunctionOperatorConfig(properties);
-            };
-
-            /**
-             * Encodes the specified GcpFunctionOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.GcpFunctionOperatorConfig.verify|verify} messages.
-             * @function encode
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IGcpFunctionOperatorConfig} message GcpFunctionOperatorConfig message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            GcpFunctionOperatorConfig.encode = function encode(message, writer) {
-                if (!writer)
-                    writer = $Writer.create();
-                if (message.region != null && message.hasOwnProperty("region"))
-                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.region);
-                if (message.api_name != null && message.hasOwnProperty("api_name"))
-                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.api_name);
-                return writer;
-            };
-
-            /**
-             * Encodes the specified GcpFunctionOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.GcpFunctionOperatorConfig.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IGcpFunctionOperatorConfig} message GcpFunctionOperatorConfig message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            GcpFunctionOperatorConfig.encodeDelimited = function encodeDelimited(message, writer) {
-                return this.encode(message, writer).ldelim();
-            };
-
-            /**
-             * Decodes a GcpFunctionOperatorConfig message from the specified reader or buffer.
-             * @function decode
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @param {number} [length] Message length if known beforehand
-             * @returns {bentoml.DeploymentSpec.GcpFunctionOperatorConfig} GcpFunctionOperatorConfig
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            GcpFunctionOperatorConfig.decode = function decode(reader, length) {
-                if (!(reader instanceof $Reader))
-                    reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig();
-                while (reader.pos < end) {
-                    let tag = reader.uint32();
-                    switch (tag >>> 3) {
-                    case 1:
-                        message.region = reader.string();
-                        break;
-                    case 2:
-                        message.api_name = reader.string();
-                        break;
-                    default:
-                        reader.skipType(tag & 7);
-                        break;
-                    }
-                }
-                return message;
-            };
-
-            /**
-             * Decodes a GcpFunctionOperatorConfig message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {bentoml.DeploymentSpec.GcpFunctionOperatorConfig} GcpFunctionOperatorConfig
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            GcpFunctionOperatorConfig.decodeDelimited = function decodeDelimited(reader) {
-                if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
-                return this.decode(reader, reader.uint32());
-            };
-
-            /**
-             * Verifies a GcpFunctionOperatorConfig message.
-             * @function verify
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @static
-             * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
-             */
-            GcpFunctionOperatorConfig.verify = function verify(message) {
-                if (typeof message !== "object" || message === null)
-                    return "object expected";
-                if (message.region != null && message.hasOwnProperty("region"))
-                    if (!$util.isString(message.region))
-                        return "region: string expected";
-                if (message.api_name != null && message.hasOwnProperty("api_name"))
-                    if (!$util.isString(message.api_name))
-                        return "api_name: string expected";
-                return null;
-            };
-
-            /**
-             * Creates a GcpFunctionOperatorConfig message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @static
-             * @param {Object.<string,*>} object Plain object
-             * @returns {bentoml.DeploymentSpec.GcpFunctionOperatorConfig} GcpFunctionOperatorConfig
-             */
-            GcpFunctionOperatorConfig.fromObject = function fromObject(object) {
-                if (object instanceof $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig)
-                    return object;
-                let message = new $root.bentoml.DeploymentSpec.GcpFunctionOperatorConfig();
-                if (object.region != null)
-                    message.region = String(object.region);
-                if (object.api_name != null)
-                    message.api_name = String(object.api_name);
-                return message;
-            };
-
-            /**
-             * Creates a plain object from a GcpFunctionOperatorConfig message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.GcpFunctionOperatorConfig} message GcpFunctionOperatorConfig
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
-             * @returns {Object.<string,*>} Plain object
-             */
-            GcpFunctionOperatorConfig.toObject = function toObject(message, options) {
-                if (!options)
-                    options = {};
-                let object = {};
-                if (options.defaults) {
-                    object.region = "";
-                    object.api_name = "";
-                }
-                if (message.region != null && message.hasOwnProperty("region"))
-                    object.region = message.region;
-                if (message.api_name != null && message.hasOwnProperty("api_name"))
-                    object.api_name = message.api_name;
-                return object;
-            };
-
-            /**
-             * Converts this GcpFunctionOperatorConfig to JSON.
-             * @function toJSON
-             * @memberof bentoml.DeploymentSpec.GcpFunctionOperatorConfig
-             * @instance
-             * @returns {Object.<string,*>} JSON object
-             */
-            GcpFunctionOperatorConfig.prototype.toJSON = function toJSON() {
-                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-            };
-
-            return GcpFunctionOperatorConfig;
-        })();
-
-        DeploymentSpec.KubernetesOperatorConfig = (function() {
-
-            /**
-             * Properties of a KubernetesOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @interface IKubernetesOperatorConfig
-             * @property {string|null} [kube_namespace] KubernetesOperatorConfig kube_namespace
-             * @property {number|null} [replicas] KubernetesOperatorConfig replicas
-             * @property {string|null} [service_name] KubernetesOperatorConfig service_name
-             * @property {string|null} [service_type] KubernetesOperatorConfig service_type
-             */
-
-            /**
-             * Constructs a new KubernetesOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @classdesc Represents a KubernetesOperatorConfig.
-             * @implements IKubernetesOperatorConfig
-             * @constructor
-             * @param {bentoml.DeploymentSpec.IKubernetesOperatorConfig=} [properties] Properties to set
-             */
-            function KubernetesOperatorConfig(properties) {
-                if (properties)
-                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
-            }
-
-            /**
-             * KubernetesOperatorConfig kube_namespace.
-             * @member {string} kube_namespace
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @instance
-             */
-            KubernetesOperatorConfig.prototype.kube_namespace = "";
-
-            /**
-             * KubernetesOperatorConfig replicas.
-             * @member {number} replicas
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @instance
-             */
-            KubernetesOperatorConfig.prototype.replicas = 0;
-
-            /**
-             * KubernetesOperatorConfig service_name.
-             * @member {string} service_name
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @instance
-             */
-            KubernetesOperatorConfig.prototype.service_name = "";
-
-            /**
-             * KubernetesOperatorConfig service_type.
-             * @member {string} service_type
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @instance
-             */
-            KubernetesOperatorConfig.prototype.service_type = "";
-
-            /**
-             * Creates a new KubernetesOperatorConfig instance using the specified properties.
-             * @function create
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IKubernetesOperatorConfig=} [properties] Properties to set
-             * @returns {bentoml.DeploymentSpec.KubernetesOperatorConfig} KubernetesOperatorConfig instance
-             */
-            KubernetesOperatorConfig.create = function create(properties) {
-                return new KubernetesOperatorConfig(properties);
-            };
-
-            /**
-             * Encodes the specified KubernetesOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.KubernetesOperatorConfig.verify|verify} messages.
-             * @function encode
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IKubernetesOperatorConfig} message KubernetesOperatorConfig message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            KubernetesOperatorConfig.encode = function encode(message, writer) {
-                if (!writer)
-                    writer = $Writer.create();
-                if (message.kube_namespace != null && message.hasOwnProperty("kube_namespace"))
-                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.kube_namespace);
-                if (message.replicas != null && message.hasOwnProperty("replicas"))
-                    writer.uint32(/* id 2, wireType 0 =*/16).int32(message.replicas);
-                if (message.service_name != null && message.hasOwnProperty("service_name"))
-                    writer.uint32(/* id 3, wireType 2 =*/26).string(message.service_name);
-                if (message.service_type != null && message.hasOwnProperty("service_type"))
-                    writer.uint32(/* id 4, wireType 2 =*/34).string(message.service_type);
-                return writer;
-            };
-
-            /**
-             * Encodes the specified KubernetesOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.KubernetesOperatorConfig.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IKubernetesOperatorConfig} message KubernetesOperatorConfig message or plain object to encode
-             * @param {$protobuf.Writer} [writer] Writer to encode to
-             * @returns {$protobuf.Writer} Writer
-             */
-            KubernetesOperatorConfig.encodeDelimited = function encodeDelimited(message, writer) {
-                return this.encode(message, writer).ldelim();
-            };
-
-            /**
-             * Decodes a KubernetesOperatorConfig message from the specified reader or buffer.
-             * @function decode
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @param {number} [length] Message length if known beforehand
-             * @returns {bentoml.DeploymentSpec.KubernetesOperatorConfig} KubernetesOperatorConfig
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            KubernetesOperatorConfig.decode = function decode(reader, length) {
-                if (!(reader instanceof $Reader))
-                    reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.KubernetesOperatorConfig();
-                while (reader.pos < end) {
-                    let tag = reader.uint32();
-                    switch (tag >>> 3) {
-                    case 1:
-                        message.kube_namespace = reader.string();
-                        break;
-                    case 2:
-                        message.replicas = reader.int32();
-                        break;
-                    case 3:
-                        message.service_name = reader.string();
-                        break;
-                    case 4:
-                        message.service_type = reader.string();
-                        break;
-                    default:
-                        reader.skipType(tag & 7);
-                        break;
-                    }
-                }
-                return message;
-            };
-
-            /**
-             * Decodes a KubernetesOperatorConfig message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @static
-             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {bentoml.DeploymentSpec.KubernetesOperatorConfig} KubernetesOperatorConfig
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            KubernetesOperatorConfig.decodeDelimited = function decodeDelimited(reader) {
-                if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
-                return this.decode(reader, reader.uint32());
-            };
-
-            /**
-             * Verifies a KubernetesOperatorConfig message.
-             * @function verify
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @static
-             * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
-             */
-            KubernetesOperatorConfig.verify = function verify(message) {
-                if (typeof message !== "object" || message === null)
-                    return "object expected";
-                if (message.kube_namespace != null && message.hasOwnProperty("kube_namespace"))
-                    if (!$util.isString(message.kube_namespace))
-                        return "kube_namespace: string expected";
-                if (message.replicas != null && message.hasOwnProperty("replicas"))
-                    if (!$util.isInteger(message.replicas))
-                        return "replicas: integer expected";
-                if (message.service_name != null && message.hasOwnProperty("service_name"))
-                    if (!$util.isString(message.service_name))
-                        return "service_name: string expected";
-                if (message.service_type != null && message.hasOwnProperty("service_type"))
-                    if (!$util.isString(message.service_type))
-                        return "service_type: string expected";
-                return null;
-            };
-
-            /**
-             * Creates a KubernetesOperatorConfig message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @static
-             * @param {Object.<string,*>} object Plain object
-             * @returns {bentoml.DeploymentSpec.KubernetesOperatorConfig} KubernetesOperatorConfig
-             */
-            KubernetesOperatorConfig.fromObject = function fromObject(object) {
-                if (object instanceof $root.bentoml.DeploymentSpec.KubernetesOperatorConfig)
-                    return object;
-                let message = new $root.bentoml.DeploymentSpec.KubernetesOperatorConfig();
-                if (object.kube_namespace != null)
-                    message.kube_namespace = String(object.kube_namespace);
-                if (object.replicas != null)
-                    message.replicas = object.replicas | 0;
-                if (object.service_name != null)
-                    message.service_name = String(object.service_name);
-                if (object.service_type != null)
-                    message.service_type = String(object.service_type);
-                return message;
-            };
-
-            /**
-             * Creates a plain object from a KubernetesOperatorConfig message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.KubernetesOperatorConfig} message KubernetesOperatorConfig
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
-             * @returns {Object.<string,*>} Plain object
-             */
-            KubernetesOperatorConfig.toObject = function toObject(message, options) {
-                if (!options)
-                    options = {};
-                let object = {};
-                if (options.defaults) {
-                    object.kube_namespace = "";
-                    object.replicas = 0;
-                    object.service_name = "";
-                    object.service_type = "";
-                }
-                if (message.kube_namespace != null && message.hasOwnProperty("kube_namespace"))
-                    object.kube_namespace = message.kube_namespace;
-                if (message.replicas != null && message.hasOwnProperty("replicas"))
-                    object.replicas = message.replicas;
-                if (message.service_name != null && message.hasOwnProperty("service_name"))
-                    object.service_name = message.service_name;
-                if (message.service_type != null && message.hasOwnProperty("service_type"))
-                    object.service_type = message.service_type;
-                return object;
-            };
-
-            /**
-             * Converts this KubernetesOperatorConfig to JSON.
-             * @function toJSON
-             * @memberof bentoml.DeploymentSpec.KubernetesOperatorConfig
-             * @instance
-             * @returns {Object.<string,*>} JSON object
-             */
-            KubernetesOperatorConfig.prototype.toJSON = function toJSON() {
-                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-            };
-
-            return KubernetesOperatorConfig;
         })();
 
         DeploymentSpec.AzureFunctionOperatorConfig = (function() {
@@ -4894,8 +4348,6 @@ export const bentoml = $root.bentoml = (() => {
                 case 2:
                 case 3:
                 case 4:
-                case 5:
-                case 6:
                     break;
                 }
             if (message.order_by != null && message.hasOwnProperty("order_by"))
@@ -4950,17 +4402,9 @@ export const bentoml = $root.bentoml = (() => {
             case 3:
                 message.operator = 3;
                 break;
-            case "GCP_FUNCTION":
+            case "AZURE_FUNCTION":
             case 4:
                 message.operator = 4;
-                break;
-            case "KUBERNETES":
-            case 5:
-                message.operator = 5;
-                break;
-            case "AZURE_FUNCTION":
-            case 6:
-                message.operator = 6;
                 break;
             }
             switch (object.order_by) {

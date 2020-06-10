@@ -45,7 +45,7 @@ done
 PKG_PATH=$PYOUT_PATH
 PKGS=$(find "$PKG_PATH" -type d)
 for PKG in $PKGS; do
-    SUBPACKAGES=$(find "$PKG" -maxdepth 1 -type dir | grep -E -v "${PKG}$" | sort)
+    SUBPACKAGES=$(find "$PKG" -maxdepth 1 -type d | grep -E -v "${PKG}$" | sort)
     MODULES=$(find "$PKG" -maxdepth 1 -iname "*.py" | grep -v "__init__.py" | sort)
     MODULE_COUNT=$(echo "$MODULES" | wc -w)
     PKG_INIT="${PKG}/__init__.py"

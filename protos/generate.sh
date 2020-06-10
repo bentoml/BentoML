@@ -33,17 +33,17 @@ python -m grpc_tools.protoc \
 
 echo "Fix imports in generated GRPC service code.."
 find "$PYOUT_PATH"/ -name '*_pb2*.py' | while read -r pyfile; do
-sed -i '.old' 's/^import \([^ ]*\)_pb2 \(.*\)$/import bentoml.yatai.proto.\1_pb2 \2/' "$pyfile"
-sed -i '.old' 's/^from \([^ ]*\) import \([^ ]*\)_pb2\(.*\)$/from bentoml.yatai.proto.\1 import \2_pb2\3/' "$pyfile"
+sed -i'.old' 's/^import \([^ ]*\)_pb2 \(.*\)$/import bentoml.yatai.proto.\1_pb2 \2/' "$pyfile"
+sed -i'.old' 's/^from \([^ ]*\) import \([^ ]*\)_pb2\(.*\)$/from bentoml.yatai.proto.\1 import \2_pb2\3/' "$pyfile"
 # Fix google.protobuf package imports
-sed -i '.old' 's/^import bentoml.yatai.proto.google.\([^ ]*\)_pb2 as \([^ ]*\)$/import google.\1_pb2 as \2/' "$pyfile"
-sed -i '.old' 's/^from bentoml.yatai.proto.google.\([^ ]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from google.\1 import \2_pb2 as \3/' "$pyfile"
+sed -i'.old' 's/^import bentoml.yatai.proto.google.\([^ ]*\)_pb2 as \([^ ]*\)$/import google.\1_pb2 as \2/' "$pyfile"
+sed -i'.old' 's/^from bentoml.yatai.proto.google.\([^ ]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from google.\1 import \2_pb2 as \3/' "$pyfile"
 rm "$pyfile".old
 done
 
 
 PKG_PATH=$PYOUT_PATH
-PKGS=$(find "$PKG_PATH" -type dir)
+PKGS=$(find "$PKG_PATH" -type d)
 for PKG in $PKGS; do
     SUBPACKAGES=$(find "$PKG" -maxdepth 1 -type dir | grep -E -v "${PKG}$" | sort)
     MODULES=$(find "$PKG" -maxdepth 1 -iname "*.py" | grep -v "__init__.py" | sort)

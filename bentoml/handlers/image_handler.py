@@ -58,8 +58,8 @@ def get_default_accept_image_formats():
     return [
         extension.strip()
         for extension in config("apiserver")
-        .get("default_image_handler_accept_file_extensions")
-        .split(",")
+            .get("default_image_handler_accept_file_extensions")
+            .split(",")
     ]
 
 
@@ -68,7 +68,10 @@ class ImageHandler(BentoHandler):
     array.
 
     Handle incoming image data from different sources, transform them into numpy array
-    and pass down to user defined API functions
+    and pass down to user defined API functions.
+
+    Processes application/octet-stream and multipart/form-data (image should be passed
+    as the "image_file" parameter)
 
     Args:
         accept_image_formats (string[]):  A list of acceptable image formats.
@@ -89,7 +92,7 @@ class ImageHandler(BentoHandler):
     BATCH_MODE_SUPPORTED = True
 
     def __init__(
-        self, accept_image_formats=None, pilmode="RGB", **base_kwargs,
+            self, accept_image_formats=None, pilmode="RGB", **base_kwargs,
     ):
         super(ImageHandler, self).__init__(**base_kwargs)
         if 'input_names' in base_kwargs:
@@ -102,7 +105,7 @@ class ImageHandler(BentoHandler):
 
         self.pilmode = pilmode
         self.accept_image_formats = (
-            accept_image_formats or get_default_accept_image_formats()
+                accept_image_formats or get_default_accept_image_formats()
         )
 
     @property
@@ -156,7 +159,7 @@ class ImageHandler(BentoHandler):
         return input_data
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func: callable
+            self, requests: Iterable[SimpleRequest], func: callable
     ) -> Iterable[SimpleResponse]:
         """
         Batch version of handle_request
@@ -221,7 +224,7 @@ class ImageHandler(BentoHandler):
         )
 
         for i in range(0, len(file_paths), batch_size):
-            step_file_paths = file_paths[i : i + batch_size]
+            step_file_paths = file_paths[i: i + batch_size]
             image_arrays = []
             for file_path in step_file_paths:
                 verify_image_format_or_raise(file_path, self.accept_image_formats)

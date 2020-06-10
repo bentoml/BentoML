@@ -140,19 +140,19 @@ export const bentoml = $root.bentoml = (() => {
         DeploymentSpec.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
-            if (message.operator != null && Object.hasOwnProperty.call(message, "operator"))
+            if (message.operator != null && message.hasOwnProperty("operator"))
                 writer.uint32(/* id 3, wireType 0 =*/24).int32(message.operator);
-            if (message.custom_operator_config != null && Object.hasOwnProperty.call(message, "custom_operator_config"))
+            if (message.custom_operator_config != null && message.hasOwnProperty("custom_operator_config"))
                 $root.bentoml.DeploymentSpec.CustomOperatorConfig.encode(message.custom_operator_config, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-            if (message.sagemaker_operator_config != null && Object.hasOwnProperty.call(message, "sagemaker_operator_config"))
+            if (message.sagemaker_operator_config != null && message.hasOwnProperty("sagemaker_operator_config"))
                 $root.bentoml.DeploymentSpec.SageMakerOperatorConfig.encode(message.sagemaker_operator_config, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-            if (message.aws_lambda_operator_config != null && Object.hasOwnProperty.call(message, "aws_lambda_operator_config"))
+            if (message.aws_lambda_operator_config != null && message.hasOwnProperty("aws_lambda_operator_config"))
                 $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.encode(message.aws_lambda_operator_config, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-            if (message.azure_function_operator_config != null && Object.hasOwnProperty.call(message, "azure_function_operator_config"))
+            if (message.azure_function_operator_config != null && message.hasOwnProperty("azure_function_operator_config"))
                 $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig.encode(message.azure_function_operator_config, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
             return writer;
         };
@@ -425,7 +425,7 @@ export const bentoml = $root.bentoml = (() => {
         /**
          * DeploymentOperator enum.
          * @name bentoml.DeploymentSpec.DeploymentOperator
-         * @enum {number}
+         * @enum {string}
          * @property {number} UNSET=0 UNSET value
          * @property {number} CUSTOM=1 CUSTOM value
          * @property {number} AWS_SAGEMAKER=2 AWS_SAGEMAKER value
@@ -507,9 +507,9 @@ export const bentoml = $root.bentoml = (() => {
             CustomOperatorConfig.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.config != null && Object.hasOwnProperty.call(message, "config"))
+                if (message.config != null && message.hasOwnProperty("config"))
                     $root.google.protobuf.Struct.encode(message.config, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
             };
@@ -758,17 +758,17 @@ export const bentoml = $root.bentoml = (() => {
             SageMakerOperatorConfig.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.region != null && Object.hasOwnProperty.call(message, "region"))
+                if (message.region != null && message.hasOwnProperty("region"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.region);
-                if (message.instance_type != null && Object.hasOwnProperty.call(message, "instance_type"))
+                if (message.instance_type != null && message.hasOwnProperty("instance_type"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.instance_type);
-                if (message.instance_count != null && Object.hasOwnProperty.call(message, "instance_count"))
+                if (message.instance_count != null && message.hasOwnProperty("instance_count"))
                     writer.uint32(/* id 3, wireType 0 =*/24).int32(message.instance_count);
-                if (message.api_name != null && Object.hasOwnProperty.call(message, "api_name"))
+                if (message.api_name != null && message.hasOwnProperty("api_name"))
                     writer.uint32(/* id 4, wireType 2 =*/34).string(message.api_name);
-                if (message.num_of_gunicorn_workers_per_instance != null && Object.hasOwnProperty.call(message, "num_of_gunicorn_workers_per_instance"))
+                if (message.num_of_gunicorn_workers_per_instance != null && message.hasOwnProperty("num_of_gunicorn_workers_per_instance"))
                     writer.uint32(/* id 5, wireType 0 =*/40).int32(message.num_of_gunicorn_workers_per_instance);
-                if (message.timeout != null && Object.hasOwnProperty.call(message, "timeout"))
+                if (message.timeout != null && message.hasOwnProperty("timeout"))
                     writer.uint32(/* id 6, wireType 0 =*/48).int32(message.timeout);
                 return writer;
             };
@@ -1038,13 +1038,13 @@ export const bentoml = $root.bentoml = (() => {
             AwsLambdaOperatorConfig.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.region != null && Object.hasOwnProperty.call(message, "region"))
+                if (message.region != null && message.hasOwnProperty("region"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.region);
-                if (message.api_name != null && Object.hasOwnProperty.call(message, "api_name"))
+                if (message.api_name != null && message.hasOwnProperty("api_name"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.api_name);
-                if (message.memory_size != null && Object.hasOwnProperty.call(message, "memory_size"))
+                if (message.memory_size != null && message.hasOwnProperty("memory_size"))
                     writer.uint32(/* id 3, wireType 0 =*/24).int32(message.memory_size);
-                if (message.timeout != null && Object.hasOwnProperty.call(message, "timeout"))
+                if (message.timeout != null && message.hasOwnProperty("timeout"))
                     writer.uint32(/* id 4, wireType 0 =*/32).int32(message.timeout);
                 return writer;
             };
@@ -1301,15 +1301,15 @@ export const bentoml = $root.bentoml = (() => {
             AzureFunctionOperatorConfig.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.location != null && Object.hasOwnProperty.call(message, "location"))
+                if (message.location != null && message.hasOwnProperty("location"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.location);
-                if (message.premium_plan_sku != null && Object.hasOwnProperty.call(message, "premium_plan_sku"))
+                if (message.premium_plan_sku != null && message.hasOwnProperty("premium_plan_sku"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.premium_plan_sku);
-                if (message.min_instances != null && Object.hasOwnProperty.call(message, "min_instances"))
+                if (message.min_instances != null && message.hasOwnProperty("min_instances"))
                     writer.uint32(/* id 3, wireType 0 =*/24).int32(message.min_instances);
-                if (message.max_burst != null && Object.hasOwnProperty.call(message, "max_burst"))
+                if (message.max_burst != null && message.hasOwnProperty("max_burst"))
                     writer.uint32(/* id 4, wireType 0 =*/32).int32(message.max_burst);
-                if (message.function_auth_level != null && Object.hasOwnProperty.call(message, "function_auth_level"))
+                if (message.function_auth_level != null && message.hasOwnProperty("function_auth_level"))
                     writer.uint32(/* id 5, wireType 2 =*/42).string(message.function_auth_level);
                 return writer;
             };
@@ -1571,13 +1571,13 @@ export const bentoml = $root.bentoml = (() => {
         DeploymentState.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+            if (message.state != null && message.hasOwnProperty("state"))
                 writer.uint32(/* id 1, wireType 0 =*/8).int32(message.state);
-            if (message.error_message != null && Object.hasOwnProperty.call(message, "error_message"))
+            if (message.error_message != null && message.hasOwnProperty("error_message"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.error_message);
-            if (message.info_json != null && Object.hasOwnProperty.call(message, "info_json"))
+            if (message.info_json != null && message.hasOwnProperty("info_json"))
                 writer.uint32(/* id 3, wireType 2 =*/26).string(message.info_json);
-            if (message.timestamp != null && Object.hasOwnProperty.call(message, "timestamp"))
+            if (message.timestamp != null && message.hasOwnProperty("timestamp"))
                 $root.google.protobuf.Timestamp.encode(message.timestamp, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             return writer;
         };
@@ -1795,7 +1795,7 @@ export const bentoml = $root.bentoml = (() => {
         /**
          * State enum.
          * @name bentoml.DeploymentState.State
-         * @enum {number}
+         * @enum {string}
          * @property {number} PENDING=0 PENDING value
          * @property {number} RUNNING=1 RUNNING value
          * @property {number} SUCCEEDED=2 SUCCEEDED value
@@ -1944,23 +1944,23 @@ export const bentoml = $root.bentoml = (() => {
         Deployment.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.namespace != null && Object.hasOwnProperty.call(message, "namespace"))
+            if (message.namespace != null && message.hasOwnProperty("namespace"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.namespace);
-            if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+            if (message.name != null && message.hasOwnProperty("name"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
-            if (message.spec != null && Object.hasOwnProperty.call(message, "spec"))
+            if (message.spec != null && message.hasOwnProperty("spec"))
                 $root.bentoml.DeploymentSpec.encode(message.spec, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+            if (message.state != null && message.hasOwnProperty("state"))
                 $root.bentoml.DeploymentState.encode(message.state, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-            if (message.annotations != null && Object.hasOwnProperty.call(message, "annotations"))
+            if (message.annotations != null && message.hasOwnProperty("annotations"))
                 for (let keys = Object.keys(message.annotations), i = 0; i < keys.length; ++i)
                     writer.uint32(/* id 5, wireType 2 =*/42).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.annotations[keys[i]]).ldelim();
-            if (message.labels != null && Object.hasOwnProperty.call(message, "labels"))
+            if (message.labels != null && message.hasOwnProperty("labels"))
                 for (let keys = Object.keys(message.labels), i = 0; i < keys.length; ++i)
                     writer.uint32(/* id 6, wireType 2 =*/50).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.labels[keys[i]]).ldelim();
-            if (message.created_at != null && Object.hasOwnProperty.call(message, "created_at"))
+            if (message.created_at != null && message.hasOwnProperty("created_at"))
                 $root.google.protobuf.Timestamp.encode(message.created_at, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
-            if (message.last_updated_at != null && Object.hasOwnProperty.call(message, "last_updated_at"))
+            if (message.last_updated_at != null && message.hasOwnProperty("last_updated_at"))
                 $root.google.protobuf.Timestamp.encode(message.last_updated_at, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
             return writer;
         };
@@ -2284,7 +2284,7 @@ export const bentoml = $root.bentoml = (() => {
         DeploymentStatus.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+            if (message.state != null && message.hasOwnProperty("state"))
                 $root.bentoml.DeploymentState.encode(message.state, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
@@ -2476,7 +2476,7 @@ export const bentoml = $root.bentoml = (() => {
         ApplyDeploymentRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.deployment != null && Object.hasOwnProperty.call(message, "deployment"))
+            if (message.deployment != null && message.hasOwnProperty("deployment"))
                 $root.bentoml.Deployment.encode(message.deployment, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
@@ -2677,9 +2677,9 @@ export const bentoml = $root.bentoml = (() => {
         ApplyDeploymentResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.deployment != null && Object.hasOwnProperty.call(message, "deployment"))
+            if (message.deployment != null && message.hasOwnProperty("deployment"))
                 $root.bentoml.Deployment.encode(message.deployment, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
@@ -2906,11 +2906,11 @@ export const bentoml = $root.bentoml = (() => {
         DeleteDeploymentRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.deployment_name != null && Object.hasOwnProperty.call(message, "deployment_name"))
+            if (message.deployment_name != null && message.hasOwnProperty("deployment_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.deployment_name);
-            if (message.namespace != null && Object.hasOwnProperty.call(message, "namespace"))
+            if (message.namespace != null && message.hasOwnProperty("namespace"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.namespace);
-            if (message.force_delete != null && Object.hasOwnProperty.call(message, "force_delete"))
+            if (message.force_delete != null && message.hasOwnProperty("force_delete"))
                 writer.uint32(/* id 3, wireType 0 =*/24).bool(message.force_delete);
             return writer;
         };
@@ -3120,7 +3120,7 @@ export const bentoml = $root.bentoml = (() => {
         DeleteDeploymentResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
@@ -3321,9 +3321,9 @@ export const bentoml = $root.bentoml = (() => {
         GetDeploymentRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.deployment_name != null && Object.hasOwnProperty.call(message, "deployment_name"))
+            if (message.deployment_name != null && message.hasOwnProperty("deployment_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.deployment_name);
-            if (message.namespace != null && Object.hasOwnProperty.call(message, "namespace"))
+            if (message.namespace != null && message.hasOwnProperty("namespace"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.namespace);
             return writer;
         };
@@ -3531,9 +3531,9 @@ export const bentoml = $root.bentoml = (() => {
         GetDeploymentResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.deployment != null && Object.hasOwnProperty.call(message, "deployment"))
+            if (message.deployment != null && message.hasOwnProperty("deployment"))
                 $root.bentoml.Deployment.encode(message.deployment, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
@@ -3751,9 +3751,9 @@ export const bentoml = $root.bentoml = (() => {
         DescribeDeploymentRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.deployment_name != null && Object.hasOwnProperty.call(message, "deployment_name"))
+            if (message.deployment_name != null && message.hasOwnProperty("deployment_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.deployment_name);
-            if (message.namespace != null && Object.hasOwnProperty.call(message, "namespace"))
+            if (message.namespace != null && message.hasOwnProperty("namespace"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.namespace);
             return writer;
         };
@@ -3961,9 +3961,9 @@ export const bentoml = $root.bentoml = (() => {
         DescribeDeploymentResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+            if (message.state != null && message.hasOwnProperty("state"))
                 $root.bentoml.DeploymentState.encode(message.state, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
@@ -4226,19 +4226,19 @@ export const bentoml = $root.bentoml = (() => {
         ListDeploymentsRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.namespace != null && Object.hasOwnProperty.call(message, "namespace"))
+            if (message.namespace != null && message.hasOwnProperty("namespace"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.namespace);
-            if (message.offset != null && Object.hasOwnProperty.call(message, "offset"))
+            if (message.offset != null && message.hasOwnProperty("offset"))
                 writer.uint32(/* id 2, wireType 0 =*/16).int32(message.offset);
-            if (message.limit != null && Object.hasOwnProperty.call(message, "limit"))
+            if (message.limit != null && message.hasOwnProperty("limit"))
                 writer.uint32(/* id 3, wireType 0 =*/24).int32(message.limit);
-            if (message.operator != null && Object.hasOwnProperty.call(message, "operator"))
+            if (message.operator != null && message.hasOwnProperty("operator"))
                 writer.uint32(/* id 4, wireType 0 =*/32).int32(message.operator);
-            if (message.order_by != null && Object.hasOwnProperty.call(message, "order_by"))
+            if (message.order_by != null && message.hasOwnProperty("order_by"))
                 writer.uint32(/* id 5, wireType 0 =*/40).int32(message.order_by);
-            if (message.ascending_order != null && Object.hasOwnProperty.call(message, "ascending_order"))
+            if (message.ascending_order != null && message.hasOwnProperty("ascending_order"))
                 writer.uint32(/* id 6, wireType 0 =*/48).bool(message.ascending_order);
-            if (message.labels_query != null && Object.hasOwnProperty.call(message, "labels_query"))
+            if (message.labels_query != null && message.hasOwnProperty("labels_query"))
                 writer.uint32(/* id 7, wireType 2 =*/58).string(message.labels_query);
             return writer;
         };
@@ -4477,7 +4477,7 @@ export const bentoml = $root.bentoml = (() => {
         /**
          * SORTABLE_COLUMN enum.
          * @name bentoml.ListDeploymentsRequest.SORTABLE_COLUMN
-         * @enum {number}
+         * @enum {string}
          * @property {number} created_at=0 created_at value
          * @property {number} name=1 name value
          */
@@ -4557,7 +4557,7 @@ export const bentoml = $root.bentoml = (() => {
         ListDeploymentsResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             if (message.deployments != null && message.deployments.length)
                 for (let i = 0; i < message.deployments.length; ++i)
@@ -4792,9 +4792,9 @@ export const bentoml = $root.bentoml = (() => {
         Status.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status_code != null && Object.hasOwnProperty.call(message, "status_code"))
+            if (message.status_code != null && message.hasOwnProperty("status_code"))
                 writer.uint32(/* id 1, wireType 0 =*/8).int32(message.status_code);
-            if (message.error_message != null && Object.hasOwnProperty.call(message, "error_message"))
+            if (message.error_message != null && message.hasOwnProperty("error_message"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.error_message);
             return writer;
         };
@@ -5030,7 +5030,7 @@ export const bentoml = $root.bentoml = (() => {
         /**
          * Code enum.
          * @name bentoml.Status.Code
-         * @enum {number}
+         * @enum {string}
          * @property {number} OK=0 OK value
          * @property {number} CANCELLED=1 CANCELLED value
          * @property {number} UNKNOWN=2 UNKNOWN value
@@ -5150,11 +5150,11 @@ export const bentoml = $root.bentoml = (() => {
         BentoUri.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.type != null && Object.hasOwnProperty.call(message, "type"))
+            if (message.type != null && message.hasOwnProperty("type"))
                 writer.uint32(/* id 1, wireType 0 =*/8).int32(message.type);
-            if (message.uri != null && Object.hasOwnProperty.call(message, "uri"))
+            if (message.uri != null && message.hasOwnProperty("uri"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.uri);
-            if (message.s3_presigned_url != null && Object.hasOwnProperty.call(message, "s3_presigned_url"))
+            if (message.s3_presigned_url != null && message.hasOwnProperty("s3_presigned_url"))
                 writer.uint32(/* id 3, wireType 2 =*/26).string(message.s3_presigned_url);
             return writer;
         };
@@ -5341,7 +5341,7 @@ export const bentoml = $root.bentoml = (() => {
         /**
          * StorageType enum.
          * @name bentoml.BentoUri.StorageType
-         * @enum {number}
+         * @enum {string}
          * @property {number} UNSET=0 UNSET value
          * @property {number} LOCAL=1 LOCAL value
          * @property {number} S3=2 S3 value
@@ -5466,13 +5466,13 @@ export const bentoml = $root.bentoml = (() => {
         BentoServiceMetadata.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+            if (message.name != null && message.hasOwnProperty("name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-            if (message.version != null && Object.hasOwnProperty.call(message, "version"))
+            if (message.version != null && message.hasOwnProperty("version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.version);
-            if (message.created_at != null && Object.hasOwnProperty.call(message, "created_at"))
+            if (message.created_at != null && message.hasOwnProperty("created_at"))
                 $root.google.protobuf.Timestamp.encode(message.created_at, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.env != null && Object.hasOwnProperty.call(message, "env"))
+            if (message.env != null && message.hasOwnProperty("env"))
                 $root.bentoml.BentoServiceMetadata.BentoServiceEnv.encode(message.env, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             if (message.artifacts != null && message.artifacts.length)
                 for (let i = 0; i < message.artifacts.length; ++i)
@@ -5804,15 +5804,15 @@ export const bentoml = $root.bentoml = (() => {
             BentoServiceEnv.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.setup_sh != null && Object.hasOwnProperty.call(message, "setup_sh"))
+                if (message.setup_sh != null && message.hasOwnProperty("setup_sh"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.setup_sh);
-                if (message.conda_env != null && Object.hasOwnProperty.call(message, "conda_env"))
+                if (message.conda_env != null && message.hasOwnProperty("conda_env"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.conda_env);
-                if (message.pip_dependencies != null && Object.hasOwnProperty.call(message, "pip_dependencies"))
+                if (message.pip_dependencies != null && message.hasOwnProperty("pip_dependencies"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.pip_dependencies);
-                if (message.python_version != null && Object.hasOwnProperty.call(message, "python_version"))
+                if (message.python_version != null && message.hasOwnProperty("python_version"))
                     writer.uint32(/* id 4, wireType 2 =*/34).string(message.python_version);
-                if (message.docker_base_image != null && Object.hasOwnProperty.call(message, "docker_base_image"))
+                if (message.docker_base_image != null && message.hasOwnProperty("docker_base_image"))
                     writer.uint32(/* id 5, wireType 2 =*/42).string(message.docker_base_image);
                 return writer;
             };
@@ -6053,9 +6053,9 @@ export const bentoml = $root.bentoml = (() => {
             BentoArtifact.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.artifact_type != null && Object.hasOwnProperty.call(message, "artifact_type"))
+                if (message.artifact_type != null && message.hasOwnProperty("artifact_type"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.artifact_type);
                 return writer;
             };
@@ -6299,17 +6299,17 @@ export const bentoml = $root.bentoml = (() => {
             BentoServiceApi.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.input_type != null && Object.hasOwnProperty.call(message, "input_type"))
+                if (message.input_type != null && message.hasOwnProperty("input_type"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.input_type);
-                if (message.docs != null && Object.hasOwnProperty.call(message, "docs"))
+                if (message.docs != null && message.hasOwnProperty("docs"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.docs);
-                if (message.input_config != null && Object.hasOwnProperty.call(message, "input_config"))
+                if (message.input_config != null && message.hasOwnProperty("input_config"))
                     $root.google.protobuf.Struct.encode(message.input_config, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-                if (message.output_config != null && Object.hasOwnProperty.call(message, "output_config"))
+                if (message.output_config != null && message.hasOwnProperty("output_config"))
                     $root.google.protobuf.Struct.encode(message.output_config, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.output_type != null && Object.hasOwnProperty.call(message, "output_type"))
+                if (message.output_type != null && message.hasOwnProperty("output_type"))
                     writer.uint32(/* id 6, wireType 2 =*/50).string(message.output_type);
                 return writer;
             };
@@ -6601,15 +6601,15 @@ export const bentoml = $root.bentoml = (() => {
         Bento.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+            if (message.name != null && message.hasOwnProperty("name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-            if (message.version != null && Object.hasOwnProperty.call(message, "version"))
+            if (message.version != null && message.hasOwnProperty("version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.version);
-            if (message.uri != null && Object.hasOwnProperty.call(message, "uri"))
+            if (message.uri != null && message.hasOwnProperty("uri"))
                 $root.bentoml.BentoUri.encode(message.uri, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.bento_service_metadata != null && Object.hasOwnProperty.call(message, "bento_service_metadata"))
+            if (message.bento_service_metadata != null && message.hasOwnProperty("bento_service_metadata"))
                 $root.bentoml.BentoServiceMetadata.encode(message.bento_service_metadata, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.UploadStatus.encode(message.status, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
             return writer;
         };
@@ -6865,9 +6865,9 @@ export const bentoml = $root.bentoml = (() => {
         AddBentoRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
             return writer;
         };
@@ -7075,9 +7075,9 @@ export const bentoml = $root.bentoml = (() => {
         AddBentoResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.uri != null && Object.hasOwnProperty.call(message, "uri"))
+            if (message.uri != null && message.hasOwnProperty("uri"))
                 $root.bentoml.BentoUri.encode(message.uri, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
@@ -7313,13 +7313,13 @@ export const bentoml = $root.bentoml = (() => {
         UploadStatus.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 writer.uint32(/* id 1, wireType 0 =*/8).int32(message.status);
-            if (message.updated_at != null && Object.hasOwnProperty.call(message, "updated_at"))
+            if (message.updated_at != null && message.hasOwnProperty("updated_at"))
                 $root.google.protobuf.Timestamp.encode(message.updated_at, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-            if (message.percentage != null && Object.hasOwnProperty.call(message, "percentage"))
+            if (message.percentage != null && message.hasOwnProperty("percentage"))
                 writer.uint32(/* id 3, wireType 0 =*/24).int32(message.percentage);
-            if (message.error_message != null && Object.hasOwnProperty.call(message, "error_message"))
+            if (message.error_message != null && message.hasOwnProperty("error_message"))
                 writer.uint32(/* id 4, wireType 2 =*/34).string(message.error_message);
             return writer;
         };
@@ -7517,7 +7517,7 @@ export const bentoml = $root.bentoml = (() => {
         /**
          * Status enum.
          * @name bentoml.UploadStatus.Status
-         * @enum {number}
+         * @enum {string}
          * @property {number} UNINITIALIZED=0 UNINITIALIZED value
          * @property {number} UPLOADING=1 UPLOADING value
          * @property {number} DONE=2 DONE value
@@ -7620,13 +7620,13 @@ export const bentoml = $root.bentoml = (() => {
         UpdateBentoRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
-            if (message.upload_status != null && Object.hasOwnProperty.call(message, "upload_status"))
+            if (message.upload_status != null && message.hasOwnProperty("upload_status"))
                 $root.bentoml.UploadStatus.encode(message.upload_status, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.service_metadata != null && Object.hasOwnProperty.call(message, "service_metadata"))
+            if (message.service_metadata != null && message.hasOwnProperty("service_metadata"))
                 $root.bentoml.BentoServiceMetadata.encode(message.service_metadata, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             return writer;
         };
@@ -7857,7 +7857,7 @@ export const bentoml = $root.bentoml = (() => {
         UpdateBentoResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
@@ -8058,9 +8058,9 @@ export const bentoml = $root.bentoml = (() => {
         DangerouslyDeleteBentoRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
             return writer;
         };
@@ -8259,7 +8259,7 @@ export const bentoml = $root.bentoml = (() => {
         DangerouslyDeleteBentoResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
@@ -8460,9 +8460,9 @@ export const bentoml = $root.bentoml = (() => {
         GetBentoRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
             return writer;
         };
@@ -8670,9 +8670,9 @@ export const bentoml = $root.bentoml = (() => {
         GetBentoResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.bento != null && Object.hasOwnProperty.call(message, "bento"))
+            if (message.bento != null && message.hasOwnProperty("bento"))
                 $root.bentoml.Bento.encode(message.bento, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
@@ -8917,15 +8917,15 @@ export const bentoml = $root.bentoml = (() => {
         ListBentoRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.offset != null && Object.hasOwnProperty.call(message, "offset"))
+            if (message.offset != null && message.hasOwnProperty("offset"))
                 writer.uint32(/* id 2, wireType 0 =*/16).int32(message.offset);
-            if (message.limit != null && Object.hasOwnProperty.call(message, "limit"))
+            if (message.limit != null && message.hasOwnProperty("limit"))
                 writer.uint32(/* id 3, wireType 0 =*/24).int32(message.limit);
-            if (message.order_by != null && Object.hasOwnProperty.call(message, "order_by"))
+            if (message.order_by != null && message.hasOwnProperty("order_by"))
                 writer.uint32(/* id 4, wireType 0 =*/32).int32(message.order_by);
-            if (message.ascending_order != null && Object.hasOwnProperty.call(message, "ascending_order"))
+            if (message.ascending_order != null && message.hasOwnProperty("ascending_order"))
                 writer.uint32(/* id 5, wireType 0 =*/40).bool(message.ascending_order);
             return writer;
         };
@@ -9114,7 +9114,7 @@ export const bentoml = $root.bentoml = (() => {
         /**
          * SORTABLE_COLUMN enum.
          * @name bentoml.ListBentoRequest.SORTABLE_COLUMN
-         * @enum {number}
+         * @enum {string}
          * @property {number} created_at=0 created_at value
          * @property {number} name=1 name value
          */
@@ -9194,7 +9194,7 @@ export const bentoml = $root.bentoml = (() => {
         ListBentoResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             if (message.bentos != null && message.bentos.length)
                 for (let i = 0; i < message.bentos.length; ++i)
@@ -9851,7 +9851,7 @@ export const bentoml = $root.bentoml = (() => {
         HealthCheckResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
@@ -10052,9 +10052,9 @@ export const bentoml = $root.bentoml = (() => {
         GetYataiServiceVersionResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status != null && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.version != null && Object.hasOwnProperty.call(message, "version"))
+            if (message.version != null && message.hasOwnProperty("version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.version);
             return writer;
         };
@@ -10258,7 +10258,7 @@ export const bentoml = $root.bentoml = (() => {
         Chunk.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.content != null && Object.hasOwnProperty.call(message, "content"))
+            if (message.content != null && message.hasOwnProperty("content"))
                 writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.content);
             return writer;
         };
@@ -10476,7 +10476,7 @@ export const google = $root.google = (() => {
             Struct.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.fields != null && Object.hasOwnProperty.call(message, "fields"))
+                if (message.fields != null && message.hasOwnProperty("fields"))
                     for (let keys = Object.keys(message.fields), i = 0; i < keys.length; ++i) {
                         writer.uint32(/* id 1, wireType 2 =*/10).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]);
                         $root.google.protobuf.Value.encode(message.fields[keys[i]], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim().ldelim();
@@ -10749,17 +10749,17 @@ export const google = $root.google = (() => {
             Value.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.nullValue != null && Object.hasOwnProperty.call(message, "nullValue"))
+                if (message.nullValue != null && message.hasOwnProperty("nullValue"))
                     writer.uint32(/* id 1, wireType 0 =*/8).int32(message.nullValue);
-                if (message.numberValue != null && Object.hasOwnProperty.call(message, "numberValue"))
+                if (message.numberValue != null && message.hasOwnProperty("numberValue"))
                     writer.uint32(/* id 2, wireType 1 =*/17).double(message.numberValue);
-                if (message.stringValue != null && Object.hasOwnProperty.call(message, "stringValue"))
+                if (message.stringValue != null && message.hasOwnProperty("stringValue"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.stringValue);
-                if (message.boolValue != null && Object.hasOwnProperty.call(message, "boolValue"))
+                if (message.boolValue != null && message.hasOwnProperty("boolValue"))
                     writer.uint32(/* id 4, wireType 0 =*/32).bool(message.boolValue);
-                if (message.structValue != null && Object.hasOwnProperty.call(message, "structValue"))
+                if (message.structValue != null && message.hasOwnProperty("structValue"))
                     $root.google.protobuf.Struct.encode(message.structValue, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.listValue != null && Object.hasOwnProperty.call(message, "listValue"))
+                if (message.listValue != null && message.hasOwnProperty("listValue"))
                     $root.google.protobuf.ListValue.encode(message.listValue, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
                 return writer;
             };
@@ -11002,7 +11002,7 @@ export const google = $root.google = (() => {
         /**
          * NullValue enum.
          * @name google.protobuf.NullValue
-         * @enum {number}
+         * @enum {string}
          * @property {number} NULL_VALUE=0 NULL_VALUE value
          */
         protobuf.NullValue = (function() {
@@ -11284,9 +11284,9 @@ export const google = $root.google = (() => {
             Timestamp.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.seconds != null && Object.hasOwnProperty.call(message, "seconds"))
+                if (message.seconds != null && message.hasOwnProperty("seconds"))
                     writer.uint32(/* id 1, wireType 0 =*/8).int64(message.seconds);
-                if (message.nanos != null && Object.hasOwnProperty.call(message, "nanos"))
+                if (message.nanos != null && message.hasOwnProperty("nanos"))
                     writer.uint32(/* id 2, wireType 0 =*/16).int32(message.nanos);
                 return writer;
             };

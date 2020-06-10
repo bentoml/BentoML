@@ -28,6 +28,9 @@ export namespace bentoml {
 
         /** DeploymentSpec kubernetes_operator_config */
         kubernetes_operator_config?: (bentoml.DeploymentSpec.IKubernetesOperatorConfig|null);
+
+        /** DeploymentSpec azure_function_operator_config */
+        azure_function_operator_config?: (bentoml.DeploymentSpec.IAzureFunctionOperatorConfig|null);
     }
 
     /** Represents a DeploymentSpec. */
@@ -63,8 +66,11 @@ export namespace bentoml {
         /** DeploymentSpec kubernetes_operator_config. */
         public kubernetes_operator_config?: (bentoml.DeploymentSpec.IKubernetesOperatorConfig|null);
 
+        /** DeploymentSpec azure_function_operator_config. */
+        public azure_function_operator_config?: (bentoml.DeploymentSpec.IAzureFunctionOperatorConfig|null);
+
         /** DeploymentSpec deployment_operator_config. */
-        public deployment_operator_config?: ("custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"gcp_function_operator_config"|"kubernetes_operator_config");
+        public deployment_operator_config?: ("custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"gcp_function_operator_config"|"kubernetes_operator_config"|"azure_function_operator_config");
 
         /**
          * Creates a new DeploymentSpec instance using the specified properties.
@@ -146,7 +152,8 @@ export namespace bentoml {
             AWS_SAGEMAKER = 2,
             AWS_LAMBDA = 3,
             GCP_FUNCTION = 4,
-            KUBERNETES = 5
+            KUBERNETES = 5,
+            AZURE_FUNCTION = 6
         }
 
         /** Properties of a CustomOperatorConfig. */
@@ -672,6 +679,120 @@ export namespace bentoml {
 
             /**
              * Converts this KubernetesOperatorConfig to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of an AzureFunctionOperatorConfig. */
+        interface IAzureFunctionOperatorConfig {
+
+            /** AzureFunctionOperatorConfig location */
+            location?: (string|null);
+
+            /** AzureFunctionOperatorConfig premium_plan_sku */
+            premium_plan_sku?: (string|null);
+
+            /** AzureFunctionOperatorConfig min_instances */
+            min_instances?: (number|null);
+
+            /** AzureFunctionOperatorConfig max_burst */
+            max_burst?: (number|null);
+
+            /** AzureFunctionOperatorConfig function_auth_level */
+            function_auth_level?: (string|null);
+        }
+
+        /** Represents an AzureFunctionOperatorConfig. */
+        class AzureFunctionOperatorConfig implements IAzureFunctionOperatorConfig {
+
+            /**
+             * Constructs a new AzureFunctionOperatorConfig.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: bentoml.DeploymentSpec.IAzureFunctionOperatorConfig);
+
+            /** AzureFunctionOperatorConfig location. */
+            public location: string;
+
+            /** AzureFunctionOperatorConfig premium_plan_sku. */
+            public premium_plan_sku: string;
+
+            /** AzureFunctionOperatorConfig min_instances. */
+            public min_instances: number;
+
+            /** AzureFunctionOperatorConfig max_burst. */
+            public max_burst: number;
+
+            /** AzureFunctionOperatorConfig function_auth_level. */
+            public function_auth_level: string;
+
+            /**
+             * Creates a new AzureFunctionOperatorConfig instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns AzureFunctionOperatorConfig instance
+             */
+            public static create(properties?: bentoml.DeploymentSpec.IAzureFunctionOperatorConfig): bentoml.DeploymentSpec.AzureFunctionOperatorConfig;
+
+            /**
+             * Encodes the specified AzureFunctionOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.AzureFunctionOperatorConfig.verify|verify} messages.
+             * @param message AzureFunctionOperatorConfig message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: bentoml.DeploymentSpec.IAzureFunctionOperatorConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified AzureFunctionOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.AzureFunctionOperatorConfig.verify|verify} messages.
+             * @param message AzureFunctionOperatorConfig message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: bentoml.DeploymentSpec.IAzureFunctionOperatorConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes an AzureFunctionOperatorConfig message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns AzureFunctionOperatorConfig
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.DeploymentSpec.AzureFunctionOperatorConfig;
+
+            /**
+             * Decodes an AzureFunctionOperatorConfig message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns AzureFunctionOperatorConfig
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.DeploymentSpec.AzureFunctionOperatorConfig;
+
+            /**
+             * Verifies an AzureFunctionOperatorConfig message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates an AzureFunctionOperatorConfig message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns AzureFunctionOperatorConfig
+             */
+            public static fromObject(object: { [k: string]: any }): bentoml.DeploymentSpec.AzureFunctionOperatorConfig;
+
+            /**
+             * Creates a plain object from an AzureFunctionOperatorConfig message. Also converts values to other types if specified.
+             * @param message AzureFunctionOperatorConfig
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: bentoml.DeploymentSpec.AzureFunctionOperatorConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this AzureFunctionOperatorConfig to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };

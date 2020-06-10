@@ -148,7 +148,7 @@ class YataiService(YataiServicer):
             return ApplyDeploymentResponse(status=e.status_proto)
         except Exception as e:
             logger.error("URPC ERROR ApplyDeployment: %s", e)
-            return ApplyDeploymentResponse(status=status_pb2.Status.INTERNAL)
+            return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
 
     def DeleteDeployment(self, request, context=None):
         try:

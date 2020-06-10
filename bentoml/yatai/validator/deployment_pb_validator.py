@@ -71,6 +71,24 @@ deployment_schema = {
                     'timeout': {'type': 'integer', 'min': 1, 'max': 900},
                 },
             },
+            # https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan
+            # https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-http-webhook-trigger?tabs=python#configuration
+            'azure_function_operator_config': {
+                'type': 'dict',
+                'schema': {
+                    'location': {'type': 'string'},
+                    'premium_plan_sku': {
+                        'type': 'string',
+                        'allowed': ['EP1', 'EP2', 'EP3'],
+                    },
+                    'min_instances': {'type': 'integer', 'min': 1, 'max': 20},
+                    'max_burst': {'type': 'integer', 'min': 1, 'max': 20},
+                    'function_auth_level': {
+                        'type': 'string',
+                        'allowed': ['anonymous', 'function', 'admin'],
+                    },
+                },
+            },
         },
     },
     'state': {

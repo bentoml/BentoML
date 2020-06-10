@@ -130,3 +130,7 @@ class YataiRepositoryException(YataiServiceException):
 
 class AWSServiceError(YataiDeploymentException):
     """Raise when YataiService encounters an issue with AWS service"""
+
+
+class AzureServiceError(YataiDeploymentException):
+    """Raise when YataiService encounters an issue with Azure service"""

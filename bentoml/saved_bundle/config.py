@@ -97,7 +97,7 @@ class SavedBundleConfig(object):
 
         if ver != BENTOML_VERSION:
             msg = (
-                "Saved BentoService bundle version mismatch: loading BentoServie "
+                "Saved BentoService bundle version mismatch: loading BentoService "
                 "bundle create with BentoML version {},  but loading from BentoML "
                 "version {}".format(conf["version"], BENTOML_VERSION)
             )

@@ -3,7 +3,7 @@ Deploying to Clipper Cluster
 
 Clipper(http://clipper.ai/) is a low-latency prediction serving system for machine learning.
 
-It provides a powerful way to orchastrate ML model containers and supports features such as `micro batching`_ which is
+It provides a powerful way to orchestrate ML model containers and supports features such as `micro batching`_ which is
 critical for building low latency online model serving systems.
 
 BentoML makes it easier to build custom containers that can be deployed to Clipper, users can easily add Clipper

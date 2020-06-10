@@ -69,7 +69,7 @@ prediction service definition with BentoML:
 The :code:`bentoml.api` decorator defines a service API, which is the entry point for
 accessing the prediction service. The :code:`DataframeHandler` here denotes that this 
 service API will convert HTTP JSON request into :code:`pandas.DataFrame` object before
-passing it to the user-defined API function code for inferencing. 
+passing it to the user-defined API function code for inference.
 
 The :code:`bentoml.env` decorator allows specifying the dependencies and environment
 settings for this prediction service. The example with 

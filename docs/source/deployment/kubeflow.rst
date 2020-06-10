@@ -10,7 +10,7 @@ trained with other machine learning frameworks, see more BentoML examples :doc:`
 
 
 ==============
-Prerequisities
+Prerequisites
 ==============
 
 Before starting this guide, make sure you have the following:

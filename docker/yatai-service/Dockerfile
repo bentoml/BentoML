@@ -54,7 +54,7 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
 # Build time argument - the BentoML version to be used in this image
 ARG BENTOML_VERSION
 ENV BENTOML_VERSION=$BENTOML_VERSION
-RUN pip install bentoml[yatai_service]==$BENTOML_VERSION
+RUN pip install "bentoml[yatai_service]==$BENTOML_VERSION"
 
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["bentoml", "yatai-service-start"]

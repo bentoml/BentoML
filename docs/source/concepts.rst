@@ -55,7 +55,7 @@ BentoML will:
 #. Saves the model based on the ML training framework and artifact type used
 #. Automatically extracts all the pip dependencies required by your BentoService class and put into a `requirements.txt` file
 #. Saves all the local python code dependencies
-#. Put all the generated files into one file directory, which, by default, this is a location managed by BentoML
+#. Put all the generated files into one file directory, which, by default, is a location managed by BentoML
 
 
 .. code-block:: python

@@ -51,5 +51,5 @@ __all__ = [
     "LightGBMModelArtifact",
     "FasttextModelArtifact",
     "OnnxModelArtifact",
-    "SpacyModelArtifact"
+    "SpacyModelArtifact",
 ]

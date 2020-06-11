@@ -160,20 +160,12 @@ class BentoServiceBase(object):
                 api_name = getattr(function, "_api_name")
                 api_doc = getattr(function, "_api_doc")
                 handler = getattr(function, "_handler")
-                output_adapter = getattr(function, "output_adapter")
 
                 # Bind api method call with self(BentoService instance)
                 func = function.__get__(self)
 
                 self._service_apis.append(
-                    BentoServiceAPI(
-                        self,
-                        api_name,
-                        api_doc,
-                        handler=handler,
-                        output_adapter=output_adapter,
-                        func=func,
-                    )
+                    BentoServiceAPI(self, api_name, api_doc, handler=handler, func=func)
                 )
 
     def get_service_apis(self):

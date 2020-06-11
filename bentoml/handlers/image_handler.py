@@ -20,12 +20,11 @@ from typing import Iterable
 
 from werkzeug.utils import secure_filename
 from werkzeug.wrappers import Request
-from flask import Response
 
 from bentoml import config
 from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 from bentoml.exceptions import BadInput, MissingDependencyException
-from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
+from bentoml.handlers.base_handlers import BentoHandler
 
 
 def _import_imageio_imread():
@@ -167,13 +166,11 @@ class ImageHandler(BentoHandler):
         """
         Batch version of handle_request
         """
-        bad_resp = SimpleResponse(400, None, "Bad Input")
-        responses = [bad_resp] * len(requests)
-
         input_datas = []
         ids = []
         for i, req in enumerate(requests):
             if not req.data:
+                ids.append(None)
                 continue
             request = Request.from_values(
                 input_stream=BytesIO(req.data),
@@ -182,18 +179,15 @@ class ImageHandler(BentoHandler):
             )
             try:
                 input_data = self._load_image_data(request)
-            except BadInput as e:
-                responses[i] = SimpleResponse(400, None, str(e))
+            except BadInput:
+                ids.append(None)
                 continue
 
             input_datas.append(input_data)
             ids.append(i)
 
         results = func(input_datas) if input_datas else []
-        for i, result in zip(ids, results):
-            responses[i] = SimpleResponse(200, None, api_func_result_to_json(result))
-
-        return responses
+        return self.output_adapter.to_batch_response(results, ids, requests)
 
     def handle_request(self, request, func):
         """Handle http request that has one image file. It will convert image into a
@@ -208,18 +202,13 @@ class ImageHandler(BentoHandler):
         """
         input_data = self._load_image_data(request)
         result = func((input_data,))[0]
-        return Response(
-            response=api_func_result_to_json(result),
-            status=200,
-            mimetype="application/json",
-        )
+        return self.output_adapter.to_response(result, request)
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True, nargs='+')
-        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
         parser.add_argument("--batch-size", default=None, type=int)
-        parsed_args = parser.parse_args(args)
+        parsed_args, unknown_args = parser.parse_known_args(args)
         file_paths = parsed_args.input
 
         batch_size = (
@@ -237,13 +226,8 @@ class ImageHandler(BentoHandler):
                 image_arrays.append(self.imread(file_path, pilmode=self.pilmode))
 
             results = func(image_arrays)
-
             for result in results:
-                if parsed_args.output == "json":
-                    result = api_func_result_to_json(result)
-                else:
-                    result = str(result)
-                print(result)
+                return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):
@@ -255,5 +239,4 @@ class ImageHandler(BentoHandler):
             )
 
         result = func((image,))[0]
-        json_output = api_func_result_to_json(result)
-        return {"statusCode": 200, "body": json_output}
+        return self.output_adapter.to_aws_lambda_event(result, event)

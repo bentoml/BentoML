@@ -28,9 +28,6 @@ class BaseOutputAdapter:
     such as HTTP response, command line stdout or AWS Lambda event object.
     """
 
-    class BadResult:
-        pass
-
     def __init__(self, cors='*'):
         self.cors = cors
 
@@ -44,8 +41,8 @@ class BaseOutputAdapter:
         :param result: result of user API function
         :param request: request object
         """
-        simple_req = SimpleRequest(headers=request.raw_headers, data=request.get_data())
-        simple_resp = self.to_batch_response(result, requests=(simple_req,))[0]
+        simple_req = SimpleRequest(headers=request.headers, data=request.get_data())
+        simple_resp = self.to_batch_response((result,), requests=(simple_req,))[0]
         return flask.Response(
             response=simple_resp.data,
             status=simple_resp.status,
@@ -53,7 +50,7 @@ class BaseOutputAdapter:
         )
 
     def to_batch_response(
-        self, result_conc, slices=None, requests=None,
+        self, result_conc, slices=None, fallbacks=None, requests=None,
     ) -> Iterable[SimpleResponse]:
         """Converts corresponding data merged by batching service into HTTP responses
 

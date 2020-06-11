@@ -310,7 +310,7 @@ class DataframeHandler(BentoHandler):
             default=self.orient,
             choices=PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
         )
-        parsed_args = parser.parse_args(args)
+        parsed_args, unknown_args = parser.parse_known_args(args)
 
         orient = parsed_args.orient
         cli_input = parsed_args.input
@@ -339,7 +339,7 @@ class DataframeHandler(BentoHandler):
             _check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
-        self.output_adapter.to_cli(result, parsed_args)
+        self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", None) == "text/csv":

@@ -16,3 +16,24 @@ def test_concat():
             assert origin_data is None
         else:
             assert origin_data == datas[s]
+
+    lst = [
+        [1],
+        None,
+        1,
+        None,
+    ]
+    flags = [
+        True,
+        True,
+        False,
+        False,
+    ]
+
+    datas, slices = concat_list(lst, flags)
+
+    for s, origin_data in zip(slices, lst):
+        if s is None:
+            assert origin_data is None
+        else:
+            assert origin_data == datas[s]

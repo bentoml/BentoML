@@ -19,36 +19,16 @@ from typing import Iterable
 
 import argparse
 
-from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.handlers.adapter.base_output import BaseOutputAdapter
-
-PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS = [
-    'dict',
-    'list',
-    'series',
-    'split',
-    'records',
-    'index',
-]
+from bentoml.handlers.adapter.json_output import jsonize
+from bentoml.handlers.utils import NestedConverter, tf_tensor_2_serializable
 
 
-def df_to_json(result, pandas_dataframe_orient="records"):
-    import pandas as pd
-
-    assert (
-        pandas_dataframe_orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS
-    ), f"unkown pandas dataframe orient '{pandas_dataframe_orient}'"
-
-    if isinstance(result, pd.DataFrame):
-        return result.to_json(orient=pandas_dataframe_orient)
-
-    if isinstance(result, pd.Series):
-        return pd.DataFrame(result).to_dict(orient=pandas_dataframe_orient)
-    raise BentoMLException("DataframeOutput only accepts pd.Series or pd.DataFrame.")
+decode_tf_if_needed = NestedConverter(tf_tensor_2_serializable)
 
 
-class DataframeOutput(BaseOutputAdapter):
+class TfTensorOutput(BaseOutputAdapter):
     """
     Converts result of use defined API function into specific output.
 
@@ -60,19 +40,8 @@ class DataframeOutput(BaseOutputAdapter):
             the header will not be set.
     """
 
-    def __init__(self, output_orient='records', **kwargs):
-        super(DataframeOutput, self).__init__(**kwargs)
-        self.output_orient = output_orient
-
-        assert self.output_orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
-            f"Invalid 'output_orient'='{self.orient}', valid options are "
-            f"{PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS}"
-        )
-
-    @property
-    def config(self):
-        base_config = super(DataframeOutput, self).config
-        return dict(base_config, output_orient=self.output_orient,)
+    def __init__(self, **kwargs):
+        super(TfTensorOutput, self).__init__(**kwargs)
 
     def to_batch_response(
         self,
@@ -82,11 +51,15 @@ class DataframeOutput(BaseOutputAdapter):
         requests: Iterable[SimpleRequest] = None,
     ) -> Iterable[SimpleResponse]:
         # TODO(bojiang): header content_type
+        result_conc = decode_tf_if_needed(result_conc)
+
+        assert isinstance(result_conc, (list, tuple))
 
         if slices is None:
             slices = [i for i, _ in enumerate(result_conc)]
         if fallbacks is None:
             fallbacks = [None] * len(slices)
+
         responses = [None] * len(slices)
 
         for i, (s, f) in enumerate(zip(slices, fallbacks)):
@@ -94,17 +67,9 @@ class DataframeOutput(BaseOutputAdapter):
                 responses[i] = f
                 continue
             result = result_conc[s]
-            try:
-                json_output = df_to_json(
-                    result, pandas_dataframe_orient=self.output_orient
-                )
-                responses[i] = SimpleResponse(
-                    200, (("Content-Type", "application/json"),), json_output
-                )
-            except AssertionError as e:
-                responses[i] = SimpleResponse(400, None, str(e))
-            except Exception as e:  # pylint: disable=broad-except
-                responses[i] = SimpleResponse(500, None, str(e))
+            result_str = jsonize(result)
+            responses[i] = SimpleResponse(200, dict(), result_str)
+
         return responses
 
     def to_cli(self, result, args):
@@ -116,24 +81,19 @@ class DataframeOutput(BaseOutputAdapter):
         """
         parser = argparse.ArgumentParser()
         parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
-        parser.add_argument(
-            "--output_orient",
-            default=self.output_orient,
-            choices=PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
-        )
         parsed_args = parser.parse_args(args)
 
+        result = decode_tf_if_needed(result)
         if parsed_args.output == 'json':
-            result = df_to_json(
-                result, pandas_dataframe_orient=parsed_args.output_orient
-            )
+            result = jsonize(result)
         else:
             result = str(result)
         print(result)
 
     def to_aws_lambda_event(self, result, event):
 
-        result = df_to_json(result, pandas_dataframe_orient=self.output_orient)
+        result = decode_tf_if_needed(result)
+        result = jsonize(result)
 
         # Allow disabling CORS by setting it to None
         if self.cors:
@@ -148,6 +108,6 @@ class DataframeOutput(BaseOutputAdapter):
     @property
     def pip_dependencies(self):
         """
-        :return: List of PyPI package names required by this BentoHandler
+        :return: List of PyPI package names required by this OutputAdapter
         """
-        return ['pandas']
+        return ['tensorflow', 'numpy']

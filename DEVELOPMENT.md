@@ -138,14 +138,27 @@ $ python -m http.server --directory ./docs/build/html
 
 And go to your browser at `http://localhost:8000`
 
-If you are developing under `macOS`, we also made a script that watches docs
-file changes, automatically rebuild the docs html files, and refresh the browser
-tab to show the change:
+If you are developing under macOS or linux, we also made a script that watches docs
+file changes, automatically rebuild the docs, and refreshes the browser
+tab to show the change (macOS only):
+
+### macOS
 
 Make sure you have fswatch command installed:
 ```
 brew install fswatch
 ```
+
+Run the `watch.sh` script to start watching docs changes:
+```
+$ ./docs/watch.sh
+```
+
+### Linux
+Make sure you have `inotifywait` installed
+```shell script
+sudo apt install inotify-tools
+``` 
 
 Run the `watch.sh` script to start watching docs changes:
 ```

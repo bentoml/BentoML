@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from typing import Iterable
 
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
@@ -49,9 +46,9 @@ def detect_suitable_adapter(result, slices=None):
     except ImportError:
         pass
 
-    from .json_output import JsonableOutput
+    from .json_output import JsonserializableOutput
 
-    return JsonableOutput
+    return JsonserializableOutput
 
 
 class DefaultOutput(BaseOutputAdapter):

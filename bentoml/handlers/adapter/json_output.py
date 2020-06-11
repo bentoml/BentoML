@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from typing import Iterable
 import json
 
@@ -46,9 +43,9 @@ def jsonize(result):
         return json.dumps({"result": str(result)})
 
 
-class JsonableOutput(BaseOutputAdapter):
+class JsonserializableOutput(BaseOutputAdapter):
     """
-    Converts result of use defined API function into specific output.
+    Converts result of user defined API function into specific output.
 
     Args:
         output_orient (str): Prefer json orient format for output result. Default is

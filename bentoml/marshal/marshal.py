@@ -185,16 +185,15 @@ class MarshalService:
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):
         for api_config in bento_service_metadata_pb.apis:
-            if api_config.handler_type in HANDLER_TYPES_BATCH_MODE_SUPPORTED:
-                handler_config = getattr(api_config, "handler_config", {})
+            if api_config.input_type in HANDLER_TYPES_BATCH_MODE_SUPPORTED:
                 max_latency = (
-                    handler_config["mb_max_latency"]
-                    if "mb_max_latency" in handler_config
+                    api_config["mb_max_latency"]
+                    if "mb_max_latency" in api_config
                     else self._DEFAULT_MAX_LATENCY
                 )
                 max_batch_size = (
-                    handler_config["mb_max_batch_size"]
-                    if "mb_max_batch_size" in handler_config
+                    api_config["mb_max_batch_size"]
+                    if "mb_max_batch_size" in api_config
                     else self._DEFAULT_MAX_BATCH_SIZE
                 )
                 self.add_batch_handler(

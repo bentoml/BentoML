@@ -47,7 +47,7 @@ def _print_bento_table(bentos, wide=False):
             for artifact in bento.bento_service_metadata.artifacts
         ]
         apis = [
-            f'{api.name}<{api.handler_type}>'
+            f'{api.name}<{api.input_type}:{api.output_type}>'
             for api in bento.bento_service_metadata.apis
         ]
         if wide:

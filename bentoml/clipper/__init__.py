@@ -167,12 +167,12 @@ def deploy_bentoml(
             )
         )
 
-    if api_metadata.handler_type not in HANDLER_TYPE_TO_INPUT_TYPE:
+    if api_metadata.input_type not in HANDLER_TYPE_TO_INPUT_TYPE:
         raise BentoMLException(
             "Only BentoService APIs using ClipperHandler can be deployed to Clipper"
         )
 
-    input_type = HANDLER_TYPE_TO_INPUT_TYPE[api_metadata.handler_type]
+    input_type = HANDLER_TYPE_TO_INPUT_TYPE[api_metadata.input_type]
     model_name = model_name or get_clipper_compatiable_string(
         bento_service_metadata.name + "-" + api_metadata.name
     )

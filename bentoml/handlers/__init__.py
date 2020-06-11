@@ -28,6 +28,20 @@ from bentoml.handlers.clipper_handler import (
 )
 
 
+BentoInputAdapter = BentoHandler
+DataframeInput = DataframeHandler
+TflowTensorInput = TensorflowTensorInput = TensorflowTensorHandler
+JsonInput = JsonHandler
+ImageInput = ImageHandler
+LegacyImageInput = LegacyImageHandler
+FasaiImageInput = FastaiImageHandler
+
+ClipperBytesInput = ClipperBytesHandler
+ClipperDoublesInput = ClipperDoublesHandler
+ClipperFloatsInput = ClipperFloatsHandler
+ClipperStringsInput = ClipperStringsHandler
+
+
 HANDLER_TYPES_BATCH_MODE_SUPPORTED = {
     name
     for name, v in locals().items()

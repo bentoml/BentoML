@@ -2494,14 +2494,20 @@ export namespace bentoml {
             /** BentoServiceApi name */
             name?: (string|null);
 
-            /** BentoServiceApi handler_type */
-            handler_type?: (string|null);
+            /** BentoServiceApi input_type */
+            input_type?: (string|null);
 
             /** BentoServiceApi docs */
             docs?: (string|null);
 
-            /** BentoServiceApi handler_config */
-            handler_config?: (google.protobuf.IStruct|null);
+            /** BentoServiceApi output_type */
+            output_type?: (string|null);
+
+            /** BentoServiceApi input_config */
+            input_config?: (google.protobuf.IStruct|null);
+
+            /** BentoServiceApi output_config */
+            output_config?: (google.protobuf.IStruct|null);
         }
 
         /** Represents a BentoServiceApi. */
@@ -2516,14 +2522,20 @@ export namespace bentoml {
             /** BentoServiceApi name. */
             public name: string;
 
-            /** BentoServiceApi handler_type. */
-            public handler_type: string;
+            /** BentoServiceApi input_type. */
+            public input_type: string;
 
             /** BentoServiceApi docs. */
             public docs: string;
 
-            /** BentoServiceApi handler_config. */
-            public handler_config?: (google.protobuf.IStruct|null);
+            /** BentoServiceApi output_type. */
+            public output_type: string;
+
+            /** BentoServiceApi input_config. */
+            public input_config?: (google.protobuf.IStruct|null);
+
+            /** BentoServiceApi output_config. */
+            public output_config?: (google.protobuf.IStruct|null);
 
             /**
              * Creates a new BentoServiceApi instance using the specified properties.

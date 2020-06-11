@@ -32,6 +32,8 @@ from bentoml.exceptions import NotFound, InvalidArgument
 
 ARTIFACTS_DIR_NAME = "artifacts"
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
+DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
+DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
 
 logger = logging.getLogger(__name__)
 
@@ -191,7 +193,14 @@ class BentoServiceBase(object):
 
 
 def api_decorator(
-    *args, input=None, output=None, api_name=None, api_doc=None, **kwargs
+    *args,
+    input=None,
+    output=None,
+    api_name=None,
+    api_doc=None,
+    mb_max_batch_size=None,
+    mb_max_latency=None,
+    **kwargs,
 ):  # pylint: disable=redefined-builtin
     """Decorator for adding api to a BentoService
 
@@ -247,6 +256,12 @@ def api_decorator(
         _api_doc = (
             (func.__doc__ or DEFAULT_API_DOC).strip() if api_doc is None else api_doc
         )
+        _mb_max_batch_size = (
+            DEFAULT_MAX_BATCH_SIZE if mb_max_batch_size is None else mb_max_batch_size
+        )
+        _mb_max_latency = (
+            DEFAULT_MAX_LATENCY if mb_max_latency is None else mb_max_latency
+        )
 
         if input is None:
             # support bentoml<=0.7
@@ -274,6 +289,9 @@ def api_decorator(
             )
         setattr(func, "_api_name", _api_name)
         setattr(func, "_api_doc", _api_doc)
+
+        setattr(func, "mb_max_batch_size", _mb_max_batch_size)
+        setattr(func, "mb_max_latency", _mb_max_latency)
 
         return func
 

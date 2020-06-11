@@ -107,4 +107,4 @@ class TfTensorOutput(BaseOutputAdapter):
         """
         :return: List of PyPI package names required by this OutputAdapter
         """
-        return ['tensorflow', 'numpy']
+        return ['tensorflow']

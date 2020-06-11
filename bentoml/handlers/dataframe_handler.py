@@ -25,11 +25,9 @@ try:
     import pandas as pd
 except ImportError:
     pd = None
-from flask import Response
 
 from bentoml.handlers.base_handlers import (
     BentoHandler,
-    api_func_result_to_json,
     PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
 )
 from bentoml.utils import is_url
@@ -154,10 +152,6 @@ def read_dataframes_from_json_n_csv(datas, content_types):
     return df_merged, slices
 
 
-class BadResult:
-    pass
-
-
 class DataframeHandler(BentoHandler):
     """Dataframe handler expects inputs from HTTP request or cli arguments that
         can be converted into a pandas Dataframe. It passes down the dataframe
@@ -167,16 +161,11 @@ class DataframeHandler(BentoHandler):
     Args:
         orient (str): Incoming json orient format for reading json data. Default is
             records.
-        output_orient (str): Prefer json orient format for output result. Default is
-            records.
         typ (str): Type of object to recover for read json with pandas. Default is
             frame
         input_dtypes ({str:str}): describing expected input data types of the input
             dataframe, it must be either a dict of column name and data type, or a list
             of data types listed by column index in the dataframe
-        cors (str): The value of the Access-Control-Allow-Origin header set in the
-            AWS Lambda response object. Default is "*". If set to None,
-            the header will not be set.
 
     Raises:
         ValueError: Incoming data is missing required columns in input_dtypes
@@ -188,11 +177,9 @@ class DataframeHandler(BentoHandler):
     def __init__(
         self,
         orient="records",
-        output_orient="records",
         typ="frame",
         input_dtypes=None,
         is_batch_input=True,
-        cors="*",
         **base_kwargs,
     ):
         if not is_batch_input:
@@ -213,17 +200,11 @@ class DataframeHandler(BentoHandler):
                 )
 
         self.orient = orient
-        self.output_orient = output_orient or orient
 
         assert self.orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
             f"Invalid option 'orient'='{self.orient}', valid options are "
             f"{PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS}"
         )
-        assert self.orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
-            f"Invalid 'output_orient'='{self.orient}', valid options are "
-            f"{PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS}"
-        )
-
         self.typ = typ
         self.input_dtypes = input_dtypes
 
@@ -231,8 +212,6 @@ class DataframeHandler(BentoHandler):
             self.input_dtypes = dict(
                 (str(index), dtype) for index, dtype in enumerate(self.input_dtypes)
             )
-
-        self.cors = cors
 
     @property
     def pip_dependencies(self):
@@ -244,10 +223,8 @@ class DataframeHandler(BentoHandler):
         return dict(
             base_config,
             orient=self.orient,
-            output_orient=self.output_orient,
             typ=self.typ,
             input_dtypes=self.input_dtypes,
-            cors=self.cors,
         )
 
     def _get_type(self, item):
@@ -305,10 +282,7 @@ class DataframeHandler(BentoHandler):
             _check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
-        json_output = api_func_result_to_json(
-            result, pandas_dataframe_orient=self.output_orient
-        )
-        return Response(response=json_output, status=200, mimetype="application/json")
+        return self.output_adapter.to_response(result, request)
 
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func
@@ -323,40 +297,22 @@ class DataframeHandler(BentoHandler):
         df_conc, slices = read_dataframes_from_json_n_csv(datas, content_types)
 
         result_conc = func(df_conc)
-        # TODO: check length
 
-        results = [result_conc[s] if s else BadResult for s in slices]
-
-        responses = [SimpleResponse(400, None, "bad request")] * len(requests)
-        for i, result in enumerate(results):
-            if result is BadResult:
-                continue
-            json_output = api_func_result_to_json(
-                result, pandas_dataframe_orient=self.output_orient
-            )
-            responses[i] = SimpleResponse(
-                200, (("Content-Type", "application/json"),), json_output
-            )
-        return responses
+        return self.output_adapter.to_batch_response(
+            result_conc, slices=slices, requests=requests,
+        )
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True)
-        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
         parser.add_argument(
             "--orient",
             default=self.orient,
             choices=PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
         )
-        parser.add_argument(
-            "--output_orient",
-            default=self.output_orient,
-            choices=PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
-        )
         parsed_args = parser.parse_args(args)
 
         orient = parsed_args.orient
-        output_orient = parsed_args.output_orient
         cli_input = parsed_args.input
 
         if os.path.isfile(cli_input) or is_s3_url(cli_input) or is_url(cli_input):
@@ -383,13 +339,7 @@ class DataframeHandler(BentoHandler):
             _check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
-        if parsed_args.output == 'json':
-            result = api_func_result_to_json(
-                result, pandas_dataframe_orient=output_orient
-            )
-        else:
-            result = str(result)
-        print(result)
+        self.output_adapter.to_cli(result, parsed_args)
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", None) == "text/csv":
@@ -410,16 +360,4 @@ class DataframeHandler(BentoHandler):
             _check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
-        result = api_func_result_to_json(
-            result, pandas_dataframe_orient=self.output_orient
-        )
-
-        # Allow disabling CORS by setting it to None
-        if self.cors:
-            return {
-                "statusCode": 200,
-                "body": result,
-                "headers": {"Access-Control-Allow-Origin": self.cors},
-            }
-
-        return {"statusCode": 200, "body": result}
+        return self.output_adapter.to_aws_lambda_event(result, event)

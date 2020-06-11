@@ -25,10 +25,6 @@ from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
 from bentoml.handlers.utils import concat_list
 
 
-class BadResult:
-    pass
-
-
 class JsonHandler(BentoHandler):
     """JsonHandler parses REST API request or CLI command into parsed_json(a
     dict in python) and pass down to user defined API function

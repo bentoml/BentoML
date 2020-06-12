@@ -65,14 +65,14 @@ A minimal prediction service in BentoML looks something like this:
 ```python
 # https://github.com/bentoml/BentoML/blob/master/guides/quick-start/iris_classifier.py
 from bentoml import env, artifacts, api, BentoService
-from bentoml.handlers import DataframeHandler
+from bentoml.adapters import DataframeInput
 from bentoml.artifact import SklearnModelArtifact
 
 @env(auto_pip_dependencies=True)
 @artifacts([SklearnModelArtifact('model')])
 class IrisClassifier(BentoService):
 
-    @api(DataframeHandler)
+    @api(input=DataframeHandler())
     def predict(self, df):
         # Optional pre-processing, post-processing code goes here
         return self.artifacts.model.predict(df)

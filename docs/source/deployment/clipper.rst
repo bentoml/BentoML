@@ -40,8 +40,8 @@ Train Iris classifier model
     >>> clf.fit(X, y)
 
 
-BentoML provides handler types that are specific for use with Clipper, including `ClipperBytesHandler`,
-`ClipperIntsHandler`, `ClipperFloatsHandler`, `ClipperDoublesHandler`, `ClipperStringsHandler` each
+BentoML provides handler types that are specific for use with Clipper, including `ClipperBytesInput`,
+`ClipperIntsInput`, `ClipperFloatsInput`, `ClipperDoublesInput`, `ClipperStringsInput` each
 corresponding to one input type that clipper support.
 
 Other than using Clipper specific handler, the rest are the same as defining a regular BentoService class:

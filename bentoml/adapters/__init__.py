@@ -13,18 +13,18 @@
 # limitations under the License.
 
 from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.adapters.dataframe_handler import DataframeHandler
+from bentoml.adapters.dataframe_input import DataframeInput
 from bentoml.adapters.tensorflow_tensor_handler import TensorflowTensorHandler
 from bentoml.adapters.json_handler import JsonHandler
 from bentoml.adapters.image_handler import ImageHandler
 from bentoml.adapters.legacy_image_handler import LegacyImageHandler
 from bentoml.adapters.fastai_image_handler import FastaiImageHandler
-from bentoml.adapters.clipper_handler import (
-    ClipperBytesHandler,
-    ClipperDoublesHandler,
-    ClipperFloatsHandler,
-    ClipperIntsHandler,
-    ClipperStringsHandler,
+from bentoml.adapters.clipper_input import (
+    ClipperBytesInput,
+    ClipperDoublesInput,
+    ClipperFloatsInput,
+    ClipperIntsInput,
+    ClipperStringsInput,
 )
 
 from bentoml.adapters.dataframe_output import DataframeOutput
@@ -33,19 +33,13 @@ from bentoml.adapters.base_output import BaseOutputAdapter
 from bentoml.adapters.default_output import DefaultOutput
 from bentoml.adapters.json_output import JsonserializableOutput
 
-
-DataframeInput = DataframeHandler
 TfTensorInput = TensorflowTensorHandler
 JsonInput = JsonHandler
 ImageInput = ImageHandler
 LegacyImageInput = LegacyImageHandler
 FastaiImageInput = FastaiImageHandler
 
-ClipperBytesInput = ClipperBytesHandler
-ClipperDoublesInput = ClipperDoublesHandler
-ClipperFloatsInput = ClipperFloatsHandler
-ClipperIntsInput = ClipperIntsHandler
-ClipperStringsInput = ClipperStringsHandler
+ClipperStringsInput = ClipperStringsInput
 
 
 BATCH_MODE_SUPPORTED_INPUT_TYPES = {

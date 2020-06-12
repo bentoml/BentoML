@@ -1,11 +1,11 @@
 .. _bentoml-api-handlers-label:
 
-API Handlers
+API InputAdapters(former Handlers)
 ================
 
-DataframeHandler
+DataframeInput
 ++++++++++++++++
-.. autoclass:: bentoml.handlers.DataframeHandler
+.. autoclass:: bentoml.adapters.DataframeInput
 
 JsonHandler
 +++++++++++
@@ -27,7 +27,7 @@ FastaiImageHandler
 ++++++++++++++++++
 .. autoclass:: bentoml.handlers.FastaiImageHandler
 
-ClipperHandler
+ClipperInput
 ++++++++++++++
 
 A special group of handlers that are designed to be used when deploying with `Clipper <http://clipper.ai/>`_.

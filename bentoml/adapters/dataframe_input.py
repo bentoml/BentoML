@@ -112,7 +112,7 @@ def _dataframe_csv_from_input(raws, content_types):
                     yield f"{str(n_row_sum)},{row_str.strip()}", i
                     n_row_sum += 1
         else:
-            raise BadInput(f'Invalid content_type for DataframeHandler: {content_type}')
+            raise BadInput(f'Invalid content_type for DataframeInput: {content_type}')
 
 
 def _gen_slice(ids):
@@ -141,7 +141,7 @@ def read_dataframes_from_json_n_csv(datas, content_types):
     try:
         rows_csv_with_id = [r for r in _dataframe_csv_from_input(datas, content_types)]
     except TypeError:
-        raise BadInput('Invalid input format for DataframeHandler') from None
+        raise BadInput('Invalid input format for DataframeInput') from None
 
     str_csv = [r for r, _ in rows_csv_with_id]
     df_str_csv = '\n'.join(str_csv)
@@ -152,7 +152,7 @@ def read_dataframes_from_json_n_csv(datas, content_types):
     return df_merged, slices
 
 
-class DataframeHandler(BaseInputAdapter):
+class DataframeInput(BaseInputAdapter):
     """Dataframe handler expects inputs from HTTP request or cli arguments that
         can be converted into a pandas Dataframe. It passes down the dataframe
         to user defined API function and returns response for REST API call
@@ -184,7 +184,7 @@ class DataframeHandler(BaseInputAdapter):
     ):
         if not is_batch_input:
             raise ValueError('dataframe handler can not accpept none batch inputs')
-        super(DataframeHandler, self).__init__(
+        super(DataframeInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )
 
@@ -195,7 +195,7 @@ class DataframeHandler(BaseInputAdapter):
                 import pandas as pd  # pylint: disable=redefined-outer-name
             except ImportError:
                 raise MissingDependencyException(
-                    "Missing required dependency 'pandas' for DataframeHandler, install"
+                    "Missing required dependency 'pandas' for DataframeInput, install"
                     "with `pip install pandas`"
                 )
 
@@ -219,7 +219,7 @@ class DataframeHandler(BaseInputAdapter):
 
     @property
     def config(self):
-        base_config = super(DataframeHandler, self).config
+        base_config = super(DataframeInput, self).config
         return dict(
             base_config,
             orient=self.orient,
@@ -275,7 +275,7 @@ class DataframeHandler(BaseInputAdapter):
             except ValueError:
                 raise BadInput(
                     "Failed parsing request data, only Content-Type application/json "
-                    "and text/csv are supported in BentoML DataframeHandler"
+                    "and text/csv are supported in BentoML DataframeInput"
                 )
 
         if self.typ == "frame" and self.input_dtypes is not None:
@@ -331,7 +331,7 @@ class DataframeHandler(BaseInputAdapter):
                 df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
             except ValueError as e:
                 raise BadInput(
-                    "Unexpected input format, BentoML DataframeHandler expects json "
+                    "Unexpected input format, BentoML DataframeInput expects json "
                     "string as input: {}".format(e)
                 )
 
@@ -353,7 +353,7 @@ class DataframeHandler(BaseInputAdapter):
             except ValueError:
                 raise BadInput(
                     "Failed parsing request data, only Content-Type application/json "
-                    "and text/csv are supported in BentoML DataframeHandler"
+                    "and text/csv are supported in BentoML DataframeInput"
                 )
 
         if self.typ == "frame" and self.input_dtypes is not None:

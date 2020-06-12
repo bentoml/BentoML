@@ -75,7 +75,7 @@ Use BentoML CLI tool to get the information of IrisClassifier created above
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeHandler",
+            "handlerType": "DataframeInput",
             "docs": "BentoService API"
           }
         ]

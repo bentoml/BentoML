@@ -38,7 +38,7 @@ Use `bento list` to get the BentoService name:version tag.
     > bentoml list
 
     BentoService                          CREATED_AT                  APIS                        ARTIFACTS
-    IrisClassifier:20200121141808_FE78B5  2020-01-21 22:18:25.079723  predict(DataframeHandler)  model(SklearnModelArtifact)
+    IrisClassifier:20200121141808_FE78B5  2020-01-21 22:18:25.079723  predict(DataframeInput)  model(SklearnModelArtifact)
 
 
 Deploy to Sagemaker requires a deployment name, BentoService name:version tag, and api name from the

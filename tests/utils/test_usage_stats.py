@@ -6,10 +6,10 @@ def test_get_bento_service_event_properties(bento_service):
     properties = _get_bento_service_event_properties(bento_service)
 
     assert 'PickleArtifact' in properties["artifact_types"]
-    assert 'DataframeHandler' in properties["input_types"]
-    assert 'ImageHandler' in properties["input_types"]
-    assert 'LegacyImageHandler' in properties["input_types"]
-    assert 'JsonHandler' in properties["input_types"]
+    assert 'DataframeInput' in properties["input_types"]
+    assert 'ImageInput' in properties["input_types"]
+    assert 'LegacyImageInput' in properties["input_types"]
+    assert 'JsonInput' in properties["input_types"]
     assert len(properties["input_types"]) == 4
 
     # Disabling fastai related tests to fix travis build

@@ -15,16 +15,16 @@
 
 from bentoml.adapters.base_input import BaseInputAdapter
 
-HANDLER_TYPE_TO_INPUT_TYPE = {
-    "ClipperBytesHandler": "bytes",
-    "ClipperIntsHandler": "ints",
-    "ClipperFloatsHandler": "floats",
-    "ClipperDoublesHandler": "doubles",
-    "ClipperStringsHandler": "strings",
+ADAPTER_TYPE_TO_INPUT_TYPE = {
+    "ClipperBytesInput": "bytes",
+    "ClipperIntsInput": "ints",
+    "ClipperFloatsInput": "floats",
+    "ClipperDoublesInput": "doubles",
+    "ClipperStringsInput": "strings",
 }
 
 
-class ClipperHandler(BaseInputAdapter):
+class ClipperInput(BaseInputAdapter):
     """
     A special handler that should only be used when deploying BentoService
      with Clipper(http://clipper.ai/)
@@ -41,46 +41,46 @@ class ClipperHandler(BaseInputAdapter):
 
     def handle_request(self, request, func):
         raise NotImplementedError(
-            "ClipperHandler does not support handling REST API prediction request"
+            "ClipperInput does not support handling REST API prediction request"
         )
 
     def handle_cli(self, args, func):
         raise NotImplementedError(
-            "ClipperHandler is not supported to be used with BentoML CLI"
+            "ClipperInput is not supported to be used with BentoML CLI"
         )
 
     def handle_aws_lambda_event(self, event, func):
         raise NotImplementedError(
-            "ClipperHandler is not supported in AWS Lambda Deployment"
+            "ClipperInput is not supported in AWS Lambda Deployment"
         )
 
 
 # pylint: disable=abstract-method
-class ClipperBytesHandler(ClipperHandler):
+class ClipperBytesInput(ClipperInput):
     """
-    ClipperHandler that deals with input type Bytes
-    """
-
-
-class ClipperFloatsHandler(ClipperHandler):
-    """
-    ClipperHandler that deals with input type Floats
+    ClipperInput that deals with input type Bytes
     """
 
 
-class ClipperIntsHandler(ClipperHandler):
+class ClipperFloatsInput(ClipperInput):
     """
-    ClipperHandler that deals with input type Ints
-    """
-
-
-class ClipperDoublesHandler(ClipperHandler):
-    """
-    ClipperHandler that deals with input type Doubles
+    ClipperInput that deals with input type Floats
     """
 
 
-class ClipperStringsHandler(ClipperHandler):
+class ClipperIntsInput(ClipperInput):
     """
-    ClipperHandler that deals with input type String
+    ClipperInput that deals with input type Ints
+    """
+
+
+class ClipperDoublesInput(ClipperInput):
+    """
+    ClipperInput that deals with input type Doubles
+    """
+
+
+class ClipperStringsInput(ClipperInput):
+    """
+    ClipperInput that deals with input type String
     """

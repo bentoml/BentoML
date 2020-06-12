@@ -474,7 +474,7 @@ class BentoService(BentoServiceBase):
     of Handler, which defines the expected input data format for this API.
 
     >>>  from bentoml import BentoService, env, api, artifacts, ver
-    >>>  from bentoml.handlers import DataframeHandler
+    >>>  from bentoml.adapters import DataframeInput
     >>>  from bentoml.artifact import SklearnModelArtifact
     >>>
     >>>  @ver(major=1, minor=4)
@@ -482,7 +482,7 @@ class BentoService(BentoServiceBase):
     >>>  @env(pip_dependencies=["scikit-learn"])
     >>>  class MyMLService(BentoService):
     >>>
-    >>>     @api(DataframeHandler)
+    >>>     @api(input=DataframeHandler())
     >>>     def predict(self, df):
     >>>         return self.artifacts.clf.predict(df)
     >>>

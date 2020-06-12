@@ -30,7 +30,7 @@ the :doc:`Getting Started Guide <quickstart>`:
 
 Each BentoService class can contain multiple models declared through the
 :code:`@bentoml.artifact` API, and multiple APIs for accessing this service. Each API
-definition requires a :code:`BentoHandler` type, which defines the expected input data
+definition requires a :code:`InputAdapter` type, which defines the expected input data
 format of this API. BentoML provides API handlers that covers most model serving use
 cases including :code:`DataframeHandler`, :code:`TensorHandler`, :code:`ImageHandler`
 and :code:`JsonHandler`.

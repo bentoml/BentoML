@@ -17,9 +17,9 @@ from typing import Iterable
 import argparse
 
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
-from bentoml.handlers.adapter.base_output import BaseOutputAdapter
-from bentoml.handlers.adapter.json_output import jsonize
-from bentoml.handlers.utils import NestedConverter, tf_tensor_2_serializable
+from bentoml.adapters.base_output import BaseOutputAdapter
+from bentoml.adapters.json_output import jsonize
+from bentoml.adapters.utils import NestedConverter, tf_tensor_2_serializable
 
 
 decode_tf_if_needed = NestedConverter(tf_tensor_2_serializable)

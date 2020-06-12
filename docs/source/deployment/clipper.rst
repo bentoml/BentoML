@@ -51,7 +51,7 @@ Other than using Clipper specific handler, the rest are the same as defining a r
     >>> # save this to a separate iris_classifier.py file
     >>> from bentoml import BentoService, api, env, artifacts
     >>> from bentoml.artifact import PickleArtifact
-    >>> from bentoml.handlers import DataframeInput, ClipperFloatsInput
+    >>> from bentoml.adapters import DataframeInput, ClipperFloatsInput
 
     >>> @artifacts([PickleArtifact('model')])
     >>> @env(pip_dependencies=["scikit-learn"])

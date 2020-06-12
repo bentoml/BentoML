@@ -24,7 +24,7 @@ from werkzeug.wrappers import Request
 from bentoml import config
 from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 from bentoml.exceptions import BadInput, MissingDependencyException
-from bentoml.handlers.base_handlers import BentoHandler
+from bentoml.adapters.base_input import BaseInputAdapter
 
 
 def _import_imageio_imread():
@@ -62,7 +62,7 @@ def get_default_accept_image_formats():
     ]
 
 
-class ImageHandler(BentoHandler):
+class ImageHandler(BaseInputAdapter):
     """Transform incoming image data from http request, cli or lambda event into numpy
     array.
 

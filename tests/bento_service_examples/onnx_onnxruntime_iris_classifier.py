@@ -2,7 +2,7 @@ import numpy
 
 import bentoml
 from bentoml.artifact import OnnxModelArtifact
-from bentoml.handlers import DataframeInput
+from bentoml.adapters import DataframeInput
 
 
 @bentoml.env(auto_pip_dependencies=True)

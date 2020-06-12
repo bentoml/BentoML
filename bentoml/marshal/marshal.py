@@ -26,7 +26,7 @@ from bentoml import config
 from bentoml.exceptions import RemoteException
 from bentoml.server.trace import async_trace, make_http_headers
 from bentoml.marshal.utils import DataLoader, SimpleRequest
-from bentoml.handlers import HANDLER_TYPES_BATCH_MODE_SUPPORTED
+from bentoml.adapters import BATCH_MODE_SUPPORTED_INPUT_TYPES
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.utils.usage_stats import track_server
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
@@ -185,7 +185,7 @@ class MarshalService:
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):
         for api_config in bento_service_metadata_pb.apis:
-            if api_config.input_type in HANDLER_TYPES_BATCH_MODE_SUPPORTED:
+            if api_config.input_type in BATCH_MODE_SUPPORTED_INPUT_TYPES:
                 max_latency = (
                     api_config["mb_max_latency"]
                     if "mb_max_latency" in api_config

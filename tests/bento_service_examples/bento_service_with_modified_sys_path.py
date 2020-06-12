@@ -2,7 +2,7 @@ import sys
 from os import path
 
 import bentoml
-from bentoml.handlers import DataframeInput
+from bentoml.adapters import DataframeInput
 from bentoml.artifact import SklearnModelArtifact
 
 sys.path.append(path.dirname(path.abspath(__file__)))

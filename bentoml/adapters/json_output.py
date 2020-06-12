@@ -19,7 +19,7 @@ import numpy as np
 import argparse
 
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
-from bentoml.handlers.adapter.base_output import BaseOutputAdapter
+from bentoml.adapters.base_output import BaseOutputAdapter
 
 
 class NumpyJsonEncoder(json.JSONEncoder):

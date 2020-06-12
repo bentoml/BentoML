@@ -5,7 +5,7 @@ import numpy as np
 import json
 
 from bentoml.handlers import DataframeHandler
-from bentoml.handlers.dataframe_handler import (
+from bentoml.adapters.dataframe_handler import (
     _check_dataframe_column_contains,
     read_dataframes_from_json_n_csv,
 )

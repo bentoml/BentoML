@@ -13,8 +13,7 @@
 # limitations under the License.
 
 
-from bentoml.handlers.base_handlers import BentoHandler
-
+from bentoml.adapters.base_input import BaseInputAdapter
 
 HANDLER_TYPE_TO_INPUT_TYPE = {
     "ClipperBytesHandler": "bytes",
@@ -25,12 +24,12 @@ HANDLER_TYPE_TO_INPUT_TYPE = {
 }
 
 
-class ClipperHandler(BentoHandler):
+class ClipperHandler(BaseInputAdapter):
     """
     A special handler that should only be used when deploying BentoService
      with Clipper(http://clipper.ai/)
 
-    Clipper Handlers are not regular BentoHandler, they don't work with REST
+    Clipper Handlers are not regular InputAdapter, they don't work with REST
     API server nor BentoML CLI.
     """
 

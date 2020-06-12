@@ -3,7 +3,7 @@ import torch  # pylint: disable=import-error
 
 import bentoml
 from bentoml.artifact import PytorchModelArtifact
-from bentoml.handlers import DataframeInput
+from bentoml.adapters import DataframeInput
 
 
 @bentoml.env(auto_pip_dependencies=True)

@@ -12,41 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.handlers.base_handlers import BentoHandler
-from bentoml.handlers.dataframe_handler import DataframeHandler
-from bentoml.handlers.tensorflow_tensor_handler import TensorflowTensorHandler
-from bentoml.handlers.json_handler import JsonHandler
-from bentoml.handlers.image_handler import ImageHandler
-from bentoml.handlers.legacy_image_handler import LegacyImageHandler
-from bentoml.handlers.fastai_image_handler import FastaiImageHandler
-from bentoml.handlers.clipper_handler import (
-    ClipperBytesHandler,
-    ClipperDoublesHandler,
-    ClipperFloatsHandler,
-    ClipperIntsHandler,
-    ClipperStringsHandler,
+from bentoml.adapters import (
+    BaseInputAdapter as BentoHandler,
+    DataframeInput as DataframeHandler,
+    TfTensorInput as TensorflowTensorHandler,
+    JsonInput as JsonHandler,
+    ImageInput as ImageHandler,
+    LegacyImageInput as LegacyImageHandler,
+    FastaiImageInput as FastaiImageHandler,
+    ClipperIntsInput as ClipperIntsHandler,
+    ClipperBytesInput as ClipperBytesHandler,
+    ClipperDoublesInput as ClipperDoublesHandler,
+    ClipperFloatsInput as ClipperFloatsHandler,
+    ClipperStringsInput as ClipperStringsHandler,
 )
 
-
-BentoInputAdapter = BentoHandler
-DataframeInput = DataframeHandler
-TflowTensorInput = TensorflowTensorInput = TensorflowTensorHandler
-JsonInput = JsonHandler
-ImageInput = ImageHandler
-LegacyImageInput = LegacyImageHandler
-FasaiImageInput = FastaiImageHandler
-
-ClipperBytesInput = ClipperBytesHandler
-ClipperDoublesInput = ClipperDoublesHandler
-ClipperFloatsInput = ClipperFloatsHandler
-ClipperStringsInput = ClipperStringsHandler
-
-
-HANDLER_TYPES_BATCH_MODE_SUPPORTED = {
-    name
-    for name, v in locals().items()
-    if name.endswith("Handler") and getattr(v, 'BATCH_MODE_SUPPORTED', None)
-}
 
 __all__ = [
     "BentoHandler",

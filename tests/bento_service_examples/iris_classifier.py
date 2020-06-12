@@ -1,5 +1,5 @@
 import bentoml
-from bentoml.handlers import DataframeInput
+from bentoml.adapters import DataframeInput
 from bentoml.artifact import SklearnModelArtifact
 
 

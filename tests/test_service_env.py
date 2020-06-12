@@ -5,7 +5,7 @@ import pytest
 import psutil  # noqa # pylint: disable=unused-import
 
 import bentoml
-from bentoml.handlers import DataframeInput
+from bentoml.adapters import DataframeInput
 from bentoml.artifact import SklearnModelArtifact
 
 

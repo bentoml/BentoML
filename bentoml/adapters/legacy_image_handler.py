@@ -21,7 +21,7 @@ from werkzeug.utils import secure_filename
 
 from bentoml import config
 from bentoml.exceptions import BadInput, MissingDependencyException
-from bentoml.handlers.base_handlers import BentoHandler
+from bentoml.adapters.base_input import BaseInputAdapter
 
 
 def _import_imageio_imread():
@@ -59,7 +59,7 @@ def get_default_accept_image_formats():
     ]
 
 
-class LegacyImageHandler(BentoHandler):
+class LegacyImageHandler(BaseInputAdapter):
     """
     *** This LegacyImageHandler is identical to the ImageHandler prior to
     BentoML version 0.8.0, it was kept here to make it easier for users to upgrade.

@@ -26,8 +26,8 @@ try:
 except ImportError:
     pd = None
 
-from bentoml.handlers.base_handlers import (
-    BentoHandler,
+from bentoml.adapters.base_input import (
+    BaseInputAdapter,
     PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
 )
 from bentoml.utils import is_url
@@ -152,7 +152,7 @@ def read_dataframes_from_json_n_csv(datas, content_types):
     return df_merged, slices
 
 
-class DataframeHandler(BentoHandler):
+class DataframeHandler(BaseInputAdapter):
     """Dataframe handler expects inputs from HTTP request or cli arguments that
         can be converted into a pandas Dataframe. It passes down the dataframe
         to user defined API function and returns response for REST API call

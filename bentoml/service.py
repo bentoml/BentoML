@@ -30,6 +30,7 @@ from bentoml.marshal.utils import DataLoader
 from bentoml.server.trace import trace
 from bentoml.exceptions import NotFound, InvalidArgument
 
+
 ARTIFACTS_DIR_NAME = "artifacts"
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
@@ -45,8 +46,8 @@ class BentoServiceAPI(object):
     Args:
         service (BentoService): ref to service containing this API
         name (str): API name, by default this is the python function name
-        handler (bentoml.handlers.BentoHandler): A BentoHandler class that transforms
-            HTTP Request and/or CLI options into expected format for the API func
+        handler (bentoml.adapters.BaseInputAdapter): A InputAdapter class that
+        transforms HTTP Request and/or CLI options into expected format for the API func
         func (function): API func contains the actual API callback, this is
             typically the 'predict' method on a model
     """
@@ -205,7 +206,7 @@ def api_decorator(
     """Decorator for adding api to a BentoService
 
     Args:
-        handler_cls (bentoml.handlers.BentoHandler): The handler class for the API
+        handler_cls (bentoml.adapters.BaseInputAdapter): The handler class for the API
             function.
 
         api_name (:obj:`str`, optional): API name to replace function name
@@ -249,7 +250,7 @@ def api_decorator(
 
     DEFAULT_API_DOC = "BentoService API"
 
-    from bentoml.handlers.base_handlers import BentoHandler
+    from bentoml.handlers import BentoHandler
 
     def decorator(func):
         _api_name = func.__name__ if api_name is None else api_name
@@ -270,7 +271,7 @@ def api_decorator(
             ):
                 raise InvalidArgument(
                     "BentoService @api decorator first parameter must "
-                    "be class derived from bentoml.handlers.BentoHandler"
+                    "be class derived from bentoml.adapters.BaseInputAdapter"
                 )
 
             handler = args[0](*args[1:], output_adapter=output, **kwargs)

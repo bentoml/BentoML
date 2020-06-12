@@ -19,11 +19,11 @@ from typing import Iterable
 
 from bentoml.exceptions import BadInput
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
-from bentoml.handlers.base_handlers import BentoHandler
-from bentoml.handlers.utils import concat_list
+from bentoml.adapters.base_input import BaseInputAdapter
+from bentoml.adapters.utils import concat_list
 
 
-class JsonHandler(BentoHandler):
+class JsonHandler(BaseInputAdapter):
     """JsonHandler parses REST API request or CLI command into parsed_json(a
     dict in python) and pass down to user defined API function
 

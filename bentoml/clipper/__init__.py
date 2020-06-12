@@ -26,7 +26,7 @@ from bentoml.yatai.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
 )
-from bentoml.handlers.clipper_handler import HANDLER_TYPE_TO_INPUT_TYPE
+from bentoml.adapters.clipper_handler import HANDLER_TYPE_TO_INPUT_TYPE
 from bentoml.exceptions import BentoMLException
 from bentoml.utils.usage_stats import track
 

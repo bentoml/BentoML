@@ -1,5 +1,5 @@
 import bentoml
-from bentoml.handlers import (
+from bentoml.adapters import (
     DataframeInput,
     ImageInput,
     LegacyImageInput,

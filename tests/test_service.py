@@ -2,7 +2,7 @@ import pytest
 
 import bentoml
 from bentoml.artifact import PickleArtifact
-from bentoml.handlers import DataframeInput, FastaiImageHandler, ImageInput
+from bentoml.adapters import DataframeInput, FastaiImageInput, ImageInput
 from bentoml.service import _validate_version_str
 from bentoml.exceptions import InvalidArgument
 
@@ -30,7 +30,7 @@ def test_custom_api_name():
 @pytest.mark.skip("skip fastai tests to fix travis build")
 def test_fastai_image_handler_pip_dependencies():
     class TestFastAiImageService(bentoml.BentoService):
-        @bentoml.api(input=FastaiImageHandler())
+        @bentoml.api(input=FastaiImageInput())
         def test(self, image):
             return image
 
@@ -68,11 +68,13 @@ def test_invalid_api_handler():
         class ExampleBentoService(
             bentoml.BentoService
         ):  # pylint: disable=unused-variable
-            @bentoml.api("Not A BentoHandler")
+            @bentoml.api("Not A InputAdapter")
             def test(self):
                 pass
 
-    assert "must be class derived from bentoml.handlers.BentoHandler" in str(e.value)
+    assert "must be class derived from bentoml.adapters.BaseInputAdapter" in str(
+        e.value
+    )
 
 
 def test_image_handler_pip_dependencies():

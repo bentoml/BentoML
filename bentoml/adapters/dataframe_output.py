@@ -18,7 +18,7 @@ import argparse
 
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
-from bentoml.handlers.adapter.base_output import BaseOutputAdapter
+from bentoml.adapters.base_output import BaseOutputAdapter
 
 PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS = [
     'dict',
@@ -145,6 +145,6 @@ class DataframeOutput(BaseOutputAdapter):
     @property
     def pip_dependencies(self):
         """
-        :return: List of PyPI package names required by this BentoHandler
+        :return: List of PyPI package names required by this InputAdapter
         """
         return ['pandas']

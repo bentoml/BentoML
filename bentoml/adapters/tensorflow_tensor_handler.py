@@ -16,13 +16,13 @@ from typing import Iterable
 
 import json
 import argparse
-from bentoml.handlers.utils import (
+from bentoml.adapters.utils import (
     NestedConverter,
     tf_b64_2_bytes,
     tf_tensor_2_serializable,
     concat_list,
 )
-from bentoml.handlers.base_handlers import BentoHandler
+from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.exceptions import BentoMLException, BadInput
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
@@ -31,9 +31,9 @@ decode_b64_if_needed = NestedConverter(tf_b64_2_bytes)
 decode_tf_if_needed = NestedConverter(tf_tensor_2_serializable)
 
 
-class TensorflowTensorHandler(BentoHandler):
+class TensorflowTensorHandler(BaseInputAdapter):
     """
-    Tensor handlers for Tensorflow models.
+    Tensor input adapter for Tensorflow models.
     Transform incoming tf tensor data from http request, cli or lambda event into
     tf tensor.
     The behaviour should be compatible with tensorflow serving REST API:

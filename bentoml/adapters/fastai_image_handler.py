@@ -22,8 +22,8 @@ from flask import Response
 import numpy as np
 
 from bentoml.exceptions import BadInput, MissingDependencyException
-from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
-from bentoml.handlers.image_handler import (
+from bentoml.adapters.base_input import BaseInputAdapter, api_func_result_to_json
+from bentoml.adapters.image_handler import (
     verify_image_format_or_raise,
     get_default_accept_image_formats,
 )
@@ -51,8 +51,8 @@ def _import_imageio_imread():
     return imread
 
 
-class FastaiImageHandler(BentoHandler):
-    """BentoHandler specified for handling image input following fastai conventions
+class FastaiImageHandler(BaseInputAdapter):
+    """InputAdapter specified for handling image input following fastai conventions
     by passing type fastai.vision.Image to user API function and providing options
     such as div, cls, and after_open
 

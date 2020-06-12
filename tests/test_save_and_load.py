@@ -5,7 +5,7 @@ import pytest
 from mock import patch
 
 import bentoml
-from bentoml.handlers import DataframeInput
+from bentoml.adapters import DataframeInput
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.exceptions import BentoMLException
 

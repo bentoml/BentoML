@@ -8,7 +8,7 @@ const apisToDisplayFormat = (apis) => {
   if (!apis) {
     return "";
   }
-  return apis.map((api) => `${api.name}<${api.handler_type}>`).join("\n");
+  return apis.map((api) => `${api.name}<${api.input_type}>`).join("\n");
 };
 
 const artifactsToDisplayFormat = (artifacts) => {

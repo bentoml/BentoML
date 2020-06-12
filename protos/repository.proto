@@ -43,6 +43,7 @@ message BentoServiceMetadata {
 
     // Configs for customizing BentoHandler
     google.protobuf.Struct handler_config = 4;
+    google.protobuf.Struct output_config = 5;
   }
 
   string name = 1;

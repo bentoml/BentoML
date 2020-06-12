@@ -18,11 +18,10 @@ import base64
 from io import BytesIO
 
 from werkzeug.utils import secure_filename
-from flask import Response
 
 from bentoml import config
 from bentoml.exceptions import BadInput, MissingDependencyException
-from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
+from bentoml.handlers.base_handlers import BentoHandler
 
 
 def _import_imageio_imread():
@@ -180,14 +179,12 @@ class LegacyImageHandler(BentoHandler):
             for input_stream in input_streams
         )
         result = func(*input_data)
-        json_output = api_func_result_to_json(result)
-        return Response(response=json_output, status=200, mimetype="application/json")
+        return self.output_adapter.to_response(result, request)
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True)
-        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
-        parsed_args = parser.parse_args(args)
+        parsed_args, unknown_args = parser.parse_known_args(args)
         file_path = parsed_args.input
 
         verify_image_format_or_raise(file_path, self.accept_image_formats)
@@ -197,11 +194,7 @@ class LegacyImageHandler(BentoHandler):
         image_array = self.imread(file_path, pilmode=self.pilmode)
 
         result = func(image_array)
-        if parsed_args.output == "json":
-            result = api_func_result_to_json(result)
-        else:
-            result = str(result)
-        print(result)
+        return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):
@@ -213,5 +206,4 @@ class LegacyImageHandler(BentoHandler):
             )
 
         result = func(image)
-        json_output = api_func_result_to_json(result)
-        return {"statusCode": 200, "body": json_output}
+        return self.output_adapter.to_aws_lambda_event(result, event)

@@ -82,6 +82,10 @@ class BentoServiceAPI(object):
         return self._handler
 
     @property
+    def output_adapter(self):
+        return self.handler.output_adapter
+
+    @property
     def func(self):
         if not self._wrapped_func:
 
@@ -99,6 +103,7 @@ class BentoServiceAPI(object):
 
     @property
     def request_schema(self):
+        # TODO(bojiang): request_schema of adapter
         return self.handler.request_schema
 
     def handle_request(self, request):
@@ -109,7 +114,7 @@ class BentoServiceAPI(object):
         with trace(
             ZIPKIN_API_URL,
             service_name=self.__class__.__name__,
-            span_name=f"call `{self._handler.__class__.__name__}`",
+            span_name=f"call `{self.handler.__class__.__name__}`",
         ):
             responses = self.handler.handle_batch_request(requests, self.func)
         return DataLoader.merge_responses(responses)
@@ -160,7 +165,7 @@ class BentoServiceBase(object):
                 func = function.__get__(self)
 
                 self._service_apis.append(
-                    BentoServiceAPI(self, api_name, api_doc, handler, func)
+                    BentoServiceAPI(self, api_name, api_doc, handler=handler, func=func)
                 )
 
     def get_service_apis(self):
@@ -253,13 +258,13 @@ def api_decorator(
                     "be class derived from bentoml.handlers.BentoHandler"
                 )
 
-            handler = args[0](*args[1:], **kwargs)
+            handler = args[0](*args[1:], output_adapter=output, **kwargs)
         else:
             handler = input
+            handler._output_adapter = output
 
         setattr(func, "_is_api", True)
         setattr(func, "_handler", handler)
-        setattr(func, "_output_adapter", output)
         if not isidentifier(_api_name):
             raise InvalidArgument(
                 "Invalid API name: '{}', a valid identifier must contains only letters,"
@@ -509,6 +514,11 @@ class BentoService(BentoServiceBase):
 
         for api in self._service_apis:
             self._env._add_pip_dependencies_if_missing(api.handler.pip_dependencies)
+            self._env._add_pip_dependencies_if_missing(
+                api.output_adapter.pip_dependencies
+            )
+
+        # TODO(bojiang): adapter dependencies
 
         for artifact in self._artifacts:
             self._env._add_pip_dependencies_if_missing(artifact.pip_dependencies)

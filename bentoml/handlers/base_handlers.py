@@ -45,7 +45,7 @@ class BentoHandler:
 
     BATCH_MODE_SUPPORTED = False
 
-    def __init__(self, **base_config):
+    def __init__(self, output_adapter=None, **base_config):
         '''
         base_configs:
             - mb_max_latency
@@ -53,12 +53,21 @@ class BentoHandler:
             - is_batch_input
         '''
         self._config = base_config
+        self._output_adapter = output_adapter
 
     @property
     def config(self):
         if getattr(self, '_config', None) is None:
             self._config = {}
         return self._config
+
+    @property
+    def output_adapter(self):
+        if self._output_adapter is None:
+            from .adapter import DefaultOutput
+
+            self._output_adapter = DefaultOutput()
+        return self._output_adapter
 
     def handle_request(self, request, func):
         """Handles an HTTP request, convert it into corresponding data

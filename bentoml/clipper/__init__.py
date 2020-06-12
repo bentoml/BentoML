@@ -34,8 +34,6 @@ logger = logging.getLogger(__name__)
 
 
 CLIPPER_ENTRY = """\
-from __future__ import print_function
-
 import rpc # this is clipper's rpc.py module
 import os
 import sys

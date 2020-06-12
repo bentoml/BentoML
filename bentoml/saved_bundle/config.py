@@ -46,6 +46,8 @@ def _get_apis_list(bento_service):
         }
         if api.handler.config:
             api_obj["handler_config"] = api.handler.config
+        if api.output_adapter.config:
+            api_obj["output_config"] = api.output_adapter.config
         result.append(api_obj)
     return result
 
@@ -154,6 +156,9 @@ class SavedBundleConfig(object):
                 if "handler_config" in api_config:
                     for k, v in api_config["handler_config"].items():
                         api_metadata.handler_config[k] = v
+                if "output_config" in api_config:
+                    for k, v in api_config["output_config"].items():
+                        api_metadata.output_config[k] = v
                 bento_service_metadata.apis.extend([api_metadata])
 
         if "artifacts" in self.config:

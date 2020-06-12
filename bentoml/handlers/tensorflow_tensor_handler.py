@@ -16,14 +16,13 @@ from typing import Iterable
 
 import json
 import argparse
-from flask import Response
 from bentoml.handlers.utils import (
     NestedConverter,
     tf_b64_2_bytes,
     tf_tensor_2_serializable,
     concat_list,
 )
-from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
+from bentoml.handlers.base_handlers import BentoHandler
 from bentoml.exceptions import BentoMLException, BadInput
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
@@ -84,7 +83,7 @@ class TensorflowTensorHandler(BentoHandler):
         else:
             raise NotImplementedError(f"method {self.method} is not implemented")
 
-    def _handle_raw_str(self, raw_str, output_format, func):
+    def _handle_raw_str(self, raw_str, func):
         import tensorflow as tf
 
         parsed_json = json.loads(raw_str)
@@ -92,18 +91,11 @@ class TensorflowTensorHandler(BentoHandler):
             instances = parsed_json.get("instances")
             instances = decode_b64_if_needed(instances)
             parsed_tensor = tf.constant(instances)
-            result = func(parsed_tensor)
-            result = decode_tf_if_needed(result)
 
         elif parsed_json.get("inputs"):
             raise NotImplementedError("column format 'inputs' is not implemented")
 
-        if output_format == "json":
-            result_str = api_func_result_to_json(result)
-        elif output_format == "str":
-            result_str = str(result)
-
-        return result_str
+        return func(parsed_tensor)
 
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func
@@ -136,8 +128,6 @@ class TensorflowTensorHandler(BentoHandler):
                     if instances is None:
                         continue
                     instances = decode_b64_if_needed(instances)
-                    if not batch_flags[i]:
-                        instances = (instances,)
                     instances_list[i] = instances
 
                 elif parsed_json.get("inputs"):
@@ -155,23 +145,13 @@ class TensorflowTensorHandler(BentoHandler):
                     500, None, f"Internal Server Error: {err}"
                 )
 
-        merged_instances, slices = concat_list(instances_list)
+        merged_instances, slices = concat_list(instances_list, batch_flags=batch_flags)
 
         parsed_tensor = tf.constant(merged_instances)
         merged_result = func(parsed_tensor)
-        merged_result = decode_tf_if_needed(merged_result)
-        assert isinstance(merged_result, (list, tuple))
-
-        for i, s in enumerate(slices):
-            if s is None:
-                continue
-            result = merged_result[s]
-            if not batch_flags[i]:
-                result = result[0]
-            result_str = api_func_result_to_json(result)
-            responses[i] = SimpleResponse(200, dict(), result_str)
-
-        return responses
+        return self.output_adapter.to_batch_response(
+            merged_result, slices=slices, fallbacks=responses, requests=requests
+        )
 
     def handle_request(self, request, func):
         """Handle http request that has jsonlized tensorflow tensor. It will convert it
@@ -185,10 +165,8 @@ class TensorflowTensorHandler(BentoHandler):
         """
         if request.content_type == "application/json":
             input_str = request.data.decode("utf-8")
-            result_str = self._handle_raw_str(input_str, "json", func)
-            return Response(
-                response=result_str, status=200, mimetype="application/json"
-            )
+            result = self._handle_raw_str(input_str, func)
+            return self.output_adapter.to_response(result, request)
         else:
             raise BadInput(
                 "Request content-type must be 'application/json'"
@@ -198,19 +176,17 @@ class TensorflowTensorHandler(BentoHandler):
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True)
-        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
-        parsed_args = parser.parse_args(args)
+        parsed_args, unknown_args = parser.parse_known_args(args)
 
-        result = self._handle_raw_str(parsed_args.input, parsed_args.output, func)
-        print(result)
+        result = self._handle_raw_str(parsed_args.input, func)
+        return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "") == "application/json":
-            result = self._handle_raw_str(event["body"], "json", func)
+            result = self._handle_raw_str(event["body"], func)
+            return self.output_adapter.to_aws_lambda_event(result, event)
         else:
             raise BentoMLException(
                 "BentoML currently doesn't support Content-Type: {content_type} for "
                 "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
             )
-
-        return {"statusCode": 200, "body": result}

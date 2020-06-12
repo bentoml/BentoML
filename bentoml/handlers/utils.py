@@ -87,7 +87,7 @@ class NestedConverter:
             return obj
 
 
-def concat_list(lst):
+def concat_list(lst, batch_flags=None):
     """
     >>> lst = [
         [1],
@@ -106,8 +106,12 @@ def concat_list(lst):
             slices[i] = None
             continue
         j = -1
-        for j, d in enumerate(r):
-            datas.append(d)
-        slices[i] = slice(row_flag, row_flag + j + 1)
+        if batch_flags is None or batch_flags[i]:
+            for j, d in enumerate(r):
+                datas.append(d)
+            slices[i] = slice(row_flag, row_flag + j + 1)
+        else:
+            datas.append(r)
+            slices[i] = row_flag
         row_flag += j + 1
     return datas, slices

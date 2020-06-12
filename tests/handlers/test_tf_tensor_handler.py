@@ -78,13 +78,13 @@ def test_tf_tensor_handle_request():
     '''
     ref: https://www.tensorflow.org/tfx/serving/api_rest#request_format_2
     '''
-    from bentoml.handlers import TensorflowTensorHandler
+    from bentoml.adapters import TfTensorInput
 
     request = Mock()
     request.headers = {}
     request.content_type = 'application/json'
 
-    handler = TensorflowTensorHandler()
+    handler = TfTensorInput()
 
     for input_data, except_result in zip(TEST_CASES, EXPECTED_RESULTS):
         request.data = json.dumps(input_data).encode('utf-8')
@@ -98,9 +98,9 @@ def test_tf_tensor_handle_batch_request():
     '''
     ref: https://www.tensorflow.org/tfx/serving/api_rest#request_format_2
     '''
-    from bentoml.handlers import TensorflowTensorHandler
+    from bentoml.adapters import TfTensorInput
 
-    handler = TensorflowTensorHandler()
+    handler = TfTensorInput()
     request = Mock()
 
     for input_data, except_result in zip(TEST_CASES, EXPECTED_RESULTS):

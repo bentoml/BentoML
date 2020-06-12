@@ -16,13 +16,13 @@ from typing import Iterable
 
 import json
 import argparse
-from bentoml.handlers.utils import (
+from bentoml.adapters.utils import (
     NestedConverter,
     tf_b64_2_bytes,
     tf_tensor_2_serializable,
     concat_list,
 )
-from bentoml.handlers.base_handlers import BentoHandler
+from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.exceptions import BentoMLException, BadInput
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
@@ -31,9 +31,9 @@ decode_b64_if_needed = NestedConverter(tf_b64_2_bytes)
 decode_tf_if_needed = NestedConverter(tf_tensor_2_serializable)
 
 
-class TensorflowTensorHandler(BentoHandler):
+class TfTensorInput(BaseInputAdapter):
     """
-    Tensor handlers for Tensorflow models.
+    Tensor input adapter for Tensorflow models.
     Transform incoming tf tensor data from http request, cli or lambda event into
     tf tensor.
     The behaviour should be compatible with tensorflow serving REST API:
@@ -51,14 +51,14 @@ class TensorflowTensorHandler(BentoHandler):
     METHODS = (PREDICT, CLASSIFY, REGRESS) = ("predict", "classify", "regress")
 
     def __init__(self, method=PREDICT, is_batch_input=True, **base_kwargs):
-        super(TensorflowTensorHandler, self).__init__(
+        super(TfTensorInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )
         self.method = method
 
     @property
     def config(self):
-        base_config = super(TensorflowTensorHandler, self).config
+        base_config = super(TfTensorInput, self).config
         return dict(base_config, method=self.method,)
 
     @property

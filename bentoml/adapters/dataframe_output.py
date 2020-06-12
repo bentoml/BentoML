@@ -13,39 +13,41 @@
 # limitations under the License.
 
 from typing import Iterable
-import json
 
-import numpy as np
 import argparse
 
+from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
-from bentoml.handlers.adapter.base_output import BaseOutputAdapter
+from bentoml.adapters.base_output import BaseOutputAdapter
+
+PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS = [
+    'dict',
+    'list',
+    'series',
+    'split',
+    'records',
+    'index',
+]
 
 
-class NumpyJsonEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
+def df_to_json(result, pandas_dataframe_orient="records"):
+    import pandas as pd
 
-    def default(self, o):  # pylint: disable=method-hidden
-        if isinstance(o, np.generic):
-            return o.item()
+    assert (
+        pandas_dataframe_orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS
+    ), f"unkown pandas dataframe orient '{pandas_dataframe_orient}'"
 
-        if isinstance(o, np.ndarray):
-            return o.tolist()
+    if isinstance(result, pd.DataFrame):
+        return result.to_json(orient=pandas_dataframe_orient)
 
-        return json.JSONEncoder.default(self, o)
-
-
-def jsonize(result):
-    try:
-        return json.dumps(result, cls=NumpyJsonEncoder)
-    except (TypeError, OverflowError):
-        # when result is not JSON serializable
-        return json.dumps({"result": str(result)})
+    if isinstance(result, pd.Series):
+        return pd.DataFrame(result).to_dict(orient=pandas_dataframe_orient)
+    raise BentoMLException("DataframeOutput only accepts pd.Series or pd.DataFrame.")
 
 
-class JsonserializableOutput(BaseOutputAdapter):
+class DataframeOutput(BaseOutputAdapter):
     """
-    Converts result of user defined API function into specific output.
+    Converts result of use defined API function into specific output.
 
     Args:
         output_orient (str): Prefer json orient format for output result. Default is
@@ -54,6 +56,20 @@ class JsonserializableOutput(BaseOutputAdapter):
             AWS Lambda response object. Default is "*". If set to None,
             the header will not be set.
     """
+
+    def __init__(self, output_orient='records', **kwargs):
+        super(DataframeOutput, self).__init__(**kwargs)
+        self.output_orient = output_orient
+
+        assert self.output_orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
+            f"Invalid 'output_orient'='{self.orient}', valid options are "
+            f"{PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS}"
+        )
+
+    @property
+    def config(self):
+        base_config = super(DataframeOutput, self).config
+        return dict(base_config, output_orient=self.output_orient,)
 
     def to_batch_response(
         self,
@@ -68,17 +84,17 @@ class JsonserializableOutput(BaseOutputAdapter):
             slices = [i for i, _ in enumerate(result_conc)]
         if fallbacks is None:
             fallbacks = [None] * len(slices)
-
         responses = [None] * len(slices)
 
         for i, (s, f) in enumerate(zip(slices, fallbacks)):
             if s is None:
                 responses[i] = f
                 continue
-
             result = result_conc[s]
             try:
-                json_output = jsonize(result)
+                json_output = df_to_json(
+                    result, pandas_dataframe_orient=self.output_orient
+                )
                 responses[i] = SimpleResponse(
                     200, (("Content-Type", "application/json"),), json_output
                 )
@@ -97,17 +113,24 @@ class JsonserializableOutput(BaseOutputAdapter):
         """
         parser = argparse.ArgumentParser()
         parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
+        parser.add_argument(
+            "--output_orient",
+            default=self.output_orient,
+            choices=PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
+        )
         parsed_args = parser.parse_args(args)
 
         if parsed_args.output == 'json':
-            result = jsonize(result)
+            result = df_to_json(
+                result, pandas_dataframe_orient=parsed_args.output_orient
+            )
         else:
             result = str(result)
         print(result)
 
     def to_aws_lambda_event(self, result, event):
 
-        result = jsonize(result)
+        result = df_to_json(result, pandas_dataframe_orient=self.output_orient)
 
         # Allow disabling CORS by setting it to None
         if self.cors:
@@ -118,3 +141,10 @@ class JsonserializableOutput(BaseOutputAdapter):
             }
 
         return {"statusCode": 200, "body": result}
+
+    @property
+    def pip_dependencies(self):
+        """
+        :return: List of PyPI package names required by this InputAdapter
+        """
+        return ['pandas']

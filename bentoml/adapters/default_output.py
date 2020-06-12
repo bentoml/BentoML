@@ -40,7 +40,7 @@ def detect_suitable_adapter(result, slices=None):
         import tensorflow as tf
 
         if isinstance(result, tf.Tensor):
-            from .tf_tensor_output import TfTensorOutput
+            from .tensorflow_tensor_output import TfTensorOutput
 
             return TfTensorOutput
     except ImportError:

@@ -48,14 +48,14 @@ class SpacyModelArtifact(BentoServiceArtifact):
     >>> nlp.to_disk("/model")
     >>>
     >>> import bentoml
-    >>> from bentoml.handlers import JsonHandler
+    >>> from bentoml.adapters import JsonInput
     >>> from bentoml.artifact import SpacyModelArtifact
     >>>
     >>> @bentoml.env(auto_pip_dependencies=True)
     >>> @bentoml.artifacts([SpacyModelArtifact('nlp')])
     >>> class SpacyModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(JsonHandler)
+    >>>     @bentoml.api(input=JsonInput())
     >>>     def predict(self, parsed_json):
     >>>         outputs = self.artifacts.nlp(parsed_json['text'])
     >>>         return outputs

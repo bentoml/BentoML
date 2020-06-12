@@ -16,24 +16,24 @@ the :doc:`Getting Started Guide <quickstart>`:
 .. code-block:: python
 
   import bentoml
-  from bentoml.handlers import DataframeHandler
+  from bentoml.adapters import DataframeInput
   from bentoml.artifact import SklearnModelArtifact
 
   @bentoml.env(auto_pip_dependencies=True)
   @bentoml.artifacts([SklearnModelArtifact('model')])
   class IrisClassifier(bentoml.BentoService):
 
-      @bentoml.api(DataframeHandler)
+      @bentoml.api(input=DataframeInput())
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
 
 Each BentoService class can contain multiple models declared through the
 :code:`@bentoml.artifact` API, and multiple APIs for accessing this service. Each API
-definition requires a :code:`BentoHandler` type, which defines the expected input data
+definition requires a :code:`InputAdapter` type, which defines the expected input data
 format of this API. BentoML provides API handlers that covers most model serving use
-cases including :code:`DataframeHandler`, :code:`TensorHandler`, :code:`ImageHandler`
-and :code:`JsonHandler`.
+cases including :code:`DataframeInput`, :code:`TensorHandler`, :code:`ImageInput`
+and :code:`JsonInput`.
 
 
 Once an ML model is trained, a BentoService instance can bundle with the trained model
@@ -102,8 +102,8 @@ BentoML CLI Listing recent Bento:
 
     > bentoml list
     BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
-    IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeHandler>  model<SklearnModelArtifact>
-    IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeHandler>  clf<PickleArtifact>
+    IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeInput>  model<SklearnModelArtifact>
+    IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeInput>  clf<PickleArtifact>
     ...
 
 
@@ -163,7 +163,7 @@ python class, simply use the :code:`auto_pip_dependencies=True` option.
   @bentoml.env(auto_pip_dependencies=True)
   class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(DataframeHandler)
+      @bentoml.api(input=DataframeInput())
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
@@ -179,7 +179,7 @@ the list of PyPI packages manually, e.g.:
   )
   class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(DataframeHandler)
+      @bentoml.api(input=DataframeInput())
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
@@ -205,7 +205,7 @@ on an H2O model that requires the h2o conda packages:
     )
     class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(DataframeHandler)
+      @bentoml.api(input=DataframeInput())
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
@@ -271,7 +271,7 @@ prediction service that packs two trained models:
 .. code-block:: python
 
     import bentoml
-    from bentoml.handlers import DataframeHandler
+    from bentoml.adapters import DataframeInput
     from bentoml.artifact import SklearnModelArtifact, XgboostModelArtifact
 
     @bentoml.env(auto_pip_dependencies=True)
@@ -281,7 +281,7 @@ prediction service that packs two trained models:
     ])
     class MyPredictionService(bentoml.BentoService):
 
-        @bentoml.api(DataframeHandler)
+        @bentoml.api(input=DataframeInput())
         def predict(self, df):
             # assume the output of model_a will be the input of model_b in this example:
             df = self.artifacts.model_a.predict(df)
@@ -310,7 +310,7 @@ defined by writing the API handling function(a class method within the BentoServ
 class) which gets called when client sent an inference request. User will need to
 annotate this method with :code:`@bentoml.api` decorator and pass in a Handler class,
 which defines the desired input format for the API function. For example, if your model
-is expecting tabular data as input, you can use :code:`DataframeHandler` for your API,
+is expecting tabular data as input, you can use :code:`DataframeInput` for your API,
 e.g.:
 
 
@@ -319,13 +319,13 @@ e.g.:
 
   class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(DataframeHandler)
+      @bentoml.api(input=DataframeInput())
       def predict(self, df):
           assert type(df) == pandas.core.frame.DataFrame
           return postprocessing(model_output)
 
 
-When using DataframeHandler, BentoML will convert the inference requests sent from the
+When using DataframeInput, BentoML will convert the inference requests sent from the
 client, either in the form of a JSON HTTP request or a CSV file, into a
 :code:`pandas.DataFrame` object and pass it down to the user-defined API function.
 
@@ -340,7 +340,7 @@ API function. For example:
 
   class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(DataframeHandler)
+      @bentoml.api(input=DataframeInput())
       def predict(self, df):
           user_profile_column = fetch_user_profile_from_database(df['user_id'])
           df['user_profile'] = user_profile_column
@@ -401,11 +401,11 @@ service that supports different access patterns for different clients, e.g.:
 
   class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(DataframeHandler)
+      @bentoml.api(input=DataframeInput())
       def predict(self, df: pandas.Dataframe):
           return self.artifacts.model.predict(df)
 
-      @bentoml.api(JsonHandler)
+      @bentoml.api(input=JsonInput())
       def predict_json(self, json_arr):
           df = process_custom_json_format(json-arr)
           return self.artifacts.model.predict(df)
@@ -712,15 +712,15 @@ list all the BentoService created:
 
     > bentoml list
     BENTO_SERVICE                                   AGE                  APIS                        ARTIFACTS
-    IrisClassifier:20200323212422_A1D30D            1 day and 22 hours   predict<DataframeHandler>   model<SklearnModelArtifact>
-    IrisClassifier:20200304143410_CD5F13            3 weeks and 4 hours  predict<DataframeHandler>   model<SklearnModelArtifact>
-    SentimentAnalysisService:20191219090607_189CFE  13 weeks and 6 days  predict<DataframeHandler>   model<SklearnModelArtifact>
-    TfModelService:20191216125343_06BCA3            14 weeks and 2 days  predict<JsonHandler>        model<TensorflowSavedModelArtifact>
+    IrisClassifier:20200323212422_A1D30D            1 day and 22 hours   predict<DataframeInput>   model<SklearnModelArtifact>
+    IrisClassifier:20200304143410_CD5F13            3 weeks and 4 hours  predict<DataframeInput>   model<SklearnModelArtifact>
+    SentimentAnalysisService:20191219090607_189CFE  13 weeks and 6 days  predict<DataframeInput>   model<SklearnModelArtifact>
+    TfModelService:20191216125343_06BCA3            14 weeks and 2 days  predict<JsonInput>        model<TensorflowSavedModelArtifact>
 
     > bentoml get IrisClassifier
     BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
-    IrisClassifier:20200121114004_360ECB  2020-01-21 19:45  predict<DataframeHandler>  model<SklearnModelArtifact>
-    IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeHandler>  model<SklearnModelArtifact>
+    IrisClassifier:20200121114004_360ECB  2020-01-21 19:45  predict<DataframeInput>  model<SklearnModelArtifact>
+    IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeInput>  model<SklearnModelArtifact>
 
     > bentoml get IrisClassifier:20200323212422_A1D30D
     {
@@ -748,7 +748,7 @@ list all the BentoService created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeHandler",
+            "handlerType": "DataframeInput",
             "docs": "BentoService API",
             "handlerConfig": {
               "output_orient": "records",

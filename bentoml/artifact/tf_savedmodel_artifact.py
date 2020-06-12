@@ -173,14 +173,14 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     >>> # ... compiling, training, etc
     >>>
     >>> import bentoml
-    >>> from bentoml.handlers import JsonHandler
+    >>> from bentoml.adapters import JsonInput
     >>> from bentoml.artifact import TensorflowSavedModelArtifact
     >>>
     >>> @bentoml.env(pip_dependencies=["tensorflow"])
     >>> @bentoml.artifacts([TensorflowSavedModelArtifact('model')])
     >>> class TfModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(JsonHandler)
+    >>>     @bentoml.api(input=JsonInput())
     >>>     def predict(self, json):
     >>>         input_data = json['input']
     >>>         prediction = self.artifacts.model.add(input_data)

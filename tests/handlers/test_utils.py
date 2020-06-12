@@ -1,4 +1,4 @@
-from bentoml.handlers.utils import concat_list
+from bentoml.adapters.utils import concat_list
 
 
 def test_concat():

@@ -19,12 +19,12 @@ from typing import Iterable
 
 from bentoml.exceptions import BadInput
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
-from bentoml.handlers.base_handlers import BentoHandler
-from bentoml.handlers.utils import concat_list
+from bentoml.adapters.base_input import BaseInputAdapter
+from bentoml.adapters.utils import concat_list
 
 
-class JsonHandler(BentoHandler):
-    """JsonHandler parses REST API request or CLI command into parsed_json(a
+class JsonInput(BaseInputAdapter):
+    """JsonInput parses REST API request or CLI command into parsed_json(a
     dict in python) and pass down to user defined API function
 
     """
@@ -32,7 +32,7 @@ class JsonHandler(BentoHandler):
     BATCH_MODE_SUPPORTED = True
 
     def __init__(self, is_batch_input=False, **base_kwargs):
-        super(JsonHandler, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
+        super(JsonInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
 
     def handle_request(self, request, func):
         if request.content_type == "application/json":

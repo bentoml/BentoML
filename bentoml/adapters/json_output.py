@@ -13,21 +13,39 @@
 # limitations under the License.
 
 from typing import Iterable
+import json
 
+import numpy as np
 import argparse
 
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
-from bentoml.handlers.adapter.base_output import BaseOutputAdapter
-from bentoml.handlers.adapter.json_output import jsonize
-from bentoml.handlers.utils import NestedConverter, tf_tensor_2_serializable
+from bentoml.adapters.base_output import BaseOutputAdapter
 
 
-decode_tf_if_needed = NestedConverter(tf_tensor_2_serializable)
+class NumpyJsonEncoder(json.JSONEncoder):
+    """ Special json encoder for numpy types """
+
+    def default(self, o):  # pylint: disable=method-hidden
+        if isinstance(o, np.generic):
+            return o.item()
+
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+
+        return json.JSONEncoder.default(self, o)
 
 
-class TfTensorOutput(BaseOutputAdapter):
+def jsonize(result):
+    try:
+        return json.dumps(result, cls=NumpyJsonEncoder)
+    except (TypeError, OverflowError):
+        # when result is not JSON serializable
+        return json.dumps({"result": str(result)})
+
+
+class JsonserializableOutput(BaseOutputAdapter):
     """
-    Converts result of use defined API function into specific output.
+    Converts result of user defined API function into specific output.
 
     Args:
         output_orient (str): Prefer json orient format for output result. Default is
@@ -37,9 +55,6 @@ class TfTensorOutput(BaseOutputAdapter):
             the header will not be set.
     """
 
-    def __init__(self, **kwargs):
-        super(TfTensorOutput, self).__init__(**kwargs)
-
     def to_batch_response(
         self,
         result_conc,
@@ -48,9 +63,6 @@ class TfTensorOutput(BaseOutputAdapter):
         requests: Iterable[SimpleRequest] = None,
     ) -> Iterable[SimpleResponse]:
         # TODO(bojiang): header content_type
-        result_conc = decode_tf_if_needed(result_conc)
-
-        assert isinstance(result_conc, (list, tuple))
 
         if slices is None:
             slices = [i for i, _ in enumerate(result_conc)]
@@ -63,10 +75,17 @@ class TfTensorOutput(BaseOutputAdapter):
             if s is None:
                 responses[i] = f
                 continue
-            result = result_conc[s]
-            result_str = jsonize(result)
-            responses[i] = SimpleResponse(200, dict(), result_str)
 
+            result = result_conc[s]
+            try:
+                json_output = jsonize(result)
+                responses[i] = SimpleResponse(
+                    200, (("Content-Type", "application/json"),), json_output
+                )
+            except AssertionError as e:
+                responses[i] = SimpleResponse(400, None, str(e))
+            except Exception as e:  # pylint: disable=broad-except
+                responses[i] = SimpleResponse(500, None, str(e))
         return responses
 
     def to_cli(self, result, args):
@@ -80,7 +99,6 @@ class TfTensorOutput(BaseOutputAdapter):
         parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
         parsed_args = parser.parse_args(args)
 
-        result = decode_tf_if_needed(result)
         if parsed_args.output == 'json':
             result = jsonize(result)
         else:
@@ -89,7 +107,6 @@ class TfTensorOutput(BaseOutputAdapter):
 
     def to_aws_lambda_event(self, result, event):
 
-        result = decode_tf_if_needed(result)
         result = jsonize(result)
 
         # Allow disabling CORS by setting it to None
@@ -101,10 +118,3 @@ class TfTensorOutput(BaseOutputAdapter):
             }
 
         return {"statusCode": 200, "body": result}
-
-    @property
-    def pip_dependencies(self):
-        """
-        :return: List of PyPI package names required by this OutputAdapter
-        """
-        return ['tensorflow', 'numpy']

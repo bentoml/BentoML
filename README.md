@@ -65,14 +65,14 @@ A minimal prediction service in BentoML looks something like this:
 ```python
 # https://github.com/bentoml/BentoML/blob/master/guides/quick-start/iris_classifier.py
 from bentoml import env, artifacts, api, BentoService
-from bentoml.handlers import DataframeHandler
+from bentoml.adapters import DataframeInput
 from bentoml.artifact import SklearnModelArtifact
 
 @env(auto_pip_dependencies=True)
 @artifacts([SklearnModelArtifact('model')])
 class IrisClassifier(BentoService):
 
-    @api(DataframeHandler)
+    @api(input=DataframeInput())
     def predict(self, df):
         # Optional pre-processing, post-processing code goes here
         return self.artifacts.model.predict(df)
@@ -80,7 +80,7 @@ class IrisClassifier(BentoService):
 
 This code defines a prediction service that bundles a scikit-learn model and provides an
  API. The API here is the entry point for accessing this prediction service, and an API
- with `DataframeHandler` will convert HTTP JSON request into `pandas.DataFrame` object
+ with `DataframeInput` will convert HTTP JSON request into `pandas.DataFrame` object
  before passing it to the user-defined API function for inferencing.
 
 The following code trains a scikit-learn model and bundles the trained model with an
@@ -182,8 +182,8 @@ AWS SageMaker, with the bentoml CLI command:
 ```bash
 $ bentoml get IrisClassifier
 BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
-IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeHandler>  model<SklearnModelArtifact>
-IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeHandler>  clf<PickleArtifact>
+IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeInput>  model<SklearnModelArtifact>
+IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeInput>  clf<PickleArtifact>
 ...
 
 $ bentoml lambda deploy test-deploy -b IrisClassifier:20200121114004_360ECB

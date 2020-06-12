@@ -1,39 +1,39 @@
-.. _bentoml-api-handlers-label:
+.. _bentoml-api-adapters-label:
 
-API Handlers
+API InputAdapters(former Handlers)
 ================
 
-DataframeHandler
+DataframeInput
 ++++++++++++++++
-.. autoclass:: bentoml.handlers.DataframeHandler
+.. autoclass:: bentoml.adapters.DataframeInput
 
-JsonHandler
+JsonInput
 +++++++++++
-.. autoclass:: bentoml.handlers.JsonHandler
+.. autoclass:: bentoml.adapters.JsonInput
 
-TensorflowTensorHandler
+TfTensorInput
 +++++++++++++++++++++++
-.. autoclass:: bentoml.handlers.TensorflowTensorHandler
+.. autoclass:: bentoml.adapters.TfTensorInput
 
-ImageHandler
+ImageInput
 ++++++++++++
-.. autoclass:: bentoml.handlers.ImageHandler
+.. autoclass:: bentoml.adapters.ImageInput
 
-LegacyImageHandler
+LegacyImageInput
 ++++++++++++
-.. autoclass:: bentoml.handlers.LegacyImageHandler
+.. autoclass:: bentoml.adapters.LegacyImageInput
 
-FastaiImageHandler
+FastaiImageInput
 ++++++++++++++++++
-.. autoclass:: bentoml.handlers.FastaiImageHandler
+.. autoclass:: bentoml.adapters.FastaiImageInput
 
-ClipperHandler
+ClipperInput
 ++++++++++++++
 
-A special group of handlers that are designed to be used when deploying with `Clipper <http://clipper.ai/>`_.
+A special group of adapters that are designed to be used when deploying with `Clipper <http://clipper.ai/>`_.
 
-.. autoclass:: bentoml.handlers.ClipperBytesHandler
-.. autoclass:: bentoml.handlers.ClipperFloatsHandler
-.. autoclass:: bentoml.handlers.ClipperIntsHandler
-.. autoclass:: bentoml.handlers.ClipperDoublesHandler
-.. autoclass:: bentoml.handlers.ClipperStringsHandler
+.. autoclass:: bentoml.adapters.ClipperBytesInput
+.. autoclass:: bentoml.adapters.ClipperFloatsInput
+.. autoclass:: bentoml.adapters.ClipperIntsInput
+.. autoclass:: bentoml.adapters.ClipperDoublesInput
+.. autoclass:: bentoml.adapters.ClipperStringsInput

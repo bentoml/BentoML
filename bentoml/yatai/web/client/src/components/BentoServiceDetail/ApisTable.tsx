@@ -40,7 +40,7 @@ const handlerConfigToTableContent = (
 
 interface IApiProps {
   name: string;
-  handler_type: string;
+  input_type: string;
   docs: string;
   handler_config: { [key: string]: string };
 }
@@ -58,7 +58,7 @@ const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
   const apisTableContent = apis.map((api) => ({
     content: [
       api.name,
-      api.handler_type,
+      api.input_type,
       handlerConfigToTableContent(api.handler_config),
       api.docs,
     ],

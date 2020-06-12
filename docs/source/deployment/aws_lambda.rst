@@ -43,7 +43,7 @@ Use `bento list` to get the BentoService name:version tag.
     > bentoml list
 
     BentoService                          CREATED_AT                  APIS                        ARTIFACTS
-    IrisClassifier:20200121141808_FE78B5  2020-01-21 22:18:25.079723  predict(DataframeHandler)  model(SklearnModelArtifact)
+    IrisClassifier:20200121141808_FE78B5  2020-01-21 22:18:25.079723  predict(DataframeInput)  model(SklearnModelArtifact)
 
 
 BentoML has great support for AWS Lambda. You can deploy, update and delete Lambda

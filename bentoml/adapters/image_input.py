@@ -24,7 +24,7 @@ from werkzeug.wrappers import Request
 from bentoml import config
 from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 from bentoml.exceptions import BadInput, MissingDependencyException
-from bentoml.handlers.base_handlers import BentoHandler
+from bentoml.adapters.base_input import BaseInputAdapter
 
 
 def _import_imageio_imread():
@@ -32,7 +32,7 @@ def _import_imageio_imread():
         from imageio import imread
     except ImportError:
         raise MissingDependencyException(
-            "imageio package is required to use ImageHandler"
+            "imageio package is required to use ImageInput"
         )
 
     return imread
@@ -57,12 +57,12 @@ def get_default_accept_image_formats():
     return [
         extension.strip()
         for extension in config("apiserver")
-        .get("default_image_handler_accept_file_extensions")
+        .get("default_image_input_accept_file_extensions")
         .split(",")
     ]
 
 
-class ImageHandler(BentoHandler):
+class ImageInput(BaseInputAdapter):
     """Transform incoming image data from http request, cli or lambda event into numpy
     array.
 
@@ -72,7 +72,7 @@ class ImageHandler(BentoHandler):
     Args:
         accept_image_formats (string[]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
-            'apiserver/default_image_handler_accept_file_extensions', which is
+            'apiserver/default_image_input_accept_file_extensions', which is
             set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
             List of all supported format can be found here:
             https://imageio.readthedocs.io/en/stable/formats.html
@@ -81,7 +81,7 @@ class ImageHandler(BentoHandler):
             https://imageio.readthedocs.io/en/stable/format_png-pil.html
 
     Raises:
-        ImportError: imageio package is required to use ImageHandler
+        ImportError: imageio package is required to use ImageInput
     """
 
     HTTP_METHODS = ["POST"]
@@ -95,13 +95,13 @@ class ImageHandler(BentoHandler):
         **base_kwargs,
     ):
         if is_batch_input:
-            raise ValueError('ImageHandler can not accpept batch inputs')
-        super(ImageHandler, self).__init__(**base_kwargs)
+            raise ValueError('ImageInput can not accpept batch inputs')
+        super(ImageInput, self).__init__(**base_kwargs)
         if 'input_names' in base_kwargs:
             raise TypeError(
-                "ImageHandler doesn't take input_names as parameters since bentoml 0.8."
+                "ImageInput doesn't take input_names as parameters since bentoml 0.8."
                 "Update your Service definition "
-                "or use LegacyImageHandler instead(not recommended)."
+                "or use LegacyImageInput instead(not recommended)."
             )
         self.imread = _import_imageio_imread()
 
@@ -140,20 +140,20 @@ class ImageHandler(BentoHandler):
         if len(request.files):
             if len(request.files) != 1:
                 raise BadInput(
-                    "ImageHandler requires one and at least one image file at a time, "
+                    "ImageInput requires one and at least one image file at a time, "
                     "if you just upgraded from bentoml 0.7, you may need to use "
-                    "MultiImageHandler or LegacyImageHandler instead"
+                    "MultiImageHandler or LegacyImageInput instead"
                 )
             input_file = next(iter(request.files.values()))
             if not input_file:
-                raise BadInput("BentoML#ImageHandler unexpected HTTP request format")
+                raise BadInput("BentoML#ImageInput unexpected HTTP request format")
             file_name = secure_filename(input_file.filename)
             verify_image_format_or_raise(file_name, self.accept_image_formats)
             input_stream = input_file.stream
         else:
             data = request.get_data()
             if not data:
-                raise BadInput("BentoML#ImageHandler unexpected HTTP request format")
+                raise BadInput("BentoML#ImageInput unexpected HTTP request format")
             else:
                 input_stream = data
 

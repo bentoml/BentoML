@@ -94,7 +94,8 @@ latency. It will respond to the fluctuations of server loading.
 .. code:: python
 
     class MovieReviewService(bentoml.BentoService):
-        @bentoml.api(DataframeHandler, mb_max_latency=300, mb_max_batch_size=1000)
+        @bentoml.api(input=DataframeInput(),
+                     mb_max_latency=300, mb_max_batch_size=1000)
         def predict(self, inputs):
                     pass
 

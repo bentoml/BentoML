@@ -41,13 +41,13 @@ class H2oModelArtifact(BentoServiceArtifact):
     >>>
     >>> import bentoml
     >>> from bentoml.artifact import H2oModelArtifact
-    >>> from bentoml.handlers import DataframeHandler
+    >>> from bentoml.adapters import DataframeInput
     >>>
     >>> @bentoml.artifacts([H2oModelArtifact('model')])
     >>> @bentoml.env(auto_pip_dependencies=True)
     >>> class H2oModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(DataframeHandler)
+    >>>     @bentoml.api(input=DataframeInput())
     >>>     def predict(self, df):
     >>>         hf = h2o.H2OFrame(df)
     >>>         predictions = self.artifacts.model.predict(hf)

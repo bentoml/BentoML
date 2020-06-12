@@ -42,13 +42,13 @@ class LightGBMModelArtifact(BentoServiceArtifact):
     >>>
     >>> import bentoml
     >>> from bentoml.artifact import LightGBMModelArtifact
-    >>> from bentoml.handlers import DataframeHandler
+    >>> from bentoml.adapters import DataframeInput
     >>>
     >>> @bentoml.artifacts([LightGBMModelArtifact('model')])
     >>> @bentoml.env(auto_pip_dependencies=True)
     >>> class LgbModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(DataframeHandler)
+    >>>     @bentoml.api(input=DataframeInput())
     >>>     def predict(self, df):
     >>>         return self.artifacts.model.predict(df)
     >>>

@@ -40,8 +40,8 @@ Train Iris classifier model
     >>> clf.fit(X, y)
 
 
-BentoML provides handler types that are specific for use with Clipper, including `ClipperBytesHandler`,
-`ClipperIntsHandler`, `ClipperFloatsHandler`, `ClipperDoublesHandler`, `ClipperStringsHandler` each
+BentoML provides handler types that are specific for use with Clipper, including `ClipperBytesInput`,
+`ClipperIntsInput`, `ClipperFloatsInput`, `ClipperDoublesInput`, `ClipperStringsInput` each
 corresponding to one input type that clipper support.
 
 Other than using Clipper specific handler, the rest are the same as defining a regular BentoService class:
@@ -51,17 +51,17 @@ Other than using Clipper specific handler, the rest are the same as defining a r
     >>> # save this to a separate iris_classifier.py file
     >>> from bentoml import BentoService, api, env, artifacts
     >>> from bentoml.artifact import PickleArtifact
-    >>> from bentoml.handlers import DataframeHandler, ClipperFloatsHandler
+    >>> from bentoml.adapters import DataframeInput, ClipperFloatsInput
 
     >>> @artifacts([PickleArtifact('model')])
     >>> @env(pip_dependencies=["scikit-learn"])
     >>> class IrisClassifier(BentoService):
 
-    >>>     @api(DataframeHandler)
+    >>>     @api(input=DataframeInput())
     >>>     def predict(self, df):
     >>>         return self.artifacts.model.predict(df)
     >>>
-    >>>     @api(ClipperFloatsHandler)
+    >>>     @api(input=ClipperFloatsInput())
     >>>     def predict_clipper(self, inputs):
     >>>         return self.artifacts.model.predict(inputs)
 

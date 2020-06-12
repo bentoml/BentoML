@@ -234,15 +234,15 @@ def api_decorator(
 
     before version 0.8
     >>> from bentoml import BentoService, api
-    >>> from bentoml.handlers import JsonHandler, DataframeHandler
+    >>> from bentoml.handlers import JsonHandler, DataframeHandler  # deprecated
     >>>
     >>> class FraudDetectionAndIdentityService(BentoService):
     >>>
-    >>>     @api(JsonHandler)
+    >>>     @api(JsonHandler)  # deprecated
     >>>     def fraud_detect(self, parsed_json):
     >>>         # do something
     >>>
-    >>>     @api(DataframeHandler, input_json_orient='records')
+    >>>     @api(DataframeHandler, input_json_orient='records')  # deprecated
     >>>     def identity(self, df):
     >>>         # do something
 

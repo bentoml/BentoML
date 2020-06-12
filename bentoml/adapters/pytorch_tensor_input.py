@@ -15,9 +15,9 @@
 from bentoml.adapters.base_input import BaseInputAdapter
 
 
-class PytorchTensorHandler(BaseInputAdapter):
+class PytorchTensorInput(BaseInputAdapter):
     """
-    Tensor handlers for Pytorch models
+    Tensor input adapter for Pytorch models
     """
 
     def handle_request(self, request, func):

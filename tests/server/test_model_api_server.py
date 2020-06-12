@@ -41,7 +41,7 @@ def test_api_function_route(bento_service, tmpdir, img_file):
     )
     assert response.data.decode().strip() == '30'
 
-    # Test Image handlers.
+    # Test ImageInput.
     with open(str(img_file), "rb") as f:
         img = f.read()
 

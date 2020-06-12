@@ -142,7 +142,7 @@ class ImageInput(BaseInputAdapter):
                 raise BadInput(
                     "ImageInput requires one and at least one image file at a time, "
                     "if you just upgraded from bentoml 0.7, you may need to use "
-                    "MultiImageHandler or LegacyImageInput instead"
+                    "FileInput or LegacyImageInput instead"
                 )
             input_file = next(iter(request.files.values()))
             if not input_file:

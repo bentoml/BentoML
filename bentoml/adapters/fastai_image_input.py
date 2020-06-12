@@ -23,7 +23,7 @@ import numpy as np
 
 from bentoml.exceptions import BadInput, MissingDependencyException
 from bentoml.adapters.base_input import BaseInputAdapter, api_func_result_to_json
-from bentoml.adapters.image_handler import (
+from bentoml.adapters.image_input import (
     verify_image_format_or_raise,
     get_default_accept_image_formats,
 )
@@ -34,7 +34,7 @@ def _import_fastai_vision():
         from fastai import vision
     except ImportError:
         raise MissingDependencyException(
-            "fastai.vision package is required to use FastaiImageHandler"
+            "fastai.vision package is required to use FastaiImageInput"
         )
 
     return vision
@@ -45,13 +45,13 @@ def _import_imageio_imread():
         from imageio import imread
     except ImportError:
         raise MissingDependencyException(
-            "imageio package is required to use FastaiImageHandler"
+            "imageio package is required to use FastaiImageInput"
         )
 
     return imread
 
 
-class FastaiImageHandler(BaseInputAdapter):
+class FastaiImageInput(BaseInputAdapter):
     """InputAdapter specified for handling image input following fastai conventions
     by passing type fastai.vision.Image to user API function and providing options
     such as div, cls, and after_open
@@ -61,7 +61,7 @@ class FastaiImageHandler(BaseInputAdapter):
             Default value is (image,)
         accept_image_formats ([str]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
-            'apiserver/default_image_handler_accept_file_extensions', which is
+            'apiserver/default_image_input_accept_file_extensions', which is
             set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
             List of all supported format can be found here:
             https://imageio.readthedocs.io/en/stable/formats.html
@@ -76,8 +76,8 @@ class FastaiImageHandler(BaseInputAdapter):
             is None
 
     Raises:
-        ImportError: imageio package is required to use FastaiImageHandler
-        ImportError: fastai package is required to use FastaiImageHandler
+        ImportError: imageio package is required to use FastaiImageInput
+        ImportError: fastai package is required to use FastaiImageInput
     """
 
     HTTP_METHODS = ["POST"]
@@ -92,7 +92,7 @@ class FastaiImageHandler(BaseInputAdapter):
         after_open=None,
         **base_kwargs,
     ):
-        super(FastaiImageHandler, self).__init__(**base_kwargs)
+        super(FastaiImageInput, self).__init__(**base_kwargs)
         self.imread = _import_imageio_imread()
         self.fastai_vision = _import_fastai_vision()
 
@@ -154,7 +154,7 @@ class FastaiImageHandler(BaseInputAdapter):
                 input_streams = (data,)
             else:
                 raise BadInput(
-                    "BentoML#ImageHandler unexpected HTTP request: %s" % request
+                    "BentoML#FastaiImageInput unexpected HTTP request: %s" % request
                 )
 
         input_data = []

@@ -31,7 +31,7 @@ decode_b64_if_needed = NestedConverter(tf_b64_2_bytes)
 decode_tf_if_needed = NestedConverter(tf_tensor_2_serializable)
 
 
-class TensorflowTensorHandler(BaseInputAdapter):
+class TfTensorInput(BaseInputAdapter):
     """
     Tensor input adapter for Tensorflow models.
     Transform incoming tf tensor data from http request, cli or lambda event into
@@ -51,14 +51,14 @@ class TensorflowTensorHandler(BaseInputAdapter):
     METHODS = (PREDICT, CLASSIFY, REGRESS) = ("predict", "classify", "regress")
 
     def __init__(self, method=PREDICT, is_batch_input=True, **base_kwargs):
-        super(TensorflowTensorHandler, self).__init__(
+        super(TfTensorInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )
         self.method = method
 
     @property
     def config(self):
-        base_config = super(TensorflowTensorHandler, self).config
+        base_config = super(TfTensorInput, self).config
         return dict(base_config, method=self.method,)
 
     @property

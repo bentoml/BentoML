@@ -23,8 +23,8 @@ from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.utils import concat_list
 
 
-class JsonHandler(BaseInputAdapter):
-    """JsonHandler parses REST API request or CLI command into parsed_json(a
+class JsonInput(BaseInputAdapter):
+    """JsonInput parses REST API request or CLI command into parsed_json(a
     dict in python) and pass down to user defined API function
 
     """
@@ -32,7 +32,7 @@ class JsonHandler(BaseInputAdapter):
     BATCH_MODE_SUPPORTED = True
 
     def __init__(self, is_batch_input=False, **base_kwargs):
-        super(JsonHandler, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
+        super(JsonInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
 
     def handle_request(self, request, func):
         if request.content_type == "application/json":

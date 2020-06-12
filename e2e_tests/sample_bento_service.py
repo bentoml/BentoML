@@ -1,21 +1,21 @@
 import logging
 
 from bentoml import BentoService, api
-from bentoml.handlers import JsonHandler
+from bentoml.adapters import JsonInput
 
 
 logger = logging.getLogger('bentoml.test')
 
 
 class SampleBentoService(BentoService):
-    @api(JsonHandler)
+    @api(input=JsonInput())
     def predict(self, data):
         logger.info(f"SampleBentoService predict API received data {data}")
         return 'cat'
 
 
 class UpdatedSampleBentoService(BentoService):
-    @api(JsonHandler)
+    @api(input=JsonInput())
     def predict(self, data):
         logger.info(f"UpdatedSampleBentoService predict API received data {data}")
         return 'dog'

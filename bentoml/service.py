@@ -56,7 +56,7 @@ class BentoServiceAPI(object):
         """
         :param service: ref to service containing this API
         :param name: API name
-        :param handler: A BentoHandler that transforms HTTP Request and/or
+        :param handler: A InputAdapter that transforms HTTP Request and/or
             CLI options into parameters for API func
         :param func: API func contains the actual API callback, this is
             typically the 'predict' method on a model
@@ -220,15 +220,15 @@ def api_decorator(
 
     after version 0.8
     >>> from bentoml import BentoService, api
-    >>> from bentoml.handlers import JsonHandler, DataframeHandler
+    >>> from bentoml.adapters import JsonInput, DataframeInput
     >>>
     >>> class FraudDetectionAndIdentityService(BentoService):
     >>>
-    >>>     @api(input=JsonHandler())
+    >>>     @api(input=JsonInput())
     >>>     def fraud_detect(self, parsed_json):
     >>>         # do something
     >>>
-    >>>     @api(input=DataframeHandler(input_json_orient='records'))
+    >>>     @api(input=DataframeInput(input_json_orient='records'))
     >>>     def identity(self, df):
     >>>         # do something
 
@@ -250,7 +250,7 @@ def api_decorator(
 
     DEFAULT_API_DOC = "BentoService API"
 
-    from bentoml.handlers import BentoHandler
+    from bentoml.adapters import BaseInputAdapter
 
     def decorator(func):
         _api_name = func.__name__ if api_name is None else api_name
@@ -267,7 +267,7 @@ def api_decorator(
         if input is None:
             # support bentoml<=0.7
             if not args or not (
-                inspect.isclass(args[0]) and issubclass(args[0], BentoHandler)
+                inspect.isclass(args[0]) and issubclass(args[0], BaseInputAdapter)
             ):
                 raise InvalidArgument(
                     "BentoService @api decorator first parameter must "
@@ -471,7 +471,7 @@ class BentoService(BentoServiceBase):
 
     Each BentoService can contain multiple models via the BentoML Artifact class, and
     can define multiple APIs for accessing this service. Each API should specify a type
-    of Handler, which defines the expected input data format for this API.
+    of InputAdapter, which defines the expected input data format for this API.
 
     >>>  from bentoml import BentoService, env, api, artifacts, ver
     >>>  from bentoml.adapters import DataframeInput
@@ -482,7 +482,7 @@ class BentoService(BentoServiceBase):
     >>>  @env(pip_dependencies=["scikit-learn"])
     >>>  class MyMLService(BentoService):
     >>>
-    >>>     @api(input=DataframeHandler())
+    >>>     @api(input=DataframeInput())
     >>>     def predict(self, df):
     >>>         return self.artifacts.clf.predict(df)
     >>>

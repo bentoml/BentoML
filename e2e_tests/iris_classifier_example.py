@@ -6,6 +6,6 @@ from bentoml.adapters import DataframeInput
 @env(auto_pip_dependencies=True)
 @artifacts([SklearnModelArtifact('clf')])
 class IrisClassifier(BentoService):
-    @api(input=DataframeHandler())
+    @api(input=DataframeInput())
     def predict(self, df):
         return self.artifacts.clf.predict(df)

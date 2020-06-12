@@ -13,7 +13,7 @@ def test_get_bento_service_event_properties(bento_service):
     assert len(properties["input_types"]) == 4
 
     # Disabling fastai related tests to fix travis build
-    # assert 'FastaiImageHandler' in properties["input_types"]
+    # assert 'FastaiImageInput' in properties["input_types"]
     # assert len(properties["input_types"]) == 4
 
     assert properties["env"] is not None

@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import json
 
-from bentoml.handlers import DataframeHandler
+from bentoml.adapters import DataframeInput
 from bentoml.adapters.dataframe_input import (
     _check_dataframe_column_contains,
     read_dataframes_from_json_n_csv,
@@ -18,7 +18,7 @@ except ImportError:
 
 
 def test_dataframe_request_schema():
-    handler = DataframeHandler(
+    handler = DataframeInput(
         input_dtypes={"col1": "int", "col2": "float", "col3": "string"}
     )
 
@@ -35,7 +35,7 @@ def test_dataframe_handle_cli(capsys, tmpdir):
     def test_func(df):
         return df["name"][0]
 
-    handler = DataframeHandler()
+    handler = DataframeInput()
 
     json_file = tmpdir.join("test.json")
     with open(str(json_file), "w") as f:
@@ -53,7 +53,7 @@ def test_dataframe_handle_aws_lambda_event():
     def test_func(df):
         return df["name"][0]
 
-    handler = DataframeHandler()
+    handler = DataframeInput()
     event = {
         "headers": {"Content-Type": "application/json"},
         "body": test_content,
@@ -62,7 +62,7 @@ def test_dataframe_handle_aws_lambda_event():
     assert response["statusCode"] == 200
     assert response["body"] == '"john"'
 
-    handler = DataframeHandler()
+    handler = DataframeInput()
     event_without_content_type_header = {
         "headers": {},
         "body": test_content,
@@ -108,7 +108,7 @@ def test_dataframe_handle_request_csv():
     def test_function(df):
         return df["name"][0]
 
-    handler = DataframeHandler()
+    handler = DataframeInput()
     csv_data = 'name,game,city\njohn,mario,sf'.encode('utf-8')
     request = Mock()
     request.headers = {'output_orient': 'records', 'orient': 'records'}

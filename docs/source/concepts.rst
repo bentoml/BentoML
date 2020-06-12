@@ -32,8 +32,8 @@ Each BentoService class can contain multiple models declared through the
 :code:`@bentoml.artifact` API, and multiple APIs for accessing this service. Each API
 definition requires a :code:`InputAdapter` type, which defines the expected input data
 format of this API. BentoML provides API handlers that covers most model serving use
-cases including :code:`DataframeInput`, :code:`TensorHandler`, :code:`ImageHandler`
-and :code:`JsonHandler`.
+cases including :code:`DataframeInput`, :code:`TensorHandler`, :code:`ImageInput`
+and :code:`JsonInput`.
 
 
 Once an ML model is trained, a BentoService instance can bundle with the trained model
@@ -405,7 +405,7 @@ service that supports different access patterns for different clients, e.g.:
       def predict(self, df: pandas.Dataframe):
           return self.artifacts.model.predict(df)
 
-      @bentoml.api(JsonHandler)
+      @bentoml.api(input=JsonInput())
       def predict_json(self, json_arr):
           df = process_custom_json_format(json-arr)
           return self.artifacts.model.predict(df)
@@ -715,7 +715,7 @@ list all the BentoService created:
     IrisClassifier:20200323212422_A1D30D            1 day and 22 hours   predict<DataframeInput>   model<SklearnModelArtifact>
     IrisClassifier:20200304143410_CD5F13            3 weeks and 4 hours  predict<DataframeInput>   model<SklearnModelArtifact>
     SentimentAnalysisService:20191219090607_189CFE  13 weeks and 6 days  predict<DataframeInput>   model<SklearnModelArtifact>
-    TfModelService:20191216125343_06BCA3            14 weeks and 2 days  predict<JsonHandler>        model<TensorflowSavedModelArtifact>
+    TfModelService:20191216125343_06BCA3            14 weeks and 2 days  predict<JsonInput>        model<TensorflowSavedModelArtifact>
 
     > bentoml get IrisClassifier
     BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS

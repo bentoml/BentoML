@@ -4,8 +4,9 @@ from bentoml.adapters import (
     ImageInput,
     LegacyImageInput,
     JsonInput,
-    # FastaiImageHandler,
+    # FastaiImageInput,
 )
+from bentoml.handlers import DataframeHandler
 from bentoml.artifact import PickleArtifact
 
 
@@ -28,7 +29,7 @@ class ExampleBentoService(bentoml.BentoService):
         """
         return self.artifacts.model.predict_dataframe(df)
 
-    @bentoml.api(DataframeInput, input_dtypes={"col1": "int"})
+    @bentoml.api(DataframeHandler, input_dtypes={"col1": "int"})
     def predict_dataframe_v1(self, df):
         """predict_dataframe expects dataframe as input
         """
@@ -47,10 +48,10 @@ class ExampleBentoService(bentoml.BentoService):
         return self.artifacts.model.predict_json(input_data)
 
     # Disabling fastai related tests to fix travis build
-    # @bentoml.api(FastaiImageHandler)
+    # @bentoml.api(input=FastaiImageInput())
     # def predict_fastai_image(self, input_data):
     #     return self.artifacts.model.predict_image(input_data)
     #
-    # @bentoml.api(FastaiImageHandler, input_names=('original', 'compared'))
+    # @bentoml.api(input=FastaiImageInput(input_names=('original', 'compared')))
     # def predict_fastai_images(self, original, compared):
     #     return all(original.data[0, 0] == compared.data[0, 0])

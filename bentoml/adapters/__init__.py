@@ -14,11 +14,11 @@
 
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.dataframe_input import DataframeInput
-from bentoml.adapters.tensorflow_tensor_handler import TensorflowTensorHandler
-from bentoml.adapters.json_handler import JsonHandler
-from bentoml.adapters.image_handler import ImageHandler
-from bentoml.adapters.legacy_image_handler import LegacyImageHandler
-from bentoml.adapters.fastai_image_handler import FastaiImageHandler
+from bentoml.adapters.tensorflow_tensor_input import TfTensorInput
+from bentoml.adapters.json_input import JsonInput
+from bentoml.adapters.image_input import ImageInput
+from bentoml.adapters.legacy_image_input import LegacyImageInput
+from bentoml.adapters.fastai_image_input import FastaiImageInput
 from bentoml.adapters.clipper_input import (
     ClipperBytesInput,
     ClipperDoublesInput,
@@ -28,18 +28,10 @@ from bentoml.adapters.clipper_input import (
 )
 
 from bentoml.adapters.dataframe_output import DataframeOutput
-from bentoml.adapters.tf_tensor_output import TfTensorOutput
+from bentoml.adapters.tensorflow_tensor_output import TfTensorOutput
 from bentoml.adapters.base_output import BaseOutputAdapter
 from bentoml.adapters.default_output import DefaultOutput
 from bentoml.adapters.json_output import JsonserializableOutput
-
-TfTensorInput = TensorflowTensorHandler
-JsonInput = JsonHandler
-ImageInput = ImageHandler
-LegacyImageInput = LegacyImageHandler
-FastaiImageInput = FastaiImageHandler
-
-ClipperStringsInput = ClipperStringsInput
 
 
 BATCH_MODE_SUPPORTED_INPUT_TYPES = {
@@ -49,9 +41,13 @@ BATCH_MODE_SUPPORTED_INPUT_TYPES = {
 
 __all__ = [
     "BaseInputAdapter",
+    'BaseOutputAdapter',
     "DataframeInput",
+    'DataframeOutput',
     "TfTensorInput",
+    'TfTensorOutput',
     "JsonInput",
+    'JsonserializableOutput',
     "ImageInput",
     "LegacyImageInput",
     "FastaiImageInput",
@@ -61,8 +57,4 @@ __all__ = [
     "ClipperIntsInput",
     "ClipperStringsInput",
     'DefaultOutput',
-    'DataframeOutput',
-    'BaseOutputAdapter',
-    'TfTensorOutput',
-    'JsonserializableOutput',
 ]

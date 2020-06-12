@@ -189,8 +189,9 @@ def _deploy_lambda_function(
         for i in artifact_types
     ) and (py_major, py_minor) != ('3', '6'):
         raise BentoMLException(
-            'For Tensorflow and Keras model, only python3.6 is '
-            'supported for AWS Lambda deployment'
+            'AWS Lambda Deployment only supports BentoML services built with Python 3.6.x'
+            'To fix this, repack your service with the right'
+            'Python version (hint: pyenv/anaconda) and try again'
         )
 
     api_names = (

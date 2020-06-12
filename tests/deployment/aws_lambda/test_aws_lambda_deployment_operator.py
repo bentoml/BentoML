@@ -108,7 +108,7 @@ def test_aws_lambda_app_py(monkeypatch):
 
     assert predict({"headers": [], "body": 'test'}, None) == {
         'body': 'test',
-        'statusCode': 200
+        'statusCode': 200,
     }
 
 

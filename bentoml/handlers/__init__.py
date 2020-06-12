@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import functools
 
 from bentoml.adapters import (
     BaseInputAdapter,
@@ -39,8 +40,6 @@ logger.warning(
 
 def deprecated(cls, cls_name):
     class wrapped_cls(cls):
-        __name__ = cls_name
-
         def __init__(self, *args, **kwargs):
             super(wrapped_cls, self).__init__(*args, **kwargs)
             logger.warning(
@@ -48,6 +47,8 @@ def deprecated(cls, cls_name):
                 f'use {cls.__name__} instead'
             )
 
+    for attr_name in functools.WRAPPER_ASSIGNMENTS:
+        setattr(wrapped_cls, attr_name, getattr(cls, attr_name, None))
     return wrapped_cls
 
 

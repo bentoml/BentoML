@@ -56,7 +56,7 @@ def generate_lambda_deployment_pb():
 
 def test_aws_lambda_app_py(monkeypatch):
     def test_predict(value):
-        return value['body']
+        return {'body': value['body'], 'statusCode': 200}
 
     class Mock_bento_service_class(object):
         name = "mock_bento_service"
@@ -106,7 +106,10 @@ def test_aws_lambda_app_py(monkeypatch):
     with pytest.raises(RuntimeError):
         predict("Invalid Input Type", None)
 
-    assert predict({"headers": [], "body": 'test'}, None) == 'test'
+    assert predict({"headers": [], "body": 'test'}, None) == {
+        'body': 'test',
+        'statusCode': 200
+    }
 
 
 @patch('shutil.rmtree', MagicMock())

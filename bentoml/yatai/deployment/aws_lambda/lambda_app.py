@@ -68,7 +68,10 @@ def api_func(event, context):  # pylint: disable=unused-argument
     if type(event) is dict and "headers" in event and "body" in event:
         print(f'Got prediction request with body "{event["body"]}"')
         prediction = bento_service_api.handle_aws_lambda_event(event)
-        print(f'Predicted "{prediction["body"]}" with status code {prediction["statusCode"]}')
+        print(
+            f'Predicted "{prediction["body"]}" with'
+            'status code {prediction["statusCode"]}'
+        )
         return prediction
     else:
         error_msg = (

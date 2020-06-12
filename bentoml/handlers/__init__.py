@@ -12,21 +12,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+
 from bentoml.adapters import (
-    BaseInputAdapter as BentoHandler,
-    DataframeInput as DataframeHandler,
-    TfTensorInput as TensorflowTensorHandler,
-    JsonInput as JsonHandler,
-    ImageInput as ImageHandler,
-    LegacyImageInput as LegacyImageHandler,
-    FastaiImageInput as FastaiImageHandler,
-    ClipperIntsInput as ClipperIntsHandler,
-    ClipperBytesInput as ClipperBytesHandler,
-    ClipperDoublesInput as ClipperDoublesHandler,
-    ClipperFloatsInput as ClipperFloatsHandler,
-    ClipperStringsInput as ClipperStringsHandler,
+    BaseInputAdapter,
+    DataframeInput,
+    TfTensorInput,
+    JsonInput,
+    ImageInput,
+    LegacyImageInput,
+    FastaiImageInput,
+    ClipperIntsInput,
+    ClipperBytesInput,
+    ClipperDoublesInput,
+    ClipperFloatsInput,
+    ClipperStringsInput,
 )
 
+logger = logging.getLogger(__name__)
+
+logger.warning(
+    'bentoml.handlers.* will be deprecated after bentoml 1.0, '
+    'use bentoml.adapters.* instead'
+)
+
+
+def deprecated(cls, cls_name):
+    class wrapped_cls(cls):
+        __name__ = cls_name
+
+        def __init__(self, *args, **kwargs):
+            super(wrapped_cls, self).__init__(*args, **kwargs)
+            logger.warning(
+                f'{cls_name} Will be deprecated after bentoml 1.0, '
+                f'use {cls.__name__} instead'
+            )
+
+    return wrapped_cls
+
+
+BentoHandler = deprecated(BaseInputAdapter, 'BentoHandler')
+DataframeHandler = deprecated(DataframeInput, 'DataframeHandler')
+TensorflowTensorHandler = deprecated(TfTensorInput, 'TensorflowTensorHandler')
+JsonHandler = deprecated(JsonInput, 'JsonHandler')
+ImageHandler = deprecated(ImageInput, 'ImageHandler')
+LegacyImageHandler = deprecated(LegacyImageInput, 'LegacyImageHandler')
+FastaiImageHandler = deprecated(FastaiImageInput, 'FastaiImageHandler')
+ClipperIntsHandler = deprecated(ClipperIntsInput, 'ClipperIntsHandler')
+ClipperBytesHandler = deprecated(ClipperBytesInput, 'ClipperBytesHandler')
+ClipperDoublesHandler = deprecated(ClipperDoublesInput, 'ClipperDoublesHandler')
+ClipperFloatsHandler = deprecated(ClipperFloatsInput, 'ClipperFloatsHandler')
+ClipperStringsHandler = deprecated(ClipperStringsInput, 'ClipperStringsHandler')
 
 __all__ = [
     "BentoHandler",

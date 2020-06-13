@@ -34,8 +34,8 @@ PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS = [
 ]
 
 
-class BentoHandler:
-    """BentoHandler is an abstraction layer between user defined API callback function
+class BaseInputAdapter:
+    """InputAdapter is an abstraction layer between user defined API callback function
     and prediction request input in a variety of different forms, such as HTTP request
     body, command line arguments or AWS Lambda event object.
     """
@@ -45,20 +45,27 @@ class BentoHandler:
 
     BATCH_MODE_SUPPORTED = False
 
-    def __init__(self, **base_config):
+    def __init__(self, output_adapter=None, **base_config):
         '''
         base_configs:
-            - mb_max_latency
-            - mb_max_batch_size
             - is_batch_input
         '''
         self._config = base_config
+        self._output_adapter = output_adapter
 
     @property
     def config(self):
         if getattr(self, '_config', None) is None:
             self._config = {}
         return self._config
+
+    @property
+    def output_adapter(self):
+        if self._output_adapter is None:
+            from .default_output import DefaultOutput
+
+            self._output_adapter = DefaultOutput()
+        return self._output_adapter
 
     def handle_request(self, request, func):
         """Handles an HTTP request, convert it into corresponding data
@@ -112,7 +119,7 @@ class BentoHandler:
     @property
     def pip_dependencies(self):
         """
-        :return: List of PyPI package names required by this BentoHandler
+        :return: List of PyPI package names required by this InputAdapter
         """
         return []
 

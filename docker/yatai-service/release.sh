@@ -10,11 +10,11 @@ fi
 
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd $GIT_ROOT/docker/yatai-service
+cd "$GIT_ROOT"/docker/yatai-service
 
 docker build --pull \
-    --build-arg version=$BENTOML_VERSION \
-    -t bentoml/yatai-service:$BENTOML_VERSION \
+    --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
+    -t bentoml/yatai-service:"$BENTOML_VERSION" \
     .
 
-docker push bentoml/yatai-service:$BENTOML_VERSION
+docker push bentoml/yatai-service:"$BENTOML_VERSION"

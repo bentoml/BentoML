@@ -31,6 +31,7 @@ from bentoml.artifact.tf_savedmodel_artifact import TensorflowSavedModelArtifact
 from bentoml.artifact.lightgbm_model_artifact import LightGBMModelArtifact
 from bentoml.artifact.fasttext_model_artifact import FasttextModelArtifact
 from bentoml.artifact.onnx_model_artifact import OnnxModelArtifact
+from bentoml.artifact.spacy_model_artifact import SpacyModelArtifact
 
 __all__ = [
     "BentoServiceArtifact",
@@ -49,5 +50,6 @@ __all__ = [
     "TensorflowSavedModelArtifact",
     "LightGBMModelArtifact",
     "FasttextModelArtifact",
-    'OnnxModelArtifact',
+    "OnnxModelArtifact",
+    "SpacyModelArtifact",
 ]

@@ -11,7 +11,7 @@ user who want to save cost and want to scale base on usage without administrativ
 Prerequisites
 -------------
 
-* An active AWS account configured on the machine with AWS CLI installed and configurated
+* An active AWS account configured on the machine with AWS CLI installed and configured
 
   * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
   * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
@@ -43,14 +43,14 @@ Use `bento list` to get the BentoService name:version tag.
     > bentoml list
 
     BentoService                          CREATED_AT                  APIS                        ARTIFACTS
-    IrisClassifier:20200121141808_FE78B5  2020-01-21 22:18:25.079723  predict(DataframeHandler)  model(SklearnModelArtifact)
+    IrisClassifier:20200121141808_FE78B5  2020-01-21 22:18:25.079723  predict(DataframeInput)  model(SklearnModelArtifact)
 
 
 BentoML has great support for AWS Lambda. You can deploy, update and delete Lambda
 deployment with single command, and customize deployment to fit your needs with parameters
 such as `memory_size` and `timeout`
 
-To deloy BentoService to AWS Lambda, use `bentoml lambda deploy` command.
+To deploy BentoService to AWS Lambda, use `bentoml lambda deploy` command.
 Deployment name and bento service name:version tag is required.
 
 .. code-block:: bash
@@ -60,8 +60,8 @@ Deployment name and bento service name:version tag is required.
     Deploying Lambda deployment -[2020-01-21 14:37:16,838] INFO - Building lambda project
     [2020-01-21 14:38:52,826] INFO - Packaging AWS Lambda project at /private/var/folders/kn/xnc9k74x03567n1mx2tfqnpr0000gn/T/bentoml-temp-qmzs123h ...
     [2020-01-21 14:39:18,834] INFO - Deploying lambda project
-    [2020-01-21 14:40:09,265] INFO - ApplyDeployment (my-frist-lambda-deployment, namespace dev) succeeded
-    Successfully created AWS Lambda deployment my-frist-lambda-deployment
+    [2020-01-21 14:40:09,265] INFO - ApplyDeployment (my-first-lambda-deployment, namespace dev) succeeded
+    Successfully created AWS Lambda deployment my-first-lambda-deployment
     {
       "namespace": "dev",
       "name": "my-first-lambda-deployment",

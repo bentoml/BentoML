@@ -68,7 +68,7 @@ Example Projects:
 
 .. autoclass:: bentoml.artifact.FastaiModelArtifact
 
-.. autoclass:: bentoml.handlers.FastaiImageHandler
+.. autoclass:: bentoml.adapters.FastaiImageInput
 
 =======
 XGBoost

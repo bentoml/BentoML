@@ -245,7 +245,7 @@ class BentoAPIServer:
     def bento_service_api_func_wrapper(self, api):
         """
         Create api function for flask route, it wraps around user defined API
-        callback and BentoHandler class, and adds request logging and instrument metrics
+        callback and adapter class, and adds request logging and instrument metrics
         """
         request_id = str(uuid.uuid4())
         service_name = self.bento_service.name

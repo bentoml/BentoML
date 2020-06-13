@@ -128,3 +128,5 @@ mlflow_tmp/
 # bundle local bentoml source when installed in editor mode
 __bentoml_tmp_sdist_build
 
+# vscode config
+.vscode/

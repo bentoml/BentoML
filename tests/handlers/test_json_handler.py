@@ -1,6 +1,6 @@
 import pytest
 
-from bentoml.handlers import JsonHandler
+from bentoml.adapters import JsonInput
 from bentoml.exceptions import BadInput
 
 
@@ -8,7 +8,7 @@ def test_json_handle_cli(capsys, tmpdir):
     def test_func(obj):
         return obj[0]["name"]
 
-    handler = JsonHandler()
+    handler = JsonInput()
 
     json_file = tmpdir.join("test.json")
     with open(str(json_file), "w") as f:
@@ -26,7 +26,7 @@ def test_json_handle_aws_lambda_event():
     def test_func(obj):
         return obj[0]["name"]
 
-    handler = JsonHandler()
+    handler = JsonInput()
     success_event_obj = {
         "headers": {"Content-Type": "application/json"},
         "body": test_content,

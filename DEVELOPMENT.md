@@ -1,20 +1,23 @@
-## Install BentoML from source code
+## Install BentoML from source
 
-Download the source code to local file system:
+Ensure you have git, python and pip installed, BentoML supports python 3.6, 3.7, and 3.8
+
+```bash
+$ python --version
+```
+
+```bash
+$ pip --version
+```
+
+
+Download the source code from BentoML's Github repository:
 ```bash
 $ git clone https://github.com/bentoml/BentoML.git
 $ cd BentoML
 ```
 
-Ensure you have python and pip installed, BentoML supports python 3.6, 3.7, and 3.8
-```bash
-$ python --version
-```
-```bash
-$ pip --version
-```
-
-And install BentoML with pip in `editable` mode:
+Install BentoML with pip in `editable` mode:
 ```
 pip install --editable .
 ```
@@ -22,10 +25,35 @@ pip install --editable .
 This will make `bentoml` available on your system which links to the sources of
 your local clone and pick up changes you made locally.
 
-Now you can test your BentoML installation by running the following in terminal:
+Test the BentoML installation:
 ```bash
 $ bentoml --version
 ```
+```python
+import bentoml
+print(bentoml.__version__)
+```
+
+#### Install BentoML from other forks or branches
+
+The `pip` command support installing directly from remote git repository. This makes it
+easy to try out new BentoML feature that has not been released, test changes in a pull 
+request. For example, to install BentoML from its master branch:
+
+```
+pip install git+https://github.com/bentoml/BentoML.git
+```
+
+Or to install from your own fork of BentoML:
+```
+pip install git+https://github.com/{your_github_username}/BentoML.git
+```
+
+You can also specify what branch to install from:
+```
+pip install git+https://github.com/{your_github_username}/BentoML.git@{branch_name}
+```
+
 
 
 ## How to run unit tests
@@ -59,7 +87,7 @@ $ tox -e py37
 $ tox -e py36
 ```
 
-## Optional: Run BentoML with verbose/debug logging
+## Run BentoML with verbose/debug logging
 
 Add the following lines to the Python code that invokes BentoML:
 
@@ -73,27 +101,6 @@ bentoml.configure_logging(logging.DEBUG)
 And/or use the `--verbose` option when running `bentoml` CLI command, e.g.:
 ```bash
 bentoml get IrisClassifier --verbose
-```
-
-## Installing BentoML from forks/branches
-
-When trying new BentoML feature that has not been released, testing a fork of
-BentoML on Google Colab or trying out changes in a pull request, an easy  way of
-doing so is to use `pip install git+...` command, for example to install BentoML
-from its master branch with all latest changes:
-
-```
-pip install git+https://github.com/bentoml/BentoML.git
-```
-
-Or to install from your own fork of BentoML:
-```
-pip install git+https://github.com/{your_github_username}/BentoML.git
-```
-
-You can also specify what branch to install from:
-```
-pip install git+https://github.com/{your_github_username}/BentoML.git@{branch_name}
 ```
 
 ## Style check and auto-formatting your code
@@ -131,14 +138,27 @@ $ python -m http.server --directory ./docs/build/html
 
 And go to your browser at `http://localhost:8000`
 
-If you are developing under `macOS`, we also made a script that watches docs
-file changes, automatically rebuild the docs html files, and refresh the browser
-tab to show the change:
+If you are developing under macOS or linux, we also made a script that watches docs
+file changes, automatically rebuild the docs, and refreshes the browser
+tab to show the change (macOS only):
+
+### macOS
 
 Make sure you have fswatch command installed:
 ```
 brew install fswatch
 ```
+
+Run the `watch.sh` script to start watching docs changes:
+```
+$ ./docs/watch.sh
+```
+
+### Linux
+Make sure you have `inotifywait` installed
+```shell script
+sudo apt install inotify-tools
+``` 
 
 Run the `watch.sh` script to start watching docs changes:
 ```

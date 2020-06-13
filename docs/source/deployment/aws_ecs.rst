@@ -15,7 +15,7 @@ trained with other machine learning frameworks, see more BentoML examples :doc:`
 Prerequisites
 -------------
 
-* An active AWS account configured on the machine with AWS CLI installed and configurated
+* An active AWS account configured on the machine with AWS CLI installed and configured
 
   * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
   * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
@@ -81,7 +81,7 @@ Verify the saved bundle created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeHandler",
+            "inputType": "DataframeInput",
             "docs": "BentoService API"
           }
         ]
@@ -297,7 +297,7 @@ Start ECR cluster with the ecr profile we created in the earlier step
     Subnet created: subnet-0dece5451f1a3b8b2
     Cluster creation succeeded.
 
-Use the VPC id from previous command to get secruity group ID
+Use the VPC id from previous command to get security group ID
 
 .. code-block:: bash
 

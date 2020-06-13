@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd $GIT_ROOT
+cd "$GIT_ROOT" || exit
 
 echo "Running flake8 on bentoml module.."
 flake8 --config=.flake8 bentoml

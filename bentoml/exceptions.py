@@ -74,7 +74,7 @@ class InvalidArgument(BentoMLException):
 
 
 class BadInput(InvalidArgument):
-    """Raise when BentoHandler receiving bad input request"""
+    """Raise when InputAdapter receiving bad input request"""
 
 
 class NotFound(BentoMLException):

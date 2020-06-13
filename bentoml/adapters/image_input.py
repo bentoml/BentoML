@@ -20,12 +20,11 @@ from typing import Iterable
 
 from werkzeug.utils import secure_filename
 from werkzeug.wrappers import Request
-from flask import Response
 
 from bentoml import config
 from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 from bentoml.exceptions import BadInput, MissingDependencyException
-from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
+from bentoml.adapters.base_input import BaseInputAdapter
 
 
 def _import_imageio_imread():
@@ -33,7 +32,7 @@ def _import_imageio_imread():
         from imageio import imread
     except ImportError:
         raise MissingDependencyException(
-            "imageio package is required to use ImageHandler"
+            "imageio package is required to use ImageInput"
         )
 
     return imread
@@ -58,12 +57,12 @@ def get_default_accept_image_formats():
     return [
         extension.strip()
         for extension in config("apiserver")
-        .get("default_image_handler_accept_file_extensions")
+        .get("default_image_input_accept_file_extensions")
         .split(",")
     ]
 
 
-class ImageHandler(BentoHandler):
+class ImageInput(BaseInputAdapter):
     """Transform incoming image data from http request, cli or lambda event into numpy
     array.
 
@@ -73,7 +72,7 @@ class ImageHandler(BentoHandler):
     Args:
         accept_image_formats (string[]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
-            'apiserver/default_image_handler_accept_file_extensions', which is
+            'apiserver/default_image_input_accept_file_extensions', which is
             set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
             List of all supported format can be found here:
             https://imageio.readthedocs.io/en/stable/formats.html
@@ -82,21 +81,27 @@ class ImageHandler(BentoHandler):
             https://imageio.readthedocs.io/en/stable/format_png-pil.html
 
     Raises:
-        ImportError: imageio package is required to use ImageHandler
+        ImportError: imageio package is required to use ImageInput
     """
 
     HTTP_METHODS = ["POST"]
     BATCH_MODE_SUPPORTED = True
 
     def __init__(
-        self, accept_image_formats=None, pilmode="RGB", **base_kwargs,
+        self,
+        accept_image_formats=None,
+        pilmode="RGB",
+        is_batch_input=False,
+        **base_kwargs,
     ):
-        super(ImageHandler, self).__init__(**base_kwargs)
+        if is_batch_input:
+            raise ValueError('ImageInput can not accpept batch inputs')
+        super(ImageInput, self).__init__(**base_kwargs)
         if 'input_names' in base_kwargs:
             raise TypeError(
-                "ImageHandler doesn't take input_names as parameters since bentoml 0.8."
+                "ImageInput doesn't take input_names as parameters since bentoml 0.8."
                 "Update your Service definition "
-                "or use LegacyImageHandler instead(not recommended)."
+                "or use LegacyImageInput instead(not recommended)."
             )
         self.imread = _import_imageio_imread()
 
@@ -135,20 +140,20 @@ class ImageHandler(BentoHandler):
         if len(request.files):
             if len(request.files) != 1:
                 raise BadInput(
-                    "ImageHandler requires one and at least one image file at a time, "
+                    "ImageInput requires one and at least one image file at a time, "
                     "if you just upgraded from bentoml 0.7, you may need to use "
-                    "MultiImageHandler or LegacyImageHandler instead"
+                    "MultiImageHandler or LegacyImageInput instead"
                 )
             input_file = next(iter(request.files.values()))
             if not input_file:
-                raise BadInput("BentoML#ImageHandler unexpected HTTP request format")
+                raise BadInput("BentoML#ImageInput unexpected HTTP request format")
             file_name = secure_filename(input_file.filename)
             verify_image_format_or_raise(file_name, self.accept_image_formats)
             input_stream = input_file.stream
         else:
             data = request.get_data()
             if not data:
-                raise BadInput("BentoML#ImageHandler unexpected HTTP request format")
+                raise BadInput("BentoML#ImageInput unexpected HTTP request format")
             else:
                 input_stream = data
 
@@ -161,13 +166,11 @@ class ImageHandler(BentoHandler):
         """
         Batch version of handle_request
         """
-        bad_resp = SimpleResponse(400, None, "Bad Input")
-        responses = [bad_resp] * len(requests)
-
         input_datas = []
         ids = []
         for i, req in enumerate(requests):
             if not req.data:
+                ids.append(None)
                 continue
             request = Request.from_values(
                 input_stream=BytesIO(req.data),
@@ -176,18 +179,15 @@ class ImageHandler(BentoHandler):
             )
             try:
                 input_data = self._load_image_data(request)
-            except BadInput as e:
-                responses[i] = SimpleResponse(400, None, str(e))
+            except BadInput:
+                ids.append(None)
                 continue
 
             input_datas.append(input_data)
             ids.append(i)
 
         results = func(input_datas) if input_datas else []
-        for i, result in zip(ids, results):
-            responses[i] = SimpleResponse(200, None, api_func_result_to_json(result))
-
-        return responses
+        return self.output_adapter.to_batch_response(results, ids, requests)
 
     def handle_request(self, request, func):
         """Handle http request that has one image file. It will convert image into a
@@ -202,18 +202,13 @@ class ImageHandler(BentoHandler):
         """
         input_data = self._load_image_data(request)
         result = func((input_data,))[0]
-        return Response(
-            response=api_func_result_to_json(result),
-            status=200,
-            mimetype="application/json",
-        )
+        return self.output_adapter.to_response(result, request)
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True, nargs='+')
-        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
         parser.add_argument("--batch-size", default=None, type=int)
-        parsed_args = parser.parse_args(args)
+        parsed_args, unknown_args = parser.parse_known_args(args)
         file_paths = parsed_args.input
 
         batch_size = (
@@ -231,13 +226,8 @@ class ImageHandler(BentoHandler):
                 image_arrays.append(self.imread(file_path, pilmode=self.pilmode))
 
             results = func(image_arrays)
-
             for result in results:
-                if parsed_args.output == "json":
-                    result = api_func_result_to_json(result)
-                else:
-                    result = str(result)
-                print(result)
+                return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):
@@ -249,5 +239,4 @@ class ImageHandler(BentoHandler):
             )
 
         result = func((image,))[0]
-        json_output = api_func_result_to_json(result)
-        return {"statusCode": 200, "body": json_output}
+        return self.output_adapter.to_aws_lambda_event(result, event)

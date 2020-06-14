@@ -41,10 +41,9 @@ TLDR:
 
 * Create API endpoint serving a trained model with just a few lines of code
 * Support all major machine learning training frameworks
-* High-performance online API serving with adaptive micro-batching support
-* Model management for teams, providing Web UI dashboard and CLI/API access
-* Flexible deployment orchestration with DevOps best practices baked-in, supporting Docker, Kubernetes, Apache Spark, AWS Lambda, SageMaker, Azure ML, GCP and more
-
+* High-Performance online API serving with adaptive micro-batching support
+* Model Registry for teams, providing Web UI dashboard and CLI/API access
+* Flexible deployment orchestration with DevOps best practices baked-in, supporting Docker, Kubernetes, Kubeflow, Knative, AWS Lambda, SageMaker, Azure ML, GCP and more
 
 Why BentoML
 -----------

@@ -9,13 +9,13 @@
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
 
 
-BentoML is a model serving framework for machine learning.
+BentoML is an open-source framework for __high-performance ML model serving__.
 
 What does BentoML do?
 * Create API endpoint serving a trained model with just a few lines of code
 * Support all major machine learning training frameworks
 * High-performance online API serving with adaptive micro-batching support
-* Model management for teams, providing Web UI dashboard and CLI/API access
+* Model Registry for teams, providing Web UI dashboard and CLI/API access
 * Flexible deployment orchestration with DevOps best practices baked-in, supporting Docker, Kubernetes, Apache Spark, AWS Lambda, SageMaker, Azure ML, GCP and more
 
 👉 Join [BentoML Slack](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg) to follow the latest development updates and roadmap discussions.

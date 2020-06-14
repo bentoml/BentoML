@@ -81,8 +81,10 @@ class Bento(Base):
 
 def _bento_orm_obj_to_pb(bento_obj):
     # Backwards compatible support loading saved bundle created before 0.8.0
-    if 'apis' in bento_obj.bento_service_metadata and \
-            bento_obj.bento_service_metadata['apis']:
+    if (
+        'apis' in bento_obj.bento_service_metadata
+        and bento_obj.bento_service_metadata['apis']
+    ):
         for api in bento_obj.bento_service_metadata['apis']:
             if 'handler_type' in api:
                 api['input_type'] = api['handler_type']

@@ -7,7 +7,7 @@ It provides a powerful way to orchestrate ML model containers and supports featu
 critical for building low latency online model serving systems.
 
 BentoML makes it easier to build custom containers that can be deployed to Clipper, users can easily add Clipper
-specify API handlers to their prediction service created with BentoML, and deploy them into clipper cluster.
+specify API inputs to their prediction service created with BentoML, and deploy them into clipper cluster.
 In this guide, we will demonstrate how to deploy a scikit-learn model to clipper, using BentoML.
 
 .. _micro batching: https://www.usenix.org/system/files/conference/nsdi17/nsdi17-crankshaw.pdf
@@ -40,11 +40,11 @@ Train Iris classifier model
     >>> clf.fit(X, y)
 
 
-BentoML provides handler types that are specific for use with Clipper, including `ClipperBytesInput`,
+BentoML provides input types that are specific for use with Clipper, including `ClipperBytesInput`,
 `ClipperIntsInput`, `ClipperFloatsInput`, `ClipperDoublesInput`, `ClipperStringsInput` each
 corresponding to one input type that clipper support.
 
-Other than using Clipper specific handler, the rest are the same as defining a regular BentoService class:
+Other than using Clipper specific input, the rest are the same as defining a regular BentoService class:
 
 .. code-block:: python
 
@@ -94,7 +94,7 @@ Save the BentoService
     [2019-11-13 15:41:24,395] INFO - BentoService bundle 'IrisClassifier:20191113154121_E7D3CE' created at: /Users/chaoyuyang/bentoml/repository/IrisClassifier/20191113154121_E7D3CE
 
 
-Test the clipper handler directly with a list of floats as input
+Test the clipper input directly with a list of floats as input
 
 .. code-block:: python
 

@@ -111,15 +111,15 @@ by default.
    ``mb_max_latency`` to 10 \* 100ms will help to achieve higher
    throughput.
 
-3. How to implement batch mode for custom handlers
+3. How to implement batch mode for custom input adapters
 ==================================================
 
-TL;DR: Implement the method ``batch_request_handler(requests)``
-following existent handlers.
+TL;DR: Implement the method ``handle_batch_request(requests)``
+following existent input adapters.
 
 The batching service is HTTP request-wise now, which is mostly
 transparent for developers. The only difference between
-``batch_request_handler`` and ``request_handler`` is:
+``handle_batch_request`` and ``handle_request`` is:
 
 -  the input parameter is a list of request object
 -  the return value should be a list of response object
@@ -130,7 +130,7 @@ alternative of each operation from the beginning. For example, each
 
 .. code:: python
 
-    def batch_request_handler(self, requests):
+    def handle_batch_request(self, requests):
         dfs = []
         for req in requests:
             dfs.append(pd.read_csv(req.body))

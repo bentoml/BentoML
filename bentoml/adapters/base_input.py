@@ -112,7 +112,8 @@ class BaseInputAdapter:
     @property
     def request_schema(self):
         """
-        :return: OpenAPI json schema for the HTTP API endpoint created with this handler
+        :return: OpenAPI json schema for the HTTP API endpoint created with this input
+                 adapter
         """
         return {"application/json": {"schema": {"type": "object"}}}
 

@@ -31,8 +31,8 @@ the :doc:`Getting Started Guide <quickstart>`:
 Each BentoService class can contain multiple models declared through the
 :code:`@bentoml.artifact` API, and multiple APIs for accessing this service. Each API
 definition requires a :code:`InputAdapter` type, which defines the expected input data
-format of this API. BentoML provides API handlers that covers most model serving use
-cases including :code:`DataframeInput`, :code:`TfTensorInput`, :code:`ImageInput`
+format of this API. BentoML provides API input adapters that covers most model serving
+use cases including :code:`DataframeInput`, :code:`TfTensorInput`, :code:`ImageInput`
 and :code:`JsonInput`.
 
 
@@ -521,7 +521,7 @@ you can still start the server by providing the path to the saved BentoService:
     bentoml serve $saved_path
 
 The REST API request format is determined by each API's input type and input config.
-More details can be found in the :ref:`BentoML API InputAdapters References <bentoml-api-handlers-label>`.
+More details can be found in the :ref:`BentoML API InputAdapters References <bentoml-api-adapters-label>`.
 
 For running production API server, make sure to run ``bentoml serve-gunicorn`` 
 command instead, or use Docker container for deployment.

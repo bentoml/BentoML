@@ -14,13 +14,17 @@
 
 import os
 import sys
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 try:
     import download_extra_resources
 
-    print("Downloading extra requirements and files from s3..")
+    logger.info("Downloading extra requirements and files from s3..")
     download_extra_resources.download_extra_resources()
-    print("Finished downloading extra requirements and files")
+    logger.info("Finished downloading extra requirements and files")
 except ImportError:
     # When function doesn't have extra resources or dependencies, we will not include
     # unzip_extra_resources and that will result with ImportError.  We will let it fail
@@ -45,11 +49,11 @@ bento_bundle_path = os.path.join('./', bento_name)
 if not os.path.exists(bento_bundle_path):
     bento_bundle_path = os.path.join('/tmp/requirements', bento_name)
 
-print(f'Loading BentoService bundle from path: "{bento_bundle_path}"')
+logger.info('Loading BentoService bundle from path: "%s"', bento_bundle_path)
 bento_service = load(bento_bundle_path)
-print(f'BentoService "{bento_service.name}" loaded successfully')
+logger.info('BentoService "%s" loaded successfully', bento_service.name)
 bento_service_api = bento_service.get_service_api(api_name)
-print(f'BentoService API "{api_name}" loaded successfully')
+logger.info('BentoService API "%s" loaded successfully', {api_name})
 
 this_module = sys.modules[__name__]
 
@@ -60,18 +64,30 @@ def api_func(event, context):  # pylint: disable=unused-argument
     parameter is usually of the Python dict type. It can also be list, str, int,
     float, or NoneType type. Currently BentoML only handles Lambda event coming from
     Application Load Balancer, in which case the parameter `event` must be type `dict`
-    containing the HTTP request headers and body.
-
-    see: https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
+    containing the HTTP request headers and body. 
+    
+    You can find an example of which
+    variables you can expect from the `event` object on the AWS Docs, here
+    https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
     """
 
     if type(event) is dict and "headers" in event and "body" in event:
-        print(f'Got prediction request with body "{event["body"]}"')
+        logger.info('Got prediction request with body "%s"', {event["body"]})
         prediction = bento_service_api.handle_aws_lambda_event(event)
-        print(
-            f'Predicted "{prediction["body"]}" with'
-            'status code {prediction["statusCode"]}'
-        )
+
+        # raw json logs
+        logger.debug(event)
+        logger.debug(prediction)
+
+        if prediction["statusCode"] >= 400:
+            logger.warning(
+                'Error when predicting. Check logs for more information.'
+            )
+        else:
+            logger.info(
+                'Predicted "%s"', prediction["body"]
+            )
+
         return prediction
     else:
         error_msg = (
@@ -79,7 +95,7 @@ def api_func(event, context):  # pylint: disable=unused-argument
             'deployment can only handle event triggered by HTTP request from '
             'Application Load Balancer.'
         )
-        print(error_msg)
+        logger.error(error_msg)
         raise RuntimeError(error_msg)
 
 

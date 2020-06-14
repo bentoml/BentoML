@@ -201,7 +201,44 @@ Use `bentoml lambda list` to have a quick glance of all of the AWS Lambda deploy
     NAME                        NAMESPACE    LABELS    PLATFORM    STATUS    AGE
     my-first-lambda-deployment  dev                    aws-lambda  running   8 minutes and 49.6 seconds
 
+If you need to look at the logs of your deployed model, we can view these within AWS CloudWatch. You can get here by searching up `CloudWatch` in your AWS Console. Then, on the left panel, click `Logs > Log Groups` and select your Lambda deployment. The name should be of the form `/aws/lambda/dev-{name}` where `{name}` is the name you used when you deployed it using the CLI. Here, you can look at specific instances of your Lambda function and the logs within it. A typical prediction may look something like the following
 
+.. code-block:: none
+
+    ...
+    START RequestId: 11ee8a7a-9884-454a-b008-fd814d9b1781 Version: $LATEST
+    [INFO] 2020-06-14T02:13:24.464Z Loading BentoService bundle from path: "./IrisClassifier"
+    [INFO] 2020-06-14T02:13:26.422Z BentoService "IrisClassifier" loaded successfully
+    [INFO] 2020-06-14T02:13:26.422Z BentoService API "{'predict'}" loaded successfully
+    [INFO] 2020-06-14T02:13:26.425Z 11ee8a7a-9884-454a-b008-fd814d9b1781 Got prediction request with body "{'[[5.1, 3.5, 1.4, 0.2]]'}"
+    [DEBUG] 2020-06-14T02:13:26.439Z 11ee8a7a-9884-454a-b008-fd814d9b1781 {'resource': '/predict', 'path': '/predict',...
+    [DEBUG] 2020-06-14T02:13:26.439Z 11ee8a7a-9884-454a-b008-fd814d9b1781 {'statusCode': 200, 'body': '[0]'}
+    [INFO] 2020-06-14T02:13:26.439Z 11ee8a7a-9884-454a-b008-fd814d9b1781 Predicted "[0]"
+    END RequestId: 11ee8a7a-9884-454a-b008-fd814d9b1781
+    REPORT RequestId: 11ee8a7a-9884-454a-b008-fd814d9b1781 Duration: 14.97 ms Billed Duration: 100 ms Memory Size: 1024 MB...
+    ...
+
+If you'd like to have some more detailed analytics into your logs, you may notice that we log some more detailed JSON data as debug info. The first JSON it logs is some event info that AWS Lambda passes in to the event handler. You can find more information about what the JSON contains here: https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html. The second JSON contains information regarding the output of the classifier, including its status code and actual prediction. An example of the prediction JSON is as follows,
+
+.. code-block:: bash
+
+    {
+      'statusCode': 200, 
+      'body': '[0]', 
+      'headers': {
+        'Access-Control-Allow-Origin': '*'
+      }
+    }
+
+You can parse both of these using CloudWatch Logs Insights or ElasticSearch. Within Logs Insights, you can construct a query to visualize the logs that match certain criteria. If, for example, you wanted to view all predictions the returned with a status code of 200, the query would look something like
+
+.. code-block:: none
+
+    fields @timestamp, @message, statusCode
+    | sort @timestamp desc
+    | filter statusCode = 200
+
+In this example, `@timestamp` and `@message` represent the time when the log was emitted and the full log message. The third field can be any first level JSON field that were logged (either event info or prediction info).
 
 Remove Lambda deployment is also very easy.  Calling `bentoml lambda delete` command will delete the Lambda function and related AWS resources
 

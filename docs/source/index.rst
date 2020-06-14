@@ -39,7 +39,7 @@ What does BentoML do?
 
 TLDR:
 
-* Create API endpoint serving a trained model with just a few lines of code
+* Create API endpoint serving trained models with just a few lines of code
 * Support all major machine learning training frameworks
 * High-Performance online API serving with adaptive micro-batching support
 * Model Registry for teams, providing Web UI dashboard and CLI/API access

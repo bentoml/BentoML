@@ -218,7 +218,7 @@ def init_sam_project(
             os.path.join(function_path, 'bundled_pip_dependencies')
         )
         for index, bundled_file_name in enumerate(bundled_files):
-            bundled_files[index] = '\n./bundled_pip_dependencies/{}'.format(
+            bundled_files[index] = './bundled_pip_dependencies/{}\n'.format(
                 bundled_file_name
             )
 
@@ -226,7 +226,7 @@ def init_sam_project(
         with open(
             os.path.join(function_path, 'requirements.txt'), 'r+'
         ) as requirement_file:
-            required_modules = requirement_file.readlines() + bundled_files
+            required_modules = bundled_files + requirement_file.readlines()
             # Write from beginning of the file, instead of appending to the end.
             requirement_file.seek(0)
             requirement_file.writelines(required_modules)

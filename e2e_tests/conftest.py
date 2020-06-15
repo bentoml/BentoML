@@ -28,7 +28,7 @@ def iris_clf_service():
     X, y = iris.data, iris.target
     clf.fit(X, y)
 
-    logger.debug('Creating iris classifier BentoService bundle..')
+    logger.debug('Creating iris classifier service saved bundle..')
     iris_clf_service_ = IrisClassifier()
     iris_clf_service_.pack('clf', clf)
     iris_clf_service_.save()
@@ -40,7 +40,7 @@ def iris_clf_service():
 
 @pytest.fixture()
 def basic_bentoservice_v1():
-    logger.debug('Creating iris classifier BentoService bundle..')
+    logger.debug('Creating basic_bentoservice_v1 saved bundle..')
     bento_svc = SampleBentoService()
     bento_svc.save()
 
@@ -51,7 +51,7 @@ def basic_bentoservice_v1():
 
 @pytest.fixture()
 def basic_bentoservice_v2():
-    logger.debug('Creating iris classifier BentoService bundle..')
+    logger.debug('Creating basic_bentoservice_v2 saved bundle..')
     bento_svc = UpdatedSampleBentoService()
     bento_svc.save()
 

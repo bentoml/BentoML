@@ -31,7 +31,7 @@ from bentoml.adapters.dataframe_output import DataframeOutput
 from bentoml.adapters.tensorflow_tensor_output import TfTensorOutput
 from bentoml.adapters.base_output import BaseOutputAdapter
 from bentoml.adapters.default_output import DefaultOutput
-from bentoml.adapters.json_output import JsonserializableOutput
+from bentoml.adapters.json_output import JsonSerializableOutput
 
 
 BATCH_MODE_SUPPORTED_INPUT_TYPES = {
@@ -47,7 +47,7 @@ __all__ = [
     "TfTensorInput",
     'TfTensorOutput',
     "JsonInput",
-    'JsonserializableOutput',
+    'JsonSerializableOutput',
     "ImageInput",
     "LegacyImageInput",
     "FastaiImageInput",

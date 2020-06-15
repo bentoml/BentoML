@@ -149,7 +149,8 @@ def get_azure_function_sub_command():
                         result.status
                     )
                     _echo(
-                        f'Failed to create Azure function deployment {name} {error_code}:{error_message}',
+                        f'Failed to create Azure function deployment {name} '
+                        f'{error_code}:{error_message}',
                         CLI_COLOR_ERROR,
                     )
                     return

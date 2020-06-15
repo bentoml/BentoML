@@ -74,22 +74,6 @@ AZURE_FUNCTION_LOCAL_SETTING_JSON = """\
 }
 """
 
-# BENTO_SERVICE_AZURE_FUNCTION_DOCKERFILE_OLD = """\
-# FROM bentoml/azure-function:{bentoml_version}
-#
-# # copy over model files
-# COPY . /bento
-#
-# # Configuring PyPI index
-# ARG PIP_INDEX_URL=https://pypi.python.org/simple/
-# ARG PIP_TRUSTED_HOST=pypi.python.org
-# ENV PIP_INDEX_URL $PIP_INDEX_URL
-# ENV PIP_TRUSTED_HOST $PIP_TRUSTED_HOST
-#
-# # Install conda, pip dependencies and run user defined setup script
-# RUN if [ -f /bento/bentoml-init.sh ]; then bash -c /bento/bentoml-init.sh; fi
-# """
-
 BENTO_SERVICE_AZURE_FUNCTION_DOCKERFILE = """\
 # To enable ssh & remote debugging on app service change the base image to the one below
 # FROM mcr.microsoft.com/azure-functions/python:3.0-python3.7-appservice

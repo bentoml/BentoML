@@ -246,7 +246,7 @@ def _build_and_push_docker_image_to_azure_container_registry(
     tag = f'{repo_name}:{bento_version}'.lower()
     logger.debug(f'Building docker image {tag}')
     try:
-        image, _ = docker_client.images.build(
+        docker_client.images.build(
             path=azure_function_project_dir,
             dockerfile=os.path.join(azure_function_project_dir, 'Dockerfile-azure'),
             tag=tag,
@@ -369,44 +369,6 @@ def _set_cors_settings(function_name, resource_group_name):
         ],
         message='update Azure functionapp cors setting',
     )
-
-
-def _set_connection_string(resource_group_name, storage_account_name, function_name):
-    connection_string = _call_az_cli(
-        command=[
-            'az',
-            'storage',
-            'account',
-            'show-connection-string',
-            '--name',
-            storage_account_name,
-            '--resource-group',
-            resource_group_name,
-            '--query',
-            'connectionString',
-            '--output',
-            'tsv',
-        ],
-        message='get Azure storage account connection string',
-        parse_json=False,
-    )
-    _call_az_cli(
-        command=[
-            'az',
-            'functionapp',
-            'config',
-            'appsettings',
-            'set',
-            '--name',
-            function_name,
-            '--resource-group',
-            resource_group_name,
-            '--settings',
-            f'AzureWebJobsStorage={connection_string}',
-        ],
-        message='update Azure function with connection string',
-    )
-    pass
 
 
 def _deploy_azure_function(
@@ -593,14 +555,6 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
         if loader._is_remote_path(bento_path):
             with loader._resolve_remote_bundle_path(bento_path) as local_path:
                 return self._add(deployment_pb, bento_pb, local_path)
-
-        (
-            resource_group_name,
-            storage_account_name,
-            function_plan_name,
-            function_name,
-            container_registry_name,
-        ) = _generate_azure_resource_names(deployment_pb.namespace, deployment_pb.name)
         try:
             _deploy_azure_function(
                 deployment_spec=deployment_pb.spec,
@@ -611,6 +565,9 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
             )
             return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
         except AzureServiceError as error:
+            resource_group_name, _, _, _, _, = _generate_azure_resource_names(
+                deployment_pb.namespace, deployment_pb.name
+            )
             logger.debug('Failed to create Azure function. Cleaning up Azure resources')
             _call_az_cli(
                 command=['az', 'group', 'delete', '-y', '--name', resource_group_name],
@@ -649,17 +606,14 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
                 return self._update(
                     deployment_pb, current_deployment, bento_pb, local_path
                 )
-        try:
-            _update_azure_function(
-                deployment_spec=deployment_pb.spec,
-                deployment_name=deployment_pb.name,
-                namespace=deployment_pb.namespace,
-                bento_pb=bento_pb.bento,
-                bento_path=bento_path,
-            )
-            return ApplyDeploymentResponse(deployment=deployment_pb, status=Status.OK())
-        except BentoMLException as error:
-            raise error
+        _update_azure_function(
+            deployment_spec=deployment_pb.spec,
+            deployment_name=deployment_pb.name,
+            namespace=deployment_pb.namespace,
+            bento_pb=bento_pb.bento,
+            bento_path=bento_path,
+        )
+        return ApplyDeploymentResponse(deployment=deployment_pb, status=Status.OK())
 
     def delete(self, deployment_pb):
         try:
@@ -714,7 +668,6 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
                 'type',
                 'usageState',
             ]
-            # TODO
             if show_function_result['state'] == 'Running':
                 state = DeploymentState.RUNNING
             else:

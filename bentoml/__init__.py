@@ -16,6 +16,8 @@
 from ._version import get_versions
 
 __version__ = get_versions()['version']
+VERSION_APPLIED_ADAPTERS = '0.8.0'
+
 del get_versions
 
 from bentoml.configuration import config

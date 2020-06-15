@@ -18,8 +18,9 @@ from datetime import datetime
 from pathlib import Path
 
 from ruamel.yaml import YAML
+from packaging import version
 
-from bentoml import __version__ as BENTOML_VERSION
+from bentoml import __version__ as BENTOML_VERSION, VERSION_APPLIED_ADAPTERS
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.utils import dump_to_yaml_str
 from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
@@ -99,21 +100,20 @@ class SavedBundleConfig(object):
         ver = str(conf["version"])
 
         if ver != BENTOML_VERSION:
-            msg = (
+            msg_mismatch = (
                 "Saved BentoService bundle version mismatch: loading BentoService "
                 "bundle create with BentoML version {},  but loading from BentoML "
                 "version {}".format(conf["version"], BENTOML_VERSION)
             )
-
-            # If major version is different, then there could be incompatible API
-            # changes. Raise error in this case.
-            if ver.split(".")[0] != BENTOML_VERSION.split(".")[0]:
-                if not BENTOML_VERSION.startswith('0+untagged'):
-                    raise BentoMLConfigException(msg)
-                else:
-                    logger.warning(msg)
+            # If there could be incompatible API changes, raise error.
+            if BENTOML_VERSION.startswith('0+untagged'):
+                logger.warning(msg_mismatch)
+            elif ver.split(".")[0] != BENTOML_VERSION.split(".")[0]:
+                raise BentoMLConfigException(msg_mismatch)
+            elif version.parse(ver) < version.parse(VERSION_APPLIED_ADAPTERS):
+                raise BentoMLConfigException(msg_mismatch)
             else:  # Otherwise just show a warning.
-                logger.warning(msg)
+                logger.warning(msg_mismatch)
 
         return conf
 

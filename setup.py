@@ -47,6 +47,7 @@ install_requires = [
     "sqlalchemy>=1.3.0",
     "tabulate",
     'contextvars;python_version < "3.7"',
+    "packaging",
 ]
 
 aws_sam_cli = ["aws-sam-cli==0.33.1"]

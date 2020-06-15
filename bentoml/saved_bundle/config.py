@@ -110,7 +110,9 @@ class SavedBundleConfig(object):
                 logger.warning(msg_mismatch)
             elif ver.split(".")[0] != BENTOML_VERSION.split(".")[0]:
                 raise BentoMLConfigException(msg_mismatch)
-            elif version.parse(ver) < version.parse(VERSION_APPLIED_ADAPTERS):
+            elif version.parse(BENTOML_VERSION) >= version.parse(
+                VERSION_APPLIED_ADAPTERS  # TODO: remove this check after 0.8.0 release
+            ) and version.parse(ver) < version.parse(VERSION_APPLIED_ADAPTERS):
                 raise BentoMLConfigException(msg_mismatch)
             else:  # Otherwise just show a warning.
                 logger.warning(msg_mismatch)

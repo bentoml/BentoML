@@ -39,7 +39,7 @@ def test_azure_function_deployment(iris_clf_service):
         if stdout.startswith('Failed to create deployment'):
             raise Exception('Failed to create deployment')
         deploy_command_stdout_list = stdout.split('\n')
-        endpoint=None
+        endpoint = None
         for index, message in enumerate(deploy_command_stdout_list):
             if '"hostNames": [' in message:
                 endpoint = (
@@ -54,7 +54,7 @@ def test_azure_function_deployment(iris_clf_service):
                 data=f'"{json.dumps(sample_data.tolist())}"',
                 headers={'Content-Type': 'application/json'},
             )
-            if request_result.status_code == 502:
+            if request_result.status_code == 502 or request_result.status_code == 503:
                 time.sleep(60)
             else:
                 break

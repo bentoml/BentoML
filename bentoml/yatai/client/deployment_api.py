@@ -501,7 +501,15 @@ class DeploymentAPIClient:
         return self.create(deployment_pb, wait)
 
     def update_azure_function_deployment(
-        self, deployment_name, bento_name, bento_version, namespace=None, wait=None,
+        self,
+        deployment_name,
+        bento_name=None,
+        bento_version=None,
+        max_burst=None,
+        min_instances=None,
+        premium_plan_sku=None,
+        namespace=None,
+        wait=None,
     ):
         get_deployment_result = self.get(namespace=namespace, name=deployment_name)
         if get_deployment_result.status.status_code != status_pb2.Status.OK:
@@ -514,8 +522,20 @@ class DeploymentAPIClient:
                 f'{namespace}. {error_code}:{error_message}'
             )
         deployment_pb = get_deployment_result.deployment
-        deployment_pb.spec.bento_name = bento_name
-        deployment_pb.spec.bento_version = bento_version
+        if bento_name:
+            deployment_pb.spec.bento_name = bento_name
+        if bento_version:
+            deployment_pb.spec.bento_version = bento_version
+        if max_burst:
+            deployment_pb.spec.azure_function_operator_config.max_burst = max_burst
+        if min_instances:
+            deployment_pb.spec.azure_function_operator_config.min_instances = (
+                min_instances
+            )
+        if premium_plan_sku:
+            deployment_pb.spec.azure_function_operator_config.premium_plan_sku = (
+                premium_plan_sku
+            )
         return self.apply(deployment_pb, wait)
 
     def list_azure_function_deployments(

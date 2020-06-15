@@ -184,6 +184,21 @@ def get_azure_function_sub_command():
         help='Deployment namespace managed by BentoML, the default value is "dev" '
         'which can be changed in BentoML configuration file',
     )
+    @click.option(
+        '--min-instances',
+        type=click.INT,
+        help='The minimum number of workers for the deployment.',
+    )
+    @click.option(
+        '--max-burst',
+        type=click.INT,
+        help='The maximum number of elastic workers for the deployment.',
+    )
+    @click.option(
+        '--premium-plan-sku',
+        type=click.STRING,
+        help='The Azure premium SKU for the deployment. Options are EP1, EP2, and EP3.',
+    )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait/--no-wait',
@@ -191,11 +206,16 @@ def get_azure_function_sub_command():
         help='Wait for apply action to complete or encounter an error. '
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
-    def update(name, namespace, bento, output, wait):
+    def update(
+        name, namespace, bento, min_instances, max_burst, premium_plan_sku, output, wait
+    ):
         yatai_client = YataiClient()
         track_cli('deploy-update', PLATFORM_NAME)
         if bento:
             bento_name, bento_version = bento.split(':')
+        else:
+            bento_name = None
+            bento_version = None
         try:
             with Spinner('Updating Azure function deployment'):
                 result = yatai_client.deployment.update_azure_function_deployment(

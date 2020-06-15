@@ -81,8 +81,19 @@ deployment_schema = {
                         'type': 'string',
                         'allowed': ['EP1', 'EP2', 'EP3'],
                     },
-                    'min_instances': {'type': 'integer', 'min': 1, 'max': 20},
-                    'max_burst': {'type': 'integer', 'min': 1, 'max': 20},
+                    'min_instances': {
+                        'required': True,
+                        'type': 'integer',
+                        'min': 1,
+                        'max': 20,
+                        'azure_function_min_instances_lower_than_max': True,
+                    },
+                    'max_burst': {
+                        'type': 'integer',
+                        'min': 1,
+                        'max': 20,
+                        'required': True,
+                    },
                     'function_auth_level': {
                         'type': 'string',
                         'allowed': ['anonymous', 'function', 'admin'],
@@ -136,6 +147,23 @@ class YataiDeploymentValidator(Validator):
                 'Must use specific "bento_version" in deployment, using "latest" is '
                 'an anti-pattern.',
             )
+
+    def _validate_azure_function_min_instances_lower_than_max(
+        self, azure_function_min_instances_lower_than_max, field, value
+    ):
+        """ Test the min instances is less than max burst for Azure function deployment
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        if azure_function_min_instances_lower_than_max:
+            max_burst = self.root_document['spec'][
+                'azure_function_operator_config'
+            ].get('max_burst', None)
+            if not max_burst:
+                self._error('max_burst', 'Max burst is required')
+            if max_burst < value:
+                self._error(field, 'Azure min instances must be smaller than max burst')
 
 
 def validate_deployment_pb(pb):

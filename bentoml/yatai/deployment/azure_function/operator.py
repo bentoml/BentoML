@@ -606,12 +606,48 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
                 return self._update(
                     deployment_pb, current_deployment, bento_pb, local_path
                 )
-        _update_azure_function(
-            deployment_spec=deployment_pb.spec,
-            deployment_name=deployment_pb.name,
-            namespace=deployment_pb.namespace,
-            bento_pb=bento_pb.bento,
-            bento_path=bento_path,
+        if (
+            deployment_pb.spec.bento_name != current_deployment.spec.bento_name
+            or deployment_pb.spec.bento_version != current_deployment.spec.bento_version
+        ):
+            logger.debug(
+                'BentoService tag is different from current Azure function deployment, '
+                'creating new Azure function project and push to ACR'
+            )
+            _update_azure_function(
+                deployment_spec=deployment_pb.spec,
+                deployment_name=deployment_pb.name,
+                namespace=deployment_pb.namespace,
+                bento_pb=bento_pb.bento,
+                bento_path=bento_path,
+            )
+        (
+            resource_group_name,
+            _,
+            function_plan_name,
+            _,
+            _,
+        ) = _generate_azure_resource_names(
+            namespace=deployment_pb.namespace, name=deployment_pb.name
+        )
+        _call_az_cli(
+            command=[
+                'az',
+                'functionapp',
+                'plan',
+                'update',
+                '--name',
+                function_plan_name,
+                '--resource-group',
+                resource_group_name,
+                '--max-burst',
+                str(deployment_pb.spec.azure_function_operator_config.max_burst),
+                '--min-instances',
+                str(deployment_pb.spec.azure_function_operator_config.min_instances),
+                '--sku',
+                deployment_pb.spec.azure_function_operator_config.premium_plan_sku,
+            ],
+            message='update Azure functionapp plan',
         )
         return ApplyDeploymentResponse(deployment=deployment_pb, status=Status.OK())
 

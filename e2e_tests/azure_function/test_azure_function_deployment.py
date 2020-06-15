@@ -1,5 +1,6 @@
 import logging
 import subprocess
+import time
 import uuid
 
 import requests
@@ -35,10 +36,10 @@ def test_azure_function_deployment(iris_clf_service):
             create_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         ) as proc:
             stdout = proc.stdout.read().decode('utf-8')
-        logger.info(stdout)
         if stdout.startswith('Failed to create deployment'):
             raise Exception('Failed to create deployment')
         deploy_command_stdout_list = stdout.split('\n')
+        endpoint=None
         for index, message in enumerate(deploy_command_stdout_list):
             if '"hostNames": [' in message:
                 endpoint = (
@@ -46,11 +47,17 @@ def test_azure_function_deployment(iris_clf_service):
                 )
         iris = datasets.load_iris()
         sample_data = iris.data[0:1]
-        request_result = requests.post(
-            endpoint,
-            data=f'"{json.dumps(sample_data.tolist())}"',
-            headers={'content-type': 'application/json'},
-        )
+        start_time = time.time()
+        while(time.time() - start_time) < 600:
+            request_result = requests.post(
+                f'https://{endpoint}/predict',
+                data=f'"{json.dumps(sample_data.tolist())}"',
+                headers={'Content-Type': 'application/json'},
+            )
+            if request_result.status_code == 502:
+                time.sleep(60)
+            else:
+                break
         assert (
             request_result.status_code == 200
         ), 'Azure function deployment prediction request failed'

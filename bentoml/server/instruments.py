@@ -18,6 +18,8 @@ class InstrumentMiddleware:
 
         service_name = self.bento_service.name
         namespace = config('instrument').get('default_namespace')
+        # Use local registry instead of the global one to avoid duplicated metrics
+        # register
         self.collector_registry = CollectorRegistry()
 
         self.metrics_request_duration = Histogram(

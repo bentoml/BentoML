@@ -56,8 +56,7 @@ BentoHandler = deprecated(BaseInputAdapter, 'BentoHandler')
 DataframeHandler = deprecated(DataframeInput, 'DataframeHandler')
 TensorflowTensorHandler = deprecated(TfTensorInput, 'TensorflowTensorHandler')
 JsonHandler = deprecated(JsonInput, 'JsonHandler')
-ImageHandler = deprecated(ImageInput, 'ImageHandler')
-LegacyImageHandler = deprecated(LegacyImageInput, 'LegacyImageHandler')
+ImageHandler = deprecated(LegacyImageInput, 'ImageHandler')
 FastaiImageHandler = deprecated(FastaiImageInput, 'FastaiImageHandler')
 ClipperIntsHandler = deprecated(ClipperIntsInput, 'ClipperIntsHandler')
 ClipperBytesHandler = deprecated(ClipperBytesInput, 'ClipperBytesHandler')
@@ -71,7 +70,6 @@ __all__ = [
     "TensorflowTensorHandler",
     "JsonHandler",
     "ImageHandler",
-    "LegacyImageHandler",
     "FastaiImageHandler",
     "ClipperBytesHandler",
     "ClipperDoublesHandler",

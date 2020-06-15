@@ -61,7 +61,7 @@ def get_default_accept_image_formats():
 
 class LegacyImageInput(BaseInputAdapter):
     """
-    *** This LegacyImageInput is identical to the ImageInput prior to
+    *** This LegacyImageInput is identical to the ImageHandler prior to
     BentoML version 0.8.0, it was kept here to make it easier for users to upgrade.
     If you are starting a new model serving project, use the ImageInput instead.
     LegacyImageInput will be deprecated in release 1.0.0. ***

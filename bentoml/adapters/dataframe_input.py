@@ -294,7 +294,10 @@ class DataframeInput(BaseInputAdapter):
         ]
         # TODO: check content_type
 
-        df_conc, slices = read_dataframes_from_json_n_csv(datas, content_types)
+        df_conc, slices_generator = read_dataframes_from_json_n_csv(
+            datas, content_types
+        )
+        slices = list(slices_generator)
 
         result_conc = func(df_conc)
 

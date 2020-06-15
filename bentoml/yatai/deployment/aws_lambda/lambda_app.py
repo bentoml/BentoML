@@ -64,8 +64,8 @@ def api_func(event, context):  # pylint: disable=unused-argument
     parameter is usually of the Python dict type. It can also be list, str, int,
     float, or NoneType type. Currently BentoML only handles Lambda event coming from
     Application Load Balancer, in which case the parameter `event` must be type `dict`
-    containing the HTTP request headers and body. 
-    
+    containing the HTTP request headers and body.
+
     You can find an example of which
     variables you can expect from the `event` object on the AWS Docs, here
     https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html

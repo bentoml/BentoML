@@ -14,6 +14,7 @@
 
 import os
 import logging
+from functools import lru_cache
 from pathlib import Path
 
 from bentoml import __version__, _version as version_mod
@@ -159,6 +160,7 @@ def config(section=None):
         return _config
 
 
+@lru_cache(maxsize=1)
 def get_bentoml_deploy_version():
     """
     BentoML version to use for generated docker image or serverless function bundle to

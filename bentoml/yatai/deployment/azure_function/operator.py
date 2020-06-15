@@ -628,7 +628,7 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
             _,
             _,
         ) = _generate_azure_resource_names(
-            namespace=deployment_pb.namespace, name=deployment_pb.name
+            namespace=deployment_pb.namespace, deployment_name=deployment_pb.name
         )
         _call_az_cli(
             command=[

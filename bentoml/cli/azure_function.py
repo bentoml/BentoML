@@ -173,7 +173,7 @@ def get_azure_function_sub_command():
         '--bento',
         '--bento-service-bundle',
         type=click.STRING,
-        callback=parse_bento_tag_callback,
+        # callback=parse_bento_tag_callback,
         help='Target BentoService to be deployed, referenced by its name and version '
         'in the format of name:version. For example: "iris_classifier:v1.2.0"',
     )
@@ -223,6 +223,9 @@ def get_azure_function_sub_command():
                     deployment_name=name,
                     bento_name=bento_name,
                     bento_version=bento_version,
+                    min_instances=min_instances,
+                    max_burst=max_burst,
+                    premium_plan_sku=premium_plan_sku,
                     wait=wait,
                 )
                 if result.status.status_code != status_pb2.Status.OK:

@@ -20,7 +20,6 @@ from bentoml.adapters import (
     DataframeInput,
     TfTensorInput,
     JsonInput,
-    ImageInput,
     LegacyImageInput,
     FastaiImageInput,
     ClipperIntsInput,
@@ -33,7 +32,7 @@ from bentoml.adapters import (
 logger = logging.getLogger(__name__)
 
 logger.warning(
-    'bentoml.handlers.* will be deprecated after bentoml 1.0, '
+    'bentoml.handlers.* will be deprecated after BentoML 1.0, '
     'use bentoml.adapters.* instead'
 )
 
@@ -43,7 +42,7 @@ def deprecated(cls, cls_name):
         def __init__(self, *args, **kwargs):
             super(wrapped_cls, self).__init__(*args, **kwargs)
             logger.warning(
-                f'{cls_name} Will be deprecated after bentoml 1.0, '
+                f'{cls_name} will be deprecated after BentoML 1.0, '
                 f'use {cls.__name__} instead'
             )
 
@@ -56,8 +55,7 @@ BentoHandler = deprecated(BaseInputAdapter, 'BentoHandler')
 DataframeHandler = deprecated(DataframeInput, 'DataframeHandler')
 TensorflowTensorHandler = deprecated(TfTensorInput, 'TensorflowTensorHandler')
 JsonHandler = deprecated(JsonInput, 'JsonHandler')
-ImageHandler = deprecated(ImageInput, 'ImageHandler')
-LegacyImageHandler = deprecated(LegacyImageInput, 'LegacyImageHandler')
+ImageHandler = deprecated(LegacyImageInput, 'ImageHandler')
 FastaiImageHandler = deprecated(FastaiImageInput, 'FastaiImageHandler')
 ClipperIntsHandler = deprecated(ClipperIntsInput, 'ClipperIntsHandler')
 ClipperBytesHandler = deprecated(ClipperBytesInput, 'ClipperBytesHandler')
@@ -71,7 +69,6 @@ __all__ = [
     "TensorflowTensorHandler",
     "JsonHandler",
     "ImageHandler",
-    "LegacyImageHandler",
     "FastaiImageHandler",
     "ClipperBytesHandler",
     "ClipperDoublesHandler",

@@ -69,7 +69,7 @@ def get_azure_function_sub_command():
         required=True,
         callback=parse_bento_tag_callback,
         help='Target BentoService to be deployed, referenced by its name and version '
-        'in format of name:version. For example: "iris_classifier:v1.2.0"',
+        'in the format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
         '--location',
@@ -81,28 +81,28 @@ def get_azure_function_sub_command():
         '--min-instances',
         type=click.INT,
         default=DEFAULT_MIN_INSTANCE_COUNT,
-        help='The minimum number of workers for the deployment. Default value is 1',
+        help='The minimum number of workers for the deployment. The default value is 1',
     )
     @click.option(
         '--max-burst',
         type=click.INT,
         default=DEFAULT_MAX_BURST,
         help='The maximum number of elastic workers for the deployment. '
-        'Default value is 3',
+        'The default value is 3',
     )
     @click.option(
         '--premium-plan-sku',
         type=click.STRING,
         default=DEFAULT_PREMIUM_PLAN_SKU,
-        help='The Azure preimium SKU for the deployment. Options are EP1, EP2, and EP3.'
-        ' Default value is EP1',
+        help='The Azure premium SKU for the deployment. Options are EP1, EP2, and EP3.'
+        ' The default value is EP1',
     )
     @click.option(
         '-l',
         '--labels',
         type=click.STRING,
         callback=parse_labels_callback,
-        help='Key:value pairs that are attached to deployments and intended to be used'
+        help='Key:value pairs that are attached to deployments and intended to be used '
         'to specify identifying attributes of the deployments that are meaningful to '
         'users. Multiple labels are separated with `,`',
     )
@@ -175,20 +175,20 @@ def get_azure_function_sub_command():
         type=click.STRING,
         callback=parse_bento_tag_callback,
         help='Target BentoService to be deployed, referenced by its name and version '
-        'in format of name:version. For example: "iris_classifier:v1.2.0"',
+        'in the format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
         '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration file',
+        help='Deployment namespace managed by BentoML, the default value is "dev" '
+        'which can be changed in BentoML configuration file',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait/--no-wait',
         default=True,
-        help='Wait for apply action to complete or encounter an error.'
+        help='Wait for apply action to complete or encounter an error. '
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def update(name, namespace, bento, output, wait):

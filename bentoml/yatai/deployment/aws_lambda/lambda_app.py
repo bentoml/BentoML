@@ -15,16 +15,14 @@
 import os
 import sys
 import logging
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+import json
 
 try:
     import download_extra_resources
 
-    logger.info("Downloading extra requirements and files from s3..")
+    print("Downloading extra requirements and files from s3..")
     download_extra_resources.download_extra_resources()
-    logger.info("Finished downloading extra requirements and files")
+    print("Finished downloading extra requirements and files")
 except ImportError:
     # When function doesn't have extra resources or dependencies, we will not include
     # unzip_extra_resources and that will result with ImportError.  We will let it fail
@@ -42,6 +40,7 @@ if '/tmp/requirements' not in sys.path:
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 from bentoml import load  # noqa
 
+logger = logging.getLogger(__name__)
 bento_name = os.environ['BENTOML_BENTO_SERVICE_NAME']
 api_name = os.environ["BENTOML_API_NAME"]
 
@@ -49,11 +48,11 @@ bento_bundle_path = os.path.join('./', bento_name)
 if not os.path.exists(bento_bundle_path):
     bento_bundle_path = os.path.join('/tmp/requirements', bento_name)
 
-logger.info('Loading BentoService bundle from path: "%s"', bento_bundle_path)
+logger.debug('Loading BentoService bundle from path: "%s"', bento_bundle_path)
 bento_service = load(bento_bundle_path)
-logger.info('BentoService "%s" loaded successfully', bento_service.name)
+logger.debug('BentoService "%s" loaded successfully', bento_service.name)
 bento_service_api = bento_service.get_service_api(api_name)
-logger.info('BentoService API "%s" loaded successfully', {api_name})
+logger.debug('BentoService API "%s" loaded successfully', {api_name})
 
 this_module = sys.modules[__name__]
 
@@ -75,18 +74,16 @@ def api_func(event, context):  # pylint: disable=unused-argument
         logger.info('Got prediction request with body "%s"', {event["body"]})
         prediction = bento_service_api.handle_aws_lambda_event(event)
 
-        # raw json logs
-        logger.debug(event)
-        logger.debug(prediction)
+        logger.debug(json.dumps({
+            'event': event,
+            'prediction': prediction["body"],
+            'status_code': prediction["statusCode"]
+        }))
 
         if prediction["statusCode"] >= 400:
-            logger.warning(
-                'Error when predicting. Check logs for more information.'
-            )
+            logger.warning('Error when predicting. Check logs for more information.')
         else:
-            logger.info(
-                'Predicted "%s"', prediction["body"]
-            )
+            logger.info('Predicted "%s"', prediction["body"])
 
         return prediction
     else:

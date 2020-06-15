@@ -33,7 +33,7 @@ from bentoml.adapters import (
 logger = logging.getLogger(__name__)
 
 logger.warning(
-    'bentoml.handlers.* will be deprecated after bentoml 1.0, '
+    'bentoml.handlers.* will be deprecated after BentoML 1.0, '
     'use bentoml.adapters.* instead'
 )
 
@@ -43,7 +43,7 @@ def deprecated(cls, cls_name):
         def __init__(self, *args, **kwargs):
             super(wrapped_cls, self).__init__(*args, **kwargs)
             logger.warning(
-                f'{cls_name} Will be deprecated after bentoml 1.0, '
+                f'{cls_name} will be deprecated after BentoML 1.0, '
                 f'use {cls.__name__} instead'
             )
 

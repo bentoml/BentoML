@@ -20,7 +20,6 @@ from bentoml.adapters import (
     DataframeInput,
     TfTensorInput,
     JsonInput,
-    ImageInput,
     LegacyImageInput,
     FastaiImageInput,
     ClipperIntsInput,

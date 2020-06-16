@@ -296,6 +296,10 @@ def api_decorator(
 
             handler = args[0](*args[1:], output_adapter=output, **kwargs)
         else:
+            assert isinstance(input, BaseInputAdapter), (
+                "API input parameter must be an instance of any classes inherited from "
+                "bentoml.adapters.BaseInputAdapter"
+            )
             handler = input
             handler._output_adapter = output
 
@@ -556,8 +560,6 @@ class BentoService(BentoServiceBase):
             self._env._add_pip_dependencies_if_missing(
                 api.output_adapter.pip_dependencies
             )
-
-        # TODO(bojiang): adapter dependencies
 
         for artifact in self._artifacts:
             self._env._add_pip_dependencies_if_missing(artifact.pip_dependencies)

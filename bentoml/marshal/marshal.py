@@ -124,8 +124,8 @@ class MarshalService:
 
     _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
     _DEFAULT_PORT = config("apiserver").getint("default_port")
-    _DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
-    _DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
+    DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
+    DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
 
     def __init__(
         self,
@@ -186,19 +186,9 @@ class MarshalService:
     def setup_routes_from_pb(self, bento_service_metadata_pb):
         for api_pb in bento_service_metadata_pb.apis:
             if api_pb.input_type in BATCH_MODE_SUPPORTED_INPUT_TYPES:
-                max_latency = (
-                    api_pb["mb_max_latency"]
-                    if "mb_max_latency" in api_pb.input_config
-                    else self._DEFAULT_MAX_LATENCY
-                )
-                max_batch_size = (
-                    api_pb["mb_max_batch_size"]
-                    if "mb_max_batch_size" in api_pb.input_config
-                    else self._DEFAULT_MAX_BATCH_SIZE
-                )
-                self.add_batch_handler(
-                    api_pb.name, max_latency, max_batch_size,
-                )
+                max_latency = api_pb.mb_max_latency or self.DEFAULT_MAX_LATENCY
+                max_batch_size = api_pb.mb_max_batch_size or self.DEFAULT_MAX_BATCH_SIZE
+                self.add_batch_handler(api_pb.name, max_latency, max_batch_size)
                 logger.info("Micro batch enabled for API `%s`", api_pb.name)
 
     async def request_dispatcher(self, request):

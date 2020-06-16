@@ -44,6 +44,8 @@ def _get_apis_list(bento_service):
             "docs": api.doc,
             "input_type": api.handler.__class__.__name__,
             "output_type": api.handler.output_adapter.__class__.__name__,
+            "mb_max_batch_size": api.mb_max_batch_size,
+            "mb_max_latency": api.mb_max_latency,
         }
         if api.handler.config:
             api_obj["input_config"] = api.handler.config
@@ -173,7 +175,14 @@ class SavedBundleConfig(object):
                     # Supports viewing API input config info for saved bundle created
                     # before version 0.8.0
                     for k, v in api_config["handler_config"].items():
-                        api_metadata.input_config[k] = v
+                        if k in {'mb_max_latency', 'mb_max_batch_size'}:
+                            setattr(api_metadata, k, v)
+                        else:
+                            api_metadata.input_config[k] = v
+                else:
+                    api_metadata.mb_max_latency = api_config["mb_max_latency"]
+                    api_metadata.mb_max_batch_size = api_config["mb_max_batch_size"]
+
                 if "input_config" in api_config:
                     for k, v in api_config["input_config"].items():
                         api_metadata.input_config[k] = v

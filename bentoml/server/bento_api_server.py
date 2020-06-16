@@ -128,7 +128,7 @@ class BentoAPIServer:
         Health check for BentoML API server.
         Make sure it works with Kubernetes liveness probe
         """
-        return Response(response="\n", status=200, mimetype="application/json")
+        return Response(response="\n", status=200, mimetype="text/plain")
 
     def metrics_view_func(self):
         from prometheus_client import generate_latest

@@ -207,40 +207,100 @@ If you need to look at the logs of your deployed model, we can view these within
 
     ...
     START RequestId: 11ee8a7a-9884-454a-b008-fd814d9b1781 Version: $LATEST
-    [INFO] 2020-06-14T02:13:24.464Z Loading BentoService bundle from path: "./IrisClassifier"
-    [INFO] 2020-06-14T02:13:26.422Z BentoService "IrisClassifier" loaded successfully
-    [INFO] 2020-06-14T02:13:26.422Z BentoService API "{'predict'}" loaded successfully
+    [DEBUG] 2020-06-14T02:13:24.464Z Loading BentoService bundle from path: "./IrisClassifier"
+    [DEBUG] 2020-06-14T02:13:26.422Z BentoService "IrisClassifier" loaded successfully
+    [DEBUG] 2020-06-14T02:13:26.422Z BentoService API "{'predict'}" loaded successfully
     [INFO] 2020-06-14T02:13:26.425Z 11ee8a7a-9884-454a-b008-fd814d9b1781 Got prediction request with body "{'[[5.1, 3.5, 1.4, 0.2]]'}"
-    [DEBUG] 2020-06-14T02:13:26.439Z 11ee8a7a-9884-454a-b008-fd814d9b1781 {'resource': '/predict', 'path': '/predict',...
-    [DEBUG] 2020-06-14T02:13:26.439Z 11ee8a7a-9884-454a-b008-fd814d9b1781 {'statusCode': 200, 'body': '[0]'}
+    [DEBUG] 2020-06-14T02:13:26.439Z 11ee8a7a-9884-454a-b008-fd814d9b1781 {"event": {"resource": "/predict", "path": "/predict", ...
     [INFO] 2020-06-14T02:13:26.439Z 11ee8a7a-9884-454a-b008-fd814d9b1781 Predicted "[0]"
     END RequestId: 11ee8a7a-9884-454a-b008-fd814d9b1781
     REPORT RequestId: 11ee8a7a-9884-454a-b008-fd814d9b1781 Duration: 14.97 ms Billed Duration: 100 ms Memory Size: 1024 MB...
     ...
 
-If you'd like to have some more detailed analytics into your logs, you may notice that we log some more detailed JSON data as debug info. The first JSON it logs is some event info that AWS Lambda passes in to the event handler. You can find more information about what the JSON contains here: https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html. The second JSON contains information regarding the output of the classifier, including its status code and actual prediction. An example of the prediction JSON is as follows,
+If you'd like to have some more detailed analytics into your logs, you may notice that we log some more detailed JSON data as debug info. There are three main fields that are logged. `event` (AWS Lambda Event Object), `prediction` (response body), and `status_code` (HTTP Response Code). You can read more about the `event` object here: https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html. An example of the prediction JSON is as follows,
 
 .. code-block:: bash
 
     {
-      'statusCode': 200, 
-      'body': '[0]', 
-      'headers': {
-        'Access-Control-Allow-Origin': '*'
-      }
+        "event": {
+            "resource": "/predict",
+            "path": "/predict",
+            "httpMethod": "POST",
+            "headers": {
+                "Accept": "*/*",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Cache-Control": "no-cache",
+                "CloudFront-Forwarded-Proto": "https",
+                "CloudFront-Is-Desktop-Viewer": "true",
+                "CloudFront-Is-Mobile-Viewer": "false",
+                "CloudFront-Is-SmartTV-Viewer": "false",
+                "CloudFront-Is-Tablet-Viewer": "false",
+                "CloudFront-Viewer-Country": "CA",
+                "Content-Type": "application/json",
+                "Host": "w3y4nf55k0.execute-api.us-east-2.amazonaws.com",
+                "Postman-Token": "f785223c-e600-4eea-84a2-8215ebe1afaa",
+                "Via": "1.1 98aedae6661e3904540676966998ed89.cloudfront.net (CloudFront)",
+                "X-Amz-Cf-Id": "K1cd5UVt__3WEj7DI8kfbi1V5MM4a-v2bRm1Y0kq-mHoOCeCsF_ahg==",
+                "X-Amzn-Trace-Id": "Root=1-5ee80803-20ab0d226a290900e7f3d334",
+                "X-Forwarded-For": "96.49.202.214, 64.252.141.139",
+                "X-Forwarded-Port": "443",
+                "X-Forwarded-Proto": "https"
+            },
+            "multiValueHeaders": {
+              ...
+            },
+            "queryStringParameters": null,
+            "multiValueQueryStringParameters": null,
+            "pathParameters": null,
+            "stageVariables": null,
+            "requestContext": {
+                "resourceId": "7vnchj",
+                "resourcePath": "/predict",
+                "httpMethod": "POST",
+                "extendedRequestId": "OMYwiHX4iYcF4Zg=",
+                "requestTime": "15/Jun/2020:23:45:07 +0000",
+                "path": "/Prod/predict",
+                "accountId": "558447057402",
+                "protocol": "HTTP/1.1",
+                "stage": "Prod",
+                "domainPrefix": "w3y4nf55k0",
+                "requestTimeEpoch": 1592264707383,
+                "requestId": "57e19330-67af-4d68-8bb9-4418acb8e880",
+                "identity": {
+                    "cognitoIdentityPoolId": null,
+                    "accountId": null,
+                    "cognitoIdentityId": null,
+                    "caller": null,
+                    "sourceIp": "96.49.202.214",
+                    "principalOrgId": null,
+                    "accessKey": null,
+                    "cognitoAuthenticationType": null,
+                    "cognitoAuthenticationProvider": null,
+                    "userArn": null,
+                    "userAgent": "PostmanRuntime/7.25.0",
+                    "user": null
+                },
+                "domainName": "w3y4nf55k0.execute-api.us-east-2.amazonaws.com",
+                "apiId": "w3y4nf55k0"
+            },
+            "body": "[[5.1, 3.5, 1.4, 0.2]]",
+            "isBase64Encoded": false
+        },
+        "prediction": "[0]",
+        "status_code": 200
     }
 
-You can parse both of these using CloudWatch Logs Insights or ElasticSearch. Within Logs Insights, you can construct a query to visualize the logs that match certain criteria. If, for example, you wanted to view all predictions the returned with a status code of 200, the query would look something like
+You can parse this JSON using CloudWatch Logs Insights or ElasticSearch. Within Logs Insights, you can construct a query to visualize the logs that match certain criteria. If, for example, you wanted to view all predictions the returned with a status code of 200, the query would look something like
 
 .. code-block:: none
 
-    fields @timestamp, @message, statusCode
+    fields @timestamp, @message, status_code
     | sort @timestamp desc
-    | filter statusCode = 200
+    | filter status_code = 200
 
 In this example, `@timestamp` and `@message` represent the time when the log was emitted and the full log message. The third field can be any first level JSON field that were logged (either event info or prediction info).
 
-Remove Lambda deployment is also very easy.  Calling `bentoml lambda delete` command will delete the Lambda function and related AWS resources
+Removing a Lambda deployment is also very easy.  Calling `bentoml lambda delete` command will delete the Lambda function and related AWS resources
 
 .. code-block:: bash
 

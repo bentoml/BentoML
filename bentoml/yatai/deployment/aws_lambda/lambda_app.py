@@ -41,6 +41,8 @@ os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 from bentoml import load  # noqa
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 bento_name = os.environ['BENTOML_BENTO_SERVICE_NAME']
 api_name = os.environ["BENTOML_API_NAME"]
 
@@ -77,7 +79,7 @@ def api_func(event, context):  # pylint: disable=unused-argument
         logger.debug(json.dumps({
             'event': event,
             'prediction': prediction["body"],
-            'status_code': prediction["statusCode"]
+            'status_code': prediction["statusCode"],
         }))
 
         if prediction["statusCode"] >= 400:

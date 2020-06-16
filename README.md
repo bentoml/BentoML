@@ -9,6 +9,7 @@
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
 
 
+
 BentoML is an open-source framework for __high-performance ML model serving__.
 
 What does BentoML do?
@@ -19,7 +20,8 @@ What does BentoML do?
 * Flexible deployment orchestration with DevOps best practices baked-in, supporting 
  Docker, Kubernetes, Kubeflow, Knative, AWS Lambda, SageMaker, Azure ML, GCP and more
 
-👉 Join [BentoML Slack](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg) to follow the latest development updates and roadmap discussions.
+👉 To follow the latest development updates and roadmap discussion, join the [BentoML mailing list](https://groups.google.com/forum/#!forum/bentoml) and the [Bentoml Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+
 
 ---
 
@@ -244,11 +246,11 @@ Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
 * Prostate Cancer Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb)
 
 
-### FastText
+#### FastText
 * Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb)
 
 
-### ONNX
+#### ONNX
 * Scikit-Learn Iris Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb)
 * ResNet50 Image recognition (ONNX model zoo) - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb)
 

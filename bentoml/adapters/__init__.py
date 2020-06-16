@@ -17,6 +17,7 @@ from bentoml.adapters.dataframe_input import DataframeInput
 from bentoml.adapters.tensorflow_tensor_input import TfTensorInput
 from bentoml.adapters.json_input import JsonInput
 from bentoml.adapters.image_input import ImageInput
+from bentoml.adapters.multi_image_input import MultiImageInput
 from bentoml.adapters.legacy_image_input import LegacyImageInput
 from bentoml.adapters.fastai_image_input import FastaiImageInput
 from bentoml.adapters.clipper_input import (
@@ -49,6 +50,7 @@ __all__ = [
     "JsonInput",
     'JsonSerializableOutput',
     "ImageInput",
+    "MultiImageInput",
     "LegacyImageInput",
     "FastaiImageInput",
     "ClipperBytesInput",

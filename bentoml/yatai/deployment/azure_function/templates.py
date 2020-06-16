@@ -33,7 +33,6 @@ from bentoml import load
 
 from __app__.{bento_name} import load
 
-# svc = load('./{bento_name}')
 svc = load()
 bento_server = BentoAPIServer(svc)
 
@@ -77,6 +76,8 @@ AZURE_FUNCTION_LOCAL_SETTING_JSON = """\
 # Using specific version of docker image, due to issues at upstream. Once
 # https://github.com/Azure/azure-functions-docker/issues/281 is resolved, we can update
 # this.
+#
+# We should publish bentoml based Azure function image.
 BENTO_SERVICE_AZURE_FUNCTION_DOCKERFILE = """\
 FROM mcr.microsoft.com/azure-functions/python:3.0.13901-python3.7
 # To enable ssh & remote debugging on app service change the base image to the one below
@@ -105,15 +106,10 @@ ADD https://github.com/krallin/tini/releases/download/${{TINI_VERSION}}/tini /us
 RUN chmod +x /usr/bin/tini
 # Finish install miniconda3
 
-# Change the script root from /home/site/wwwroot
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \\
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true
 
-# COPY requirements.txt /
-# RUN pip install -r /requirements.txt
-
 COPY . /home/site/wwwroot
-# WORKDIR /bento
 
 # Install BentoML related
 RUN set -x && \\

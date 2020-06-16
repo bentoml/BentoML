@@ -35,9 +35,9 @@ from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.exceptions import (
     BentoMLException,
-    InvalidArgument,
     MissingDependencyException,
     AzureServiceError,
+    YataiDeploymentException,
 )
 from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
@@ -54,8 +54,9 @@ logger = logging.getLogger(__name__)
 
 def ensure_azure_cli_available_and_login_or_raise():
     try:
-        result = subprocess.check_output(['az', 'account', 'show'])
-        account_info = json.loads(result.decode('utf-8'))
+        account_info = _call_az_cli(
+            command=['az', 'account', 'show'], message='show Azure account'
+        )
         if not account_info['user'] or not account_info['homeTenantId']:
             # https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli?view=azure-cli-latest
             # Attempt to login with azure service principal values from bentoml
@@ -93,13 +94,7 @@ def ensure_azure_cli_available_and_login_or_raise():
                         'Azure service principal account is not enabled'
                     )
             else:
-                raise BentoMLException(
-                    'Azure function deployment requires a signed in az cli.'
-                )
-    except subprocess.CalledProcessError as error:
-        raise BentoMLException(
-            'Error executing az command: {}'.format(error.output.decode())
-        )
+                raise BentoMLException('Azure CLI is not logged in')
     except FileNotFoundError:
         raise MissingDependencyException(
             'azure cli is required for this deployment. Please visit '
@@ -155,13 +150,13 @@ def _generate_azure_resource_names(namespace, deployment_name):
     # 3-24 a-z0-9, scope: global
     storage_account_name = f'{namespace}{deployment_name}'.lower()
     if len(storage_account_name):
-        storage_account_name = f'{namespace[:5]}{deployment_name[0:21]}'
+        storage_account_name = f'{namespace[:5]}{deployment_name[0:19]}'
     invalid_chars_for_storage_account = re.compile("[^a-z0-9]")
     storage_account_name = re.sub(
         invalid_chars_for_storage_account, '0', storage_account_name
     )
 
-    # cant find
+    # cant find restriction for functionapp plan name.
     function_plan_name = f'{deployment_name}'
 
     # same as Microsoft.Web/sites
@@ -195,8 +190,11 @@ def _call_az_cli(command, message, parse_json=True):
     sys_default_encoding = sys.getfilesystemencoding()
     stdout, stderr = proc.communicate()
     if proc.returncode == 0:
-        # remove console color code: \x1b[0m
-        result = stdout.decode(sys_default_encoding).replace('\x1b[0m', '')
+        result = stdout.decode(sys_default_encoding)
+        if result.endswith('\x1b[0m'):
+            # remove console color code: \x1b[0m
+            # https://github.com/Azure/azure-cli/issues/9903
+            result = result.replace('\x1b[0m', '')
         logger.debug(f'AZ command "{" ".join(command)}" Result: {result}')
         if parse_json:
             return json.loads(result)
@@ -211,19 +209,20 @@ def _call_az_cli(command, message, parse_json=True):
 
 
 def _login_acr_registry(acr_name, resource_group_name):
-    command = [
-        'az',
-        'acr',
-        'login',
-        '--name',
-        acr_name,
-        '--resource-group',
-        resource_group_name,
-    ]
     result = _call_az_cli(
-        command, message='log into Azure container registry', parse_json=False
+        command=[
+            'az',
+            'acr',
+            'login',
+            '--name',
+            acr_name,
+            '--resource-group',
+            resource_group_name,
+        ],
+        message='log into Azure container registry',
+        parse_json=False
     ).replace('\n', '')
-    if result != 'Login Succeeded':
+    if 'Login Succeeded' in result:
         raise AzureServiceError(
             f'Failed to log into Azure container registry. {result}'
         )
@@ -236,14 +235,9 @@ def _build_and_push_docker_image_to_azure_container_registry(
     bento_name,
     bento_version,
 ):
-    # with _login_acr_registry scope, clean up docker login info
-    # thinking more on parelle and production server. check docker config support
-    # multiple registries
     _login_acr_registry(container_registry_name, resource_group_name)
     docker_client = docker.from_env()
-    repo_name = f'{container_registry_name}.azurecr.io/{bento_name}'.lower()
-    # repo_name = f'yubozhao/{bento_name}'.lower()
-    tag = f'{repo_name}:{bento_version}'.lower()
+    tag = f'{container_registry_name}.azurecr.io/{bento_name}:{bento_version}'.lower()
     logger.debug(f'Building docker image {tag}')
     try:
         docker_client.images.build(
@@ -267,22 +261,21 @@ def _build_and_push_docker_image_to_azure_container_registry(
 
 def _get_storage_account_connect_string(resource_group_name, storage_account_name):
     try:
-        command = [
-            'az',
-            'storage',
-            'account',
-            'show-connection-string',
-            '--resource-group',
-            resource_group_name,
-            '--name',
-            storage_account_name,
-            '--query',
-            'connectionString',
-            '--output',
-            'tsv',
-        ]
         return _call_az_cli(
-            command=command,
+            command=[
+                'az',
+                'storage',
+                'account',
+                'show-connection-string',
+                '--resource-group',
+                resource_group_name,
+                '--name',
+                storage_account_name,
+                '--query',
+                'connectionString',
+                '--output',
+                'tsv',
+            ],
             message='get Azure storage account connection string',
             parse_json=False,
         )
@@ -323,7 +316,7 @@ def _get_docker_login_info(resource_group_name, container_registry_name):
 
 
 def _set_cors_settings(function_name, resource_group_name):
-    # To allow all `*`, need to remove all other allowed origins in the list.
+    # To allow all, use `*` and  remove all other origins in the list.
     cors_list_result = _call_az_cli(
         command=[
             'az',
@@ -412,25 +405,24 @@ def _deploy_azure_function(
             ],
             message='Create Azure storage account',
         )
-        create_azure_function_premium_plan_command = [
-            'az',
-            'functionapp',
-            'plan',
-            'create',
-            '--name',
-            function_plan_name,
-            '--is-linux',
-            '--sku',
-            azure_function_config.premium_plan_sku,
-            '--min-instances',
-            str(azure_function_config.min_instances),
-            '--max-burst',
-            str(azure_function_config.max_burst),
-            '--resource-group',
-            resource_group_name,
-        ]
         _call_az_cli(
-            command=create_azure_function_premium_plan_command,
+            command=[
+                'az',
+                'functionapp',
+                'plan',
+                'create',
+                '--name',
+                function_plan_name,
+                '--is-linux',
+                '--sku',
+                azure_function_config.premium_plan_sku,
+                '--min-instances',
+                str(azure_function_config.min_instances),
+                '--max-burst',
+                str(azure_function_config.max_burst),
+                '--resource-group',
+                resource_group_name,
+            ],
             message='create Azure functionapp premium plan',
         )
         # Add note for why choose standard
@@ -536,14 +528,18 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
         try:
             deployment_spec = deployment_pb.spec
             if not deployment_spec.azure_function_operator_config.location:
-                raise InvalidArgument('Azure function location is missing')
-            bento_pb = self.yatai_service.GetBento(
+                raise YataiDeploymentException(
+                    'Azure function parameter "location" is missing'
+                )
+            bento_repo_pb = self.yatai_service.GetBento(
                 GetBentoRequest(
                     bento_name=deployment_spec.bento_name,
                     bento_version=deployment_spec.bento_version,
                 )
             )
-            return self._add(deployment_pb, bento_pb.bento, bento_pb.bento.uri.uri)
+            return self._add(
+                deployment_pb, bento_repo_pb.bento, bento_repo_pb.bento.uri.uri
+            )
         except BentoMLException as error:
             deployment_pb.state.state = DeploymentState.ERROR
             deployment_pb.state.error_message = f'Error: {str(error)}'
@@ -569,27 +565,33 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
                 deployment_pb.namespace, deployment_pb.name
             )
             logger.debug('Failed to create Azure function. Cleaning up Azure resources')
-            _call_az_cli(
-                command=['az', 'group', 'delete', '-y', '--name', resource_group_name],
-                message='delete Azure resource group',
-            )
+            try:
+                _call_az_cli(
+                    command=[
+                        'az',
+                        'group',
+                        'delete',
+                        '-y',
+                        '--name',
+                        resource_group_name
+                    ],
+                    message='delete Azure resource group',
+                )
+            except AzureServiceError:
+                pass
             raise error
 
     def update(self, deployment_pb, previous_deployment):
         try:
-            bento_pb = self.yatai_service.GetBento(
+            bento_repo_pb = self.yatai_service.GetBento(
                 GetBentoRequest(
                     bento_name=deployment_pb.spec.bento_name,
                     bento_version=deployment_pb.spec.bento_version,
                 )
             )
-            if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
-                raise BentoMLException(
-                    f'BentoML currently not support '
-                    f'{BentoUri.StorageType.Name(bento_pb.bento.uri.type)} repository'
-                )
+            bento_pb = bento_repo_pb.bento
             return self._update(
-                deployment_pb, previous_deployment, bento_pb, bento_pb.bento.uri.uri
+                deployment_pb, previous_deployment, bento_pb, bento_pb.uri.uri
             )
         except BentoMLException as error:
             deployment_pb.state.state = DeploymentState.ERROR
@@ -618,7 +620,7 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
                 deployment_spec=deployment_pb.spec,
                 deployment_name=deployment_pb.name,
                 namespace=deployment_pb.namespace,
-                bento_pb=bento_pb.bento,
+                bento_pb=bento_pb,
                 bento_path=bento_path,
             )
         (
@@ -704,12 +706,13 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
                 'type',
                 'usageState',
             ]
+            # Need find more documentation on the status of functionapp. For now, any
+            # other status is error.
             if show_function_result['state'] == 'Running':
                 state = DeploymentState.RUNNING
             else:
                 state = DeploymentState.ERROR
             info_json = {k: v for k, v in show_function_result.items() if k in keys}
-            # construct endpoints from hostname
             deployment_state = DeploymentState(
                 info_json=json.dumps(info_json, default=str), state=state,
             )

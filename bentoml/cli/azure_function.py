@@ -36,7 +36,7 @@ from bentoml.yatai.client import YataiClient
 
 PLATFORM_NAME = DeploymentSpec.DeploymentOperator.Name(DeploymentSpec.AZURE_FUNCTION)
 DEFAULT_MIN_INSTANCE_COUNT = 1
-DEFAULT_MAX_BURST = 3
+DEFAULT_MAX_BURST = 20
 DEFAULT_PREMIUM_PLAN_SKU = 'EP1'
 DEFAULT_FUNCTION_AUTH_LEVEL = 'function'
 
@@ -115,6 +115,12 @@ def get_azure_function_sub_command():
         'function',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '--wait/--no-wait',
+        default=True,
+        help='Wait for apply action to complete or encounter an error.'
+             'If set to no-wait, CLI will return immediately. The default value is wait',
+    )
     def deploy(
         namespace,
         name,
@@ -126,6 +132,7 @@ def get_azure_function_sub_command():
         labels,
         function_auth_level,
         output,
+        wait,
     ):
         track_cli('deploy-create', PLATFORM_NAME)
         bento_name, bento_version = bento.split(':')
@@ -143,6 +150,7 @@ def get_azure_function_sub_command():
                     max_burst=max_burst,
                     premium_plan_sku=premium_plan_sku,
                     function_auth_level=function_auth_level,
+                    wait=wait,
                 )
                 if result.status.status_code != status_pb2.Status.OK:
                     error_code, error_message = status_pb_to_error_code_and_message(

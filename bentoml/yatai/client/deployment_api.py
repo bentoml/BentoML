@@ -495,8 +495,7 @@ class DeploymentAPIClient:
         deployment_pb.spec.azure_function_operator_config.function_auth_level = (
             function_auth_level
         )
-        if max_burst:
-            deployment_pb.spec.azure_function_operator_config.max_burst = max_burst
+        deployment_pb.spec.azure_function_operator_config.max_burst = max_burst
 
         return self.create(deployment_pb, wait)
 

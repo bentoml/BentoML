@@ -76,11 +76,15 @@ def api_func(event, context):  # pylint: disable=unused-argument
         logger.info('Got prediction request with body "%s"', {event["body"]})
         prediction = bento_service_api.handle_aws_lambda_event(event)
 
-        logger.debug(json.dumps({
-            'event': event,
-            'prediction': prediction["body"],
-            'status_code': prediction["statusCode"],
-        }))
+        logger.debug(
+            json.dumps(
+                {
+                    'event': event,
+                    'prediction': prediction["body"],
+                    'status_code': prediction["statusCode"],
+                }
+            )
+        )
 
         if prediction["statusCode"] >= 400:
             logger.warning('Error when predicting. Check logs for more information.')

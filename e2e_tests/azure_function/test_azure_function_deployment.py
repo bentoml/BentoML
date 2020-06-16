@@ -4,8 +4,6 @@ import time
 import uuid
 
 import requests
-import json
-from sklearn import datasets
 
 from e2e_tests.cli_operations import delete_deployment
 
@@ -14,7 +12,7 @@ logger = logging.getLogger('bentoml.test')
 
 def test_azure_function_deployment(iris_clf_service):
     random_hash = uuid.uuid4().hex[:6]
-    deployment_name = f'tests-azure-function-{random_hash}'
+    deployment_name = f'test-azure-{random_hash}'
     create_deployment_command = [
         'bentoml',
         'azure-function',
@@ -36,8 +34,9 @@ def test_azure_function_deployment(iris_clf_service):
             create_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         ) as proc:
             stdout = proc.stdout.read().decode('utf-8')
-        if stdout.startswith('Failed to create deployment'):
-            raise Exception('Failed to create deployment')
+        logger.info(stdout)
+        if 'Failed to create Azure function deployment' in stdout:
+            raise Exception('Failed to create Azure function deployment')
         deploy_command_stdout_list = stdout.split('\n')
         endpoint = None
         for index, message in enumerate(deploy_command_stdout_list):
@@ -45,24 +44,31 @@ def test_azure_function_deployment(iris_clf_service):
                 endpoint = (
                     deploy_command_stdout_list[index + 1].strip().replace('"', '')
                 )
-        iris = datasets.load_iris()
-        sample_data = iris.data[0:1]
+        # Azure takes long time to download docker image, waiting at least 5 minutes
+        # for it to be ready.
+        logger.info('Sleeping 5 mins to wait for Azure download docker image')
+        time.sleep(500)
         start_time = time.time()
-        while(time.time() - start_time) < 600:
+        while (time.time() - start_time) < 400:
+            logger.info(f'Making request to endpoint {endpoint}')
             request_result = requests.post(
                 f'https://{endpoint}/predict',
-                data=f'"{json.dumps(sample_data.tolist())}"',
+                data='[[5, 4, 3, 2]]',
                 headers={'Content-Type': 'application/json'},
             )
-            if request_result.status_code == 502 or request_result.status_code == 503:
-                time.sleep(60)
+            logger.info(
+                f'Request result {request_result.status_code} '
+                f'{request_result.content.decode("utf-8")}'
+            )
+            if request_result.status_code == 503 or request_result.status_code == 502:
+                time.sleep(100)
             else:
                 break
         assert (
             request_result.status_code == 200
         ), 'Azure function deployment prediction request failed'
         assert (
-            request_result.content.decode('utf-8') == '[0]'
+            request_result.content.decode('utf-8') == '[1]'
         ), 'Azure function deployment prediction result mismatch'
     finally:
         delete_deployment('azure-function', deployment_name)

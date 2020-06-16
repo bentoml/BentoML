@@ -6329,9 +6329,9 @@ export const bentoml = $root.bentoml = (() => {
                     $root.google.protobuf.Struct.encode(message.output_config, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
                 if (message.output_type != null && message.hasOwnProperty("output_type"))
                     writer.uint32(/* id 6, wireType 2 =*/50).string(message.output_type);
-                if (message.mb_max_latency != null && Object.hasOwnProperty.call(message, "mb_max_latency"))
+                if (message.mb_max_latency != null && message.hasOwnProperty("mb_max_latency"))
                     writer.uint32(/* id 7, wireType 0 =*/56).int32(message.mb_max_latency);
-                if (message.mb_max_batch_size != null && Object.hasOwnProperty.call(message, "mb_max_batch_size"))
+                if (message.mb_max_batch_size != null && message.hasOwnProperty("mb_max_batch_size"))
                     writer.uint32(/* id 8, wireType 0 =*/64).int32(message.mb_max_batch_size);
                 return writer;
             };

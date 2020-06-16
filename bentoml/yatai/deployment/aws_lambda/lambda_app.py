@@ -40,8 +40,7 @@ if '/tmp/requirements' not in sys.path:
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 from bentoml import load  # noqa
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger('bentoml.lambda_app')
 
 bento_name = os.environ['BENTOML_BENTO_SERVICE_NAME']
 api_name = os.environ["BENTOML_API_NAME"]
@@ -73,10 +72,8 @@ def api_func(event, context):  # pylint: disable=unused-argument
     """
 
     if type(event) is dict and "headers" in event and "body" in event:
-        logger.info('Got prediction request with body "%s"', {event["body"]})
         prediction = bento_service_api.handle_aws_lambda_event(event)
-
-        logger.debug(
+        logger.info(
             json.dumps(
                 {
                     'event': event,
@@ -88,8 +85,6 @@ def api_func(event, context):  # pylint: disable=unused-argument
 
         if prediction["statusCode"] >= 400:
             logger.warning('Error when predicting. Check logs for more information.')
-        else:
-            logger.info('Predicted "%s"', prediction["body"])
 
         return prediction
     else:

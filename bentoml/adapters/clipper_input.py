@@ -26,10 +26,10 @@ ADAPTER_TYPE_TO_INPUT_TYPE = {
 
 class ClipperInput(BaseInputAdapter):
     """
-    A special handler that should only be used when deploying BentoService
+    A special input adapter that should only be used when deploying BentoService
      with Clipper(http://clipper.ai/)
 
-    Clipper Handlers are not regular InputAdapter, they don't work with REST
+    ClipperInput are not regular InputAdapter, they don't work with REST
     API server nor BentoML CLI.
     """
 

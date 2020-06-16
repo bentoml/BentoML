@@ -8,7 +8,7 @@ from tests.bento_service_examples.iris_classifier import IrisClassifier
 from tests.conftest import delete_saved_bento_service
 
 
-def test_auto_handler_dependencies(bento_bundle_path):
+def test_auto_adapter_dependencies(bento_bundle_path):
     with open(os.path.join(bento_bundle_path, 'requirements.txt')) as f:
         requirements_txt_content = f.read()
 

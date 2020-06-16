@@ -96,8 +96,8 @@ _UPLOADSTATUS_STATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1428,
-  serialized_end=1504,
+  serialized_start=1479,
+  serialized_end=1555,
 )
 _sym_db.RegisterEnumDescriptor(_UPLOADSTATUS_STATUS)
 
@@ -118,8 +118,8 @@ _LISTBENTOREQUEST_SORTABLE_COLUMN = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2178,
-  serialized_end=2221,
+  serialized_start=2229,
+  serialized_end=2272,
 )
 _sym_db.RegisterEnumDescriptor(_LISTBENTOREQUEST_SORTABLE_COLUMN)
 
@@ -294,23 +294,37 @@ _BENTOSERVICEMETADATA_BENTOSERVICEAPI = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='output_type', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.output_type', index=3,
-      number=6, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='input_config', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.input_config', index=4,
+      name='input_config', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.input_config', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='output_config', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.output_config', index=5,
+      name='output_config', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.output_config', index=4,
       number=5, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='output_type', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.output_type', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='mb_max_latency', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.mb_max_latency', index=6,
+      number=7, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='mb_max_batch_size', full_name='bentoml.BentoServiceMetadata.BentoServiceApi.mb_max_batch_size', index=7,
+      number=8, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
@@ -327,7 +341,7 @@ _BENTOSERVICEMETADATA_BENTOSERVICEAPI = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=769,
-  serialized_end=950,
+  serialized_end=1001,
 )
 
 _BENTOSERVICEMETADATA = _descriptor.Descriptor(
@@ -392,7 +406,7 @@ _BENTOSERVICEMETADATA = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=292,
-  serialized_end=950,
+  serialized_end=1001,
 )
 
 
@@ -450,8 +464,8 @@ _BENTO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=953,
-  serialized_end=1125,
+  serialized_start=1004,
+  serialized_end=1176,
 )
 
 
@@ -488,8 +502,8 @@ _ADDBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1127,
-  serialized_end=1187,
+  serialized_start=1178,
+  serialized_end=1238,
 )
 
 
@@ -526,8 +540,8 @@ _ADDBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1189,
-  serialized_end=1272,
+  serialized_start=1240,
+  serialized_end=1323,
 )
 
 
@@ -579,8 +593,8 @@ _UPLOADSTATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1275,
-  serialized_end=1504,
+  serialized_start=1326,
+  serialized_end=1555,
 )
 
 
@@ -631,8 +645,8 @@ _UPDATEBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1507,
-  serialized_end=1673,
+  serialized_start=1558,
+  serialized_end=1724,
 )
 
 
@@ -662,8 +676,8 @@ _UPDATEBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1675,
-  serialized_end=1729,
+  serialized_start=1726,
+  serialized_end=1780,
 )
 
 
@@ -700,8 +714,8 @@ _DANGEROUSLYDELETEBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1731,
-  serialized_end=1805,
+  serialized_start=1782,
+  serialized_end=1856,
 )
 
 
@@ -731,8 +745,8 @@ _DANGEROUSLYDELETEBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1807,
-  serialized_end=1872,
+  serialized_start=1858,
+  serialized_end=1923,
 )
 
 
@@ -769,8 +783,8 @@ _GETBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1874,
-  serialized_end=1934,
+  serialized_start=1925,
+  serialized_end=1985,
 )
 
 
@@ -807,8 +821,8 @@ _GETBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1936,
-  serialized_end=2018,
+  serialized_start=1987,
+  serialized_end=2069,
 )
 
 
@@ -867,8 +881,8 @@ _LISTBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2021,
-  serialized_end=2221,
+  serialized_start=2072,
+  serialized_end=2272,
 )
 
 
@@ -905,8 +919,8 @@ _LISTBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2223,
-  serialized_end=2307,
+  serialized_start=2274,
+  serialized_end=2358,
 )
 
 _BENTOURI.fields_by_name['type'].enum_type = _BENTOURI_STORAGETYPE

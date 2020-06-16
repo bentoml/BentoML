@@ -6,7 +6,7 @@ from bentoml.adapters import (
     JsonInput,
     # FastaiImageInput,
 )
-from bentoml.handlers import DataframeHandler
+from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.artifact import PickleArtifact
 
 
@@ -17,7 +17,7 @@ class ExampleBentoService(bentoml.BentoService):
     Example BentoService class made for testing purpose
     """
 
-    @bentoml.api(input=DataframeInput())
+    @bentoml.api(input=DataframeInput(), mb_max_latency=1000, mb_max_batch_size=2000)
     def predict(self, df):
         """An API for testing simple bento model service
         """
@@ -29,7 +29,7 @@ class ExampleBentoService(bentoml.BentoService):
         """
         return self.artifacts.model.predict_dataframe(df)
 
-    @bentoml.api(DataframeHandler, input_dtypes={"col1": "int"})
+    @bentoml.api(DataframeHandler, input_dtypes={"col1": "int"})  # deprecated
     def predict_dataframe_v1(self, df):
         """predict_dataframe expects dataframe as input
         """

@@ -2500,14 +2500,20 @@ export namespace bentoml {
             /** BentoServiceApi docs */
             docs?: (string|null);
 
-            /** BentoServiceApi output_type */
-            output_type?: (string|null);
-
             /** BentoServiceApi input_config */
             input_config?: (google.protobuf.IStruct|null);
 
             /** BentoServiceApi output_config */
             output_config?: (google.protobuf.IStruct|null);
+
+            /** BentoServiceApi output_type */
+            output_type?: (string|null);
+
+            /** BentoServiceApi mb_max_latency */
+            mb_max_latency?: (number|null);
+
+            /** BentoServiceApi mb_max_batch_size */
+            mb_max_batch_size?: (number|null);
         }
 
         /** Represents a BentoServiceApi. */
@@ -2528,14 +2534,20 @@ export namespace bentoml {
             /** BentoServiceApi docs. */
             public docs: string;
 
-            /** BentoServiceApi output_type. */
-            public output_type: string;
-
             /** BentoServiceApi input_config. */
             public input_config?: (google.protobuf.IStruct|null);
 
             /** BentoServiceApi output_config. */
             public output_config?: (google.protobuf.IStruct|null);
+
+            /** BentoServiceApi output_type. */
+            public output_type: string;
+
+            /** BentoServiceApi mb_max_latency. */
+            public mb_max_latency: number;
+
+            /** BentoServiceApi mb_max_batch_size. */
+            public mb_max_batch_size: number;
 
             /**
              * Creates a new BentoServiceApi instance using the specified properties.

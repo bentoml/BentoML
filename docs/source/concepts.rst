@@ -31,8 +31,8 @@ the :doc:`Getting Started Guide <quickstart>`:
 Each BentoService class can contain multiple models declared through the
 :code:`@bentoml.artifact` API, and multiple APIs for accessing this service. Each API
 definition requires a :code:`InputAdapter` type, which defines the expected input data
-format of this API. BentoML provides API handlers that covers most model serving use
-cases including :code:`DataframeInput`, :code:`TensorHandler`, :code:`ImageInput`
+format of this API. BentoML provides API input adapters that covers most model serving
+use cases including :code:`DataframeInput`, :code:`TfTensorInput`, :code:`ImageInput`
 and :code:`JsonInput`.
 
 
@@ -300,17 +300,18 @@ For most model serving scenarios, we recommend one model per prediction service,
 decouple non-related models into separate services. The only exception is when multiple
 models are depending on each other, such as the example above.
 
-.. _concepts-api-func-and-handlers:
+.. _concepts-api-func-and-adapters:
 
-API Function and Handlers
+API Function and Adapters
 -------------------------
 
 BentoService API is the entry point for clients to access a prediction service. It is
 defined by writing the API handling function(a class method within the BentoService
 class) which gets called when client sent an inference request. User will need to
-annotate this method with :code:`@bentoml.api` decorator and pass in a Handler class,
-which defines the desired input format for the API function. For example, if your model
-is expecting tabular data as input, you can use :code:`DataframeInput` for your API,
+annotate this method with :code:`@bentoml.api` decorator and pass in an InputAdapter
+instance, which defines the desired input format for the API function. For example,
+if your model is expecting tabular data as input, you can use :code:`DataframeInput`
+for your API,
 e.g.:
 
 
@@ -350,7 +351,7 @@ API function. For example:
 
 .. note::
 
-    Check out the :doc:`list of API Handlers <api/handlers>` that BentoML provides.
+    Check out the :doc:`list of API InputAdapters <api/adapters>` that BentoML provides.
 
 
 It is important to notice that in BentoML, the input variable passed into the
@@ -519,8 +520,8 @@ you can still start the server by providing the path to the saved BentoService:
 
     bentoml serve $saved_path
 
-The REST API request format is determined by each API's handler type and handler config.
-More details can be found in the :ref:`BentoML API Handlers References <bentoml-api-handlers-label>`.
+The REST API request format is determined by each API's input type and input config.
+More details can be found in the :ref:`BentoML API InputAdapters References <bentoml-api-adapters-label>`.
 
 For running production API server, make sure to run ``bentoml serve-gunicorn`` 
 command instead, or use Docker container for deployment.
@@ -594,8 +595,8 @@ tasks. BentoML implemented such a micro batching layer that is inspired by the p
 
 Given the mass performance improvement a model serving system get from micro-batching, 
 BentoML APIs were designed to work with micro-batching without any code changes on the 
-user side. It is why all the API Handlers are designed to accept a list of input data, 
-as described in the :ref:`concepts-api-func-and-handlers` section.
+user side. It is why all the API InputAdapters are designed to accept a list of input data, 
+as described in the :ref:`concepts-api-func-and-adapters` section.
 
 Currently, micro-batching is still a beta feature, users can enable micro-batching by
 passing a flag when running BentoML API server:
@@ -748,9 +749,9 @@ list all the BentoService created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeInput",
+            "InputType": "DataframeInput",
             "docs": "BentoService API",
-            "handlerConfig": {
+            "inputConfig": {
               "output_orient": "records",
               "orient": "records",
               "typ": "frame",

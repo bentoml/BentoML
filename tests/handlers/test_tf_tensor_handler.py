@@ -84,11 +84,11 @@ def test_tf_tensor_handle_request():
     request.headers = {}
     request.content_type = 'application/json'
 
-    handler = TfTensorInput()
+    input_adapter = TfTensorInput()
 
     for input_data, except_result in zip(TEST_CASES, EXPECTED_RESULTS):
         request.data = json.dumps(input_data).encode('utf-8')
-        response = handler.handle_request(request, lambda i: i)
+        response = input_adapter.handle_request(request, lambda i: i)
 
         prediction = json.loads(response.get_data())
         assert_eq_or_both_nan(except_result, prediction)
@@ -100,12 +100,12 @@ def test_tf_tensor_handle_batch_request():
     '''
     from bentoml.adapters import TfTensorInput
 
-    handler = TfTensorInput()
+    input_adapter = TfTensorInput()
     request = Mock()
 
     for input_data, except_result in zip(TEST_CASES, EXPECTED_RESULTS):
         request.data = json.dumps(input_data).encode('utf-8')
-        responses = handler.handle_batch_request([request] * 3, lambda i: i)
+        responses = input_adapter.handle_batch_request([request] * 3, lambda i: i)
 
         for response in responses:
             prediction = json.loads(response.data)

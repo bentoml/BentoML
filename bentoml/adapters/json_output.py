@@ -43,7 +43,7 @@ def jsonize(result):
         return json.dumps({"result": str(result)})
 
 
-class JsonserializableOutput(BaseOutputAdapter):
+class JsonSerializableOutput(BaseOutputAdapter):
     """
     Converts result of user defined API function into specific output.
 

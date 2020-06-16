@@ -10,7 +10,8 @@ RUN apk update \
         git \
         linux-headers \
     && apk add \
-        bash \
+        bash
+
 # Restore USER as set in base image
 # https://github.com/ContinuumIO/docker-images/blob/2020_02_release/miniconda3/alpine/Dockerfile
 USER 10151

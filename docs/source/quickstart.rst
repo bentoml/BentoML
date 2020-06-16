@@ -60,7 +60,7 @@ prediction service definition with BentoML:
   @bentoml.artifacts([SklearnModelArtifact('model')])
   class IrisClassifier(bentoml.BentoService):
 
-      @bentoml.api(input=DataframeInput)
+      @bentoml.api(input=DataframeInput())
       def predict(self, df):
           # Optional pre-processing, post-processing code goes here
           return self.artifacts.model.predict(df)

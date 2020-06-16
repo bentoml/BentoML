@@ -6,13 +6,13 @@ from bentoml.adapters import FastaiImageInput
 pytestmark = pytest.mark.skip("skipping entire test file to debug travis build issue")
 
 
-def test_fastai_image_handler(capsys, tmpdir):
-    class ImageHandlerModelForFastai(bentoml.BentoService):
+def test_fastai_image_input(capsys, tmpdir):
+    class ImageInputModelForFastai(bentoml.BentoService):
         @bentoml.api(input=FastaiImageInput())
         def predict(self, image):
             return list(image.shape)
 
-    ms = ImageHandlerModelForFastai()
+    ms = ImageInputModelForFastai()
 
     import imageio
     import numpy as np

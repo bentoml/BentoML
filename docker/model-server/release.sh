@@ -24,6 +24,7 @@ docker build --pull \
     --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
     -t bentoml/model-server:"$BENTOML_VERSION"-alpine \
     -f Dockerfile-alpine \
+    --network=host \
     .
 docker push bentoml/model-server:"$BENTOML_VERSION"-alpine
 

@@ -47,5 +47,6 @@ __all__ = [
     "save",
     "save_to_dir",
     "handlers",
+    "adapters",
     "artifact",
 ]

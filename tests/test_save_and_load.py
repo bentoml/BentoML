@@ -36,6 +36,8 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
 
     api = model_service.get_service_api('predict')
     assert api.name == "predict"
+    assert api.mb_max_latency == 1000
+    assert api.mb_max_batch_size == 2000
     assert isinstance(api.handler, DataframeInput)
     assert api.func(1) == 2
 

@@ -153,7 +153,7 @@ def read_dataframes_from_json_n_csv(datas, content_types):
 
 
 class DataframeInput(BaseInputAdapter):
-    """Dataframe handler expects inputs from HTTP request or cli arguments that
+    """DataframeInput expects inputs from HTTP request or cli arguments that
         can be converted into a pandas Dataframe. It passes down the dataframe
         to user defined API function and returns response for REST API call
         or print result for CLI call
@@ -183,7 +183,7 @@ class DataframeInput(BaseInputAdapter):
         **base_kwargs,
     ):
         if not is_batch_input:
-            raise ValueError('dataframe handler can not accpept none batch inputs')
+            raise ValueError('DataframeInput can not accpept none batch inputs')
         super(DataframeInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )
@@ -294,7 +294,10 @@ class DataframeInput(BaseInputAdapter):
         ]
         # TODO: check content_type
 
-        df_conc, slices = read_dataframes_from_json_n_csv(datas, content_types)
+        df_conc, slices_generator = read_dataframes_from_json_n_csv(
+            datas, content_types
+        )
+        slices = list(slices_generator)
 
         result_conc = func(df_conc)
 

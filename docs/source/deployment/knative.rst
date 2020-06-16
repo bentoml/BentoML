@@ -76,7 +76,7 @@ Verify the saved bundle created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeInput",
+            "InputType": "DataframeInput",
             "docs": "BentoService API"
           }
         ]

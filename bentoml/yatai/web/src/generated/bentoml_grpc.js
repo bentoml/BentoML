@@ -6207,9 +6207,11 @@ export const bentoml = $root.bentoml = (() => {
              * @property {string|null} [name] BentoServiceApi name
              * @property {string|null} [input_type] BentoServiceApi input_type
              * @property {string|null} [docs] BentoServiceApi docs
-             * @property {string|null} [output_type] BentoServiceApi output_type
              * @property {google.protobuf.IStruct|null} [input_config] BentoServiceApi input_config
              * @property {google.protobuf.IStruct|null} [output_config] BentoServiceApi output_config
+             * @property {string|null} [output_type] BentoServiceApi output_type
+             * @property {number|null} [mb_max_latency] BentoServiceApi mb_max_latency
+             * @property {number|null} [mb_max_batch_size] BentoServiceApi mb_max_batch_size
              */
 
             /**
@@ -6252,14 +6254,6 @@ export const bentoml = $root.bentoml = (() => {
             BentoServiceApi.prototype.docs = "";
 
             /**
-             * BentoServiceApi output_type.
-             * @member {string} output_type
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @instance
-             */
-            BentoServiceApi.prototype.output_type = "";
-
-            /**
              * BentoServiceApi input_config.
              * @member {google.protobuf.IStruct|null|undefined} input_config
              * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
@@ -6274,6 +6268,30 @@ export const bentoml = $root.bentoml = (() => {
              * @instance
              */
             BentoServiceApi.prototype.output_config = null;
+
+            /**
+             * BentoServiceApi output_type.
+             * @member {string} output_type
+             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
+             * @instance
+             */
+            BentoServiceApi.prototype.output_type = "";
+
+            /**
+             * BentoServiceApi mb_max_latency.
+             * @member {number} mb_max_latency
+             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
+             * @instance
+             */
+            BentoServiceApi.prototype.mb_max_latency = 0;
+
+            /**
+             * BentoServiceApi mb_max_batch_size.
+             * @member {number} mb_max_batch_size
+             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
+             * @instance
+             */
+            BentoServiceApi.prototype.mb_max_batch_size = 0;
 
             /**
              * Creates a new BentoServiceApi instance using the specified properties.
@@ -6311,6 +6329,10 @@ export const bentoml = $root.bentoml = (() => {
                     $root.google.protobuf.Struct.encode(message.output_config, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
                 if (message.output_type != null && message.hasOwnProperty("output_type"))
                     writer.uint32(/* id 6, wireType 2 =*/50).string(message.output_type);
+                if (message.mb_max_latency != null && Object.hasOwnProperty.call(message, "mb_max_latency"))
+                    writer.uint32(/* id 7, wireType 0 =*/56).int32(message.mb_max_latency);
+                if (message.mb_max_batch_size != null && Object.hasOwnProperty.call(message, "mb_max_batch_size"))
+                    writer.uint32(/* id 8, wireType 0 =*/64).int32(message.mb_max_batch_size);
                 return writer;
             };
 
@@ -6354,14 +6376,20 @@ export const bentoml = $root.bentoml = (() => {
                     case 3:
                         message.docs = reader.string();
                         break;
-                    case 6:
-                        message.output_type = reader.string();
-                        break;
                     case 4:
                         message.input_config = $root.google.protobuf.Struct.decode(reader, reader.uint32());
                         break;
                     case 5:
                         message.output_config = $root.google.protobuf.Struct.decode(reader, reader.uint32());
+                        break;
+                    case 6:
+                        message.output_type = reader.string();
+                        break;
+                    case 7:
+                        message.mb_max_latency = reader.int32();
+                        break;
+                    case 8:
+                        message.mb_max_batch_size = reader.int32();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -6407,9 +6435,6 @@ export const bentoml = $root.bentoml = (() => {
                 if (message.docs != null && message.hasOwnProperty("docs"))
                     if (!$util.isString(message.docs))
                         return "docs: string expected";
-                if (message.output_type != null && message.hasOwnProperty("output_type"))
-                    if (!$util.isString(message.output_type))
-                        return "output_type: string expected";
                 if (message.input_config != null && message.hasOwnProperty("input_config")) {
                     let error = $root.google.protobuf.Struct.verify(message.input_config);
                     if (error)
@@ -6420,6 +6445,15 @@ export const bentoml = $root.bentoml = (() => {
                     if (error)
                         return "output_config." + error;
                 }
+                if (message.output_type != null && message.hasOwnProperty("output_type"))
+                    if (!$util.isString(message.output_type))
+                        return "output_type: string expected";
+                if (message.mb_max_latency != null && message.hasOwnProperty("mb_max_latency"))
+                    if (!$util.isInteger(message.mb_max_latency))
+                        return "mb_max_latency: integer expected";
+                if (message.mb_max_batch_size != null && message.hasOwnProperty("mb_max_batch_size"))
+                    if (!$util.isInteger(message.mb_max_batch_size))
+                        return "mb_max_batch_size: integer expected";
                 return null;
             };
 
@@ -6441,8 +6475,6 @@ export const bentoml = $root.bentoml = (() => {
                     message.input_type = String(object.input_type);
                 if (object.docs != null)
                     message.docs = String(object.docs);
-                if (object.output_type != null)
-                    message.output_type = String(object.output_type);
                 if (object.input_config != null) {
                     if (typeof object.input_config !== "object")
                         throw TypeError(".bentoml.BentoServiceMetadata.BentoServiceApi.input_config: object expected");
@@ -6453,6 +6485,12 @@ export const bentoml = $root.bentoml = (() => {
                         throw TypeError(".bentoml.BentoServiceMetadata.BentoServiceApi.output_config: object expected");
                     message.output_config = $root.google.protobuf.Struct.fromObject(object.output_config);
                 }
+                if (object.output_type != null)
+                    message.output_type = String(object.output_type);
+                if (object.mb_max_latency != null)
+                    message.mb_max_latency = object.mb_max_latency | 0;
+                if (object.mb_max_batch_size != null)
+                    message.mb_max_batch_size = object.mb_max_batch_size | 0;
                 return message;
             };
 
@@ -6476,6 +6514,8 @@ export const bentoml = $root.bentoml = (() => {
                     object.input_config = null;
                     object.output_config = null;
                     object.output_type = "";
+                    object.mb_max_latency = 0;
+                    object.mb_max_batch_size = 0;
                 }
                 if (message.name != null && message.hasOwnProperty("name"))
                     object.name = message.name;
@@ -6489,6 +6529,10 @@ export const bentoml = $root.bentoml = (() => {
                     object.output_config = $root.google.protobuf.Struct.toObject(message.output_config, options);
                 if (message.output_type != null && message.hasOwnProperty("output_type"))
                     object.output_type = message.output_type;
+                if (message.mb_max_latency != null && message.hasOwnProperty("mb_max_latency"))
+                    object.mb_max_latency = message.mb_max_latency;
+                if (message.mb_max_batch_size != null && message.hasOwnProperty("mb_max_batch_size"))
+                    object.mb_max_batch_size = message.mb_max_batch_size;
                 return object;
             };
 

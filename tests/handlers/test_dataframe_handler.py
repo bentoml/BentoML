@@ -18,11 +18,11 @@ except ImportError:
 
 
 def test_dataframe_request_schema():
-    handler = DataframeInput(
+    input_adapter = DataframeInput(
         input_dtypes={"col1": "int", "col2": "float", "col3": "string"}
     )
 
-    schema = handler.request_schema["application/json"]["schema"]
+    schema = input_adapter.request_schema["application/json"]["schema"]
     assert "object" == schema["type"]
     assert 3 == len(schema["properties"])
     assert "array" == schema["properties"]["col1"]["type"]
@@ -35,14 +35,14 @@ def test_dataframe_handle_cli(capsys, tmpdir):
     def test_func(df):
         return df["name"][0]
 
-    handler = DataframeInput()
+    input_adapter = DataframeInput()
 
     json_file = tmpdir.join("test.json")
     with open(str(json_file), "w") as f:
         f.write('[{"name": "john","game": "mario","city": "sf"}]')
 
     test_args = ["--input={}".format(json_file)]
-    handler.handle_cli(test_args, test_func)
+    input_adapter.handle_cli(test_args, test_func)
     out, _ = capsys.readouterr()
     assert out.strip().endswith("john")
 
@@ -53,21 +53,21 @@ def test_dataframe_handle_aws_lambda_event():
     def test_func(df):
         return df["name"][0]
 
-    handler = DataframeInput()
+    input_adapter = DataframeInput()
     event = {
         "headers": {"Content-Type": "application/json"},
         "body": test_content,
     }
-    response = handler.handle_aws_lambda_event(event, test_func)
+    response = input_adapter.handle_aws_lambda_event(event, test_func)
     assert response["statusCode"] == 200
     assert response["body"] == '"john"'
 
-    handler = DataframeInput()
+    input_adapter = DataframeInput()
     event_without_content_type_header = {
         "headers": {},
         "body": test_content,
     }
-    response = handler.handle_aws_lambda_event(
+    response = input_adapter.handle_aws_lambda_event(
         event_without_content_type_header, test_func
     )
     assert response["statusCode"] == 200
@@ -78,7 +78,7 @@ def test_dataframe_handle_aws_lambda_event():
             "headers": {},
             "body": "bad_input_content",
         }
-        handler.handle_aws_lambda_event(event_with_bad_input, test_func)
+        input_adapter.handle_aws_lambda_event(event_with_bad_input, test_func)
 
 
 def test_check_dataframe_column_contains():
@@ -108,14 +108,14 @@ def test_dataframe_handle_request_csv():
     def test_function(df):
         return df["name"][0]
 
-    handler = DataframeInput()
+    input_adapter = DataframeInput()
     csv_data = 'name,game,city\njohn,mario,sf'.encode('utf-8')
     request = Mock()
     request.headers = {'output_orient': 'records', 'orient': 'records'}
     request.content_type = 'text/csv'
     request.data = csv_data
 
-    result = handler.handle_request(request, test_function)
+    result = input_adapter.handle_request(request, test_function)
     assert result.get_data().decode('utf-8') == '"john"'
 
 

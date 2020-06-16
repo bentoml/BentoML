@@ -6,4 +6,4 @@ API Reference
 
   bentoml
   artifacts
-  handlers
+  adapters

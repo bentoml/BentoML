@@ -28,7 +28,7 @@ def test_custom_api_name():
 
 
 @pytest.mark.skip("skip fastai tests to fix travis build")
-def test_fastai_image_handler_pip_dependencies():
+def test_fastai_image_input_pip_dependencies():
     class TestFastAiImageService(bentoml.BentoService):
         @bentoml.api(input=FastaiImageInput())
         def test(self, image):
@@ -62,7 +62,7 @@ def test_duplicated_artifact_name():
     assert "Duplicated artifact name `model` detected" in str(e.value)
 
 
-def test_invalid_api_handler():
+def test_invalid_api_input():
     with pytest.raises(InvalidArgument) as e:
 
         class ExampleBentoService(
@@ -77,7 +77,7 @@ def test_invalid_api_handler():
     )
 
 
-def test_image_handler_pip_dependencies():
+def test_image_input_pip_dependencies():
     class TestImageService(bentoml.BentoService):
         @bentoml.api(input=ImageInput())
         def test(self, images):

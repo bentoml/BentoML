@@ -52,7 +52,9 @@ class BentoServiceAPI(object):
             typically the 'predict' method on a model
     """
 
-    def __init__(self, service, name, doc, handler, func):
+    def __init__(
+        self, service, name, doc, handler, func, mb_max_latency, mb_max_batch_size
+    ):
         """
         :param service: ref to service containing this API
         :param name: API name
@@ -60,6 +62,12 @@ class BentoServiceAPI(object):
             CLI options into parameters for API func
         :param func: API func contains the actual API callback, this is
             typically the 'predict' method on a model
+        :param mb_max_latency: The latency goal of your service in milliseconds.
+            Default: 300.
+        :param mb_max_batch_size: The maximum size of any batch. This parameter
+            governs the throughput/latency tradeoff, and also avoids having
+            batches that are so large they exceed some resource constraint (e.g.
+            GPU memory to hold a batch's data). Default: 1000.
         """
         self._service = service
         self._name = name
@@ -67,6 +75,8 @@ class BentoServiceAPI(object):
         self._handler = handler
         self._func = func
         self._wrapped_func = None
+        self.mb_max_latency = mb_max_latency
+        self.mb_max_batch_size = mb_max_batch_size
 
     @property
     def service(self):
@@ -163,12 +173,22 @@ class BentoServiceBase(object):
                 api_name = getattr(function, "_api_name")
                 api_doc = getattr(function, "_api_doc")
                 handler = getattr(function, "_handler")
+                mb_max_latency = getattr(function, "_mb_max_latency")
+                mb_max_batch_size = getattr(function, "_mb_max_batch_size")
 
                 # Bind api method call with self(BentoService instance)
                 func = function.__get__(self)
 
                 self._service_apis.append(
-                    BentoServiceAPI(self, api_name, api_doc, handler=handler, func=func)
+                    BentoServiceAPI(
+                        self,
+                        api_name,
+                        api_doc,
+                        handler=handler,
+                        func=func,
+                        mb_max_latency=mb_max_latency,
+                        mb_max_batch_size=mb_max_batch_size,
+                    )
                 )
 
     def get_service_apis(self):
@@ -234,15 +254,15 @@ def api_decorator(
 
     before version 0.8
     >>> from bentoml import BentoService, api
-    >>> from bentoml.handlers import JsonHandler, DataframeHandler
+    >>> from bentoml.handlers import JsonHandler, DataframeHandler  # deprecated
     >>>
     >>> class FraudDetectionAndIdentityService(BentoService):
     >>>
-    >>>     @api(JsonHandler)
+    >>>     @api(JsonHandler)  # deprecated
     >>>     def fraud_detect(self, parsed_json):
     >>>         # do something
     >>>
-    >>>     @api(DataframeHandler, input_json_orient='records')
+    >>>     @api(DataframeHandler, input_json_orient='records')  # deprecated
     >>>     def identity(self, df):
     >>>         # do something
 
@@ -291,8 +311,8 @@ def api_decorator(
         setattr(func, "_api_name", _api_name)
         setattr(func, "_api_doc", _api_doc)
 
-        setattr(func, "mb_max_batch_size", _mb_max_batch_size)
-        setattr(func, "mb_max_latency", _mb_max_latency)
+        setattr(func, "_mb_max_batch_size", _mb_max_batch_size)
+        setattr(func, "_mb_max_latency", _mb_max_latency)
 
         return func
 

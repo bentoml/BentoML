@@ -16,6 +16,6 @@ and ask in the bentoml-users channel.
   logging
   micro_batching
   custom_artifact
-  custom_handler
+  custom_input_adapter
   yatai_service
 

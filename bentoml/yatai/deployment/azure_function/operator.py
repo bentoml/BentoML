@@ -45,7 +45,7 @@ from bentoml.yatai.proto.deployment_pb2 import (
     DescribeDeploymentResponse,
     DeleteDeploymentResponse,
 )
-from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
+from bentoml.yatai.proto.repository_pb2 import GetBentoRequest
 from bentoml.yatai.status import Status
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 
@@ -220,7 +220,7 @@ def _login_acr_registry(acr_name, resource_group_name):
             resource_group_name,
         ],
         message='log into Azure container registry',
-        parse_json=False
+        parse_json=False,
     ).replace('\n', '')
     if 'Login Succeeded' in result:
         raise AzureServiceError(
@@ -573,7 +573,7 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
                         'delete',
                         '-y',
                         '--name',
-                        resource_group_name
+                        resource_group_name,
                     ],
                     message='delete Azure resource group',
                 )

@@ -119,7 +119,7 @@ def get_azure_function_sub_command():
         '--wait/--no-wait',
         default=True,
         help='Wait for apply action to complete or encounter an error.'
-             'If set to no-wait, CLI will return immediately. The default value is wait',
+        'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def deploy(
         namespace,

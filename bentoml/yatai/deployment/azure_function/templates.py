@@ -74,10 +74,13 @@ AZURE_FUNCTION_LOCAL_SETTING_JSON = """\
 }
 """
 
+# Using specific version of docker image, due to issues at upstream. Once
+# https://github.com/Azure/azure-functions-docker/issues/281 is resolved, we can update
+# this.
 BENTO_SERVICE_AZURE_FUNCTION_DOCKERFILE = """\
+FROM mcr.microsoft.com/azure-functions/python:3.0.13901-python3.7
 # To enable ssh & remote debugging on app service change the base image to the one below
 # FROM mcr.microsoft.com/azure-functions/python:3.0-python3.7-appservice
-FROM mcr.microsoft.com/azure-functions/python:3.0-python3.7
 
 # Install miniconda3
 # https://hub.docker.com/r/continuumio/miniconda3/dockerfile

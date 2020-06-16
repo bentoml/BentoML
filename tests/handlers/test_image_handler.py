@@ -19,7 +19,7 @@ def test_image_input_cli(capsys, img_file):
 
     test_args = ["--input", img_file]
     test_image_input.handle_cli(test_args, predict)
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out.strip().endswith("(10, 10, 3)")
 
 
@@ -28,7 +28,7 @@ def test_image_input_cli_list(capsys, img_files):
 
     test_args = ["--input"] + glob.glob(img_files)
     test_image_input.handle_cli(test_args, predict)
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     lines = out.strip().split('\n')
     for line in lines[-10:]:
         assert line.strip().endswith("(10, 10, 3)")
@@ -41,7 +41,7 @@ def test_image_input_aws_lambda_event(img_file):
         try:
             image_bytes_encoded = base64.encodebytes(content)
         except AttributeError:
-            image_bytes_encoded = base64.encodestring(str(img_file))
+            image_bytes_encoded = base64.encodebytes(str(img_file))
 
     aws_lambda_event = {
         "body": image_bytes_encoded,

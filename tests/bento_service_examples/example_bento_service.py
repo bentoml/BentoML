@@ -17,7 +17,7 @@ class ExampleBentoService(bentoml.BentoService):
     Example BentoService class made for testing purpose
     """
 
-    @bentoml.api(input=DataframeInput())
+    @bentoml.api(input=DataframeInput(), mb_max_latency=1000, mb_max_batch_size=2000)
     def predict(self, df):
         """An API for testing simple bento model service
         """

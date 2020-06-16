@@ -222,7 +222,7 @@ def _login_acr_registry(acr_name, resource_group_name):
         message='log into Azure container registry',
         parse_json=False,
     ).replace('\n', '')
-    if 'Login Succeeded' in result:
+    if result == 'Login Succeed':
         raise AzureServiceError(
             f'Failed to log into Azure container registry. {result}'
         )

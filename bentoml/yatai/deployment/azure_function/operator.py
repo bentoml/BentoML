@@ -21,13 +21,9 @@ import sys
 
 import docker
 
-from bentoml import config
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.saved_bundle import loader
-from bentoml.yatai.deployment.azure_function.templates import (
-    AZURE_API_FUNCTION_JSON,
-    BENTO_SERVICE_AZURE_FUNCTION_DOCKERFILE,
-)
+from bentoml.yatai.deployment.azure_function.templates import AZURE_API_FUNCTION_JSON
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.exceptions import (
@@ -60,39 +56,9 @@ def _assert_az_cli_logged_in():
         command=['az', 'account', 'show'], message='show Azure account'
     )
     if not account_info['user'] or not account_info['homeTenantId']:
-        return False
-    return True
-
-def _login_azure_cli_with_sp():
-    # https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli?view=azure-cli-latest
-    # Attempt to login with azure service principal values from bentoml
-    # configuration.
-    sp_app_id = config.get('yatai_service').get('azure_service_principal_app_url', None)
-    sp_cert = config('yatai_service').get('azure_service_principal_cert', None)
-    sp_tenant = config('yatai_service').get('azure_service_principal_tenant', None)
-    if sp_app_id and sp_cert and sp_tenant:
-        service_principal_login_result = _call_az_cli(
-            command=[
-                'az',
-                'login',
-                '--service-principal',
-                '--user-name',
-                sp_app_id,
-                '--password',
-                sp_cert,
-                '--tenant',
-                sp_tenant,
-            ],
-            message='login Azure CLI with service principal account',
+        raise YataiDeploymentException(
+            'A signed in Azure CLI is required for Azure Function deployment'
         )
-        if service_principal_login_result['state'] != 'Enabled':
-            raise AzureServiceError(
-                f'Failed to login Azure service principal account with '
-                f'{sp_app_id}, {sp_cert} {sp_tenant}. CLI response: '
-                f'{service_principal_login_result}'
-            )
-    else:
-        raise BentoMLException('Azure service principal values are missing')
 
 
 def _assert_azure_cli_available():
@@ -107,31 +73,28 @@ def _assert_azure_cli_available():
 
 
 def _init_azure_function_project(
-    azure_function_project_dir, bento_path, bento_pb, azure_function_config
+    azure_function_project_dir, bento_path, azure_function_config
 ):
     try:
+        local_bentoml_path = os.path.dirname(__file__)
         shutil.copytree(bento_path, azure_function_project_dir)
         shutil.copy(
-            os.path.join(os.path.dirname(__file__), 'host.json'),
+            os.path.join(local_bentoml_path, 'host.json'),
             os.path.join(azure_function_project_dir, 'host.json'),
         )
         shutil.copy(
-            os.path.join(os.path.dirname(__file__), 'local.settings.json'),
+            os.path.join(local_bentoml_path, 'local.settings.json'),
             os.path.join(azure_function_project_dir, 'local.settings.json'),
         )
-        with open(
-            os.path.join(azure_function_project_dir, 'Dockerfile-azure'), 'w'
-        ) as f:
-            f.write(
-                BENTO_SERVICE_AZURE_FUNCTION_DOCKERFILE.format(
-                    bentoml_version=LAST_PYPI_RELEASE_VERSION
-                )
-            )
+        shutil.copy(
+            os.path.join(local_bentoml_path, 'Dockerfile'),
+            os.path.join(azure_function_project_dir, 'Dockerfile-azure'),
+        )
 
         app_path = os.path.join(azure_function_project_dir, 'app')
         os.mkdir(app_path)
         shutil.copy(
-            os.path.join(os.path.dirname(__file__), 'app_init.py'),
+            os.path.join(local_bentoml_path, 'app_init.py'),
             os.path.join(app_path, '__init__.py'),
         )
         with open(os.path.join(app_path, 'function.json'), 'w') as f:
@@ -253,6 +216,7 @@ def _build_and_push_docker_image_to_azure_container_registry(
             path=azure_function_project_dir,
             dockerfile=os.path.join(azure_function_project_dir, 'Dockerfile-azure'),
             tag=tag,
+            buildargs={'BENTOML_VERSION': LAST_PYPI_RELEASE_VERSION}
         )
         logger.debug('Finished building docker image')
     except docker.errors.BuildError as e:
@@ -393,7 +357,7 @@ def _deploy_azure_function(
     with TempDirectory() as temp_dir:
         azure_function_project_dir = os.path.join(temp_dir, deployment_spec.bento_name)
         _init_azure_function_project(
-            azure_function_project_dir, bento_path, bento_pb, azure_function_config,
+            azure_function_project_dir, bento_path, azure_function_config,
         )
         _call_az_cli(
             command=[
@@ -511,7 +475,7 @@ def _update_azure_function(
     with TempDirectory() as temp_dir:
         azure_function_project_dir = os.path.join(temp_dir, deployment_spec.bento_name)
         _init_azure_function_project(
-            azure_function_project_dir, bento_path, bento_pb, azure_function_config,
+            azure_function_project_dir, bento_path, azure_function_config,
         )
         docker_tag = _build_and_push_docker_image_to_azure_container_registry(
             azure_function_project_dir=azure_function_project_dir,
@@ -543,8 +507,7 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
         super(AzureFunctionDeploymentOperator, self).__init__(yatai_service=yatai_service)
         ensure_docker_available_or_raise()
         _assert_azure_cli_available()
-        if not _assert_az_cli_logged_in():
-            _login_azure_cli_with_sp()
+        _assert_az_cli_logged_in()
 
     def add(self, deployment_pb):
         try:

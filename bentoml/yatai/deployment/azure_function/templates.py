@@ -24,12 +24,3 @@ AZURE_API_FUNCTION_JSON = """\
   ]
 }}
 """
-
-BENTO_SERVICE_AZURE_FUNCTION_DOCKERFILE = """\
-FROM bentoml/azure-function:{bentoml_version}
-
-COPY . /home/site/wwwroot
-
-# Install additional pip dependencies inside bundled_pip_dependencies dir
-RUN if [ -f /home/site/wwwroot/bentoml-init.sh ]; then /bin/bash -c /home/site/wwwroot/bentoml-init.sh; fi
-"""  # noqa: E501

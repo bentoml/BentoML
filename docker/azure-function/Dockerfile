@@ -26,10 +26,6 @@ ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/
 RUN chmod +x /usr/bin/tini
 # Finish install miniconda3
 
-# Set home directory for Azure function
-ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
-    AzureFunctionsJobHost__Logging__Console__IsEnabled=true
-
 # Install BentoML related
 RUN apt-get update --fix-missing && \
     apt-get install -y build-essential && \

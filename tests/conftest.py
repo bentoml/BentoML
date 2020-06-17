@@ -47,6 +47,9 @@ class TestModel(object):
             assert input_data is not None
         return [input_data.shape for input_data in input_datas]
 
+    def predict_legacy_images(self, original, compared):
+        return original == compared
+
     def predict_json(self, input_jsons):
         assert input_jsons
         return [{"ok": True}] * len(input_jsons)

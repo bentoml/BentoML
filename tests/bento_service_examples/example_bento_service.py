@@ -41,8 +41,8 @@ class ExampleBentoService(bentoml.BentoService):
         return self.artifacts.model.predict_image(images)
 
     @bentoml.api(input=LegacyImageInput(input_names=('original', 'compared')))
-    def predict_images(self, original, compared):
-        return original[0, 0] == compared[0, 0]
+    def predict_legacy_images(self, original, compared):
+        return self.artifacts.model.predict_legacy_images(original, compared)
 
     @bentoml.api(input=JsonInput())
     def predict_json(self, input_data):

@@ -540,7 +540,7 @@ def _update_azure_function(
 
 class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
     def __init__(self, yatai_service):
-        super(AzureFunctionDeploymentOperator, self).__init__(yatai_service)
+        super(AzureFunctionDeploymentOperator, self).__init__(yatai_service=yatai_service)
         ensure_docker_available_or_raise()
         _assert_azure_cli_available()
         if not _assert_az_cli_logged_in():

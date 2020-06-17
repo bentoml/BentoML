@@ -25,9 +25,6 @@ from bentoml import config
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.saved_bundle import loader
 from bentoml.yatai.deployment.azure_function.templates import (
-    AZURE_FUNCTION_HOST_JSON,
-    AZURE_FUNCTION_LOCAL_SETTING_JSON,
-    AZURE_API_INIT_PY,
     AZURE_API_FUNCTION_JSON,
     BENTO_SERVICE_AZURE_FUNCTION_DOCKERFILE,
 )
@@ -52,49 +49,55 @@ from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 logger = logging.getLogger(__name__)
 
 
-def ensure_azure_cli_available_and_login_or_raise():
-    try:
-        account_info = _call_az_cli(
-            command=['az', 'account', 'show'], message='show Azure account'
+MAX_RESOURCE_GROUP_NAME_LENGTH = 90
+MAX_STORAGE_ACCOUNT_NAME_LENGTH = 24
+MAX_FUNCTION_NAME_LENGTH = 60
+MAX_CONTAINER_REGISTRY_NAME_LENGTH = 50
+
+
+def _assert_az_cli_logged_in():
+    account_info = _call_az_cli(
+        command=['az', 'account', 'show'], message='show Azure account'
+    )
+    if not account_info['user'] or not account_info['homeTenantId']:
+        return False
+    return True
+
+def _login_azure_cli_with_sp():
+    # https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli?view=azure-cli-latest
+    # Attempt to login with azure service principal values from bentoml
+    # configuration.
+    sp_app_id = config.get('yatai_service').get('azure_service_principal_app_url', None)
+    sp_cert = config('yatai_service').get('azure_service_principal_cert', None)
+    sp_tenant = config('yatai_service').get('azure_service_principal_tenant', None)
+    if sp_app_id and sp_cert and sp_tenant:
+        service_principal_login_result = _call_az_cli(
+            command=[
+                'az',
+                'login',
+                '--service-principal',
+                '--user-name',
+                sp_app_id,
+                '--password',
+                sp_cert,
+                '--tenant',
+                sp_tenant,
+            ],
+            message='login Azure CLI with service principal account',
         )
-        if not account_info['user'] or not account_info['homeTenantId']:
-            # https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli?view=azure-cli-latest
-            # Attempt to login with azure service principal values from bentoml
-            # configuration.
-            service_principal_app_id = config.get('yatai_service').get(
-                'azure_service_principal_app_url', None
+        if service_principal_login_result['state'] != 'Enabled':
+            raise AzureServiceError(
+                f'Failed to login Azure service principal account with '
+                f'{sp_app_id}, {sp_cert} {sp_tenant}. CLI response: '
+                f'{service_principal_login_result}'
             )
-            service_principal_cert = config('yatai_service').get(
-                'azure_service_principal_cert', None
-            )
-            service_principal_tenant = config('yatai_service').get(
-                'azure_service_principal_tenant', None
-            )
-            if (
-                service_principal_app_id
-                and service_principal_cert
-                and service_principal_tenant
-            ):
-                service_principal_login_result = _call_az_cli(
-                    command=[
-                        'az',
-                        'login',
-                        '--service-principal',
-                        '--user-name',
-                        service_principal_app_id,
-                        '--password',
-                        service_principal_cert,
-                        '--tenant',
-                        service_principal_tenant,
-                    ],
-                    message='login Azure CLI with service principal account',
-                )
-                if service_principal_login_result['state'] != 'Enabled':
-                    raise BentoMLException(
-                        'Azure service principal account is not enabled'
-                    )
-            else:
-                raise BentoMLException('Azure CLI is not logged in')
+    else:
+        raise BentoMLException('Azure service principal values are missing')
+
+
+def _assert_azure_cli_available():
+    try:
+        _call_az_cli(command=['az', 'account', 'show'], message='show Azure account')
     except FileNotFoundError:
         raise MissingDependencyException(
             'azure cli is required for this deployment. Please visit '
@@ -108,12 +111,14 @@ def _init_azure_function_project(
 ):
     try:
         shutil.copytree(bento_path, azure_function_project_dir)
-        with open(os.path.join(azure_function_project_dir, 'host.json'), 'w') as f:
-            f.write(AZURE_FUNCTION_HOST_JSON)
-        with open(
-            os.path.join(azure_function_project_dir, 'local.settings.json'), 'w'
-        ) as f:
-            f.write(AZURE_FUNCTION_LOCAL_SETTING_JSON)
+        shutil.copy(
+            os.path.join(os.path.dirname(__file__), 'host.json'),
+            os.path.join(azure_function_project_dir, 'host.json'),
+        )
+        shutil.copy(
+            os.path.join(os.path.dirname(__file__), 'local.settings.json'),
+            os.path.join(azure_function_project_dir, 'local.settings.json'),
+        )
         with open(
             os.path.join(azure_function_project_dir, 'Dockerfile-azure'), 'w'
         ) as f:
@@ -125,8 +130,10 @@ def _init_azure_function_project(
 
         app_path = os.path.join(azure_function_project_dir, 'app')
         os.mkdir(app_path)
-        with open(os.path.join(app_path, '__init__.py'), 'w') as f:
-            f.write(AZURE_API_INIT_PY.format(bento_name=bento_pb.name))
+        shutil.copy(
+            os.path.join(os.path.dirname(__file__), 'app_init.py'),
+            os.path.join(app_path, '__init__.py'),
+        )
         with open(os.path.join(app_path, 'function.json'), 'w') as f:
             f.write(
                 AZURE_API_FUNCTION_JSON.format(
@@ -144,36 +151,32 @@ def _generate_azure_resource_names(namespace, deployment_name):
     # 1-90, alphannumeric(A-Za-z0-9) underscores, parenthese, hyphens, periods
     # scope subscription
     resource_group_name = f'{namespace}-{deployment_name}'
-    if len(resource_group_name) > 90:
-        resource_group_name = f'{namespace[:30]}-{deployment_name[:60]}'
+    if len(resource_group_name) > MAX_RESOURCE_GROUP_NAME_LENGTH:
+        resource_group_name = f'{namespace[:29]}-{deployment_name[:60]}'
 
     # 3-24 a-z0-9, scope: global
     storage_account_name = f'{namespace}{deployment_name}'.lower()
-    if len(storage_account_name):
+    if len(storage_account_name) > MAX_STORAGE_ACCOUNT_NAME_LENGTH:
         storage_account_name = f'{namespace[:5]}{deployment_name[0:19]}'
-    invalid_chars_for_storage_account = re.compile("[^a-z0-9]")
-    storage_account_name = re.sub(
-        invalid_chars_for_storage_account, '0', storage_account_name
-    )
+    # Replace invalid chars in storage account name to '0'
+    storage_account_name = re.sub(re.compile("[^a-z0-9]"), '0', storage_account_name)
 
-    # cant find restriction for functionapp plan name.
-    function_plan_name = f'{deployment_name}'
+    # Azure has no documentation on the requirements for function plan name.
+    function_plan_name = deployment_name
 
     # same as Microsoft.Web/sites
     # 2-60, alphanumeric and hyphens. scope global
     function_name = f'{namespace}-{deployment_name}'
-    if len(deployment_name) > 60:
+    if len(deployment_name) > MAX_FUNCTION_NAME_LENGTH:
         function_name = f'{namespace[:19]}-{deployment_name[:40]}'
-    invalid_chars_for_function_name = re.compile("[^a-zA-Z0-9-]")
-    function_name = re.sub(invalid_chars_for_function_name, '-', function_name)
+    function_name = re.sub(re.compile("[^a-zA-Z0-9-]"), '-', function_name)
 
     # 5-50, alphanumeric scope global
     container_registry_name = f'{namespace}{deployment_name}'
-    if len(container_registry_name) > 50:
+    if len(container_registry_name) > MAX_CONTAINER_REGISTRY_NAME_LENGTH:
         container_registry_name = f'{namespace[:10]}{deployment_name[:40]}'
-    invalid_chars_for_container_registry = re.compile("[^a-zA-Z0-9]")
     container_registry_name = re.sub(
-        invalid_chars_for_container_registry, '0', container_registry_name
+        re.compile("[^a-zA-Z0-9]"), '0', container_registry_name
     )
 
     return (
@@ -237,6 +240,12 @@ def _build_and_push_docker_image_to_azure_container_registry(
 ):
     _login_acr_registry(container_registry_name, resource_group_name)
     docker_client = docker.from_env()
+    try:
+        docker_client.ping()
+    except docker.errors.APIError as err:
+        raise YataiDeploymentException(
+            f'Failed to get response from docker registry {str(err)}'
+        )
     tag = f'{container_registry_name}.azurecr.io/{bento_name}:{bento_version}'.lower()
     logger.debug(f'Building docker image {tag}')
     try:
@@ -247,14 +256,20 @@ def _build_and_push_docker_image_to_azure_container_registry(
         )
         logger.debug('Finished building docker image')
     except docker.errors.BuildError as e:
-        raise BentoMLException(f'Failed to build docker image. BuildError: {str(e)}')
+        raise YataiDeploymentException(
+            f'Failed to build docker image. BuildError: {str(e)}'
+        )
     except docker.errors.APIError as e:
-        raise BentoMLException(f'Failed to build docker image. APIError: {str(e)}')
+        raise YataiDeploymentException(
+            f'Failed to build docker image. APIError: {str(e)}'
+        )
     try:
         docker_client.images.push(tag)
         logger.debug('Finished pushing docker image')
     except docker.errors.APIError as e:
-        raise BentoMLException(f'Failed to push docker image. APIError: {str(e)}')
+        raise YataiDeploymentException(
+            f'Failed to push docker image. APIError: {str(e)}'
+        )
 
     return tag
 
@@ -440,13 +455,18 @@ def _deploy_azure_function(
             ],
             message='create Azure container registry',
         )
-        docker_tag = _build_and_push_docker_image_to_azure_container_registry(
-            azure_function_project_dir=azure_function_project_dir,
-            container_registry_name=container_registry_name,
-            resource_group_name=resource_group_name,
-            bento_name=bento_pb.name,
-            bento_version=bento_pb.version,
-        )
+        try:
+            docker_tag = _build_and_push_docker_image_to_azure_container_registry(
+                azure_function_project_dir=azure_function_project_dir,
+                container_registry_name=container_registry_name,
+                resource_group_name=resource_group_name,
+                bento_name=bento_pb.name,
+                bento_version=bento_pb.version,
+            )
+        except Exception as e:
+            raise AzureServiceError(
+                f'Failed to create Azure Function docker image. {str(e)}'
+            )
         docker_username, docker_password = _get_docker_login_info(
             resource_group_name, container_registry_name
         )
@@ -522,7 +542,9 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
     def __init__(self, yatai_service):
         super(AzureFunctionDeploymentOperator, self).__init__(yatai_service)
         ensure_docker_available_or_raise()
-        ensure_azure_cli_available_and_login_or_raise()
+        _assert_azure_cli_available()
+        if not _assert_az_cli_logged_in():
+            _login_azure_cli_with_sp()
 
     def add(self, deployment_pb):
         try:

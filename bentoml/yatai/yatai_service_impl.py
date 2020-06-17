@@ -205,7 +205,7 @@ class YataiService(YataiServicer):
             return DeleteDeploymentResponse(status=e.status_proto)
         except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR DeleteDeployment: %s", e)
-            return DeleteDeploymentResponse(status=status_pb2.Status.INTERNAL)
+            return DeleteDeploymentResponse(status=Status.INTERNAL(str(e)))
 
     def GetDeployment(self, request, context=None):
         try:

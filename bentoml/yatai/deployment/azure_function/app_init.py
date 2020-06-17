@@ -12,9 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import azure.functions as func
 
-# https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan
-AZURE_FUNCTION_PREMIUM_PLAN_SKUS = ['EP1', 'EP2', 'EP3']
+from bentoml.server import BentoAPIServer
+from bentoml import load
 
-# https://docs.microsoft.com/en-us/java/api/com.microsoft.azure.functions.annotation.httptrigger.authlevel?view=azure-java-stable
-AZURE_FUNCTION_AUTH_LEVELS = ['anonymous', 'function', 'admin']
+bento_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+svc = load(bento_path)
+
+bento_server = BentoAPIServer(svc)
+
+
+def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
+    return func.WsgiMiddleware(bento_server.app.wsgi_app).handle(req, context)

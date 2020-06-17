@@ -25,53 +25,20 @@ AZURE_API_FUNCTION_JSON = """\
 }}
 """
 
-AZURE_API_INIT_PY = """\
-import azure.functions as func
-
-from bentoml.server import BentoAPIServer
-from bentoml import load
-
-from __app__.{bento_name} import load
-
-svc = load()
-bento_server = BentoAPIServer(svc)
-
-def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
-    return func.WsgiMiddleware(bento_server.app.wsgi_app).handle(req, context)
-"""
-
-AZURE_FUNCTION_HOST_JSON = """\
-{
-  "version": "2.0",
-  "logging": {
-    "applicationInsights": {
-      "samplingSettings": {
-        "isEnabled": true,
-        "excludedTypes": "Request"
-      }
-    }
-  },
-  "extensionBundle": {
-    "id": "Microsoft.Azure.Functions.ExtensionBundle",
-    "version": "[1.*, 2.0.0)"
-  },
-  "extensions": {
-    "http": {
-        "routePrefix": ""
-    }
-  }
-}
-"""
-
-AZURE_FUNCTION_LOCAL_SETTING_JSON = """\
-{
-  "IsEncrypted": false,
-  "Values": {
-    "FUNCTIONS_WORKER_RUNTIME": "python",
-    "AzureWebJobsStorage": ""
-  }
-}
-"""
+# AZURE_API_INIT_PY = """\
+# import azure.functions as func
+#
+# from bentoml.server import BentoAPIServer
+# from bentoml import load
+#
+# from __app__.{bento_name} import load
+#
+# svc = load()
+# bento_server = BentoAPIServer(svc)
+#
+# def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
+#     return func.WsgiMiddleware(bento_server.app.wsgi_app).handle(req, context)
+# """
 
 # Using specific version of docker image, due to issues at upstream. Once
 # https://github.com/Azure/azure-functions-docker/issues/281 is resolved, we can update
@@ -116,11 +83,6 @@ RUN set -x && \\
     apt-get update && \\
     apt-get install --no-install-recommends --no-install-suggests -y libpq-dev build-essential && \\
     rm -rf /var/lib/apt/lists/*
-
-ARG PIP_INDEX_URL=https://pypi.python.org/simple/
-ARG PIP_TRUSTED_HOST=pypi.python.org
-ENV PIP_INDEX_URL $PIP_INDEX_URL
-ENV PIP_TRUSTED_HOST $PIP_TRUSTED_HOST
 
 # Install additional pip dependencies inside bundled_pip_dependencies dir
 RUN if [ -f /home/site/wwwroot/bentoml-init.sh ]; then /bin/bash -c /home/site/wwwroot/bentoml-init.sh; fi

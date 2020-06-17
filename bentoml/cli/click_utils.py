@@ -124,6 +124,8 @@ def _is_valid_bento_tag(value):
 
 
 def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argument
+    if not value:
+        return value
     if not _is_valid_bento_tag(value):
         raise click.BadParameter(
             "Bad formatting. Please present in BentoName:Version, for example "

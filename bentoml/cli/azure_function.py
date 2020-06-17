@@ -26,6 +26,8 @@ from bentoml.cli.click_utils import (
 )
 from bentoml.cli.deployment import _print_deployment_info, _print_deployments_info
 from bentoml.cli.utils import Spinner
+from bentoml.yatai.deployment.azure_function import AZURE_FUNCTION_PREMIUM_PLAN_SKUS, \
+    AZURE_FUNCTION_AUTH_LEVELS
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.exceptions import BentoMLException
 from bentoml.yatai.proto import status_pb2
@@ -37,8 +39,8 @@ from bentoml.yatai.client import YataiClient
 PLATFORM_NAME = DeploymentSpec.DeploymentOperator.Name(DeploymentSpec.AZURE_FUNCTION)
 DEFAULT_MIN_INSTANCE_COUNT = 1
 DEFAULT_MAX_BURST = 20
-DEFAULT_PREMIUM_PLAN_SKU = 'EP1'
-DEFAULT_FUNCTION_AUTH_LEVEL = 'function'
+DEFAULT_PREMIUM_PLAN_SKU = AZURE_FUNCTION_PREMIUM_PLAN_SKUS[0]
+DEFAULT_FUNCTION_AUTH_LEVEL = AZURE_FUNCTION_AUTH_LEVELS[0]
 
 
 def get_azure_function_sub_command():
@@ -46,13 +48,13 @@ def get_azure_function_sub_command():
 
     @click.group(
         name='azure-function',
-        help='Commands for Azure function BentoService deployment',
+        help='Commands for Azure Function BentoService deployment',
         cls=BentoMLCommandGroup,
     )
     def azure_function():
         pass
 
-    @azure_function.command(help='Deploy BentoService to Azure function')
+    @azure_function.command(help='Deploy BentoService to Azure Function')
     @click.option(
         '-n',
         '--namespace',
@@ -81,21 +83,23 @@ def get_azure_function_sub_command():
         '--min-instances',
         type=click.INT,
         default=DEFAULT_MIN_INSTANCE_COUNT,
-        help='The minimum number of workers for the deployment. The default value is 1',
+        help=f'The minimum number of workers for the deployment. The default value is '
+        f'{DEFAULT_MIN_INSTANCE_COUNT}',
     )
     @click.option(
         '--max-burst',
         type=click.INT,
         default=DEFAULT_MAX_BURST,
-        help='The maximum number of elastic workers for the deployment. '
-        'The default value is 3',
+        help=f'The maximum number of elastic workers for the deployment. '
+        f'The default value is {DEFAULT_MAX_BURST}',
     )
     @click.option(
         '--premium-plan-sku',
-        type=click.STRING,
+        type=click.Choice(AZURE_FUNCTION_PREMIUM_PLAN_SKUS),
         default=DEFAULT_PREMIUM_PLAN_SKU,
-        help='The Azure premium SKU for the deployment. Options are EP1, EP2, and EP3.'
-        ' The default value is EP1',
+        help=f'The Azure function premium SKU for the deployment. The options are '
+        f'{", ".join(AZURE_FUNCTION_PREMIUM_PLAN_SKUS)}. The default value is '
+        f'{DEFAULT_PREMIUM_PLAN_SKU}',
     )
     @click.option(
         '-l',
@@ -108,18 +112,19 @@ def get_azure_function_sub_command():
     )
     @click.option(
         '--function-auth-level',
-        type=click.STRING,
+        type=click.Choice(AZURE_FUNCTION_AUTH_LEVELS),
         default=DEFAULT_FUNCTION_AUTH_LEVEL,
-        help='The authorization level for the deployed Azure function. '
-        'Options are "anonymous", "function", and "admin". Default value is '
-        'function',
+        help=f'The authorization level for the deployed Azure Function. The options '
+        f'are {", ".join(AZURE_FUNCTION_AUTH_LEVELS)}. The default value is '
+        f'{DEFAULT_FUNCTION_AUTH_LEVEL}',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait/--no-wait',
         default=True,
         help='Wait for apply action to complete or encounter an error.'
-        'If set to no-wait, CLI will return immediately. The default value is wait',
+        'If set to no-wait, CLI will exit without waiting until it has verified '
+        'cloud resource allocation',
     )
     def deploy(
         namespace,
@@ -138,7 +143,7 @@ def get_azure_function_sub_command():
         bento_name, bento_version = bento.split(':')
         yatai_client = YataiClient()
         try:
-            with Spinner('Deploying Azure function deployment'):
+            with Spinner(f'Deploying {bento} to Azure Functions'):
                 result = yatai_client.deployment.create_azure_function_deployment(
                     name=name,
                     namespace=namespace,
@@ -157,31 +162,31 @@ def get_azure_function_sub_command():
                         result.status
                     )
                     _echo(
-                        f'Failed to create Azure function deployment {name} '
+                        f'Failed to create Azure Functions deployment {name} '
                         f'{error_code}:{error_message}',
                         CLI_COLOR_ERROR,
                     )
                     return
                 track_cli('deploy-create-success', PLATFORM_NAME)
                 _echo(
-                    f'Successfully created Azure function deployment {name}',
+                    f'Successfully created Azure Functions deployment {name}',
                     CLI_COLOR_SUCCESS,
                 )
                 _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
             _echo(
-                f'Failed to create Azure function deployment {name}. {str(e)}',
+                f'Failed to create Azure Functions deployment {name}. {str(e)}',
                 CLI_COLOR_ERROR,
             )
 
-    @azure_function.command(help='Update existing Azure function deployment')
+    @azure_function.command(help='Update existing Azure Functions deployment')
     @click.argument('name', type=click.STRING)
     @click.option(
         '-b',
         '--bento',
         '--bento-service-bundle',
         type=click.STRING,
-        # callback=parse_bento_tag_callback,
+        callback=parse_bento_tag_callback,
         help='Target BentoService to be deployed, referenced by its name and version '
         'in the format of name:version. For example: "iris_classifier:v1.2.0"',
     )
@@ -204,15 +209,17 @@ def get_azure_function_sub_command():
     )
     @click.option(
         '--premium-plan-sku',
-        type=click.STRING,
-        help='The Azure premium SKU for the deployment. Options are EP1, EP2, and EP3.',
+        type=click.Choice(AZURE_FUNCTION_PREMIUM_PLAN_SKUS),
+        help=f'The Azure function premium SKU for the deployment. The options are '
+        f'{", ".join(AZURE_FUNCTION_PREMIUM_PLAN_SKUS)}.',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
         '--wait/--no-wait',
         default=True,
-        help='Wait for apply action to complete or encounter an error. '
-        'If set to no-wait, CLI will return immediately. The default value is wait',
+        help='Wait for apply action to complete or encounter an error.'
+        'If set to no-wait, CLI will exit without waiting until it has verified '
+        'cloud resource allocation',
     )
     def update(
         name, namespace, bento, min_instances, max_burst, premium_plan_sku, output, wait
@@ -225,7 +232,7 @@ def get_azure_function_sub_command():
             bento_name = None
             bento_version = None
         try:
-            with Spinner('Updating Azure function deployment'):
+            with Spinner(f'Updating Azure Function deployment {name}'):
                 result = yatai_client.deployment.update_azure_function_deployment(
                     namespace=namespace,
                     deployment_name=name,
@@ -241,19 +248,22 @@ def get_azure_function_sub_command():
                         result.status
                     )
                     _echo(
-                        f'Failed to update Azure function deployment {name}. '
+                        f'Failed to update Azure Function deployment {name}. '
                         f'{error_code}:{error_message}'
                     )
                 track_cli('deploy-update-success', PLATFORM_NAME)
                 _echo(
-                    f'Successfully update Azure function deployment {name}',
+                    f'Successfully update Azure Function deployment {name}',
                     CLI_COLOR_SUCCESS,
                 )
                 _print_deployment_info(result.deployment, output)
         except BentoMLException as e:
-            _echo(f'Failed to update Azure function {name}: {str(e)}', CLI_COLOR_ERROR)
+            _echo(
+                f'Failed to update Azure Functions deployment {name}: {str(e)}',
+                CLI_COLOR_ERROR,
+            )
 
-    @azure_function.command(help='Delete Azure functiond deployment')
+    @azure_function.command(help='Delete Azure Functions deployment')
     @click.argument('name', type=click.STRING)
     @click.option(
         '-n',
@@ -269,6 +279,7 @@ def get_azure_function_sub_command():
         'ignore errors when deleting cloud resources',
     )
     def delete(name, namespace, force):
+        track_cli('deploy-delete', PLATFORM_NAME)
         yatai_client = YataiClient()
         get_deployment_result = yatai_client.deployment.get(namespace, name)
         if get_deployment_result.status.status_code != status_pb2.Status.OK:
@@ -276,12 +287,11 @@ def get_azure_function_sub_command():
                 get_deployment_result.status
             )
             _echo(
-                f'Failed to get Azure function deployment {name} for deletion. '
+                f'Failed to get Azure Function deployment {name} for deletion. '
                 f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
             return
-        track_cli('deploy-delete', PLATFORM_NAME)
         try:
             result = yatai_client.deployment.delete(name, namespace, force)
             if result.status.status_code != status_pb2.Status.OK:
@@ -310,11 +320,11 @@ def get_azure_function_sub_command():
             )
         except BentoMLException as e:
             _echo(
-                f'Failed to delete Azure function deployment {name} {str(e)}',
+                f'Failed to delete Azure Function deployment {name} {str(e)}',
                 CLI_COLOR_ERROR,
             )
 
-    @azure_function.command(help='Get Azure function deployment information')
+    @azure_function.command(help='Get Azure Function deployment information')
     @click.argument('name', type=click.STRING)
     @click.option(
         '-n',
@@ -336,7 +346,7 @@ def get_azure_function_sub_command():
                     get_result.status
                 )
                 _echo(
-                    f'Failed to get Azure function deployment {name}. '
+                    f'Failed to get Azure Function deployment {name}. '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
@@ -347,7 +357,7 @@ def get_azure_function_sub_command():
                     describe_result.status
                 )
                 _echo(
-                    f'Failed to retrieve the latest status for Azure function '
+                    f'Failed to retrieve the latest status for Azure Function '
                     f'deployment {name}. {error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
@@ -357,11 +367,11 @@ def get_azure_function_sub_command():
 
         except BentoMLException as e:
             _echo(
-                f'Failed to get Azure function deployment {name}. {str(e)}',
+                f'Failed to get Azure Function deployment {name}. {str(e)}',
                 CLI_COLOR_ERROR,
             )
 
-    @azure_function.command(name='list', help='List Azure function deployments')
+    @azure_function.command(name='list', help='List Azure Function deployments')
     @click.option(
         '-n',
         '--namespace',
@@ -409,7 +419,7 @@ def get_azure_function_sub_command():
                     list_result.status
                 )
                 _echo(
-                    f'Failed to list Azure function deployments '
+                    f'Failed to list Azure Function deployments '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
@@ -417,7 +427,7 @@ def get_azure_function_sub_command():
             _print_deployments_info(list_result.deployments, output)
         except BentoMLException as e:
             _echo(
-                f'Failed to list Azure function deployments {str(e)}', CLI_COLOR_ERROR
+                f'Failed to list Azure Function deployments {str(e)}', CLI_COLOR_ERROR
             )
 
     return azure_function

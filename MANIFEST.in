@@ -41,6 +41,10 @@ graft bentoml/yatai/web/dist
 # include ".conf" file
 include bentoml/yatai/deployment/sagemaker/sagemaker_nginx.conf
 
+# include ".json" file
+include bentoml/yatai/deployment/azure_function/host.json
+include bentoml/yatai/deployment/azure_function/local.setting.json
+
 prune e2e_tests
 prune tests
 prune benchmark

@@ -1,4 +1,6 @@
 # pylint: disable=redefined-outer-name
+import itertools
+import time
 import pytest
 import math
 import pandas as pd
@@ -154,6 +156,7 @@ DF_CASES = (
     pd.DataFrame([np.nan]),  # special values
     pd.DataFrame([math.nan]),  # special values
     pd.DataFrame([" "]),  # special values
+    pd.DataFrame({"test": ["a,b", "c\nd"]}),  # special values
     # pd.Series(np.random.rand(2)),  # TODO: Series support
     # pd.DataFrame([""]),  # TODO: -> NaN
 )
@@ -188,8 +191,8 @@ def test_batch_read_dataframes_from_mixed_json_n_csv(df):
         )  # auto detect orient
 
     # test content_type=text/csv
-    test_datas.extend([df.to_csv().encode()] * 3)
-    test_types.extend(['text/csv'] * 3)
+    # test_datas.extend([df.to_csv().encode()] * 3)
+    # test_types.extend(['text/csv'] * 3)
 
     # test content_type=text/csv without index
     test_datas.extend([df.to_csv(index=False).encode()] * 3)
@@ -236,3 +239,27 @@ def test_batch_read_dataframes_from_json_in_mixed_order():
         assert_df_equal(
             df_merged[s][["A", "B", "C"]], pd.read_json(df_json1)[["A", "B", "C"]]
         )
+
+
+def test_benchmark_load_dataframes():
+    '''
+    read_dataframes_from_json_n_csv should be 30x faster than pd.read_json + pd.concat
+    '''
+    test_count = 50
+
+    dfs = [pd.DataFrame(np.random.rand(10, 100)) for _ in range(test_count)]
+    inputs = [df.to_json().encode() for df in dfs]
+
+    time_st = time.time()
+    dfs = [pd.read_json(i) for i in inputs]
+    result1 = pd.concat(dfs)
+    time1 = time.time() - time_st
+
+    time_st = time.time()
+    result2, _ = read_dataframes_from_json_n_csv(
+        inputs, itertools.repeat('application/json'), 'columns'
+    )
+    time2 = time.time() - time_st
+
+    assert_df_equal(result1, result2)
+    assert time1 / time2 > 25

@@ -216,7 +216,7 @@ def _build_and_push_docker_image_to_azure_container_registry(
             path=azure_function_project_dir,
             dockerfile=os.path.join(azure_function_project_dir, 'Dockerfile-azure'),
             tag=tag,
-            buildargs={'BENTOML_VERSION': LAST_PYPI_RELEASE_VERSION}
+            buildargs={'BENTOML_VERSION': LAST_PYPI_RELEASE_VERSION},
         )
         logger.debug('Finished building docker image')
     except docker.errors.BuildError as e:
@@ -504,7 +504,7 @@ def _update_azure_function(
 
 class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
     def __init__(self, yatai_service):
-        super(AzureFunctionDeploymentOperator, self).__init__(yatai_service=yatai_service)
+        super(AzureFunctionDeploymentOperator, self).__init__(yatai_service)
         ensure_docker_available_or_raise()
         _assert_azure_cli_available()
         _assert_az_cli_logged_in()

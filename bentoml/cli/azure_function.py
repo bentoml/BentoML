@@ -26,8 +26,10 @@ from bentoml.cli.click_utils import (
 )
 from bentoml.cli.deployment import _print_deployment_info, _print_deployments_info
 from bentoml.cli.utils import Spinner
-from bentoml.yatai.deployment.azure_function import AZURE_FUNCTION_PREMIUM_PLAN_SKUS, \
-    AZURE_FUNCTION_AUTH_LEVELS
+from bentoml.yatai.deployment.azure_function import (
+    AZURE_FUNCTION_PREMIUM_PLAN_SKUS,
+    AZURE_FUNCTION_AUTH_LEVELS,
+)
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.exceptions import BentoMLException
 from bentoml.yatai.proto import status_pb2

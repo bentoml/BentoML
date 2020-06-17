@@ -14,10 +14,6 @@
 
 from typing import Iterable
 import os
-import sys
-import json
-import collections
-import itertools
 import argparse
 from io import StringIO
 
@@ -31,161 +27,13 @@ from bentoml.adapters.base_input import (
     PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
 )
 from bentoml.utils import is_url
+from bentoml.utils.dataframe_util import (
+    read_dataframes_from_json_n_csv,
+    check_dataframe_column_contains,
+)
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.utils.s3 import is_s3_url
 from bentoml.exceptions import BadInput, MissingDependencyException
-
-
-def _check_dataframe_column_contains(required_column_names, df):
-    df_columns = set(map(str, df.columns))
-    for col in required_column_names:
-        if col not in df_columns:
-            raise BadInput(
-                "Missing columns: {}, required_column:{}".format(
-                    ",".join(set(required_column_names) - df_columns), df_columns
-                )
-            )
-
-
-def _to_csv_cell(v):
-    if v is None:
-        return ""
-    return str(v)
-
-
-def _dataframe_csv_from_input(raws, content_types):
-    row_sum = -1
-    columns = []
-    for i, (data, content_type) in enumerate(zip(raws, content_types)):
-        if not content_type or content_type.lower() == "application/json":
-            # load json with order preserved
-            if sys.version_info >= (3, 6):
-                od = json.loads(data.decode('utf-8'))
-            else:
-                od = json.loads(
-                    data.decode('utf-8'), object_pairs_hook=collections.OrderedDict
-                )
-
-            if isinstance(od, list):
-                if isinstance(od[0], dict):  # orient: records
-                    if row_sum == -1:  # make header
-                        columns = od[0].keys()
-                        yield ",".join(
-                            itertools.chain(('',), map(_to_csv_cell, columns))
-                        ), None
-                        row_sum += 1
-
-                    for datas_row in od:
-                        datas = (
-                            (datas_row[c] for c in columns)
-                            if columns
-                            else datas_row.values()
-                        )
-                        yield ','.join(
-                            itertools.chain((str(row_sum),), map(_to_csv_cell, datas))
-                        ), i
-                        row_sum += 1
-                else:  # orient: values
-                    if row_sum == -1:  # make header
-                        yield ",".join(
-                            itertools.chain(('',), map(_to_csv_cell, range(len(od[0]))))
-                        ), None
-                        row_sum += 1
-
-                    for datas_row in od:
-                        yield ','.join(
-                            itertools.chain(
-                                (str(row_sum),), map(_to_csv_cell, datas_row)
-                            )
-                        ), i
-                        row_sum += 1
-            elif isinstance(od, dict):
-                if isinstance(next(iter(od.values())), dict):  # orient: columns
-                    if row_sum == -1:  # make header
-                        columns = od.keys()
-                        yield ",".join(
-                            itertools.chain(('',), map(_to_csv_cell, columns))
-                        ), None
-                        row_sum += 1
-
-                    for row in next(iter(od.values())):
-                        if columns:
-                            datas_row = (od[col][row] for col in columns)
-                        else:
-                            datas_row = (od[col][row] for col in od.keys())
-                        yield ','.join(
-                            itertools.chain(
-                                (str(row_sum),), map(_to_csv_cell, datas_row)
-                            )
-                        ), i
-                        row_sum += 1
-                else:
-                    raise NotImplementedError()
-
-        elif content_type.lower() == "text/csv":
-            data_str = data.decode('utf-8')
-            row_strs = data_str.split('\n')
-            if not row_strs:
-                continue
-            if row_strs[0].strip().startswith(','):  # csv with index column
-                if row_sum == -1:
-                    columns = row_strs[0].strip().split(',')[1:]
-                    yield row_strs[0].strip(), None
-                for row_str in row_strs[1:]:
-                    if not row_str.strip():  # skip blank line
-                        continue
-                    yield f"{str(row_sum)},{row_str.split(',', maxsplit=1)[1]}", i
-                    row_sum += 1
-            else:
-                if row_sum == -1:
-                    columns = row_strs[0].strip().split(',')
-                    yield "," + row_strs[0].strip(), None
-                for row_str in row_strs[1:]:
-                    if not row_str.strip():  # skip blank line
-                        continue
-                    yield f"{str(row_sum)},{row_str.strip()}", i
-                    row_sum += 1
-        else:
-            raise BadInput(f'Invalid content_type for DataframeInput: {content_type}')
-
-
-def _gen_slice(ids):
-    start = -1
-    i = -1
-    for i, id_ in enumerate(ids):
-        if start == -1:
-            start = i
-            continue
-
-        if ids[start] != id_:
-            yield slice(start, i)
-            start = i
-            continue
-    yield slice(start, i + 1)
-
-
-def read_dataframes_from_json_n_csv(
-    datas: Iterable["pd.DataFrame"], content_types: Iterable[str]
-) -> ("pd.DataFrame", Iterable[slice]):
-    '''
-    load detaframes from multiple raw datas in json or csv fromat, efficiently
-
-    Background: Each calling of pandas.read_csv or pandas.read_json cost about 100ms,
-    no matter how many lines it contains. Concat jsons/csvs before read_json/read_csv
-    to improve performance.
-    '''
-    try:
-        rows_csv_with_id = [r for r in _dataframe_csv_from_input(datas, content_types)]
-    except TypeError:
-        raise BadInput('Invalid input format for DataframeInput') from None
-
-    str_csv = [r for r, _ in rows_csv_with_id]
-    df_str_csv = '\n'.join(str_csv)
-    df_merged = pd.read_csv(StringIO(df_str_csv), index_col=0)
-
-    dfs_id = [i for _, i in rows_csv_with_id][1:]
-    slices = _gen_slice(dfs_id)
-    return df_merged, slices
 
 
 class DataframeInput(BaseInputAdapter):
@@ -195,8 +43,8 @@ class DataframeInput(BaseInputAdapter):
         or print result for CLI call
 
     Args:
-        orient (str): Incoming json orient format for reading json data. Default is
-            records.
+        orient (str or None): Incoming json orient format for reading json data.
+            Default is None which means automatically detect.
         typ (str): Type of object to recover for read json with pandas. Default is
             frame
         input_dtypes ({str:str}): describing expected input data types of the input
@@ -212,7 +60,7 @@ class DataframeInput(BaseInputAdapter):
 
     def __init__(
         self,
-        orient="records",
+        orient=None,
         typ="frame",
         input_dtypes=None,
         is_batch_input=True,
@@ -237,7 +85,9 @@ class DataframeInput(BaseInputAdapter):
 
         self.orient = orient
 
-        assert self.orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
+        assert (
+            not self.orient or self.orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS
+        ), (
             f"Invalid option 'orient'='{self.orient}', valid options are "
             f"{PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS}"
         )
@@ -315,7 +165,7 @@ class DataframeInput(BaseInputAdapter):
                 )
 
         if self.typ == "frame" and self.input_dtypes is not None:
-            _check_dataframe_column_contains(self.input_dtypes, df)
+            check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
         return self.output_adapter.to_response(result, request)
@@ -328,10 +178,9 @@ class DataframeInput(BaseInputAdapter):
         content_types = [
             r.formated_headers.get('content-type', 'application/json') for r in requests
         ]
-        # TODO: check content_type
 
         df_conc, slices_generator = read_dataframes_from_json_n_csv(
-            datas, content_types
+            datas, content_types, self.orient
         )
         slices = list(slices_generator)
 
@@ -375,7 +224,7 @@ class DataframeInput(BaseInputAdapter):
                 )
 
         if self.typ == "frame" and self.input_dtypes is not None:
-            _check_dataframe_column_contains(self.input_dtypes, df)
+            check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
         self.output_adapter.to_cli(result, unknown_args)
@@ -396,7 +245,7 @@ class DataframeInput(BaseInputAdapter):
                 )
 
         if self.typ == "frame" and self.input_dtypes is not None:
-            _check_dataframe_column_contains(self.input_dtypes, df)
+            check_dataframe_column_contains(self.input_dtypes, df)
 
         result = func(df)
         return self.output_adapter.to_aws_lambda_event(result, event)

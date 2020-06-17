@@ -99,3 +99,19 @@ def cached_property(method):
         return self._cached_properties[method.__name__]
 
     return _m
+
+
+class catch_exceptions(object):
+    def __init__(self, exceptions, fallback=None):
+        self.exceptions = exceptions
+        self.fallback = fallback
+
+    def __call__(self, func):
+        @wraps(func)
+        def _(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except self.exceptions:
+                return self.fallback
+
+        return _

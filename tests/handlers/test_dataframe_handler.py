@@ -5,8 +5,9 @@ import pytest
 import math
 import pandas as pd
 import numpy as np
+import json
 
-from bentoml.utils.dataframe_util import _csv_split
+from bentoml.utils.dataframe_util import _csv_split, _guess_orient
 from bentoml.adapters import DataframeInput
 from bentoml.adapters.dataframe_input import (
     check_dataframe_column_contains,
@@ -156,8 +157,8 @@ DF_CASES = (
     pd.DataFrame(["str1", "str2", "str3"]),  # single dim sting array
     pd.DataFrame([np.nan]),  # special values
     pd.DataFrame([math.nan]),  # special values
-    pd.DataFrame([" ", '"']),  # special values
-    pd.DataFrame({"test": ["a,b", "c\nd"]}),  # special values
+    pd.DataFrame([" ", 'a"b', "a,b", "a\nb"]),  # special values
+    pd.DataFrame({"test": [" ", 'a"b', "a,b", "a\nb"]}),  # special values
     # pd.Series(np.random.rand(2)),  # TODO: Series support
     # pd.DataFrame([""]),  # TODO: -> NaN
 )
@@ -245,6 +246,12 @@ def test_batch_read_dataframes_from_json_in_mixed_order():
         assert_df_equal(
             df_merged[s][["A", "B", "C"]], pd.read_json(df_json1)[["A", "B", "C"]]
         )
+
+
+def test_guess_orient(df, orient):
+    json_str = df.to_json(orient=orient)
+    guessed_orient = _guess_orient(json.loads(json_str))
+    assert orient == guessed_orient or orient in guessed_orient
 
 
 def test_benchmark_load_dataframes():

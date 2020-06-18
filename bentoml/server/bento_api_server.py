@@ -147,6 +147,7 @@ class BentoAPIServer:
             )
 
         data = json.loads(request.data.decode("utf-8"))
+
         if "request_id" not in data.keys():
             return Response(response="Missing request id", status=400)
 
@@ -187,7 +188,7 @@ class BentoAPIServer:
                 "/feedback",
                 "feedback",
                 partial(self.feedback_view_func, self.bento_service),
-                methods=["POST", "GET"],
+                methods=["POST"],
             )
 
         self.setup_bento_service_api_routes()

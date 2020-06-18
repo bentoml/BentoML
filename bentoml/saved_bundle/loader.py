@@ -176,7 +176,7 @@ def safe_retrieve(bundle_path, target_dir):
             return target_dir
 
     shutil.copytree(bundle_path, target_dir)
-    return bundle_path
+    return
 
 
 def load(bundle_path):

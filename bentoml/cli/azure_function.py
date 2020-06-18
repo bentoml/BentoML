@@ -99,8 +99,8 @@ def get_azure_function_sub_command():
         '--premium-plan-sku',
         type=click.Choice(AZURE_FUNCTION_PREMIUM_PLAN_SKUS),
         default=DEFAULT_PREMIUM_PLAN_SKU,
-        help=f'The Azure Functions premium SKU for the deployment. The default value is '
-        f'{DEFAULT_PREMIUM_PLAN_SKU}',
+        help=f'The Azure Functions premium SKU for the deployment. The default value '
+        f'is {DEFAULT_PREMIUM_PLAN_SKU}',
     )
     @click.option(
         '-l',

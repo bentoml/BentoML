@@ -157,7 +157,7 @@ def _from_csv_without_index(state: DataFrameState, table: Iterator[str]):
         if row_str.endswith('\r'):
             row_str = row_str[:-1]
         state.columns = tuple(_csv_unquote(s) for s in _csv_split(row_str, ','))
-        if not row_str.strip():
+        if not row_str.strip():  # for special value ' ', which is a bug of pandas
             yield _csv_quote(row_str)
         else:
             yield row_str

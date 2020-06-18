@@ -201,7 +201,10 @@ def test_batch_read_dataframes_from_mixed_json_n_csv(df):
 
 def test_batch_read_dataframes_from_csv_other_CRLF(df):
     csv_str = df.to_csv(index=False)
-    csv_str = '\r\n'.join(_csv_split(csv_str, '\n')).encode()
+    if '\r\n' in csv_str:
+        csv_str = '\n'.join(_csv_split(csv_str, '\r\n')).encode()
+    else:
+        csv_str = '\r\n'.join(_csv_split(csv_str, '\n')).encode()
     df_merged, _ = read_dataframes_from_json_n_csv([csv_str], ['text/csv'])
     assert_df_equal(df_merged, df)
 

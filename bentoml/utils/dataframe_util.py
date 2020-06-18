@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, List
+from typing import Iterable, List, Iterator
 import sys
 import json
 import collections
@@ -45,36 +45,30 @@ def check_dataframe_column_contains(required_column_names, df):
             )
 
 
-def _to_str(v):
-    if v is None:
-        return ""
-    return str(v)
-
-
 def _from_json_records(state: DataFrameState, table: list):
     if not state.line_num:  # make header
         state.columns = table[0].keys()
-        yield itertools.chain(('',), state.columns)
+        yield state.columns
 
     for tr in table:
         tds = (tr[c] for c in state.columns) if state.columns else tr.values()
         state.line_num += 1
-        yield itertools.chain((state.line_num - 1,), tds)
+        yield tds
 
 
 def _from_json_values(state: DataFrameState, table: list):
     if not state.line_num:  # make header
-        yield itertools.chain(('',), range(len(table[0])))
+        yield range(len(table[0]))
 
     for tr in table:
         state.line_num += 1
-        yield itertools.chain((state.line_num - 1,), tr)
+        yield tr
 
 
 def _from_json_columns(state: DataFrameState, table: dict):
     if not state.line_num:  # make header
         state.columns = table.keys()
-        yield itertools.chain(('',), state.columns)
+        yield state.columns
 
     for row in next(iter(table.values())):
         if state.columns:
@@ -82,13 +76,13 @@ def _from_json_columns(state: DataFrameState, table: dict):
         else:
             tr = (table[col][row] for col in table.keys())
         state.line_num += 1
-        yield itertools.chain((state.line_num - 1,), tr)
+        yield tr
 
 
 def _from_json_index(state: DataFrameState, table: dict):
     if not state.line_num:  # make header
         state.columns = next(iter(table.values())).keys()
-        yield itertools.chain(('',), state.columns)
+        yield state.columns
 
     for row in table.keys():
         if state.columns:
@@ -96,13 +90,13 @@ def _from_json_index(state: DataFrameState, table: dict):
         else:
             tr = (td for td in table[row].values())
         state.line_num += 1
-        yield itertools.chain((state.line_num - 1,), tr)
+        yield tr
 
 
 def _from_json_split(state: DataFrameState, table: dict):
     if not state.line_num:  # make header
         state.columns = table['columns']
-        yield itertools.chain(('',), state.columns)
+        yield state.columns
 
     if state.columns:
         _id_map = {k: i for i, k in enumerate(state.columns)}
@@ -113,29 +107,70 @@ def _from_json_split(state: DataFrameState, table: dict):
         else:
             tr = row
         state.line_num += 1
-        yield itertools.chain((state.line_num - 1,), tr)
+        yield tr
 
 
-def _from_csv_with_index(state: DataFrameState, table: List[str]):
+def _csv_split(string, delimiter, maxsplit=None) -> Iterator[str]:
+    dlen = len(delimiter)
+    if '"' in string:
+
+        def _iter_line(line):
+            quoted = False
+            last_cur = 0
+            split = 0
+            for i, c in enumerate(line):
+                if c == '"':
+                    quoted = not quoted
+                if not quoted and string[i : i + dlen] == delimiter:
+                    yield line[last_cur:i]
+                    last_cur = i + dlen
+                    split += 1
+                    if maxsplit is not None and split == maxsplit:
+                        break
+            yield line[last_cur:]
+
+        return _iter_line(string)
+    return iter(string.split(delimiter, maxsplit=maxsplit or 0))
+
+
+def _csv_unquote(string):
+    if '"' in string:
+        string = string.strip()
+        assert string[0] == '"' and string[-1] == '"'
+        return string[1:-1].replace('""', '"')
+    return string
+
+
+def _csv_quote(td):
+    if td is None:
+        td = ''
+    elif not isinstance(td, str):
+        td = str(td)
+    if '\n' in td or '"' in td or ',' in td or not td.strip():
+        return td.replace('"', '""').join('""')
+    return td
+
+
+def _from_csv_without_index(state: DataFrameState, table: Iterator[str]):
+    row_str = next(table)  # skip column names
     if not state.line_num:
-        state.columns = table[0].split(',')[1:]
-        yield table[0]
-    for row_str in table[1:]:
-        if not row_str.strip():  # skip blank line
+        if row_str.endswith('\r'):
+            row_str = row_str[:-1]
+        state.columns = tuple(_csv_unquote(s) for s in _csv_split(row_str, ','))
+        if not row_str.strip():  # for special value ' ', which is a bug of pandas
+            yield _csv_quote(row_str)
+        else:
+            yield row_str
+    for row_str in table:
+        if row_str.endswith('\r'):
+            row_str = row_str[:-1]
+        if not row_str:  # skip blank line
             continue
         state.line_num += 1
-        yield f"{str(state.line_num - 1)},{row_str.split(',', maxsplit=1)[1]}"
-
-
-def _from_csv_without_index(state: DataFrameState, table: List[str]):
-    if not state.line_num:
-        state.columns = table[0].split(',')
-        yield "," + table[0]
-    for row_str in table[1:]:
-        if not row_str.strip():  # skip blank line
-            continue
-        state.line_num += 1
-        yield f"{str(state.line_num - 1)},{row_str.strip()}"
+        if not row_str.strip():
+            yield _csv_quote(row_str)
+        else:
+            yield row_str
 
 
 def _detect_orient(table):
@@ -202,7 +237,7 @@ def _dataframe_csv_from_input(tables, content_types, orients):
                     table.decode('utf-8'), object_pairs_hook=collections.OrderedDict
                 )
         elif content_type.lower() == "text/csv":
-            table = table.decode('utf-8').split('\n')
+            table = _csv_split(table.decode('utf-8'), '\n')
             if not table:
                 continue
         else:
@@ -240,12 +275,8 @@ def _dataframe_csv_from_input(tables, content_types, orients):
 
             continue
         elif content_type.lower() == "text/csv":
-            if table[0].strip().startswith(','):  # csv with index column
-                for line in _from_csv_with_index(state, table):
-                    yield line, table_id if state.line_num else None
-            else:
-                for line in _from_csv_without_index(state, table):
-                    yield line, table_id if state.line_num else None
+            for line in _from_csv_without_index(state, table):
+                yield line, table_id if state.line_num else None
 
 
 def _gen_slice(ids):
@@ -277,18 +308,17 @@ def read_dataframes_from_json_n_csv(
         raise MissingDependencyException('pandas required')
     try:
         rows_csv_with_id = [
-            (tds if isinstance(tds, str) else ','.join(map(_to_str, tds)), table_id)
+            (tds if isinstance(tds, str) else ','.join(map(_csv_quote, tds)), table_id)
             for tds, table_id in _dataframe_csv_from_input(
                 datas, content_types, itertools.repeat(orient)
             )
-            if tds is not None
         ]
     except (TypeError, ValueError) as e:
         raise BadInput('Invalid input format for DataframeInput') from e
 
     str_csv = [r for r, _ in rows_csv_with_id]
     df_str_csv = '\n'.join(str_csv)
-    df_merged = pd.read_csv(StringIO(df_str_csv), index_col=0)
+    df_merged = pd.read_csv(StringIO(df_str_csv), index_col=None)
 
     dfs_id = [i for _, i in rows_csv_with_id][1:]
     slices = _gen_slice(dfs_id)

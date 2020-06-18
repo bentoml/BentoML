@@ -1,6 +1,9 @@
 {
   "version": "2.0",
   "logging": {
+    "console": {
+      "isEnabled": "true"
+    },
     "applicationInsights": {
       "samplingSettings": {
         "isEnabled": true,

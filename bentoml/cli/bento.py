@@ -248,14 +248,14 @@ def add_bento_sub_command(cli):
             _echo(
                 f'BentoService {name}:{version} not found - '
                 f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR
+                CLI_COLOR_ERROR,
             )
             return
 
         if get_bento_result.bento.uri.s3_presigned_url:
             bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
         else:
-            bento_service_bundle_path =  get_bento_result.bento.uri.uri
+            bento_service_bundle_path = get_bento_result.bento.uri.uri
 
         safe_retrieve(bento_service_bundle_path, target_dir)
 

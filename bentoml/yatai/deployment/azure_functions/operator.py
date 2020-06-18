@@ -23,7 +23,7 @@ import docker
 
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.saved_bundle import loader
-from bentoml.yatai.deployment.azure_function.templates import AZURE_API_FUNCTION_JSON
+from bentoml.yatai.deployment.azure_functions.templates import AZURE_API_FUNCTION_JSON
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.exceptions import (
@@ -72,26 +72,26 @@ def _assert_azure_cli_available():
         )
 
 
-def _init_azure_function_project(
-    azure_function_project_dir, bento_path, azure_function_config
+def _init_azure_functions_project(
+    azure_functions_project_dir, bento_path, azure_functions_config
 ):
     try:
         local_bentoml_path = os.path.dirname(__file__)
-        shutil.copytree(bento_path, azure_function_project_dir)
+        shutil.copytree(bento_path, azure_functions_project_dir)
         shutil.copy(
             os.path.join(local_bentoml_path, 'host.json'),
-            os.path.join(azure_function_project_dir, 'host.json'),
+            os.path.join(azure_functions_project_dir, 'host.json'),
         )
         shutil.copy(
             os.path.join(local_bentoml_path, 'local.settings.json'),
-            os.path.join(azure_function_project_dir, 'local.settings.json'),
+            os.path.join(azure_functions_project_dir, 'local.settings.json'),
         )
         shutil.copy(
             os.path.join(local_bentoml_path, 'Dockerfile'),
-            os.path.join(azure_function_project_dir, 'Dockerfile-azure'),
+            os.path.join(azure_functions_project_dir, 'Dockerfile-azure'),
         )
 
-        app_path = os.path.join(azure_function_project_dir, 'app')
+        app_path = os.path.join(azure_functions_project_dir, 'app')
         os.mkdir(app_path)
         shutil.copy(
             os.path.join(local_bentoml_path, 'app_init.py'),
@@ -100,7 +100,7 @@ def _init_azure_function_project(
         with open(os.path.join(app_path, 'function.json'), 'w') as f:
             f.write(
                 AZURE_API_FUNCTION_JSON.format(
-                    function_auth_level=azure_function_config.function_auth_level
+                    function_auth_level=azure_functions_config.function_auth_level
                 )
             )
     except Exception as e:
@@ -195,7 +195,7 @@ def _login_acr_registry(acr_name, resource_group_name):
 
 
 def _build_and_push_docker_image_to_azure_container_registry(
-    azure_function_project_dir,
+    azure_functions_project_dir,
     container_registry_name,
     resource_group_name,
     bento_name,
@@ -213,8 +213,8 @@ def _build_and_push_docker_image_to_azure_container_registry(
     logger.debug(f'Building docker image {tag}')
     try:
         docker_client.images.build(
-            path=azure_function_project_dir,
-            dockerfile=os.path.join(azure_function_project_dir, 'Dockerfile-azure'),
+            path=azure_functions_project_dir,
+            dockerfile=os.path.join(azure_functions_project_dir, 'Dockerfile-azure'),
             tag=tag,
             buildargs={'BENTOML_VERSION': LAST_PYPI_RELEASE_VERSION},
         )
@@ -344,10 +344,10 @@ def _set_cors_settings(function_name, resource_group_name):
     )
 
 
-def _deploy_azure_function(
+def _deploy_azure_functions(
     namespace, deployment_name, deployment_spec, bento_pb, bento_path,
 ):
-    azure_function_config = deployment_spec.azure_function_operator_config
+    azure_functions_config = deployment_spec.azure_functions_operator_config
     (
         resource_group_name,
         storage_account_name,
@@ -356,9 +356,9 @@ def _deploy_azure_function(
         container_registry_name,
     ) = _generate_azure_resource_names(namespace, deployment_name)
     with TempDirectory() as temp_dir:
-        azure_function_project_dir = os.path.join(temp_dir, deployment_spec.bento_name)
-        _init_azure_function_project(
-            azure_function_project_dir, bento_path, azure_function_config,
+        azure_functions_project_dir = os.path.join(temp_dir, deployment_spec.bento_name)
+        _init_azure_functions_project(
+            azure_functions_project_dir, bento_path, azure_functions_config,
         )
         _call_az_cli(
             command=[
@@ -368,7 +368,7 @@ def _deploy_azure_function(
                 '--name',
                 resource_group_name,
                 '--location',
-                azure_function_config.location,
+                azure_functions_config.location,
             ],
             message='create Azure resource group',
         )
@@ -395,11 +395,11 @@ def _deploy_azure_function(
                 function_plan_name,
                 '--is-linux',
                 '--sku',
-                azure_function_config.premium_plan_sku,
+                azure_functions_config.premium_plan_sku,
                 '--min-instances',
-                str(azure_function_config.min_instances),
+                str(azure_functions_config.min_instances),
                 '--max-burst',
-                str(azure_function_config.max_burst),
+                str(azure_functions_config.max_burst),
                 '--resource-group',
                 resource_group_name,
             ],
@@ -422,7 +422,7 @@ def _deploy_azure_function(
         )
         try:
             docker_tag = _build_and_push_docker_image_to_azure_container_registry(
-                azure_function_project_dir=azure_function_project_dir,
+                azure_functions_project_dir=azure_functions_project_dir,
                 container_registry_name=container_registry_name,
                 resource_group_name=resource_group_name,
                 bento_name=bento_pb.name,
@@ -462,10 +462,10 @@ def _deploy_azure_function(
         _set_cors_settings(function_name, resource_group_name)
 
 
-def _update_azure_function(
+def _update_azure_functions(
     namespace, deployment_name, deployment_spec, bento_pb, bento_path,
 ):
-    azure_function_config = deployment_spec.azure_function_operator_config
+    azure_functions_config = deployment_spec.azure_functions_operator_config
     (
         resource_group_name,
         _,
@@ -474,12 +474,12 @@ def _update_azure_function(
         container_registry_name,
     ) = _generate_azure_resource_names(namespace, deployment_name)
     with TempDirectory() as temp_dir:
-        azure_function_project_dir = os.path.join(temp_dir, deployment_spec.bento_name)
-        _init_azure_function_project(
-            azure_function_project_dir, bento_path, azure_function_config,
+        azure_functions_project_dir = os.path.join(temp_dir, deployment_spec.bento_name)
+        _init_azure_functions_project(
+            azure_functions_project_dir, bento_path, azure_functions_config,
         )
         docker_tag = _build_and_push_docker_image_to_azure_container_registry(
-            azure_function_project_dir=azure_function_project_dir,
+            azure_functions_project_dir=azure_functions_project_dir,
             container_registry_name=container_registry_name,
             resource_group_name=resource_group_name,
             bento_name=bento_pb.name,
@@ -503,9 +503,9 @@ def _update_azure_function(
         )
 
 
-class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
+class AzureFunctionsDeploymentOperator(DeploymentOperatorBase):
     def __init__(self, yatai_service):
-        super(AzureFunctionDeploymentOperator, self).__init__(yatai_service)
+        super(AzureFunctionsDeploymentOperator, self).__init__(yatai_service)
         ensure_docker_available_or_raise()
         _assert_azure_cli_available()
         _assert_az_cli_logged_in()
@@ -538,7 +538,7 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
             with loader._resolve_remote_bundle_path(bento_path) as local_path:
                 return self._add(deployment_pb, bento_pb, local_path)
         try:
-            _deploy_azure_function(
+            _deploy_azure_functions(
                 deployment_spec=deployment_pb.spec,
                 deployment_name=deployment_pb.name,
                 namespace=deployment_pb.namespace,
@@ -605,7 +605,7 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
                 'BentoService tag is different from current Azure Functions '
                 'deployment, creating new Azure Functions project and push to ACR'
             )
-            _update_azure_function(
+            _update_azure_functions(
                 deployment_spec=deployment_pb.spec,
                 deployment_name=deployment_pb.name,
                 namespace=deployment_pb.namespace,
@@ -632,11 +632,11 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
                 '--resource-group',
                 resource_group_name,
                 '--max-burst',
-                str(deployment_pb.spec.azure_function_operator_config.max_burst),
+                str(deployment_pb.spec.azure_functions_operator_config.max_burst),
                 '--min-instances',
-                str(deployment_pb.spec.azure_function_operator_config.min_instances),
+                str(deployment_pb.spec.azure_functions_operator_config.min_instances),
                 '--sku',
-                deployment_pb.spec.azure_function_operator_config.premium_plan_sku,
+                deployment_pb.spec.azure_functions_operator_config.premium_plan_sku,
             ],
             message='update Azure functionapp plan',
         )

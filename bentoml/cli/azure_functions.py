@@ -26,9 +26,9 @@ from bentoml.cli.click_utils import (
 )
 from bentoml.cli.deployment import _print_deployment_info, _print_deployments_info
 from bentoml.cli.utils import Spinner
-from bentoml.yatai.deployment.azure_function import (
-    AZURE_FUNCTION_PREMIUM_PLAN_SKUS,
-    AZURE_FUNCTION_AUTH_LEVELS,
+from bentoml.yatai.deployment.azure_functions import (
+    AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
+    AZURE_FUNCTIONS_AUTH_LEVELS,
 )
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.exceptions import BentoMLException
@@ -38,14 +38,14 @@ from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
 
-PLATFORM_NAME = DeploymentSpec.DeploymentOperator.Name(DeploymentSpec.AZURE_FUNCTION)
+PLATFORM_NAME = DeploymentSpec.DeploymentOperator.Name(DeploymentSpec.AZURE_FUNCTIONS)
 DEFAULT_MIN_INSTANCE_COUNT = 1
 DEFAULT_MAX_BURST = 20
-DEFAULT_PREMIUM_PLAN_SKU = AZURE_FUNCTION_PREMIUM_PLAN_SKUS[0]
-DEFAULT_FUNCTION_AUTH_LEVEL = AZURE_FUNCTION_AUTH_LEVELS[0]
+DEFAULT_PREMIUM_PLAN_SKU = AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS[0]
+DEFAULT_FUNCTION_AUTH_LEVEL = AZURE_FUNCTIONS_AUTH_LEVELS[0]
 
 
-def get_azure_function_sub_command():
+def get_azure_functions_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
@@ -53,10 +53,10 @@ def get_azure_function_sub_command():
         help='Commands for Azure Functions BentoService deployment',
         cls=BentoMLCommandGroup,
     )
-    def azure_function():
+    def azure_functions():
         pass
 
-    @azure_function.command(help='Deploy BentoService to Azure Functions')
+    @azure_functions.command(help='Deploy BentoService to Azure Functions')
     @click.option(
         '-n',
         '--namespace',
@@ -97,7 +97,7 @@ def get_azure_function_sub_command():
     )
     @click.option(
         '--premium-plan-sku',
-        type=click.Choice(AZURE_FUNCTION_PREMIUM_PLAN_SKUS),
+        type=click.Choice(AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS),
         default=DEFAULT_PREMIUM_PLAN_SKU,
         help=f'The Azure Functions premium SKU for the deployment. The default value '
         f'is {DEFAULT_PREMIUM_PLAN_SKU}',
@@ -113,7 +113,7 @@ def get_azure_function_sub_command():
     )
     @click.option(
         '--function-auth-level',
-        type=click.Choice(AZURE_FUNCTION_AUTH_LEVELS),
+        type=click.Choice(AZURE_FUNCTIONS_AUTH_LEVELS),
         default=DEFAULT_FUNCTION_AUTH_LEVEL,
         help=f'The authorization level for the deployed Azure Functions. The default '
         f'value is {DEFAULT_FUNCTION_AUTH_LEVEL}',
@@ -144,7 +144,7 @@ def get_azure_function_sub_command():
         yatai_client = YataiClient()
         try:
             with Spinner(f'Deploying {bento} to Azure Functions'):
-                result = yatai_client.deployment.create_azure_function_deployment(
+                result = yatai_client.deployment.create_azure_functions_deployment(
                     name=name,
                     namespace=namespace,
                     labels=labels,
@@ -179,7 +179,7 @@ def get_azure_function_sub_command():
                 CLI_COLOR_ERROR,
             )
 
-    @azure_function.command(help='Update existing Azure Functions deployment')
+    @azure_functions.command(help='Update existing Azure Functions deployment')
     @click.argument('name', type=click.STRING)
     @click.option(
         '-b',
@@ -209,7 +209,7 @@ def get_azure_function_sub_command():
     )
     @click.option(
         '--premium-plan-sku',
-        type=click.Choice(AZURE_FUNCTION_PREMIUM_PLAN_SKUS),
+        type=click.Choice(AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS),
         help='The Azure Functions premium SKU for the deployment.',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
@@ -232,7 +232,7 @@ def get_azure_function_sub_command():
             bento_version = None
         try:
             with Spinner(f'Updating Azure Functions deployment {name}'):
-                result = yatai_client.deployment.update_azure_function_deployment(
+                result = yatai_client.deployment.update_azure_functions_deployment(
                     namespace=namespace,
                     deployment_name=name,
                     bento_name=bento_name,
@@ -262,7 +262,7 @@ def get_azure_function_sub_command():
                 CLI_COLOR_ERROR,
             )
 
-    @azure_function.command(help='Delete Azure Functions deployment')
+    @azure_functions.command(help='Delete Azure Functions deployment')
     @click.argument('name', type=click.STRING)
     @click.option(
         '-n',
@@ -323,7 +323,7 @@ def get_azure_function_sub_command():
                 CLI_COLOR_ERROR,
             )
 
-    @azure_function.command(help='Get Azure Functions deployment information')
+    @azure_functions.command(help='Get Azure Functions deployment information')
     @click.argument('name', type=click.STRING)
     @click.option(
         '-n',
@@ -370,7 +370,7 @@ def get_azure_function_sub_command():
                 CLI_COLOR_ERROR,
             )
 
-    @azure_function.command(name='list', help='List Azure Functions deployments')
+    @azure_functions.command(name='list', help='List Azure Functions deployments')
     @click.option(
         '-n',
         '--namespace',
@@ -406,7 +406,7 @@ def get_azure_function_sub_command():
         yatai_client = YataiClient()
         track_cli('deploy-list', PLATFORM_NAME)
         try:
-            list_result = yatai_client.deployment.list_azure_function_deployments(
+            list_result = yatai_client.deployment.list_azure_functions_deployments(
                 limit=limit,
                 labels_query=labels,
                 namespace=namespace,
@@ -429,4 +429,4 @@ def get_azure_function_sub_command():
                 f'Failed to list Azure Functions deployments {str(e)}', CLI_COLOR_ERROR
             )
 
-    return azure_function
+    return azure_functions

@@ -71,6 +71,8 @@ class DeploymentAPIClient:
                 operator = DeploymentSpec.AWS_SAGEMAKER
             elif operator == 'lambda':
                 operator = DeploymentSpec.AWS_LAMBDA
+            elif operator == DeploymentSpec.AZURE_FUNCTIONS:
+                operator == 'azure-functions'
             else:
                 raise BentoMLException(f'Unrecognized operator {operator}')
 
@@ -465,7 +467,7 @@ class DeploymentAPIClient:
             ascending_order=ascending_order,
         )
 
-    def create_azure_function_deployment(
+    def create_azure_functions_deployment(
         self,
         name,
         bento_name,
@@ -486,20 +488,20 @@ class DeploymentAPIClient:
 
         deployment_pb.spec.bento_name = bento_name
         deployment_pb.spec.bento_version = bento_version
-        deployment_pb.spec.operator = DeploymentSpec.AZURE_FUNCTION
-        deployment_pb.spec.azure_function_operator_config.location = location
-        deployment_pb.spec.azure_function_operator_config.premium_plan_sku = (
+        deployment_pb.spec.operator = DeploymentSpec.AZURE_FUNCTIONS
+        deployment_pb.spec.azure_functions_operator_config.location = location
+        deployment_pb.spec.azure_functions_operator_config.premium_plan_sku = (
             premium_plan_sku
         )
-        deployment_pb.spec.azure_function_operator_config.min_instances = min_instances
-        deployment_pb.spec.azure_function_operator_config.function_auth_level = (
+        deployment_pb.spec.azure_functions_operator_config.min_instances = min_instances
+        deployment_pb.spec.azure_functions_operator_config.function_auth_level = (
             function_auth_level
         )
-        deployment_pb.spec.azure_function_operator_config.max_burst = max_burst
+        deployment_pb.spec.azure_functions_operator_config.max_burst = max_burst
 
         return self.create(deployment_pb, wait)
 
-    def update_azure_function_deployment(
+    def update_azure_functions_deployment(
         self,
         deployment_name,
         bento_name=None,
@@ -526,18 +528,18 @@ class DeploymentAPIClient:
         if bento_version:
             deployment_pb.spec.bento_version = bento_version
         if max_burst:
-            deployment_pb.spec.azure_function_operator_config.max_burst = max_burst
+            deployment_pb.spec.azure_functions_operator_config.max_burst = max_burst
         if min_instances:
-            deployment_pb.spec.azure_function_operator_config.min_instances = (
+            deployment_pb.spec.azure_functions_operator_config.min_instances = (
                 min_instances
             )
         if premium_plan_sku:
-            deployment_pb.spec.azure_function_operator_config.premium_plan_sku = (
+            deployment_pb.spec.azure_functions_operator_config.premium_plan_sku = (
                 premium_plan_sku
             )
         return self.apply(deployment_pb, wait)
 
-    def list_azure_function_deployments(
+    def list_azure_functions_deployments(
         self,
         limit=None,
         offset=None,
@@ -553,7 +555,7 @@ class DeploymentAPIClient:
             labels_query=labels_query,
             namespace=namespace,
             is_all_namespaces=is_all_namespaces,
-            operator=DeploymentSpec.AZURE_FUNCTION,
+            operator=DeploymentSpec.AZURE_FUNCTIONS,
             order_by=order_by,
             ascending_order=ascending_order,
         )

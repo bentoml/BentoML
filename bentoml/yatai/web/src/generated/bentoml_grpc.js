@@ -28,7 +28,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {bentoml.DeploymentSpec.ICustomOperatorConfig|null} [custom_operator_config] DeploymentSpec custom_operator_config
          * @property {bentoml.DeploymentSpec.ISageMakerOperatorConfig|null} [sagemaker_operator_config] DeploymentSpec sagemaker_operator_config
          * @property {bentoml.DeploymentSpec.IAwsLambdaOperatorConfig|null} [aws_lambda_operator_config] DeploymentSpec aws_lambda_operator_config
-         * @property {bentoml.DeploymentSpec.IAzureFunctionOperatorConfig|null} [azure_function_operator_config] DeploymentSpec azure_function_operator_config
+         * @property {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig|null} [azure_functions_operator_config] DeploymentSpec azure_functions_operator_config
          */
 
         /**
@@ -95,24 +95,24 @@ export const bentoml = $root.bentoml = (() => {
         DeploymentSpec.prototype.aws_lambda_operator_config = null;
 
         /**
-         * DeploymentSpec azure_function_operator_config.
-         * @member {bentoml.DeploymentSpec.IAzureFunctionOperatorConfig|null|undefined} azure_function_operator_config
+         * DeploymentSpec azure_functions_operator_config.
+         * @member {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig|null|undefined} azure_functions_operator_config
          * @memberof bentoml.DeploymentSpec
          * @instance
          */
-        DeploymentSpec.prototype.azure_function_operator_config = null;
+        DeploymentSpec.prototype.azure_functions_operator_config = null;
 
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
         /**
          * DeploymentSpec deployment_operator_config.
-         * @member {"custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"azure_function_operator_config"|undefined} deployment_operator_config
+         * @member {"custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"azure_functions_operator_config"|undefined} deployment_operator_config
          * @memberof bentoml.DeploymentSpec
          * @instance
          */
         Object.defineProperty(DeploymentSpec.prototype, "deployment_operator_config", {
-            get: $util.oneOfGetter($oneOfFields = ["custom_operator_config", "sagemaker_operator_config", "aws_lambda_operator_config", "azure_function_operator_config"]),
+            get: $util.oneOfGetter($oneOfFields = ["custom_operator_config", "sagemaker_operator_config", "aws_lambda_operator_config", "azure_functions_operator_config"]),
             set: $util.oneOfSetter($oneOfFields)
         });
 
@@ -152,8 +152,8 @@ export const bentoml = $root.bentoml = (() => {
                 $root.bentoml.DeploymentSpec.SageMakerOperatorConfig.encode(message.sagemaker_operator_config, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
             if (message.aws_lambda_operator_config != null && message.hasOwnProperty("aws_lambda_operator_config"))
                 $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.encode(message.aws_lambda_operator_config, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-            if (message.azure_function_operator_config != null && message.hasOwnProperty("azure_function_operator_config"))
-                $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig.encode(message.azure_function_operator_config, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+            if (message.azure_functions_operator_config != null && message.hasOwnProperty("azure_functions_operator_config"))
+                $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.encode(message.azure_functions_operator_config, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
             return writer;
         };
 
@@ -207,7 +207,7 @@ export const bentoml = $root.bentoml = (() => {
                     message.aws_lambda_operator_config = $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.decode(reader, reader.uint32());
                     break;
                 case 7:
-                    message.azure_function_operator_config = $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig.decode(reader, reader.uint32());
+                    message.azure_functions_operator_config = $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.decode(reader, reader.uint32());
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -290,14 +290,14 @@ export const bentoml = $root.bentoml = (() => {
                         return "aws_lambda_operator_config." + error;
                 }
             }
-            if (message.azure_function_operator_config != null && message.hasOwnProperty("azure_function_operator_config")) {
+            if (message.azure_functions_operator_config != null && message.hasOwnProperty("azure_functions_operator_config")) {
                 if (properties.deployment_operator_config === 1)
                     return "deployment_operator_config: multiple values";
                 properties.deployment_operator_config = 1;
                 {
-                    let error = $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig.verify(message.azure_function_operator_config);
+                    let error = $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.verify(message.azure_functions_operator_config);
                     if (error)
-                        return "azure_function_operator_config." + error;
+                        return "azure_functions_operator_config." + error;
                 }
             }
             return null;
@@ -336,7 +336,7 @@ export const bentoml = $root.bentoml = (() => {
             case 3:
                 message.operator = 3;
                 break;
-            case "AZURE_FUNCTION":
+            case "AZURE_FUNCTIONS":
             case 4:
                 message.operator = 4;
                 break;
@@ -356,10 +356,10 @@ export const bentoml = $root.bentoml = (() => {
                     throw TypeError(".bentoml.DeploymentSpec.aws_lambda_operator_config: object expected");
                 message.aws_lambda_operator_config = $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.fromObject(object.aws_lambda_operator_config);
             }
-            if (object.azure_function_operator_config != null) {
-                if (typeof object.azure_function_operator_config !== "object")
-                    throw TypeError(".bentoml.DeploymentSpec.azure_function_operator_config: object expected");
-                message.azure_function_operator_config = $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig.fromObject(object.azure_function_operator_config);
+            if (object.azure_functions_operator_config != null) {
+                if (typeof object.azure_functions_operator_config !== "object")
+                    throw TypeError(".bentoml.DeploymentSpec.azure_functions_operator_config: object expected");
+                message.azure_functions_operator_config = $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.fromObject(object.azure_functions_operator_config);
             }
             return message;
         };
@@ -403,10 +403,10 @@ export const bentoml = $root.bentoml = (() => {
                 if (options.oneofs)
                     object.deployment_operator_config = "aws_lambda_operator_config";
             }
-            if (message.azure_function_operator_config != null && message.hasOwnProperty("azure_function_operator_config")) {
-                object.azure_function_operator_config = $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig.toObject(message.azure_function_operator_config, options);
+            if (message.azure_functions_operator_config != null && message.hasOwnProperty("azure_functions_operator_config")) {
+                object.azure_functions_operator_config = $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.toObject(message.azure_functions_operator_config, options);
                 if (options.oneofs)
-                    object.deployment_operator_config = "azure_function_operator_config";
+                    object.deployment_operator_config = "azure_functions_operator_config";
             }
             return object;
         };
@@ -430,7 +430,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {number} CUSTOM=1 CUSTOM value
          * @property {number} AWS_SAGEMAKER=2 AWS_SAGEMAKER value
          * @property {number} AWS_LAMBDA=3 AWS_LAMBDA value
-         * @property {number} AZURE_FUNCTION=4 AZURE_FUNCTION value
+         * @property {number} AZURE_FUNCTIONS=4 AZURE_FUNCTIONS value
          */
         DeploymentSpec.DeploymentOperator = (function() {
             const valuesById = {}, values = Object.create(valuesById);
@@ -438,7 +438,7 @@ export const bentoml = $root.bentoml = (() => {
             values[valuesById[1] = "CUSTOM"] = 1;
             values[valuesById[2] = "AWS_SAGEMAKER"] = 2;
             values[valuesById[3] = "AWS_LAMBDA"] = 3;
-            values[valuesById[4] = "AZURE_FUNCTION"] = 4;
+            values[valuesById[4] = "AZURE_FUNCTIONS"] = 4;
             return values;
         })();
 
@@ -1209,28 +1209,28 @@ export const bentoml = $root.bentoml = (() => {
             return AwsLambdaOperatorConfig;
         })();
 
-        DeploymentSpec.AzureFunctionOperatorConfig = (function() {
+        DeploymentSpec.AzureFunctionsOperatorConfig = (function() {
 
             /**
-             * Properties of an AzureFunctionOperatorConfig.
+             * Properties of an AzureFunctionsOperatorConfig.
              * @memberof bentoml.DeploymentSpec
-             * @interface IAzureFunctionOperatorConfig
-             * @property {string|null} [location] AzureFunctionOperatorConfig location
-             * @property {string|null} [premium_plan_sku] AzureFunctionOperatorConfig premium_plan_sku
-             * @property {number|null} [min_instances] AzureFunctionOperatorConfig min_instances
-             * @property {number|null} [max_burst] AzureFunctionOperatorConfig max_burst
-             * @property {string|null} [function_auth_level] AzureFunctionOperatorConfig function_auth_level
+             * @interface IAzureFunctionsOperatorConfig
+             * @property {string|null} [location] AzureFunctionsOperatorConfig location
+             * @property {string|null} [premium_plan_sku] AzureFunctionsOperatorConfig premium_plan_sku
+             * @property {number|null} [min_instances] AzureFunctionsOperatorConfig min_instances
+             * @property {number|null} [max_burst] AzureFunctionsOperatorConfig max_burst
+             * @property {string|null} [function_auth_level] AzureFunctionsOperatorConfig function_auth_level
              */
 
             /**
-             * Constructs a new AzureFunctionOperatorConfig.
+             * Constructs a new AzureFunctionsOperatorConfig.
              * @memberof bentoml.DeploymentSpec
-             * @classdesc Represents an AzureFunctionOperatorConfig.
-             * @implements IAzureFunctionOperatorConfig
+             * @classdesc Represents an AzureFunctionsOperatorConfig.
+             * @implements IAzureFunctionsOperatorConfig
              * @constructor
-             * @param {bentoml.DeploymentSpec.IAzureFunctionOperatorConfig=} [properties] Properties to set
+             * @param {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig=} [properties] Properties to set
              */
-            function AzureFunctionOperatorConfig(properties) {
+            function AzureFunctionsOperatorConfig(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
@@ -1238,67 +1238,67 @@ export const bentoml = $root.bentoml = (() => {
             }
 
             /**
-             * AzureFunctionOperatorConfig location.
+             * AzureFunctionsOperatorConfig location.
              * @member {string} location
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @instance
              */
-            AzureFunctionOperatorConfig.prototype.location = "";
+            AzureFunctionsOperatorConfig.prototype.location = "";
 
             /**
-             * AzureFunctionOperatorConfig premium_plan_sku.
+             * AzureFunctionsOperatorConfig premium_plan_sku.
              * @member {string} premium_plan_sku
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @instance
              */
-            AzureFunctionOperatorConfig.prototype.premium_plan_sku = "";
+            AzureFunctionsOperatorConfig.prototype.premium_plan_sku = "";
 
             /**
-             * AzureFunctionOperatorConfig min_instances.
+             * AzureFunctionsOperatorConfig min_instances.
              * @member {number} min_instances
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @instance
              */
-            AzureFunctionOperatorConfig.prototype.min_instances = 0;
+            AzureFunctionsOperatorConfig.prototype.min_instances = 0;
 
             /**
-             * AzureFunctionOperatorConfig max_burst.
+             * AzureFunctionsOperatorConfig max_burst.
              * @member {number} max_burst
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @instance
              */
-            AzureFunctionOperatorConfig.prototype.max_burst = 0;
+            AzureFunctionsOperatorConfig.prototype.max_burst = 0;
 
             /**
-             * AzureFunctionOperatorConfig function_auth_level.
+             * AzureFunctionsOperatorConfig function_auth_level.
              * @member {string} function_auth_level
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @instance
              */
-            AzureFunctionOperatorConfig.prototype.function_auth_level = "";
+            AzureFunctionsOperatorConfig.prototype.function_auth_level = "";
 
             /**
-             * Creates a new AzureFunctionOperatorConfig instance using the specified properties.
+             * Creates a new AzureFunctionsOperatorConfig instance using the specified properties.
              * @function create
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @static
-             * @param {bentoml.DeploymentSpec.IAzureFunctionOperatorConfig=} [properties] Properties to set
-             * @returns {bentoml.DeploymentSpec.AzureFunctionOperatorConfig} AzureFunctionOperatorConfig instance
+             * @param {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig=} [properties] Properties to set
+             * @returns {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} AzureFunctionsOperatorConfig instance
              */
-            AzureFunctionOperatorConfig.create = function create(properties) {
-                return new AzureFunctionOperatorConfig(properties);
+            AzureFunctionsOperatorConfig.create = function create(properties) {
+                return new AzureFunctionsOperatorConfig(properties);
             };
 
             /**
-             * Encodes the specified AzureFunctionOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.AzureFunctionOperatorConfig.verify|verify} messages.
+             * Encodes the specified AzureFunctionsOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.verify|verify} messages.
              * @function encode
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @static
-             * @param {bentoml.DeploymentSpec.IAzureFunctionOperatorConfig} message AzureFunctionOperatorConfig message or plain object to encode
+             * @param {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig} message AzureFunctionsOperatorConfig message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
-            AzureFunctionOperatorConfig.encode = function encode(message, writer) {
+            AzureFunctionsOperatorConfig.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
                 if (message.location != null && message.hasOwnProperty("location"))
@@ -1315,33 +1315,33 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
-             * Encodes the specified AzureFunctionOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.AzureFunctionOperatorConfig.verify|verify} messages.
+             * Encodes the specified AzureFunctionsOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.verify|verify} messages.
              * @function encodeDelimited
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @static
-             * @param {bentoml.DeploymentSpec.IAzureFunctionOperatorConfig} message AzureFunctionOperatorConfig message or plain object to encode
+             * @param {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig} message AzureFunctionsOperatorConfig message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
-            AzureFunctionOperatorConfig.encodeDelimited = function encodeDelimited(message, writer) {
+            AzureFunctionsOperatorConfig.encodeDelimited = function encodeDelimited(message, writer) {
                 return this.encode(message, writer).ldelim();
             };
 
             /**
-             * Decodes an AzureFunctionOperatorConfig message from the specified reader or buffer.
+             * Decodes an AzureFunctionsOperatorConfig message from the specified reader or buffer.
              * @function decode
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
-             * @returns {bentoml.DeploymentSpec.AzureFunctionOperatorConfig} AzureFunctionOperatorConfig
+             * @returns {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} AzureFunctionsOperatorConfig
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            AzureFunctionOperatorConfig.decode = function decode(reader, length) {
+            AzureFunctionsOperatorConfig.decode = function decode(reader, length) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
@@ -1369,30 +1369,30 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
-             * Decodes an AzureFunctionOperatorConfig message from the specified reader or buffer, length delimited.
+             * Decodes an AzureFunctionsOperatorConfig message from the specified reader or buffer, length delimited.
              * @function decodeDelimited
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {bentoml.DeploymentSpec.AzureFunctionOperatorConfig} AzureFunctionOperatorConfig
+             * @returns {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} AzureFunctionsOperatorConfig
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            AzureFunctionOperatorConfig.decodeDelimited = function decodeDelimited(reader) {
+            AzureFunctionsOperatorConfig.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
                     reader = new $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
-             * Verifies an AzureFunctionOperatorConfig message.
+             * Verifies an AzureFunctionsOperatorConfig message.
              * @function verify
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @static
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            AzureFunctionOperatorConfig.verify = function verify(message) {
+            AzureFunctionsOperatorConfig.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
                 if (message.location != null && message.hasOwnProperty("location"))
@@ -1414,17 +1414,17 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
-             * Creates an AzureFunctionOperatorConfig message from a plain object. Also converts values to their respective internal types.
+             * Creates an AzureFunctionsOperatorConfig message from a plain object. Also converts values to their respective internal types.
              * @function fromObject
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @static
              * @param {Object.<string,*>} object Plain object
-             * @returns {bentoml.DeploymentSpec.AzureFunctionOperatorConfig} AzureFunctionOperatorConfig
+             * @returns {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} AzureFunctionsOperatorConfig
              */
-            AzureFunctionOperatorConfig.fromObject = function fromObject(object) {
-                if (object instanceof $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig)
+            AzureFunctionsOperatorConfig.fromObject = function fromObject(object) {
+                if (object instanceof $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig)
                     return object;
-                let message = new $root.bentoml.DeploymentSpec.AzureFunctionOperatorConfig();
+                let message = new $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig();
                 if (object.location != null)
                     message.location = String(object.location);
                 if (object.premium_plan_sku != null)
@@ -1439,15 +1439,15 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
-             * Creates a plain object from an AzureFunctionOperatorConfig message. Also converts values to other types if specified.
+             * Creates a plain object from an AzureFunctionsOperatorConfig message. Also converts values to other types if specified.
              * @function toObject
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @static
-             * @param {bentoml.DeploymentSpec.AzureFunctionOperatorConfig} message AzureFunctionOperatorConfig
+             * @param {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} message AzureFunctionsOperatorConfig
              * @param {$protobuf.IConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
-            AzureFunctionOperatorConfig.toObject = function toObject(message, options) {
+            AzureFunctionsOperatorConfig.toObject = function toObject(message, options) {
                 if (!options)
                     options = {};
                 let object = {};
@@ -1472,17 +1472,17 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
-             * Converts this AzureFunctionOperatorConfig to JSON.
+             * Converts this AzureFunctionsOperatorConfig to JSON.
              * @function toJSON
-             * @memberof bentoml.DeploymentSpec.AzureFunctionOperatorConfig
+             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @instance
              * @returns {Object.<string,*>} JSON object
              */
-            AzureFunctionOperatorConfig.prototype.toJSON = function toJSON() {
+            AzureFunctionsOperatorConfig.prototype.toJSON = function toJSON() {
                 return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
             };
 
-            return AzureFunctionOperatorConfig;
+            return AzureFunctionsOperatorConfig;
         })();
 
         return DeploymentSpec;
@@ -4402,7 +4402,7 @@ export const bentoml = $root.bentoml = (() => {
             case 3:
                 message.operator = 3;
                 break;
-            case "AZURE_FUNCTION":
+            case "AZURE_FUNCTIONS":
             case 4:
                 message.operator = 4;
                 break;

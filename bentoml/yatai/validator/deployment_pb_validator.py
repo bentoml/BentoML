@@ -15,9 +15,9 @@
 from cerberus import Validator
 
 from bentoml.utils import ProtoMessageToDict
-from bentoml.yatai.deployment.azure_function import (
-    AZURE_FUNCTION_PREMIUM_PLAN_SKUS,
-    AZURE_FUNCTION_AUTH_LEVELS,
+from bentoml.yatai.deployment.azure_functions import (
+    AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
+    AZURE_FUNCTIONS_AUTH_LEVELS,
 )
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 
@@ -77,14 +77,14 @@ deployment_schema = {
             },
             # https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan
             # https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-http-webhook-trigger?tabs=python#configuration
-            'azure_function_operator_config': {
+            'azure_functions_operator_config': {
                 'type': 'dict',
-                'azure_function_configuration': True,
+                'azure_functions_configuration': True,
                 'schema': {
                     'location': {'type': 'string'},
                     'premium_plan_sku': {
                         'type': 'string',
-                        'allowed': AZURE_FUNCTION_PREMIUM_PLAN_SKUS,
+                        'allowed': AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
                     },
                     'min_instances': {
                         'required': True,
@@ -100,7 +100,7 @@ deployment_schema = {
                     },
                     'function_auth_level': {
                         'type': 'string',
-                        'allowed': AZURE_FUNCTION_AUTH_LEVELS,
+                        'allowed': AZURE_FUNCTIONS_AUTH_LEVELS,
                     },
                 },
             },
@@ -152,15 +152,15 @@ class YataiDeploymentValidator(Validator):
                 'an anti-pattern.',
             )
 
-    def _validate_azure_function_configuration(
-        self, azure_function_configuration, field, value
+    def _validate_azure_functions_configuration(
+        self, azure_functions_configuration, field, value
     ):
-        """ Test the min instances is less than max burst for Azure function deployment
+        """ Test the min instances is less than max burst for Azure Functions deployment
 
         The rule's arguments are validated against this schema:
         {'type': 'boolean'}
         """
-        if azure_function_configuration:
+        if azure_functions_configuration:
             if value.get('max_burst', 0) < value.get('min_instances', 0):
                 self._error(
                     field,

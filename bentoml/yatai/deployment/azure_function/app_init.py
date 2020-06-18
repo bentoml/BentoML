@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-import azure.functions as func
+import azure.functions as func #pylint: disable=import-error
 
 from bentoml.server import BentoAPIServer
 from bentoml import load

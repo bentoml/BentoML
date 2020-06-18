@@ -33,7 +33,7 @@ def df_to_json(result, pandas_dataframe_orient="records"):
         return result.to_json(orient=pandas_dataframe_orient)
 
     if isinstance(result, pd.Series):
-        return pd.DataFrame(result).to_dict(orient=pandas_dataframe_orient)
+        return pd.DataFrame(result).to_json(orient=pandas_dataframe_orient)
     raise BentoMLException("DataframeOutput only accepts pd.Series or pd.DataFrame.")
 
 

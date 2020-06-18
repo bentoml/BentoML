@@ -81,7 +81,7 @@ def api_func_result_to_json(result, pandas_dataframe_orient="records"):
         return result.to_json(orient=pandas_dataframe_orient)
 
     if pd and isinstance(result, pd.Series):
-        return pd.DataFrame(result).to_dict(orient=pandas_dataframe_orient)
+        return pd.DataFrame(result).to_json(orient=pandas_dataframe_orient)
 
     try:
         return json.dumps(result, cls=NumpyJsonEncoder)

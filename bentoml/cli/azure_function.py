@@ -99,8 +99,7 @@ def get_azure_function_sub_command():
         '--premium-plan-sku',
         type=click.Choice(AZURE_FUNCTION_PREMIUM_PLAN_SKUS),
         default=DEFAULT_PREMIUM_PLAN_SKU,
-        help=f'The Azure function premium SKU for the deployment. The options are '
-        f'{", ".join(AZURE_FUNCTION_PREMIUM_PLAN_SKUS)}. The default value is '
+        help=f'The Azure function premium SKU for the deployment. The default value is '
         f'{DEFAULT_PREMIUM_PLAN_SKU}',
     )
     @click.option(
@@ -116,9 +115,8 @@ def get_azure_function_sub_command():
         '--function-auth-level',
         type=click.Choice(AZURE_FUNCTION_AUTH_LEVELS),
         default=DEFAULT_FUNCTION_AUTH_LEVEL,
-        help=f'The authorization level for the deployed Azure Function. The options '
-        f'are {", ".join(AZURE_FUNCTION_AUTH_LEVELS)}. The default value is '
-        f'{DEFAULT_FUNCTION_AUTH_LEVEL}',
+        help=f'The authorization level for the deployed Azure Function. The default '
+        f'value is {DEFAULT_FUNCTION_AUTH_LEVEL}',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
@@ -212,8 +210,7 @@ def get_azure_function_sub_command():
     @click.option(
         '--premium-plan-sku',
         type=click.Choice(AZURE_FUNCTION_PREMIUM_PLAN_SKUS),
-        help=f'The Azure function premium SKU for the deployment. The options are '
-        f'{", ".join(AZURE_FUNCTION_PREMIUM_PLAN_SKUS)}.',
+        help='The Azure function premium SKU for the deployment.',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(

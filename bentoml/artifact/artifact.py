@@ -33,7 +33,8 @@ class BentoServiceArtifact(object):
     def __init__(self, name):
         if not re.fullmatch(VALID_ARTIFACT_NAME_PATTERN, name):
             raise ValueError(
-                "'name' must start with a letter (a-z|A-Z) or underscore character and can only contain alpha-numeric characters and underscores"
+                "'name' must start with a letter (a-z|A-Z) or underscore character \
+                 and can only contain alpha-numeric characters and underscores"
             )
         self._name = name
 

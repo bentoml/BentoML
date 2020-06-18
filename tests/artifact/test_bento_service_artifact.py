@@ -27,25 +27,25 @@ def test_valid_artifact_name():
 def test_unvalid_artifact_name():
     name = ""
     with pytest.raises(ValueError) as e:
-        artifact = BentoServiceArtifact(name)
+        BentoServiceArtifact(name)
     assert "'name' must start with a letter" in str(e.value)
 
     name = "_"
     with pytest.raises(ValueError) as e:
-        artifact = BentoServiceArtifact(name)
+        BentoServiceArtifact(name)
     assert "'name' must start with a letter" in str(e.value)
 
     name = "156test"
     with pytest.raises(ValueError) as e:
-        artifact = BentoServiceArtifact(name)
+        BentoServiceArtifact(name)
     assert "'name' must start with a letter" in str(e.value)
 
     name = "thisisàtest"
     with pytest.raises(ValueError) as e:
-        artifact = BentoServiceArtifact(name)
+        BentoServiceArtifact(name)
     assert "'name' must start with a letter" in str(e.value)
 
     name = "thisIs012Alo(*ng__erTest"
     with pytest.raises(ValueError) as e:
-        artifact = BentoServiceArtifact(name)
+        BentoServiceArtifact(name)
     assert "'name' must start with a letter" in str(e.value)

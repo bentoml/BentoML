@@ -20,6 +20,7 @@ import logging
 import tempfile
 from contextlib import contextmanager
 from urllib.parse import urlparse
+import shutil
 
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
@@ -156,6 +157,26 @@ def load_bento_service_class(bundle_path):
     model_service_class._bento_service_bundle_version = metadata["service_version"]
 
     return model_service_class
+
+
+def safe_retrieve(bundle_path, target_dir):
+    """Safely retrieve bento service to local path
+
+    Args:
+        bundle_path (str): The path that contains saved BentoService bundle,
+            supporting both local file path and s3 path
+        target_dir (str): Where the service contents should end up
+
+    Returns:
+        string: location of safe local path
+    """
+    if _is_remote_path(bundle_path):
+        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
+            shutil.copytree(local_bundle_path, target_dir)
+            return target_dir
+
+    shutil.copytree(bundle_path, target_dir)
+    return bundle_path
 
 
 def load(bundle_path):

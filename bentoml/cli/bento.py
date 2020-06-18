@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import click
+import os
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
@@ -25,6 +26,7 @@ from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
+from bentoml.saved_bundle import safe_retrieve
 
 
 def _print_bento_info(bento, output_type):
@@ -218,3 +220,43 @@ def add_bento_sub_command(cli):
                     CLI_COLOR_ERROR,
                 )
             _echo(f'BentoService {name}:{version} deleted')
+
+    @cli.command(
+        help='Retrieves BentoService artifacts into a target directory',
+        short_help="Retrieves BentoService artifacts into a target directory",
+    )
+    @click.argument("bento", type=click.STRING)
+    @click.option(
+        '--target_dir',
+        help="Directory to put artifacts into. Defaults to pwd.",
+        default=os.getcwd(),
+    )
+    def retrieve(bento, target_dir):
+        if ':' not in bento:
+            _echo(f'BentoService {bento} invalid - specify name:version')
+            return
+        name, version = bento.split(':')
+
+        yatai_client = YataiClient()
+
+        track_cli('bento-retrieve')
+        get_bento_result = yatai_client.repository.get(name, version)
+        if get_bento_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_bento_result.status
+            )
+            _echo(
+                f'BentoService {name}:{version} not found - '
+                f'{error_code}:{error_message}',
+                CLI_COLOR_ERROR
+            )
+            return
+
+        if get_bento_result.bento.uri.s3_presigned_url:
+            bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
+        else:
+            bento_service_bundle_path =  get_bento_result.bento.uri.uri
+
+        bento_path = safe_retrieve(bento_service_bundle_path, target_dir)
+
+        click.echo('Service %s artifact directory => %s' % (name, bento_path))

@@ -6,6 +6,7 @@ import math
 import pandas as pd
 import numpy as np
 
+from bentoml.utils.dataframe_util import _csv_split
 from bentoml.adapters import DataframeInput
 from bentoml.adapters.dataframe_input import (
     check_dataframe_column_contains,
@@ -155,7 +156,7 @@ DF_CASES = (
     pd.DataFrame(["str1", "str2", "str3"]),  # single dim sting array
     pd.DataFrame([np.nan]),  # special values
     pd.DataFrame([math.nan]),  # special values
-    pd.DataFrame([" "]),  # special values
+    pd.DataFrame([" ", '"']),  # special values
     pd.DataFrame({"test": ["a,b", "c\nd"]}),  # special values
     # pd.Series(np.random.rand(2)),  # TODO: Series support
     # pd.DataFrame([""]),  # TODO: -> NaN
@@ -190,17 +191,19 @@ def test_batch_read_dataframes_from_mixed_json_n_csv(df):
             test_datas, test_types, orient=None
         )  # auto detect orient
 
-    # test content_type=text/csv
-    # test_datas.extend([df.to_csv().encode()] * 3)
-    # test_types.extend(['text/csv'] * 3)
-
-    # test content_type=text/csv without index
     test_datas.extend([df.to_csv(index=False).encode()] * 3)
     test_types.extend(['text/csv'] * 3)
 
     df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types)
     for s in slices:
         assert_df_equal(df_merged[s], df)
+
+
+def test_batch_read_dataframes_from_csv_other_CRLF(df):
+    csv_str = df.to_csv(index=False)
+    csv_str = '\r\n'.join(_csv_split(csv_str, '\n')).encode()
+    df_merged, _ = read_dataframes_from_json_n_csv([csv_str], ['text/csv'])
+    assert_df_equal(df_merged, df)
 
 
 def test_batch_read_dataframes_from_json_of_orients(df, orient):
@@ -262,4 +265,4 @@ def test_benchmark_load_dataframes():
     time2 = time.time() - time_st
 
     assert_df_equal(result1, result2)
-    assert time1 / time2 > 25
+    assert time1 / time2 > 20

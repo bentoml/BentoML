@@ -134,8 +134,8 @@ def _csv_split(string, delimiter, maxsplit=None) -> Iterator[str]:
 
 
 def _csv_unquote(string):
-    string = string.strip()
     if '"' in string:
+        string = string.strip()
         assert string[0] == '"' and string[-1] == '"'
         return string[1:-1].replace('""', '"')
     return string
@@ -152,16 +152,25 @@ def _csv_quote(td):
 
 
 def _from_csv_without_index(state: DataFrameState, table: Iterator[str]):
-    col_row = next(table)
+    row_str = next(table)  # skip column names
     if not state.line_num:
-        state.columns = tuple(_csv_unquote(s) for s in _csv_split(col_row, ','))
-        yield col_row
+        if row_str.endswith('\r'):
+            row_str = row_str[:-1]
+        state.columns = tuple(_csv_unquote(s) for s in _csv_split(row_str, ','))
+        if not row_str.strip():
+            yield _csv_quote(row_str)
+        else:
+            yield row_str
     for row_str in table:
-        row_str = row_str.strip()
+        if row_str.endswith('\r'):
+            row_str = row_str[:-1]
         if not row_str:  # skip blank line
             continue
         state.line_num += 1
-        yield row_str
+        if not row_str.strip():
+            yield _csv_quote(row_str)
+        else:
+            yield row_str
 
 
 def _detect_orient(table):
@@ -303,7 +312,6 @@ def read_dataframes_from_json_n_csv(
             for tds, table_id in _dataframe_csv_from_input(
                 datas, content_types, itertools.repeat(orient)
             )
-            if tds is not None
         ]
     except (TypeError, ValueError) as e:
         raise BadInput('Invalid input format for DataframeInput') from e

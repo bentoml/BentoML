@@ -17,31 +17,23 @@ from typing import Iterable
 import argparse
 
 from bentoml.exceptions import BentoMLException
+from bentoml.utils.dataframe_util import PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.adapters.base_output import BaseOutputAdapter
-
-PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS = [
-    'dict',
-    'list',
-    'series',
-    'split',
-    'records',
-    'index',
-]
 
 
 def df_to_json(result, pandas_dataframe_orient="records"):
     import pandas as pd
 
     assert (
-        pandas_dataframe_orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS
+        pandas_dataframe_orient in PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
     ), f"unkown pandas dataframe orient '{pandas_dataframe_orient}'"
 
     if isinstance(result, pd.DataFrame):
         return result.to_json(orient=pandas_dataframe_orient)
 
     if isinstance(result, pd.Series):
-        return pd.DataFrame(result).to_dict(orient=pandas_dataframe_orient)
+        return pd.DataFrame(result).to_json(orient=pandas_dataframe_orient)
     raise BentoMLException("DataframeOutput only accepts pd.Series or pd.DataFrame.")
 
 
@@ -61,9 +53,9 @@ class DataframeOutput(BaseOutputAdapter):
         super(DataframeOutput, self).__init__(**kwargs)
         self.output_orient = output_orient
 
-        assert self.output_orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS, (
+        assert self.output_orient in PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS, (
             f"Invalid 'output_orient'='{self.orient}', valid options are "
-            f"{PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS}"
+            f"{PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS}"
         )
 
     @property
@@ -116,7 +108,7 @@ class DataframeOutput(BaseOutputAdapter):
         parser.add_argument(
             "--output_orient",
             default=self.output_orient,
-            choices=PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
+            choices=PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
         )
         parsed_args = parser.parse_args(args)
 

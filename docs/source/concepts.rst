@@ -752,7 +752,6 @@ list all the BentoService created:
             "InputType": "DataframeInput",
             "docs": "BentoService API",
             "inputConfig": {
-              "output_orient": "records",
               "orient": "records",
               "typ": "frame",
               "is_batch_input": true,

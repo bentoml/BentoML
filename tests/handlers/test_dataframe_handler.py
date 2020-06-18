@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import pytest
 import math
 import pandas as pd
@@ -5,7 +6,7 @@ import numpy as np
 
 from bentoml.adapters import DataframeInput
 from bentoml.adapters.dataframe_input import (
-    _check_dataframe_column_contains,
+    check_dataframe_column_contains,
     read_dataframes_from_json_n_csv,
 )
 from bentoml.exceptions import BadInput
@@ -86,17 +87,17 @@ def test_check_dataframe_column_contains():
     )
 
     # this should pass
-    _check_dataframe_column_contains({"a": "int", "b": "int", "c": "int"}, df)
-    _check_dataframe_column_contains({"a": "int"}, df)
-    _check_dataframe_column_contains({"a": "int", "c": "int"}, df)
+    check_dataframe_column_contains({"a": "int", "b": "int", "c": "int"}, df)
+    check_dataframe_column_contains({"a": "int"}, df)
+    check_dataframe_column_contains({"a": "int", "c": "int"}, df)
 
     # this should raise exception
     with pytest.raises(BadInput) as e:
-        _check_dataframe_column_contains({"required_column_x": "int"}, df)
+        check_dataframe_column_contains({"required_column_x": "int"}, df)
     assert "Missing columns: required_column_x" in str(e.value)
 
     with pytest.raises(BadInput) as e:
-        _check_dataframe_column_contains(
+        check_dataframe_column_contains(
             {"a": "int", "b": "int", "d": "int", "e": "int"}, df
         )
     assert "Missing columns:" in str(e.value)
@@ -110,7 +111,7 @@ def test_dataframe_handle_request_csv():
     input_adapter = DataframeInput()
     csv_data = 'name,game,city\njohn,mario,sf'.encode('utf-8')
     request = Mock()
-    request.headers = {'output_orient': 'records', 'orient': 'records'}
+    request.headers = {'orient': 'records'}
     request.content_type = 'text/csv'
     request.data = csv_data
 
@@ -135,56 +136,96 @@ def assert_df_equal(left: pd.DataFrame, right: pd.DataFrame):
         )
 
 
-def test_batch_read_dataframes_from_json_n_csv():
-    for df in (
-        pd.DataFrame(np.random.rand(1, 3)),
-        pd.DataFrame(np.random.rand(2, 3)),
-        pd.DataFrame(np.random.rand(2, 3), columns=['A', 'B', 'C']),
-        pd.DataFrame(["str1", "str2", "str3"]),  # single dim sting array
-        pd.DataFrame([np.nan]),  # special values
-        pd.DataFrame([math.nan]),  # special values
-        pd.DataFrame([" "]),  # special values
-        # pd.Series(np.random.rand(2)),  # TODO: Series support
-        # pd.DataFrame([""]),  # TODO: -> NaN
-    ):
-        DF_ORIENTS = {'split', 'records', 'index', 'columns', 'values', 'table'}
+DF_ORIENTS = {
+    'split',
+    'records',
+    'index',
+    'columns',
+    'values',
+    # 'table',  # TODO(bojiang)
+}
 
-        test_datas = []
-        test_types = []
 
-        # test content_type=application/json with various orients
-        for orient in DF_ORIENTS:
-            try:
-                assert_df_equal(df, pd.read_json(df.to_json(orient=orient)))
-            except (AssertionError, ValueError):
-                # skip cases not supported by official pandas
-                continue
+DF_CASES = (
+    pd.DataFrame(np.random.rand(1, 3)),
+    pd.DataFrame(np.random.rand(2, 3)),
+    pd.DataFrame(np.random.rand(2, 3), columns=['A', 'B', 'C']),
+    pd.DataFrame(["str1", "str2", "str3"]),  # single dim sting array
+    pd.DataFrame([np.nan]),  # special values
+    pd.DataFrame([math.nan]),  # special values
+    pd.DataFrame([" "]),  # special values
+    # pd.Series(np.random.rand(2)),  # TODO: Series support
+    # pd.DataFrame([""]),  # TODO: -> NaN
+)
 
-            test_datas.extend([df.to_json(orient=orient).encode()] * 3)
-            test_types.extend(['application/json'] * 3)
-            df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types)
 
-        # test content_type=text/csv
-        test_datas.extend([df.to_csv().encode()] * 3)
-        test_types.extend(['text/csv'] * 3)
+@pytest.fixture(params=DF_CASES)
+def df(request):
+    return request.param
 
-        # test content_type=text/csv without index
-        test_datas.extend([df.to_csv(index=False).encode()] * 3)
-        test_types.extend(['text/csv'] * 3)
 
-        df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types)
-        for s in slices:
-            assert_df_equal(df_merged[s], df)
+@pytest.fixture(params=DF_ORIENTS)
+def orient(request):
+    return request.param
 
-    # test data with different column order when orient=records
-    df = pd.DataFrame([[1, 2, 3], [2, 4, 6]], columns=['A', 'B', 'C'])
+
+def test_batch_read_dataframes_from_mixed_json_n_csv(df):
+    test_datas = []
+    test_types = []
+
+    # test content_type=application/json with various orients
+    for orient in DF_ORIENTS:
+        try:
+            assert_df_equal(df, pd.read_json(df.to_json(orient=orient)))
+        except (AssertionError, ValueError):
+            # skip cases not supported by official pandas
+            continue
+
+        test_datas.extend([df.to_json(orient=orient).encode()] * 3)
+        test_types.extend(['application/json'] * 3)
+        df_merged, slices = read_dataframes_from_json_n_csv(
+            test_datas, test_types, orient=None
+        )  # auto detect orient
+
+    # test content_type=text/csv
+    test_datas.extend([df.to_csv().encode()] * 3)
+    test_types.extend(['text/csv'] * 3)
+
+    # test content_type=text/csv without index
+    test_datas.extend([df.to_csv(index=False).encode()] * 3)
+    test_types.extend(['text/csv'] * 3)
+
+    df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types)
+    for s in slices:
+        assert_df_equal(df_merged[s], df)
+
+
+def test_batch_read_dataframes_from_json_of_orients(df, orient):
+    test_datas = [df.to_json(orient=orient).encode()] * 3
+    test_types = ['application/json'] * 3
+    df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
+
+    df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
+    for s in slices:
+        assert_df_equal(df_merged[s], df)
+
+
+def test_batch_read_dataframes_from_json_with_wrong_orients(df, orient):
+    test_datas = [df.to_json(orient='table').encode()] * 3
+    test_types = ['application/json'] * 3
+
+    with pytest.raises(BadInput):
+        read_dataframes_from_json_n_csv(test_datas, test_types, orient)
+
+
+def test_batch_read_dataframes_from_json_in_mixed_order():
+    # different column order when orient=records
     df_json = b'[{"A": 1, "B": 2, "C": 3}, {"C": 6, "A": 2, "B": 4}]'
     df_merged, slices = read_dataframes_from_json_n_csv([df_json], ['application/json'])
     for s in slices:
         assert_df_equal(df_merged[s], pd.read_json(df_json))
 
-    # test data with different row/column order when orient=columns
-    df = pd.DataFrame([[1, 2, 3], [2, 4, 6]], columns=['A', 'B', 'C'])
+    # different row/column order when orient=columns
     df_json1 = b'{"A": {"1": 1, "2": 2}, "B": {"1": 2, "2": 4}, "C": {"1": 3, "2": 6}}'
     df_json2 = b'{"B": {"1": 2, "2": 4}, "A": {"1": 1, "2": 2}, "C": {"1": 3, "2": 6}}'
     df_json3 = b'{"A": {"1": 1, "2": 2}, "B": {"2": 4, "1": 2}, "C": {"1": 3, "2": 6}}'

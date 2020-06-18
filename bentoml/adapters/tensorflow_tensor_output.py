@@ -30,8 +30,6 @@ class TfTensorOutput(BaseOutputAdapter):
     Converts result of use defined API function into specific output.
 
     Args:
-        output_orient (str): Prefer json orient format for output result. Default is
-            records.
         cors (str): The value of the Access-Control-Allow-Origin header set in the
             AWS Lambda response object. Default is "*". If set to None,
             the header will not be set.

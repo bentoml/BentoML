@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import os
+import re
 
 from bentoml.exceptions import InvalidArgument
 
 ARTIFACTS_DIR_NAME = "artifacts"
+VALID_ARTIFACT_NAME_PATTERN = '(?i)^([a-z][a-z0-9_]*)|(_[a-z0-9_]+)$'
 
 
 class BentoServiceArtifact(object):
@@ -29,6 +31,10 @@ class BentoServiceArtifact(object):
     """
 
     def __init__(self, name):
+        if not re.fullmatch(VALID_ARTIFACT_NAME_PATTERN, name):
+            raise ValueError(
+                "'name' must start with a letter (a-z|A-Z) or underscore character and can only contain alpha-numeric characters and underscores"
+            )
         self._name = name
 
     @property

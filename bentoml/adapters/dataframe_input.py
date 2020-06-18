@@ -54,63 +54,97 @@ def _to_csv_cell(v):
 
 
 def _dataframe_csv_from_input(raws, content_types):
-    n_row_sum = -1
+    row_sum = -1
+    columns = []
     for i, (data, content_type) in enumerate(zip(raws, content_types)):
         if not content_type or content_type.lower() == "application/json":
+            # load json with order preserved
             if sys.version_info >= (3, 6):
                 od = json.loads(data.decode('utf-8'))
             else:
                 od = json.loads(
-                    data.decode('utf-8'),  # preserve order
-                    object_pairs_hook=collections.OrderedDict,
+                    data.decode('utf-8'), object_pairs_hook=collections.OrderedDict
                 )
 
             if isinstance(od, list):
-                if n_row_sum == -1:  # make header
-                    yield ",".join(
-                        itertools.chain(('',), map(str, range(len(od[0]))))
-                    ), None
-                    n_row_sum += 1
+                if isinstance(od[0], dict):  # orient: records
+                    if row_sum == -1:  # make header
+                        columns = od[0].keys()
+                        yield ",".join(
+                            itertools.chain(('',), map(_to_csv_cell, columns))
+                        ), None
+                        row_sum += 1
 
-                for _, datas_row in enumerate(od):
-                    yield ','.join(
-                        itertools.chain((str(n_row_sum),), map(_to_csv_cell, datas_row))
-                    ), i
-                    n_row_sum += 1
+                    for datas_row in od:
+                        datas = (
+                            (datas_row[c] for c in columns)
+                            if columns
+                            else datas_row.values()
+                        )
+                        yield ','.join(
+                            itertools.chain((str(row_sum),), map(_to_csv_cell, datas))
+                        ), i
+                        row_sum += 1
+                else:  # orient: values
+                    if row_sum == -1:  # make header
+                        yield ",".join(
+                            itertools.chain(('',), map(_to_csv_cell, range(len(od[0]))))
+                        ), None
+                        row_sum += 1
+
+                    for datas_row in od:
+                        yield ','.join(
+                            itertools.chain(
+                                (str(row_sum),), map(_to_csv_cell, datas_row)
+                            )
+                        ), i
+                        row_sum += 1
             elif isinstance(od, dict):
-                if n_row_sum == -1:  # make header
-                    yield ",".join(itertools.chain(('',), map(_to_csv_cell, od))), None
-                    n_row_sum += 1
+                if isinstance(next(iter(od.values())), dict):  # orient: columns
+                    if row_sum == -1:  # make header
+                        columns = od.keys()
+                        yield ",".join(
+                            itertools.chain(('',), map(_to_csv_cell, columns))
+                        ), None
+                        row_sum += 1
 
-                for _, name_row in enumerate(next(iter(od.values()))):
-                    datas_row = (
-                        od[name_col][name_row] for n_col, name_col in enumerate(od)
-                    )
-                    yield ','.join(
-                        itertools.chain((str(n_row_sum),), map(_to_csv_cell, datas_row))
-                    ), i
-                    n_row_sum += 1
+                    for row in next(iter(od.values())):
+                        if columns:
+                            datas_row = (od[col][row] for col in columns)
+                        else:
+                            datas_row = (od[col][row] for col in od.keys())
+                        yield ','.join(
+                            itertools.chain(
+                                (str(row_sum),), map(_to_csv_cell, datas_row)
+                            )
+                        ), i
+                        row_sum += 1
+                else:
+                    raise NotImplementedError()
+
         elif content_type.lower() == "text/csv":
             data_str = data.decode('utf-8')
             row_strs = data_str.split('\n')
             if not row_strs:
                 continue
             if row_strs[0].strip().startswith(','):  # csv with index column
-                if n_row_sum == -1:
-                    yield row_strs[0], None
+                if row_sum == -1:
+                    columns = row_strs[0].strip().split(',')[1:]
+                    yield row_strs[0].strip(), None
                 for row_str in row_strs[1:]:
                     if not row_str.strip():  # skip blank line
                         continue
-                    yield f"{str(n_row_sum)},{row_str.split(',', maxsplit=1)[1]}", i
-                    n_row_sum += 1
+                    yield f"{str(row_sum)},{row_str.split(',', maxsplit=1)[1]}", i
+                    row_sum += 1
             else:
-                if n_row_sum == -1:
-                    yield "," + row_strs[0], None
+                if row_sum == -1:
+                    columns = row_strs[0].strip().split(',')
+                    yield "," + row_strs[0].strip(), None
                 for row_str in row_strs[1:]:
                     if not row_str.strip():  # skip blank line
                         continue
-                    yield f"{str(n_row_sum)},{row_str.strip()}", i
-                    n_row_sum += 1
+                    yield f"{str(row_sum)},{row_str.strip()}", i
+                    row_sum += 1
         else:
             raise BadInput(f'Invalid content_type for DataframeInput: {content_type}')
 
@@ -130,7 +164,9 @@ def _gen_slice(ids):
     yield slice(start, i + 1)
 
 
-def read_dataframes_from_json_n_csv(datas, content_types):
+def read_dataframes_from_json_n_csv(
+    datas: Iterable["pd.DataFrame"], content_types: Iterable[str]
+) -> ("pd.DataFrame", Iterable[slice]):
     '''
     load detaframes from multiple raw datas in json or csv fromat, efficiently
 

@@ -2,7 +2,6 @@ import pytest
 import math
 import pandas as pd
 import numpy as np
-import json
 
 from bentoml.adapters import DataframeInput
 from bentoml.adapters.dataframe_input import (
@@ -119,36 +118,80 @@ def test_dataframe_handle_request_csv():
     assert result.get_data().decode('utf-8') == '"john"'
 
 
+def assert_df_equal(left: pd.DataFrame, right: pd.DataFrame):
+    '''
+    Compare two instances of pandas.DataFrame ignoring index and columns
+    '''
+    try:
+        left_array = left.values
+        right_array = right.values
+        if right_array.dtype == np.float:
+            np.testing.assert_array_almost_equal(left_array, right_array)
+        else:
+            np.testing.assert_array_equal(left_array, right_array)
+    except AssertionError:
+        raise AssertionError(
+            f"\n{left.to_string()}\n is not equal to \n{right.to_string()}\n"
+        )
+
+
 def test_batch_read_dataframes_from_json_n_csv():
     for df in (
+        pd.DataFrame(np.random.rand(1, 3)),
         pd.DataFrame(np.random.rand(2, 3)),
+        pd.DataFrame(np.random.rand(2, 3), columns=['A', 'B', 'C']),
         pd.DataFrame(["str1", "str2", "str3"]),  # single dim sting array
         pd.DataFrame([np.nan]),  # special values
         pd.DataFrame([math.nan]),  # special values
         pd.DataFrame([" "]),  # special values
+        # pd.Series(np.random.rand(2)),  # TODO: Series support
         # pd.DataFrame([""]),  # TODO: -> NaN
     ):
-        csv_str = df.to_json()
-        list_str = json.dumps(df.to_numpy().tolist())
-        test_datas = (
-            [csv_str.encode()] * 20
-            + [list_str.encode()] * 20
-            + [df.to_csv().encode()] * 20
-            + [df.to_csv(index=False).encode()] * 20
-        )
+        DF_ORIENTS = {'split', 'records', 'index', 'columns', 'values', 'table'}
 
-        test_types = (
-            ['application/json'] * 20
-            + ['application/json'] * 20
-            + ['text/csv'] * 20
-            + ['text/csv'] * 20
-        )
+        test_datas = []
+        test_types = []
+
+        # test content_type=application/json with various orients
+        for orient in DF_ORIENTS:
+            try:
+                assert_df_equal(df, pd.read_json(df.to_json(orient=orient)))
+            except (AssertionError, ValueError):
+                # skip cases not supported by official pandas
+                continue
+
+            test_datas.extend([df.to_json(orient=orient).encode()] * 3)
+            test_types.extend(['application/json'] * 3)
+            df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types)
+
+        # test content_type=text/csv
+        test_datas.extend([df.to_csv().encode()] * 3)
+        test_types.extend(['text/csv'] * 3)
+
+        # test content_type=text/csv without index
+        test_datas.extend([df.to_csv(index=False).encode()] * 3)
+        test_types.extend(['text/csv'] * 3)
 
         df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types)
         for s in slices:
-            left = df_merged[s].values
-            right = df.values
-            if right.dtype == np.float:
-                np.testing.assert_array_almost_equal(left, right)
-            else:
-                np.testing.assert_array_equal(left, right)
+            assert_df_equal(df_merged[s], df)
+
+    # test data with different column order when orient=records
+    df = pd.DataFrame([[1, 2, 3], [2, 4, 6]], columns=['A', 'B', 'C'])
+    df_json = b'[{"A": 1, "B": 2, "C": 3}, {"C": 6, "A": 2, "B": 4}]'
+    df_merged, slices = read_dataframes_from_json_n_csv([df_json], ['application/json'])
+    for s in slices:
+        assert_df_equal(df_merged[s], pd.read_json(df_json))
+
+    # test data with different row/column order when orient=columns
+    df = pd.DataFrame([[1, 2, 3], [2, 4, 6]], columns=['A', 'B', 'C'])
+    df_json1 = b'{"A": {"1": 1, "2": 2}, "B": {"1": 2, "2": 4}, "C": {"1": 3, "2": 6}}'
+    df_json2 = b'{"B": {"1": 2, "2": 4}, "A": {"1": 1, "2": 2}, "C": {"1": 3, "2": 6}}'
+    df_json3 = b'{"A": {"1": 1, "2": 2}, "B": {"2": 4, "1": 2}, "C": {"1": 3, "2": 6}}'
+    df_merged, slices = read_dataframes_from_json_n_csv(
+        [df_json1, df_json2, df_json3], ['application/json'] * 3
+    )
+    for s in slices:
+        assert_df_equal(
+            df_merged[s][["A", "B", "C"]], pd.read_json(df_json1)[["A", "B", "C"]]
+        )

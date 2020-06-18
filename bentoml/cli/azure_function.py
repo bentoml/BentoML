@@ -49,14 +49,14 @@ def get_azure_function_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
-        name='azure-function',
-        help='Commands for Azure Function BentoService deployment',
+        name='azure-functions',
+        help='Commands for Azure Functions BentoService deployment',
         cls=BentoMLCommandGroup,
     )
     def azure_function():
         pass
 
-    @azure_function.command(help='Deploy BentoService to Azure Function')
+    @azure_function.command(help='Deploy BentoService to Azure Functions')
     @click.option(
         '-n',
         '--namespace',
@@ -99,7 +99,7 @@ def get_azure_function_sub_command():
         '--premium-plan-sku',
         type=click.Choice(AZURE_FUNCTION_PREMIUM_PLAN_SKUS),
         default=DEFAULT_PREMIUM_PLAN_SKU,
-        help=f'The Azure function premium SKU for the deployment. The default value is '
+        help=f'The Azure Functions premium SKU for the deployment. The default value is '
         f'{DEFAULT_PREMIUM_PLAN_SKU}',
     )
     @click.option(
@@ -115,7 +115,7 @@ def get_azure_function_sub_command():
         '--function-auth-level',
         type=click.Choice(AZURE_FUNCTION_AUTH_LEVELS),
         default=DEFAULT_FUNCTION_AUTH_LEVEL,
-        help=f'The authorization level for the deployed Azure Function. The default '
+        help=f'The authorization level for the deployed Azure Functions. The default '
         f'value is {DEFAULT_FUNCTION_AUTH_LEVEL}',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
@@ -210,7 +210,7 @@ def get_azure_function_sub_command():
     @click.option(
         '--premium-plan-sku',
         type=click.Choice(AZURE_FUNCTION_PREMIUM_PLAN_SKUS),
-        help='The Azure function premium SKU for the deployment.',
+        help='The Azure Functions premium SKU for the deployment.',
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
@@ -231,7 +231,7 @@ def get_azure_function_sub_command():
             bento_name = None
             bento_version = None
         try:
-            with Spinner(f'Updating Azure Function deployment {name}'):
+            with Spinner(f'Updating Azure Functions deployment {name}'):
                 result = yatai_client.deployment.update_azure_function_deployment(
                     namespace=namespace,
                     deployment_name=name,
@@ -247,7 +247,7 @@ def get_azure_function_sub_command():
                         result.status
                     )
                     _echo(
-                        f'Failed to update Azure Function deployment {name}. '
+                        f'Failed to update Azure Functions deployment {name}. '
                         f'{error_code}:{error_message}'
                     )
                 track_cli('deploy-update-success', PLATFORM_NAME)

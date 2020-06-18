@@ -257,6 +257,6 @@ def add_bento_sub_command(cli):
         else:
             bento_service_bundle_path =  get_bento_result.bento.uri.uri
 
-        bento_path = safe_retrieve(bento_service_bundle_path, target_dir)
+        safe_retrieve(bento_service_bundle_path, target_dir)
 
-        click.echo('Service %s artifact directory => %s' % (name, bento_path))
+        click.echo('Service %s artifact directory => %s' % (name, target_dir))

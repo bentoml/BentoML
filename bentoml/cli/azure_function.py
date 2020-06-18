@@ -255,7 +255,7 @@ def get_azure_function_sub_command():
                     )
                 track_cli('deploy-update-success', PLATFORM_NAME)
                 _echo(
-                    f'Successfully update Azure Function deployment {name}',
+                    f'Successfully update Azure Functions deployment {name}',
                     CLI_COLOR_SUCCESS,
                 )
                 _print_deployment_info(result.deployment, output)
@@ -289,7 +289,7 @@ def get_azure_function_sub_command():
                 get_deployment_result.status
             )
             _echo(
-                f'Failed to get Azure Function deployment {name} for deletion. '
+                f'Failed to get Azure Functions deployment {name} for deletion. '
                 f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
@@ -322,11 +322,11 @@ def get_azure_function_sub_command():
             )
         except BentoMLException as e:
             _echo(
-                f'Failed to delete Azure Function deployment {name} {str(e)}',
+                f'Failed to delete Azure Functions deployment {name} {str(e)}',
                 CLI_COLOR_ERROR,
             )
 
-    @azure_function.command(help='Get Azure Function deployment information')
+    @azure_function.command(help='Get Azure Functions deployment information')
     @click.argument('name', type=click.STRING)
     @click.option(
         '-n',
@@ -348,7 +348,7 @@ def get_azure_function_sub_command():
                     get_result.status
                 )
                 _echo(
-                    f'Failed to get Azure Function deployment {name}. '
+                    f'Failed to get Azure Functions deployment {name}. '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
@@ -359,7 +359,7 @@ def get_azure_function_sub_command():
                     describe_result.status
                 )
                 _echo(
-                    f'Failed to retrieve the latest status for Azure Function '
+                    f'Failed to retrieve the latest status for Azure Functions '
                     f'deployment {name}. {error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
@@ -369,11 +369,11 @@ def get_azure_function_sub_command():
 
         except BentoMLException as e:
             _echo(
-                f'Failed to get Azure Function deployment {name}. {str(e)}',
+                f'Failed to get Azure Functions deployment {name}. {str(e)}',
                 CLI_COLOR_ERROR,
             )
 
-    @azure_function.command(name='list', help='List Azure Function deployments')
+    @azure_function.command(name='list', help='List Azure Functions deployments')
     @click.option(
         '-n',
         '--namespace',
@@ -421,7 +421,7 @@ def get_azure_function_sub_command():
                     list_result.status
                 )
                 _echo(
-                    f'Failed to list Azure Function deployments '
+                    f'Failed to list Azure Functions deployments '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
@@ -429,7 +429,7 @@ def get_azure_function_sub_command():
             _print_deployments_info(list_result.deployments, output)
         except BentoMLException as e:
             _echo(
-                f'Failed to list Azure Function deployments {str(e)}', CLI_COLOR_ERROR
+                f'Failed to list Azure Functions deployments {str(e)}', CLI_COLOR_ERROR
             )
 
     return azure_function

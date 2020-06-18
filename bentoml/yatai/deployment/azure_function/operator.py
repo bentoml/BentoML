@@ -227,6 +227,7 @@ def _build_and_push_docker_image_to_azure_container_registry(
         raise YataiDeploymentException(
             f'Failed to build docker image. APIError: {str(e)}'
         )
+    logger.debug(f'Pushing docker image {tag}')
     try:
         docker_client.images.push(tag)
         logger.debug('Finished pushing docker image')
@@ -549,7 +550,9 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
             resource_group_name, _, _, _, _, = _generate_azure_resource_names(
                 deployment_pb.namespace, deployment_pb.name
             )
-            logger.debug('Failed to create Azure function. Cleaning up Azure resources')
+            logger.debug(
+                'Failed to create Azure Functions. Cleaning up Azure resources'
+            )
             try:
                 _call_az_cli(
                     command=[
@@ -581,7 +584,8 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
         except BentoMLException as error:
             deployment_pb.state.state = DeploymentState.ERROR
             deployment_pb.state.error_message = (
-                f'Encounter error when updating Azure function deployment: {str(error)}'
+                f'Encounter error when updating Azure Functions deployment: '
+                f'{str(error)}'
             )
             return ApplyDeploymentResponse(
                 status=error.status_proto, deployment=deployment_pb
@@ -598,8 +602,8 @@ class AzureFunctionDeploymentOperator(DeploymentOperatorBase):
             or deployment_pb.spec.bento_version != current_deployment.spec.bento_version
         ):
             logger.debug(
-                'BentoService tag is different from current Azure function deployment, '
-                'creating new Azure function project and push to ACR'
+                'BentoService tag is different from current Azure Functions '
+                'deployment, creating new Azure Functions project and push to ACR'
             )
             _update_azure_function(
                 deployment_spec=deployment_pb.spec,

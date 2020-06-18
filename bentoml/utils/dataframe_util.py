@@ -222,6 +222,9 @@ _ORIENT_MAP = {
 }
 
 
+PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS = {k for k in _ORIENT_MAP}
+
+
 def _dataframe_csv_from_input(tables, content_types, orients):
     state = DataFrameState()
     for table_id, (table, content_type, orient) in enumerate(

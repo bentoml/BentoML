@@ -22,14 +22,12 @@ try:
 except ImportError:
     pd = None
 
-from bentoml.adapters.base_input import (
-    BaseInputAdapter,
-    PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
-)
+from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.utils import is_url
 from bentoml.utils.dataframe_util import (
     read_dataframes_from_json_n_csv,
     check_dataframe_column_contains,
+    PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
 )
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.utils.s3 import is_s3_url
@@ -86,10 +84,10 @@ class DataframeInput(BaseInputAdapter):
         self.orient = orient
 
         assert (
-            not self.orient or self.orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS
+            not self.orient or self.orient in PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
         ), (
             f"Invalid option 'orient'='{self.orient}', valid options are "
-            f"{PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS}"
+            f"{PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS}"
         )
         self.typ = typ
         self.input_dtypes = input_dtypes
@@ -196,7 +194,7 @@ class DataframeInput(BaseInputAdapter):
         parser.add_argument(
             "--orient",
             default=self.orient,
-            choices=PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS,
+            choices=PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
         )
         parsed_args, unknown_args = parser.parse_known_args(args)
 

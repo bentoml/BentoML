@@ -12,26 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from typing import Iterable
 
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-import numpy as np
 
 from bentoml import config as bentoml_config
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
-
-PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS = [
-    'dict',
-    'list',
-    'series',
-    'split',
-    'records',
-    'index',
-]
 
 
 class BaseInputAdapter:
@@ -123,34 +108,3 @@ class BaseInputAdapter:
         :return: List of PyPI package names required by this InputAdapter
         """
         return []
-
-
-class NumpyJsonEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
-
-    def default(self, o):  # pylint: disable=method-hidden
-        if isinstance(o, np.generic):
-            return o.item()
-
-        if isinstance(o, np.ndarray):
-            return o.tolist()
-
-        return json.JSONEncoder.default(self, o)
-
-
-def api_func_result_to_json(result, pandas_dataframe_orient="records"):
-    assert (
-        pandas_dataframe_orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS
-    ), f"unkown pandas dataframe orient '{pandas_dataframe_orient}'"
-
-    if pd and isinstance(result, pd.DataFrame):
-        return result.to_json(orient=pandas_dataframe_orient)
-
-    if pd and isinstance(result, pd.Series):
-        return pd.DataFrame(result).to_dict(orient=pandas_dataframe_orient)
-
-    try:
-        return json.dumps(result, cls=NumpyJsonEncoder)
-    except (TypeError, OverflowError):
-        # when result is not JSON serializable
-        return json.dumps({"result": str(result)})

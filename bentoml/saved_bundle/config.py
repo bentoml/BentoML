@@ -20,6 +20,7 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from bentoml import __version__ as BENTOML_VERSION
+from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.utils import dump_to_yaml_str
 from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
@@ -34,6 +35,8 @@ metadata:
 """
 
 logger = logging.getLogger(__name__)
+DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
+DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
 
 
 def _get_apis_list(bento_service):
@@ -180,8 +183,15 @@ class SavedBundleConfig(object):
                         else:
                             api_metadata.input_config[k] = v
                 else:
-                    api_metadata.mb_max_latency = api_config["mb_max_latency"]
-                    api_metadata.mb_max_batch_size = api_config["mb_max_batch_size"]
+                    if 'mb_max_latency' in api_config:
+                        api_metadata.mb_max_latency = api_config["mb_max_latency"]
+                    else:
+                        api_metadata.mb_max_latency = DEFAULT_MAX_LATENCY
+
+                    if 'mb_max_batch_size' in api_config:
+                        api_metadata.mb_max_batch_size = api_config["mb_max_batch_size"]
+                    else:
+                        api_metadata.mb_max_batch_size = DEFAULT_MAX_BATCH_SIZE
 
                 if "input_config" in api_config:
                     for k, v in api_config["input_config"].items():

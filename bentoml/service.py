@@ -117,7 +117,10 @@ class BentoServiceAPI(object):
     @property
     def request_schema(self):
         # TODO(bojiang): request_schema of adapter
-        return self.handler.request_schema
+        schema = self.handler.request_schema
+        if schema.get('application/json'):
+            schema.get('application/json')['example'] = self.handler._http_input_example
+        return schema
 
     def handle_request(self, request):
         return self.handler.handle_request(request, self.func)

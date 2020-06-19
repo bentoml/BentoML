@@ -30,13 +30,14 @@ class BaseInputAdapter:
 
     BATCH_MODE_SUPPORTED = False
 
-    def __init__(self, output_adapter=None, **base_config):
+    def __init__(self, output_adapter=None, http_input_example=None, **base_config):
         '''
         base_configs:
             - is_batch_input
         '''
         self._config = base_config
         self._output_adapter = output_adapter
+        self._http_input_example = http_input_example
 
     @property
     def config(self):

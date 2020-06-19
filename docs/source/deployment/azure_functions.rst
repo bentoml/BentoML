@@ -6,18 +6,22 @@ Microsoft. Its serverless execution model along with the ability to bring your o
 container allow users deploy a BentoML API server with full functionality that scales
 base on usage.
 
+In this guide, it will deploy an IrisClassifier BentoService to Azure Functions, make a
+prediction request to the deployment endpoint, and then delete the deployment. It will
+also show how to start an remote YataiService with Azure credential for deploying to
+the Azure Functions.
 
 Prerequisites:
 --------------
 
 * An signed in Azure CLI tool on your local machine.
 
-    * Install Azure CLI:
-    * Sign in Azure CLI:
+    * Install Azure CLI: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
+    * Sign in Azure CLI: https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli?view=azure-cli-latest
 
 * Docker is installed and running on your local machine
 
-    * Install instruction:
+    * Install instruction: https://docs.docker.com/get-docker/
 
 * Python 3.6 or above and required Pypi packages: `bentoml` and `scikit-learn`
 
@@ -29,7 +33,7 @@ Prerequisites:
 Azure Functions deployment with BentoML
 ---------------------------------------
 
-Run the example project form the :doc:`Quickstart guide <../quickstart>` to create an
+Run the example project from the :doc:`Quickstart guide <../quickstart>` to create an
 IrisClassifier BentoService saved bundle for the deployment:
 
 .. code-block:: bash
@@ -286,7 +290,7 @@ with Azure CLI in your local machine, you should be able to find the `accessToke
 in your Azure directory. Now start the BentoML YataiService docker image and mount that
 `accessTokens.json` file to the running container.
 
-.. code-block: bash
+.. code-block:: bash
 
     $ docker run -v /Users/bozhaoyu/.azure/accessTokens.json:/home/.azure/accessTokens.json -p 50051:50051 -p 3000:3000 bentoml/yatai-service:latest
 

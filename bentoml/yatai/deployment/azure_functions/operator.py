@@ -513,9 +513,9 @@ class AzureFunctionsDeploymentOperator(DeploymentOperatorBase):
     def add(self, deployment_pb):
         try:
             deployment_spec = deployment_pb.spec
-            if not deployment_spec.azure_function_operator_config.location:
+            if not deployment_spec.azure_functions_operator_config.location:
                 raise YataiDeploymentException(
-                    'Azure function parameter "location" is missing'
+                    'Azure Functions parameter "location" is missing'
                 )
             bento_repo_pb = self.yatai_service.GetBento(
                 GetBentoRequest(

@@ -37,9 +37,7 @@ class YataiClient:
 
     @cached_property
     def repository(self):
-        return BentoRepositoryAPIClient(
-            self.yatai_service
-        )
+        return BentoRepositoryAPIClient(self.yatai_service)
 
     @cached_property
     def deployment(self):

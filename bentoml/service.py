@@ -54,7 +54,7 @@ class BentoServiceAPI(object):
     """
 
     def __init__(
-            self, service, name, doc, handler, func, mb_max_latency, mb_max_batch_size
+        self, service, name, doc, handler, func, mb_max_latency, mb_max_batch_size
     ):
         """
         :param service: ref to service containing this API
@@ -103,9 +103,9 @@ class BentoServiceAPI(object):
     def func(self):
         def _wrapped_func(*args, **kwargs):
             with trace(
-                    ZIPKIN_API_URL,
-                    service_name=self.__class__.__name__,
-                    span_name="user defined api handler",
+                ZIPKIN_API_URL,
+                service_name=self.__class__.__name__,
+                span_name="user defined api handler",
             ):
                 resp = self._func(*args, **kwargs)
             return resp
@@ -126,9 +126,9 @@ class BentoServiceAPI(object):
     def handle_batch_request(self, request):
         requests = DataLoader.split_requests(request.data)
         with trace(
-                ZIPKIN_API_URL,
-                service_name=self.__class__.__name__,
-                span_name=f"call `{self.handler.__class__.__name__}`",
+            ZIPKIN_API_URL,
+            service_name=self.__class__.__name__,
+            span_name=f"call `{self.handler.__class__.__name__}`",
         ):
             responses = self.handler.handle_batch_request(requests, self.func)
         return DataLoader.merge_responses(responses)
@@ -167,8 +167,8 @@ class BentoServiceBase(object):
     def _config_service_apis(self):
         self._service_apis = []
         for _, function in inspect.getmembers(
-                self.__class__,
-                predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x),
+            self.__class__,
+            predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x),
         ):
             if hasattr(function, "_is_api"):
                 api_name = getattr(function, "_api_name")
@@ -215,14 +215,14 @@ class BentoServiceBase(object):
 
 
 def api_decorator(
-        *args,
-        input=None,
-        output=None,
-        api_name=None,
-        api_doc=None,
-        mb_max_batch_size=None,
-        mb_max_latency=None,
-        **kwargs,
+    *args,
+    input=None,
+    output=None,
+    api_name=None,
+    api_doc=None,
+    mb_max_batch_size=None,
+    mb_max_latency=None,
+    **kwargs,
 ):  # pylint: disable=redefined-builtin
     """Decorator for adding api to a BentoService
 
@@ -288,7 +288,7 @@ def api_decorator(
         if input is None:
             # support bentoml<=0.7
             if not args or not (
-                    inspect.isclass(args[0]) and issubclass(args[0], BaseInputAdapter)
+                inspect.isclass(args[0]) and issubclass(args[0], BaseInputAdapter)
             ):
                 raise InvalidArgument(
                     "BentoService @api decorator first parameter must "
@@ -357,13 +357,13 @@ def artifacts_decorator(artifacts):
 
 
 def env_decorator(
-        pip_dependencies=None,
-        auto_pip_dependencies=False,
-        requirements_txt_file=None,
-        conda_channels=None,
-        conda_dependencies=None,
-        setup_sh=None,
-        docker_base_image=None,
+    pip_dependencies=None,
+    auto_pip_dependencies=False,
+    requirements_txt_file=None,
+    conda_channels=None,
+    conda_dependencies=None,
+    setup_sh=None,
+    docker_base_image=None,
 ):
     """Define environment and dependencies required for the BentoService being created
 
@@ -447,8 +447,8 @@ def _validate_version_str(version_str):
     regex = r"[A-Za-z0-9_.-]{1,128}\Z"
     semver_regex = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa: E501
     if (
-            re.match(regex, version_str) is None
-            and re.match(semver_regex, version_str) is None
+        re.match(regex, version_str) is None
+        and re.match(semver_regex, version_str) is None
     ):
         raise InvalidArgument(
             'Invalid BentoService version: "{}", it can only consist'
@@ -623,8 +623,8 @@ class BentoService(BentoServiceBase):
             self.__class__._bento_service_bundle_version = None
 
         if (
-                self._bento_service_version is not None
-                and self._bento_service_version != version_str
+            self._bento_service_version is not None
+            and self._bento_service_version != version_str
         ):
             logger.warning(
                 "Resetting BentoService '%s' version from %s to %s",

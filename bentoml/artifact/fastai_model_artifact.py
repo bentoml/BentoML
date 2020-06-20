@@ -54,14 +54,14 @@ class FastaiModelArtifact(BentoServiceArtifact):
     >>> # train model
     >>>
     >>> import bentoml
-    >>> from bentoml.handlers import DataframeHandler
+    >>> from bentoml.adapters import DataframeInput
     >>> from bentoml.artifact import FastaiModelArtifact
     >>>
     >>> @bentoml.artifacts([FastaiModelArtifact('model')])
     >>> @bentoml.env(auto_pip_dependencies=True)
     >>> class FastaiModelService(bentoml.BentoService):
     >>>
-    >>>     @api(DataframeHandler)
+    >>>     @api(input=DataframeInput())
     >>>     def predict(self, df):
     >>>         results = []
     >>>         for _, row in df.iterrows():

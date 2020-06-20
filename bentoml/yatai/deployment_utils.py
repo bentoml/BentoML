@@ -78,14 +78,6 @@ def deployment_dict_to_pb(deployment_dict):
                 deployment_pb.spec.aws_lambda_operator_config.__setattr__(
                     field, lambda_conf.get(field)
                 )
-    elif deployment_pb.spec.operator == DeploymentSpec.KUBERNETES:
-        k8s_config = spec_dict.get('kubernetes_operator_config', {})
-
-        for field in ['kube_namespace', 'replicas', 'service_name', 'service_type']:
-            if k8s_config.get(field):
-                deployment_pb.spec.kubernetes_operator_config.__setattr__(
-                    field, k8s_config.get(field)
-                )
     else:
         raise InvalidArgument(
             'Platform "{}" is not supported in the current version of '

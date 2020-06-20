@@ -11,7 +11,7 @@ BentoML on a Kubernetes cluster. The same deployment steps are also applicable f
 trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
 
 
-Prerequsities
+Prerequisites
 -------------
 
 Before starting this guide, make sure you have the following:
@@ -82,7 +82,7 @@ Verify the saved bundle created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeHandler",
+            "InputType": "DataframeInput",
             "docs": "BentoService API"
           }
         ]

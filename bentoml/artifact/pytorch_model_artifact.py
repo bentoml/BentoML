@@ -52,14 +52,14 @@ class PytorchModelArtifact(BentoServiceArtifact):
     >>>
     >>>
     >>> import bentoml
-    >>> from bentoml.handlers import ImageHandler
+    >>> from bentoml.adapters import ImageInput
     >>> from bentoml.artifact import PytorchModelArtifact
     >>>
     >>> @bentoml.env(auto_pip_dependencies=True)
     >>> @bentoml.artifacts([PytorchModelArtifact('net')])
     >>> class PytorchModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(ImageHandler)
+    >>>     @bentoml.api(input=ImageInput())
     >>>     def predict(self, imgs):
     >>>         outputs = self.artifacts.net(imgs)
     >>>         return outputs

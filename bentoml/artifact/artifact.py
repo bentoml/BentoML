@@ -29,6 +29,13 @@ class BentoServiceArtifact(object):
     """
 
     def __init__(self, name):
+        if not name.isidentifier():
+            raise ValueError(
+                "Artifact name must be a valid python identifier, a string \
+                is considered a valid identifier if it only contains \
+                alphanumeric letters (a-z) and (0-9), or underscores (_). \
+                A valid identifier cannot start with a number, or contain any spaces."
+            )
         self._name = name
 
     @property

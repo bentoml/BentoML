@@ -14,6 +14,7 @@
 
 import os
 import logging
+from functools import lru_cache
 from pathlib import Path
 
 from bentoml import __version__, _version as version_mod
@@ -159,6 +160,7 @@ def config(section=None):
         return _config
 
 
+@lru_cache(maxsize=1)
 def get_bentoml_deploy_version():
     """
     BentoML version to use for generated docker image or serverless function bundle to
@@ -172,14 +174,11 @@ def get_bentoml_deploy_version():
     if bentoml_deploy_version != __version__:
         logger.warning(
             "BentoML local changes detected - Local BentoML repository including all "
-            "code changes will be bundled together with the BentoService bundle. "
-            "When used with docker, the base docker image will be default to same "
-            "version as last PyPI release at version: %s. You can also force bentoml "
-            "to use a specific version for deploying your BentoService bundle, "
-            "by setting the config 'core/bentoml_deploy_version' to a pinned version "
-            "or your custom BentoML on github, e.g.:"
-            "'bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{"
-            "branch}'",
-            LAST_PYPI_RELEASE_VERSION,
+            "code changes will be packaged together with saved bundle created, under "
+            "'./bundled_pip_dependencies' directory. For using a modified version of "
+            "BentoML for production deployment, it is recommended to set the "
+            "'core/bentoml_deploy_version' config to a http location or your BentoML "
+            "for on github, e.g.: 'bentoml_deploy_version = git+https://github.com/"
+            "{username}/bentoml.git@{branch}'"
         )
     return bentoml_deploy_version

@@ -7,18 +7,17 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 trap 'kill $(jobs -p)' EXIT
 
 echo "Initial docs build..."
-cd $GIT_ROOT/docs && make html
+cd "$GIT_ROOT"/docs && make html
 
 echo "Starting local http server for preview..."
-python3 -m http.server --directory $GIT_ROOT/docs/build/html &
+python3 -m http.server --directory "$GIT_ROOT"/docs/build/html &
 
 echo "Open browser..."
-open -a "Google Chrome" http://0.0.0.0:8000/
-
-fswatch -o $GIT_ROOT/docs $GIT_ROOT/bentoml | while read; \
-  do \
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  open -a "Google Chrome" http://0.0.0.0:8000/
+  fswatch -o "$GIT_ROOT"/docs "$GIT_ROOT"/bentoml | while read -r; do
     echo "Change detected, rebuilding docs..."
-    cd $GIT_ROOT/docs && make html
+    cd "$GIT_ROOT"/docs && make html
 
     # refresh page
     osascript -e '
@@ -37,3 +36,10 @@ tell application "Google Chrome"
 end tell
     '
   done
+else
+  xdg-open http://localhost:8000
+  while inotifywait -e modify -r "$GIT_ROOT"/docs "$GIT_ROOT"/bentoml; do
+    echo "Change detected, rebuilding docs..."
+    cd "$GIT_ROOT"/docs && make html
+  done
+fi

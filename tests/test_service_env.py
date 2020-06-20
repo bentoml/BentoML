@@ -5,14 +5,14 @@ import pytest
 import psutil  # noqa # pylint: disable=unused-import
 
 import bentoml
-from bentoml.handlers import DataframeHandler
+from bentoml.adapters import DataframeInput
 from bentoml.artifact import SklearnModelArtifact
 
 
 def test_pip_dependencies_env():
     @bentoml.env(pip_dependencies=["numpy"])
     class ServiceWithString(bentoml.BentoService):
-        @bentoml.api(DataframeHandler)
+        @bentoml.api(input=DataframeInput())
         def predict(self, df):
             return df
 
@@ -21,7 +21,7 @@ def test_pip_dependencies_env():
 
     @bentoml.env(pip_dependencies=['numpy', 'pandas', 'torch'])
     class ServiceWithList(bentoml.BentoService):
-        @bentoml.api(DataframeHandler)
+        @bentoml.api(input=DataframeInput())
         def predict(self, df):
             return df
 
@@ -34,7 +34,7 @@ def test_pip_dependencies_env():
 def test_service_env_pip_dependencies(tmpdir):
     @bentoml.env(pip_dependencies=['numpy', 'pandas', 'torch'])
     class ServiceWithList(bentoml.BentoService):
-        @bentoml.api(DataframeHandler)
+        @bentoml.api(input=DataframeInput())
         def predict(self, df):
             return df
 
@@ -54,7 +54,7 @@ def test_artifact_pip_dependencies(tmpdir):
     @bentoml.artifacts([SklearnModelArtifact('model')])
     @bentoml.env(pip_dependencies=['scikit-learn==0.23.0'])
     class ServiceWithList(bentoml.BentoService):
-        @bentoml.api(DataframeHandler)
+        @bentoml.api(input=DataframeInput())
         def predict(self, df):
             return df
 
@@ -76,7 +76,7 @@ def test_can_instantiate_setup_sh_from_file(tmpdir):
 
     @bentoml.env(setup_sh=script_path)
     class ServiceWithSetup(bentoml.BentoService):
-        @bentoml.api(DataframeHandler)
+        @bentoml.api(input=DataframeInput())
         def predict(self, df):
             return df
 
@@ -97,7 +97,7 @@ def test_can_instantiate_setup_sh_from_file(tmpdir):
 def test_can_instantiate_setup_sh_from_txt(tmpdir):
     @bentoml.env(setup_sh='ls')
     class ServiceWithSetup(bentoml.BentoService):
-        @bentoml.api(DataframeHandler)
+        @bentoml.api(input=DataframeInput())
         def predict(self, df):
             return df
 
@@ -117,7 +117,7 @@ def test_can_instantiate_setup_sh_from_txt(tmpdir):
 def test_docker_base_image_env():
     @bentoml.env(docker_base_image='continuumio/miniconda3:4.8.0')
     class ServiceWithSetup(bentoml.BentoService):
-        @bentoml.api(DataframeHandler)
+        @bentoml.api(input=DataframeInput())
         def predict(self, df):
             return df
 

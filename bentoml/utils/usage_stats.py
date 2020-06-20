@@ -93,16 +93,20 @@ def _bento_service_metadata_to_event_properties(
         properties = {}
 
     artifact_types = set()
-    handler_types = set()
+    input_types = set()
+    output_types = set()
 
     for artifact in bento_service_metadata.artifacts:
         artifact_types.add(artifact.artifact_type)
 
     for api in bento_service_metadata.apis:
-        handler_types.add(api.handler_type)
+        input_types.add(api.input_type)
+        output_types.add(api.output_type)
 
-    if handler_types:
-        properties["handler_types"] = list(handler_types)
+    if input_types:
+        properties["input_types"] = list(input_types)
+    if output_types:
+        properties["output_types"] = list(output_types)
 
     if artifact_types:
         properties["artifact_types"] = list(artifact_types)

@@ -56,7 +56,7 @@ class KerasModelArtifact(BentoServiceArtifact):
     >>> @bentoml.env(pip_dependencies=['tensorflow==1.14.0', 'numpy', 'pandas'])
     >>> @bentoml.artifacts([KerasModelArtifact('model')])
     >>> class KerasModelService(bentoml.BentoService):
-    >>>     @bentoml.api(JsonHandler)
+    >>>     @bentoml.api(input=JsonInput())
     >>>     def predict(self, parsed_json):
     >>>         input_data = text.text_to_word_sequence(parsed_json['text'])
     >>>         return self.artifacts.model.predict_classes(input_data)

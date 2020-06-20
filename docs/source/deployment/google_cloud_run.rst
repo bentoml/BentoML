@@ -33,7 +33,7 @@ Create Google cloud project
 
 .. code-block:: bash
 
-    $ glcoud components update
+    $ gcloud components update
 
     All components are up to date.
 
@@ -42,7 +42,7 @@ Create Google cloud project
 
     $ gcloud projects create irisclassifier-gcloud-run
 
-    # Sample ouput
+    # Sample output
 
     Create in progress for [https://cloudresourcemanager.googleapis.com/v1/projects/irisclassifier-gcloud-run].
     Waiting for [operations/cp.6403723248945195918] to finish...done.
@@ -103,7 +103,7 @@ Verify the saved bundle created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeHandler",
+            "InputType": "DataframeInput",
             "docs": "BentoService API"
           }
         ]
@@ -164,12 +164,12 @@ Deploy the image to Google Cloud Run
 2. Click `Create Service` on the top of the navigation bar
 3. In the Create Cloud Run service page:
 
-**Select container image URL from the selection menu, choose allow Unauthenitcated invocations from the Authentication section**
+**Select container image URL from the selection menu, choose allow Unauthenticated invocations from the Authentication section**
 
 .. image:: ../_static/img/gcloud-start.png
     :alt: GCP project creation
 
-**Expand Show Optional Revision Settings and change COntainer Port from `8080` to `5000`**
+**Expand Show Optional Revision Settings and change Container Port from `8080` to `5000`**
 
 .. image:: ../_static/img/gcloud-setting.png
     :alt: GCP project setting

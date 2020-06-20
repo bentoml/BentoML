@@ -96,7 +96,7 @@ class ImageInput(BaseInputAdapter):
     ):
         if is_batch_input:
             raise ValueError('ImageInput can not accpept batch inputs')
-        super(ImageInput, self).__init__(**base_kwargs)
+        super(ImageInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
         if 'input_names' in base_kwargs:
             raise TypeError(
                 "ImageInput doesn't take input_names as parameters since bentoml 0.8."

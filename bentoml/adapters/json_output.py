@@ -14,12 +14,15 @@
 
 from typing import Iterable
 import json
+import base64
 
 import numpy as np
 import argparse
 
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.adapters.base_output import BaseOutputAdapter
+
+TF_B64_KEY = "b64"
 
 
 class NumpyJsonEncoder(json.JSONEncoder):
@@ -31,6 +34,12 @@ class NumpyJsonEncoder(json.JSONEncoder):
 
         if isinstance(o, np.ndarray):
             return o.tolist()
+
+        if isinstance(o, bytes):
+            try:
+                return o.decode('utf-8')
+            except UnicodeDecodeError:
+                return {TF_B64_KEY: base64.b64encode(o).decode("utf-8")}
 
         return json.JSONEncoder.default(self, o)
 

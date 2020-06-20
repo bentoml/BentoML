@@ -12,23 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
 from typing import Iterable
-
 import json
+
 import argparse
-from bentoml.adapters.utils import (
-    NestedConverter,
-    tf_b64_2_bytes,
-    tf_tensor_2_serializable,
-    concat_list,
-)
+
+from bentoml.adapters.utils import concat_list
 from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.exceptions import BentoMLException, BadInput
+from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
 
-decode_b64_if_needed = NestedConverter(tf_b64_2_bytes)
-decode_tf_if_needed = NestedConverter(tf_tensor_2_serializable)
+TF_B64_KEY = "b64"
+
+
+def b64_hook(o):
+    if isinstance(o, dict) and TF_B64_KEY in o:
+        return base64.b64decode(o[TF_B64_KEY])
+    return o
 
 
 class TfTensorInput(BaseInputAdapter):
@@ -86,10 +88,9 @@ class TfTensorInput(BaseInputAdapter):
     def _handle_raw_str(self, raw_str, func):
         import tensorflow as tf
 
-        parsed_json = json.loads(raw_str)
+        parsed_json = json.loads(raw_str, object_hook=b64_hook)
         if parsed_json.get("instances") is not None:
             instances = parsed_json.get("instances")
-            instances = decode_b64_if_needed(instances)
             parsed_tensor = tf.constant(instances)
 
         elif parsed_json.get("inputs"):
@@ -101,9 +102,8 @@ class TfTensorInput(BaseInputAdapter):
         self, requests: Iterable[SimpleRequest], func
     ) -> Iterable[SimpleResponse]:
         """
-        TODO(hrmthw):
+        TODO(bojiang):
         1. specify batch dim
-        1. output str fromat
         """
         import tensorflow as tf
 
@@ -115,20 +115,16 @@ class TfTensorInput(BaseInputAdapter):
         for i, request in enumerate(requests):
             try:
                 raw_str = request.data
-                batch_flags[i] = (
-                    request.formated_headers.get(
-                        self._BATCH_REQUEST_HEADER.lower(),
-                        "true" if self.config.get("is_batch_input") else "false",
-                    )
-                    == "true"
-                )
-                parsed_json = json.loads(raw_str)
+                batch_flags[i] = self.is_batch_request(request)
+                parsed_json = json.loads(raw_str, object_hook=b64_hook)
                 if parsed_json.get("instances") is not None:
                     instances = parsed_json.get("instances")
                     if instances is None:
                         continue
-                    instances = decode_b64_if_needed(instances)
-                    instances_list[i] = instances
+                    if batch_flags[i]:
+                        instances_list[i] = [instances]
+                    else:
+                        instances_list[i] = instances
 
                 elif parsed_json.get("inputs"):
                     responses[i] = SimpleResponse(
@@ -144,7 +140,6 @@ class TfTensorInput(BaseInputAdapter):
                 responses[i] = SimpleResponse(
                     500, None, f"Internal Server Error: {err}"
                 )
-
         merged_instances, slices = concat_list(instances_list, batch_flags=batch_flags)
 
         parsed_tensor = tf.constant(merged_instances)
@@ -163,15 +158,9 @@ class TfTensorInput(BaseInputAdapter):
         Return:
             response object
         """
-        if request.content_type == "application/json":
-            input_str = request.data.decode("utf-8")
-            result = self._handle_raw_str(input_str, func)
-            return self.output_adapter.to_response(result, request)
-        else:
-            raise BadInput(
-                "Request content-type must be 'application/json'"
-                " for this BentoService API"
-            )
+        req = SimpleRequest.from_flask_request(request)
+        res = self.handle_batch_request([req], func)[0]
+        return res.to_flask_response()
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()

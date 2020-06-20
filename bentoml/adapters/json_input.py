@@ -55,13 +55,7 @@ class JsonInput(BaseInputAdapter):
         batch_flags = [None] * len(requests)
 
         for i, request in enumerate(requests):
-            batch_flags[i] = (
-                request.formated_headers.get(
-                    self._BATCH_REQUEST_HEADER.lower(),
-                    "true" if self.config.get('is_batch_input') else "false",
-                )
-                == "true"
-            )
+            batch_flags[i] = self.is_batch_request(request)
             try:
                 raw_str = request.data
                 parsed_json = json.loads(raw_str)

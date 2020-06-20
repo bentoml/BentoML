@@ -66,7 +66,7 @@ def test_image_input_http_request_post_binary(img_file):
     assert response.status_code == 200
     assert "[10, 10, 3]" in str(response.response)
 
-    simple_request = SimpleRequest(request.headers, request.get_data())
+    simple_request = SimpleRequest.from_flask_request(request)
     responses = test_image_input.handle_batch_request([simple_request], predict)
 
     assert responses[0].status == 200

@@ -145,7 +145,7 @@ class DataframeInput(BaseInputAdapter):
 
     def handle_request(self, request, func):
         if request.content_type == "text/csv":
-            csv_string = StringIO(request.data.decode('utf-8'))
+            csv_string = StringIO(request.get_data().decode('utf-8'))
             df = pd.read_csv(csv_string)
         else:
             # Optimistically assuming Content-Type to be "application/json"

@@ -15,8 +15,7 @@
 from typing import Iterable
 
 
-from bentoml import config as bentoml_config
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.marshal.utils import SimpleResponse, SimpleRequest, BATCH_REQUEST_HEADER
 
 
 class BaseInputAdapter:
@@ -26,7 +25,6 @@ class BaseInputAdapter:
     """
 
     HTTP_METHODS = ["POST", "GET"]
-    _BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")
 
     BATCH_MODE_SUPPORTED = False
 
@@ -44,6 +42,11 @@ class BaseInputAdapter:
         if getattr(self, '_config', None) is None:
             self._config = {}
         return self._config
+
+    def is_batch_request(self, request):
+        if BATCH_REQUEST_HEADER.lower() in request.formated_headers:
+            return request.formated_headers[BATCH_REQUEST_HEADER.lower()]
+        return self.config.get("is_batch_input", False)
 
     @property
     def output_adapter(self):

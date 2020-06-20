@@ -16,7 +16,7 @@ from typing import Iterable
 
 import flask
 
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.marshal.utils import SimpleResponse, SimpleRequest, BATCH_REQUEST_HEADER
 
 
 class BaseOutputAdapter:
@@ -32,19 +32,20 @@ class BaseOutputAdapter:
     def config(self):
         return dict(cors=self.cors,)
 
+    def is_batch_request(self, request):
+        if BATCH_REQUEST_HEADER.lower() in request.formated_headers:
+            return request.formated_headers[BATCH_REQUEST_HEADER.lower()]
+        return self.config.get("is_batch_input", False)
+
     def to_response(self, result, request: flask.Request) -> flask.Response:
         """Converts corresponding data into an HTTP response
 
         :param result: result of user API function
         :param request: request object
         """
-        simple_req = SimpleRequest(headers=request.headers, data=request.get_data())
+        simple_req = SimpleRequest.from_flask_request(request)
         simple_resp = self.to_batch_response((result,), requests=(simple_req,))[0]
-        return flask.Response(
-            response=simple_resp.data,
-            status=simple_resp.status,
-            headers=simple_resp.headers,
-        )
+        return simple_resp.to_flask_response()
 
     def to_batch_response(
         self, result_conc, slices=None, fallbacks=None, requests=None,

@@ -7,7 +7,7 @@ from click.testing import CliRunner
 import psutil  # noqa # pylint: disable=unused-import
 
 from bentoml.cli import create_bento_service_cli
-from bentoml.cli.bento import t_unpack_jq_like_string
+from bentoml.cli.bento import _unpack_jq_like_string
 
 
 def generate_test_input_file():

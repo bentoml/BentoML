@@ -94,8 +94,7 @@ def _unpack_jq_like_string(bento_dict, jq):
             bento_dict = bento_dict[_t]
         except KeyError:
             _echo(
-                f'Key {_t} not found, ignoring',
-                CLI_COLOR_ERROR,
+                f'Key {_t} not found, ignoring', CLI_COLOR_ERROR,
             )
     return bento_dict
 
@@ -110,7 +109,7 @@ def add_bento_sub_command(cli):
     @click.option(
         '--json-output',
         type=click.STRING,
-        help='Fetch specific field from JSON in a jq-like syntax'
+        help='Fetch specific field from JSON in a jq-like syntax',
     )
     @click.option('--ascending-order', is_flag=True)
     @click.option('--print-location', is_flag=True)
@@ -146,12 +145,7 @@ def add_bento_sub_command(cli):
             if json_output:
                 resp_dict = MessageToDict(get_bento_result.bento)
                 res = _unpack_jq_like_string(resp_dict, json_output)
-                _echo(json.dumps(
-                    res,
-                    sort_keys=True,
-                    indent=4,
-                    separators=(',', ': ')
-                ))
+                _echo(json.dumps(res, sort_keys=True, indent=4, separators=(',', ': ')))
                 return
             _print_bento_info(get_bento_result.bento, output)
             return
@@ -174,9 +168,7 @@ def add_bento_sub_command(cli):
                 return
 
             _print_bentos_info(
-                list_bento_versions_result.bentos,
-                output,
-                print_location
+                list_bento_versions_result.bentos, output, print_location
             )
 
     @cli.command(name='list', help='List BentoServices information')

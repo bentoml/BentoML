@@ -23,12 +23,7 @@ def generate_test_input_file():
 
 
 def test_unpack_jq_like_string():
-    test_obj = {
-        "a": "b",
-        "c": {
-            "d": "e",
-        }
-    }
+    test_obj = {"a": "b", "c": {"d": "e",}}
 
     assert _unpack_jq_like_string(test_obj, "a") == test_obj["a"]
     assert _unpack_jq_like_string(test_obj, "") == test_obj

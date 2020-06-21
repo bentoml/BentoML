@@ -74,14 +74,29 @@ def _print_bento_table(bentos, wide=False):
     _echo(table_display)
 
 
-def _print_bentos_info(bentos, output_type):
+def _print_bentos_info(bentos, output_type, print_location=False):
     if output_type == 'table':
         _print_bento_table(bentos)
     elif output_type == 'wide':
         _print_bento_table(bentos, wide=True)
     else:
         for bento in bentos:
+            if print_location:
+                _echo(bento.uri.uri)
             _print_bento_info(bento, output_type)
+
+
+def _unpack_jq_like_string(bento_dict, jq):
+    tokens = jq.split(".")
+    for _t in tokens:
+        try:
+            bento_dict = bento_dict[_t]
+        except KeyError:
+            _echo(
+                f'Key {_t} not found, ignoring',
+                CLI_COLOR_ERROR,
+            )
+    return bento_dict
 
 
 def add_bento_sub_command(cli):
@@ -91,11 +106,15 @@ def add_bento_sub_command(cli):
     @click.option(
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
+    @click.option(
+        '--json-output', type=click.STRING, help='Fetch specific field from JSON in a jq-like syntax'
+    )
     @click.option('--ascending-order', is_flag=True)
+    @click.option('--print-location', is_flag=True)
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table', 'wide'])
     )
-    def get(bento, limit, ascending_order, output):
+    def get(bento, limit, json_output, ascending_order, print_location, output):
         if ':' in bento:
             name, version = bento.split(':')
         else:
@@ -103,6 +122,7 @@ def add_bento_sub_command(cli):
             version = None
         yatai_client = YataiClient()
 
+        # get specific version
         if name and version:
             track_cli('bento-get')
             output = output or 'json'
@@ -117,8 +137,13 @@ def add_bento_sub_command(cli):
                     CLI_COLOR_ERROR,
                 )
                 return
-            _print_bento_info(get_bento_result.bento, output)
-            return
+            if print_location:
+                _echo(get_bento_result.bento.uri.uri)
+                return
+            else:
+                _print_bento_info(get_bento_result.bento, output)
+                return
+        # get by name only
         elif name:
             track_cli('bento-list')
             output = output or 'table'
@@ -136,7 +161,7 @@ def add_bento_sub_command(cli):
                 )
                 return
 
-            _print_bentos_info(list_bento_versions_result.bentos, output)
+            _print_bentos_info(list_bento_versions_result.bentos, output, print_location)
 
     @cli.command(name='list', help='List BentoServices information')
     @click.option(

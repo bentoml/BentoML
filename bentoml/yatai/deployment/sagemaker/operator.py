@@ -49,7 +49,7 @@ RUN apt-get update --fix-missing && \
     apt-get clean
 
 # gevent required by AWS Sagemaker
-RUN pip install gevent
+RUN pip install gevent==1.4
 
 # copy over model files
 COPY . /bento

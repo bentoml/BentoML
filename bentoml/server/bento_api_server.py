@@ -128,7 +128,7 @@ class BentoAPIServer:
         Health check for BentoML API server.
         Make sure it works with Kubernetes liveness probe
         """
-        return Response(response="\n", status=200, mimetype="application/json")
+        return Response(response="\n", status=200, mimetype="text/plain")
 
     def metrics_view_func(self):
         from prometheus_client import generate_latest
@@ -147,6 +147,7 @@ class BentoAPIServer:
             )
 
         data = json.loads(request.data.decode("utf-8"))
+
         if "request_id" not in data.keys():
             return Response(response="Missing request id", status=400)
 
@@ -187,7 +188,7 @@ class BentoAPIServer:
                 "/feedback",
                 "feedback",
                 partial(self.feedback_view_func, self.bento_service),
-                methods=["POST", "GET"],
+                methods=["POST"],
             )
 
         self.setup_bento_service_api_routes()
@@ -245,7 +246,7 @@ class BentoAPIServer:
     def bento_service_api_func_wrapper(self, api):
         """
         Create api function for flask route, it wraps around user defined API
-        callback and BentoHandler class, and adds request logging and instrument metrics
+        callback and adapter class, and adds request logging and instrument metrics
         """
         request_id = str(uuid.uuid4())
         service_name = self.bento_service.name

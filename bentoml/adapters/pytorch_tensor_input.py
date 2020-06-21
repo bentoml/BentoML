@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.handlers.base_handlers import BentoHandler
+from bentoml.adapters.base_input import BaseInputAdapter
 
 
-class PytorchTensorHandler(BentoHandler):
+class PytorchTensorInput(BaseInputAdapter):
     """
-    Tensor handlers for Pytorch models
+    Tensor input adapter for Pytorch models
     """
 
     def handle_request(self, request, func):

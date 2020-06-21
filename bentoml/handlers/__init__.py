@@ -12,27 +12,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.handlers.base_handlers import BentoHandler
-from bentoml.handlers.dataframe_handler import DataframeHandler
-from bentoml.handlers.tensorflow_tensor_handler import TensorflowTensorHandler
-from bentoml.handlers.json_handler import JsonHandler
-from bentoml.handlers.image_handler import ImageHandler
-from bentoml.handlers.legacy_image_handler import LegacyImageHandler
-from bentoml.handlers.fastai_image_handler import FastaiImageHandler
-from bentoml.handlers.clipper_handler import (
-    ClipperBytesHandler,
-    ClipperDoublesHandler,
-    ClipperFloatsHandler,
-    ClipperIntsHandler,
-    ClipperStringsHandler,
+import logging
+import functools
+
+from bentoml.adapters import (
+    BaseInputAdapter,
+    DataframeInput,
+    TfTensorInput,
+    JsonInput,
+    LegacyImageInput,
+    FastaiImageInput,
+    ClipperIntsInput,
+    ClipperBytesInput,
+    ClipperDoublesInput,
+    ClipperFloatsInput,
+    ClipperStringsInput,
+)
+
+logger = logging.getLogger(__name__)
+
+logger.warning(
+    'bentoml.handlers.* will be deprecated after BentoML 1.0, '
+    'use bentoml.adapters.* instead'
 )
 
 
-HANDLER_TYPES_BATCH_MODE_SUPPORTED = {
-    name
-    for name, v in locals().items()
-    if name.endswith("Handler") and getattr(v, 'BATCH_MODE_SUPPORTED', None)
-}
+def deprecated(cls, cls_name):
+    class wrapped_cls(cls):
+        def __init__(self, *args, **kwargs):
+            super(wrapped_cls, self).__init__(*args, **kwargs)
+            logger.warning(
+                f'{cls_name} will be deprecated after BentoML 1.0, '
+                f'use {cls.__name__} instead'
+            )
+
+    for attr_name in functools.WRAPPER_ASSIGNMENTS:
+        setattr(wrapped_cls, attr_name, getattr(cls, attr_name, None))
+    return wrapped_cls
+
+
+BentoHandler = deprecated(BaseInputAdapter, 'BentoHandler')
+DataframeHandler = deprecated(DataframeInput, 'DataframeHandler')
+TensorflowTensorHandler = deprecated(TfTensorInput, 'TensorflowTensorHandler')
+JsonHandler = deprecated(JsonInput, 'JsonHandler')
+ImageHandler = deprecated(LegacyImageInput, 'ImageHandler')
+FastaiImageHandler = deprecated(FastaiImageInput, 'FastaiImageHandler')
+ClipperIntsHandler = deprecated(ClipperIntsInput, 'ClipperIntsHandler')
+ClipperBytesHandler = deprecated(ClipperBytesInput, 'ClipperBytesHandler')
+ClipperDoublesHandler = deprecated(ClipperDoublesInput, 'ClipperDoublesHandler')
+ClipperFloatsHandler = deprecated(ClipperFloatsInput, 'ClipperFloatsHandler')
+ClipperStringsHandler = deprecated(ClipperStringsInput, 'ClipperStringsHandler')
 
 __all__ = [
     "BentoHandler",
@@ -40,7 +69,6 @@ __all__ = [
     "TensorflowTensorHandler",
     "JsonHandler",
     "ImageHandler",
-    "LegacyImageHandler",
     "FastaiImageHandler",
     "ClipperBytesHandler",
     "ClipperDoublesHandler",

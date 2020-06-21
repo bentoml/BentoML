@@ -9,14 +9,14 @@ else
 fi
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd $GIT_ROOT/docker/model-server
+cd "$GIT_ROOT"/docker/model-server
 
 echo "Releasing debian based docker base image.."
 docker build --pull \
-    --build-arg BENTOML_VERSION=$BENTOML_VERSION \
-    -t bentoml/model-server:$BENTOML_VERSION \
+    --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
+    -t bentoml/model-server:"$BENTOML_VERSION" \
     .
-docker push bentoml/model-server:$BENTOML_VERSION
+docker push bentoml/model-server:"$BENTOML_VERSION"
 
 PYTHON_MAJOR_VERSIONS=(3.6 3.7 3.8)
 echo "Building Alpine based docker base images for ${PYTHON_MAJOR_VERSIONS[*]}"
@@ -28,6 +28,7 @@ do
     --build-arg PYTHON_VERSION=$version \
     -t bentoml/model-server:$BENTOML_VERSION-alpine${version//.} \
     -f Dockerfile-alpine \
+    --network=host \
     .
 
     docker push bentoml/model-server:$BENTOML_VERSION-alpine${version//.}

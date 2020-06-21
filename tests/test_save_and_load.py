@@ -5,7 +5,7 @@ import pytest
 from mock import patch
 
 import bentoml
-from bentoml.handlers import DataframeHandler
+from bentoml.adapters import DataframeInput
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.exceptions import BentoMLException
 
@@ -36,7 +36,9 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
 
     api = model_service.get_service_api('predict')
     assert api.name == "predict"
-    assert isinstance(api.handler, DataframeHandler)
+    assert api.mb_max_latency == 1000
+    assert api.mb_max_batch_size == 2000
+    assert isinstance(api.handler, DataframeInput)
     assert api.func(1) == 2
 
     # Check api methods are available
@@ -78,7 +80,7 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
 
     api = model_service.get_service_api('predict')
     assert api.name == "predict"
-    assert isinstance(api.handler, DataframeHandler)
+    assert isinstance(api.handler, DataframeInput)
     assert api.func(1) == 2
     # Check api methods are available
     assert model_service.predict(1) == 2
@@ -87,7 +89,7 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
 class TestBentoWithOutArtifact(bentoml.BentoService):
     __test__ = False
 
-    @bentoml.api(DataframeHandler)
+    @bentoml.api(input=DataframeInput())
     def test(self, df):
         return df
 

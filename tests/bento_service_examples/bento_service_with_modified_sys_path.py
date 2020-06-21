@@ -2,7 +2,7 @@ import sys
 from os import path
 
 import bentoml
-from bentoml.handlers import DataframeHandler
+from bentoml.adapters import DataframeInput
 from bentoml.artifact import SklearnModelArtifact
 
 sys.path.append(path.dirname(path.abspath(__file__)))
@@ -17,7 +17,7 @@ from local_dependencies.nested_dependency import nested_dependency_func
 @bentoml.env(pip_dependencies=["scikit-learn"])
 @bentoml.artifacts([SklearnModelArtifact('model')])
 class IrisClassifier(bentoml.BentoService):
-    @bentoml.api(DataframeHandler)
+    @bentoml.api(input=DataframeInput())
     def predict(self, df):
         df = dummy_util_func(df)
         df = dependency_in_local_module_directory(df)

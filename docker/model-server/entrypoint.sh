@@ -15,11 +15,11 @@ _main() {
     set -- bentoml serve-gunicorn "$@" /bento
   fi
 
-  if [ ! -z ${PORT:-} ]; then
+  if [ -n "${PORT:-}" ]; then
     # Set BentoML API server port via env var
     export BENTOML_PORT=$PORT \
     # Backward compatibility for BentoML prior to 0.7.5
-    export BENTOML__APISERVER__DEFAULT_PORT=$PORT \
+    export BENTOML__APISERVER__DEFAULT_PORT=$PORT
   fi
 
   exec "$@"

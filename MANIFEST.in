@@ -26,6 +26,8 @@ global-exclude __pycache__
 # special files to include with PyPI distribution
 include versioneer.py
 include bentoml/_version.py
+include bentoml/saved_bundle/bentoml-init.sh
+include bentoml/saved_bundle/docker-entrypoint.sh
 graft bentoml/server/static
 graft bentoml/configuration
 

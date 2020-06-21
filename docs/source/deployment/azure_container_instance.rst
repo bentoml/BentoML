@@ -73,7 +73,7 @@ Verify the saved bundle created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeHandler",
+            "InputType": "DataframeInput",
             "docs": "BentoService API"
           }
         ]
@@ -427,7 +427,7 @@ Deploying image as Azure container. `registry-username` and `registry-password` 
       "volumes": null
     }
 
-Use `az container show` command to fetch container instace state
+Use `az container show` command to fetch container instance state
 
 .. code-block:: bash
 
@@ -436,7 +436,7 @@ Use `az container show` command to fetch container instace state
     "Running"
 
 
-We can use the same `az container show` command to retreive endpoint address
+We can use the same `az container show` command to retrieve endpoint address
 
 .. code-block:: bash
 

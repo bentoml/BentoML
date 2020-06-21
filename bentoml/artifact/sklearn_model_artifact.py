@@ -58,13 +58,13 @@ class SklearnModelArtifact(BentoServiceArtifact):
     >>>
     >>> import bentoml
     >>> from bentoml.artifact import SklearnModelArtifact
-    >>> from bentoml.handlers import DataframeHandler
+    >>> from bentoml.adapters import DataframeInput
     >>>
     >>> @bentoml.env(auto_pip_dependencies=True)
     >>> @bentoml.artifacts([SklearnModelArtifact('model')])
     >>> class SklearnModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(DataframeHandler)
+    >>>     @bentoml.api(input=DataframeInput())
     >>>     def predict(self, df):
     >>>         result = self.artifacts.model.predict(df)
     >>>         return result

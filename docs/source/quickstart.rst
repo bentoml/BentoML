@@ -53,23 +53,23 @@ prediction service definition with BentoML:
 
   # https://github.com/bentoml/BentoML/blob/master/guides/quick-start/iris_classifier.py
   import bentoml
-  from bentoml.handlers import DataframeHandler
+  from bentoml.adapters import DataframeInput
   from bentoml.artifact import SklearnModelArtifact
 
   @bentoml.env(auto_pip_dependencies=True)
   @bentoml.artifacts([SklearnModelArtifact('model')])
   class IrisClassifier(bentoml.BentoService):
 
-      @bentoml.api(DataframeHandler)
+      @bentoml.api(input=DataframeInput())
       def predict(self, df):
           # Optional pre-processing, post-processing code goes here
           return self.artifacts.model.predict(df)
 
 
 The :code:`bentoml.api` decorator defines a service API, which is the entry point for
-accessing the prediction service. The :code:`DataframeHandler` here denotes that this 
+accessing the prediction service. The :code:`DataframeInput` here denotes that this 
 service API will convert HTTP JSON request into :code:`pandas.DataFrame` object before
-passing it to the user-defined API function code for inferencing. 
+passing it to the user-defined API function code for inference.
 
 The :code:`bentoml.env` decorator allows specifying the dependencies and environment
 settings for this prediction service. The example with 

@@ -7,7 +7,7 @@ error=0
 trap 'error=1' ERR
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd $GIT_ROOT
+cd "$GIT_ROOT" || exit
 
 pytest tests --cov=bentoml --ignore tests/integration_tests
 

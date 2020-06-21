@@ -38,11 +38,13 @@ message BentoServiceMetadata {
 
   message BentoServiceApi {
     string name = 1;
-    string handler_type = 2;
+    string input_type = 2;
     string docs = 3;
-
-    // Configs for customizing BentoHandler
-    google.protobuf.Struct handler_config = 4;
+    google.protobuf.Struct input_config = 4;
+    google.protobuf.Struct output_config = 5;
+    string output_type = 6;
+    int32 mb_max_latency = 7;
+    int32 mb_max_batch_size = 8;
   }
 
   string name = 1;

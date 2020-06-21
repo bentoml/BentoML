@@ -19,6 +19,7 @@ from bentoml.saved_bundle.loader import (
     load_bento_service_metadata,
     load_bento_service_class,
     load_bento_service_api,
+    safe_retrieve,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "load_bento_service_metadata",
     "load_bento_service_class",
     "load_bento_service_api",
+    "safe_retrieve",
 ]

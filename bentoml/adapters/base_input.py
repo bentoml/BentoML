@@ -12,30 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from typing import Iterable
 
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-import numpy as np
 
 from bentoml import config as bentoml_config
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
-PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS = [
-    'dict',
-    'list',
-    'series',
-    'split',
-    'records',
-    'index',
-]
 
-
-class BentoHandler:
-    """BentoHandler is an abstraction layer between user defined API callback function
+class BaseInputAdapter:
+    """InputAdapter is an abstraction layer between user defined API callback function
     and prediction request input in a variety of different forms, such as HTTP request
     body, command line arguments or AWS Lambda event object.
     """
@@ -45,20 +30,28 @@ class BentoHandler:
 
     BATCH_MODE_SUPPORTED = False
 
-    def __init__(self, **base_config):
+    def __init__(self, output_adapter=None, http_input_example=None, **base_config):
         '''
         base_configs:
-            - mb_max_latency
-            - mb_max_batch_size
             - is_batch_input
         '''
         self._config = base_config
+        self._output_adapter = output_adapter
+        self._http_input_example = http_input_example
 
     @property
     def config(self):
         if getattr(self, '_config', None) is None:
             self._config = {}
         return self._config
+
+    @property
+    def output_adapter(self):
+        if self._output_adapter is None:
+            from .default_output import DefaultOutput
+
+            self._output_adapter = DefaultOutput()
+        return self._output_adapter
 
     def handle_request(self, request, func):
         """Handles an HTTP request, convert it into corresponding data
@@ -105,44 +98,14 @@ class BentoHandler:
     @property
     def request_schema(self):
         """
-        :return: OpenAPI json schema for the HTTP API endpoint created with this handler
+        :return: OpenAPI json schema for the HTTP API endpoint created with this input
+                 adapter
         """
         return {"application/json": {"schema": {"type": "object"}}}
 
     @property
     def pip_dependencies(self):
         """
-        :return: List of PyPI package names required by this BentoHandler
+        :return: List of PyPI package names required by this InputAdapter
         """
         return []
-
-
-class NumpyJsonEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
-
-    def default(self, o):  # pylint: disable=method-hidden
-        if isinstance(o, np.generic):
-            return o.item()
-
-        if isinstance(o, np.ndarray):
-            return o.tolist()
-
-        return json.JSONEncoder.default(self, o)
-
-
-def api_func_result_to_json(result, pandas_dataframe_orient="records"):
-    assert (
-        pandas_dataframe_orient in PANDAS_DATAFRAME_TO_DICT_ORIENT_OPTIONS
-    ), f"unkown pandas dataframe orient '{pandas_dataframe_orient}'"
-
-    if pd and isinstance(result, pd.DataFrame):
-        return result.to_json(orient=pandas_dataframe_orient)
-
-    if pd and isinstance(result, pd.Series):
-        return pd.DataFrame(result).to_dict(orient=pandas_dataframe_orient)
-
-    try:
-        return json.dumps(result, cls=NumpyJsonEncoder)
-    except (TypeError, OverflowError):
-        # when result is not JSON serializable
-        return json.dumps({"result": str(result)})

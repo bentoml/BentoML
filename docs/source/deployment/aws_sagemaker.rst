@@ -1,15 +1,15 @@
 Deploying to AWS SageMaker
 ==========================
 
-AWS Sagemaker is a fully managed services for quickly building ML models. BentoML provides great sujpport
+AWS Sagemaker is a fully managed services for quickly building ML models. BentoML provides great support
 for deploying BentoService to AWS Sagemaker without additional process and work from user. With BentoML,
 users can enjoy the great system performance from Sagemaker with any popular ML frameworks.
 
 
-Prerequisits
+Prerequisites
 ------------
 
-* An active AWS account configured on the machine with AWS CLI installed and configurated
+* An active AWS account configured on the machine with AWS CLI installed and configured
 
   * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
   * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
@@ -38,7 +38,7 @@ Use `bento list` to get the BentoService name:version tag.
     > bentoml list
 
     BentoService                          CREATED_AT                  APIS                        ARTIFACTS
-    IrisClassifier:20200121141808_FE78B5  2020-01-21 22:18:25.079723  predict(DataframeHandler)  model(SklearnModelArtifact)
+    IrisClassifier:20200121141808_FE78B5  2020-01-21 22:18:25.079723  predict(DataframeInput)  model(SklearnModelArtifact)
 
 
 Deploy to Sagemaker requires a deployment name, BentoService name:version tag, and api name from the

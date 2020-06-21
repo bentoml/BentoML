@@ -13,7 +13,8 @@
 # limitations under the License.
 import click
 import os
-from google.protobuf.json_format import MessageToJson
+import json
+from google.protobuf.json_format import MessageToJson, MessageToDict
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import (
@@ -140,9 +141,18 @@ def add_bento_sub_command(cli):
             if print_location:
                 _echo(get_bento_result.bento.uri.uri)
                 return
-            else:
-                _print_bento_info(get_bento_result.bento, output)
+            if json_output:
+                resp_dict = MessageToDict(get_bento_result.bento)
+                res = _unpack_jq_like_string(resp_dict, json_output)
+                _echo(json.dumps(
+                    res, 
+                    sort_keys=True, 
+                    indent=4, 
+                    separators=(',', ': ')
+                ))
                 return
+            _print_bento_info(get_bento_result.bento, output)
+            return
         # get by name only
         elif name:
             track_cli('bento-list')

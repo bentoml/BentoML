@@ -87,15 +87,16 @@ def _print_bentos_info(bentos, output_type, print_location=False):
             _print_bento_info(bento, output_type)
 
 
-def _unpack_jq_like_string(bento_dict, jq):
-    tokens = jq.split(".")
+def _unpack_jq_like_string(bento_dict, json_query):
+    tokens = json_query.split(".")
     for _t in tokens:
         try:
             bento_dict = bento_dict[_t]
         except KeyError:
             _echo(
-                f'Key {_t} not found, ignoring', CLI_COLOR_ERROR,
+                f'Failed to get {json_query}. Key {_t} is missing', CLI_COLOR_ERROR,
             )
+            return None
     return bento_dict
 
 

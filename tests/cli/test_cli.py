@@ -23,15 +23,15 @@ def generate_test_input_file():
 
 
 def test_unpack_jq_like_string():
-    test_obj = {"a": "b", "c": {"d": "e",}}
+    test_obj = {"a": "b", "c": {"d": "e"}}
 
     assert _unpack_jq_like_string(test_obj, "a") == test_obj["a"]
-    assert _unpack_jq_like_string(test_obj, "") == test_obj
     assert _unpack_jq_like_string(test_obj, "c.d") == test_obj["c"]["d"]
 
-    # key not found should use last working key
-    assert _unpack_jq_like_string(test_obj, "b") == test_obj
-    assert _unpack_jq_like_string(test_obj, "c.g") == test_obj["c"]
+    # key not found should return None
+    assert _unpack_jq_like_string(test_obj, "") is None
+    assert _unpack_jq_like_string(test_obj, "b") is None
+    assert _unpack_jq_like_string(test_obj, "c.g") is None
 
 
 def test_run_command_with_input_file(bento_bundle_path):

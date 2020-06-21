@@ -108,7 +108,9 @@ def add_bento_sub_command(cli):
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
     @click.option(
-        '--json-output', type=click.STRING, help='Fetch specific field from JSON in a jq-like syntax'
+        '--json-output',
+        type=click.STRING,
+        help='Fetch specific field from JSON in a jq-like syntax'
     )
     @click.option('--ascending-order', is_flag=True)
     @click.option('--print-location', is_flag=True)
@@ -145,9 +147,9 @@ def add_bento_sub_command(cli):
                 resp_dict = MessageToDict(get_bento_result.bento)
                 res = _unpack_jq_like_string(resp_dict, json_output)
                 _echo(json.dumps(
-                    res, 
-                    sort_keys=True, 
-                    indent=4, 
+                    res,
+                    sort_keys=True,
+                    indent=4,
                     separators=(',', ': ')
                 ))
                 return
@@ -171,7 +173,11 @@ def add_bento_sub_command(cli):
                 )
                 return
 
-            _print_bentos_info(list_bento_versions_result.bentos, output, print_location)
+            _print_bentos_info(
+                list_bento_versions_result.bentos,
+                output,
+                print_location
+            )
 
     @cli.command(name='list', help='List BentoServices information')
     @click.option(

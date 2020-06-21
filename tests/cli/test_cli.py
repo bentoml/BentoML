@@ -6,7 +6,8 @@ import mock
 from click.testing import CliRunner
 import psutil  # noqa # pylint: disable=unused-import
 
-from bentoml.cli import create_bento_service_cli, _unpack_jq_like_string
+from bentoml.cli import create_bento_service_cli
+from bentoml.cli.bento import t_unpack_jq_like_string
 
 
 def generate_test_input_file():
@@ -36,6 +37,7 @@ def test_unpack_jq_like_string():
     # key not found should use last working key
     assert _unpack_jq_like_string(test_obj, "b") == test_obj
     assert _unpack_jq_like_string(test_obj, "c.g") == test_obj["c"]
+
 
 def test_run_command_with_input_file(bento_bundle_path):
     input_path = generate_test_input_file()

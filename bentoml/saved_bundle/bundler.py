@@ -135,6 +135,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
         f.write(MANIFEST_IN_TEMPLATE.format(service_name=bento_service.name))
 
     # write Dockerfile
+    logger.debug("Using Docker Base Image %s", bento_service._env._docker_base_image)
     with open(os.path.join(path, "Dockerfile"), "w") as f:
         f.write(
             MODEL_SERVER_DOCKERFILE_CPU.format(

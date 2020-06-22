@@ -109,19 +109,19 @@ BentoService as docker image to Azure Functions.
 
 .. code-block:: bash
 
-    $ bentoml azure-functions deploy azure-bentoml -b IrisClassifier:20200618124555_310CE0 --location westus
+    $ bentoml azure-functions deploy iris-classifier-demo -b IrisClassifier:20200622131825_5788D9 --location westus
 
     # sample output
-    [2020-06-18 12:54:49,232] INFO - ApplyDeployment (azure-bentoml, namespace dev) succeeded
-    Successfully created Azure Functions deployment azure-bentoml
+    [2020-06-22 13:59:22,881] INFO - ApplyDeployment (iris-classifier-demo, namespace dev) succeeded
+    -Successfully created Azure Functions deployment iris-classifier-demo
     {
       "namespace": "dev",
-      "name": "azure-bentoml",
+      "name": "iris-classifier-demo",
       "spec": {
         "bentoName": "IrisClassifier",
-        "bentoVersion": "20200618124555_310CE0",
-        "operator": "AZURE_FUNCTION",
-        "azureFunctionOperatorConfig": {
+        "bentoVersion": "20200622131825_5788D9",
+        "operator": "AZURE_FUNCTIONS",
+        "azureFunctionsOperatorConfig": {
           "location": "westus",
           "premiumPlanSku": "EP1",
           "minInstances": 1,
@@ -132,30 +132,30 @@ BentoService as docker image to Azure Functions.
       "state": {
         "state": "RUNNING",
         "infoJson": {
-          "defaultHostName": "dev-azure-bentoml.azurewebsites.net",
+          "defaultHostName": "dev-iris-classifier-demo.azurewebsites.net",
           "enabledHostNames": [
-            "dev-azure-bentoml.azurewebsites.net",
-            "dev-azure-bentoml.scm.azurewebsites.net"
+            "dev-iris-classifier-demo.azurewebsites.net",
+            "dev-iris-classifier-demo.scm.azurewebsites.net"
           ],
           "hostNames": [
-            "dev-azure-bentoml.azurewebsites.net"
+            "dev-iris-classifier-demo.azurewebsites.net"
           ],
-          "id": "/subscriptions/f01c41a2-72ba-480c-99a6-b3241fada0ac/resourceGroups/dev-azure-bentoml/providers/Microsoft.Web/sites/dev-azure-bentoml",
+          "id": "/subscriptions/f01c41a2-72ba-480c-99a6-b3241fada0ac/resourceGroups/dev-iris-classifier-demo/providers/Microsoft.Web/sites/dev-iris-classifier-demo",
           "kind": "functionapp,linux,container",
-          "lastModifiedTimeUtc": "2020-06-18T19:54:48.540000",
+          "lastModifiedTimeUtc": "2020-06-22T20:59:22.350000",
           "location": "West US",
-          "name": "dev-azure-bentoml",
-          "repositorySiteName": "dev-azure-bentoml",
+          "name": "dev-iris-classifier-demo",
+          "repositorySiteName": "dev-iris-classifier-demo",
           "reserved": true,
-          "resourceGroup": "dev-azure-bentoml",
+          "resourceGroup": "dev-iris-classifier-demo",
           "state": "Running",
           "type": "Microsoft.Web/sites",
           "usageState": "Normal"
         },
-        "timestamp": "2020-06-18T19:54:55.456691Z"
+        "timestamp": "2020-06-22T20:59:30.428159Z"
       },
-      "createdAt": "2020-06-18T19:47:57.385626Z",
-      "lastUpdatedAt": "2020-06-18T19:47:57.385659Z"
+      "createdAt": "2020-06-22T20:53:26.607038Z",
+      "lastUpdatedAt": "2020-06-22T20:53:26.607073Z"
     }
 
 
@@ -165,17 +165,17 @@ the deployment.
 
 .. code-block:: bash
 
-    $ bentoml azure-functions get azure-bentoml
+    $ bentoml azure-functions get iris-classifier-demo
 
     # Sample output
     {
       "namespace": "dev",
-      "name": "azure-bentoml",
+      "name": "iris-classifier-demo",
       "spec": {
         "bentoName": "IrisClassifier",
-        "bentoVersion": "20200618124555_310CE0",
-        "operator": "AZURE_FUNCTION",
-        "azureFunctionOperatorConfig": {
+        "bentoVersion": "20200622131825_5788D9",
+        "operator": "AZURE_FUNCTIONS",
+        "azureFunctionsOperatorConfig": {
           "location": "westus",
           "premiumPlanSku": "EP1",
           "minInstances": 1,
@@ -186,30 +186,30 @@ the deployment.
       "state": {
         "state": "RUNNING",
         "infoJson": {
-          "defaultHostName": "dev-azure-bentoml.azurewebsites.net",
+          "defaultHostName": "dev-iris-classifier-demo.azurewebsites.net",
           "enabledHostNames": [
-            "dev-azure-bentoml.azurewebsites.net",
-            "dev-azure-bentoml.scm.azurewebsites.net"
+            "dev-iris-classifier-demo.azurewebsites.net",
+            "dev-iris-classifier-demo.scm.azurewebsites.net"
           ],
           "hostNames": [
-            "dev-azure-bentoml.azurewebsites.net"
+            "dev-iris-classifier-demo.azurewebsites.net"
           ],
-          "id": "/subscriptions/f01c41a2-72ba-480c-99a6-b3241fada0ac/resourceGroups/dev-azure-bentoml/providers/Microsoft.Web/sites/dev-azure-bentoml",
+          "id": "/subscriptions/f01c41a2-72ba-480c-99a6-b3241fada0ac/resourceGroups/dev-iris-classifier-demo/providers/Microsoft.Web/sites/dev-iris-classifier-demo",
           "kind": "functionapp,linux,container",
-          "lastModifiedTimeUtc": "2020-06-18T19:54:48.540000",
+          "lastModifiedTimeUtc": "2020-06-22T20:59:22.350000",
           "location": "West US",
-          "name": "dev-azure-bentoml",
-          "repositorySiteName": "dev-azure-bentoml",
+          "name": "dev-iris-classifier-demo",
+          "repositorySiteName": "dev-iris-classifier-demo",
           "reserved": true,
-          "resourceGroup": "dev-azure-bentoml",
+          "resourceGroup": "dev-iris-classifier-demo",
           "state": "Running",
           "type": "Microsoft.Web/sites",
           "usageState": "Normal"
         },
-        "timestamp": "2020-06-18T19:55:54.292111Z"
+        "timestamp": "2020-06-22T21:04:59.779887Z"
       },
-      "createdAt": "2020-06-18T19:47:57.385626Z",
-      "lastUpdatedAt": "2020-06-18T19:47:57.385659Z"
+      "createdAt": "2020-06-22T20:53:26.607038Z",
+      "lastUpdatedAt": "2020-06-22T20:53:26.607073Z"
     }
 
 During Azure Functions initialized stage, it takes a while to download the docker image.
@@ -227,7 +227,7 @@ mentioned above or you could make a `curl` request to the endpoint.
 
     $  curl -i --request POST --header "Content-Type: application/json" \
         --data '[[5.1, 3.5, 1.4, 0.2]]' \
-        "https://dev-azure-bentoml.azurewebsites.net/predict"
+        "https://dev-iris-classifier-demo.azurewebsites.net/predict"
 
     # Sample output
 
@@ -235,9 +235,9 @@ mentioned above or you could make a `curl` request to the endpoint.
     Content-Length: 3
     Content-Type: application/json
     Server: Kestrel
-    Request-Context: appId=cid-v1:c3a39ce6-5bf4-4961-a0de-01c0897b49de
-    request_id: 7a75f307-e62b-44f3-b834-7f87f9b96209
-    Date: Thu, 18 Jun 2020 20:06:01 GMT
+    Request-Context: appId=cid-v1:1f23e525-f1cd-471a-ae47-e313f784b99e
+    request_id: 525a5c94-41a8-4d9f-9259-0216d3ceb465
+    Date: Mon, 22 Jun 2020 21:19:40 GMT
 
     [0]%
 
@@ -249,8 +249,8 @@ Use `bentoml azure-functions list` to display all active deployments to Azure Fu
     $ bentoml azure-functions list
 
     # Sample output
-    NAME           NAMESPACE    PLATFORM        BENTO_SERVICE                         STATUS    AGE
-    azure-bentoml  dev          azure-function  IrisClassifier:20200618124555_310CE0  running   19 minutes and 22.14 seconds
+    NAME                  NAMESPACE    PLATFORM         BENTO_SERVICE                         STATUS    AGE
+    iris-classifier-demo  dev          azure-functions  IrisClassifier:20200622131825_5788D9  running   26 minutes and 24.49 seconds
 
 
 
@@ -263,7 +263,7 @@ command.
 
 .. code-block: bash
 
-    $ bentoml azure-functions update azure-bentoml -b IrisClassifier:new_version
+    $ bentoml azure-functions update iris-classifier-demo -b IrisClassifier:new_version
 
 
 =================================
@@ -274,7 +274,7 @@ BentoML will remove all Azure resources created for the deployment.
 
 .. code-block:: bash
 
-    $ bentoml azure-functions delete azure-bentoml
+    $ bentoml azure-functions delete iris-classifier-demo
 
 
 =====================================================================
@@ -285,14 +285,13 @@ BentoML recommends to use remote YataiService for managing and deploying BentoSe
 when you are working in a team. To deploy Azure Functions in remote YataiService, you
 need to provide the Azure credential for it.
 
-In this guide, it will starts a docker container as remote YataiService. After Sign in
-with Azure CLI in your local machine, you should be able to find the `accessTokens.json`
-in your Azure directory. Now start the BentoML YataiService docker image and mount that
-`accessTokens.json` file to the running container.
+After Sign in with Azure CLI in your local machine, you should be able to find the
+`accessTokens.json` in your Azure directory. Now start the BentoML YataiService docker
+image and mount that `accessTokens.json` file to the running container.
 
 .. code-block:: bash
 
-    $ docker run -v /Users/bozhaoyu/.azure/accessTokens.json:/home/.azure/accessTokens.json -p 50051:50051 -p 3000:3000 bentoml/yatai-service:latest
+    $ docker run -v ~/.azure/accessTokens.json:/home/.azure/accessTokens.json -p 50051:50051 -p 3000:3000 bentoml/yatai-service:latest
 
 
 After the YataiService docker container is running, in another terminal window, set
@@ -301,4 +300,85 @@ yatai service address with `bentoml config set`
 .. code-block:: bash
 
     $ bentoml config set yatai_service.url=127.0.0.1:50051
+
+
+============================================================
+Deploy and manage Azure Functions deployment with Kubernetes
+============================================================
+
+Create a Kubernetes secret base on the `accessTokens.json`
+
+.. code-block:: bash
+
+    $ kubectl create configmap azure-access-tokens --from-file=~/.azure/accessTokens.json
+
+
+Confirm the secrete is created successfully by using `kubectl describe` command
+
+.. code-block:: bash
+
+    $kubectl describe configmap azure-access-tokens
+
+
+
+Copy and paste the code below into a file named `yatai-service.yaml`
+
+.. code-block:: yaml
+
+    apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app: yatai-service
+      name: iris-classifier
+      name: yatai-service
+    spec:
+      ports:
+      - name: grpc
+        port: 50051
+        targetPort: 50051
+      - name: web
+        port: 3000
+        targetPort: 3000
+      selector:
+        app: yatai-service
+      type: LoadBalancer
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: yatai-service
+      name: yatai-service
+    spec:
+      selector:
+        matchLabels:
+          app: yatai-service
+      template:
+        metadata:
+          labels:
+            app: yatai-service
+        spec:
+          containers:
+          - image: bentoml/yatai-service
+            imagePullPolicy: IfNotPresent
+            name: yatai-service
+            ports:
+            - containerPort: 50051
+            - containerPort: 3000
+            volumeMounts:
+            - mountPath: "/home/.azure"
+              name: azure-access-tokens
+              readOnly: true
+          volumes:
+          - name: azure-access-tokens
+            configmap:
+                name: azure-access-tokens
+
+
+Run `kubectl apply` command to deploy Yatai service to the Kubernetes cluster
+
+.. code-block:: bash
+
+    $ kubectl apply -f yatai-service.yaml
 

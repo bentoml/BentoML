@@ -65,12 +65,12 @@ class MultiImageInput(BaseInputAdapter):
     """
 
     def __init__(
-            self,
-            input_names=("image",),
-            accepted_image_formats=None,
-            pilmode="RGB",
-            is_batch_input=False,
-            **base_kwargs,
+        self,
+        input_names=("image",),
+        accepted_image_formats=None,
+        pilmode="RGB",
+        is_batch_input=False,
+        **base_kwargs,
     ):
         if is_batch_input:
             raise ValueError('ImageInput can not accept batch inputs')
@@ -80,7 +80,7 @@ class MultiImageInput(BaseInputAdapter):
         self.input_names = input_names
         self.pilmode = pilmode
         self.accepted_image_formats = (
-                accepted_image_formats or get_default_accept_image_formats()
+            accepted_image_formats or get_default_accept_image_formats()
         )
 
     def handle_request(self, request: Request, func):
@@ -97,7 +97,7 @@ class MultiImageInput(BaseInputAdapter):
         return imread(file, pilmode=self.pilmode)
 
     def handle_batch_request(
-            self, requests: Iterable[SimpleRequest], func
+        self, requests: Iterable[SimpleRequest], func
     ) -> Iterable[SimpleResponse]:
         raise NotImplementedError(
             "The batch processing architecture does not currently support multipart "
@@ -128,12 +128,13 @@ class MultiImageInput(BaseInputAdapter):
                 part: decoder.BodyPart = part
                 if part.headers['name'] in self.input_names:
                     files[part.headers['name']] = self.read_file(
-                        part.headers['filename'],
-                        part.content
+                        part.headers['filename'], part.content
                     )
             result = func((files,))[0]
             return self.output_adapter.to_aws_lambda_event(result, event)
         else:
             raise BadInput(
-                "Multi-image requests don't support the {} content type".format(content_type)
+                "Multi-image requests don't support the {} content type".format(
+                    content_type
+                )
             )

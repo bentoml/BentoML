@@ -26,12 +26,12 @@ do
     docker build --pull \
     --build-arg BENTOML_VERSION=$BENTOML_VERSION \
     --build-arg PYTHON_VERSION=$version \
-    -t bentoml/model-server:$BENTOML_VERSION-alpine${version//.} \
+    -t bentoml/model-server:$BENTOML_VERSION-alpine-py${version//.} \
     -f Dockerfile-alpine \
     --network=host \
     .
 
-    docker push bentoml/model-server:$BENTOML_VERSION-alpine${version//.}
+    docker push bentoml/model-server:$BENTOML_VERSION-alpine-py${version//.}
 
 done
 echo "Done"

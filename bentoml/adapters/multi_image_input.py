@@ -33,10 +33,6 @@ imread = _import_imageio_imread()
 
 class MultiImageInput(BaseInputAdapter):
     """
-    Warning: this is a not yet implemented, follow issue #806 for updates
-    Transform incoming images data from http request, cli or lambda event into numpy
-    array.
-
     Args:
         input_names (string[]): A tuple of acceptable input name for HTTP request.
             Default value is (image,)
@@ -54,14 +50,13 @@ class MultiImageInput(BaseInputAdapter):
         ImportError: imageio package is required to use ImageInput
 
     Example usage:
-        ```
-        class MyService(BentoService):
-            @bentoml.api(input=MultiImageInput(input_names=('imageX', 'imageY')))
-            def predict(self, image_groups):
-                for image_group in image_groups:
-                    image_array_x = image_group['imageX']
-                    image_array_y = image_group['imageY']
-        ```
+
+    >>> class MyService(BentoService):
+    >>> @bentoml.api(input=MultiImageInput(input_names=('imageX', 'imageY')))
+    >>> def predict(self, image_groups):
+    >>>     for image_group in image_groups:
+    >>>         image_array_x = image_group['imageX']
+    >>>         image_array_y = image_group['imageY']
     """
 
     def __init__(
@@ -105,6 +100,12 @@ class MultiImageInput(BaseInputAdapter):
         )
 
     def handle_cli(self, args, func):
+        """Handles an CLI command call, convert CLI arguments into
+        corresponding data format that user API function is expecting, and
+        prints the API function result to console output
+        :param args: CLI arguments
+        :param func: user API function
+        """
         parser = argparse.ArgumentParser()
         for input_name in self.input_names:
             parser.add_argument(input_name, required=True)
@@ -119,6 +120,12 @@ class MultiImageInput(BaseInputAdapter):
         return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
+        """Handles a Lambda event, convert event dict into corresponding
+        data format that user API function is expecting, and use API
+        function result as response
+        :param event: AWS lambda event data of the python `dict` type
+        :param func: user API function
+        """
         content_type = event.headers['content-type']
         if "multipart/form-data" in content_type:
             files = {}

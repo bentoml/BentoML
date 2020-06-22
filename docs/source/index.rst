@@ -30,7 +30,7 @@ ML teams an end-to-end model serving solution with baked-in DevOps best practice
 
 👩‍💻 Star/Watch/Fork the `BentoML Github Repository <https://github.com/bentoml/BentoML>`_.
 
-👉 To follow the latest development updates and roadmap discussion, join the 
+👉 To follow development updates and discussion, join the
 `BentoML mailing list <https://groups.google.com/forum/#!forum/bentoml>`_ and the 
 `Bentoml Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_
 

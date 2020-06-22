@@ -45,7 +45,7 @@ class BaseInputAdapter:
 
     def is_batch_request(self, request):
         if BATCH_REQUEST_HEADER.lower() in request.formated_headers:
-            return request.formated_headers[BATCH_REQUEST_HEADER.lower()]
+            return request.formated_headers[BATCH_REQUEST_HEADER.lower()] != 'false'
         return self.config.get("is_batch_input", False)
 
     @property

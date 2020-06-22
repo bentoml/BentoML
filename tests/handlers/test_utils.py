@@ -48,17 +48,20 @@ def test_concat_lists_with_flags():
         [],
         None,
         [1],
+        "string",
         None,
     ]
     flags = [
         True,
         True,
+        True,
+        False,
         False,
         False,
     ]
 
     datas, slices = concat_list(lst, flags)
-    assert datas == [[1], [2], [1]]
+    assert datas == [[1], [2], [1], "string"]
 
     for s, origin_data in zip(slices, lst):
         if s is None:

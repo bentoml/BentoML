@@ -18,13 +18,10 @@ import json
 
 import argparse
 
-from bentoml.adapters.utils import concat_list
+from bentoml.adapters.utils import concat_list, TF_B64_KEY
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
-
-
-TF_B64_KEY = "b64"
 
 
 def b64_hook(o):
@@ -121,10 +118,7 @@ class TfTensorInput(BaseInputAdapter):
                     instances = parsed_json.get("instances")
                     if instances is None:
                         continue
-                    if batch_flags[i]:
-                        instances_list[i] = [instances]
-                    else:
-                        instances_list[i] = instances
+                    instances_list[i] = instances
 
                 elif parsed_json.get("inputs"):
                     responses[i] = SimpleResponse(
@@ -141,7 +135,6 @@ class TfTensorInput(BaseInputAdapter):
                     500, None, f"Internal Server Error: {err}"
                 )
         merged_instances, slices = concat_list(instances_list, batch_flags=batch_flags)
-
         parsed_tensor = tf.constant(merged_instances)
         merged_result = func(parsed_tensor)
         return self.output_adapter.to_batch_response(

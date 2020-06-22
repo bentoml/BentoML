@@ -200,9 +200,13 @@ def _build_and_push_docker_image_to_azure_container_registry(
     resource_group_name,
     bento_name,
     bento_version,
+    bento_python_version,
 ):
     _login_acr_registry(container_registry_name, resource_group_name)
     docker_client = docker.from_env()
+    python_version = bento_python_version[: bento_python_version.rfind('.')].replace(
+        '.', ''
+    )
     try:
         docker_client.ping()
     except docker.errors.APIError as err:
@@ -216,7 +220,10 @@ def _build_and_push_docker_image_to_azure_container_registry(
             path=azure_functions_project_dir,
             dockerfile=os.path.join(azure_functions_project_dir, 'Dockerfile-azure'),
             tag=tag,
-            buildargs={'BENTOML_VERSION': LAST_PYPI_RELEASE_VERSION},
+            buildargs={
+                'BENTOML_VERSION': LAST_PYPI_RELEASE_VERSION,
+                'PYTHON_VERSION': python_version,
+            },
         )
         logger.debug('Finished building docker image')
     except docker.errors.BuildError as e:
@@ -427,6 +434,7 @@ def _deploy_azure_functions(
                 resource_group_name=resource_group_name,
                 bento_name=bento_pb.name,
                 bento_version=bento_pb.version,
+                bento_python_version=bento_pb.bento_service_metadata.env.python_version,
             )
         except Exception as e:
             raise AzureServiceError(
@@ -484,6 +492,7 @@ def _update_azure_functions(
             resource_group_name=resource_group_name,
             bento_name=bento_pb.name,
             bento_version=bento_pb.version,
+            bento_python_version=bento_pb.bento_service_metadata.env.python_version,
         )
         _call_az_cli(
             command=[

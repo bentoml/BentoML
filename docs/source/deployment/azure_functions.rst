@@ -270,8 +270,6 @@ command.
 Remove Azure Functions deployment
 =================================
 
-BentoML will remove all Azure resources created for the deployment.
-
 .. code-block:: bash
 
     $ bentoml azure-functions delete iris-classifier-demo

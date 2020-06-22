@@ -85,6 +85,7 @@ deployment_schema = {
                     'premium_plan_sku': {
                         'type': 'string',
                         'allowed': AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
+                        'required': True,
                     },
                     'min_instances': {
                         'required': True,
@@ -101,6 +102,7 @@ deployment_schema = {
                     'function_auth_level': {
                         'type': 'string',
                         'allowed': AZURE_FUNCTIONS_AUTH_LEVELS,
+                        'required': True,
                     },
                 },
             },

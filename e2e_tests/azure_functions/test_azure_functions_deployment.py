@@ -12,31 +12,19 @@ logger = logging.getLogger('bentoml.test')
 
 def test_azure_function_deployment(iris_clf_service):
     random_hash = uuid.uuid4().hex[:6]
-    deployment_name = f'test-azure-{random_hash}'
-    create_deployment_command = [
-        'bentoml',
-        'azure-function',
-        'deploy',
-        deployment_name,
-        '-b',
-        iris_clf_service,
-        '--location',
-        'westus',
-        '--max-burst',
-        '2',
-        '--function-auth-level',
-        'anonymous',
-        '--debug',
-    ]
+    deployment_name = f'test-azures-{random_hash}'
     try:
         logger.info(f'Deploying {deployment_name} to Azure function')
         with subprocess.Popen(
-            create_deployment_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            f'bentoml azure-functions deploy {deployment_name} -b {iris_clf_service} --location westus --max-burst 2 --function-auth-level anonymous --debug',  # noqa: E501
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         ) as proc:
             stdout = proc.stdout.read().decode('utf-8')
         logger.info(stdout)
-        if 'Failed to create Azure function deployment' in stdout:
-            raise Exception('Failed to create Azure function deployment')
+        assert (
+            'Failed to create Azure function deployment' not in stdout
+        ), "Azure function deployment creation should success"
         deploy_command_stdout_list = stdout.split('\n')
         endpoint = None
         for index, message in enumerate(deploy_command_stdout_list):
@@ -71,4 +59,4 @@ def test_azure_function_deployment(iris_clf_service):
             request_result.content.decode('utf-8') == '[1]'
         ), 'Azure function deployment prediction result mismatch'
     finally:
-        delete_deployment('azure-function', deployment_name)
+        delete_deployment('azure-functions', deployment_name)

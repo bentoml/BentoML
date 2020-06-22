@@ -1,5 +1,6 @@
 ARG BENTOML_VERSION=latest
-FROM bentoml/azure-function:$BENTOML_VERSION
+ARG PYTHON_VERSION=3.7
+FROM bentoml/azure-functions:$BENTOML_VERSION-py$PYTHON_VERSION
 
 # https://github.com/MicrosoftDocs/azure-docs/issues/26761
 # Copying BentoService to Azure function specific directory

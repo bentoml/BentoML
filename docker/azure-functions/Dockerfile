@@ -1,7 +1,8 @@
 # Using specific version of docker image, due to issues at upstream. Once
 # https://github.com/Azure/azure-functions-docker/issues/281 is resolved, we can update
 # this.
-FROM mcr.microsoft.com/azure-functions/python:3.0.13901-python3.7
+ARG PYTHON_VERSION
+FROM mcr.microsoft.com/azure-functions/python:3.0.13901-python$PYTHON_VERSION
 
 # Install miniconda3
 # https://hub.docker.com/r/continuumio/miniconda3/dockerfile

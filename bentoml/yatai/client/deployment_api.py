@@ -72,7 +72,7 @@ class DeploymentAPIClient:
             elif operator == 'lambda':
                 operator = DeploymentSpec.AWS_LAMBDA
             elif operator == DeploymentSpec.AZURE_FUNCTIONS:
-                operator == 'azure-functions'
+                operator = 'azure-functions'
             else:
                 raise BentoMLException(f'Unrecognized operator {operator}')
 

@@ -30,6 +30,7 @@ from bentoml.marshal.utils import DataLoader
 from bentoml.server.trace import trace
 from bentoml.exceptions import NotFound, InvalidArgument
 
+from werkzeug.utils import cached_property
 
 ARTIFACTS_DIR_NAME = "artifacts"
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
@@ -98,21 +99,18 @@ class BentoServiceAPI(object):
     def output_adapter(self):
         return self.handler.output_adapter
 
-    @property
+    @cached_property
     def func(self):
-        if not self._wrapped_func:
+        def _wrapped_func(*args, **kwargs):
+            with trace(
+                ZIPKIN_API_URL,
+                service_name=self.__class__.__name__,
+                span_name="user defined api handler",
+            ):
+                resp = self._func(*args, **kwargs)
+            return resp
 
-            def _wrapped_func(*args, **kwargs):
-                with trace(
-                    ZIPKIN_API_URL,
-                    service_name=self.__class__.__name__,
-                    span_name="user defined api handler",
-                ):
-                    resp = self._func(*args, **kwargs)
-                return resp
-
-            self._wrapped_func = _wrapped_func
-        return self._wrapped_func
+        return _wrapped_func
 
     @property
     def request_schema(self):

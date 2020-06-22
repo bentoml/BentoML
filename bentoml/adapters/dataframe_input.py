@@ -21,6 +21,7 @@ try:
     import pandas as pd
 except ImportError:
     pd = None
+import flask
 
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.utils import is_url
@@ -143,7 +144,7 @@ class DataframeInput(BaseInputAdapter):
 
         return default
 
-    def handle_request(self, request, func):
+    def handle_request(self, request: flask.Request, func):
         if request.content_type == "text/csv":
             csv_string = StringIO(request.get_data().decode('utf-8'))
             df = pd.read_csv(csv_string)
@@ -151,7 +152,7 @@ class DataframeInput(BaseInputAdapter):
             # Optimistically assuming Content-Type to be "application/json"
             try:
                 df = pd.read_json(
-                    request.data.decode("utf-8"),
+                    request.get_data().decode("utf-8"),
                     orient=self.orient,
                     typ=self.typ,
                     dtype=False,

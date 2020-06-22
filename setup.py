@@ -42,6 +42,7 @@ install_requires = [
     "python-dateutil>=2.1,<2.8.1",
     "python-json-logger",
     "requests",
+    "requests_toolbelt",
     "ruamel.yaml>=0.15.0",
     "sqlalchemy-utils",
     "sqlalchemy>=1.3.0",

@@ -15,6 +15,7 @@ import argparse
 import pathlib
 from typing import Iterable
 
+from requests_toolbelt.multipart import decoder
 from werkzeug import Request
 from werkzeug.utils import secure_filename
 
@@ -24,6 +25,7 @@ from bentoml.adapters.image_input import (
     verify_image_format_or_raise,
     _import_imageio_imread,
 )
+from bentoml.exceptions import BadInput
 from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 
 imread = _import_imageio_imread()
@@ -63,12 +65,12 @@ class MultiImageInput(BaseInputAdapter):
     """
 
     def __init__(
-        self,
-        input_names=("image",),
-        accepted_image_formats=None,
-        pilmode="RGB",
-        is_batch_input=False,
-        **base_kwargs,
+            self,
+            input_names=("image",),
+            accepted_image_formats=None,
+            pilmode="RGB",
+            is_batch_input=False,
+            **base_kwargs,
     ):
         if is_batch_input:
             raise ValueError('ImageInput can not accept batch inputs')
@@ -78,7 +80,7 @@ class MultiImageInput(BaseInputAdapter):
         self.input_names = input_names
         self.pilmode = pilmode
         self.accepted_image_formats = (
-            accepted_image_formats or get_default_accept_image_formats()
+                accepted_image_formats or get_default_accept_image_formats()
         )
 
     def handle_request(self, request: Request, func):
@@ -95,7 +97,7 @@ class MultiImageInput(BaseInputAdapter):
         return imread(file, pilmode=self.pilmode)
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
+            self, requests: Iterable[SimpleRequest], func
     ) -> Iterable[SimpleResponse]:
         raise NotImplementedError(
             "The batch processing architecture does not currently support multipart "
@@ -117,4 +119,21 @@ class MultiImageInput(BaseInputAdapter):
         return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
-        raise NotImplementedError()
+        content_type = event.headers['content-type']
+        if "multipart/form-data" in content_type:
+            files = {}
+
+            request = decoder.MultipartDecoder(event.body, content_type)
+            for part in request.parts:
+                part: decoder.BodyPart = part
+                if part.headers['name'] in self.input_names:
+                    files[part.headers['name']] = self.read_file(
+                        part.headers['filename'],
+                        part.content
+                    )
+            result = func((files,))[0]
+            return self.output_adapter.to_aws_lambda_event(result, event)
+        else:
+            raise BadInput(
+                "Multi-image requests don't support the {} content type".format(content_type)
+            )

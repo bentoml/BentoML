@@ -13,9 +13,9 @@
 # limitations under the License.
 import argparse
 import pathlib
+from io import BytesIO
 from typing import Iterable
 
-from requests_toolbelt.multipart import decoder
 from werkzeug import Request
 from werkzeug.utils import secure_filename
 
@@ -86,7 +86,7 @@ class MultiImageInput(BaseInputAdapter):
         result = func((files,))[0]
         return self.output_adapter.to_response(result, request)
 
-    def read_file(self, name: str, file):
+    def read_file(self, name: str, file: BytesIO):
         safe_name = secure_filename(name)
         verify_image_format_or_raise(safe_name, self.accepted_image_formats)
         return imread(file, pilmode=self.pilmode)
@@ -130,13 +130,11 @@ class MultiImageInput(BaseInputAdapter):
         if "multipart/form-data" in content_type:
             files = {}
 
-            request = decoder.MultipartDecoder(event.body, content_type)
-            for part in request.parts:
-                part: decoder.BodyPart = part
-                if part.headers['name'] in self.input_names:
-                    files[part.headers['name']] = self.read_file(
-                        part.headers['filename'], part.content
-                    )
+            request = Request.from_values(
+                data=event.body, content_type=content_type, headers=event.headers
+            )
+            for name, file in request.files:
+                files[name] = self.read_file(file.filename, file.stream)
             result = func((files,))[0]
             return self.output_adapter.to_aws_lambda_event(result, event)
         else:

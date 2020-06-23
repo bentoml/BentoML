@@ -58,6 +58,7 @@ def get_aws_lambda_sub_command():
         '--bento',
         '--bento-service-bundle',
         type=click.STRING,
+        required=True,
         callback=parse_bento_tag_callback,
         help='Target BentoService to be deployed, referenced by its name and version '
         'in format of name:version. For example: "iris_classifier:v1.2.0"',

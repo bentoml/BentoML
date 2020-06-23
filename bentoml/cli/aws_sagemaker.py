@@ -62,6 +62,7 @@ def get_aws_sagemaker_sub_command():
         type=click.STRING,
         required=True,
         callback=parse_bento_tag_callback,
+        required=True,
         help='Target BentoService to be deployed, referenced by its name and version '
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )

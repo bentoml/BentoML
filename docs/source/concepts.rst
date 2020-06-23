@@ -223,23 +223,23 @@ However, there may be times when you need to use other Docker images (e.g. have 
 
 .. code-block:: python
 
-  # e.g. using BentoML Alpine-based images
-  @env(docker_base_image="bentoml/model-server:0.8.12-alpine-py37")
+  # e.g. using BentoML slim image
+  @env(docker_base_image="bentoml/model-server:0.8.12-slim-py37")
   @artifacts([SklearnModelArtifact('model')])
   class ExamplePredictionService(BentoService):
     ...
 
-In fact, one such base image that many may find useful are the Alpine-based images. The original base image weighs in at roughly `~853MB` whereas the Alpine version weighs in at `~360MB`. 
+In fact, one such base image that many may find useful are the BentoML slim base images. The original base image weighs in at roughly `~853MB` whereas the slim version weighs in at `~360MB`. 
 
 .. code-block:: bash
 
   > docker image ls
 
   REPOSITORY                             TAG                   IMAGE ID            CREATED              SIZE
-  bentoml/model-server                   0.8.12-alpine-py37    109b451ed537        6 minutes ago        360MB
+  bentoml/model-server                   0.8.12-slim-py37      109b451ed537        6 minutes ago        360MB
   bentoml/model-server                   0.8.12                f034fa23264c        33 minutes ago       853MB
 
-This means that each image built on top of Alpine based images will be significantly smaller. 
+This means that each image built on top of these slim images will be significantly smaller. 
 
 .. code-block:: bash
 
@@ -247,9 +247,9 @@ This means that each image built on top of Alpine based images will be significa
 
   REPOSITORY                               TAG                 IMAGE ID            CREATED              SIZE
   jzhao2k19/iris                           latest              bfc9b81c7535        About a minute ago   1.54GB
-  jzhao2k19/iris-alpine                    latest              4e8d87a0c18a        4 minutes ago        577MB
+  jzhao2k19/iris-slim                      latest              4e8d87a0c18a        4 minutes ago        577MB
 
-However, as with using any alternative Docker base image, there are a few things to keep in mind. The regular base image uses `conda`, whereas the Alpine image does not. This has a few consequences. BentoML uses `conda` to ensure the Python version used matches the one you used to save your bundle. This means that you should manually select the right Alpine base image for your bundle. For example, if you used Python 3.8 to train your model, you would use `bentoml/model-server:0.8.12-alpine-py38`. Currently, BentoML support Python 3.6, 3.7, and 3.8. Additionally, this means that BentoML will ignore the `environment.yml`, meaning that user-defined `conda` packages and dependencies will be ignored. In the following example, only `pandas` will be installed, as the `conda_channels` and `conda_dependencies` will be ignored.
+However, as with using any alternative Docker base image, there are a few things to keep in mind. The regular base image uses `conda`, whereas the slim image does not. This has a few consequences. BentoML uses `conda` to ensure the Python version used matches the one you used to save your bundle. This means that you should manually select the right slim image for your bundle. For example, if you used Python 3.8 to train your model, you would use `bentoml/model-server:0.8.12-slim-py38`. Currently, BentoML support Python 3.6, 3.7, and 3.8. Additionally, this means that BentoML will ignore the `environment.yml`, meaning that user-defined `conda` packages and dependencies will be ignored. In the following example, only `pandas` will be installed, as the `conda_channels` and `conda_dependencies` will be ignored.
 
 .. code-block:: python
 
@@ -257,7 +257,7 @@ However, as with using any alternative Docker base image, there are a few things
     pip_dependencies=['pandas'],
     conda_channels=['h2oai'],
     conda_dependencies=['h2o==3.24.0.2'],
-    docker_base_image="bentoml/model-server:0.8.12-alpine-py37"
+    docker_base_image="bentoml/model-server:0.8.12-slim-py37"
   )
   class ExamplePredictionService(bentoml.BentoService):
     ...

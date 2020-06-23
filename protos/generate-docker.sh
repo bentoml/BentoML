@@ -9,7 +9,7 @@ fi
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT"
 
-echo "Start Python 3.7 docker container"
+echo "Start BentoML proto-dev docker container"
 echo $GIT_ROOT
 
 docker run --rm -v $GIT_ROOT:/home/bento --name generate-proto bentoml/proto-dev /home/bento/protos/generate.sh

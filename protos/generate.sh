@@ -79,17 +79,6 @@ for PKG in $PKGS; do
 
 echo "Finish generating protobuf python code"
 
-if ! [ -x "$(command -v pbjs)" ]; then
-  echo "Installing protobuf js"
-
-  if ! [ -x "$(command -v npm)" ]; then
-    echo "Installing NodeJS and npm"
-    apt-get update
-    apt-get install -y nodejs npm
-  fi
-  npm i -g protobufjs@6.7.0
-fi
-
 echo "Generate grpc code for javascript/typescript"
 echo "Please make sure protobufjs is installed on your system"
 echo "You can install with npm i -g protobufjs"

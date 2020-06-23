@@ -12,7 +12,7 @@ cd "$GIT_ROOT"
 echo "Start Python 3.7 docker container"
 echo $GIT_ROOT
 
-docker run --rm -v $GIT_ROOT:/home/bento --name generate-proto python:3.7 /home/bento/protos/generate.sh
+docker run --rm -v $GIT_ROOT:/home/bento --name generate-proto bentoml/proto-dev /home/bento/protos/generate.sh
 
 echo "Generate python and javascript files from protobuf complete."
 

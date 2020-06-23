@@ -75,10 +75,11 @@ def add_yatai_service_sub_command(cli):
     def yatai_service_start(
         db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url
     ):
-        track_cli('yatai-service-start')
         try:
             start_yatai_service_grpc_server(
                 db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url
             )
+            return 0
         except BentoMLException as e:
             _echo(f'Yatai gRPC server failed: {str(e)}', CLI_COLOR_ERROR)
+            return 1, {'error_message': str(e)}

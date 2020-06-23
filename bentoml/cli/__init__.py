@@ -81,7 +81,7 @@ def run_with_conda_env(bundle_path, command):
 
     pip_req = os.path.join(bundle_path, 'requirements.txt')
 
-    subprocess.call(
+    return_code = subprocess.call(
         'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
         'parameter requires conda but it\'s not installed."; exit 1; }} && '
         'conda env update -n {env_name} -f {env_file} && '
@@ -94,7 +94,7 @@ def run_with_conda_env(bundle_path, command):
         ),
         shell=True,
     )
-    return
+    return return_code
 
 
 def create_bento_service_cli(pip_installed_bundle_path=None):
@@ -159,13 +159,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Run API server in a BentoML managed Conda environment",
     )
     def run(api_name, run_args, bento=None, with_conda=False):
-        track_cli('run')
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
 
         if with_conda:
-            run_with_conda_env(
+            return run_with_conda_env(
                 bento_service_bundle_path,
                 'bentoml run {api_name} {bento} {args}'.format(
                     bento=bento_service_bundle_path,
@@ -173,10 +172,10 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     args=' '.join(map(escape_shell_params, run_args)),
                 ),
             )
-            return
 
         api = load_bento_service_api(bento_service_bundle_path, api_name)
         api.handle_cli(run_args)
+        return 0
 
     # Example Usage: bentoml info {BUNDLE_PATH}
     @bentoml_cli.command(
@@ -188,8 +187,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         """
         List all APIs defined in the BentoService loaded from saved bundle
         """
-        track_cli('info')
-
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
@@ -199,6 +196,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         )
         output = json.dumps(ProtoMessageToDict(bento_service_metadata_pb), indent=2)
         _echo(output)
+        return 0
 
     # Example usage: bentoml open-api-spec {BUNDLE_PATH}
     @bentoml_cli.command(
@@ -208,8 +206,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     def open_api_spec(bento=None):
-        track_cli('open-api-spec')
-
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
@@ -217,6 +213,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service = load(bento_service_bundle_path)
 
         _echo(json.dumps(get_open_api_spec_json(bento_service), indent=2))
+        return 0
 
     # Example Usage: bentoml serve {BUNDLE_PATH} --port={PORT}
     @bentoml_cli.command(
@@ -246,14 +243,13 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         envvar='BENTOML_ENABLE_MICROBATCH',
     )
     def serve(port, bento=None, with_conda=False, enable_microbatch=False):
-        track_cli('serve')
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
         bento_service = load(bento_service_bundle_path)
 
         if with_conda:
-            run_with_conda_env(
+            return run_with_conda_env(
                 bento_service_bundle_path,
                 'bentoml serve {bento} --port {port} {flags}'.format(
                     bento=bento_service_bundle_path,
@@ -261,7 +257,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     flags="--enable-microbatch" if enable_microbatch else "",
                 ),
             )
-            return
 
         if enable_microbatch:
             with reserve_free_port() as api_server_port:
@@ -348,7 +343,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         )
 
         if with_conda:
-            run_with_conda_env(
+            return run_with_conda_env(
                 pip_installed_bundle_path,
                 'bentoml serve_gunicorn {bento} -p {port} -w {workers} '
                 '--timeout {timeout} {flags}'.format(
@@ -359,7 +354,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     flags="--enable-microbatch" if enable_microbatch else "",
                 ),
             )
-            return
 
         if workers is None:
             workers = get_gunicorn_num_of_workers()

@@ -34,7 +34,6 @@ from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.exceptions import BentoMLException
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
-from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
 
 PLATFORM_NAME = DeploymentSpec.DeploymentOperator.Name(DeploymentSpec.AWS_LAMBDA)
@@ -118,7 +117,6 @@ def get_aws_lambda_sub_command():
         output,
         wait,
     ):
-        track_cli('deploy-create', PLATFORM_NAME)
         yatai_client = YataiClient()
         bento_name, bento_version = bento.split(':')
         try:
@@ -139,28 +137,23 @@ def get_aws_lambda_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                track_cli(
-                    'deploy-create-failure',
-                    PLATFORM_NAME,
-                    {'error_code': error_code, 'error_message': error_message},
-                )
                 _echo(
                     f'Failed to create AWS Lambda deployment {name} '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
-                return
-            track_cli('deploy-create-success', PLATFORM_NAME)
+                return 1, {'error_code': error_code, 'error_message': error_message}
             _echo(
                 f'Successfully created AWS Lambda deployment {name}', CLI_COLOR_SUCCESS
             )
             _print_deployment_info(result.deployment, output)
+            return 0
         except BentoMLException as e:
-            track_cli('deploy-create-failure', PLATFORM_NAME, {'error_message': str(e)})
             _echo(
                 f'Failed to create AWS Lambda deployment {name} {str(e)}',
                 CLI_COLOR_ERROR,
             )
+            return 1, {'error_message': str(e)}
 
     @aws_lambda.command(help='Update existing AWS Lambda deployment')
     @click.argument('name', type=click.STRING)
@@ -223,29 +216,24 @@ def get_aws_lambda_sub_command():
                     error_code, error_message = status_pb_to_error_code_and_message(
                         result.status
                     )
-                    track_cli(
-                        'deploy-update-failure',
-                        PLATFORM_NAME,
-                        {'error_code': error_code, 'error_message': error_message},
-                    )
                     _echo(
                         f'Failed to update AWS Lambda deployment {name} '
                         f'{error_code}:{error_message}',
                         CLI_COLOR_ERROR,
                     )
-                    return
-                track_cli('deploy-update-success', PLATFORM_NAME)
+                    return 1, {'error_code': error_code, 'error_message': error_message}
                 _echo(
                     f'Successfully updated AWS Lambda deployment {name}',
                     CLI_COLOR_SUCCESS,
                 )
                 _print_deployment_info(result.deployment, output)
+                return 0
         except BentoMLException as e:
-            track_cli('deploy-update-failure', PLATFORM_NAME, {'error_message': str(e)})
             _echo(
                 f'Failed to updated AWS Lambda deployment {name}: {str(e)}',
                 CLI_COLOR_ERROR,
             )
+            return 1, {'error_message': str(e)}
 
     @aws_lambda.command(help='Delete AWS Lambda deployment')
     @click.argument('name', type=click.STRING)
@@ -277,7 +265,6 @@ def get_aws_lambda_sub_command():
                 CLI_COLOR_ERROR,
             )
             return
-        track_cli('deploy-delete', PLATFORM_NAME)
         try:
             result = yatai_client.deployment.delete(
                 namespace=namespace, deployment_name=name, force_delete=force
@@ -286,17 +273,12 @@ def get_aws_lambda_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                track_cli(
-                    'deploy-delete-failure',
-                    PLATFORM_NAME,
-                    {'error_code': error_code, 'error_message': error_message},
-                )
                 _echo(
                     f'Failed to delete AWS Lambda deployment {name} '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
-                return
+                return 1, {'error_code': error_code, 'error_message': error_message}
             extra_properties = {}
             if get_deployment_result.deployment.created_at:
                 stopped_time = datetime.utcnow()
@@ -306,17 +288,17 @@ def get_aws_lambda_sub_command():
                         - get_deployment_result.deployment.created_at.ToDatetime()
                     ).total_seconds()
                 )
-            track_cli('deploy-delete-success', PLATFORM_NAME, extra_properties)
             _echo(
                 f'Successfully deleted AWS Lambda deployment "{name}"',
                 CLI_COLOR_SUCCESS,
             )
+            return 0, extra_properties
         except BentoMLException as e:
-            track_cli('deploy-delete-failure', PLATFORM_NAME, {'error_message': str(e)})
             _echo(
                 f'Failed to delete AWS Lambda deployment {name} {str(e)}',
                 CLI_COLOR_ERROR,
             )
+            return 1, {'error_message': str(e)}
 
     @aws_lambda.command(help='Get AWS Lambda deployment information')
     @click.argument('name', type=click.STRING)
@@ -332,7 +314,6 @@ def get_aws_lambda_sub_command():
     )
     def get(name, namespace, output):
         yatai_client = YataiClient()
-        track_cli('deploy-get', PLATFORM_NAME)
         describe_result = yatai_client.deployment.describe(namespace, name)
         if describe_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
@@ -343,7 +324,7 @@ def get_aws_lambda_sub_command():
                 f'{name}. {error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
-            return
+            return 1, {'error_code': error_code, 'error_message': error_message}
 
         get_result = yatai_client.deployment.get(namespace, name)
         if get_result.status.status_code != status_pb2.Status.OK:
@@ -355,8 +336,9 @@ def get_aws_lambda_sub_command():
                 f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
-            return
+            return 1, {'error_code': error_code, 'error_message': error_message}
         _print_deployment_info(get_result.deployment, output)
+        return 0
 
     @aws_lambda.command(name='list', help='List AWS Sagemaker deployments')
     @click.option(
@@ -392,7 +374,6 @@ def get_aws_lambda_sub_command():
     )
     def list_deployments(namespace, limit, labels, order_by, asc, output):
         yatai_client = YataiClient()
-        track_cli('deploy-list', PLATFORM_NAME)
         try:
             list_result = yatai_client.deployment.list_lambda_deployments(
                 limit=limit,
@@ -410,9 +391,12 @@ def get_aws_lambda_sub_command():
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
+                return 1, {'error_code': error_code, 'error_message': error_message}
             else:
                 _print_deployments_info(list_result.deployments, output)
+                return 0
         except BentoMLException as e:
             _echo(f'Failed to list AWS Sagemaker deployment {str(e)}')
+            return 1, {'error_message': str(e)}
 
     return aws_lambda

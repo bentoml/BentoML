@@ -27,7 +27,6 @@ from bentoml.configuration import (
     CONFIG_FILE_ENCODING,
 )
 from bentoml.cli.click_utils import BentoMLCommandGroup, _echo, CLI_COLOR_ERROR
-from bentoml.utils.usage_stats import track_cli
 
 # pylint: disable=unused-variable
 
@@ -59,20 +58,18 @@ def get_configuration_sub_command():
 
     @config.command(help="View local BentoML configurations")
     def view():
-        track_cli('config-view')
         local_config = ConfigParser()
         local_config.read(get_local_config_file(), encoding=CONFIG_FILE_ENCODING)
         local_config.write(sys.stdout)
-        return
+        return 0
 
     @config.command(
         help="View effective BentoML configs, including default config values and "
         "local config overrides"
     )
     def view_effective():
-        track_cli('config-view-effective')
         bentoml_config().write(sys.stdout)
-        return
+        return 0
 
     @config.command(
         name="set",
@@ -81,7 +78,6 @@ def get_configuration_sub_command():
     )
     @click.argument("updates", nargs=-1)
     def set_command(updates):
-        track_cli('config-set')
         local_config = ConfigParser()
         local_config_file = get_local_config_file()
         local_config.read(local_config_file, encoding=CONFIG_FILE_ENCODING)
@@ -100,11 +96,12 @@ def get_configuration_sub_command():
                 local_config.set(sec.strip(), opt.strip(), value.strip())
 
             local_config.write(open(local_config_file, 'w'))
-            return
+            return 0
         except ValueError:
-            _echo('Wrong config format: %s' % str(updates), CLI_COLOR_ERROR)
+            error_message = f'Wrong config format: {str(updates)}'
+            _echo(error_message, CLI_COLOR_ERROR)
             _echo(EXAMPLE_CONFIG_USAGE)
-            return
+            return 1, {'error_message': error_message}
 
     @config.command(
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
@@ -112,7 +109,6 @@ def get_configuration_sub_command():
     )
     @click.argument("updates", nargs=-1)
     def unset(updates):
-        track_cli('config-unset')
         local_config = ConfigParser()
         local_config_file = get_local_config_file()
         local_config.read(local_config_file, encoding=CONFIG_FILE_ENCODING)
@@ -130,20 +126,20 @@ def get_configuration_sub_command():
                 local_config.remove_option(sec.strip(), opt.strip())
 
             local_config.write(open(local_config_file, 'w'))
-            return
+            return 0
         except ValueError:
-            _echo('Wrong config format: %s' % str(updates), CLI_COLOR_ERROR)
+            error_message = f'Wrong config format: {str(updates)}'
+            _echo(error_message, CLI_COLOR_ERROR)
             _echo(EXAMPLE_CONFIG_USAGE)
-            return
+            return 1, {'error_message': error_message}
 
     @config.command(help="Reset all local BentoML configs to default")
     def reset():
-        track_cli('config-reset')
         local_config_file = get_local_config_file()
         if os.path.isfile(local_config_file):
             logger.info("Removing existing BentoML config file: %s", local_config_file)
             os.remove(local_config_file)
         create_local_config_file_if_not_found()
-        return
+        return 0
 
     return config

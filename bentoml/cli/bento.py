@@ -24,7 +24,6 @@ from bentoml.cli.click_utils import (
 from bentoml.cli.utils import humanfriendly_age_from_datetime
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
-from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
 from bentoml.saved_bundle import safe_retrieve
 
@@ -105,7 +104,6 @@ def add_bento_sub_command(cli):
         yatai_client = YataiClient()
 
         if name and version:
-            track_cli('bento-get')
             output = output or 'json'
             get_bento_result = yatai_client.repository.get(name, version)
             if get_bento_result.status.status_code != status_pb2.Status.OK:
@@ -122,9 +120,8 @@ def add_bento_sub_command(cli):
                 _echo(get_bento_result.bento.uri.uri)
                 return
             _print_bento_info(get_bento_result.bento, output)
-            return
+            return 0
         elif name:
-            track_cli('bento-list')
             output = output or 'table'
             list_bento_versions_result = yatai_client.repository.list(
                 bento_name=name, limit=limit, ascending_order=ascending_order
@@ -138,9 +135,10 @@ def add_bento_sub_command(cli):
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
-                return
+                return 1, {'error_code': error_code, 'error_message': error_message}
 
             _print_bentos_info(list_bento_versions_result.bentos, output)
+            return 0
 
     @cli.command(name='list', help='List BentoServices information')
     @click.option(
@@ -161,7 +159,6 @@ def add_bento_sub_command(cli):
     )
     def list_bentos(limit, offset, order_by, ascending_order, output):
         yatai_client = YataiClient()
-        track_cli('bento-list')
         list_bentos_result = yatai_client.repository.list(
             limit=limit,
             offset=offset,
@@ -176,9 +173,10 @@ def add_bento_sub_command(cli):
                 f'Failed to list BentoServices ' f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
-            return
+            return 1, {'error_code': error_code, 'error_message': error_message}
 
         _print_bentos_info(list_bentos_result.bentos, output)
+        return 0
 
     @cli.command()
     @click.argument("bentos", type=click.STRING, callback=parse_bento_tag_list_callback)
@@ -210,7 +208,8 @@ def add_bento_sub_command(cli):
                 f'Are you sure about delete {bento}? This will delete the BentoService '
                 f'saved bundle files permanently'
             ):
-                return
+                # TODO
+                return 0
             result = yatai_client.repository.dangerously_delete_bento(
                 name=name, version=version
             )
@@ -223,7 +222,9 @@ def add_bento_sub_command(cli):
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
+                return 1, {'error_code': error_code, 'error_message': error_message}
             _echo(f'BentoService {name}:{version} deleted')
+            return 0
 
     @cli.command(
         help='Retrieves BentoService artifacts into a target directory',
@@ -243,7 +244,6 @@ def add_bento_sub_command(cli):
 
         yatai_client = YataiClient()
 
-        track_cli('bento-retrieve')
         get_bento_result = yatai_client.repository.get(name, version)
         if get_bento_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
@@ -254,7 +254,7 @@ def add_bento_sub_command(cli):
                 f'{error_code}:{error_message}',
                 CLI_COLOR_ERROR,
             )
-            return
+            return 1, {'error_code': error_code, 'error_message': error_message}
 
         if get_bento_result.bento.uri.s3_presigned_url:
             bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
@@ -264,3 +264,4 @@ def add_bento_sub_command(cli):
         safe_retrieve(bento_service_bundle_path, target_dir)
 
         click.echo('Service %s artifact directory => %s' % (name, target_dir))
+        return 0

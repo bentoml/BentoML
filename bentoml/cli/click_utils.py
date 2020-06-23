@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import re
+import sys
+
 import click
 import functools
 import logging
@@ -42,14 +44,74 @@ from bentoml import configure_logging
 #     'bright_cyan': 96,
 #     'bright_white': 97,
 # }
+from bentoml.utils.usage_stats import track_cli
 
 CLI_COLOR_SUCCESS = "green"
 CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
 
+DEPLOYMENT_PLATFORMS = ['azure_functions', 'aws_sagemaker', 'aws_lambda']
+
 
 def _echo(message, color="reset"):
     click.secho(message, fg=color)
+
+
+def _generate_track_event_name(command_group, command, result_code=None):
+    # Format deployment related event names to match with existing event names
+    if command_group in DEPLOYMENT_PLATFORMS or command_group == 'deployment':
+        if command == 'list_deployments':
+            command = 'list'
+        event_name = f'deploy-{command}'
+    # For commands such as run, serve_gunicorn and etc to match existing event name
+    elif command_group == '':
+        if command == 'open_api_spec':
+            command = 'open-api-spec'
+        event_name = command
+    else:
+        # Special case for bentoml config set. The name of func is `set_command`. It
+        # will be changed to 'set'
+        if command == 'set_command':
+            command = 'set'
+        event_name = f'{command_group}-{command}'
+
+    if result_code == 0:
+        event_name = f'{event_name}-success'
+    elif result_code == 1:
+        event_name = f'{event_name}-failure'
+
+    return event_name
+
+
+def _get_deployment_platform(command_group):
+    if command_group in DEPLOYMENT_PLATFORMS:
+        return command_group.upper()
+    else:
+        return None
+
+
+def _get_command_group(module):
+    module_list = module.split('.')
+    if len(module_list) == 3:
+        return module_list[2]
+    else:
+        return ''
+
+
+def _send_track_info(func_name, func_module, result_code=None):
+    # Don't record user install auto completion for bentoml cli
+    if func_name == 'install_completion':
+        return
+    command_group = _get_command_group(func_module)
+    platform_name = _get_deployment_platform(command_group)
+    track_cli(_generate_track_event_name(command_group, func_name), platform_name)
+    if result_code and type(result_code) == 'tuples':
+        result_code = result_code[0]
+        extra_info = result_code[1]
+    else:
+        extra_info = None
+    event_name = _generate_track_event_name(command_group, func_name, result_code)
+    track_cli(event_name, platform_name, extra_info)
 
 
 class BentoMLCommandGroup(click.Group):
@@ -91,10 +153,27 @@ class BentoMLCommandGroup(click.Group):
 
         return wrapper
 
+    @staticmethod
+    def bentoml_track_usage(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            _send_track_info(func.__name__, func.__module__)
+            try:
+                result_code = func(*args, **kwargs)
+            except:
+                _send_track_info(func.__name__, func.__module__, 1)
+                raise
+            _send_track_info(func.__name__, func.__module__, result_code)
+            sys.exit(result_code)
+
+        return wrapper
+
     def command(self, *args, **kwargs):
         def wrapper(func):
             # add common parameters to command
             func = BentoMLCommandGroup.bentoml_common_params(func)
+            # Send tracking events before and after command invoked.
+            func = BentoMLCommandGroup.bentoml_track_usage(func)
 
             # move common parameters to end of the parameters list
             func.__click_params__ = (

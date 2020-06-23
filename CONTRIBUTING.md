@@ -83,6 +83,7 @@ Issue type tags:
 | question | Any questions about the project |
 | bug | Something isn't working |
 | enhancement | Improving performance, usability, consistency |
+| docs | Documentation, tutorials, and example projects |
 | new feature | Feature requests or pull request implementing a new feature |
 | test | Improving unit test coverage, e2e test, CI or build |
 

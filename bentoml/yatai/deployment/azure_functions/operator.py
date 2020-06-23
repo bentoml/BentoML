@@ -50,6 +50,15 @@ MAX_STORAGE_ACCOUNT_NAME_LENGTH = 24
 MAX_FUNCTION_NAME_LENGTH = 60
 MAX_CONTAINER_REGISTRY_NAME_LENGTH = 50
 
+# https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan
+AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS = ['EP1', 'EP2', 'EP3']
+# https://docs.microsoft.com/en-us/java/api/com.microsoft.azure.functions.annotation.httptrigger.authlevel?view=azure-java-stable
+AZURE_FUNCTIONS_AUTH_LEVELS = ['anonymous', 'function', 'admin']
+DEFAULT_MIN_INSTANCE_COUNT = 1
+DEFAULT_MAX_BURST = 20
+DEFAULT_PREMIUM_PLAN_SKU = AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS[0]
+DEFAULT_FUNCTION_AUTH_LEVEL = AZURE_FUNCTIONS_AUTH_LEVELS[0]
+
 
 def _assert_az_cli_logged_in():
     account_info = _call_az_cli(
@@ -101,6 +110,7 @@ def _init_azure_functions_project(
             f.write(
                 AZURE_API_FUNCTION_JSON.format(
                     function_auth_level=azure_functions_config.function_auth_level
+                    or DEFAULT_FUNCTION_AUTH_LEVEL
                 )
             )
     except Exception as e:
@@ -204,14 +214,12 @@ def _build_and_push_docker_image_to_azure_container_registry(
 ):
     _login_acr_registry(container_registry_name, resource_group_name)
     docker_client = docker.from_env()
-    python_version = bento_python_version[: bento_python_version.rfind('.')].replace(
-        '.', ''
-    )
+    major, minor, _ = bento_python_version.split('.')
     try:
         docker_client.ping()
     except docker.errors.APIError as err:
         raise YataiDeploymentException(
-            f'Failed to get response from docker registry {str(err)}'
+            f'Failed to get response from docker server: {str(err)}'
         )
     tag = f'{container_registry_name}.azurecr.io/{bento_name}:{bento_version}'.lower()
     logger.debug(f'Building docker image {tag}')
@@ -222,7 +230,7 @@ def _build_and_push_docker_image_to_azure_container_registry(
             tag=tag,
             buildargs={
                 'BENTOML_VERSION': LAST_PYPI_RELEASE_VERSION,
-                'PYTHON_VERSION': python_version,
+                'PYTHON_VERSION': major + minor,
             },
         )
         logger.debug('Finished building docker image')
@@ -244,32 +252,6 @@ def _build_and_push_docker_image_to_azure_container_registry(
         )
 
     return tag
-
-
-def _get_storage_account_connect_string(resource_group_name, storage_account_name):
-    try:
-        return _call_az_cli(
-            command=[
-                'az',
-                'storage',
-                'account',
-                'show-connection-string',
-                '--resource-group',
-                resource_group_name,
-                '--name',
-                storage_account_name,
-                '--query',
-                'connectionString',
-                '--output',
-                'tsv',
-            ],
-            message='get Azure storage account connection string',
-            parse_json=False,
-        )
-    except BentoMLException as e:
-        raise AzureServiceError(
-            f'Failed to get Azure storage account connection string. {str(e)}'
-        )
 
 
 def _get_docker_login_info(resource_group_name, container_registry_name):
@@ -402,11 +384,12 @@ def _deploy_azure_functions(
                 function_plan_name,
                 '--is-linux',
                 '--sku',
-                azure_functions_config.premium_plan_sku,
+                azure_functions_config.premium_plan_sku or DEFAULT_PREMIUM_PLAN_SKU,
                 '--min-instances',
-                str(azure_functions_config.min_instances),
+                str(azure_functions_config.min_instances)
+                or str(DEFAULT_MIN_INSTANCE_COUNT),
                 '--max-burst',
-                str(azure_functions_config.max_burst),
+                str(azure_functions_config.max_burst) or str(DEFAULT_MAX_BURST),
                 '--resource-group',
                 resource_group_name,
             ],

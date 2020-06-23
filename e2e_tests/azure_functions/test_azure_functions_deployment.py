@@ -13,21 +13,12 @@ logger = logging.getLogger('bentoml.test')
 def test_azure_function_deployment(iris_clf_service):
     random_hash = uuid.uuid4().hex[:6]
     deployment_name = f'test-azures-{random_hash}'
-    command = [
-        'bentoml',
-        'azure-functions',
-        'deploy',
-        deployment_name,
-        '-b',
-        iris_clf_service,
-        '--location',
-        'westus',
-        '--max-burst',
-        '2',
-        '--function-auth-level',
-        'anonymous',
-        '--debug',
-    ]
+    command = f"""\
+bentoml azure-functions deploy {deployment_name} -b {iris_clf_service} \
+--location westus --max-burst 2 --function-auth-level anonymous --debug\
+""".split(
+        ' '
+    )
     try:
         logger.info(f'Deploying {deployment_name} to Azure function')
         with subprocess.Popen(

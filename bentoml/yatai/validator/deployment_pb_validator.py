@@ -15,7 +15,7 @@
 from cerberus import Validator
 
 from bentoml.utils import ProtoMessageToDict
-from bentoml.yatai.deployment.azure_functions import (
+from bentoml.yatai.deployment.azure_functions.operator import (
     AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
     AZURE_FUNCTIONS_AUTH_LEVELS,
 )
@@ -85,7 +85,6 @@ deployment_schema = {
                     'premium_plan_sku': {
                         'type': 'string',
                         'allowed': AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
-                        'required': True,
                     },
                     'min_instances': {
                         'required': True,
@@ -102,7 +101,6 @@ deployment_schema = {
                     'function_auth_level': {
                         'type': 'string',
                         'allowed': AZURE_FUNCTIONS_AUTH_LEVELS,
-                        'required': True,
                     },
                 },
             },

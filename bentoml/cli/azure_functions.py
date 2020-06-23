@@ -26,9 +26,13 @@ from bentoml.cli.click_utils import (
 )
 from bentoml.cli.deployment import _print_deployment_info, _print_deployments_info
 from bentoml.cli.utils import Spinner
-from bentoml.yatai.deployment.azure_functions import (
+from bentoml.yatai.deployment.azure_functions.operator import (
     AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
     AZURE_FUNCTIONS_AUTH_LEVELS,
+    DEFAULT_MIN_INSTANCE_COUNT,
+    DEFAULT_MAX_BURST,
+    DEFAULT_PREMIUM_PLAN_SKU,
+    DEFAULT_FUNCTION_AUTH_LEVEL,
 )
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.exceptions import BentoMLException
@@ -39,10 +43,6 @@ from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
 
 PLATFORM_NAME = DeploymentSpec.DeploymentOperator.Name(DeploymentSpec.AZURE_FUNCTIONS)
-DEFAULT_MIN_INSTANCE_COUNT = 1
-DEFAULT_MAX_BURST = 20
-DEFAULT_PREMIUM_PLAN_SKU = AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS[0]
-DEFAULT_FUNCTION_AUTH_LEVEL = AZURE_FUNCTIONS_AUTH_LEVELS[0]
 
 
 def get_azure_functions_sub_command():

@@ -11,10 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-# https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan
-AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS = ['EP1', 'EP2', 'EP3']
-
-# https://docs.microsoft.com/en-us/java/api/com.microsoft.azure.functions.annotation.httptrigger.authlevel?view=azure-java-stable
-AZURE_FUNCTIONS_AUTH_LEVELS = ['anonymous', 'function', 'admin']

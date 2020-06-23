@@ -160,7 +160,7 @@ class BentoMLCommandGroup(click.Group):
             _send_track_info(func.__name__, func.__module__)
             try:
                 result_code = func(*args, **kwargs)
-            except:
+            except BaseException:
                 _send_track_info(func.__name__, func.__module__, 1)
                 raise
             _send_track_info(func.__name__, func.__module__, result_code)

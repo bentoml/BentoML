@@ -26,7 +26,6 @@ from bentoml.cli.click_utils import (
 )
 from bentoml.yatai.client import YataiClient
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.exceptions import BentoMLException
@@ -69,7 +68,6 @@ def get_deployment_sub_command():
     )
     def create(deployment_yaml, output, wait):
         yatai_client = YataiClient()
-        platform_name = deployment_yaml.get('spec', {}).get('operator')
         deployment_name = deployment_yaml.get('name')
         try:
             with Spinner('Creating deployment '):
@@ -113,7 +111,6 @@ def get_deployment_sub_command():
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def apply(deployment_yaml, output, wait):
-        platform_name = deployment_yaml.get('spec', {}).get('operator')
         deployment_name = deployment_yaml.get('name')
         try:
             yatai_client = YataiClient()
@@ -170,9 +167,6 @@ def get_deployment_sub_command():
                 CLI_COLOR_ERROR,
             )
             return
-        platform = DeploymentSpec.DeploymentOperator.Name(
-            get_deployment_result.deployment.spec.operator
-        )
         result = yatai_client.deployment.delete(name, namespace, force)
         if result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(

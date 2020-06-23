@@ -2,6 +2,10 @@ import pickle
 from functools import lru_cache
 from typing import NamedTuple, Iterable
 
+from bentoml import config as bentoml_config
+
+BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")
+
 
 class SimpleRequest(NamedTuple):
     '''
@@ -17,11 +21,22 @@ class SimpleRequest(NamedTuple):
     def formated_headers(self):
         return {hk.decode().lower(): hv.decode() for hk, hv in self.headers or tuple()}
 
+    @classmethod
+    def from_flask_request(cls, request):
+        return cls(tuple(request.headers), request.get_data())
+
 
 class SimpleResponse(NamedTuple):
     status: int
     headers: tuple
     data: str
+
+    def to_flask_response(self):
+        import flask
+
+        return flask.Response(
+            headers=self.headers, response=self.data, status=self.status
+        )
 
 
 class PlasmaDataLoader:

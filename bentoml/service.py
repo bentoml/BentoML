@@ -20,6 +20,8 @@ import uuid
 from datetime import datetime
 from abc import abstractmethod, ABCMeta
 
+import flask
+
 from bentoml import config
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import SavedBundleConfig
@@ -120,11 +122,11 @@ class BentoServiceAPI(object):
             schema.get('application/json')['example'] = self.handler._http_input_example
         return schema
 
-    def handle_request(self, request):
+    def handle_request(self, request: flask.Request):
         return self.handler.handle_request(request, self.func)
 
-    def handle_batch_request(self, request):
-        requests = DataLoader.split_requests(request.data)
+    def handle_batch_request(self, request: flask.Request):
+        requests = DataLoader.split_requests(request.get_data())
         with trace(
             ZIPKIN_API_URL,
             service_name=self.__class__.__name__,

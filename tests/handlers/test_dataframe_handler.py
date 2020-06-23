@@ -3,6 +3,8 @@ import itertools
 import time
 import pytest
 import math
+
+import flask
 import pandas as pd
 import numpy as np
 import json
@@ -16,9 +18,9 @@ from bentoml.adapters.dataframe_input import (
 from bentoml.exceptions import BadInput
 
 try:
-    from unittest.mock import Mock
+    from unittest.mock import MagicMock
 except ImportError:
-    from mock import Mock
+    from mock import MagicMock
 
 
 def test_dataframe_request_schema():
@@ -114,10 +116,10 @@ def test_dataframe_handle_request_csv():
 
     input_adapter = DataframeInput()
     csv_data = 'name,game,city\njohn,mario,sf'.encode('utf-8')
-    request = Mock()
+    request = MagicMock(spec=flask.Request)
     request.headers = {'orient': 'records'}
     request.content_type = 'text/csv'
-    request.data = csv_data
+    request.get_data.return_value = csv_data
 
     result = input_adapter.handle_request(request, test_function)
     assert result.get_data().decode('utf-8') == '"john"'

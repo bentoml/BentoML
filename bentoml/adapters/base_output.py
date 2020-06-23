@@ -38,13 +38,9 @@ class BaseOutputAdapter:
         :param result: result of user API function
         :param request: request object
         """
-        simple_req = SimpleRequest(headers=request.headers, data=request.get_data())
+        simple_req = SimpleRequest.from_flask_request(request)
         simple_resp = self.to_batch_response((result,), requests=(simple_req,))[0]
-        return flask.Response(
-            response=simple_resp.data,
-            status=simple_resp.status,
-            headers=simple_resp.headers,
-        )
+        return simple_resp.to_flask_response()
 
     def to_batch_response(
         self, result_conc, slices=None, fallbacks=None, requests=None,

@@ -146,7 +146,7 @@ class BentoAPIServer:
                 response="Incorrect content format, require JSON", status=400
             )
 
-        data = json.loads(request.data.decode("utf-8"))
+        data = json.loads(request.get_data().decode("utf-8"))
 
         if "request_id" not in data.keys():
             return Response(response="Missing request id", status=400)

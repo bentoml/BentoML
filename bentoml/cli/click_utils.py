@@ -124,7 +124,7 @@ def _is_valid_bento_tag(value):
 
 
 def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argument
-    if not _is_valid_bento_tag(value):
+    if param.required and not _is_valid_bento_tag(value):
         raise click.BadParameter(
             "Bad formatting. Please present in BentoName:Version, for example "
             "iris_classifier:v1.2.0"

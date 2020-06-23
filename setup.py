@@ -50,6 +50,7 @@ install_requires = [
 ]
 
 aws_sam_cli = ["aws-sam-cli==0.33.1"]
+azure_cli = ["azure-cli"]
 postgres = ['psycopg2', 'psycopg2-binary']
 
 test_requires = [
@@ -90,7 +91,7 @@ docs_requires = [
 
 dev_all = install_requires + dev_requires + docs_requires
 
-yatai_service = install_requires + aws_sam_cli + postgres
+yatai_service = install_requires + aws_sam_cli + postgres + azure_cli
 
 extras_require = {
     "dev": dev_all,

@@ -308,14 +308,14 @@ Create a Kubernetes secret base on the `accessTokens.json`
 
 .. code-block:: bash
 
-    $ kubectl create configmap azure-access-tokens --from-file=~/.azure/accessTokens.json
+    $ kubectl create secret generic azure-access-tokens --from-file=~/.azure/accessTokens.json
 
 
 Confirm the secrete is created successfully by using `kubectl describe` command
 
 .. code-block:: bash
 
-    $kubectl describe configmap azure-access-tokens
+    $kubectl describe secret azure-access-tokens
 
 
 
@@ -370,8 +370,8 @@ Copy and paste the code below into a file named `yatai-service.yaml`
               readOnly: true
           volumes:
           - name: azure-access-tokens
-            configmap:
-                name: azure-access-tokens
+            secret:
+                secretName: azure-access-tokens
 
 
 Run `kubectl apply` command to deploy Yatai service to the Kubernetes cluster

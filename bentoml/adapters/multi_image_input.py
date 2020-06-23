@@ -94,10 +94,24 @@ class MultiImageInput(BaseInputAdapter):
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func
     ) -> Iterable[SimpleResponse]:
-        raise NotImplementedError(
-            "The batch processing architecture does not currently support multipart "
-            "requests, which are required for multi-image requests"
-        )
+        inputs = []
+        slices = []
+        for i, req in enumerate(requests):
+            content_type = req.headers['Content-Type']
+
+            if "multipart/form-data" not in content_type:
+                slices.append(None)
+            else:
+                files = {}
+                request = Request.from_values(
+                    data=req.data, content_type=content_type, headers=req.headers,
+                )
+                for name, file in request.files:
+                    files[name] = self.read_file(file.filename, file.stream)
+                inputs.append(files)
+                slices.append(i)
+        results = func(inputs) if inputs else []
+        return self.output_adapter.to_batch_response(results, slices, requests)
 
     def handle_cli(self, args, func):
         """Handles an CLI command call, convert CLI arguments into

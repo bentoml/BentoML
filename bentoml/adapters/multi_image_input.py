@@ -126,7 +126,7 @@ class MultiImageInput(BaseInputAdapter):
         :param event: AWS lambda event data of the python `dict` type
         :param func: user API function
         """
-        content_type = event.headers['content-type']
+        content_type = event.headers['Content-Type']
         if "multipart/form-data" in content_type:
             files = {}
 

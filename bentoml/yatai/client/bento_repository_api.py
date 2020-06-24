@@ -34,7 +34,7 @@ from bentoml.yatai.proto.repository_pb2 import (
 )
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.saved_bundle import save_to_dir, load_bento_service_metadata
+from bentoml.saved_bundle import save_to_dir
 from bentoml.yatai.status import Status
 
 

@@ -21,7 +21,11 @@ import logging
 from configparser import ConfigParser
 
 from bentoml import config as bentoml_config
-from bentoml.configuration import get_local_config_file, DEFAULT_CONFIG_FILE
+from bentoml.configuration import (
+    get_local_config_file,
+    DEFAULT_CONFIG_FILE,
+    CONFIG_FILE_ENCODING,
+)
 from bentoml.cli.click_utils import BentoMLCommandGroup, _echo, CLI_COLOR_ERROR
 from bentoml.utils.usage_stats import track_cli
 
@@ -57,7 +61,7 @@ def get_configuration_sub_command():
     def view():
         track_cli('config-view')
         local_config = ConfigParser()
-        local_config.read(get_local_config_file(), encoding='utf-8')
+        local_config.read(get_local_config_file(), encoding=CONFIG_FILE_ENCODING)
         local_config.write(sys.stdout)
         return
 
@@ -80,7 +84,7 @@ def get_configuration_sub_command():
         track_cli('config-set')
         local_config = ConfigParser()
         local_config_file = get_local_config_file()
-        local_config.read(local_config_file, encoding='utf-8')
+        local_config.read(local_config_file, encoding=CONFIG_FILE_ENCODING)
 
         try:
             for update in updates:
@@ -111,7 +115,7 @@ def get_configuration_sub_command():
         track_cli('config-unset')
         local_config = ConfigParser()
         local_config_file = get_local_config_file()
-        local_config.read(local_config_file, encoding='utf-8')
+        local_config.read(local_config_file, encoding=CONFIG_FILE_ENCODING)
 
         try:
             for update in updates:

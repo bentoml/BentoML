@@ -24,6 +24,7 @@ from flask import Flask, jsonify, Response, request, make_response
 from werkzeug.utils import secure_filename
 
 from bentoml import config
+from bentoml.configuration import get_debug_mode
 from bentoml.utils.usage_stats import track_server
 from bentoml.server.trace import trace
 from bentoml.exceptions import BentoMLException
@@ -104,7 +105,7 @@ class BentoAPIServer:
 
         # Bentoml api service is not thread safe.
         # Flask dev server enabled threaded by default, disable it.
-        self.app.run(port=self.port, threaded=False)
+        self.app.run(port=self.port, threaded=False, debug=get_debug_mode())
 
     @staticmethod
     def index_view_func():

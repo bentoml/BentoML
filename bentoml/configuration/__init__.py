@@ -166,9 +166,7 @@ def get_bentoml_deploy_version():
     bentoml_deploy_version = config('core').get('bentoml_deploy_version')
 
     if bentoml_deploy_version != LAST_PYPI_RELEASE_VERSION:
-        logger.info(
-            f"Setting BentoML deploy version to '{bentoml_deploy_version}'"
-        )
+        logger.info(f"Setting BentoML deploy version to '{bentoml_deploy_version}'")
 
     if LAST_PYPI_RELEASE_VERSION != BENTOML_VERSION:
         if _is_pip_installed_bentoml():

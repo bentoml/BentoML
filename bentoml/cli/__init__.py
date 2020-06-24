@@ -250,7 +250,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             bento, pip_installed_bundle_path
         )
         bento_service = load(bento_service_bundle_path)
-        bento_service._path = bento_service_bundle_path
+
         if with_conda:
             run_with_conda_env(
                 bento_service_bundle_path,

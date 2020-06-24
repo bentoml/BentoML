@@ -177,6 +177,7 @@ def load(bundle_path):
 
     svc_cls = load_bento_service_class(bundle_path)
     svc = svc_cls()
+    svc._path = bundle_path
 
     track_load_finish(svc)
     return svc

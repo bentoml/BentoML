@@ -13,8 +13,7 @@
 # limitations under the License.
 import click
 import os
-import json
-from google.protobuf.json_format import MessageToJson, MessageToDict
+from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import (
@@ -75,29 +74,14 @@ def _print_bento_table(bentos, wide=False):
     _echo(table_display)
 
 
-def _print_bentos_info(bentos, output_type, print_location=False):
+def _print_bentos_info(bentos, output_type):
     if output_type == 'table':
         _print_bento_table(bentos)
     elif output_type == 'wide':
         _print_bento_table(bentos, wide=True)
     else:
         for bento in bentos:
-            if print_location:
-                _echo(bento.uri.uri)
             _print_bento_info(bento, output_type)
-
-
-def _unpack_jq_like_string(bento_dict, json_query):
-    tokens = json_query.split(".")
-    for _t in tokens:
-        try:
-            bento_dict = bento_dict[_t]
-        except KeyError:
-            _echo(
-                f'Failed to get {json_query}. Key {_t} is missing', CLI_COLOR_ERROR,
-            )
-            return None
-    return bento_dict
 
 
 def add_bento_sub_command(cli):
@@ -107,17 +91,12 @@ def add_bento_sub_command(cli):
     @click.option(
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
-    @click.option(
-        '--json-output',
-        type=click.STRING,
-        help='Fetch specific field from JSON in a jq-like syntax',
-    )
     @click.option('--ascending-order', is_flag=True)
     @click.option('--print-location', is_flag=True)
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table', 'wide'])
     )
-    def get(bento, limit, json_output, ascending_order, print_location, output):
+    def get(bento, limit, ascending_order, print_location, output):
         if ':' in bento:
             name, version = bento.split(':')
         else:
@@ -125,7 +104,6 @@ def add_bento_sub_command(cli):
             version = None
         yatai_client = YataiClient()
 
-        # get specific version
         if name and version:
             track_cli('bento-get')
             output = output or 'json'
@@ -143,14 +121,8 @@ def add_bento_sub_command(cli):
             if print_location:
                 _echo(get_bento_result.bento.uri.uri)
                 return
-            if json_output:
-                resp_dict = MessageToDict(get_bento_result.bento)
-                res = _unpack_jq_like_string(resp_dict, json_output)
-                _echo(json.dumps(res, sort_keys=True, indent=4, separators=(',', ': ')))
-                return
             _print_bento_info(get_bento_result.bento, output)
             return
-        # get by name only
         elif name:
             track_cli('bento-list')
             output = output or 'table'
@@ -168,9 +140,7 @@ def add_bento_sub_command(cli):
                 )
                 return
 
-            _print_bentos_info(
-                list_bento_versions_result.bentos, output, print_location
-            )
+            _print_bentos_info(list_bento_versions_result.bentos, output)
 
     @cli.command(name='list', help='List BentoServices information')
     @click.option(

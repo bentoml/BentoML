@@ -7,7 +7,6 @@ from click.testing import CliRunner
 import psutil  # noqa # pylint: disable=unused-import
 
 from bentoml.cli import create_bento_service_cli
-from bentoml.cli.bento import _unpack_jq_like_string
 
 
 def generate_test_input_file():
@@ -20,18 +19,6 @@ def generate_test_input_file():
     with open(file_path, "w") as f:
         f.write('[{"col1": 1}, {"col1": 2}]')
     return file_path
-
-
-def test_unpack_jq_like_string():
-    test_obj = {"a": "b", "c": {"d": "e"}}
-
-    assert _unpack_jq_like_string(test_obj, "a") == test_obj["a"]
-    assert _unpack_jq_like_string(test_obj, "c.d") == test_obj["c"]["d"]
-
-    # key not found should return None
-    assert _unpack_jq_like_string(test_obj, "") is None
-    assert _unpack_jq_like_string(test_obj, "b") is None
-    assert _unpack_jq_like_string(test_obj, "c.g") is None
 
 
 def test_run_command_with_input_file(bento_bundle_path):

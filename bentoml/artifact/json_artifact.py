@@ -18,7 +18,9 @@ class JSONArtifact(BentoServiceArtifact):
             Defaults to stdlib's json module.
     """
 
-    def __init__(self, name, file_extension=".json", encoding="utf8", json_module=None):
+    def __init__(
+        self, name, file_extension=".json", encoding="utf-8", json_module=None
+    ):
         super().__init__(name)
         self._file_extension = file_extension
         self._encoding = encoding

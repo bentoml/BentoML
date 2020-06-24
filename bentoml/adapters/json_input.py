@@ -38,7 +38,7 @@ class JsonInput(BaseInputAdapter):
 
     def handle_request(self, request: flask.Request, func):
         if request.content_type == "application/json":
-            parsed_json = json.loads(request.get_data().decode("utf-8"))
+            parsed_json = json.loads(request.get_data(as_text=True))
         else:
             raise BadInput(
                 "Request content-type must be 'application/json' for this "

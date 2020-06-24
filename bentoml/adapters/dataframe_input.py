@@ -146,13 +146,13 @@ class DataframeInput(BaseInputAdapter):
 
     def handle_request(self, request: flask.Request, func):
         if request.content_type == "text/csv":
-            csv_string = StringIO(request.get_data().decode('utf-8'))
+            csv_string = StringIO(request.get_data(as_text=True))
             df = pd.read_csv(csv_string)
         else:
             # Optimistically assuming Content-Type to be "application/json"
             try:
                 df = pd.read_json(
-                    request.get_data().decode("utf-8"),
+                    request.get_data(as_text=True),
                     orient=self.orient,
                     typ=self.typ,
                     dtype=False,

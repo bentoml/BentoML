@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 # Default bentoml config comes with the library bentoml/config/default_bentoml.cfg
 DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.cfg")
 
+CONFIG_FILE_ENCODING = "utf-8"
+
 
 def expand_env_var(env_var):
     """Expands potentially nested env var by repeatedly applying `expandvars` and
@@ -99,7 +101,7 @@ def load_config():
         )
 
     with open(DEFAULT_CONFIG_FILE, "rb") as f:
-        DEFAULT_CONFIG = f.read().decode("utf-8")
+        DEFAULT_CONFIG = f.read().decode(CONFIG_FILE_ENCODING)
 
     loaded_config = BentoMLConfigParser(
         default_config=parameterized_config(DEFAULT_CONFIG)
@@ -109,7 +111,9 @@ def load_config():
     if os.path.isfile(local_config_file):
         logger.info("Loading local BentoML config file: %s", local_config_file)
         with open(local_config_file, "rb") as f:
-            loaded_config.read_string(parameterized_config(f.read().decode("utf-8")))
+            loaded_config.read_string(
+                parameterized_config(f.read().decode(CONFIG_FILE_ENCODING))
+            )
     else:
         logger.info("No local BentoML config file found, using default configurations")
 

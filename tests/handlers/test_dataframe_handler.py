@@ -115,7 +115,7 @@ def test_dataframe_handle_request_csv():
         return df["name"][0]
 
     input_adapter = DataframeInput()
-    csv_data = 'name,game,city\njohn,mario,sf'.encode('utf-8')
+    csv_data = 'name,game,city\njohn,mario,sf'
     request = MagicMock(spec=flask.Request)
     request.headers = {'orient': 'records'}
     request.content_type = 'text/csv'

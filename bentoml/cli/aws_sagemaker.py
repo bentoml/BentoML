@@ -14,12 +14,12 @@
 from datetime import datetime
 
 import click
+from click import ClickException
 
 from bentoml.cli.utils import Spinner
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     parse_bento_tag_callback,
-    CLI_COLOR_ERROR,
     _echo,
     CLI_COLOR_SUCCESS,
     parse_labels_callback,
@@ -155,26 +155,20 @@ def get_aws_sagemaker_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                _echo(
+                raise ClickException(
                     f'Failed to create AWS Sagemaker deployment {name} '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
+                    f'{error_code}:{error_message}'
                 )
-                return 1, {'error_code': error_code, 'error_message': error_message}
             _echo(
                 f'Successfully created AWS Sagemaker deployment {name}',
                 CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)
-            return 0
+            return
         except BentoMLException as e:
-            _echo(
-                'Failed to create AWS Sagemaker deployment {}.: {}'.format(
-                    name, str(e)
-                ),
-                CLI_COLOR_ERROR,
+            raise ClickException(
+                f'Failed to create AWS Sagemaker deployment {name}.: {str(e)}'
             )
-            return 1, {'error_message', str(e)}
 
     @aws_sagemaker.command(help='Update existing AWS Sagemaker deployment')
     @click.argument('name', type=click.STRING)
@@ -263,23 +257,20 @@ def get_aws_sagemaker_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                _echo(
+                raise ClickException(
                     f'Failed to update AWS Sagemaker deployment {name}.'
                     f'{error_code}:{error_message}'
                 )
-                return 1, {'error_code': error_code, 'error_message': error_message}
             _echo(
                 f'Successfully updated AWS Sagemaker deployment {name}',
                 CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)
-            return 0
+            return
         except BentoMLException as e:
-            _echo(
-                f'Failed to update AWS Sagemaker deployment {name}: {str(e)}',
-                CLI_COLOR_ERROR,
+            raise ClickException(
+                f'Failed to update AWS Sagemaker deployment {name}: {str(e)}'
             )
-            return 1, {'error_message': str(e)}
 
     @aws_sagemaker.command(help='Delete AWS Sagemaker deployment')
     @click.argument('name', type=click.STRING)
@@ -303,24 +294,20 @@ def get_aws_sagemaker_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            _echo(
+            raise ClickException(
                 f'Failed to get Sagemaker deployment {name} for deletion. '
-                f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
+                f'{error_code}:{error_message}'
             )
-            return 1, {'error_code': error_code, 'error_message': error_message}
         try:
             result = yatai_client.deployment.delete(name, namespace, force)
             if result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                _echo(
+                raise ClickException(
                     f'Failed to delete AWS Sagemaker deployment {name}. '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
+                    f'{error_code}:{error_message}'
                 )
-                return 1, {'error_code': error_code, 'error_message': error_message}
             extra_properties = {}
             if get_deployment_result.deployment.created_at:
                 stopped_time = datetime.utcnow()
@@ -334,13 +321,11 @@ def get_aws_sagemaker_sub_command():
                 f'Successfully deleted AWS Sagemaker deployment "{name}"',
                 CLI_COLOR_SUCCESS,
             )
-            return 0
+            return extra_properties
         except BentoMLException as e:
-            _echo(
-                f'Failed to delete AWS Sagemaker deployment {name} {str(e)}',
-                CLI_COLOR_ERROR,
+            raise ClickException(
+                f'Failed to delete AWS Sagemaker deployment {name} {str(e)}'
             )
-            return 1, {'error_message': str(e)}
 
     @aws_sagemaker.command(help='Get AWS Sagemaker deployment information')
     @click.argument('name', type=click.STRING)
@@ -362,32 +347,26 @@ def get_aws_sagemaker_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     get_result.status
                 )
-                _echo(
+                raise ClickException(
                     f'Failed to get AWS Sagemaker deployment {name}. '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
+                    f'{error_code}:{error_message}'
                 )
-                return 1, {'error_code': error_code, 'error_message': error_message}
             describe_result = yatai_client.deployment.describe(namespace, name)
             if describe_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
                     describe_result.status
                 )
-                _echo(
+                raise ClickException(
                     f'Failed to retrieve the latest status for AWS Sagemaker '
-                    f'deployment {name}. {error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
+                    f'deployment {name}. {error_code}:{error_message}'
                 )
-                return 1, {'error_code': error_code, 'error_message': error_message}
             get_result.deployment.state.CopyFrom(describe_result.state)
             _print_deployment_info(get_result.deployment, output)
-            return 0
+            return
         except BentoMLException as e:
-            _echo(
-                f'Failed to get AWS Sagemaker deployment {name} {str(e)}',
-                CLI_COLOR_ERROR,
+            raise ClickException(
+                f'Failed to get AWS Sagemaker deployment {name} {str(e)}'
             )
-            return 1, {'error_message': str(e)}
 
     @aws_sagemaker.command(
         name='list', help='List AWS Sagemaker deployment information'
@@ -437,16 +416,13 @@ def get_aws_sagemaker_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_result.status
                 )
-                _echo(
+                raise ClickException(
                     f'Failed to list AWS Sagemaker deployments '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
+                    f'{error_code}:{error_message}'
                 )
-                return 1, {'error_code': error_code, 'error_message': error_message}
             _print_deployments_info(list_result.deployments, output)
-            return 0
+            return
         except BentoMLException as e:
-            _echo(f'Failed to list AWS Sagemaker deployments {str(e)}', CLI_COLOR_ERROR)
-            return 1, {'error_message': str(e)}
+            raise ClickException(f'Failed to list AWS Sagemaker deployments {str(e)}')
 
     return aws_sagemaker

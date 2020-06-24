@@ -20,13 +20,15 @@ import logging
 
 from configparser import ConfigParser
 
+from click import ClickException
+
 from bentoml import config as bentoml_config
 from bentoml.configuration import (
     get_local_config_file,
     DEFAULT_CONFIG_FILE,
     CONFIG_FILE_ENCODING,
 )
-from bentoml.cli.click_utils import BentoMLCommandGroup, _echo, CLI_COLOR_ERROR
+from bentoml.cli.click_utils import BentoMLCommandGroup, _echo
 
 # pylint: disable=unused-variable
 
@@ -96,12 +98,10 @@ def get_configuration_sub_command():
                 local_config.set(sec.strip(), opt.strip(), value.strip())
 
             local_config.write(open(local_config_file, 'w'))
-            return 0
+            return
         except ValueError:
-            error_message = f'Wrong config format: {str(updates)}'
-            _echo(error_message, CLI_COLOR_ERROR)
             _echo(EXAMPLE_CONFIG_USAGE)
-            return 1, {'error_message': error_message}
+            raise ClickException(f'Wrong config format: {str(updates)}')
 
     @config.command(
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
@@ -126,12 +126,10 @@ def get_configuration_sub_command():
                 local_config.remove_option(sec.strip(), opt.strip())
 
             local_config.write(open(local_config_file, 'w'))
-            return 0
+            return
         except ValueError:
-            error_message = f'Wrong config format: {str(updates)}'
-            _echo(error_message, CLI_COLOR_ERROR)
             _echo(EXAMPLE_CONFIG_USAGE)
-            return 1, {'error_message': error_message}
+            raise ClickException(f'Wrong config format: {str(updates)}')
 
     @config.command(help="Reset all local BentoML configs to default")
     def reset():
@@ -140,6 +138,6 @@ def get_configuration_sub_command():
             logger.info("Removing existing BentoML config file: %s", local_config_file)
             os.remove(local_config_file)
         create_local_config_file_if_not_found()
-        return 0
+        return
 
     return config

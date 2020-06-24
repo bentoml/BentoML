@@ -43,13 +43,11 @@ from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
 from bentoml.utils import ProtoMessageToDict, reserve_free_port
-from bentoml.utils.usage_stats import track_cli
 from bentoml.utils.s3 import is_s3_url
 from bentoml.yatai.client import YataiClient
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.exceptions import BentoMLException
-
 
 try:
     import click_completion
@@ -81,7 +79,7 @@ def run_with_conda_env(bundle_path, command):
 
     pip_req = os.path.join(bundle_path, 'requirements.txt')
 
-    return_code = subprocess.call(
+    subprocess.call(
         'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
         'parameter requires conda but it\'s not installed."; exit 1; }} && '
         'conda env update -n {env_name} -f {env_file} && '
@@ -94,7 +92,7 @@ def run_with_conda_env(bundle_path, command):
         ),
         shell=True,
     )
-    return return_code
+    return
 
 
 def create_bento_service_cli(pip_installed_bundle_path=None):
@@ -175,7 +173,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
 
         api = load_bento_service_api(bento_service_bundle_path, api_name)
         api.handle_cli(run_args)
-        return 0
+        return
 
     # Example Usage: bentoml info {BUNDLE_PATH}
     @bentoml_cli.command(
@@ -196,7 +194,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         )
         output = json.dumps(ProtoMessageToDict(bento_service_metadata_pb), indent=2)
         _echo(output)
-        return 0
+        return
 
     # Example usage: bentoml open-api-spec {BUNDLE_PATH}
     @bentoml_cli.command(
@@ -213,7 +211,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service = load(bento_service_bundle_path)
 
         _echo(json.dumps(get_open_api_spec_json(bento_service), indent=2))
-        return 0
+        return
 
     # Example Usage: bentoml serve {BUNDLE_PATH} --port={PORT}
     @bentoml_cli.command(
@@ -329,7 +327,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         enable_microbatch=False,
         microbatch_workers=1,
     ):
-        track_cli('serve_gunicorn')
         if not psutil.POSIX:
             _echo(
                 "The `bentoml server-gunicon` command is only supported on POSIX. "

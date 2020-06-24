@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import re
-import sys
+import time
 
 import click
 import functools
@@ -57,7 +57,7 @@ def _echo(message, color="reset"):
     click.secho(message, fg=color)
 
 
-def _generate_track_event_name(command_group, command, result_code=None):
+def _generate_track_event_name(command_group, command):
     # Format deployment related event names to match with existing event names
     if command_group in DEPLOYMENT_PLATFORMS or command_group == 'deployment':
         if command == 'list_deployments':
@@ -74,11 +74,6 @@ def _generate_track_event_name(command_group, command, result_code=None):
         if command == 'set_command':
             command = 'set'
         event_name = f'{command_group}-{command}'
-
-    if result_code == 0:
-        event_name = f'{event_name}-success'
-    elif result_code == 1:
-        event_name = f'{event_name}-failure'
 
     return event_name
 
@@ -98,20 +93,16 @@ def _get_command_group(module):
         return ''
 
 
-def _send_track_info(func_name, func_module, result_code=None):
+def _send_track_info(func_name, func_module, additional_info=None):
     # Don't record user install auto completion for bentoml cli
     if func_name == 'install_completion':
         return
     command_group = _get_command_group(func_module)
     platform_name = _get_deployment_platform(command_group)
-    track_cli(_generate_track_event_name(command_group, func_name), platform_name)
-    if result_code and type(result_code) == 'tuples':
-        result_code = result_code[0]
-        extra_info = result_code[1]
-    else:
-        extra_info = None
-    event_name = _generate_track_event_name(command_group, func_name, result_code)
-    track_cli(event_name, platform_name, extra_info)
+    extra_info = {'platform': platform_name} if platform_name else {}
+    if additional_info is not None:
+        extra_info.update(additional_info)
+    track_cli(_generate_track_event_name(command_group, func_name), extra_info)
 
 
 class BentoMLCommandGroup(click.Group):
@@ -157,14 +148,21 @@ class BentoMLCommandGroup(click.Group):
     def bentoml_track_usage(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            _send_track_info(func.__name__, func.__module__)
+            start_time = time.time()
             try:
-                result_code = func(*args, **kwargs)
-            except BaseException:
-                _send_track_info(func.__name__, func.__module__, 1)
+                additional_info = func(*args, **kwargs)
+            except BaseException as e:
+                duration = time.time() - start_time
+                additional_info = {
+                    'duration': duration,
+                    'error_type': type(e).__name__,
+                    'error_message': str(e),
+                }
+                _send_track_info(func.__name__, func.__module__, additional_info)
                 raise
-            _send_track_info(func.__name__, func.__module__, result_code)
-            sys.exit(result_code)
+            duration = time.time() - start_time
+            additional_info['duration'] = duration
+            _send_track_info(func.__name__, func.__module__, additional_info)
 
         return wrapper
 

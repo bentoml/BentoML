@@ -16,10 +16,11 @@ import click
 import logging
 from datetime import datetime
 
+from click import ClickException
+
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     _echo,
-    CLI_COLOR_ERROR,
     CLI_COLOR_SUCCESS,
     parse_yaml_file_callback,
     validate_labels_query_callback,
@@ -76,23 +77,19 @@ def get_deployment_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                _echo(
+                raise ClickException(
                     f'Failed to create deployment {deployment_name} '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
+                    f'{error_code}:{error_message}'
                 )
-                return 1, {'error_code': error_code, 'error_message': error_message}
             _echo(
                 f'Successfully created deployment {deployment_name}', CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)
-            return 0
+            return
         except BentoMLException as e:
-            _echo(
-                f'Failed to create deployment {deployment_name} {str(e)}',
-                CLI_COLOR_ERROR,
+            raise ClickException(
+                f'Failed to create deployment {deployment_name} {str(e)}'
             )
-            return 1, {'error_message': str(e)}
 
     @deployment.command(help='Apply BentoService deployment from yaml file')
     @click.option(
@@ -120,24 +117,20 @@ def get_deployment_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                _echo(
+                raise ClickException(
                     f'Failed to apply deployment {deployment_name} '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
+                    f'{error_code}:{error_message}'
                 )
-                return 1, {'error_code': error_code, 'error_message': error_message}
             _echo(
                 f'Successfully applied deployment {deployment_name}', CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)
-            return 0
+            return
         except BentoMLException as e:
-            _echo(
-                'Failed to apply deployment {name}. Error message: {message}'.format(
-                    name=deployment_yaml.get('name'), message=e
-                )
+            raise ClickException(
+                f'Failed to apply deployment {deployment_yaml.get("name")}. '
+                f'Error message: {str(e)}'
             )
-            return 1, {'error_message': str(e)}
 
     @deployment.command(help='Delete deployment')
     @click.argument('name', type=click.STRING)
@@ -161,22 +154,18 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            _echo(
+            raise ClickException(
                 f'Failed to get deployment {name} for deletion. '
-                f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
+                f'{error_code}:{error_message}'
             )
-            return
         result = yatai_client.deployment.delete(name, namespace, force)
         if result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            _echo(
-                f'Failed to delete deployment {name}. {error_code}:{error_message}',
-                CLI_COLOR_ERROR,
+            raise ClickException(
+                f'Failed to delete deployment {name}. {error_code}:{error_message}'
             )
-            return 1, {'error_code': error_code, 'error_message': error_message}
         extra_properties = {}
         if get_deployment_result.deployment.created_at:
             stopped_time = datetime.utcnow()
@@ -187,7 +176,7 @@ def get_deployment_sub_command():
                 ).total_seconds()
             )
         _echo('Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS)
-        return 0
+        return extra_properties
 
     @deployment.command(help='Get deployment information')
     @click.argument('name', type=click.STRING)
@@ -206,11 +195,9 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_result.status
             )
-            _echo(
-                f'Failed to get deployment {name}. ' f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
+            raise ClickException(
+                f'Failed to get deployment {name}. ' f'{error_code}:{error_message}'
             )
-            return 1, {'error_code': error_code, 'error_message': error_message}
         describe_result = yatai_client.deployment.describe(
             namespace=namespace, name=name
         )
@@ -218,15 +205,13 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 describe_result.status
             )
-            _echo(
+            raise ClickException(
                 f'Failed to retrieve the latest status for deployment'
-                f' {name}. {error_code}:{error_message}',
-                CLI_COLOR_ERROR,
+                f' {name}. {error_code}:{error_message}'
             )
-            return 1, {'error_code': error_code, 'error_message': error_message}
         get_result.deployment.state.CopyFrom(describe_result.state)
         _print_deployment_info(get_result.deployment, output)
-        return 0
+        return
 
     @deployment.command(name='list', help='List deployments')
     @click.option(
@@ -278,15 +263,12 @@ def get_deployment_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_result.status
                 )
-                _echo(
-                    f'Failed to list deployments {error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
+                raise ClickException(
+                    f'Failed to list deployments {error_code}:{error_message}'
                 )
-                return 1, {'error_code': error_code, 'error_message': error_message}
             _print_deployments_info(list_result.deployments, output)
-            return 0
+            return
         except BentoMLException as e:
-            _echo(f'Failed to list deployments {str(e)}')
-            return 1, {'error_message', str(e)}
+            raise ClickException(f'Failed to list deployments {str(e)}')
 
     return deployment

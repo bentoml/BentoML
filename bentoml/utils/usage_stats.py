@@ -155,10 +155,8 @@ def track_load_finish(bento_service):
     return track("load", properties)
 
 
-def track_cli(command, deploy_platform=None, extra_properties=None):
+def track_cli(command, extra_properties=None):
     properties = {}
-    if deploy_platform is not None:
-        properties['platform'] = deploy_platform
     if extra_properties is not None:
         properties.update(extra_properties)
     return track('cli-' + command, properties)

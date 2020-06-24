@@ -57,10 +57,10 @@ class BentoRepositoryAPIClient:
         """
         with TempDirectory() as tmpdir:
             save_to_dir(bento_service, tmpdir, version, silent=True)
-            return self._upload_bento_service(tmpdir)
+            return self._upload_bento_service(bento_service, tmpdir)
 
-    def _upload_bento_service(self, saved_bento_path):
-        bento_service_metadata = load_bento_service_metadata(saved_bento_path)
+    def _upload_bento_service(self, bento_service, saved_bento_path):
+        bento_service_metadata = bento_service.get_bento_service_metadata_pb()
 
         get_bento_response = self.yatai_service.GetBento(
             GetBentoRequest(

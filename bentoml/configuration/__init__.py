@@ -71,17 +71,11 @@ BENTOML_VERSION = __version__
 LAST_PYPI_RELEASE_VERSION = __version__.split('+')[0]
 
 
-def _is_pypi_release():
+def _is_pip_installed_bentoml():
     is_installed_package = hasattr(version_mod, 'version_json')
     is_tagged = not __version__.startswith('0+untagged')
     is_clean = not version_mod.get_versions()['dirty']
     return is_installed_package and is_tagged and is_clean
-
-
-if not _is_pypi_release():
-    # Reset to LAST_PYPI_RELEASE_VERSION if bentoml module is 'dirty'
-    # This will be used as default value of 'core/bentoml_deploy_version' config
-    BENTOML_VERSION = LAST_PYPI_RELEASE_VERSION
 
 
 def get_local_config_file():
@@ -171,14 +165,23 @@ def get_bentoml_deploy_version():
     """
     bentoml_deploy_version = config('core').get('bentoml_deploy_version')
 
-    if bentoml_deploy_version != __version__:
-        logger.warning(
-            "BentoML local changes detected - Local BentoML repository including all "
-            "code changes will be packaged together with saved bundle created, under "
-            "'./bundled_pip_dependencies' directory. For using a modified version of "
-            "BentoML for production deployment, it is recommended to set the "
-            "'core/bentoml_deploy_version' config to a http location or your BentoML "
-            "for on github, e.g.: 'bentoml_deploy_version = git+https://github.com/"
-            "{username}/bentoml.git@{branch}'"
-        )
+    if bentoml_deploy_version != LAST_PYPI_RELEASE_VERSION:
+        logger.info(f"Setting BentoML deploy version to '{bentoml_deploy_version}'")
+
+    if LAST_PYPI_RELEASE_VERSION != BENTOML_VERSION:
+        if _is_pip_installed_bentoml():
+            logger.warning(
+                "Using BentoML not from official PyPI release. In order to find the "
+                "same version of BentoML when deplying your BentoService, you must "
+                "set the 'core/bentoml_deploy_version' config to a http/git location "
+                "of your BentoML fork, e.g.: 'bentoml_deploy_version = "
+                "git+https://github.com/{username}/bentoml.git@{branch}'"
+            )
+        else:
+            logger.warning(
+                "Using BentoML installed in `editable` model, the local BentoML "
+                "repository including all code changes will be packaged together with "
+                "saved bundle created, under the './bundled_pip_dependencies' "
+                "directory of the saved bundle."
+            )
     return bentoml_deploy_version

@@ -34,7 +34,7 @@ from bentoml.yatai.proto.repository_pb2 import (
 )
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.saved_bundle import save_to_dir, load_bento_service_metadata
+from bentoml.saved_bundle import save_to_dir
 from bentoml.yatai.status import Status
 
 
@@ -57,10 +57,10 @@ class BentoRepositoryAPIClient:
         """
         with TempDirectory() as tmpdir:
             save_to_dir(bento_service, tmpdir, version, silent=True)
-            return self._upload_bento_service(tmpdir)
+            return self._upload_bento_service(bento_service, tmpdir)
 
-    def _upload_bento_service(self, saved_bento_path):
-        bento_service_metadata = load_bento_service_metadata(saved_bento_path)
+    def _upload_bento_service(self, bento_service, saved_bento_path):
+        bento_service_metadata = bento_service.get_bento_service_metadata_pb()
 
         get_bento_response = self.yatai_service.GetBento(
             GetBentoRequest(

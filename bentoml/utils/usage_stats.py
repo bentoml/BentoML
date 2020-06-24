@@ -25,7 +25,7 @@ import requests
 from ruamel.yaml import YAML
 
 from bentoml.utils import ProtoMessageToDict
-from bentoml.configuration import _is_pypi_release
+from bentoml.configuration import _is_pip_installed_bentoml
 from bentoml import config
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -44,7 +44,7 @@ SESSION_ID = str(uuid.uuid4())  # uuid that marks current python session
 
 # Use dev amplitude key
 API_KEY = '7f65f2446427226eb86f6adfacbbf47a'
-if _is_pypi_release():
+if _is_pip_installed_bentoml():
     # Use prod amplitude key
     API_KEY = '1ad6ee0e81b9666761aebd55955bbd3a'
 

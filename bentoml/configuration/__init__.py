@@ -21,7 +21,6 @@ from bentoml import __version__, _version as version_mod
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
 
-
 # Note this file is loaded prior to logging being configured, thus logger is only
 # used within functions in this file
 logger = logging.getLogger(__name__)
@@ -189,3 +188,19 @@ def get_bentoml_deploy_version():
                 "directory of the saved bundle."
             )
     return bentoml_deploy_version
+
+
+def get_debug_mode():
+    return config().getboolean('core', 'debug')
+
+
+def set_debug_mode(debug_mode_on: bool):
+    config().set('core', 'debug', str(debug_mode_on))
+
+    from bentoml.utils.log import configure_logging
+
+    configure_logging()  # reconfigure logging and set log level to debug
+
+    logger.debug(
+        f"Setting debug mode: {'ON' if debug_mode_on else 'OFF'} for current session"
+    )

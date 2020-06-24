@@ -19,7 +19,7 @@ import logging
 
 from setuptools import sandbox
 
-from bentoml.configuration import _is_pypi_release
+from bentoml.configuration import _is_pip_installed_bentoml
 
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.py_module_utils import copy_used_py_modules
@@ -199,7 +199,7 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
     # this is for BentoML developer to create BentoService containing custom develop
     # branches of BentoML library, it is True only when BentoML module is installed in
     # development mode via "pip install --editable ."
-    if not _is_pypi_release() and os.path.isfile(bentoml_setup_py):
+    if not _is_pip_installed_bentoml() and os.path.isfile(bentoml_setup_py):
         logger.info(
             "Detect BentoML installed in development model, copying local BentoML "
             "module file to target saved bundle path"

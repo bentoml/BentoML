@@ -39,7 +39,7 @@ include bentoml/yatai/alembic.ini
 graft bentoml/yatai/web/dist
 
 # include ".conf" file
-include bentoml/yatai/deployment/sagemaker/sagemaker_nginx.conf
+include bentoml/yatai/deployment/sagemaker/nginx.conf
 
 # include files for Azure function deployment
 include bentoml/yatai/deployment/azure_functions/host.json

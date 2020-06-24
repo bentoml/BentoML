@@ -92,10 +92,11 @@ def add_bento_sub_command(cli):
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
     @click.option('--ascending-order', is_flag=True)
+    @click.option('--print-location', is_flag=True)
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table', 'wide'])
     )
-    def get(bento, limit, ascending_order, output):
+    def get(bento, limit, ascending_order, print_location, output):
         if ':' in bento:
             name, version = bento.split(':')
         else:
@@ -116,6 +117,9 @@ def add_bento_sub_command(cli):
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
+                return
+            if print_location:
+                _echo(get_bento_result.bento.uri.uri)
                 return
             _print_bento_info(get_bento_result.bento, output)
             return

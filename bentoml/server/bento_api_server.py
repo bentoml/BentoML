@@ -20,7 +20,7 @@ import time
 import logging
 from functools import partial
 
-from flask import Flask, jsonify, Response, request, make_response
+from flask import Flask, jsonify, Response, request, make_response, render_template
 from werkzeug.utils import secure_filename
 
 from bentoml import config
@@ -83,13 +83,23 @@ class BentoAPIServer:
 
         self.port = port
         self.bento_service = bento_service
-
-        self.app = Flask(
-            app_name,
-            static_folder=os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), 'static'
-            ),
-        )
+        if hasattr(bento_service, '_static_files'):
+            self.app = Flask(
+                app_name,
+                static_folder=os.path.join(
+                    self.bento_service._path, app_name, 'webui/static'
+                ),
+                template_folder=os.path.join(
+                    self.bento_service._path, app_name, 'webui'
+                ),
+            )
+        else:
+            self.app = Flask(
+                app_name,
+                static_folder=os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), 'static'
+                ),
+            )
 
         for middleware in (InstrumentMiddleware,):
             self.app.wsgi_app = middleware(self.app.wsgi_app, self.bento_service)
@@ -106,16 +116,18 @@ class BentoAPIServer:
         # Flask dev server enabled threaded by default, disable it.
         self.app.run(port=self.port, threaded=False)
 
-    @staticmethod
-    def index_view_func():
+    def index_view_func(self):
         """
         The index route for BentoML API server
         """
-        return Response(
-            response=INDEX_HTML.format(url='/docs.json'),
-            status=200,
-            mimetype="text/html",
-        )
+        if hasattr(self.bento_service, '_static_files'):
+            return render_template('index.html')
+        else:
+            return Response(
+                response=INDEX_HTML.format(url='/docs.json'),
+                status=200,
+                mimetype="text/html",
+            )
 
     @staticmethod
     def docs_view_func(bento_service):

@@ -299,6 +299,24 @@ def api_decorator(
     return decorator
 
 
+def webui_decorator(static_files):
+    """Define web UI static files required to be bundled with a BentoService
+
+    Args:
+        static_files: path to directory containg index.html and static dir
+
+    >>>  @webui('./ui/')
+    >>>  class MyMLService(BentoService):
+    >>>     pass
+    """
+
+    def decorator(bento_service_cls):
+        bento_service_cls._static_files = static_files
+        return bento_service_cls
+
+    return decorator
+
+
 def artifacts_decorator(artifacts):
     """Define artifacts required to be bundled with a BentoService
 

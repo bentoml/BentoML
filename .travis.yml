@@ -9,6 +9,7 @@ python:
   - 3.6
   - 3.7
   - 3.8
+  - "docker-test"
 
 services:
   - docker
@@ -45,7 +46,7 @@ matrix:
         - ./travis/pytorch_integration_tests.sh
 
     - name: "Docker Container e2e tests"
-      python: "3.6"
+      python: "docker-test"
       script:
         - ./travis/docker_integration_tests.sh
 

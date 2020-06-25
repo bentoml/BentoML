@@ -38,7 +38,7 @@ def bento_docker_server(tag, path, port=PORT):
 
     logger.info('Starting docker Server...')
     logger.info(dClient.containers())
-    logger.info(dClient.images())
+    logger.info(dClient.images(all=True))
     container = dClient.create_container(
         name='bento-test-docker-init',
         image=tag,

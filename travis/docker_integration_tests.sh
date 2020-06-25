@@ -9,6 +9,6 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-pytest e2e_tests/docker_server/test_docker_container_initialization.py --cov=bentoml
+pytest e2e_tests/docker_server/test_docker_container_initialization.py -s
 
 test $error = 0 # Return non-zero if pytest failed

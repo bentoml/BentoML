@@ -44,7 +44,7 @@ matrix:
     - name: "Docker Container e2e tests"
       python: "3.6"
       script:
-        - pytest e2e_tests/docker_server/test_docker_container_initialization.py
+        - ./travis/docker_integration_tests.sh
 
 script:
   - ./travis/unit_tests.sh

@@ -15,6 +15,7 @@ def bento_docker_server(tag, path, port=PORT):
     logger.info("Starting Build...")
     dClient = docker.APIClient(base_url='unix://var/run/docker.sock')
     logger.info("Docker client connected!")
+    logger.info(dClient.version())
     try:
         generator = dClient.build(path=path, tag=tag, rm=False)
     except:

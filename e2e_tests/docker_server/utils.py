@@ -14,7 +14,11 @@ logger = logging.getLogger('bentoml.test')
 def bento_docker_server(tag, path, port=PORT):
     logger.info("Starting Build...")
     dClient = docker.APIClient(base_url='unix://var/run/docker.sock')
-    generator = dClient.build(path=path, tag=tag, rm=False)
+    logger.info("Docker client connected!")
+    try:
+        generator = dClient.build(path=path, tag=tag, rm=False)
+    except:
+        logger.error('build faild!')
 
     # output build logs
     while True:
@@ -28,7 +32,7 @@ def bento_docker_server(tag, path, port=PORT):
             logger.info("Docker image build complete.")
             break
         except ValueError:
-            logger.info("Error parsing output from docker image build: %s" % output)
+            logger.error("Error parsing output from docker image build: %s" % output)
 
     logger.info('Starting docker Server...')
     container = dClient.create_container(

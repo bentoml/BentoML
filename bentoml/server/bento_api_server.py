@@ -83,7 +83,7 @@ class BentoAPIServer:
 
         self.port = port
         self.bento_service = bento_service
-        if hasattr(bento_service, '_static_files'):
+        if bento_service._static_files:
             self.app = Flask(
                 app_name,
                 static_folder=os.path.join(
@@ -116,11 +116,12 @@ class BentoAPIServer:
         # Flask dev server enabled threaded by default, disable it.
         self.app.run(port=self.port, threaded=False)
 
-    def index_view_func(self):
+    @staticmethod
+    def index_view_func(bento_service):
         """
         The index route for BentoML API server
         """
-        if hasattr(self.bento_service, '_static_files'):
+        if bento_service._static_files:
             return render_template('index.html')
         else:
             return Response(
@@ -185,7 +186,9 @@ class BentoAPIServer:
         /predict
         """
 
-        self.app.add_url_rule("/", "index", self.index_view_func)
+        self.app.add_url_rule(
+            "/", "index", partial(self.index_view_func, self.bento_service)
+        )
         self.app.add_url_rule(
             "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
         )

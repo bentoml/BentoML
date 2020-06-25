@@ -533,6 +533,9 @@ class BentoService(BentoServiceBase):
     _version_major = None
     _version_minor = None
 
+    # See `webui` function above for more
+    _static_files = None
+
     def __init__(self):
         from bentoml.artifact import ArtifactCollection
 
@@ -570,6 +573,10 @@ class BentoService(BentoServiceBase):
     @property
     def env(self):
         return self._env
+
+    @property
+    def webui(self):
+        return self._static_files
 
     @hybridmethod
     @property

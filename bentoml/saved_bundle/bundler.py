@@ -143,7 +143,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
         )
 
     # copy custom webui if enabled
-    if hasattr(bento_service, '_static_files'):
+    if bento_service._static_files:
         src_webui_dir = os.path.join(os.getcwd(), bento_service._static_files)
         dest_webui_dir = os.path.join(module_base_path, 'webui')
         # os.mkdir(dest_webui_dir)

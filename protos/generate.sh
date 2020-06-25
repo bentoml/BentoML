@@ -4,9 +4,6 @@ set -e
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT"
 
-# Install python grpcio-tools if it's not already installed
-# pip install grpcio-tools
-
 PROTO_PATH=$GIT_ROOT/protos
 PYOUT_PATH=$GIT_ROOT/bentoml/yatai/proto
 
@@ -80,8 +77,9 @@ echo "Cleaning up existing proto generated js code.."
 rm -rf "$JS_GRPC_PATH"
 mkdir -p "$JS_GRPC_PATH"
 
-echo "Generating grpc JS code..."
+echo "Generating gRPC JavaScript code..."
 pbjs -t static-module -w es6 --keep-case --force-number -o bentoml_grpc.js "$PROTO_PATH"/*.proto
+echo "Generating gRPC TypeScript code..."
 pbts -o bentoml_grpc.d.ts bentoml_grpc.js
 
 mv "$GIT_ROOT"/bentoml_grpc.js "$JS_GRPC_PATH"

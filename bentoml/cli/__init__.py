@@ -173,7 +173,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
 
         api = load_bento_service_api(bento_service_bundle_path, api_name)
         api.handle_cli(run_args)
-        return
 
     # Example Usage: bentoml info {BUNDLE_PATH}
     @bentoml_cli.command(
@@ -194,7 +193,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         )
         output = json.dumps(ProtoMessageToDict(bento_service_metadata_pb), indent=2)
         _echo(output)
-        return
 
     # Example usage: bentoml open-api-spec {BUNDLE_PATH}
     @bentoml_cli.command(
@@ -211,7 +209,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service = load(bento_service_bundle_path)
 
         _echo(json.dumps(get_open_api_spec_json(bento_service), indent=2))
-        return
 
     # Example Usage: bentoml serve {BUNDLE_PATH} --port={PORT}
     @bentoml_cli.command(

@@ -11,10 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from datetime import datetime
 
 import click
-from click import ClickException
 
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.cli.utils import Spinner
@@ -31,7 +29,7 @@ from bentoml.cli.deployment import (
     _print_deployments_info,
 )
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BentoMLCLIException
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.yatai.client import YataiClient
@@ -137,7 +135,7 @@ def get_aws_lambda_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to create AWS Lambda deployment {name} '
                     f'{error_code}:{error_message}'
                 )
@@ -145,9 +143,8 @@ def get_aws_lambda_sub_command():
                 f'Successfully created AWS Lambda deployment {name}', CLI_COLOR_SUCCESS
             )
             _print_deployment_info(result.deployment, output)
-            return
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to create AWS Lambda deployment {name} {str(e)}'
             )
 
@@ -212,7 +209,7 @@ def get_aws_lambda_sub_command():
                     error_code, error_message = status_pb_to_error_code_and_message(
                         result.status
                     )
-                    raise ClickException(
+                    raise BentoMLCLIException(
                         f'Failed to update AWS Lambda deployment {name} '
                         f'{error_code}:{error_message}'
                     )
@@ -221,9 +218,8 @@ def get_aws_lambda_sub_command():
                     CLI_COLOR_SUCCESS,
                 )
                 _print_deployment_info(result.deployment, output)
-                return
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to updated AWS Lambda deployment {name}: {str(e)}'
             )
 
@@ -251,7 +247,7 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to get AWS Lambda deployment {name} for deletion '
                 f'{error_code}:{error_message}'
             )
@@ -263,26 +259,16 @@ def get_aws_lambda_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to delete AWS Lambda deployment {name} '
                     f'{error_code}:{error_message}'
-                )
-            extra_properties = {}
-            if get_deployment_result.deployment.created_at:
-                stopped_time = datetime.utcnow()
-                extra_properties['uptime'] = int(
-                    (
-                        stopped_time
-                        - get_deployment_result.deployment.created_at.ToDatetime()
-                    ).total_seconds()
                 )
             _echo(
                 f'Successfully deleted AWS Lambda deployment "{name}"',
                 CLI_COLOR_SUCCESS,
             )
-            return extra_properties
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to delete AWS Lambda deployment {name} {str(e)}'
             )
 
@@ -305,7 +291,7 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 describe_result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to retrieve the latest status for AWS Lambda deployment '
                 f'{name}. {error_code}:{error_message}'
             )
@@ -315,14 +301,13 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to get AWS Lambda deployment {name}. '
                 f'{error_code}:{error_message}'
             )
         _print_deployment_info(get_result.deployment, output)
-        return
 
-    @aws_lambda.command(name='list', help='List AWS Sagemaker deployments')
+    @aws_lambda.command(name='list', help='List AWS Lambda deployments')
     @click.option(
         '-n',
         '--namespace',
@@ -368,14 +353,13 @@ def get_aws_lambda_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_result.status
                 )
-                raise ClickException(
-                    f'Failed to list AWS Sagemaker deployments. '
+                raise BentoMLCLIException(
+                    f'Failed to list AWS Lambda deployments. '
                     f'{error_code}:{error_message}'
                 )
             else:
                 _print_deployments_info(list_result.deployments, output)
-                return
         except BentoMLException as e:
-            raise ClickException(f'Failed to list AWS Sagemaker deployment {str(e)}')
+            raise BentoMLCLIException(f'Failed to list AWS Lambda deployment {str(e)}')
 
     return aws_lambda

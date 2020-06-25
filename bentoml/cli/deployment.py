@@ -14,9 +14,6 @@
 
 import click
 import logging
-from datetime import datetime
-
-from click import ClickException
 
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
@@ -29,7 +26,7 @@ from bentoml.yatai.client import YataiClient
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BentoMLCLIException
 from bentoml.cli.utils import Spinner, _print_deployment_info, _print_deployments_info
 
 # pylint: disable=unused-variable
@@ -77,7 +74,7 @@ def get_deployment_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to create deployment {deployment_name} '
                     f'{error_code}:{error_message}'
                 )
@@ -85,9 +82,8 @@ def get_deployment_sub_command():
                 f'Successfully created deployment {deployment_name}', CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)
-            return
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to create deployment {deployment_name} {str(e)}'
             )
 
@@ -117,7 +113,7 @@ def get_deployment_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to apply deployment {deployment_name} '
                     f'{error_code}:{error_message}'
                 )
@@ -125,9 +121,8 @@ def get_deployment_sub_command():
                 f'Successfully applied deployment {deployment_name}', CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)
-            return
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to apply deployment {deployment_yaml.get("name")}. '
                 f'Error message: {str(e)}'
             )
@@ -154,7 +149,7 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to get deployment {name} for deletion. '
                 f'{error_code}:{error_message}'
             )
@@ -163,20 +158,10 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to delete deployment {name}. {error_code}:{error_message}'
             )
-        extra_properties = {}
-        if get_deployment_result.deployment.created_at:
-            stopped_time = datetime.utcnow()
-            extra_properties['uptime'] = int(
-                (
-                    stopped_time
-                    - get_deployment_result.deployment.created_at.ToDatetime()
-                ).total_seconds()
-            )
         _echo('Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS)
-        return extra_properties
 
     @deployment.command(help='Get deployment information')
     @click.argument('name', type=click.STRING)
@@ -195,7 +180,7 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to get deployment {name}. ' f'{error_code}:{error_message}'
             )
         describe_result = yatai_client.deployment.describe(
@@ -205,13 +190,12 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 describe_result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to retrieve the latest status for deployment'
                 f' {name}. {error_code}:{error_message}'
             )
         get_result.deployment.state.CopyFrom(describe_result.state)
         _print_deployment_info(get_result.deployment, output)
-        return
 
     @deployment.command(name='list', help='List deployments')
     @click.option(
@@ -263,12 +247,11 @@ def get_deployment_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to list deployments {error_code}:{error_message}'
                 )
             _print_deployments_info(list_result.deployments, output)
-            return
         except BentoMLException as e:
-            raise ClickException(f'Failed to list deployments {str(e)}')
+            raise BentoMLCLIException(f'Failed to list deployments {str(e)}')
 
     return deployment

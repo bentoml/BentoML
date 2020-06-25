@@ -11,10 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from datetime import datetime
 
 import click
-from click import ClickException
 
 from bentoml.cli.utils import Spinner
 from bentoml.cli.click_utils import (
@@ -30,7 +28,7 @@ from bentoml.cli.deployment import (
     _print_deployments_info,
 )
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BentoMLCLIException
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.utils import status_pb_to_error_code_and_message
@@ -155,7 +153,7 @@ def get_aws_sagemaker_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to create AWS Sagemaker deployment {name} '
                     f'{error_code}:{error_message}'
                 )
@@ -164,9 +162,8 @@ def get_aws_sagemaker_sub_command():
                 CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)
-            return
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to create AWS Sagemaker deployment {name}.: {str(e)}'
             )
 
@@ -257,7 +254,7 @@ def get_aws_sagemaker_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to update AWS Sagemaker deployment {name}.'
                     f'{error_code}:{error_message}'
                 )
@@ -266,9 +263,8 @@ def get_aws_sagemaker_sub_command():
                 CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)
-            return
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to update AWS Sagemaker deployment {name}: {str(e)}'
             )
 
@@ -294,7 +290,7 @@ def get_aws_sagemaker_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to get Sagemaker deployment {name} for deletion. '
                 f'{error_code}:{error_message}'
             )
@@ -304,26 +300,16 @@ def get_aws_sagemaker_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to delete AWS Sagemaker deployment {name}. '
                     f'{error_code}:{error_message}'
-                )
-            extra_properties = {}
-            if get_deployment_result.deployment.created_at:
-                stopped_time = datetime.utcnow()
-                extra_properties['uptime'] = int(
-                    (
-                        stopped_time
-                        - get_deployment_result.deployment.created_at.ToDatetime()
-                    ).total_seconds()
                 )
             _echo(
                 f'Successfully deleted AWS Sagemaker deployment "{name}"',
                 CLI_COLOR_SUCCESS,
             )
-            return extra_properties
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to delete AWS Sagemaker deployment {name} {str(e)}'
             )
 
@@ -347,7 +333,7 @@ def get_aws_sagemaker_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     get_result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to get AWS Sagemaker deployment {name}. '
                     f'{error_code}:{error_message}'
                 )
@@ -356,15 +342,14 @@ def get_aws_sagemaker_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     describe_result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to retrieve the latest status for AWS Sagemaker '
                     f'deployment {name}. {error_code}:{error_message}'
                 )
             get_result.deployment.state.CopyFrom(describe_result.state)
             _print_deployment_info(get_result.deployment, output)
-            return
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to get AWS Sagemaker deployment {name} {str(e)}'
             )
 
@@ -416,13 +401,14 @@ def get_aws_sagemaker_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to list AWS Sagemaker deployments '
                     f'{error_code}:{error_message}'
                 )
             _print_deployments_info(list_result.deployments, output)
-            return
         except BentoMLException as e:
-            raise ClickException(f'Failed to list AWS Sagemaker deployments {str(e)}')
+            raise BentoMLCLIException(
+                f'Failed to list AWS Sagemaker deployments {str(e)}'
+            )
 
     return aws_sagemaker

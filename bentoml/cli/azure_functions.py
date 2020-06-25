@@ -11,10 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from datetime import datetime
 
 import click
-from click import ClickException
 
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
@@ -35,7 +33,7 @@ from bentoml.yatai.deployment.azure_functions.operator import (
     DEFAULT_FUNCTION_AUTH_LEVEL,
 )
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BentoMLCLIException
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.utils import status_pb_to_error_code_and_message
@@ -159,7 +157,7 @@ def get_azure_functions_sub_command():
                     error_code, error_message = status_pb_to_error_code_and_message(
                         result.status
                     )
-                    raise ClickException(
+                    raise BentoMLCLIException(
                         f'Failed to create Azure Functions deployment {name} '
                         f'{error_code}:{error_message}'
                     )
@@ -168,9 +166,8 @@ def get_azure_functions_sub_command():
                     CLI_COLOR_SUCCESS,
                 )
                 _print_deployment_info(result.deployment, output)
-                return
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to create Azure Functions deployment {name}. {str(e)}'
             )
 
@@ -240,7 +237,7 @@ def get_azure_functions_sub_command():
                     error_code, error_message = status_pb_to_error_code_and_message(
                         result.status
                     )
-                    raise ClickException(
+                    raise BentoMLCLIException(
                         f'Failed to update Azure Functions deployment {name}. '
                         f'{error_code}:{error_message}'
                     )
@@ -249,9 +246,8 @@ def get_azure_functions_sub_command():
                     CLI_COLOR_SUCCESS,
                 )
                 _print_deployment_info(result.deployment, output)
-                return
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to update Azure Functions deployment {name}: {str(e)}'
             )
 
@@ -277,7 +273,7 @@ def get_azure_functions_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to get Azure Functions deployment {name} for deletion. '
                 f'{error_code}:{error_message}',
             )
@@ -287,26 +283,16 @@ def get_azure_functions_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to delete Azure Functions deployment {name}. '
                     f'{error_code}:{error_message}',
-                )
-            extra_properties = {}
-            if get_deployment_result.deployment.created_at:
-                stopped_time = datetime.utcnow()
-                extra_properties['uptime'] = int(
-                    (
-                        stopped_time
-                        - get_deployment_result.deployment.created_at.ToDatetime()
-                    ).total_seconds()
                 )
             _echo(
                 f'Successfully deleted Azure Functions deployment "{name}"',
                 CLI_COLOR_SUCCESS,
             )
-            return extra_properties
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to delete Azure Functions deployment {name} {str(e)}',
             )
 
@@ -330,7 +316,7 @@ def get_azure_functions_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     get_result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to get Azure Functions deployment {name}. '
                     f'{error_code}:{error_message}'
                 )
@@ -339,15 +325,14 @@ def get_azure_functions_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     describe_result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to retrieve the latest status for Azure Functions '
                     f'deployment {name}. {error_code}:{error_message}'
                 )
             get_result.deployment.state.CopyFrom(describe_result.state)
             _print_deployment_info(get_result.deployment, output)
-            return
         except BentoMLException as e:
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to get Azure Functions deployment {name}. {str(e)}'
             )
 
@@ -363,7 +348,7 @@ def get_azure_functions_sub_command():
     @click.option(
         '--limit',
         type=click.INT,
-        help='The maximum amount of AWS Sagemaker deployments to be listed at once',
+        help='The maximum amount of Azure Functions deployments to be listed at once',
     )
     @click.option(
         '-l',
@@ -397,13 +382,14 @@ def get_azure_functions_sub_command():
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to list Azure Functions deployments '
                     f'{error_code}:{error_message}'
                 )
             _print_deployments_info(list_result.deployments, output)
-            return
         except BentoMLException as e:
-            raise ClickException(f'Failed to list Azure Functions deployments {str(e)}')
+            raise BentoMLCLIException(
+                f'Failed to list Azure Functions deployments {str(e)}'
+            )
 
     return azure_functions

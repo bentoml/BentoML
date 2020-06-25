@@ -19,9 +19,12 @@ import click
 import functools
 import logging
 
+from click import ClickException
 from ruamel.yaml import YAML
 
 from bentoml import configure_logging
+from bentoml.exceptions import BentoMLException
+from bentoml.utils.usage_stats import track_cli
 
 # Available CLI colors for _echo:
 #
@@ -44,66 +47,59 @@ from bentoml import configure_logging
 #     'bright_cyan': 96,
 #     'bright_white': 97,
 # }
-from bentoml.utils.usage_stats import track_cli
 
 CLI_COLOR_SUCCESS = "green"
 CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
 
-DEPLOYMENT_PLATFORMS = ['azure_functions', 'aws_sagemaker', 'aws_lambda']
+DEPLOYMENT_CMD_GROUPS = ['azure_functions', 'aws_sagemaker', 'aws_lambda', 'deployment']
 
 
 def _echo(message, color="reset"):
     click.secho(message, fg=color)
 
 
-def _generate_track_event_name(command_group, command):
+def _generate_track_event_name(command, sub_cmd_group=None):
+    if sub_cmd_group is None:
+        if command == 'open_api_spec':
+            command = 'open-api-spec'
+        return command
+
     # Format deployment related event names to match with existing event names
-    if command_group in DEPLOYMENT_PLATFORMS or command_group == 'deployment':
+    if sub_cmd_group in DEPLOYMENT_CMD_GROUPS:
         if command == 'list_deployments':
             command = 'list'
         event_name = f'deploy-{command}'
-    # For commands such as run, serve_gunicorn and etc to match existing event name
-    elif command_group == '':
-        if command == 'open_api_spec':
-            command = 'open-api-spec'
-        event_name = command
     else:
         # Special case for bentoml config set. The name of func is `set_command`. It
         # will be changed to 'set'
         if command == 'set_command':
             command = 'set'
-        event_name = f'{command_group}-{command}'
+        event_name = f'{sub_cmd_group}-{command}'
 
     return event_name
 
 
 def _get_deployment_platform(command_group):
-    if command_group in DEPLOYMENT_PLATFORMS:
+    if command_group in DEPLOYMENT_CMD_GROUPS:
         return command_group.upper()
     else:
         return None
 
 
-def _get_command_group(module):
-    module_list = module.split('.')
-    if len(module_list) == 3:
-        return module_list[2]
-    else:
-        return ''
+def _get_sub_cmd_group(modules):
+    module_list = modules.split('.')
+    return None if module_list[-1] == 'cli' else module_list[-1]
 
 
 def _send_track_info(func_name, func_module, additional_info=None):
-    # Don't record user install auto completion for bentoml cli
-    if func_name == 'install_completion':
-        return
-    command_group = _get_command_group(func_module)
-    platform_name = _get_deployment_platform(command_group)
+    sub_cmd_group = _get_sub_cmd_group(func_module)
+    platform_name = _get_deployment_platform(sub_cmd_group)
     extra_info = {'platform': platform_name} if platform_name else {}
     if additional_info is not None:
         extra_info.update(additional_info)
 
-    track_cli(_generate_track_event_name(command_group, func_name), extra_info)
+    track_cli(_generate_track_event_name(func_name, sub_cmd_group), extra_info)
 
 
 class BentoMLCommandGroup(click.Group):
@@ -151,22 +147,26 @@ class BentoMLCommandGroup(click.Group):
         def wrapper(*args, **kwargs):
             start_time = time.time()
             try:
-                additional_info = func(*args, **kwargs)
+                return_value = func(*args, **kwargs)
+            except BentoMLException as e:
+                duration = time.time() - start_time
+                additional_info = {
+                    'duration': duration,
+                    'error_type': type(e).__name__,
+                }
+                _send_track_info(func.__name__, func.__module__, additional_info)
+                raise ClickException(str(e))
             except BaseException as e:
                 duration = time.time() - start_time
                 additional_info = {
                     'duration': duration,
                     'error_type': type(e).__name__,
-                    'error_message': str(e),
                 }
                 _send_track_info(func.__name__, func.__module__, additional_info)
                 raise
             duration = time.time() - start_time
-            if additional_info is None:
-                additional_info = {'duration': duration}
-            else:
-                additional_info['duration'] = duration
-            _send_track_info(func.__name__, func.__module__, additional_info)
+            _send_track_info(func.__name__, func.__module__, {"duration": duration})
+            return return_value
 
         return wrapper
 

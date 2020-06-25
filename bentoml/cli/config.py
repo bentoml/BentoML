@@ -20,17 +20,16 @@ import logging
 
 from configparser import ConfigParser
 
-from click import ClickException
-
 from bentoml import config as bentoml_config
 from bentoml.configuration import (
     get_local_config_file,
     DEFAULT_CONFIG_FILE,
     CONFIG_FILE_ENCODING,
 )
-from bentoml.cli.click_utils import BentoMLCommandGroup, _echo
+from bentoml.cli.click_utils import BentoMLCommandGroup
 
 # pylint: disable=unused-variable
+from bentoml.exceptions import BentoMLCLIException
 
 logger = logging.getLogger(__name__)
 
@@ -100,8 +99,9 @@ def get_configuration_sub_command():
             local_config.write(open(local_config_file, 'w'))
             return
         except ValueError:
-            _echo(EXAMPLE_CONFIG_USAGE)
-            raise ClickException(f'Wrong config format: {str(updates)}')
+            raise BentoMLCLIException(
+                f'Wrong config format: {str(updates)}{EXAMPLE_CONFIG_USAGE}'
+            )
 
     @config.command(
         context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
@@ -128,8 +128,9 @@ def get_configuration_sub_command():
             local_config.write(open(local_config_file, 'w'))
             return
         except ValueError:
-            _echo(EXAMPLE_CONFIG_USAGE)
-            raise ClickException(f'Wrong config format: {str(updates)}')
+            raise BentoMLCLIException(
+                f'Wrong config format: {str(updates)}{EXAMPLE_CONFIG_USAGE}'
+            )
 
     @config.command(help="Reset all local BentoML configs to default")
     def reset():

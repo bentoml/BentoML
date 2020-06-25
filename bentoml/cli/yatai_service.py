@@ -16,9 +16,8 @@
 import logging
 
 import click
-from click import ClickException
 
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, BentoMLCLIException
 from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 
 logger = logging.getLogger(__name__)
@@ -78,6 +77,5 @@ def add_yatai_service_sub_command(cli):
             start_yatai_service_grpc_server(
                 db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url
             )
-            return
         except BentoMLException as e:
-            raise ClickException(f'Yatai gRPC server failed: {str(e)}')
+            raise BentoMLCLIException(f'Yatai gRPC server failed: {str(e)}')

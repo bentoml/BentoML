@@ -14,7 +14,6 @@
 import click
 import os
 
-from click import ClickException
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
@@ -23,6 +22,7 @@ from bentoml.cli.click_utils import (
     parse_bento_tag_list_callback,
 )
 from bentoml.cli.utils import humanfriendly_age_from_datetime
+from bentoml.exceptions import BentoMLCLIException
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.yatai.client import YataiClient
@@ -111,7 +111,7 @@ def add_bento_sub_command(cli):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     get_bento_result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'BentoService {name}:{version} not found - '
                     f'{error_code}:{error_message}'
                 )
@@ -119,7 +119,6 @@ def add_bento_sub_command(cli):
                 _echo(get_bento_result.bento.uri.uri)
                 return
             _print_bento_info(get_bento_result.bento, output)
-            return
         elif name:
             output = output or 'table'
             list_bento_versions_result = yatai_client.repository.list(
@@ -129,13 +128,12 @@ def add_bento_sub_command(cli):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_bento_versions_result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to list versions for BentoService {name} '
                     f'{error_code}:{error_message}'
                 )
 
             _print_bentos_info(list_bento_versions_result.bentos, output)
-            return
 
     @cli.command(name='list', help='List BentoServices information')
     @click.option(
@@ -166,12 +164,11 @@ def add_bento_sub_command(cli):
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_bentos_result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'Failed to list BentoServices ' f'{error_code}:{error_message}'
             )
 
         _print_bentos_info(list_bentos_result.bentos, output)
-        return
 
     @cli.command()
     @click.argument("bentos", type=click.STRING, callback=parse_bento_tag_list_callback)
@@ -193,7 +190,7 @@ def add_bento_sub_command(cli):
         for bento in bentos:
             name, version = bento.split(':')
             if not name and not version:
-                raise ClickException(
+                raise BentoMLCLIException(
                     'BentoService name or version is missing. Please provide in the '
                     'format of name:version'
                 )
@@ -209,12 +206,11 @@ def add_bento_sub_command(cli):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise ClickException(
+                raise BentoMLCLIException(
                     f'Failed to delete Bento {name}:{version} '
                     f'{error_code}:{error_message}'
                 )
             _echo(f'BentoService {name}:{version} deleted')
-            return
 
     @cli.command(
         help='Retrieves BentoService artifacts into a target directory',
@@ -239,7 +235,7 @@ def add_bento_sub_command(cli):
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_bento_result.status
             )
-            raise ClickException(
+            raise BentoMLCLIException(
                 f'BentoService {name}:{version} not found - '
                 f'{error_code}:{error_message}'
             )
@@ -252,4 +248,3 @@ def add_bento_sub_command(cli):
         safe_retrieve(bento_service_bundle_path, target_dir)
 
         click.echo('Service %s artifact directory => %s' % (name, target_dir))
-        return

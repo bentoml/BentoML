@@ -13,6 +13,7 @@
 # limitations under the License.
 import click
 import os
+import docker
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
@@ -26,8 +27,11 @@ from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
+from bentoml.yatai.deployment.utils import (
+    process_docker_api_line,
+    ensure_docker_available_or_raise
+)
 from bentoml.saved_bundle import safe_retrieve
-
 
 def _print_bento_info(bento, output_type):
     if output_type == 'yaml':
@@ -260,3 +264,71 @@ def add_bento_sub_command(cli):
         safe_retrieve(bento_service_bundle_path, target_dir)
 
         click.echo('Service %s artifact directory => %s' % (name, target_dir))
+
+
+    @cli.command(
+        help='Containerize given Bento into a Docker image',
+        short_help="Containerize given Bento into a Docker image",
+    )
+    @click.argument("bento", type=click.STRING)
+    @click.option('--push', is_flag=True)
+    @click.option(
+        '--docker-username',
+        help="Prepends specified Docker username to image name.",
+    )
+    def containerize(bento, push, docker_username):
+        """Containerize specified BentoService.
+
+        BENTO is the target BentoService to be containerized, referenced by its name and
+        version in format of name:version. For example: "iris_classifier:v1.2.0"
+
+        `bentoml containerize` command also supports the use of the `latest` tag and will
+        automatically use the last built version of your Bento.
+
+        // add stuff about --push
+        // add stuff about --docker-username
+        """
+        if ':' not in bento:
+            _echo(f'BentoService {bento} invalid - specify name:version')
+            return
+        name, version = bento.split(':')
+
+        yatai_client = YataiClient()
+
+        track_cli('bento-containerize')
+        get_bento_result = yatai_client.repository.get(name, version)
+        if get_bento_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_bento_result.status
+            )
+            _echo(
+                f'BentoService {name}:{version} not found - '
+                f'{error_code}:{error_message}',
+                CLI_COLOR_ERROR,
+            )
+            return
+
+        if get_bento_result.bento.uri.s3_presigned_url:
+            bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
+        else:
+            bento_service_bundle_path = get_bento_result.bento.uri.uri
+
+        _echo(f"Found Bento: {bento_service_bundle_path}")
+
+        tag = bento
+        if docker_username is not None:
+            tag = f'{docker_username}/{bento}'
+            
+        _echo(f"Building docker image: {tag}")
+        docker_api = docker.APIClient()
+        ensure_docker_available_or_raise()
+
+        for line in docker_api.build(
+            path=bento_service_bundle_path,
+            tag="test_temp",
+            decode=True,
+        ):
+            if "stream" in line:
+                cleaned = line['stream'].rstrip("\n")
+                if cleaned not in ["\n", ""]:
+                    _echo(cleaned)

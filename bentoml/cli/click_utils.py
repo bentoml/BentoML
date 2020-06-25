@@ -102,6 +102,7 @@ def _send_track_info(func_name, func_module, additional_info=None):
     extra_info = {'platform': platform_name} if platform_name else {}
     if additional_info is not None:
         extra_info.update(additional_info)
+
     track_cli(_generate_track_event_name(command_group, func_name), extra_info)
 
 
@@ -161,7 +162,10 @@ class BentoMLCommandGroup(click.Group):
                 _send_track_info(func.__name__, func.__module__, additional_info)
                 raise
             duration = time.time() - start_time
-            additional_info['duration'] = duration
+            if additional_info is None:
+                additional_info = {'duration': duration}
+            else:
+                additional_info['duration'] = duration
             _send_track_info(func.__name__, func.__module__, additional_info)
 
         return wrapper

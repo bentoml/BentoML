@@ -155,13 +155,6 @@ def track_load_finish(bento_service):
     return track("load", properties)
 
 
-def track_cli(command, extra_properties=None):
-    properties = {}
-    if extra_properties is not None:
-        properties.update(extra_properties)
-    return track('cli-' + command, properties)
-
-
 def track_server_stop(server_type, start_time, properties):
     # track server stop event
     duration = time.time() - start_time

@@ -62,7 +62,7 @@ def get_configuration_sub_command():
         local_config = ConfigParser()
         local_config.read(get_local_config_file(), encoding=CONFIG_FILE_ENCODING)
         local_config.write(sys.stdout)
-        return 0
+        return
 
     @config.command(
         help="View effective BentoML configs, including default config values and "
@@ -70,7 +70,7 @@ def get_configuration_sub_command():
     )
     def view_effective():
         bentoml_config().write(sys.stdout)
-        return 0
+        return
 
     @config.command(
         name="set",

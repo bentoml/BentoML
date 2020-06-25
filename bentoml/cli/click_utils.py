@@ -24,7 +24,7 @@ from ruamel.yaml import YAML
 
 from bentoml import configure_logging
 from bentoml.exceptions import BentoMLException
-from bentoml.utils.usage_stats import track_cli
+from bentoml.utils.usage_stats import track
 from bentoml.configuration import set_debug_mode
 
 
@@ -54,57 +54,12 @@ CLI_COLOR_SUCCESS = "green"
 CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
 
-DEPLOYMENT_CMD_GROUPS = ['azure_functions', 'aws_sagemaker', 'aws_lambda', 'deployment']
-
 
 logger = logging.getLogger(__name__)
 
 
 def _echo(message, color="reset"):
     click.secho(message, fg=color)
-
-
-def _generate_track_event_name(command, sub_cmd_group=None):
-    if sub_cmd_group is None:
-        if command == 'open_api_spec':
-            command = 'open-api-spec'
-        return command
-
-    # Format deployment related event names to match with existing event names
-    if sub_cmd_group in DEPLOYMENT_CMD_GROUPS:
-        if command == 'list_deployments':
-            command = 'list'
-        event_name = f'deploy-{command}'
-    else:
-        # Special case for bentoml config set. The name of func is `set_command`. It
-        # will be changed to 'set'
-        if command == 'set_command':
-            command = 'set'
-        event_name = f'{sub_cmd_group}-{command}'
-
-    return event_name
-
-
-def _get_deployment_platform(command_group):
-    if command_group in DEPLOYMENT_CMD_GROUPS:
-        return command_group.upper()
-    else:
-        return None
-
-
-def _get_sub_cmd_group(modules):
-    module_list = modules.split('.')
-    return None if module_list[-1] == 'cli' else module_list[-1]
-
-
-def _send_track_info(func_name, func_module, additional_info=None):
-    sub_cmd_group = _get_sub_cmd_group(func_module)
-    platform_name = _get_deployment_platform(sub_cmd_group)
-    extra_info = {'platform': platform_name} if platform_name else {}
-    if additional_info is not None:
-        extra_info.update(additional_info)
-
-    track_cli(_generate_track_event_name(func_name, sub_cmd_group), extra_info)
 
 
 class BentoMLCommandGroup(click.Group):
@@ -153,26 +108,28 @@ class BentoMLCommandGroup(click.Group):
             start_time = time.time()
             try:
                 return_value = func(*args, **kwargs)
-            except BentoMLException as e:
-                duration = time.time() - start_time
-                additional_info = {
-                    'duration': duration,
-                    'error_type': type(e).__name__,
-                }
-                _send_track_info(func.__name__, func.__module__, additional_info)
-                raise ClickException(str(e))
             except BaseException as e:
                 duration = time.time() - start_time
                 additional_info = {
                     'duration': duration,
                     'error_type': type(e).__name__,
                 }
-                _send_track_info(func.__name__, func.__module__, additional_info)
+                track(f'{func.__module__}.{func.__name__}', additional_info)
                 raise
             duration = time.time() - start_time
-            _send_track_info(func.__name__, func.__module__, {"duration": duration})
+            track(f'{func.__module__}.{func.__module__}', {"duration": duration})
             return return_value
 
+        return wrapper
+
+    @staticmethod
+    def raise_click_exception(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except BentoMLException as e:
+                raise ClickException(str(e))
         return wrapper
 
     def command(self, *args, **kwargs):
@@ -181,6 +138,8 @@ class BentoMLCommandGroup(click.Group):
             func = BentoMLCommandGroup.bentoml_common_params(func)
             # Send tracking events before and after command invoked.
             func = BentoMLCommandGroup.bentoml_track_usage(func)
+            # If BentoMLException raise ClickException
+            func = BentoMLCommandGroup.raise_click_exception(func)
 
             # move common parameters to end of the parameters list
             func.__click_params__ = (

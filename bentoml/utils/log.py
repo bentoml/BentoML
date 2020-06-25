@@ -18,6 +18,7 @@ import logging.config
 from pathlib import Path
 
 from bentoml import config
+from bentoml.configuration import get_debug_mode
 
 
 def get_logging_config_dict(logging_level, base_log_directory):
@@ -102,6 +103,8 @@ def get_logging_config_dict(logging_level, base_log_directory):
 def configure_logging(logging_level=None):
     if logging_level is None:
         logging_level = config("logging").get("LOGGING_LEVEL").upper()
+    if get_debug_mode():
+        logging_level = logging.getLevelName(logging.DEBUG)
 
     base_log_dir = os.path.expanduser(config("logging").get("BASE_LOG_DIR"))
     Path(base_log_dir).mkdir(parents=True, exist_ok=True)

@@ -25,6 +25,8 @@ from ruamel.yaml import YAML
 from bentoml import configure_logging
 from bentoml.exceptions import BentoMLException
 from bentoml.utils.usage_stats import track_cli
+from bentoml.configuration import set_debug_mode
+
 
 # Available CLI colors for _echo:
 #
@@ -53,6 +55,9 @@ CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
 
 DEPLOYMENT_CMD_GROUPS = ['azure_functions', 'aws_sagemaker', 'aws_lambda', 'deployment']
+
+
+logger = logging.getLogger(__name__)
 
 
 def _echo(message, color="reset"):
@@ -127,15 +132,15 @@ class BentoMLCommandGroup(click.Group):
         )
         @functools.wraps(func)
         def wrapper(quiet, verbose, *args, **kwargs):
-            if verbose:
-                from bentoml import config
-
-                config().set('core', 'debug', 'true')
-                configure_logging(logging.DEBUG)
-            elif quiet:
+            if quiet:
                 configure_logging(logging.ERROR)
-            else:
-                configure_logging()  # use default setting in local bentoml.cfg
+                if verbose:
+                    logger.warning(
+                        "The bentoml command option `--verbose/--debug` is ignored when"
+                        "the `--quiet` flag is also in use"
+                    )
+            elif verbose:
+                set_debug_mode(True)
 
             return func(*args, **kwargs)
 

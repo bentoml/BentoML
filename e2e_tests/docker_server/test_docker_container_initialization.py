@@ -2,6 +2,7 @@ import logging
 import json
 
 import requests
+import docker
 
 from e2e_tests.docker_server.DockerTestService import DockerTestService
 from e2e_tests.docker_server.utils import bento_docker_server, PORT, wait_till_server_up
@@ -20,6 +21,7 @@ def test_docker_container_init():
     #path = save_dir
     logger.info('saving to ' + str(path))
     tag = f'{svc.name}:{svc.version}'.lower()
+    logger.info(docker.__version__)
 
     with bento_docker_server(path=path, tag=tag):
         wait_till_server_up()

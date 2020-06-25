@@ -10,6 +10,8 @@ python:
   - 3.7
   - 3.8
 
+services:
+  - docker
 install:
   - "python -m pip install --upgrade pip"
   - "pip install ."

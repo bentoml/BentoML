@@ -28,7 +28,7 @@ install_requires = [
     "configparser",
     "docker",
     "flask",
-    "grpcio==1.27.2",
+    "grpcio<=1.27.2",
     "gunicorn",
     "humanfriendly",
     "numpy",

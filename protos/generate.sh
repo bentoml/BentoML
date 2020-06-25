@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-if [[ "$PWD" == '/' ]]; then
-  echo 'Manually set source directory to /home/bento'
-  BENTOML_SRC_DIR='/home/bento'
-else
-  BENTOML_SRC_DIR=$(git rev-parse --show-toplevel)
-fi
+BENTOML_SRC_DIR=$(git rev-parse --show-toplevel)
 
 echo $BENTOML_SRC_DIR
 

@@ -14,7 +14,7 @@ def bento_docker_server(tag, path, port=PORT):
     dClient = docker.from_env()
     logger.info("Starting Build...")
     try:
-        img, logs = dClient.images.build(path=path, tag=tag)
+        dClient.images.build(path=path, tag=tag)
     except docker.errors.BuildError as exec:
         # log build logs only if build fails
         for log in exec.build_log:
@@ -23,11 +23,12 @@ def bento_docker_server(tag, path, port=PORT):
 
     logger.info('Starting docker Server...')
     container = dClient.containers.run(
-                    name='bento-test-docker-init',
-                    image=tag,
-                    ports={5000: port},
-                    remove=True,
-                    detach=True,)
+        name='bento-test-docker-init',
+        image=tag,
+        ports={5000: port},
+        remove=True,
+        detach=True,
+    )
     yield container
 
     logger.info('Stopping docker Server...')
@@ -39,12 +40,12 @@ def wait_till_server_up(timeout=30):
     Keep trying till the gunicorn server is
     up and running. Takes a timeout parameter (in sec).
     """
-    url = 'http://127.0.0.1:'+str(PORT)+'/healthz'
+    url = 'http://127.0.0.1:' + str(PORT) + '/healthz'
     connection_error = True
     total_time = 0
     while connection_error:
         try:
-            r = requests.get(url)
+            requests.get(url)
             logger.info('server is up!')
             connection_error = False
         except requests.exceptions.ConnectionError:

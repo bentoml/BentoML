@@ -7,10 +7,10 @@ from bentoml.adapters import JsonInput
 
 logger = logging.getLogger('bentoml.test')
 
+
 @env(
-        pip_dependencies=['scikit-learn'],
-        setup_sh='touch success.file',
-    )
+    pip_dependencies=['scikit-learn'], setup_sh='touch success.file',
+)
 class DockerTestService(BentoService):
     @api(input=JsonInput())
     def predict(self, data):
@@ -18,16 +18,16 @@ class DockerTestService(BentoService):
         return 'ok'
 
     @api(input=JsonInput())
-    def check_packages(self, data):
+    def check_packages(self, data):  # pylint: disable=unused-argument
         logger.info('testing the packages installed...')
         checks = {
-                    'pip-install': True,
-                    'setup-script': True,
-                    'conda-install': True,
-                }
+            'pip-install': True,
+            'setup-script': True,
+            'conda-install': True,
+        }
         try:
-            import sklearn
-        except:
+            import sklearn  # pylint: disable=unused-import
+        except ImportError:
             checks['pip-install'] = False
 
         if not os.path.isfile('/bento/success.file'):

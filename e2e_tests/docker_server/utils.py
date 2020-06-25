@@ -19,10 +19,8 @@ def bento_docker_server(tag, path, port=PORT):
     logger.info(dClient.version())
     logger.info(os.listdir(path))
     logger.info(dClient.containers())
-    try:
-        generator = dClient.build(path=path, tag=tag, rm=False)
-    except:
-        logger.error('build faild!')
+
+    generator = dClient.build(path=path, tag=tag, rm=False)
 
     # output build logs
     while True:
@@ -39,6 +37,8 @@ def bento_docker_server(tag, path, port=PORT):
             logger.error("Error parsing output from docker image build: %s" % output)
 
     logger.info('Starting docker Server...')
+    logger.info(dClient.containers())
+    logger.info(dClient.images())
     container = dClient.create_container(
         name='bento-test-docker-init',
         image=tag,

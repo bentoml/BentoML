@@ -22,6 +22,8 @@ def bento_docker_server(tag, path, port=PORT):
 
     generator = dClient.build(path=path, tag=tag, rm=False)
 
+    for i in generator:
+        logger.info(i)
     # output build logs
     while True:
         try:
@@ -32,7 +34,7 @@ def bento_docker_server(tag, path, port=PORT):
                 logger.info(json_output['stream'].strip('\n'))
         except StopIteration:
             logger.info("Docker image build complete.")
-            break
+            #break
         except ValueError:
             logger.error("Error parsing output from docker image build: %s" % output)
 

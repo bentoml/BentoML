@@ -298,7 +298,7 @@ def get_azure_functions_sub_command():
                     result.status
                 )
                 _echo(
-                    f'Failed to delete AWS Sagemaker deployment {name}. '
+                    f'Failed to delete Azure Functions deployment {name}. '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
@@ -314,7 +314,7 @@ def get_azure_functions_sub_command():
                 )
             track_cli('deploy-delete-success', PLATFORM_NAME, extra_properties)
             _echo(
-                f'Successfully deleted AWS Sagemaker deployment "{name}"',
+                f'Successfully deleted Azure Functions deployment "{name}"',
                 CLI_COLOR_SUCCESS,
             )
         except BentoMLException as e:
@@ -382,7 +382,7 @@ def get_azure_functions_sub_command():
     @click.option(
         '--limit',
         type=click.INT,
-        help='The maximum amount of AWS Sagemaker deployments to be listed at once',
+        help='The maximum amount of Azure Functions deployments to be listed at once',
     )
     @click.option(
         '-l',

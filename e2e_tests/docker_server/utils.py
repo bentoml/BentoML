@@ -1,3 +1,4 @@
+import os
 import logging
 import contextlib
 import time
@@ -16,6 +17,8 @@ def bento_docker_server(tag, path, port=PORT):
     dClient = docker.APIClient(base_url='unix://var/run/docker.sock')
     logger.info("Docker client connected!")
     logger.info(dClient.version())
+    logger.info(os.listdir(path))
+    logger.info(dClient.containers())
     try:
         generator = dClient.build(path=path, tag=tag, rm=False)
     except:

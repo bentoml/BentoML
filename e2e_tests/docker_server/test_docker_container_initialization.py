@@ -15,9 +15,9 @@ save_dir = '/home/jjmachan/bentoml/test_dir'
 def test_docker_container_init():
     svc = DockerTestService()
     # TODO: detemine which is better save_to_dir or save
-    path = svc.save()
-    # svc.save_to_dir(save_dir)
-    # path = save_dir
+    #path = svc.save()
+    svc.save_to_dir(save_dir)
+    path = save_dir
     logger.info('saving to ' + str(path))
     tag = f'{svc.name}:{svc.version}'.lower()
 

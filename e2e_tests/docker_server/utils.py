@@ -1,6 +1,7 @@
 import logging
 import contextlib
 import time
+import json
 
 import docker
 import requests
@@ -11,28 +12,40 @@ logger = logging.getLogger('bentoml.test')
 
 @contextlib.contextmanager
 def bento_docker_server(tag, path, port=PORT):
-    dClient = docker.from_env()
     logger.info("Starting Build...")
-    try:
-        dClient.images.build(path=path, tag=tag)
-    except docker.errors.BuildError as exec:
-        # log build logs only if build fails
-        for log in exec.build_log:
-            print(log)
-            logger.error(log)
+    dClient = docker.APIClient(base_url='unix://var/run/docker.sock')
+    generator = dClient.build(path=path, tag=tag, rm=False)
+
+    # output build logs
+    while True:
+        try:
+            output = generator.__next__()
+            output = output.strip(b'\r\n')
+            json_output = json.loads(output)
+            if 'stream' in json_output:
+                logger.info(json_output['stream'].strip('\n'))
+        except StopIteration:
+            logger.info("Docker image build complete.")
+            break
+        except ValueError:
+            logger.info("Error parsing output from docker image build: %s" % output)
 
     logger.info('Starting docker Server...')
-    container = dClient.containers.run(
+    container = dClient.create_container(
         name='bento-test-docker-init',
         image=tag,
-        ports={5000: port},
-        remove=True,
-        detach=True,
+        ports=[5000],
+        host_config=dClient.create_host_config(port_bindings={
+            5000:PORT
+        })
     )
-    yield container
+
+    dClient.start(container=container.get('Id'))
+
+    yield
 
     logger.info('Stopping docker Server...')
-    container.kill()
+    dClient.kill(container=container.get('Id'))
 
 
 def wait_till_server_up(timeout=30):

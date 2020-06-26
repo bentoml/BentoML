@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y nodejs npm
 
 RUN npm install -g npm@latest
 
-RUN npm install -g protobufjs@6.7.0
+RUN npm install -g protobufjs@6.9.0
 EOF
 
 echo "Starting BentoML proto generator docker container.."

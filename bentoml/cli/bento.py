@@ -14,6 +14,7 @@
 import click
 import os
 import docker
+import subprocess
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
@@ -36,6 +37,7 @@ from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.saved_bundle import safe_retrieve
+
 
 def _print_bento_info(bento, output_type):
     if output_type == 'yaml':
@@ -269,7 +271,6 @@ def add_bento_sub_command(cli):
 
         click.echo('Service %s artifact directory => %s' % (name, target_dir))
 
-
     @cli.command(
         help='Containerize given Bento into a Docker image',
         short_help="Containerize given Bento into a Docker image",
@@ -283,11 +284,11 @@ def add_bento_sub_command(cli):
     def containerize(bento, push, docker_repository):
         """Containerize specified BentoService.
 
-        BENTO is the target BentoService to be containerized, referenced by its name and
-        version in format of name:version. For example: "iris_classifier:v1.2.0"
+        BENTO is the target BentoService to be containerized, referenced by its name
+        and version in format of name:version. For example: "iris_classifier:v1.2.0"
 
-        `bentoml containerize` command also supports the use of the `latest` tag and will
-        automatically use the last built version of your Bento.
+        `bentoml containerize` command also supports the use of the `latest` tag
+        and will automatically use the last built version of your Bento.
 
         // add stuff about --push
         // add stuff about --docker-repository
@@ -337,40 +338,32 @@ def add_bento_sub_command(cli):
             with Spinner(f"Building Docker image: {name} "):
                 _echo_docker_api_result(
                     docker_api.build(
-                        path=bento_service_bundle_path,
-                        tag=tag,
-                        decode=True,
+                        path=bento_service_bundle_path, tag=tag, decode=True,
                     )
                 )
-        except Exception as error:
+        except (FileNotFoundError, subprocess.CalledProcessError) as error:
             _echo(
-                f'Could not build Docker image: {error}',
-                CLI_COLOR_ERROR,
+                f'Could not build Docker image: {error}', CLI_COLOR_ERROR,
             )
             return
 
         _echo(
-            f'Built {tag}',
-            CLI_COLOR_SUCCESS,
+            f'Built {tag}', CLI_COLOR_SUCCESS,
         )
 
         if push:
             if not docker_repository:
                 _echo(
-                    f'Docker Registry must be specified when pushing image.',
+                    'Docker Registry must be specified when pushing image.',
                     CLI_COLOR_ERROR,
                 )
                 return
             with Spinner(f"Pushing docker image to {tag} "):
                 _echo_docker_api_result(
                     docker_api.push(
-                        repository=name,
-                        tag=version,
-                        stream=True,
-                        decode=True,
+                        repository=name, tag=version, stream=True, decode=True,
                     )
                 )
             _echo(
-                f'Pushed {tag}',
-                CLI_COLOR_SUCCESS,
+                f'Pushed {tag}', CLI_COLOR_SUCCESS,
             )

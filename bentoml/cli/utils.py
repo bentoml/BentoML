@@ -91,8 +91,8 @@ def parse_key_value_pairs(key_value_pairs_str):
             result[key] = value
     return result
 
+
 def _echo_docker_api_result(docker_generator):
-    layers = {}
     for line in docker_generator:
         if "stream" in line:
             cleaned = line['stream'].rstrip("\n")
@@ -104,17 +104,22 @@ def _echo_docker_api_result(docker_generator):
             total = humanfriendly_bytes(progress["total"])
             _echo(f" Pushed {cur}/{total}")
 
+
 def _make_bento_name_docker_compatible(name, tag):
     """
-    Name components may contain lowercase letters, digits and separators. A separator is defined as a period, one or two underscores, or one or more dashes.
+    Name components may contain lowercase letters, digits and separators.
+    A separator is defined as a period, one or two underscores, or one or more dashes.
 
-    A tag name must be valid ASCII and may contain lowercase and uppercase letters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters.
+    A tag name must be valid ASCII and may contain lowercase and uppercase letters,
+    digits, underscores, periods and dashes. A tag name may not start with a period
+    or a dash and may contain a maximum of 128 characters.
 
     https://docs.docker.com/engine/reference/commandline/tag/#extended-description
     """
     name = name.lower().strip("._-")
     tag = tag.lstrip(".-")[:128]
     return name, tag
+
 
 def _print_deployment_info(deployment, output_type):
     if output_type == 'yaml':
@@ -149,12 +154,14 @@ def _format_deployment_age_for_print(deployment_pb):
     else:
         return humanfriendly_age_from_datetime(deployment_pb.created_at.ToDatetime())
 
+
 def humanfriendly_bytes(num):
-    step_unit = 1000 # apparently docker uses 1000?
+    step_unit = 1000  # apparently docker uses 1000?
     for x in ['B', 'KB', 'MB', 'GB', 'TB']:
         if num < step_unit:
             return "%3.2f %s" % (num, x)
         num /= step_unit
+
 
 def humanfriendly_age_from_datetime(dt, detailed=False, max_unit=2):
     return humanfriendly.format_timespan(datetime.utcnow() - dt, detailed, max_unit)

@@ -19,18 +19,22 @@ from tabulate import tabulate
 
 from bentoml.cli.click_utils import (
     CLI_COLOR_ERROR,
+    CLI_COLOR_WARNING,
+    CLI_COLOR_SUCCESS,
     _echo,
     parse_bento_tag_list_callback,
 )
-from bentoml.cli.utils import humanfriendly_age_from_datetime
+from bentoml.cli.utils import (
+    humanfriendly_age_from_datetime,
+    _echo_docker_api_result,
+    _make_bento_name_docker_compatible,
+    Spinner,
+)
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
-from bentoml.yatai.deployment.utils import (
-    process_docker_api_line,
-    ensure_docker_available_or_raise
-)
+from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.saved_bundle import safe_retrieve
 
 def _print_bento_info(bento, output_type):
@@ -273,10 +277,10 @@ def add_bento_sub_command(cli):
     @click.argument("bento", type=click.STRING)
     @click.option('--push', is_flag=True)
     @click.option(
-        '--docker-username',
-        help="Prepends specified Docker username to image name.",
+        '--docker-repository',
+        help="Prepends specified Docker repository to image name.",
     )
-    def containerize(bento, push, docker_username):
+    def containerize(bento, push, docker_repository):
         """Containerize specified BentoService.
 
         BENTO is the target BentoService to be containerized, referenced by its name and
@@ -286,7 +290,7 @@ def add_bento_sub_command(cli):
         automatically use the last built version of your Bento.
 
         // add stuff about --push
-        // add stuff about --docker-username
+        // add stuff about --docker-repository
         """
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')
@@ -315,20 +319,58 @@ def add_bento_sub_command(cli):
 
         _echo(f"Found Bento: {bento_service_bundle_path}")
 
-        tag = bento
-        if docker_username is not None:
-            tag = f'{docker_username}/{bento}'
-            
-        _echo(f"Building docker image: {tag}")
-        docker_api = docker.APIClient()
-        ensure_docker_available_or_raise()
+        if docker_repository is not None:
+            name = f'{docker_repository}/{name}'
 
-        for line in docker_api.build(
-            path=bento_service_bundle_path,
-            tag="test_temp",
-            decode=True,
-        ):
-            if "stream" in line:
-                cleaned = line['stream'].rstrip("\n")
-                if cleaned not in ["\n", ""]:
-                    _echo(cleaned)
+        name, version = _make_bento_name_docker_compatible(name, version)
+        tag = f"{name}:{version}"
+        if tag != bento:
+            _echo(
+                f'Bento name or tag was changed to be Docker compatible. \n'
+                f'"{bento}" -> "{tag}"',
+                CLI_COLOR_WARNING,
+            )
+
+        try:
+            docker_api = docker.APIClient()
+            ensure_docker_available_or_raise()
+            with Spinner(f"Building Docker image: {name} "):
+                _echo_docker_api_result(
+                    docker_api.build(
+                        path=bento_service_bundle_path,
+                        tag=tag,
+                        decode=True,
+                    )
+                )
+        except Exception as error:
+            _echo(
+                f'Could not build Docker image: {error}',
+                CLI_COLOR_ERROR,
+            )
+            return
+
+        _echo(
+            f'Built {tag}',
+            CLI_COLOR_SUCCESS,
+        )
+
+        if push:
+            if not docker_repository:
+                _echo(
+                    f'Docker Registry must be specified when pushing image.',
+                    CLI_COLOR_ERROR,
+                )
+                return
+            with Spinner(f"Pushing docker image to {tag} "):
+                _echo_docker_api_result(
+                    docker_api.push(
+                        repository=name,
+                        tag=version,
+                        stream=True,
+                        decode=True,
+                    )
+                )
+            _echo(
+                f'Pushed {tag}',
+                CLI_COLOR_SUCCESS,
+            )

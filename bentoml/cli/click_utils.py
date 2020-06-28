@@ -20,6 +20,7 @@ import logging
 from ruamel.yaml import YAML
 
 from bentoml import configure_logging
+from bentoml.configuration import set_debug_mode
 
 # Available CLI colors for _echo:
 #
@@ -46,6 +47,9 @@ from bentoml import configure_logging
 CLI_COLOR_SUCCESS = "green"
 CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
+
+
+logger = logging.getLogger(__name__)
 
 
 def _echo(message, color="reset"):
@@ -77,15 +81,15 @@ class BentoMLCommandGroup(click.Group):
         )
         @functools.wraps(func)
         def wrapper(quiet, verbose, *args, **kwargs):
-            if verbose:
-                from bentoml import config
-
-                config().set('core', 'debug', 'true')
-                configure_logging(logging.DEBUG)
-            elif quiet:
+            if quiet:
                 configure_logging(logging.ERROR)
-            else:
-                configure_logging()  # use default setting in local bentoml.cfg
+                if verbose:
+                    logger.warning(
+                        "The bentoml command option `--verbose/--debug` is ignored when"
+                        "the `--quiet` flag is also in use"
+                    )
+            elif verbose:
+                set_debug_mode(True)
 
             return func(*args, **kwargs)
 
@@ -124,7 +128,7 @@ def _is_valid_bento_tag(value):
 
 
 def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argument
-    if not _is_valid_bento_tag(value):
+    if param.required and not _is_valid_bento_tag(value):
         raise click.BadParameter(
             "Bad formatting. Please present in BentoName:Version, for example "
             "iris_classifier:v1.2.0"

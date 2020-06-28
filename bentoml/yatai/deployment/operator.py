@@ -33,6 +33,12 @@ def get_deployment_operator(yatai_service, deployment_pb):
         )
 
         return AwsLambdaDeploymentOperator(yatai_service)
+    elif operator == DeploymentSpec.AZURE_FUNCTIONS:
+        from bentoml.yatai.deployment.azure_functions.operator import (
+            AzureFunctionsDeploymentOperator,
+        )
+
+        return AzureFunctionsDeploymentOperator(yatai_service)
     elif operator == DeploymentSpec.CUSTOM:
         raise NotImplementedError(
             "Custom deployment operator is not supported in current version of BentoML"

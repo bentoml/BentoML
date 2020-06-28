@@ -19,13 +19,6 @@ from .base_output import BaseOutputAdapter
 
 
 def detect_suitable_adapter(result, slices=None):
-    if slices is not None:
-        for s in slices:
-            if s:
-                return detect_suitable_adapter(result[s])
-    if isinstance(result, (list, tuple)):
-        return detect_suitable_adapter(result[0])
-
     try:
         import pandas as pd
 
@@ -45,6 +38,13 @@ def detect_suitable_adapter(result, slices=None):
             return TfTensorOutput
     except ImportError:
         pass
+
+    if slices is not None:
+        for s in slices:
+            if s:
+                return detect_suitable_adapter(result[s])
+    if isinstance(result, (list, tuple)):
+        return detect_suitable_adapter(result[0])
 
     from .json_output import JsonSerializableOutput
 

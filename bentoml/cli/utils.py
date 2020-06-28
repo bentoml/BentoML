@@ -97,7 +97,7 @@ def _print_deployment_info(deployment, output_type):
         _echo(pb_to_yaml(deployment))
     else:
         deployment_info = MessageToDict(deployment)
-        if deployment_info['state']['infoJson']:
+        if deployment_info['state'] and deployment_info['state']['infoJson']:
             deployment_info['state']['infoJson'] = json.loads(
                 deployment_info['state']['infoJson']
             )

@@ -20,6 +20,8 @@ import uuid
 from datetime import datetime
 from abc import abstractmethod, ABCMeta
 
+import flask
+
 from bentoml import config
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import SavedBundleConfig
@@ -30,6 +32,7 @@ from bentoml.marshal.utils import DataLoader
 from bentoml.server.trace import trace
 from bentoml.exceptions import NotFound, InvalidArgument
 
+from werkzeug.utils import cached_property
 
 ARTIFACTS_DIR_NAME = "artifacts"
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
@@ -98,32 +101,32 @@ class BentoServiceAPI(object):
     def output_adapter(self):
         return self.handler.output_adapter
 
-    @property
+    @cached_property
     def func(self):
-        if not self._wrapped_func:
+        def _wrapped_func(*args, **kwargs):
+            with trace(
+                ZIPKIN_API_URL,
+                service_name=self.__class__.__name__,
+                span_name="user defined api handler",
+            ):
+                resp = self._func(*args, **kwargs)
+            return resp
 
-            def _wrapped_func(*args, **kwargs):
-                with trace(
-                    ZIPKIN_API_URL,
-                    service_name=self.__class__.__name__,
-                    span_name="user defined api handler",
-                ):
-                    resp = self._func(*args, **kwargs)
-                return resp
-
-            self._wrapped_func = _wrapped_func
-        return self._wrapped_func
+        return _wrapped_func
 
     @property
     def request_schema(self):
         # TODO(bojiang): request_schema of adapter
-        return self.handler.request_schema
+        schema = self.handler.request_schema
+        if schema.get('application/json'):
+            schema.get('application/json')['example'] = self.handler._http_input_example
+        return schema
 
-    def handle_request(self, request):
+    def handle_request(self, request: flask.Request):
         return self.handler.handle_request(request, self.func)
 
-    def handle_batch_request(self, request):
-        requests = DataLoader.split_requests(request.data)
+    def handle_batch_request(self, request: flask.Request):
+        requests = DataLoader.split_requests(request.get_data())
         with trace(
             ZIPKIN_API_URL,
             service_name=self.__class__.__name__,
@@ -238,7 +241,7 @@ def api_decorator(
     Raises:
         InvalidArgument: API name must contains only letters
 
-    after version 0.8
+    >>> # After version 0.8
     >>> from bentoml import BentoService, api
     >>> from bentoml.adapters import JsonInput, DataframeInput
     >>>
@@ -252,7 +255,7 @@ def api_decorator(
     >>>     def identity(self, df):
     >>>         # do something
 
-    before version 0.8
+    >>> # Before version 0.8
     >>> from bentoml import BentoService, api
     >>> from bentoml.handlers import JsonHandler, DataframeHandler  # deprecated
     >>>

@@ -58,6 +58,7 @@ def get_aws_lambda_sub_command():
         '--bento',
         '--bento-service-bundle',
         type=click.STRING,
+        required=True,
         callback=parse_bento_tag_callback,
         help='Target BentoService to be deployed, referenced by its name and version '
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
@@ -357,7 +358,7 @@ def get_aws_lambda_sub_command():
             return
         _print_deployment_info(get_result.deployment, output)
 
-    @aws_lambda.command(name='list', help='List AWS Sagemaker deployments')
+    @aws_lambda.command(name='list', help='List AWS Lambda deployments')
     @click.option(
         '-n',
         '--namespace',
@@ -405,13 +406,13 @@ def get_aws_lambda_sub_command():
                     list_result.status
                 )
                 _echo(
-                    f'Failed to list AWS Sagemaker deployments. '
+                    f'Failed to list AWS Lambda deployments. '
                     f'{error_code}:{error_message}',
                     CLI_COLOR_ERROR,
                 )
             else:
                 _print_deployments_info(list_result.deployments, output)
         except BentoMLException as e:
-            _echo(f'Failed to list AWS Sagemaker deployment {str(e)}')
+            _echo(f'Failed to list AWS Lambda deployment {str(e)}')
 
     return aws_lambda

@@ -202,7 +202,7 @@ class MarshalService:
         ):
             api_name = request.match_info.get("name")
             if api_name in self.batch_handlers:
-                req = SimpleRequest(request.raw_headers, await request.read())
+                req = SimpleRequest.from_flask_request(request)
                 try:
                     resp = await self.batch_handlers[api_name](req)
                 except RemoteException as e:

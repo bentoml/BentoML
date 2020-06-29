@@ -47,6 +47,31 @@ def iris_clf_service():
 
 
 @pytest.fixture()
+def iris_clf_service_with_additional_large_file():
+    logger.debug('Training iris classifier with sklearn..')
+    clf = svm.SVC(gamma='scale')
+    iris = datasets.load_iris()
+    X, y = iris.data, iris.target
+    clf.fit(X, y)
+
+    logger.debug('Creating iris classifier service saved bundle..')
+    iris_clf_service_ = IrisClassifier()
+    iris_clf_service_.pack('clf', clf)
+    saved_path = iris_clf_service_.save()
+
+    with open(
+        os.path.join(saved_path, 'IrisClassifier', 'artifacts', 'large-text.txt'),
+        'w'
+    ) as out:
+        out.seek((1024 * 1024 * 250) - 1)
+        out.write('0')
+
+    bento_name = f'{iris_clf_service_.name}:{iris_clf_service_.version}'
+    yield bento_name
+    delete_bento(bento_name)
+
+
+@pytest.fixture()
 def basic_bentoservice_v1():
     logger.debug('Creating basic_bentoservice_v1 saved bundle..')
     bento_svc = SampleBentoService()

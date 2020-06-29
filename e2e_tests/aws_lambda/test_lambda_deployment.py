@@ -13,7 +13,7 @@ from e2e_tests.cli_operations import delete_deployment
 logger = logging.getLogger('bentoml.test')
 
 
-def test_aws_lambda_deployment(iris_clf_service):
+def test_aws_lambda_deployment(iris_clf_service_with_additional_large_file):
     random_hash = uuid.uuid4().hex[:6]
     deployment_name = f'tests-lambda-e2e-{random_hash}'
 
@@ -23,7 +23,7 @@ def test_aws_lambda_deployment(iris_clf_service):
         'deploy',
         deployment_name,
         '-b',
-        iris_clf_service,
+        iris_clf_service_with_additional_large_file,
         '--region',
         'us-west-2',
         '--verbose',

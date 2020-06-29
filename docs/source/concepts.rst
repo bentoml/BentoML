@@ -928,7 +928,7 @@ creating model serving deployments.
 Retrieving BentoServices
 -------------------
 
-After saving your Model services to BentoML, you can retrieve the artifact bundle using the CLI from any environment configured to use the YataiService. The `--target_dir` flag specifies where the artifact bundle will be populated. If the directory exists, it will not be overwritten to avoid inconsistent bundles.
+After saving your Model services to BentoML, you can retrieve the artifact bundle using the CLI from any environment configured to use the YataiService. The :code:`--target_dir` flag specifies where the artifact bundle will be populated. If the directory exists, it will not be overwritten to avoid inconsistent bundles.
 
 .. code-block:: bash
 

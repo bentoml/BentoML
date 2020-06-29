@@ -165,7 +165,7 @@ def add_bento_sub_command(cli):
                 list_bentos_result.status
             )
             raise BentoMLCLIException(
-                f'Failed to list BentoServices ' f'{error_code}:{error_message}'
+                f'Failed to list BentoServices {error_code}:{error_message}'
             )
 
         _print_bentos_info(list_bentos_result.bentos, output)

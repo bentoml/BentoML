@@ -234,24 +234,21 @@ def get_deployment_sub_command():
     )
     def list_deployments(namespace, platform, limit, labels, order_by, asc, output):
         yatai_client = YataiClient()
-        try:
-            list_result = yatai_client.deployment.list(
-                limit=limit,
-                labels_query=labels,
-                namespace=namespace,
-                operator=platform,
-                order_by=order_by,
-                ascending_order=asc,
+        list_result = yatai_client.deployment.list(
+            limit=limit,
+            labels_query=labels,
+            namespace=namespace,
+            operator=platform,
+            order_by=order_by,
+            ascending_order=asc,
+        )
+        if list_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                list_result.status
             )
-            if list_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    list_result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to list deployments {error_code}:{error_message}'
-                )
-            _print_deployments_info(list_result.deployments, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(f'Failed to list deployments {str(e)}')
+            raise BentoMLCLIException(
+                f'Failed to list deployments {error_code}:{error_message}'
+            )
+        _print_deployments_info(list_result.deployments, output)
 
     return deployment

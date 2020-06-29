@@ -25,7 +25,6 @@ from werkzeug.utils import secure_filename
 
 from bentoml import config
 from bentoml.configuration import get_debug_mode
-from bentoml.utils.usage_stats import track_server
 from bentoml.server.trace import trace
 from bentoml.exceptions import BentoMLException
 from bentoml.server.instruments import InstrumentMiddleware
@@ -101,8 +100,6 @@ class BentoAPIServer:
         """
         Start an REST server at the specific port on the instance or parameter.
         """
-        track_server('flask')
-
         # Bentoml api service is not thread safe.
         # Flask dev server enabled threaded by default, disable it.
         self.app.run(port=self.port, threaded=False, debug=get_debug_mode())

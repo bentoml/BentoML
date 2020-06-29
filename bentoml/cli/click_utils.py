@@ -56,6 +56,7 @@ CLI_COLOR_WARNING = "yellow"
 
 
 logger = logging.getLogger(__name__)
+TRACK_CLI_EVENT_NAME = 'bentoml-cli'
 
 
 def _echo(message, color="reset"):
@@ -102,22 +103,29 @@ class BentoMLCommandGroup(click.Group):
         return wrapper
 
     @staticmethod
-    def bentoml_track_usage(func):
+    def bentoml_track_usage(func, cmd_group, **kwargs):
+        command_name = kwargs.get('name', func.__name__)
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            track_properties = {
+                'command_group': cmd_group.name,
+                'command': command_name,
+            }
             start_time = time.time()
             try:
                 return_value = func(*args, **kwargs)
             except BaseException as e:
-                duration = time.time() - start_time
-                additional_info = {
-                    'duration': duration,
-                    'error_type': type(e).__name__,
-                }
-                track(f'{func.__module__}.{func.__name__}', additional_info)
+                track_properties['duration'] = time.time() - start_time
+                track_properties['error_type'] = type(e).__name__
+                track_properties['return_code'] = 1
+                if track_properties['error_type'] == 'KeyboardInterrupt':
+                    track_properties['return_code'] = 2
+                track(TRACK_CLI_EVENT_NAME, track_properties)
                 raise
-            duration = time.time() - start_time
-            track(f'{func.__module__}.{func.__module__}', {"duration": duration})
+            track_properties['duration'] = time.time() - start_time
+            track_properties['return_code'] = 0
+            track(TRACK_CLI_EVENT_NAME, track_properties)
             return return_value
 
         return wrapper
@@ -130,15 +138,16 @@ class BentoMLCommandGroup(click.Group):
                 return func(*args, **kwargs)
             except BentoMLException as e:
                 raise ClickException(str(e))
+
         return wrapper
 
     def command(self, *args, **kwargs):
         def wrapper(func):
             # add common parameters to command
             func = BentoMLCommandGroup.bentoml_common_params(func)
-            # Send tracking events before and after command invoked.
-            func = BentoMLCommandGroup.bentoml_track_usage(func)
-            # If BentoMLException raise ClickException
+            # Send tracking events before command finish.
+            func = BentoMLCommandGroup.bentoml_track_usage(func, self, **kwargs)
+            # If BentoMLException raise ClickException instead before exit
             func = BentoMLCommandGroup.raise_click_exception(func)
 
             # move common parameters to end of the parameters list

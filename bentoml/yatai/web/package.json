@@ -27,7 +27,7 @@
     "lodash": "^4.17.15",
     "morgan": "^1.10.0",
     "normalize.css": "^8.0.1",
-    "protobufjs": "^6.8.8",
+    "protobufjs": "^6.9.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.5.4",
     "winston": "^3.2.1"

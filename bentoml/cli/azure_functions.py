@@ -33,7 +33,7 @@ from bentoml.yatai.deployment.azure_functions.operator import (
     DEFAULT_FUNCTION_AUTH_LEVEL,
 )
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.exceptions import BentoMLException, BentoMLCLIException
+from bentoml.exceptions import CLIExceptions
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.utils import status_pb_to_error_code_and_message
@@ -138,38 +138,30 @@ def get_azure_functions_sub_command():
     ):
         bento_name, bento_version = bento.split(':')
         yatai_client = YataiClient()
-        try:
-            with Spinner(f'Deploying {bento} to Azure Functions'):
-                result = yatai_client.deployment.create_azure_functions_deployment(
-                    name=name,
-                    namespace=namespace,
-                    labels=labels,
-                    bento_name=bento_name,
-                    bento_version=bento_version,
-                    location=location,
-                    min_instances=min_instances,
-                    max_burst=max_burst,
-                    premium_plan_sku=premium_plan_sku,
-                    function_auth_level=function_auth_level,
-                    wait=wait,
-                )
-                if result.status.status_code != status_pb2.Status.OK:
-                    error_code, error_message = status_pb_to_error_code_and_message(
-                        result.status
-                    )
-                    raise BentoMLCLIException(
-                        f'Failed to create Azure Functions deployment {name} '
-                        f'{error_code}:{error_message}'
-                    )
-                _echo(
-                    f'Successfully created Azure Functions deployment {name}',
-                    CLI_COLOR_SUCCESS,
-                )
-                _print_deployment_info(result.deployment, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to create Azure Functions deployment {name}. {str(e)}'
+        with Spinner(f'Deploying {bento} to Azure Functions'):
+            result = yatai_client.deployment.create_azure_functions_deployment(
+                name=name,
+                namespace=namespace,
+                labels=labels,
+                bento_name=bento_name,
+                bento_version=bento_version,
+                location=location,
+                min_instances=min_instances,
+                max_burst=max_burst,
+                premium_plan_sku=premium_plan_sku,
+                function_auth_level=function_auth_level,
+                wait=wait,
             )
+            if result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = status_pb_to_error_code_and_message(
+                    result.status
+                )
+                raise CLIExceptions(f'{error_code}:{error_message}')
+            _echo(
+                f'Successfully created Azure Functions deployment {name}',
+                CLI_COLOR_SUCCESS,
+            )
+            _print_deployment_info(result.deployment, output)
 
     @azure_functions.command(help='Update existing Azure Functions deployment')
     @click.argument('name', type=click.STRING)
@@ -221,35 +213,27 @@ def get_azure_functions_sub_command():
         else:
             bento_name = None
             bento_version = None
-        try:
-            with Spinner(f'Updating Azure Functions deployment {name}'):
-                result = yatai_client.deployment.update_azure_functions_deployment(
-                    namespace=namespace,
-                    deployment_name=name,
-                    bento_name=bento_name,
-                    bento_version=bento_version,
-                    min_instances=min_instances,
-                    max_burst=max_burst,
-                    premium_plan_sku=premium_plan_sku,
-                    wait=wait,
-                )
-                if result.status.status_code != status_pb2.Status.OK:
-                    error_code, error_message = status_pb_to_error_code_and_message(
-                        result.status
-                    )
-                    raise BentoMLCLIException(
-                        f'Failed to update Azure Functions deployment {name}. '
-                        f'{error_code}:{error_message}'
-                    )
-                _echo(
-                    f'Successfully update Azure Functions deployment {name}',
-                    CLI_COLOR_SUCCESS,
-                )
-                _print_deployment_info(result.deployment, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to update Azure Functions deployment {name}: {str(e)}'
+        with Spinner(f'Updating Azure Functions deployment {name}'):
+            result = yatai_client.deployment.update_azure_functions_deployment(
+                namespace=namespace,
+                deployment_name=name,
+                bento_name=bento_name,
+                bento_version=bento_version,
+                min_instances=min_instances,
+                max_burst=max_burst,
+                premium_plan_sku=premium_plan_sku,
+                wait=wait,
             )
+            if result.status.status_code != status_pb2.Status.OK:
+                error_code, error_message = status_pb_to_error_code_and_message(
+                    result.status
+                )
+                raise CLIExceptions(f'{error_code}:{error_message}')
+            _echo(
+                f'Successfully update Azure Functions deployment {name}',
+                CLI_COLOR_SUCCESS,
+            )
+            _print_deployment_info(result.deployment, output)
 
     @azure_functions.command(help='Delete Azure Functions deployment')
     @click.argument('name', type=click.STRING)
@@ -273,28 +257,17 @@ def get_azure_functions_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise BentoMLCLIException(
-                f'Failed to get Azure Functions deployment {name} for deletion. '
-                f'{error_code}:{error_message}',
+            raise CLIExceptions(f'{error_code}:{error_message}',)
+        result = yatai_client.deployment.delete(name, namespace, force)
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
             )
-        try:
-            result = yatai_client.deployment.delete(name, namespace, force)
-            if result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to delete Azure Functions deployment {name}. '
-                    f'{error_code}:{error_message}',
-                )
-            _echo(
-                f'Successfully deleted Azure Functions deployment "{name}"',
-                CLI_COLOR_SUCCESS,
-            )
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to delete Azure Functions deployment {name} {str(e)}',
-            )
+            raise CLIExceptions(f'{error_code}:{error_message}',)
+        _echo(
+            f'Successfully deleted Azure Functions deployment "{name}"',
+            CLI_COLOR_SUCCESS,
+        )
 
     @azure_functions.command(help='Get Azure Functions deployment information')
     @click.argument('name', type=click.STRING)
@@ -310,31 +283,20 @@ def get_azure_functions_sub_command():
     )
     def get(name, namespace, output):
         yatai_client = YataiClient()
-        try:
-            get_result = yatai_client.deployment.get(namespace, name)
-            if get_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    get_result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to get Azure Functions deployment {name}. '
-                    f'{error_code}:{error_message}'
-                )
-            describe_result = yatai_client.deployment.describe(namespace, name)
-            if describe_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    describe_result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to retrieve the latest status for Azure Functions '
-                    f'deployment {name}. {error_code}:{error_message}'
-                )
-            get_result.deployment.state.CopyFrom(describe_result.state)
-            _print_deployment_info(get_result.deployment, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to get Azure Functions deployment {name}. {str(e)}'
+        get_result = yatai_client.deployment.get(namespace, name)
+        if get_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_result.status
             )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        describe_result = yatai_client.deployment.describe(namespace, name)
+        if describe_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                describe_result.status
+            )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        get_result.deployment.state.CopyFrom(describe_result.state)
+        _print_deployment_info(get_result.deployment, output)
 
     @azure_functions.command(name='list', help='List Azure Functions deployments')
     @click.option(
@@ -370,26 +332,18 @@ def get_azure_functions_sub_command():
     )
     def list_deployment(namespace, limit, labels, order_by, asc, output):
         yatai_client = YataiClient()
-        try:
-            list_result = yatai_client.deployment.list_azure_functions_deployments(
-                limit=limit,
-                labels_query=labels,
-                namespace=namespace,
-                order_by=order_by,
-                ascending_order=asc,
+        list_result = yatai_client.deployment.list_azure_functions_deployments(
+            limit=limit,
+            labels_query=labels,
+            namespace=namespace,
+            order_by=order_by,
+            ascending_order=asc,
+        )
+        if list_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                list_result.status
             )
-            if list_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    list_result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to list Azure Functions deployments '
-                    f'{error_code}:{error_message}'
-                )
-            _print_deployments_info(list_result.deployments, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to list Azure Functions deployments {str(e)}'
-            )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        _print_deployments_info(list_result.deployments, output)
 
     return azure_functions

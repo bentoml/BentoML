@@ -31,7 +31,7 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
     ]
     try:
         deployment_success, endpoint_name = run_sagemaker_create_or_update_command(
-            create_deployment_command
+            create_deployment_command, 'deploy'
         )
         assert deployment_success, 'Sagemaker deployment was unsuccessful'
         assert endpoint_name, 'Sagemaker deployment endpoint name is missing'
@@ -58,7 +58,7 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
             updated_deployment_success,
             endpoint_name,
         ) = run_sagemaker_create_or_update_command(
-            update_bento_version_deployment_command
+            update_bento_version_deployment_command, 'update'
         )
         assert (
             updated_deployment_success

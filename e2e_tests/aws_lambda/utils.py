@@ -17,7 +17,7 @@ def send_test_data_to_endpoint(deployment_endpoint, sample_data=None):
     return request_result.status_code, request_result.content.decode('utf-8')
 
 
-def run_lambda_create_or_update_command(deploy_command):
+def run_lambda_create_or_update_command(deploy_command, command_name):
     """
     :return: deployment_success, deployment_endpoint
     """
@@ -32,7 +32,7 @@ def run_lambda_create_or_update_command(deploy_command):
 
     if deploy_command_stdout.startswith(
         'Failed to create deployment'
-    ) or deploy_command_stdout.startswith('Failed to update deployment'):
+    ) or deploy_command_stdout.startswith(f'Error: lambda {command_name} failed'):
         return False, None
 
     deploy_command_stdout_list = deploy_command_stdout.split('\n')

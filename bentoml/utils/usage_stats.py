@@ -17,8 +17,6 @@ import sys
 import platform
 import json
 import logging
-import time
-import atexit
 
 import uuid
 import requests

@@ -27,7 +27,7 @@ def test_aws_lambda_update_deployment(basic_bentoservice_v1, basic_bentoservice_
     ]
     try:
         deployment_success, deployment_endpoint = run_lambda_create_or_update_command(
-            create_deployment_command
+            create_deployment_command, 'deploy'
         )
         assert deployment_success, "AWS Lambda deployment creation should success"
         assert deployment_endpoint, "AWS Lambda deployment should have endpoint"
@@ -48,7 +48,7 @@ def test_aws_lambda_update_deployment(basic_bentoservice_v1, basic_bentoservice_
         (
             update_deployment_success,
             update_deployment_endpoint,
-        ) = run_lambda_create_or_update_command(update_deployment_command)
+        ) = run_lambda_create_or_update_command(update_deployment_command, 'update')
         assert (
             update_deployment_success
         ), "AWS Lambda deployment creation should success"

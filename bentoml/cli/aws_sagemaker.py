@@ -28,7 +28,7 @@ from bentoml.cli.deployment import (
     _print_deployments_info,
 )
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.exceptions import BentoMLException, BentoMLCLIException
+from bentoml.exceptions import CLIExceptions
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.utils import status_pb_to_error_code_and_message
@@ -133,39 +133,30 @@ def get_aws_sagemaker_sub_command():
         # use the DeploymentOperator name in proto to be consistent with amplitude
         bento_name, bento_version = bento.split(':')
         yatai_client = YataiClient()
-        try:
-            with Spinner('Deploying Sagemaker deployment '):
-                result = yatai_client.deployment.create_sagemaker_deployment(
-                    name=name,
-                    namespace=namespace,
-                    labels=labels,
-                    bento_name=bento_name,
-                    bento_version=bento_version,
-                    instance_count=instance_count,
-                    instance_type=instance_type,
-                    num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
-                    api_name=api_name,
-                    timeout=timeout,
-                    region=region,
-                    wait=wait,
-                )
-            if result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to create AWS Sagemaker deployment {name} '
-                    f'{error_code}:{error_message}'
-                )
-            _echo(
-                f'Successfully created AWS Sagemaker deployment {name}',
-                CLI_COLOR_SUCCESS,
+        with Spinner('Deploying Sagemaker deployment '):
+            result = yatai_client.deployment.create_sagemaker_deployment(
+                name=name,
+                namespace=namespace,
+                labels=labels,
+                bento_name=bento_name,
+                bento_version=bento_version,
+                instance_count=instance_count,
+                instance_type=instance_type,
+                num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
+                api_name=api_name,
+                timeout=timeout,
+                region=region,
+                wait=wait,
             )
-            _print_deployment_info(result.deployment, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to create AWS Sagemaker deployment {name}.: {str(e)}'
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
             )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        _echo(
+            f'Successfully created AWS Sagemaker deployment {name}', CLI_COLOR_SUCCESS,
+        )
+        _print_deployment_info(result.deployment, output)
 
     @aws_sagemaker.command(help='Update existing AWS Sagemaker deployment')
     @click.argument('name', type=click.STRING)
@@ -236,37 +227,28 @@ def get_aws_sagemaker_sub_command():
         else:
             bento_name = None
             bento_version = None
-        try:
-            with Spinner('Updating Sagemaker deployment '):
-                result = yatai_client.deployment.update_sagemaker_deployment(
-                    namespace=namespace,
-                    deployment_name=name,
-                    bento_name=bento_name,
-                    bento_version=bento_version,
-                    instance_count=instance_count,
-                    instance_type=instance_type,
-                    num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
-                    timeout=timeout,
-                    api_name=api_name,
-                    wait=wait,
-                )
-            if result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to update AWS Sagemaker deployment {name}.'
-                    f'{error_code}:{error_message}'
-                )
-            _echo(
-                f'Successfully updated AWS Sagemaker deployment {name}',
-                CLI_COLOR_SUCCESS,
+        with Spinner('Updating Sagemaker deployment '):
+            result = yatai_client.deployment.update_sagemaker_deployment(
+                namespace=namespace,
+                deployment_name=name,
+                bento_name=bento_name,
+                bento_version=bento_version,
+                instance_count=instance_count,
+                instance_type=instance_type,
+                num_of_gunicorn_workers_per_instance=num_of_gunicorn_workers_per_instance,  # noqa E501
+                timeout=timeout,
+                api_name=api_name,
+                wait=wait,
             )
-            _print_deployment_info(result.deployment, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to update AWS Sagemaker deployment {name}: {str(e)}'
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
             )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        _echo(
+            f'Successfully updated AWS Sagemaker deployment {name}', CLI_COLOR_SUCCESS,
+        )
+        _print_deployment_info(result.deployment, output)
 
     @aws_sagemaker.command(help='Delete AWS Sagemaker deployment')
     @click.argument('name', type=click.STRING)
@@ -290,28 +272,17 @@ def get_aws_sagemaker_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise BentoMLCLIException(
-                f'Failed to get Sagemaker deployment {name} for deletion. '
-                f'{error_code}:{error_message}'
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        result = yatai_client.deployment.delete(name, namespace, force)
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
             )
-        try:
-            result = yatai_client.deployment.delete(name, namespace, force)
-            if result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to delete AWS Sagemaker deployment {name}. '
-                    f'{error_code}:{error_message}'
-                )
-            _echo(
-                f'Successfully deleted AWS Sagemaker deployment "{name}"',
-                CLI_COLOR_SUCCESS,
-            )
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to delete AWS Sagemaker deployment {name} {str(e)}'
-            )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        _echo(
+            f'Successfully deleted AWS Sagemaker deployment "{name}"',
+            CLI_COLOR_SUCCESS,
+        )
 
     @aws_sagemaker.command(help='Get AWS Sagemaker deployment information')
     @click.argument('name', type=click.STRING)
@@ -327,31 +298,20 @@ def get_aws_sagemaker_sub_command():
     )
     def get(name, namespace, output):
         yatai_client = YataiClient()
-        try:
-            get_result = yatai_client.deployment.get(namespace, name)
-            if get_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    get_result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to get AWS Sagemaker deployment {name}. '
-                    f'{error_code}:{error_message}'
-                )
-            describe_result = yatai_client.deployment.describe(namespace, name)
-            if describe_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    describe_result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to retrieve the latest status for AWS Sagemaker '
-                    f'deployment {name}. {error_code}:{error_message}'
-                )
-            get_result.deployment.state.CopyFrom(describe_result.state)
-            _print_deployment_info(get_result.deployment, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to get AWS Sagemaker deployment {name} {str(e)}'
+        get_result = yatai_client.deployment.get(namespace, name)
+        if get_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_result.status
             )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        describe_result = yatai_client.deployment.describe(namespace, name)
+        if describe_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                describe_result.status
+            )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        get_result.deployment.state.CopyFrom(describe_result.state)
+        _print_deployment_info(get_result.deployment, output)
 
     @aws_sagemaker.command(
         name='list', help='List AWS Sagemaker deployment information'
@@ -389,26 +349,18 @@ def get_aws_sagemaker_sub_command():
     )
     def list_deployment(namespace, limit, labels, order_by, asc, output):
         yatai_client = YataiClient()
-        try:
-            list_result = yatai_client.deployment.list_sagemaker_deployments(
-                limit=limit,
-                labels_query=labels,
-                namespace=namespace,
-                order_by=order_by,
-                ascending_order=asc,
+        list_result = yatai_client.deployment.list_sagemaker_deployments(
+            limit=limit,
+            labels_query=labels,
+            namespace=namespace,
+            order_by=order_by,
+            ascending_order=asc,
+        )
+        if list_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                list_result.status
             )
-            if list_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    list_result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to list AWS Sagemaker deployments '
-                    f'{error_code}:{error_message}'
-                )
-            _print_deployments_info(list_result.deployments, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to list AWS Sagemaker deployments {str(e)}'
-            )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        _print_deployments_info(list_result.deployments, output)
 
     return aws_sagemaker

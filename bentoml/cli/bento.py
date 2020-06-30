@@ -22,7 +22,7 @@ from bentoml.cli.click_utils import (
     parse_bento_tag_list_callback,
 )
 from bentoml.cli.utils import humanfriendly_age_from_datetime
-from bentoml.exceptions import BentoMLCLIException
+from bentoml.exceptions import CLIExceptions
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.yatai.client import YataiClient
@@ -111,10 +111,7 @@ def add_bento_sub_command(cli):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     get_bento_result.status
                 )
-                raise BentoMLCLIException(
-                    f'BentoService {name}:{version} not found - '
-                    f'{error_code}:{error_message}'
-                )
+                raise CLIExceptions(f'{error_code}:{error_message}')
             if print_location:
                 _echo(get_bento_result.bento.uri.uri)
                 return
@@ -128,10 +125,7 @@ def add_bento_sub_command(cli):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_bento_versions_result.status
                 )
-                raise BentoMLCLIException(
-                    f'Failed to list versions for BentoService {name} '
-                    f'{error_code}:{error_message}'
-                )
+                raise CLIExceptions(f'{error_code}:{error_message}')
 
             _print_bentos_info(list_bento_versions_result.bentos, output)
 
@@ -164,9 +158,7 @@ def add_bento_sub_command(cli):
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_bentos_result.status
             )
-            raise BentoMLCLIException(
-                f'Failed to list BentoServices {error_code}:{error_message}'
-            )
+            raise CLIExceptions(f'{error_code}:{error_message}')
 
         _print_bentos_info(list_bentos_result.bentos, output)
 
@@ -190,7 +182,7 @@ def add_bento_sub_command(cli):
         for bento in bentos:
             name, version = bento.split(':')
             if not name and not version:
-                raise BentoMLCLIException(
+                raise CLIExceptions(
                     'BentoService name or version is missing. Please provide in the '
                     'format of name:version'
                 )
@@ -206,10 +198,7 @@ def add_bento_sub_command(cli):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise BentoMLCLIException(
-                    f'Failed to delete Bento {name}:{version} '
-                    f'{error_code}:{error_message}'
-                )
+                raise CLIExceptions(f'{error_code}:{error_message}')
             _echo(f'BentoService {name}:{version} deleted')
 
     @cli.command(
@@ -235,7 +224,7 @@ def add_bento_sub_command(cli):
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_bento_result.status
             )
-            raise BentoMLCLIException(
+            raise CLIExceptions(
                 f'BentoService {name}:{version} not found - '
                 f'{error_code}:{error_message}'
             )

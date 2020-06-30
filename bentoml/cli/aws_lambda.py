@@ -29,7 +29,7 @@ from bentoml.cli.deployment import (
     _print_deployments_info,
 )
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.exceptions import BentoMLException, BentoMLCLIException
+from bentoml.exceptions import CLIExceptions
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.yatai.client import YataiClient
@@ -117,36 +117,26 @@ def get_aws_lambda_sub_command():
     ):
         yatai_client = YataiClient()
         bento_name, bento_version = bento.split(':')
-        try:
-            with Spinner(f'Deploying "{bento}" to AWS Lambda '):
-                result = yatai_client.deployment.create_lambda_deployment(
-                    name=name,
-                    namespace=namespace,
-                    bento_name=bento_name,
-                    bento_version=bento_version,
-                    api_name=api_name,
-                    region=region,
-                    memory_size=memory_size,
-                    timeout=timeout,
-                    labels=labels,
-                    wait=wait,
-                )
-            if result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to create AWS Lambda deployment {name} '
-                    f'{error_code}:{error_message}'
-                )
-            _echo(
-                f'Successfully created AWS Lambda deployment {name}', CLI_COLOR_SUCCESS
+        with Spinner(f'Deploying "{bento}" to AWS Lambda '):
+            result = yatai_client.deployment.create_lambda_deployment(
+                name=name,
+                namespace=namespace,
+                bento_name=bento_name,
+                bento_version=bento_version,
+                api_name=api_name,
+                region=region,
+                memory_size=memory_size,
+                timeout=timeout,
+                labels=labels,
+                wait=wait,
             )
-            _print_deployment_info(result.deployment, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to create AWS Lambda deployment {name} {str(e)}'
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
             )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        _echo(f'Successfully created AWS Lambda deployment {name}', CLI_COLOR_SUCCESS)
+        _print_deployment_info(result.deployment, output)
 
     @aws_lambda.command(help='Update existing AWS Lambda deployment')
     @click.argument('name', type=click.STRING)
@@ -194,34 +184,25 @@ def get_aws_lambda_sub_command():
         else:
             bento_name = None
             bento_version = None
-        try:
-            with Spinner('Updating Lambda deployment '):
-                result = yatai_client.deployment.update_lambda_deployment(
-                    bento_name=bento_name,
-                    bento_version=bento_version,
-                    deployment_name=name,
-                    namespace=namespace,
-                    memory_size=memory_size,
-                    timeout=timeout,
-                    wait=wait,
-                )
-                if result.status.status_code != status_pb2.Status.OK:
-                    error_code, error_message = status_pb_to_error_code_and_message(
-                        result.status
-                    )
-                    raise BentoMLCLIException(
-                        f'Failed to update AWS Lambda deployment {name} '
-                        f'{error_code}:{error_message}'
-                    )
-                _echo(
-                    f'Successfully updated AWS Lambda deployment {name}',
-                    CLI_COLOR_SUCCESS,
-                )
-                _print_deployment_info(result.deployment, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to updated AWS Lambda deployment {name}: {str(e)}'
+        with Spinner('Updating Lambda deployment '):
+            result = yatai_client.deployment.update_lambda_deployment(
+                bento_name=bento_name,
+                bento_version=bento_version,
+                deployment_name=name,
+                namespace=namespace,
+                memory_size=memory_size,
+                timeout=timeout,
+                wait=wait,
             )
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
+            )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        _echo(
+            f'Successfully updated AWS Lambda deployment {name}', CLI_COLOR_SUCCESS,
+        )
+        _print_deployment_info(result.deployment, output)
 
     @aws_lambda.command(help='Delete AWS Lambda deployment')
     @click.argument('name', type=click.STRING)
@@ -247,30 +228,18 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise BentoMLCLIException(
-                f'Failed to get AWS Lambda deployment {name} for deletion '
-                f'{error_code}:{error_message}'
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        result = yatai_client.deployment.delete(
+            namespace=namespace, deployment_name=name, force_delete=force
+        )
+        if result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
             )
-        try:
-            result = yatai_client.deployment.delete(
-                namespace=namespace, deployment_name=name, force_delete=force
-            )
-            if result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to delete AWS Lambda deployment {name} '
-                    f'{error_code}:{error_message}'
-                )
-            _echo(
-                f'Successfully deleted AWS Lambda deployment "{name}"',
-                CLI_COLOR_SUCCESS,
-            )
-        except BentoMLException as e:
-            raise BentoMLCLIException(
-                f'Failed to delete AWS Lambda deployment {name} {str(e)}'
-            )
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        _echo(
+            f'Successfully deleted AWS Lambda deployment "{name}"', CLI_COLOR_SUCCESS,
+        )
 
     @aws_lambda.command(help='Get AWS Lambda deployment information')
     @click.argument('name', type=click.STRING)
@@ -291,20 +260,14 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 describe_result.status
             )
-            raise BentoMLCLIException(
-                f'Failed to retrieve the latest status for AWS Lambda deployment '
-                f'{name}. {error_code}:{error_message}'
-            )
+            raise CLIExceptions(f'{error_code}:{error_message}')
 
         get_result = yatai_client.deployment.get(namespace, name)
         if get_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_result.status
             )
-            raise BentoMLCLIException(
-                f'Failed to get AWS Lambda deployment {name}. '
-                f'{error_code}:{error_message}'
-            )
+            raise CLIExceptions(f'{error_code}:{error_message}')
         _print_deployment_info(get_result.deployment, output)
 
     @aws_lambda.command(name='list', help='List AWS Lambda deployments')
@@ -341,25 +304,19 @@ def get_aws_lambda_sub_command():
     )
     def list_deployments(namespace, limit, labels, order_by, asc, output):
         yatai_client = YataiClient()
-        try:
-            list_result = yatai_client.deployment.list_lambda_deployments(
-                limit=limit,
-                labels_query=labels,
-                namespace=namespace,
-                order_by=order_by,
-                ascending_order=asc,
+        list_result = yatai_client.deployment.list_lambda_deployments(
+            limit=limit,
+            labels_query=labels,
+            namespace=namespace,
+            order_by=order_by,
+            ascending_order=asc,
+        )
+        if list_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                list_result.status
             )
-            if list_result.status.status_code != status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    list_result.status
-                )
-                raise BentoMLCLIException(
-                    f'Failed to list AWS Lambda deployments. '
-                    f'{error_code}:{error_message}'
-                )
-            else:
-                _print_deployments_info(list_result.deployments, output)
-        except BentoMLException as e:
-            raise BentoMLCLIException(f'Failed to list AWS Lambda deployment {str(e)}')
+            raise CLIExceptions(f'{error_code}:{error_message}')
+        else:
+            _print_deployments_info(list_result.deployments, output)
 
     return aws_lambda

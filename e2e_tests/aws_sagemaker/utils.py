@@ -6,7 +6,7 @@ from e2e_tests.yatai_server.utils import modified_environ
 logger = logging.getLogger('bentoml.test')
 
 
-def run_sagemaker_create_or_update_command(deploy_command):
+def run_sagemaker_create_or_update_command(deploy_command, command_name):
     """
     :return: deployment_success, endpoint_name
     """
@@ -19,7 +19,7 @@ def run_sagemaker_create_or_update_command(deploy_command):
     logger.info(deployment_stdout)
 
     if deployment_stdout.startswith(
-        'Failed to create AWS Sagemaker deployment'
+        'Error: sagemaker {command_name} failed'
     ) or deployment_stdout.startswith('Failed to update AWS Sagemaker deployment'):
         return False, None
     deployment_stdout_list = deployment_stdout.split('\n')

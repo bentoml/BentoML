@@ -131,13 +131,17 @@ class BentoMLCommandGroup(click.Group):
         return wrapper
 
     @staticmethod
-    def raise_click_exception(func):
+    def raise_click_exception(func, cmd_group, **kwargs):
+        command_name = kwargs.get('name', func.__name__)
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
             except BentoMLException as e:
-                raise ClickException(str(e))
+                raise ClickException(
+                    f'{cmd_group.name} {command_name} failed: {str(e)}'
+                )
 
         return wrapper
 
@@ -148,7 +152,7 @@ class BentoMLCommandGroup(click.Group):
             # Send tracking events before command finish.
             func = BentoMLCommandGroup.bentoml_track_usage(func, self, **kwargs)
             # If BentoMLException raise ClickException instead before exit
-            func = BentoMLCommandGroup.raise_click_exception(func)
+            func = BentoMLCommandGroup.raise_click_exception(func, self, **kwargs)
 
             # move common parameters to end of the parameters list
             func.__click_params__ = (

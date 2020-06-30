@@ -230,7 +230,7 @@ def get_azure_functions_sub_command():
                 )
                 raise CLIException(f'{error_code}:{error_message}')
             _echo(
-                f'Successfully update Azure Functions deployment {name}',
+                f'Successfully updated Azure Functions deployment {name}',
                 CLI_COLOR_SUCCESS,
             )
             _print_deployment_info(result.deployment, output)

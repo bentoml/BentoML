@@ -105,7 +105,9 @@ class BentoAPIServer:
 
         # Bentoml api service is not thread safe.
         # Flask dev server enabled threaded by default, disable it.
-        self.app.run(port=self.port, threaded=False, debug=get_debug_mode())
+        self.app.run(
+            port=self.port, threaded=False, debug=get_debug_mode(), use_reloader=False,
+        )
 
     @staticmethod
     def index_view_func():

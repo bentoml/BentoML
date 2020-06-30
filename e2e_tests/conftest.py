@@ -60,8 +60,7 @@ def iris_clf_service_with_additional_large_file():
     saved_path = iris_clf_service_.save()
 
     with open(
-        os.path.join(saved_path, 'IrisClassifier', 'artifacts', 'large-text.txt'),
-        'w'
+        os.path.join(saved_path, 'IrisClassifier', 'artifacts', 'large-text.txt'), 'w'
     ) as out:
         out.seek((1024 * 1024 * 250) - 1)
         out.write('0')

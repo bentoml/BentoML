@@ -1,4 +1,5 @@
 import pytest
+import asyncio
 
 import imageio
 import numpy as np
@@ -8,6 +9,45 @@ from tests.bento_service_examples.example_bento_service import ExampleBentoServi
 
 
 def pytest_configure():
+    # async request client
+    async def assert_request(
+        method,
+        url,
+        headers=None,
+        data=None,
+        timeout=10,
+        assert_status=None,
+        assert_data=None,
+    ):
+        if assert_status is None:
+            assert_status = 200
+
+        import aiohttp
+
+        try:
+            async with aiohttp.ClientSession() as sess:
+                async with sess.request(
+                    method, url, data=data, headers=headers, timeout=timeout
+                ) as r:
+                    data = await r.read()
+                    if callable(assert_status):
+                        assert assert_status(r.status)
+                    else:
+                        assert r.status == assert_status
+                    if assert_data is not None:
+                        if callable(assert_data):
+                            assert assert_data(data)
+                        else:
+                            assert data == assert_data
+        except (
+            asyncio.CancelledError,
+            aiohttp.client_exceptions.ServerDisconnectedError,
+            TimeoutError,
+        ):
+            assert False
+
+    pytest.assert_request = assert_request
+
     # dataframe json orients
     pytest.DF_ORIENTS = {
         'split',
@@ -21,6 +61,21 @@ def pytest_configure():
         'records',
         'columns',
     }
+
+
+def pytest_addoption(parser):
+    parser.addoption("--batch-request", action="store_false")
+    parser.addoption("--host", action="store", default="localhost:5000")
+
+
+@pytest.fixture()
+def host(pytestconfig):
+    return pytestconfig.getoption("host")
+
+
+@pytest.fixture()
+def is_batch_request(pytestconfig):
+    return pytestconfig.getoption("batch_request")
 
 
 @pytest.fixture()
@@ -48,7 +103,7 @@ class TestModel(object):
         return [input_data.shape for input_data in input_datas]
 
     def predict_legacy_images(self, original, compared):
-        return original == compared
+        return (original == compared).all()
 
     def predict_json(self, input_jsons):
         assert input_jsons

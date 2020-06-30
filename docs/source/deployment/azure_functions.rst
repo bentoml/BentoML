@@ -328,7 +328,6 @@ Copy and paste the code below into a file named `yatai-service.yaml`
     metadata:
       labels:
         app: yatai-service
-      name: iris-classifier
       name: yatai-service
     spec:
       ports:

@@ -13,7 +13,7 @@ from e2e_tests.cli_operations import delete_deployment
 logger = logging.getLogger('bentoml.test')
 
 
-def test_aws_lambda_deployment(iris_clf_service_with_additional_large_file):
+def run_lambda_deployment(bento):
     random_hash = uuid.uuid4().hex[:6]
     deployment_name = f'tests-lambda-e2e-{random_hash}'
 
@@ -23,7 +23,7 @@ def test_aws_lambda_deployment(iris_clf_service_with_additional_large_file):
         'deploy',
         deployment_name,
         '-b',
-        iris_clf_service_with_additional_large_file,
+        bento,
         '--region',
         'us-west-2',
         '--verbose',
@@ -44,3 +44,13 @@ def test_aws_lambda_deployment(iris_clf_service_with_additional_large_file):
         assert content == '[0]', "prediction result mismatch"
     finally:
         delete_deployment('lambda', deployment_name)
+
+
+def test_aws_lambda_deployment(iris_clf_service):
+    run_lambda_deployment(iris_clf_service)
+
+
+def test_aws_lambda_deployment_with_large_file(
+    iris_clf_service_with_additional_large_file
+):
+    run_lambda_deployment(iris_clf_service_with_additional_large_file)

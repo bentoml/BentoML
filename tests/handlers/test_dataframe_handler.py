@@ -277,4 +277,4 @@ def test_benchmark_load_dataframes():
     time2 = time.time() - time_st
 
     assert_df_equal(result1, result2)
-    assert time1 / time2 > 20
+    assert time1 / time2 > 10

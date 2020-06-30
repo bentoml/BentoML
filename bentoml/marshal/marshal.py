@@ -92,6 +92,7 @@ def metrics_patch(cls):
                 self.metrics_request_exception.labels(
                     endpoint=api_name, exception_class=e.__class__.__name__
                 ).inc()
+                logger.error(traceback.format_exc())
                 resp = aiohttp.web.Response(status=500)
             self.metrics_request_total.labels(
                 endpoint=api_name, http_response_code=resp.status
@@ -202,7 +203,7 @@ class MarshalService:
         ):
             api_name = request.match_info.get("name")
             if api_name in self.batch_handlers:
-                req = SimpleRequest.from_flask_request(request)
+                req = SimpleRequest(request.raw_headers, await request.read())
                 try:
                     resp = await self.batch_handlers[api_name](req)
                 except RemoteException as e:

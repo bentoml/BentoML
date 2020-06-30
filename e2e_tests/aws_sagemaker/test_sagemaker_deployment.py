@@ -37,7 +37,7 @@ def test_sagemaker_deployment(iris_clf_service):
 
     try:
         deployment_success, endpoint_name = run_sagemaker_create_or_update_command(
-            create_deployment_command, 'deploy'
+            create_deployment_command
         )
         assert deployment_success, 'Sagemaker deployment was unsuccessful'
         assert endpoint_name, 'Sagemaker deployment endpoint name is missing'

@@ -30,7 +30,7 @@ def test_aws_lambda_deployment(iris_clf_service):
     ]
     try:
         deployment_success, deployment_endpoint = run_lambda_create_or_update_command(
-            create_deployment_command, 'deploy'
+            create_deployment_command
         )
         assert deployment_success, "AWS Lambda deployment creation should success"
         assert deployment_endpoint, "AWS Lambda deployment should have endpoint"

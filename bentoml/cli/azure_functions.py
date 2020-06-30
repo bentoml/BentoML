@@ -257,13 +257,13 @@ def get_azure_functions_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise CLIException(f'{error_code}:{error_message}', )
+            raise CLIException(f'{error_code}:{error_message}')
         result = yatai_client.deployment.delete(name, namespace, force)
         if result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIException(f'{error_code}:{error_message}', )
+            raise CLIException(f'{error_code}:{error_message}')
         _echo(
             f'Successfully deleted Azure Functions deployment "{name}"',
             CLI_COLOR_SUCCESS,

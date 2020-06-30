@@ -6,7 +6,7 @@ from e2e_tests.yatai_server.utils import modified_environ
 logger = logging.getLogger('bentoml.test')
 
 
-def run_sagemaker_create_or_update_command(deploy_command, command_name):
+def run_sagemaker_create_or_update_command(deploy_command):
     """
     :return: deployment_success, endpoint_name
     """

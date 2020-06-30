@@ -17,7 +17,7 @@ def send_test_data_to_endpoint(deployment_endpoint, sample_data=None):
     return request_result.status_code, request_result.content.decode('utf-8')
 
 
-def run_lambda_create_or_update_command(deploy_command, command_name):
+def run_lambda_create_or_update_command(deploy_command):
     """
     :return: deployment_success, deployment_endpoint
     """

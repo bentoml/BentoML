@@ -136,5 +136,5 @@ class AzureServiceError(YataiDeploymentException):
     """Raise when YataiService encounters an issue with Azure service"""
 
 
-class CLIExceptions(BentoMLException):
+class CLIException(BentoMLException):
     """Raise when CLI encounters an issue"""

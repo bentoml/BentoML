@@ -29,7 +29,7 @@ from bentoml.cli.deployment import (
     _print_deployments_info,
 )
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.exceptions import CLIExceptions
+from bentoml.exceptions import CLIException
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.yatai.client import YataiClient
@@ -134,7 +134,7 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         _echo(f'Successfully created AWS Lambda deployment {name}', CLI_COLOR_SUCCESS)
         _print_deployment_info(result.deployment, output)
 
@@ -198,7 +198,7 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         _echo(
             f'Successfully updated AWS Lambda deployment {name}', CLI_COLOR_SUCCESS,
         )
@@ -228,7 +228,7 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         result = yatai_client.deployment.delete(
             namespace=namespace, deployment_name=name, force_delete=force
         )
@@ -236,7 +236,7 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         _echo(
             f'Successfully deleted AWS Lambda deployment "{name}"', CLI_COLOR_SUCCESS,
         )
@@ -260,14 +260,14 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 describe_result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
 
         get_result = yatai_client.deployment.get(namespace, name)
         if get_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         _print_deployment_info(get_result.deployment, output)
 
     @aws_lambda.command(name='list', help='List AWS Lambda deployments')
@@ -315,7 +315,7 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         else:
             _print_deployments_info(list_result.deployments, output)
 

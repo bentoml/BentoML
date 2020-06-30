@@ -26,9 +26,7 @@ bentoml azure-functions deploy {deployment_name} -b {iris_clf_service} \
         ) as proc:
             stdout = proc.stdout.read().decode('utf-8')
         logger.info(stdout)
-        assert (
-            'Error: azure-functions deploy failed' not in stdout
-        ), "Azure function deployment creation should success"
+        assert proc.returncode == 0, 'Failed to create Azure Functions deployment'
         deploy_command_stdout_list = stdout.split('\n')
         endpoint = None
         for index, message in enumerate(deploy_command_stdout_list):

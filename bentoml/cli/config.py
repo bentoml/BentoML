@@ -29,7 +29,7 @@ from bentoml.configuration import (
 from bentoml.cli.click_utils import BentoMLCommandGroup
 
 # pylint: disable=unused-variable
-from bentoml.exceptions import CLIExceptions
+from bentoml.exceptions import CLIException
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ def get_configuration_sub_command():
             local_config.write(open(local_config_file, 'w'))
             return
         except ValueError:
-            raise CLIExceptions(
+            raise CLIException(
                 f'Wrong config format: {str(updates)}{EXAMPLE_CONFIG_USAGE}'
             )
 
@@ -128,7 +128,7 @@ def get_configuration_sub_command():
             local_config.write(open(local_config_file, 'w'))
             return
         except ValueError:
-            raise CLIExceptions(
+            raise CLIException(
                 f'Wrong config format: {str(updates)}{EXAMPLE_CONFIG_USAGE}'
             )
 

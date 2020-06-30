@@ -26,7 +26,7 @@ from bentoml.yatai.client import YataiClient
 from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
-from bentoml.exceptions import CLIExceptions
+from bentoml.exceptions import CLIException
 from bentoml.cli.utils import Spinner, _print_deployment_info, _print_deployments_info
 
 # pylint: disable=unused-variable
@@ -73,7 +73,7 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         _echo(
             f'Successfully created deployment {deployment_name}', CLI_COLOR_SUCCESS,
         )
@@ -104,7 +104,7 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         _echo(
             f'Successfully applied deployment {deployment_name}', CLI_COLOR_SUCCESS,
         )
@@ -132,13 +132,13 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         result = yatai_client.deployment.delete(name, namespace, force)
         if result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         _echo('Successfully deleted deployment "{}"'.format(name), CLI_COLOR_SUCCESS)
 
     @deployment.command(help='Get deployment information')
@@ -158,7 +158,7 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         describe_result = yatai_client.deployment.describe(
             namespace=namespace, name=name
         )
@@ -166,7 +166,7 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 describe_result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         get_result.deployment.state.CopyFrom(describe_result.state)
         _print_deployment_info(get_result.deployment, output)
 
@@ -219,7 +219,7 @@ def get_deployment_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_result.status
             )
-            raise CLIExceptions(f'{error_code}:{error_message}')
+            raise CLIException(f'{error_code}:{error_message}')
         _print_deployments_info(list_result.deployments, output)
 
     return deployment

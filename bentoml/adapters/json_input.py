@@ -17,6 +17,8 @@ import json
 import argparse
 from typing import Iterable
 
+import flask
+
 from bentoml.exceptions import BadInput
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.adapters.base_input import BaseInputAdapter
@@ -34,9 +36,9 @@ class JsonInput(BaseInputAdapter):
     def __init__(self, is_batch_input=False, **base_kwargs):
         super(JsonInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
 
-    def handle_request(self, request, func):
+    def handle_request(self, request: flask.Request, func):
         if request.content_type == "application/json":
-            parsed_json = json.loads(request.data.decode("utf-8"))
+            parsed_json = json.loads(request.get_data(as_text=True))
         else:
             raise BadInput(
                 "Request content-type must be 'application/json' for this "
@@ -55,13 +57,7 @@ class JsonInput(BaseInputAdapter):
         batch_flags = [None] * len(requests)
 
         for i, request in enumerate(requests):
-            batch_flags[i] = (
-                request.formated_headers.get(
-                    self._BATCH_REQUEST_HEADER.lower(),
-                    "true" if self.config.get('is_batch_input') else "false",
-                )
-                == "true"
-            )
+            batch_flags[i] = self.is_batch_request(request)
             try:
                 raw_str = request.data
                 parsed_json = json.loads(raw_str)

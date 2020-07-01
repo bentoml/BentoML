@@ -13,13 +13,20 @@
 # limitations under the License.
 
 import re
+import time
+
 import click
 import functools
 import logging
 
+from click import ClickException
 from ruamel.yaml import YAML
 
 from bentoml import configure_logging
+from bentoml.exceptions import BentoMLException
+from bentoml.utils.usage_stats import track
+from bentoml.configuration import set_debug_mode
+
 
 # Available CLI colors for _echo:
 #
@@ -46,6 +53,10 @@ from bentoml import configure_logging
 CLI_COLOR_SUCCESS = "green"
 CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
+
+
+logger = logging.getLogger(__name__)
+TRACK_CLI_EVENT_NAME = 'bentoml-cli'
 
 
 def _echo(message, color="reset"):
@@ -77,17 +88,59 @@ class BentoMLCommandGroup(click.Group):
         )
         @functools.wraps(func)
         def wrapper(quiet, verbose, *args, **kwargs):
-            if verbose:
-                from bentoml import config
-
-                config().set('core', 'debug', 'true')
-                configure_logging(logging.DEBUG)
-            elif quiet:
+            if quiet:
                 configure_logging(logging.ERROR)
-            else:
-                configure_logging()  # use default setting in local bentoml.cfg
+                if verbose:
+                    logger.warning(
+                        "The bentoml command option `--verbose/--debug` is ignored when"
+                        "the `--quiet` flag is also in use"
+                    )
+            elif verbose:
+                set_debug_mode(True)
 
             return func(*args, **kwargs)
+
+        return wrapper
+
+    @staticmethod
+    def bentoml_track_usage(func, cmd_group, **kwargs):
+        command_name = kwargs.get('name', func.__name__)
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            track_properties = {
+                'command_group': cmd_group.name,
+                'command': command_name,
+            }
+            start_time = time.time()
+            try:
+                return_value = func(*args, **kwargs)
+                track_properties['duration'] = time.time() - start_time
+                track_properties['return_code'] = 0
+                track(TRACK_CLI_EVENT_NAME, track_properties)
+                return return_value
+            except BaseException as e:
+                track_properties['duration'] = time.time() - start_time
+                track_properties['error_type'] = type(e).__name__
+                track_properties['return_code'] = 1
+                if type(e) == KeyboardInterrupt:
+                    track_properties['return_code'] = 2
+                track(TRACK_CLI_EVENT_NAME, track_properties)
+                raise
+
+        return wrapper
+
+    @staticmethod
+    def raise_click_exception(func, cmd_group, **kwargs):
+        command_name = kwargs.get('name', func.__name__)
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except BentoMLException as e:
+                msg = f'{cmd_group.name} {command_name} failed: {str(e)}'
+                raise ClickException(click.style(msg, fg='red'))
 
         return wrapper
 
@@ -95,6 +148,10 @@ class BentoMLCommandGroup(click.Group):
         def wrapper(func):
             # add common parameters to command
             func = BentoMLCommandGroup.bentoml_common_params(func)
+            # Send tracking events before command finish.
+            func = BentoMLCommandGroup.bentoml_track_usage(func, self, **kwargs)
+            # If BentoMLException raise ClickException instead before exit
+            func = BentoMLCommandGroup.raise_click_exception(func, self, **kwargs)
 
             # move common parameters to end of the parameters list
             func.__click_params__ = (
@@ -124,7 +181,7 @@ def _is_valid_bento_tag(value):
 
 
 def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argument
-    if not _is_valid_bento_tag(value):
+    if param.required and not _is_valid_bento_tag(value):
         raise click.BadParameter(
             "Bad formatting. Please present in BentoName:Version, for example "
             "iris_classifier:v1.2.0"

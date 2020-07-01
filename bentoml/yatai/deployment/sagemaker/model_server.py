@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from flask import Flask, Response, request
-from bentoml.utils.usage_stats import track_server
 
 
 def setup_bento_service_api_route(app, api):
@@ -61,5 +60,4 @@ class BentomlSagemakerServer:
         setup_routes(self.app, self.bento_service, api_name)
 
     def start(self):
-        track_server('sagemaker')
         self.app.run(port=AWS_SAGEMAKER_SERVE_PORT)

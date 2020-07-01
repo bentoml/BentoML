@@ -13,20 +13,28 @@
 # limitations under the License.
 import click
 import os
+import docker
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import (
-    CLI_COLOR_ERROR,
+    CLI_COLOR_WARNING,
+    CLI_COLOR_SUCCESS,
     _echo,
+    parse_bento_tag_callback,
     parse_bento_tag_list_callback,
 )
-from bentoml.cli.utils import humanfriendly_age_from_datetime
+from bentoml.cli.utils import (
+    humanfriendly_age_from_datetime,
+    _echo_docker_api_result,
+    make_bento_name_docker_compatible,
+    Spinner,
+)
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
-from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
 from bentoml.saved_bundle import safe_retrieve
+from bentoml.exceptions import CLIException, BentoMLException
 
 
 def _print_bento_info(bento, output_type):
@@ -92,10 +100,11 @@ def add_bento_sub_command(cli):
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
     @click.option('--ascending-order', is_flag=True)
+    @click.option('--print-location', is_flag=True)
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table', 'wide'])
     )
-    def get(bento, limit, ascending_order, output):
+    def get(bento, limit, ascending_order, print_location, output):
         if ':' in bento:
             name, version = bento.split(':')
         else:
@@ -104,23 +113,18 @@ def add_bento_sub_command(cli):
         yatai_client = YataiClient()
 
         if name and version:
-            track_cli('bento-get')
             output = output or 'json'
             get_bento_result = yatai_client.repository.get(name, version)
             if get_bento_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
                     get_bento_result.status
                 )
-                _echo(
-                    f'BentoService {name}:{version} not found - '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
-                )
+                raise CLIException(f'{error_code}:{error_message}')
+            if print_location:
+                _echo(get_bento_result.bento.uri.uri)
                 return
             _print_bento_info(get_bento_result.bento, output)
-            return
         elif name:
-            track_cli('bento-list')
             output = output or 'table'
             list_bento_versions_result = yatai_client.repository.list(
                 bento_name=name, limit=limit, ascending_order=ascending_order
@@ -129,12 +133,7 @@ def add_bento_sub_command(cli):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_bento_versions_result.status
                 )
-                _echo(
-                    f'Failed to list versions for BentoService {name} '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
-                )
-                return
+                raise CLIException(f'{error_code}:{error_message}')
 
             _print_bentos_info(list_bento_versions_result.bentos, output)
 
@@ -157,7 +156,6 @@ def add_bento_sub_command(cli):
     )
     def list_bentos(limit, offset, order_by, ascending_order, output):
         yatai_client = YataiClient()
-        track_cli('bento-list')
         list_bentos_result = yatai_client.repository.list(
             limit=limit,
             offset=offset,
@@ -168,11 +166,7 @@ def add_bento_sub_command(cli):
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_bentos_result.status
             )
-            _echo(
-                f'Failed to list BentoServices ' f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
-            )
-            return
+            raise CLIException(f'{error_code}:{error_message}')
 
         _print_bentos_info(list_bentos_result.bentos, output)
 
@@ -196,12 +190,10 @@ def add_bento_sub_command(cli):
         for bento in bentos:
             name, version = bento.split(':')
             if not name and not version:
-                _echo(
+                raise CLIException(
                     'BentoService name or version is missing. Please provide in the '
-                    'format of name:version',
-                    CLI_COLOR_ERROR,
+                    'format of name:version'
                 )
-                return
             if not yes and not click.confirm(
                 f'Are you sure about delete {bento}? This will delete the BentoService '
                 f'saved bundle files permanently'
@@ -214,11 +206,7 @@ def add_bento_sub_command(cli):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                _echo(
-                    f'Failed to delete Bento {name}:{version} '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
-                )
+                raise CLIException(f'{error_code}:{error_message}')
             _echo(f'BentoService {name}:{version} deleted')
 
     @cli.command(
@@ -239,18 +227,15 @@ def add_bento_sub_command(cli):
 
         yatai_client = YataiClient()
 
-        track_cli('bento-retrieve')
         get_bento_result = yatai_client.repository.get(name, version)
         if get_bento_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_bento_result.status
             )
-            _echo(
+            raise CLIException(
                 f'BentoService {name}:{version} not found - '
-                f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
+                f'{error_code}:{error_message}'
             )
-            return
 
         if get_bento_result.bento.uri.s3_presigned_url:
             bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
@@ -260,3 +245,112 @@ def add_bento_sub_command(cli):
         safe_retrieve(bento_service_bundle_path, target_dir)
 
         click.echo('Service %s artifact directory => %s' % (name, target_dir))
+
+    @cli.command(
+        help='Containerize given Bento into a Docker image',
+        short_help="Containerize given Bento into a Docker image",
+    )
+    @click.argument(
+        "bento", type=click.STRING, callback=parse_bento_tag_callback,
+    )
+    @click.option('--push', is_flag=True)
+    @click.option(
+        '--docker-repository',
+        help="Prepends specified Docker repository to image name.",
+    )
+    @click.option(
+        '-u', '--username', type=click.STRING, required=False,
+    )
+    @click.option(
+        '-p', '--password', type=click.STRING, required=False,
+    )
+    def containerize(bento, push, docker_repository, username, password):
+        """Containerize specified BentoService.
+
+        BENTO is the target BentoService to be containerized, referenced by its name
+        and version in format of name:version. For example: "iris_classifier:v1.2.0"
+
+        `bentoml containerize` command also supports the use of the `latest` tag
+        and will automatically use the last built version of your Bento.
+
+        You can also optionally provide a `--push` flag, which will push the built
+        image to the Docker repository specified by the `--docker-repository`.
+
+        If you would like to push to Docker Hub, `--docker-repository` can just be
+        your Docker Hub username. Otherwise, the tag should include the hostname as
+        well. For example, for Google Container Registry, the `--docker-repository`
+        would be `[HOSTNAME]/[PROJECT-ID]`
+        """
+        name, version = bento.split(':')
+        yatai_client = YataiClient()
+
+        get_bento_result = yatai_client.repository.get(name, version)
+        if get_bento_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_bento_result.status
+            )
+            raise CLIException(
+                f'BentoService {name}:{version} not found - '
+                f'{error_code}:{error_message}',
+            )
+
+        if get_bento_result.bento.uri.s3_presigned_url:
+            bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
+        else:
+            bento_service_bundle_path = get_bento_result.bento.uri.uri
+
+        _echo(f"Found Bento: {bento_service_bundle_path}")
+
+        if docker_repository is not None:
+            name = f'{docker_repository}/{name}'
+
+        name, version = make_bento_name_docker_compatible(name, version)
+        tag = f"{name}:{version}"
+        if tag != bento:
+            _echo(
+                f'Bento name or tag was changed to be Docker compatible. \n'
+                f'"{bento}" -> "{tag}"',
+                CLI_COLOR_WARNING,
+            )
+
+        docker_api = docker.APIClient()
+        try:
+            with Spinner(f"Building Docker image: {name}\n"):
+                _echo_docker_api_result(
+                    docker_api.build(
+                        path=bento_service_bundle_path, tag=tag, decode=True,
+                    )
+                )
+        except docker.errors.APIError as error:
+            raise CLIException(f'Could not build Docker image: {error}')
+
+        _echo(
+            f'Finished building {tag} from {bento}', CLI_COLOR_SUCCESS,
+        )
+
+        if push:
+            if not docker_repository:
+                raise CLIException('Docker Registry must be specified when pushing.')
+
+            auth_config_payload = (
+                {"username": username, "password": password}
+                if username or password
+                else None
+            )
+
+            try:
+                with Spinner(f"Pushing docker image to {tag}\n"):
+                    _echo_docker_api_result(
+                        docker_api.push(
+                            repository=name,
+                            tag=version,
+                            stream=True,
+                            decode=True,
+                            auth_config=auth_config_payload,
+                        )
+                    )
+                _echo(
+                    f'Pushed {tag} to {name}', CLI_COLOR_SUCCESS,
+                )
+            except (docker.errors.APIError, BentoMLException) as error:
+                raise CLIException(f'Could not push Docker image: {error}')

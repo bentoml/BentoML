@@ -214,6 +214,53 @@ on an H2O model that requires the h2o conda packages:
     One caveat with Conda Packages here, is that it does not work with AWS Lambda 
     deployment due to the limitation of the AWS Lambda platform.
 
+Using other Docker base images
+^^^^^^^^^^^^^^^^
+
+By default, BentoML uses a default Docker base image and installs your model and its dependencies on top of it. This base image contains all of BentoML's dependencies and an installation of `conda` which helps BentoML to package and use the right Python version for your bundle.
+
+However, there may be times when you need to use other Docker images (e.g. have some pre-build dependencies layers, company base image, using an Alpine-based image, etc.). BentoML makes it really easy to switch between base images by doing allowing you to specify a `docker_base_image`.
+
+.. code-block:: python
+
+  # e.g. using BentoML slim image
+  @env(docker_base_image="bentoml/model-server:0.8.12-slim-py37")
+  @artifacts([SklearnModelArtifact('model')])
+  class ExamplePredictionService(BentoService):
+    ...
+
+In fact, one such base image that many may find useful are the BentoML slim base images. The original base image weighs in at roughly `~853MB` whereas the slim version weighs in at `~360MB`. 
+
+.. code-block:: bash
+
+  > docker image ls
+
+  REPOSITORY                             TAG                   IMAGE ID            CREATED              SIZE
+  bentoml/model-server                   0.8.12-slim-py37      109b451ed537        6 minutes ago        360MB
+  bentoml/model-server                   0.8.12                f034fa23264c        33 minutes ago       853MB
+
+This means that each image built on top of these slim images will be significantly smaller. 
+
+.. code-block:: bash
+
+  > docker image ls
+
+  REPOSITORY                               TAG                 IMAGE ID            CREATED              SIZE
+  jzhao2k19/iris                           latest              bfc9b81c7535        About a minute ago   1.54GB
+  jzhao2k19/iris-slim                      latest              4e8d87a0c18a        4 minutes ago        577MB
+
+However, as with using any alternative Docker base image, there are a few things to keep in mind. The regular base image uses `conda`, whereas the slim image does not. This has a few consequences. BentoML uses `conda` to ensure the Python version used matches the one you used to save your bundle. This means that you should manually select the right slim image for your bundle. For example, if you used Python 3.8 to train your model, you would use `bentoml/model-server:0.8.12-slim-py38`. Currently, BentoML support Python 3.6, 3.7, and 3.8. Additionally, this means that BentoML will ignore the `environment.yml`, meaning that user-defined `conda` packages and dependencies will be ignored. In the following example, only `pandas` will be installed, as the `conda_channels` and `conda_dependencies` will be ignored.
+
+.. code-block:: python
+
+  @bentoml.env(
+    pip_dependencies=['pandas'],
+    conda_channels=['h2oai'],
+    conda_dependencies=['h2o==3.24.0.2'],
+    docker_base_image="bentoml/model-server:0.8.12-slim-py37"
+  )
+  class ExamplePredictionService(bentoml.BentoService):
+    ...
 
 Init Bash Script
 ^^^^^^^^^^^^^^^^
@@ -877,3 +924,27 @@ creating model serving deployments.
     the security best practices built-in, to bootstrap the end-to-end model management 
     and model serving deployment workflow. `Contact us <mailto:contact@bentoml.ai>`_ to
     learn more about our offerings.
+
+Retrieving BentoServices
+-------------------
+
+After saving your Model services to BentoML, you can retrieve the artifact bundle using the CLI from any environment configured to use the YataiService. The :code:`--target_dir` flag specifies where the artifact bundle will be populated. If the directory exists, it will not be overwritten to avoid inconsistent bundles.
+
+.. code-block:: bash
+
+    > bentoml retrieve --help
+    Usage: bentoml retrieve [OPTIONS] BENTO
+
+      Retrieves BentoService artifacts into a target directory
+
+    Options:
+      --target_dir TEXT   Directory to put artifacts into. Defaults to pwd.
+      -q, --quiet         Hide all warnings and info logs
+      --verbose, --debug  Show debug logs when running the command
+      --help              Show this message and exit.
+
+This command extends BentoML to be useful in a CI workflow or to provide a rapid way to share Services with others.
+
+.. code-block:: bash
+
+    bentoml retrieve ModelServe --target_dir=~/bentoml_bundle/

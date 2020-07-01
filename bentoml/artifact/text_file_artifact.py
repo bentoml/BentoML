@@ -30,7 +30,7 @@ class TextFileArtifact(BentoServiceArtifact):
 
     """
 
-    def __init__(self, name, file_extension=".txt", encoding="utf8"):
+    def __init__(self, name, file_extension=".txt", encoding="utf-8"):
         super(TextFileArtifact, self).__init__(name)
         self._file_extension = file_extension
         self._encoding = encoding

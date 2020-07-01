@@ -27,6 +27,7 @@ from tabulate import tabulate
 from bentoml.cli.click_utils import _echo
 from bentoml.yatai.proto.deployment_pb2 import DeploymentState, DeploymentSpec
 from bentoml.utils import pb_to_yaml
+from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
@@ -92,12 +93,49 @@ def parse_key_value_pairs(key_value_pairs_str):
     return result
 
 
+def _echo_docker_api_result(docker_generator):
+    layers = {}
+    for line in docker_generator:
+        if "stream" in line:
+            cleaned = line['stream'].rstrip("\n")
+            if cleaned != "":
+                _echo(cleaned)
+        if "status" in line and line["status"] == "Pushing":
+            progress = line["progressDetail"]
+            layers[line["id"]] = progress["current"], progress["total"]
+            cur, total = zip(*layers.values())
+            cur, total = (
+                humanfriendly.format_size(sum(cur)),
+                humanfriendly.format_size(sum(total)),
+            )
+            _echo(f"Pushed {cur} / {total}")
+        if "errorDetail" in line:
+            error = line["errorDetail"]
+            raise BentoMLException(f'Could not push Docker image: {error["message"]}')
+
+
+def make_bento_name_docker_compatible(name, tag):
+    """
+    Name components may contain lowercase letters, digits and separators.
+    A separator is defined as a period, one or two underscores, or one or more dashes.
+
+    A tag name must be valid ASCII and may contain lowercase and uppercase letters,
+    digits, underscores, periods and dashes. A tag name may not start with a period
+    or a dash and may contain a maximum of 128 characters.
+
+    https://docs.docker.com/engine/reference/commandline/tag/#extended-description
+    """
+    name = name.lower().strip("._-")
+    tag = tag.lstrip(".-")[:128]
+    return name, tag
+
+
 def _print_deployment_info(deployment, output_type):
     if output_type == 'yaml':
         _echo(pb_to_yaml(deployment))
     else:
         deployment_info = MessageToDict(deployment)
-        if deployment_info['state']['infoJson']:
+        if deployment_info['state'] and deployment_info['state']['infoJson']:
             deployment_info['state']['infoJson'] = json.loads(
                 deployment_info['state']['infoJson']
             )

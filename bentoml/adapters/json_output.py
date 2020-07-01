@@ -15,32 +15,11 @@
 from typing import Iterable
 import json
 
-import numpy as np
 import argparse
 
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.adapters.utils import NumpyJsonEncoder
 from bentoml.adapters.base_output import BaseOutputAdapter
-
-
-class NumpyJsonEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
-
-    def default(self, o):  # pylint: disable=method-hidden
-        if isinstance(o, np.generic):
-            return o.item()
-
-        if isinstance(o, np.ndarray):
-            return o.tolist()
-
-        return json.JSONEncoder.default(self, o)
-
-
-def jsonize(result):
-    try:
-        return json.dumps(result, cls=NumpyJsonEncoder)
-    except (TypeError, OverflowError):
-        # when result is not JSON serializable
-        return json.dumps({"result": str(result)})
 
 
 class JsonSerializableOutput(BaseOutputAdapter):
@@ -76,7 +55,7 @@ class JsonSerializableOutput(BaseOutputAdapter):
 
             result = result_conc[s]
             try:
-                json_output = jsonize(result)
+                json_output = json.dumps(result, cls=NumpyJsonEncoder)
                 responses[i] = SimpleResponse(
                     200, (("Content-Type", "application/json"),), json_output
                 )
@@ -98,14 +77,14 @@ class JsonSerializableOutput(BaseOutputAdapter):
         parsed_args = parser.parse_args(args)
 
         if parsed_args.output == 'json':
-            result = jsonize(result)
+            result = json.dumps(result, cls=NumpyJsonEncoder)
         else:
             result = str(result)
         print(result)
 
     def to_aws_lambda_event(self, result, event):
 
-        result = jsonize(result)
+        result = json.dumps(result, cls=NumpyJsonEncoder)
 
         # Allow disabling CORS by setting it to None
         if self.cors:

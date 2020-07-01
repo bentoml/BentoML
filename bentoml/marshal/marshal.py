@@ -28,7 +28,6 @@ from bentoml.server.trace import async_trace, make_http_headers
 from bentoml.marshal.utils import DataLoader, SimpleRequest
 from bentoml.adapters import BATCH_MODE_SUPPORTED_INPUT_TYPES
 from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.utils.usage_stats import track_server
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
 from bentoml.marshal.utils import SimpleResponse
 
@@ -92,6 +91,7 @@ def metrics_patch(cls):
                 self.metrics_request_exception.labels(
                     endpoint=api_name, exception_class=e.__class__.__name__
                 ).inc()
+                logger.error(traceback.format_exc())
                 resp = aiohttp.web.Response(status=500)
             self.metrics_request_total.labels(
                 endpoint=api_name, http_response_code=resp.status
@@ -278,7 +278,6 @@ class MarshalService:
         """
         Start an micro batch server at the specific port on the instance or parameter.
         """
-        track_server('marshal')
         marshal_proc = multiprocessing.Process(
             target=self.fork_start_app, kwargs=dict(port=port), daemon=True,
         )

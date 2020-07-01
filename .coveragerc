@@ -1,0 +1,5 @@
+[run]
+omit=
+	bentoml/adapters/pytorch_tensor_input.py
+	bentoml/utils/cloudpickle.py
+	bentoml/_version.py

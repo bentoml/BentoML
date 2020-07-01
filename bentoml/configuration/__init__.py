@@ -21,7 +21,6 @@ from bentoml import __version__, _version as version_mod
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
 
-
 # Note this file is loaded prior to logging being configured, thus logger is only
 # used within functions in this file
 logger = logging.getLogger(__name__)
@@ -29,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 # Default bentoml config comes with the library bentoml/config/default_bentoml.cfg
 DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.cfg")
+
+CONFIG_FILE_ENCODING = "utf-8"
 
 
 def expand_env_var(env_var):
@@ -71,17 +72,11 @@ BENTOML_VERSION = __version__
 LAST_PYPI_RELEASE_VERSION = __version__.split('+')[0]
 
 
-def _is_pypi_release():
+def _is_pip_installed_bentoml():
     is_installed_package = hasattr(version_mod, 'version_json')
     is_tagged = not __version__.startswith('0+untagged')
     is_clean = not version_mod.get_versions()['dirty']
     return is_installed_package and is_tagged and is_clean
-
-
-if not _is_pypi_release():
-    # Reset to LAST_PYPI_RELEASE_VERSION if bentoml module is 'dirty'
-    # This will be used as default value of 'core/bentoml_deploy_version' config
-    BENTOML_VERSION = LAST_PYPI_RELEASE_VERSION
 
 
 def get_local_config_file():
@@ -105,7 +100,7 @@ def load_config():
         )
 
     with open(DEFAULT_CONFIG_FILE, "rb") as f:
-        DEFAULT_CONFIG = f.read().decode("utf-8")
+        DEFAULT_CONFIG = f.read().decode(CONFIG_FILE_ENCODING)
 
     loaded_config = BentoMLConfigParser(
         default_config=parameterized_config(DEFAULT_CONFIG)
@@ -115,7 +110,9 @@ def load_config():
     if os.path.isfile(local_config_file):
         logger.info("Loading local BentoML config file: %s", local_config_file)
         with open(local_config_file, "rb") as f:
-            loaded_config.read_string(parameterized_config(f.read().decode("utf-8")))
+            loaded_config.read_string(
+                parameterized_config(f.read().decode(CONFIG_FILE_ENCODING))
+            )
     else:
         logger.info("No local BentoML config file found, using default configurations")
 
@@ -171,14 +168,39 @@ def get_bentoml_deploy_version():
     """
     bentoml_deploy_version = config('core').get('bentoml_deploy_version')
 
-    if bentoml_deploy_version != __version__:
-        logger.warning(
-            "BentoML local changes detected - Local BentoML repository including all "
-            "code changes will be packaged together with saved bundle created, under "
-            "'./bundled_pip_dependencies' directory. For using a modified version of "
-            "BentoML for production deployment, it is recommended to set the "
-            "'core/bentoml_deploy_version' config to a http location or your BentoML "
-            "for on github, e.g.: 'bentoml_deploy_version = git+https://github.com/"
-            "{username}/bentoml.git@{branch}'"
-        )
+    if bentoml_deploy_version != LAST_PYPI_RELEASE_VERSION:
+        logger.info(f"Setting BentoML deploy version to '{bentoml_deploy_version}'")
+
+    if LAST_PYPI_RELEASE_VERSION != BENTOML_VERSION:
+        if _is_pip_installed_bentoml():
+            logger.warning(
+                "Using BentoML not from official PyPI release. In order to find the "
+                "same version of BentoML when deplying your BentoService, you must "
+                "set the 'core/bentoml_deploy_version' config to a http/git location "
+                "of your BentoML fork, e.g.: 'bentoml_deploy_version = "
+                "git+https://github.com/{username}/bentoml.git@{branch}'"
+            )
+        else:
+            logger.warning(
+                "Using BentoML installed in `editable` model, the local BentoML "
+                "repository including all code changes will be packaged together with "
+                "saved bundle created, under the './bundled_pip_dependencies' "
+                "directory of the saved bundle."
+            )
     return bentoml_deploy_version
+
+
+def get_debug_mode():
+    return config().getboolean('core', 'debug')
+
+
+def set_debug_mode(debug_mode_on: bool):
+    config().set('core', 'debug', str(debug_mode_on))
+
+    from bentoml.utils.log import configure_logging
+
+    configure_logging()  # reconfigure logging and set log level to debug
+
+    logger.debug(
+        f"Setting debug mode: {'ON' if debug_mode_on else 'OFF'} for current session"
+    )

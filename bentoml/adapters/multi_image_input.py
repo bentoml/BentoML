@@ -59,7 +59,9 @@ class MultiImageInput(BaseInputAdapter):
     ):
         if is_batch_input:
             raise ValueError('ImageInput can not accpept batch inputs')
-        super(MultiImageInput, self).__init__(**base_kwargs)
+        super(MultiImageInput, self).__init__(
+            is_batch_input=is_batch_input, **base_kwargs
+        )
         self.input_names = input_names
         self.pilmode = pilmode
         self.accept_image_formats = (

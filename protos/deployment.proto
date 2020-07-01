@@ -20,7 +20,7 @@ message DeploymentSpec {
     // Built-in deployment operator types
     AWS_SAGEMAKER = 2;
     AWS_LAMBDA = 3;
-    AZURE_FUNCTION = 4;
+    AZURE_FUNCTIONS = 4;
   }
 
   message CustomOperatorConfig {
@@ -49,7 +49,7 @@ message DeploymentSpec {
     int32 timeout = 4;
   }
 
-  message AzureFunctionOperatorConfig {
+  message AzureFunctionsOperatorConfig {
       // Similar to region value in AWS
       string location = 1;
       // Azure function premium plan id
@@ -72,7 +72,7 @@ message DeploymentSpec {
     CustomOperatorConfig custom_operator_config = 4;
     SageMakerOperatorConfig sagemaker_operator_config = 5;
     AwsLambdaOperatorConfig aws_lambda_operator_config = 6;
-    AzureFunctionOperatorConfig azure_function_operator_config = 7;
+    AzureFunctionsOperatorConfig azure_functions_operator_config = 7;
   }
 }
 

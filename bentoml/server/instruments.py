@@ -14,28 +14,34 @@ class InstrumentMiddleware:
         self.app = app
         self.bento_service = bento_service
 
-        from prometheus_client import Histogram, Counter, Gauge
+        from prometheus_client import Histogram, Counter, Gauge, CollectorRegistry
 
         service_name = self.bento_service.name
         namespace = config('instrument').get('default_namespace')
+        # Use local registry instead of the global one to avoid duplicated metrics
+        # register
+        self.collector_registry = CollectorRegistry()
 
         self.metrics_request_duration = Histogram(
             name=service_name + '_request_duration_seconds',
             documentation=service_name + " API HTTP request duration in seconds",
             namespace=namespace,
             labelnames=['endpoint', 'service_version', 'http_response_code'],
+            registry=self.collector_registry,
         )
         self.metrics_request_total = Counter(
             name=service_name + "_request_total",
             documentation='Totoal number of HTTP requests',
             namespace=namespace,
             labelnames=['endpoint', 'service_version', 'http_response_code'],
+            registry=self.collector_registry,
         )
         self.metrics_request_in_progress = Gauge(
             name=service_name + "_request_in_progress",
             documentation='Totoal number of HTTP requests in progress now',
             namespace=namespace,
             labelnames=['endpoint', 'service_version'],
+            registry=self.collector_registry,
         )
 
     def __call__(self, environ, start_response):

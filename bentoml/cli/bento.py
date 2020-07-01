@@ -27,7 +27,7 @@ from bentoml.cli.click_utils import (
 from bentoml.cli.utils import (
     humanfriendly_age_from_datetime,
     _echo_docker_api_result,
-    _make_bento_name_docker_compatible,
+    make_bento_name_docker_compatible,
     Spinner,
 )
 from bentoml.yatai.proto import status_pb2
@@ -304,7 +304,7 @@ def add_bento_sub_command(cli):
         if docker_repository is not None:
             name = f'{docker_repository}/{name}'
 
-        name, version = _make_bento_name_docker_compatible(name, version)
+        name, version = make_bento_name_docker_compatible(name, version)
         tag = f"{name}:{version}"
         if tag != bento:
             _echo(
@@ -313,8 +313,8 @@ def add_bento_sub_command(cli):
                 CLI_COLOR_WARNING,
             )
 
+        docker_api = docker.APIClient()
         try:
-            docker_api = docker.APIClient()
             with Spinner(f"Building Docker image: {name}\n"):
                 _echo_docker_api_result(
                     docker_api.build(

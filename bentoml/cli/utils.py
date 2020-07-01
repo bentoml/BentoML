@@ -114,7 +114,7 @@ def _echo_docker_api_result(docker_generator):
             raise BentoMLException(f'Could not push Docker image: {error["message"]}')
 
 
-def _make_bento_name_docker_compatible(name, tag):
+def make_bento_name_docker_compatible(name, tag):
     """
     Name components may contain lowercase letters, digits and separators.
     A separator is defined as a period, one or two underscores, or one or more dashes.

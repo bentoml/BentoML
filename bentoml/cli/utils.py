@@ -101,13 +101,12 @@ def _echo_docker_api_result(docker_generator):
                 _echo(cleaned)
         if "status" in line and line["status"] == "Pushing":
             progress = line["progressDetail"]
-            cur = humanfriendly_bytes(progress["current"])
-            total = humanfriendly_bytes(progress["total"])
+            cur = humanfriendly.format_size(progress["current"])
+            total = humanfriendly.format_size(progress["total"])
             _echo(f" Pushed {cur}/{total}")
         if "errorDetail" in line:
             error = line["errorDetail"]
-            raise BentoMLException(
-                f'Could not push Docker image: {error["message"]}')
+            raise BentoMLException(f'Could not push Docker image: {error["message"]}')
 
 
 def _make_bento_name_docker_compatible(name, tag):
@@ -158,14 +157,6 @@ def _format_deployment_age_for_print(deployment_pb):
         return None
     else:
         return humanfriendly_age_from_datetime(deployment_pb.created_at.ToDatetime())
-
-
-def humanfriendly_bytes(num):
-    step_unit = 1000  # apparently docker uses 1000?
-    for x in ['B', 'KB', 'MB', 'GB', 'TB']:
-        if num < step_unit:
-            return "%3.2f %s" % (num, x)
-        num /= step_unit
 
 
 def humanfriendly_age_from_datetime(dt, detailed=False, max_unit=2):

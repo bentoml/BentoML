@@ -36,6 +36,7 @@ from bentoml.yatai.client import YataiClient
 from bentoml.saved_bundle import safe_retrieve
 from bentoml.exceptions import CLIException, BentoMLException
 
+
 def _print_bento_info(bento, output_type):
     if output_type == 'yaml':
         _echo(pb_to_yaml(bento))
@@ -250,9 +251,7 @@ def add_bento_sub_command(cli):
         short_help="Containerize given Bento into a Docker image",
     )
     @click.argument(
-        "bento",
-        type=click.STRING,
-        callback=parse_bento_tag_callback,
+        "bento", type=click.STRING, callback=parse_bento_tag_callback,
     )
     @click.option('--push', is_flag=True)
     @click.option(
@@ -260,16 +259,10 @@ def add_bento_sub_command(cli):
         help="Prepends specified Docker repository to image name.",
     )
     @click.option(
-        '-u',
-        '--username',
-        type=click.STRING,
-        required=False,
+        '-u', '--username', type=click.STRING, required=False,
     )
     @click.option(
-        '-p',
-        '--password',
-        type=click.STRING,
-        required=False,
+        '-p', '--password', type=click.STRING, required=False,
     )
     def containerize(bento, push, docker_repository, username, password):
         """Containerize specified BentoService.
@@ -332,13 +325,18 @@ def add_bento_sub_command(cli):
             raise CLIException(f'Could not build Docker image: {error}')
 
         _echo(
-            f'Finished building {tag} from Bento {bento}', CLI_COLOR_SUCCESS,
+            f'Finished building {tag} from {bento}', CLI_COLOR_SUCCESS,
         )
 
         if push:
             if not docker_repository:
                 raise CLIException('Docker Registry must be specified when pushing.')
-            auth_config_payload = {"username": username, "password": password}
+
+            auth_config_payload = (
+                {"username": username, "password": password}
+                if username or password
+                else None
+            )
 
             try:
                 with Spinner(f"Pushing docker image to {tag} "):

@@ -19,7 +19,6 @@ from gunicorn.app.base import Application
 
 from bentoml import config
 from bentoml.marshal import MarshalService
-from bentoml.utils.usage_stats import track_server
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
 
 marshal_logger = logging.getLogger("bentoml.marshal")
@@ -81,7 +80,6 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         return server.make_app()
 
     def run(self):
-        track_server('gunicorn-microbatch', {"number_of_workers": self.cfg.workers})
         setup_prometheus_multiproc_dir(self.prometheus_lock)
         super(GunicornMarshalServer, self).run()
 

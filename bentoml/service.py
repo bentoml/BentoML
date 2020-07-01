@@ -241,7 +241,7 @@ def api_decorator(
     Raises:
         InvalidArgument: API name must contains only letters
 
-    after version 0.8
+    >>> # After version 0.8
     >>> from bentoml import BentoService, api
     >>> from bentoml.adapters import JsonInput, DataframeInput
     >>>
@@ -255,7 +255,7 @@ def api_decorator(
     >>>     def identity(self, df):
     >>>         # do something
 
-    before version 0.8
+    >>> # Before version 0.8
     >>> from bentoml import BentoService, api
     >>> from bentoml.handlers import JsonHandler, DataframeHandler  # deprecated
     >>>

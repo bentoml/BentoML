@@ -11,6 +11,6 @@ cd "$GIT_ROOT" || exit
 
 # Install tensorflow
 pip install torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-pytest "$GIT_ROOT"/tests/integration_tests/test_pytorch_model_artifact.py --cov=bentoml
+pytest "$GIT_ROOT"/tests/integration_tests/test_pytorch_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

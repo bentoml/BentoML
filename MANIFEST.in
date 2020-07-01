@@ -44,7 +44,7 @@ include bentoml/yatai/deployment/sagemaker/serve
 
 # include files for Azure function deployment
 include bentoml/yatai/deployment/azure_functions/host.json
-include bentoml/yatai/deployment/azure_functions/local.setting.json
+include bentoml/yatai/deployment/azure_functions/local.settings.json
 include bentoml/yatai/deployment/azure_functions/Dockerfile
 
 prune e2e_tests

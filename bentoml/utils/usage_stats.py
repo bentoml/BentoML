@@ -17,8 +17,6 @@ import sys
 import platform
 import json
 import logging
-import time
-import atexit
 
 import uuid
 import requests
@@ -153,31 +151,3 @@ def track_load_start():
 def track_load_finish(bento_service):
     properties = _get_bento_service_event_properties(bento_service)
     return track("load", properties)
-
-
-def track_cli(command, deploy_platform=None, extra_properties=None):
-    properties = {}
-    if deploy_platform is not None:
-        properties['platform'] = deploy_platform
-    if extra_properties is not None:
-        properties.update(extra_properties)
-    return track('cli-' + command, properties)
-
-
-def track_server_stop(server_type, start_time, properties):
-    # track server stop event
-    duration = time.time() - start_time
-    properties['uptime'] = int(duration)
-    return track(
-        'server-{server_type}-stop'.format(server_type=server_type), properties
-    )
-
-
-def track_server(server_type, extra_properties=None):
-    properties = extra_properties or {}
-
-    # track server start event
-    track('server-{server_type}-start'.format(server_type=server_type), properties)
-
-    start_time = time.time()
-    atexit.register(track_server_stop, server_type, start_time, properties)

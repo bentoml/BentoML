@@ -73,7 +73,9 @@ dev_requires = [
     "flake8>=3.8.2",
     "gitpython>=2.0.2",
     "grpcio-reflection<=1.27.2",
-    "grpcio-tools<=1.27.2",
+    # This grpcio-tools version  should be kept in sync with the version found in
+    # `protos/generate-docker.sh` script
+    "grpcio-tools==1.27.2",
     "pylint>=2.5.2",
     "setuptools",
     "tox-conda>=0.2.0",

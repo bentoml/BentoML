@@ -924,3 +924,27 @@ creating model serving deployments.
     the security best practices built-in, to bootstrap the end-to-end model management 
     and model serving deployment workflow. `Contact us <mailto:contact@bentoml.ai>`_ to
     learn more about our offerings.
+
+Retrieving BentoServices
+-------------------
+
+After saving your Model services to BentoML, you can retrieve the artifact bundle using the CLI from any environment configured to use the YataiService. The :code:`--target_dir` flag specifies where the artifact bundle will be populated. If the directory exists, it will not be overwritten to avoid inconsistent bundles.
+
+.. code-block:: bash
+
+    > bentoml retrieve --help
+    Usage: bentoml retrieve [OPTIONS] BENTO
+
+      Retrieves BentoService artifacts into a target directory
+
+    Options:
+      --target_dir TEXT   Directory to put artifacts into. Defaults to pwd.
+      -q, --quiet         Hide all warnings and info logs
+      --verbose, --debug  Show debug logs when running the command
+      --help              Show this message and exit.
+
+This command extends BentoML to be useful in a CI workflow or to provide a rapid way to share Services with others.
+
+.. code-block:: bash
+
+    bentoml retrieve ModelServe --target_dir=~/bentoml_bundle/

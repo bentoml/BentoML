@@ -103,13 +103,10 @@ def _echo_docker_api_result(docker_generator):
         if "status" in line and line["status"] == "Pushing":
             progress = line["progressDetail"]
             layers[line["id"]] = progress["current"], progress["total"]
-            cur, total = 0, 0
-            for v in layers.values():
-                cur += v[0]
-                total += v[1]
+            cur, total = zip(*layers.values())
             cur, total = (
-                humanfriendly.format_size(cur),
-                humanfriendly.format_size(total),
+                humanfriendly.format_size(sum(cur)),
+                humanfriendly.format_size(sum(total)),
             )
             _echo(f"Pushed {cur} / {total}")
         if "errorDetail" in line:

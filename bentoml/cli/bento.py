@@ -13,21 +13,16 @@
 # limitations under the License.
 import click
 import os
-<<<<<<< HEAD
 import docker
 import subprocess
-=======
-
->>>>>>> 207d83166701a8ba8e146b98e7db528355fbcc5c
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import (
-<<<<<<< HEAD
-    CLI_COLOR_ERROR,
     CLI_COLOR_WARNING,
     CLI_COLOR_SUCCESS,
     _echo,
+    parse_bento_tag_callback,
     parse_bento_tag_list_callback,
 )
 from bentoml.cli.utils import (
@@ -36,19 +31,12 @@ from bentoml.cli.utils import (
     _make_bento_name_docker_compatible,
     Spinner,
 )
-=======
-    _echo,
-    parse_bento_tag_list_callback,
-)
-from bentoml.cli.utils import humanfriendly_age_from_datetime
-from bentoml.exceptions import CLIException
->>>>>>> 207d83166701a8ba8e146b98e7db528355fbcc5c
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.yatai.client import YataiClient
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.saved_bundle import safe_retrieve
-
+from bentoml.exceptions import CLIException
 
 def _print_bento_info(bento, output_type):
     if output_type == 'yaml':
@@ -263,7 +251,11 @@ def add_bento_sub_command(cli):
         help='Containerize given Bento into a Docker image',
         short_help="Containerize given Bento into a Docker image",
     )
-    @click.argument("bento", type=click.STRING)
+    @click.argument(
+        "bento",
+        type=click.STRING,
+        callback=parse_bento_tag_callback,
+    )
     @click.option('--push', is_flag=True)
     @click.option(
         '--docker-repository',
@@ -281,25 +273,18 @@ def add_bento_sub_command(cli):
         // add stuff about --push
         // add stuff about --docker-repository
         """
-        if ':' not in bento:
-            _echo(f'BentoService {bento} invalid - specify name:version')
-            return
         name, version = bento.split(':')
-
         yatai_client = YataiClient()
 
-        track_cli('bento-containerize')
         get_bento_result = yatai_client.repository.get(name, version)
         if get_bento_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_bento_result.status
             )
-            _echo(
+            raise CLIException(
                 f'BentoService {name}:{version} not found - '
                 f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
             )
-            return
 
         if get_bento_result.bento.uri.s3_presigned_url:
             bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
@@ -323,17 +308,17 @@ def add_bento_sub_command(cli):
         try:
             docker_api = docker.APIClient()
             ensure_docker_available_or_raise()
-            with Spinner(f"Building Docker image: {name} "):
+            with Spinner(f"Building Docker image: {name} \n"):
                 _echo_docker_api_result(
                     docker_api.build(
                         path=bento_service_bundle_path, tag=tag, decode=True,
                     )
                 )
         except (FileNotFoundError, subprocess.CalledProcessError) as error:
-            _echo(
-                f'Could not build Docker image: {error}', CLI_COLOR_ERROR,
+            raise CLIException(
+                f'Could not build Docker image: {error}',
+                CLI_COLOR_ERROR,
             )
-            return
 
         _echo(
             f'Built {tag}', CLI_COLOR_SUCCESS,
@@ -341,11 +326,7 @@ def add_bento_sub_command(cli):
 
         if push:
             if not docker_repository:
-                _echo(
-                    'Docker Registry must be specified when pushing image.',
-                    CLI_COLOR_ERROR,
-                )
-                return
+                raise CLIException('Docker Registry must be specified when pushing image.')
             with Spinner(f"Pushing docker image to {tag} "):
                 _echo_docker_api_result(
                     docker_api.push(

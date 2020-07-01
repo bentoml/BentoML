@@ -122,8 +122,9 @@ class MultiImageInput(BaseInputAdapter):
         """
         parser = argparse.ArgumentParser()
         for input_name in self.input_names:
-            parser.add_argument(input_name, required=True)
+            parser.add_argument('--' + input_name)
         args, unknown_args = parser.parse_known_args(args)
+        args = vars(args)
         files = {
             input_name: self.read_file(
                 pathlib.Path(args[input_name]).name, args[input_name]

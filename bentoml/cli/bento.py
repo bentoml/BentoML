@@ -315,7 +315,7 @@ def add_bento_sub_command(cli):
 
         try:
             docker_api = docker.APIClient()
-            with Spinner(f"Building Docker image: {name} \n"):
+            with Spinner(f"Building Docker image: {name}\n"):
                 _echo_docker_api_result(
                     docker_api.build(
                         path=bento_service_bundle_path, tag=tag, decode=True,
@@ -339,7 +339,7 @@ def add_bento_sub_command(cli):
             )
 
             try:
-                with Spinner(f"Pushing docker image to {tag} "):
+                with Spinner(f"Pushing docker image to {tag}\n"):
                     _echo_docker_api_result(
                         docker_api.push(
                             repository=name,

@@ -20,8 +20,9 @@ import time
 import logging
 from functools import partial
 
-from flask import Flask, jsonify, Response, request, make_response, render_template
+from flask import Flask, jsonify, Response, request, make_response, send_from_directory
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import NotFound
 
 from bentoml import config
 from bentoml.utils.usage_stats import track_server
@@ -42,10 +43,10 @@ logger = logging.getLogger(__name__)
 INDEX_HTML = '''\
 <!DOCTYPE html>
 <head><link rel="stylesheet" type="text/css"
-            href="/static/swagger-ui.css"></head>
+            href="/swagger_static/swagger-ui.css"></head>
 <body>
 <div id="swagger-ui-container"></div>
-<script src="/static/swagger-ui-bundle.js"></script>
+<script src="/swagger_static/swagger-ui-bundle.js"></script>
 <script>
     SwaggerUIBundle({{
         url: '{url}',
@@ -83,23 +84,15 @@ class BentoAPIServer:
 
         self.port = port
         self.bento_service = bento_service
-        if bento_service._static_files:
-            self.app = Flask(
-                app_name,
-                static_folder=os.path.join(
-                    self.bento_service._path, app_name, 'webui/static'
-                ),
-                template_folder=os.path.join(
-                    self.bento_service._path, app_name, 'webui'
-                ),
-            )
-        else:
-            self.app = Flask(
-                app_name,
-                static_folder=os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)), 'static'
-                ),
-            )
+        self.app = Flask(app_name, static_folder=None)
+
+        self.static_path = os.path.join(
+            self.bento_service._bento_service_bundle_path, app_name, 'webui'
+        )
+
+        self.swagger_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'swagger_static'
+        )
 
         for middleware in (InstrumentMiddleware,):
             self.app.wsgi_app = middleware(self.app.wsgi_app, self.bento_service)
@@ -117,18 +110,41 @@ class BentoAPIServer:
         self.app.run(port=self.port, threaded=False)
 
     @staticmethod
-    def index_view_func(bento_service):
+    def static_serve(static_path, file_path):
+        """
+        The static files route for BentoML API server
+        """
+        try:
+            return send_from_directory(static_path, file_path)
+        except NotFound:
+            return send_from_directory(
+                os.path.join(static_path, file_path), "index.html"
+            )
+
+    @staticmethod
+    def index_view_func(static_path):
         """
         The index route for BentoML API server
         """
-        if bento_service._static_files:
-            return render_template('index.html')
-        else:
-            return Response(
-                response=INDEX_HTML.format(url='/docs.json'),
-                status=200,
-                mimetype="text/html",
-            )
+        return send_from_directory(static_path, 'index.html')
+
+    @staticmethod
+    def swagger_ui_func():
+        """
+        The swagger UI route for BentoML API server
+        """
+        return Response(
+            response=INDEX_HTML.format(url='/docs.json'),
+            status=200,
+            mimetype="text/html",
+        )
+
+    @staticmethod
+    def swagger_static(static_path, filename):
+        """
+        The swagger static files route for BentoML API server
+        """
+        return send_from_directory(static_path, filename)
 
     @staticmethod
     def docs_view_func(bento_service):
@@ -177,6 +193,7 @@ class BentoAPIServer:
         Setup routes for bento model server, including:
 
         /               Index Page
+        /docs           Swagger UI
         /healthz        Health check ping
         /feedback       Submitting feedback
         /metrics        Prometheus metrics endpoint
@@ -187,7 +204,23 @@ class BentoAPIServer:
         """
 
         self.app.add_url_rule(
-            "/", "index", partial(self.index_view_func, self.bento_service)
+            "/<path:file_path>",
+            "static_proxy",
+            partial(self.static_serve, self.static_path),
+        )
+        self.app.add_url_rule(
+            "/<path:file_path>/index",
+            "static_proxy2",
+            partial(self.static_serve, self.static_path),
+        )
+        self.app.add_url_rule(
+            "/", "index", partial(self.index_view_func, self.static_path)
+        )
+        self.app.add_url_rule("/docs", "swagger", self.swagger_ui_func)
+        self.app.add_url_rule(
+            "/swagger_static/<path:filename>",
+            "swagger_static",
+            partial(self.swagger_static, self.swagger_path),
         )
         self.app.add_url_rule(
             "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)

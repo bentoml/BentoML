@@ -28,7 +28,7 @@ from bentoml.adapters.utils import concat_list
 class JsonInput(BaseInputAdapter):
     """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
     json serializable object in python) and pass down to user defined API function
-    
+
     ****
     How to upgrade from LegacyJsonInput(JsonInput before 0.8.3)
 
@@ -40,9 +40,7 @@ class JsonInput(BaseInputAdapter):
             result = do_something_to_json(parsed_json)
             return result
         ```
-        
     --->
-        
         ```
         @bentoml.api(input=JsonInput())
         def predict(self, parsed_jsons):
@@ -50,7 +48,6 @@ class JsonInput(BaseInputAdapter):
             return results
         ```
     For clients, the request is the same as LegacyJsonInput, each includes single json.
-
     """
 
     BATCH_MODE_SUPPORTED = True

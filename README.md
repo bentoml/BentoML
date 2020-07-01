@@ -20,7 +20,9 @@ What does BentoML do?
 * Flexible deployment orchestration with DevOps best practices baked-in, supporting 
  Docker, Kubernetes, Kubeflow, Knative, AWS Lambda, SageMaker, Azure ML, GCP and more
 
-👉 To follow development updates and discussion, join the [BentoML mailing list](https://groups.google.com/forum/#!forum/bentoml) and the [Bentoml Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+👉 To follow development updates and discussion, join the 
+[Bentoml Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+and the [contributors mailing list](https://groups.google.com/forum/#!forum/bentoml).
 
 
 ---

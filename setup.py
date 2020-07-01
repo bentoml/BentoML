@@ -64,7 +64,7 @@ test_requires = [
     "pandas",
     "pylint>=2.5.2",
     "pytest-cov>=2.7.1",
-    "pytest>=4.6.0",
+    "pytest>=5.4.0",
     "scikit-learn",
     "protobuf==3.6.0",
 ] + aws_sam_cli

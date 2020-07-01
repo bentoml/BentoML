@@ -7,12 +7,13 @@ from bentoml.marshal.dispatcher import CorkDispatcher
 @pytest.mark.asyncio
 async def test_dispatcher_raise_error():
     @CorkDispatcher(max_batch_size=10, max_latency_in_ms=100)
-    async def f(x):
-        if x == 1:
-            raise ValueError()
-        if x == 2:
-            raise TypeError()
-        return x
+    async def f(xs):
+        for x in xs:
+            if x == 1:
+                raise ValueError()
+            if x == 2:
+                raise TypeError()
+        return xs
 
     with pytest.raises(ValueError):
         await f(1)

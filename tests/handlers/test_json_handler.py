@@ -5,26 +5,26 @@ from bentoml.exceptions import BadInput
 
 
 def test_json_handle_cli(capsys, tmpdir):
-    def test_func(obj):
-        return obj[0]["name"]
+    def test_func(objs):
+        return [obj["name"] for obj in objs]
 
     input_adapter = JsonInput()
 
     json_file = tmpdir.join("test.json")
     with open(str(json_file), "w") as f:
-        f.write('[{"name": "john","game": "mario","city": "sf"}]')
+        f.write('{"name": "john","game": "mario","city": "sf"}')
 
     test_args = ["--input={}".format(json_file)]
     input_adapter.handle_cli(test_args, test_func)
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out.strip().endswith("john")
 
 
 def test_json_handle_aws_lambda_event():
-    test_content = '[{"name": "john","game": "mario","city": "sf"}]'
+    test_content = '{"name": "john","game": "mario","city": "sf"}'
 
-    def test_func(obj):
-        return obj[0]["name"]
+    def test_func(objs):
+        return [obj["name"] for obj in objs]
 
     input_adapter = JsonInput()
     success_event_obj = {

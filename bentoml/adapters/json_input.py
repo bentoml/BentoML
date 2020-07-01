@@ -37,16 +37,15 @@ class JsonInput(BaseInputAdapter):
         super(JsonInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
 
     def handle_request(self, request: flask.Request, func):
-        if request.content_type == "application/json":
-            parsed_json = json.loads(request.get_data(as_text=True))
-        else:
+        if request.content_type != "application/json":
             raise BadInput(
                 "Request content-type must be 'application/json' for this "
                 "BentoService API"
             )
-
-        result = func(parsed_json)
-        return self.output_adapter.to_response(result, request)
+        resps = self.handle_batch_request(
+            [SimpleRequest.from_flask_request(request)], func
+        )
+        return resps[0].to_flask_response()
 
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func

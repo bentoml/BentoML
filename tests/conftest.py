@@ -7,6 +7,22 @@ from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
 
 
+def pytest_configure():
+    # dataframe json orients
+    pytest.DF_ORIENTS = {
+        'split',
+        'records',
+        'index',
+        'columns',
+        'values',
+        # 'table',  # TODO(bojiang)
+    }
+    pytest.DF_AUTO_ORIENTS = {
+        'records',
+        'columns',
+    }
+
+
 @pytest.fixture()
 def img_file(tmpdir):
     img_file_ = tmpdir.join("test_img.jpg")

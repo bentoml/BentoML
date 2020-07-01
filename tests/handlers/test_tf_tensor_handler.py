@@ -64,13 +64,13 @@ TEST_INPUTS = [
 
 
 TEST_HEADERS = [
-    ((BATCH_REQUEST_HEADER.encode(), b'true'),),
-    ((BATCH_REQUEST_HEADER.encode(), b'true'),),
-    ((BATCH_REQUEST_HEADER.encode(), b'false'),),
-    ((BATCH_REQUEST_HEADER.encode(), b'false'),),
-    ((BATCH_REQUEST_HEADER.encode(), b'true'),),
-    ((BATCH_REQUEST_HEADER.encode(), b'false'),),
-    ((BATCH_REQUEST_HEADER.encode(), b'true'),),
+    ((BATCH_REQUEST_HEADER, 'true'),),
+    ((BATCH_REQUEST_HEADER, 'true'),),
+    ((BATCH_REQUEST_HEADER, 'false'),),
+    ((BATCH_REQUEST_HEADER, 'false'),),
+    ((BATCH_REQUEST_HEADER, 'true'),),
+    ((BATCH_REQUEST_HEADER, 'false'),),
+    ((BATCH_REQUEST_HEADER, 'true'),),
 ]
 
 

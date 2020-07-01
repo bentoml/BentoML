@@ -139,9 +139,8 @@ class BentoMLCommandGroup(click.Group):
             try:
                 return func(*args, **kwargs)
             except BentoMLException as e:
-                raise ClickException(
-                    f'{cmd_group.name} {command_name} failed: {str(e)}'
-                )
+                msg = f'{cmd_group.name} {command_name} failed: {str(e)}'
+                raise ClickException(click.style(msg, fg='red'))
 
         return wrapper
 

@@ -27,6 +27,7 @@ from tabulate import tabulate
 from bentoml.cli.click_utils import _echo
 from bentoml.yatai.proto.deployment_pb2 import DeploymentState, DeploymentSpec
 from bentoml.utils import pb_to_yaml
+from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,10 @@ def _echo_docker_api_result(docker_generator):
             cur = humanfriendly_bytes(progress["current"])
             total = humanfriendly_bytes(progress["total"])
             _echo(f" Pushed {cur}/{total}")
+        if "errorDetail" in line:
+            error = line["errorDetail"]
+            raise BentoMLException(
+                f'Could not push Docker image: {error["message"]}')
 
 
 def _make_bento_name_docker_compatible(name, tag):

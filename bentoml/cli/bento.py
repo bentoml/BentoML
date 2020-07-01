@@ -14,7 +14,6 @@
 import click
 import os
 import docker
-import subprocess
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
@@ -34,9 +33,8 @@ from bentoml.cli.utils import (
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.yatai.client import YataiClient
-from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.saved_bundle import safe_retrieve
-from bentoml.exceptions import CLIException
+from bentoml.exceptions import CLIException, BentoMLException
 
 def _print_bento_info(bento, output_type):
     if output_type == 'yaml':
@@ -261,7 +259,19 @@ def add_bento_sub_command(cli):
         '--docker-repository',
         help="Prepends specified Docker repository to image name.",
     )
-    def containerize(bento, push, docker_repository):
+    @click.option(
+        '-u',
+        '--username',
+        type=click.STRING,
+        required=False,
+    )
+    @click.option(
+        '-p',
+        '--password',
+        type=click.STRING,
+        required=False,
+    )
+    def containerize(bento, push, docker_repository, username, password):
         """Containerize specified BentoService.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -275,7 +285,7 @@ def add_bento_sub_command(cli):
 
         If you would like to push to Docker Hub, `--docker-repository` can just be
         your Docker Hub username. Otherwise, the tag should include the hostname as
-        well. For example, for Google Container Registry, the `--docker-repository` 
+        well. For example, for Google Container Registry, the `--docker-repository`
         would be `[HOSTNAME]/[PROJECT-ID]`
         """
         name, version = bento.split(':')
@@ -327,13 +337,22 @@ def add_bento_sub_command(cli):
 
         if push:
             if not docker_repository:
-                raise CLIException('Docker Registry must be specified when pushing image.')
-            with Spinner(f"Pushing docker image to {tag} "):
-                _echo_docker_api_result(
-                    docker_api.push(
-                        repository=name, tag=version, stream=True, decode=True,
+                raise CLIException('Docker Registry must be specified when pushing.')
+            auth_config_payload = {"username": username, "password": password}
+
+            try:
+                with Spinner(f"Pushing docker image to {tag} "):
+                    _echo_docker_api_result(
+                        docker_api.push(
+                            repository=name,
+                            tag=version,
+                            stream=True,
+                            decode=True,
+                            auth_config=auth_config_payload,
+                        )
                     )
+                _echo(
+                    f'Pushed {tag} to {name}', CLI_COLOR_SUCCESS,
                 )
-            _echo(
-                f'Pushed {tag} to {name}', CLI_COLOR_SUCCESS,
-            )
+            except (docker.errors.APIError, BentoMLException) as error:
+                raise CLIException(f'Could not push Docker image: {error}')

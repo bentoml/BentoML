@@ -47,7 +47,7 @@ class MultiImageInput(BaseInputAdapter):
             https://imageio.readthedocs.io/en/stable/format_png-pil.html
 
     Raises:
-        ImportError: imageio package is required to use ImageInput
+        ImportError: imageio package is required to use MultiImageInput
 
     Example usage:
 
@@ -68,7 +68,7 @@ class MultiImageInput(BaseInputAdapter):
         **base_kwargs,
     ):
         if is_batch_input:
-            raise ValueError('ImageInput can not accept batch inputs')
+            raise ValueError('MultiImageInput can not accept batch inputs')
         super(MultiImageInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )

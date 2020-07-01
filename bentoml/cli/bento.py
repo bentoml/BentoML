@@ -270,8 +270,13 @@ def add_bento_sub_command(cli):
         `bentoml containerize` command also supports the use of the `latest` tag
         and will automatically use the last built version of your Bento.
 
-        // add stuff about --push
-        // add stuff about --docker-repository
+        You can also optionally provide a `--push` flag, which will push the built
+        image to the Docker repository specified by the `--docker-repository`.
+
+        If you would like to push to Docker Hub, `--docker-repository` can just be
+        your Docker Hub username. Otherwise, the tag should include the hostname as
+        well. For example, for Google Container Registry, the `--docker-repository` 
+        would be `[HOSTNAME]/[PROJECT-ID]`
         """
         name, version = bento.split(':')
         yatai_client = YataiClient()
@@ -307,21 +312,17 @@ def add_bento_sub_command(cli):
 
         try:
             docker_api = docker.APIClient()
-            ensure_docker_available_or_raise()
             with Spinner(f"Building Docker image: {name} \n"):
                 _echo_docker_api_result(
                     docker_api.build(
                         path=bento_service_bundle_path, tag=tag, decode=True,
                     )
                 )
-        except (FileNotFoundError, subprocess.CalledProcessError) as error:
-            raise CLIException(
-                f'Could not build Docker image: {error}',
-                CLI_COLOR_ERROR,
-            )
+        except docker.errors.APIError as error:
+            raise CLIException(f'Could not build Docker image: {error}')
 
         _echo(
-            f'Built {tag}', CLI_COLOR_SUCCESS,
+            f'Finished building {tag} from Bento {bento}', CLI_COLOR_SUCCESS,
         )
 
         if push:
@@ -334,5 +335,5 @@ def add_bento_sub_command(cli):
                     )
                 )
             _echo(
-                f'Pushed {tag}', CLI_COLOR_SUCCESS,
+                f'Pushed {tag} to {name}', CLI_COLOR_SUCCESS,
             )

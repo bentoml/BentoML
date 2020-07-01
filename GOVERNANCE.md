@@ -27,13 +27,13 @@ no selection process.
 
 As a contributor, you may find yourself doing one or more of the following:
 
-* Supporting new users by answering questions on the
+* Support new users by answering questions on the
     [github issue tracker](https://github.com/bentoml/BentoML/issues) and the 
     [#bentoml-users slack channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
 * Report issues you're facing and "Thumbs up" on issues and feature requests that are 
     relevant to you in BentoML's [issue tracker](https://github.com/bentoml/BentoML/issues).
 * Investigate bugs and reviewing other developer's pull requests.
-* Contributing code or documentation to the project by submitting a Github pull request.
+* Contribute code or documentation to the project by submitting a Github pull request.
 * Create new example projects and contribute it to [bentoml/gallery](https://github.com/bentoml/gallery).
 
 
@@ -119,10 +119,10 @@ they will appoint a substitute BDFL for that decision.
 
 #### Current Core Team Members
 
-* Bo Jiang @bojiang
-* Bozhao Yu @yubozhao
-* Chaoyu Yang @parano (BDFL)
-* Liang Sun @leonsim
+* Bo Jiang - [@bojiang](https://github.com/bojiang)
+* Bozhao Yu - [@yubozhao](https://github.com/yubozhao), [🔗linkedin](https://www.linkedin.com/in/bozhaoyu/)
+* Chaoyu Yang (BDFL) - [@parano](https://github.com/parano), [🔗linkedin](https://www.linkedin.com/in/parano/)
+* Liang Sun - [@leonsim](https://github.com/leonsim), [🔗linkedin](https://www.linkedin.com/in/1e0ns/)
 * TBD
 * TBD
 * TBD

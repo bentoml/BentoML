@@ -4,23 +4,23 @@
 
 The decision-making process and governance structure of BentoML project can be found in the governance document: [BentoML Governance Doc](https://github.com/bentoml/BentoML/blob/master/GOVERNANCE.md).
 
-To follow development updates and discussion, join the [BentoML mailing list](https://groups.google.com/forum/#!forum/bentoml) and the [BentoML Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+To follow development updates and discussion, join the [BentoML contributors mailing list](https://groups.google.com/forum/#!forum/bentoml) and the [BentoML Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
 
 
 ## Ways to contribute
 
 There are many ways to contribute to BentoML.
 
-* Contributing code or documentation to the project by submitting a Github pull request.
-
+* Supporting new users by answering questions on the
+    [github issues tracker](https://github.com/bentoml/BentoML/issues) and the 
+    [#bentoml-users slack channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+ 
 * Report issues you're facing and "Thumbs up" on issues and feature requests that are 
     relevant to you in BentoML's [issues tracker](https://github.com/bentoml/BentoML/issues).
-
-* Answer questions on the github [issues tracker](https://github.com/bentoml/BentoML/issues),
-    [mailing list](https://groups.google.com/forum/#!forum/bentoml) and the 
-    [#bentoml-users slack channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
-  
+ 
 * Investigate bugs and reviewing other developer's pull requests.
+
+* Contributing code or documentation to the project by submitting a Github pull request.
 
 * Create new example projects and contribute it to [bentoml/gallery](https://github.com/bentoml/gallery).
 

@@ -87,7 +87,9 @@ class BentoAPIServer:
         self.app = Flask(app_name, static_folder=None)
 
         self.static_path = os.path.join(
-            self.bento_service._bento_service_bundle_path, app_name, 'webui'
+            self.bento_service._bento_service_bundle_path,
+            app_name,
+            'web_static_content',
         )
 
         self.swagger_path = os.path.join(
@@ -202,20 +204,23 @@ class BentoAPIServer:
         /classify
         /predict
         """
+        if self.bento_service.web_static_content:
+            self.app.add_url_rule(
+                "/<path:file_path>",
+                "static_proxy",
+                partial(self.static_serve, self.static_path),
+            )
+            self.app.add_url_rule(
+                "/<path:file_path>/index",
+                "static_proxy2",
+                partial(self.static_serve, self.static_path),
+            )
+            self.app.add_url_rule(
+                "/", "index", partial(self.index_view_func, self.static_path)
+            )
+        else:
+            self.app.add_url_rule("/", "index", self.swagger_ui_func)
 
-        self.app.add_url_rule(
-            "/<path:file_path>",
-            "static_proxy",
-            partial(self.static_serve, self.static_path),
-        )
-        self.app.add_url_rule(
-            "/<path:file_path>/index",
-            "static_proxy2",
-            partial(self.static_serve, self.static_path),
-        )
-        self.app.add_url_rule(
-            "/", "index", partial(self.index_view_func, self.static_path)
-        )
         self.app.add_url_rule("/docs", "swagger", self.swagger_ui_func)
         self.app.add_url_rule(
             "/swagger_static/<path:filename>",

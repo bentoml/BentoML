@@ -299,11 +299,11 @@ def api_decorator(
     return decorator
 
 
-def webui_decorator(static_files):
+def webui_decorator(web_static_content):
     """Define web UI static files required to be bundled with a BentoService
 
     Args:
-        static_files: path to directory containg index.html and static dir
+        web_static_content: path to directory containg index.html and static dir
 
     >>>  @webui('./ui/')
     >>>  class MyMLService(BentoService):
@@ -311,7 +311,7 @@ def webui_decorator(static_files):
     """
 
     def decorator(bento_service_cls):
-        bento_service_cls._static_files = static_files
+        bento_service_cls._web_static_content = web_static_content
         return bento_service_cls
 
     return decorator
@@ -534,7 +534,7 @@ class BentoService(BentoServiceBase):
     _version_minor = None
 
     # See `webui` function above for more
-    _static_files = None
+    _web_static_content = None
 
     def __init__(self):
         from bentoml.artifact import ArtifactCollection
@@ -575,8 +575,8 @@ class BentoService(BentoServiceBase):
         return self._env
 
     @property
-    def webui(self):
-        return self._static_files
+    def web_static_content(self):
+        return self._web_static_content
 
     @hybridmethod
     @property

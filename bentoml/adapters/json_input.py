@@ -26,9 +26,28 @@ from bentoml.adapters.utils import concat_list
 
 
 class JsonInput(BaseInputAdapter):
-    """JsonInput parses REST API request or CLI command into parsed_json(a
-    dict in python) and pass down to user defined API function
+    """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
+    json serializable object in python) and pass down to user defined API function
 
+    ****
+    How to upgrade from LegacyJsonInput(JsonInput before 0.8.3)
+
+    To enable micro batching for API with json inputs, custom bento service should use
+    JsonInput and modify the handler method like this:
+        ```
+        @bentoml.api(input=LegacyJsonInput())
+        def predict(self, parsed_json):
+            result = do_something_to_json(parsed_json)
+            return result
+        ```
+    --->
+        ```
+        @bentoml.api(input=JsonInput())
+        def predict(self, parsed_jsons):
+            results = do_something_to_list_of_json(parsed_jsons)
+            return results
+        ```
+    For clients, the request is the same as LegacyJsonInput, each includes single json.
     """
 
     BATCH_MODE_SUPPORTED = True
@@ -37,16 +56,15 @@ class JsonInput(BaseInputAdapter):
         super(JsonInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
 
     def handle_request(self, request: flask.Request, func):
-        if request.content_type == "application/json":
-            parsed_json = json.loads(request.get_data(as_text=True))
-        else:
+        if request.content_type != "application/json":
             raise BadInput(
                 "Request content-type must be 'application/json' for this "
                 "BentoService API"
             )
-
-        result = func(parsed_json)
-        return self.output_adapter.to_response(result, request)
+        resps = self.handle_batch_request(
+            [SimpleRequest.from_flask_request(request)], func
+        )
+        return resps[0].to_flask_response()
 
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func
@@ -90,7 +108,7 @@ class JsonInput(BaseInputAdapter):
             content = parsed_args.input
 
         input_json = json.loads(content)
-        result = func(input_json)
+        result = func([input_json])[0]
         return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
@@ -102,5 +120,5 @@ class JsonInput(BaseInputAdapter):
                 "BentoService API lambda endpoint"
             )
 
-        result = func(parsed_json)
+        result = func([parsed_json])[0]
         return self.output_adapter.to_aws_lambda_event(result, event)

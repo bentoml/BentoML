@@ -22,5 +22,5 @@ def test_fastai_image_input(capsys, tmpdir):
     api = ms.get_service_apis()[0]
     test_args = ["--input={}".format(img_file)]
     api.handle_cli(test_args)
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out.strip() == '[3, 10, 10]'

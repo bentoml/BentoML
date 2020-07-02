@@ -88,9 +88,11 @@ if __name__ == "__main__":
     test_svc.pack('model', pickle_model)
 
     sklearn_model = RandomForestRegressor(n_estimators=2)
-    sklearn_model.fit([[i] for i in range(10000)], [i for i in range(10000)])
+    sklearn_model.fit(
+        [[i] for _ in range(100) for i in range(10)],
+        [i for _ in range(100) for i in range(10)],
+    )
     test_svc.pack('sk_model', sklearn_model)
 
     tmpdir = sys.argv[1]
-    # version = sys.argv[2]
     save_to_dir(test_svc, tmpdir, silent=True)

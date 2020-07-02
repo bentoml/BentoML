@@ -9,11 +9,12 @@ TMP_DIR="$GIT_ROOT/.test_bundle"
 
 cd "$GIT_ROOT" || exit
 
+python -m pip install -e .
+
 ## Build docker image
 if [ -e "$TMP_DIR" ]; then
 	rm -r "$TMP_DIR";
 fi
-
 mkdir "$TMP_DIR"
 python "$GIT_ROOT"/tests/integration/api_server/example_service.py "$TMP_DIR"
 

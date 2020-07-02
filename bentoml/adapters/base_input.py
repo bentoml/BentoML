@@ -12,11 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable
+from __future__ import annotations
+from typing import Iterable, TYPE_CHECKING
+from dataclasses import dataclass
 
 
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest, BATCH_REQUEST_HEADER
 
+if TYPE_CHECKING:
+    @dataclass
+    class InputAdapterConfig:
+        is_batch_input: bool = False
 
 class BaseInputAdapter:
     """InputAdapter is an abstraction layer between user defined API callback function
@@ -33,14 +39,12 @@ class BaseInputAdapter:
         base_configs:
             - is_batch_input
         '''
-        self._config = base_config
+        self._config: InputAdapterConfig = base_config
         self._output_adapter = output_adapter
         self._http_input_example = http_input_example
 
     @property
-    def config(self):
-        if getattr(self, '_config', None) is None:
-            self._config = {}
+    def config(self) -> InputAdapterConfig:
         return self._config
 
     def is_batch_request(self, request):

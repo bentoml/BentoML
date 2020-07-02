@@ -31,7 +31,7 @@ install_requires = [
     "grpcio<=1.27.2",
     "gunicorn",
     "humanfriendly",
-    "numpy",
+    "numpy>=1.16.6",
     "packaging",
     "prometheus_client",
     "protobuf>=3.6.0",

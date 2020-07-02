@@ -10,8 +10,8 @@ import click
 import grpc
 
 from bentoml import config
+from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
-from bentoml.utils.usage_stats import track_server
 from bentoml.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
@@ -66,7 +66,6 @@ def get_yatai_service(
 def start_yatai_service_grpc_server(
     db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url
 ):
-    track_server('yatai-service-grpc-server')
     from bentoml.yatai.yatai_service_impl import YataiService
 
     yatai_service = YataiService(
@@ -74,7 +73,7 @@ def start_yatai_service_grpc_server(
     )
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     add_YataiServicer_to_server(yatai_service, server)
-    debug_mode = config().getboolean('core', 'debug')
+    debug_mode = get_debug_mode()
     if debug_mode:
         try:
             logger.debug('Enabling gRPC server reflection for debugging')

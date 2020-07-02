@@ -1,3 +1,4 @@
 scikit-learn==0.20.3
 aws-sam-cli==0.33.1
 psycopg2-binary
+azure-cli

@@ -32,6 +32,7 @@ from bentoml.saved_bundle import (
 )
 from bentoml.cli.aws_lambda import get_aws_lambda_sub_command
 from bentoml.cli.aws_sagemaker import get_aws_sagemaker_sub_command
+from bentoml.cli.azure_functions import get_azure_functions_sub_command
 from bentoml.cli.bento import add_bento_sub_command
 from bentoml.cli.yatai_service import add_yatai_service_sub_command
 from bentoml.server import BentoAPIServer
@@ -42,13 +43,11 @@ from bentoml.cli.click_utils import BentoMLCommandGroup, conditional_argument, _
 from bentoml.cli.deployment import get_deployment_sub_command
 from bentoml.cli.config import get_configuration_sub_command
 from bentoml.utils import ProtoMessageToDict, reserve_free_port
-from bentoml.utils.usage_stats import track_cli
 from bentoml.utils.s3 import is_s3_url
 from bentoml.yatai.client import YataiClient
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.exceptions import BentoMLException
-
 
 try:
     import click_completion
@@ -158,13 +157,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Run API server in a BentoML managed Conda environment",
     )
     def run(api_name, run_args, bento=None, with_conda=False):
-        track_cli('run')
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
 
         if with_conda:
-            run_with_conda_env(
+            return run_with_conda_env(
                 bento_service_bundle_path,
                 'bentoml run {api_name} {bento} {args}'.format(
                     bento=bento_service_bundle_path,
@@ -172,7 +170,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     args=' '.join(map(escape_shell_params, run_args)),
                 ),
             )
-            return
 
         api = load_bento_service_api(bento_service_bundle_path, api_name)
         api.handle_cli(run_args)
@@ -187,8 +184,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         """
         List all APIs defined in the BentoService loaded from saved bundle
         """
-        track_cli('info')
-
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
@@ -207,8 +202,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     def open_api_spec(bento=None):
-        track_cli('open-api-spec')
-
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
@@ -245,14 +238,13 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         envvar='BENTOML_ENABLE_MICROBATCH',
     )
     def serve(port, bento=None, with_conda=False, enable_microbatch=False):
-        track_cli('serve')
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
         bento_service = load(bento_service_bundle_path)
 
         if with_conda:
-            run_with_conda_env(
+            return run_with_conda_env(
                 bento_service_bundle_path,
                 'bentoml serve {bento} --port {port} {flags}'.format(
                     bento=bento_service_bundle_path,
@@ -260,7 +252,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     flags="--enable-microbatch" if enable_microbatch else "",
                 ),
             )
-            return
 
         if enable_microbatch:
             with reserve_free_port() as api_server_port:
@@ -333,7 +324,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         enable_microbatch=False,
         microbatch_workers=1,
     ):
-        track_cli('serve_gunicorn')
         if not psutil.POSIX:
             _echo(
                 "The `bentoml server-gunicon` command is only supported on POSIX. "
@@ -347,7 +337,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         )
 
         if with_conda:
-            run_with_conda_env(
+            return run_with_conda_env(
                 pip_installed_bundle_path,
                 'bentoml serve_gunicorn {bento} -p {port} -w {workers} '
                 '--timeout {timeout} {flags}'.format(
@@ -358,7 +348,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     flags="--enable-microbatch" if enable_microbatch else "",
                 ),
             )
-            return
 
         if workers is None:
             workers = get_gunicorn_num_of_workers()
@@ -436,11 +425,13 @@ def create_bentoml_cli():
     aws_sagemaker_sub_command = get_aws_sagemaker_sub_command()
     aws_lambda_sub_command = get_aws_lambda_sub_command()
     deployment_sub_command = get_deployment_sub_command()
+    azure_function_sub_command = get_azure_functions_sub_command()
     add_bento_sub_command(_cli)
     add_yatai_service_sub_command(_cli)
     _cli.add_command(config_sub_command)
     _cli.add_command(aws_sagemaker_sub_command)
     _cli.add_command(aws_lambda_sub_command)
+    _cli.add_command(azure_function_sub_command)
     _cli.add_command(deployment_sub_command)
 
     return _cli

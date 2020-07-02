@@ -26,7 +26,7 @@ from bentoml.yatai.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
 )
-from bentoml.handlers.clipper_handler import HANDLER_TYPE_TO_INPUT_TYPE
+from bentoml.adapters.clipper_input import ADAPTER_TYPE_TO_INPUT_TYPE
 from bentoml.exceptions import BentoMLException
 from bentoml.utils.usage_stats import track
 
@@ -34,8 +34,6 @@ logger = logging.getLogger(__name__)
 
 
 CLIPPER_ENTRY = """\
-from __future__ import print_function
-
 import rpc # this is clipper's rpc.py module
 import os
 import sys
@@ -169,12 +167,12 @@ def deploy_bentoml(
             )
         )
 
-    if api_metadata.handler_type not in HANDLER_TYPE_TO_INPUT_TYPE:
+    if api_metadata.input_type not in ADAPTER_TYPE_TO_INPUT_TYPE:
         raise BentoMLException(
-            "Only BentoService APIs using ClipperHandler can be deployed to Clipper"
+            "Only BentoService APIs using ClipperInput can be deployed to Clipper"
         )
 
-    input_type = HANDLER_TYPE_TO_INPUT_TYPE[api_metadata.handler_type]
+    input_type = ADAPTER_TYPE_TO_INPUT_TYPE[api_metadata.input_type]
     model_name = model_name or get_clipper_compatiable_string(
         bento_service_metadata.name + "-" + api_metadata.name
     )

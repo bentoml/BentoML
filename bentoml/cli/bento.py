@@ -12,19 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import click
+import os
+
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import (
-    CLI_COLOR_ERROR,
     _echo,
     parse_bento_tag_list_callback,
 )
 from bentoml.cli.utils import humanfriendly_age_from_datetime
+from bentoml.exceptions import CLIException
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
-from bentoml.utils.usage_stats import track_cli
 from bentoml.yatai.client import YataiClient
+from bentoml.saved_bundle import safe_retrieve
 
 
 def _print_bento_info(bento, output_type):
@@ -47,7 +49,7 @@ def _print_bento_table(bentos, wide=False):
             for artifact in bento.bento_service_metadata.artifacts
         ]
         apis = [
-            f'{api.name}<{api.handler_type}>'
+            f'{api.name}<{api.input_type}:{api.output_type}>'
             for api in bento.bento_service_metadata.apis
         ]
         if wide:
@@ -90,10 +92,11 @@ def add_bento_sub_command(cli):
         '--limit', type=click.INT, help='Limit how many resources will be retrieved'
     )
     @click.option('--ascending-order', is_flag=True)
+    @click.option('--print-location', is_flag=True)
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table', 'wide'])
     )
-    def get(bento, limit, ascending_order, output):
+    def get(bento, limit, ascending_order, print_location, output):
         if ':' in bento:
             name, version = bento.split(':')
         else:
@@ -102,23 +105,18 @@ def add_bento_sub_command(cli):
         yatai_client = YataiClient()
 
         if name and version:
-            track_cli('bento-get')
             output = output or 'json'
             get_bento_result = yatai_client.repository.get(name, version)
             if get_bento_result.status.status_code != status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
                     get_bento_result.status
                 )
-                _echo(
-                    f'BentoService {name}:{version} not found - '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
-                )
+                raise CLIException(f'{error_code}:{error_message}')
+            if print_location:
+                _echo(get_bento_result.bento.uri.uri)
                 return
             _print_bento_info(get_bento_result.bento, output)
-            return
         elif name:
-            track_cli('bento-list')
             output = output or 'table'
             list_bento_versions_result = yatai_client.repository.list(
                 bento_name=name, limit=limit, ascending_order=ascending_order
@@ -127,12 +125,7 @@ def add_bento_sub_command(cli):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_bento_versions_result.status
                 )
-                _echo(
-                    f'Failed to list versions for BentoService {name} '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
-                )
-                return
+                raise CLIException(f'{error_code}:{error_message}')
 
             _print_bentos_info(list_bento_versions_result.bentos, output)
 
@@ -155,7 +148,6 @@ def add_bento_sub_command(cli):
     )
     def list_bentos(limit, offset, order_by, ascending_order, output):
         yatai_client = YataiClient()
-        track_cli('bento-list')
         list_bentos_result = yatai_client.repository.list(
             limit=limit,
             offset=offset,
@@ -166,11 +158,7 @@ def add_bento_sub_command(cli):
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_bentos_result.status
             )
-            _echo(
-                f'Failed to list BentoServices ' f'{error_code}:{error_message}',
-                CLI_COLOR_ERROR,
-            )
-            return
+            raise CLIException(f'{error_code}:{error_message}')
 
         _print_bentos_info(list_bentos_result.bentos, output)
 
@@ -194,12 +182,10 @@ def add_bento_sub_command(cli):
         for bento in bentos:
             name, version = bento.split(':')
             if not name and not version:
-                _echo(
+                raise CLIException(
                     'BentoService name or version is missing. Please provide in the '
-                    'format of name:version',
-                    CLI_COLOR_ERROR,
+                    'format of name:version'
                 )
-                return
             if not yes and not click.confirm(
                 f'Are you sure about delete {bento}? This will delete the BentoService '
                 f'saved bundle files permanently'
@@ -212,9 +198,42 @@ def add_bento_sub_command(cli):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                _echo(
-                    f'Failed to delete Bento {name}:{version} '
-                    f'{error_code}:{error_message}',
-                    CLI_COLOR_ERROR,
-                )
+                raise CLIException(f'{error_code}:{error_message}')
             _echo(f'BentoService {name}:{version} deleted')
+
+    @cli.command(
+        help='Retrieves BentoService artifacts into a target directory',
+        short_help="Retrieves BentoService artifacts into a target directory",
+    )
+    @click.argument("bento", type=click.STRING)
+    @click.option(
+        '--target_dir',
+        help="Directory to put artifacts into. Defaults to pwd.",
+        default=os.getcwd(),
+    )
+    def retrieve(bento, target_dir):
+        if ':' not in bento:
+            _echo(f'BentoService {bento} invalid - specify name:version')
+            return
+        name, version = bento.split(':')
+
+        yatai_client = YataiClient()
+
+        get_bento_result = yatai_client.repository.get(name, version)
+        if get_bento_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_bento_result.status
+            )
+            raise CLIException(
+                f'BentoService {name}:{version} not found - '
+                f'{error_code}:{error_message}'
+            )
+
+        if get_bento_result.bento.uri.s3_presigned_url:
+            bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
+        else:
+            bento_service_bundle_path = get_bento_result.bento.uri.uri
+
+        safe_retrieve(bento_service_bundle_path, target_dir)
+
+        click.echo('Service %s artifact directory => %s' % (name, target_dir))

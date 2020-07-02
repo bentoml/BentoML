@@ -18,11 +18,10 @@ import base64
 from io import BytesIO
 
 from werkzeug.utils import secure_filename
-from flask import Response
 
 from bentoml import config
 from bentoml.exceptions import BadInput, MissingDependencyException
-from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
+from bentoml.adapters.base_input import BaseInputAdapter
 
 
 def _import_imageio_imread():
@@ -30,7 +29,7 @@ def _import_imageio_imread():
         from imageio import imread
     except ImportError:
         raise MissingDependencyException(
-            "imageio package is required to use LegacyImageHandler"
+            "imageio package is required to use LegacyImageInput"
         )
 
     return imread
@@ -55,17 +54,17 @@ def get_default_accept_image_formats():
     return [
         extension.strip()
         for extension in config('apiserver')
-        .get('default_image_handler_accept_file_extensions')
+        .get('default_image_input_accept_file_extensions')
         .split(',')
     ]
 
 
-class LegacyImageHandler(BentoHandler):
+class LegacyImageInput(BaseInputAdapter):
     """
-    *** This LegacyImageHandler is identical to the ImageHandler prior to
+    *** This LegacyImageInput is identical to the ImageHandler prior to
     BentoML version 0.8.0, it was kept here to make it easier for users to upgrade.
-    If you are starting a new model serving project, use the ImageHandler instead.
-    LegacyImageHandler will be deprecated in release 1.0.0. ***
+    If you are starting a new model serving project, use the ImageInput instead.
+    LegacyImageInput will be deprecated in release 1.0.0. ***
 
     Transform incoming image data from http request, cli or lambda event into numpy
     array.
@@ -78,7 +77,7 @@ class LegacyImageHandler(BentoHandler):
             Default value is (image,)
         accept_image_formats (string[]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
-            'apiserver/default_image_handler_accept_file_extensions', which is
+            'apiserver/default_image_input_accept_file_extensions', which is
             set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
             List of all supported format can be found here:
             https://imageio.readthedocs.io/en/stable/formats.html
@@ -87,7 +86,7 @@ class LegacyImageHandler(BentoHandler):
             https://imageio.readthedocs.io/en/stable/format_png-pil.html
 
     Raises:
-        ImportError: imageio package is required to use LegacyImageHandler
+        ImportError: imageio package is required to use LegacyImageInput
     """
 
     HTTP_METHODS = ["POST"]
@@ -99,7 +98,7 @@ class LegacyImageHandler(BentoHandler):
         pilmode="RGB",
         **base_kwargs,
     ):
-        super(LegacyImageHandler, self).__init__(**base_kwargs)
+        super(LegacyImageInput, self).__init__(**base_kwargs)
         self.imread = _import_imageio_imread()
 
         self.input_names = tuple(input_names)
@@ -151,7 +150,7 @@ class LegacyImageHandler(BentoHandler):
             response object
         """
         if len(self.input_names) == 1 and len(request.files) == 1:
-            # Ignore multipart form input name when LegacyImageHandler is intended
+            # Ignore multipart form input name when LegacyImageInput is intended
             # to accept only one image file at a time
             input_files = [file for _, file in request.files.items()]
         else:
@@ -172,7 +171,7 @@ class LegacyImageHandler(BentoHandler):
                 input_streams = (data,)
             else:
                 raise BadInput(
-                    "BentoML#LegacyImageHandler unexpected HTTP request format"
+                    "BentoML#LegacyImageInput unexpected HTTP request format"
                 )
 
         input_data = tuple(
@@ -180,14 +179,12 @@ class LegacyImageHandler(BentoHandler):
             for input_stream in input_streams
         )
         result = func(*input_data)
-        json_output = api_func_result_to_json(result)
-        return Response(response=json_output, status=200, mimetype="application/json")
+        return self.output_adapter.to_response(result, request)
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True)
-        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
-        parsed_args = parser.parse_args(args)
+        parsed_args, unknown_args = parser.parse_known_args(args)
         file_path = parsed_args.input
 
         verify_image_format_or_raise(file_path, self.accept_image_formats)
@@ -197,11 +194,7 @@ class LegacyImageHandler(BentoHandler):
         image_array = self.imread(file_path, pilmode=self.pilmode)
 
         result = func(image_array)
-        if parsed_args.output == "json":
-            result = api_func_result_to_json(result)
-        else:
-            result = str(result)
-        print(result)
+        return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):
@@ -213,5 +206,4 @@ class LegacyImageHandler(BentoHandler):
             )
 
         result = func(image)
-        json_output = api_func_result_to_json(result)
-        return {"statusCode": 200, "body": json_output}
+        return self.output_adapter.to_aws_lambda_event(result, event)

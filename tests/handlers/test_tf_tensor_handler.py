@@ -1,14 +1,20 @@
+# pylint: disable=redefined-outer-name
 import sys
 import json
 import base64
 import math
 import numbers
+
+import pytest
 import numpy as np
+import flask
 
 try:
-    from unittest.mock import Mock, MagicMock
+    from unittest.mock import MagicMock
 except ImportError:
-    from mock import Mock, MagicMock
+    from mock import MagicMock
+
+from bentoml.marshal.utils import BATCH_REQUEST_HEADER
 
 
 def mock_tensorflow_module():
@@ -46,7 +52,7 @@ STR_B64 = base64.b64encode(STR_BYTES).decode()
 BIN_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
 BIN_B64 = base64.b64encode(BIN_BYTES).decode()
 
-TEST_CASES = [
+TEST_INPUTS = [
     {'instances': [[[1, 2]], [[3, 4]]]},
     {"instances": [[1.0, -float('inf'), float('inf')]]},
     {"instances": float('nan')},
@@ -55,6 +61,18 @@ TEST_CASES = [
     {"instances": {"b64": BIN_B64}},
     {"instances": [{"b64": BIN_B64}]},
 ]
+
+
+TEST_HEADERS = [
+    ((BATCH_REQUEST_HEADER, 'true'),),
+    ((BATCH_REQUEST_HEADER, 'true'),),
+    ((BATCH_REQUEST_HEADER, 'false'),),
+    ((BATCH_REQUEST_HEADER, 'false'),),
+    ((BATCH_REQUEST_HEADER, 'true'),),
+    ((BATCH_REQUEST_HEADER, 'false'),),
+    ((BATCH_REQUEST_HEADER, 'true'),),
+]
+
 
 EXPECTED_RESULTS = [
     [[[1, 2]], [[3, 4]]],
@@ -67,6 +85,11 @@ EXPECTED_RESULTS = [
 ]
 
 
+@pytest.fixture(params=zip(TEST_INPUTS, TEST_HEADERS, EXPECTED_RESULTS))
+def test_cases(request):
+    return request.param
+
+
 def assert_eq_or_both_nan(x, y):
     if isinstance(x, numbers.Number) and isinstance(y, numbers.Number):
         assert math.isnan(x) and math.isnan(y) or math.isclose(x, y)
@@ -74,39 +97,45 @@ def assert_eq_or_both_nan(x, y):
         assert x == y
 
 
-def test_tf_tensor_handle_request():
+def test_tf_tensor_handle_request(test_cases):
     '''
     ref: https://www.tensorflow.org/tfx/serving/api_rest#request_format_2
     '''
-    from bentoml.handlers import TensorflowTensorHandler
+    from bentoml.adapters import TfTensorInput
 
-    request = Mock()
+    request = MagicMock(spec=flask.Request)
+
     request.headers = {}
     request.content_type = 'application/json'
 
-    handler = TensorflowTensorHandler()
+    input_adapter = TfTensorInput()
 
-    for input_data, except_result in zip(TEST_CASES, EXPECTED_RESULTS):
-        request.data = json.dumps(input_data).encode('utf-8')
-        response = handler.handle_request(request, lambda i: i)
+    input_data, headers, except_result = test_cases
+    request.get_data.return_value = json.dumps(input_data).encode('utf-8')
+    request.headers = headers
+    response = input_adapter.handle_request(request, lambda i: i)
 
-        prediction = json.loads(response.get_data())
-        assert_eq_or_both_nan(except_result, prediction)
+    prediction = json.loads(response.get_data())
+    assert_eq_or_both_nan(except_result, prediction)
 
 
-def test_tf_tensor_handle_batch_request():
+def test_tf_tensor_handle_batch_request(test_cases):
     '''
     ref: https://www.tensorflow.org/tfx/serving/api_rest#request_format_2
     '''
-    from bentoml.handlers import TensorflowTensorHandler
+    from bentoml.adapters import TfTensorInput
+    from bentoml.marshal.utils import SimpleRequest
 
-    handler = TensorflowTensorHandler()
-    request = Mock()
+    input_adapter = TfTensorInput()
+    request = MagicMock(spec=flask.Request)
 
-    for input_data, except_result in zip(TEST_CASES, EXPECTED_RESULTS):
-        request.data = json.dumps(input_data).encode('utf-8')
-        responses = handler.handle_batch_request([request] * 3, lambda i: i)
+    input_data, headers, except_result = test_cases
+    request.get_data.return_value = json.dumps(input_data).encode('utf-8')
+    request.headers = headers
+    responses = input_adapter.handle_batch_request(
+        [SimpleRequest.from_flask_request(request)] * 3, lambda i: i
+    )
 
-        for response in responses:
-            prediction = json.loads(response.data)
-            assert_eq_or_both_nan(except_result, prediction)
+    for response in responses:
+        prediction = json.loads(response.data)
+        assert_eq_or_both_nan(except_result, prediction)

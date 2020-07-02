@@ -2,7 +2,7 @@ Deploying to KFServing
 ======================
 
 
-KFServing enables serverless inferencing on Kubernetes cluster for common machine learning
+KFServing enables serverless inference on Kubernetes cluster for common machine learning
 frameworks like Tensorflow, XGBoost, scikit-learn and etc. BentoServices can easily
 deploy to KFServing and take advantage of what KFServing offers.
 
@@ -74,7 +74,7 @@ Verify the saved bundle created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeHandler",
+            "InputType": "DataframeInput",
             "docs": "BentoService API"
           }
         ]

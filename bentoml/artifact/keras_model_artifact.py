@@ -24,6 +24,9 @@ from bentoml.exceptions import (
 )
 
 
+MODULE_NAME_FILE_ENCODING = "utf-8"
+
+
 class KerasModelArtifact(BentoServiceArtifact):
     """
     Abstraction for saving/loading Keras model
@@ -56,7 +59,7 @@ class KerasModelArtifact(BentoServiceArtifact):
     >>> @bentoml.env(pip_dependencies=['tensorflow==1.14.0', 'numpy', 'pandas'])
     >>> @bentoml.artifacts([KerasModelArtifact('model')])
     >>> class KerasModelService(bentoml.BentoService):
-    >>>     @bentoml.api(JsonHandler)
+    >>>     @bentoml.api(input=JsonInput())
     >>>     def predict(self, parsed_json):
     >>>         input_data = text.text_to_word_sequence(parsed_json['text'])
     >>>         return self.artifacts.model.predict_classes(input_data)
@@ -186,7 +189,7 @@ class KerasModelArtifact(BentoServiceArtifact):
     def load(self, path):
         if os.path.isfile(self._keras_module_name_path(path)):
             with open(self._keras_module_name_path(path), "rb") as text_file:
-                keras_module_name = text_file.read().decode("utf-8")
+                keras_module_name = text_file.read().decode(MODULE_NAME_FILE_ENCODING)
                 try:
                     keras_module = importlib.import_module(keras_module_name)
                 except ImportError:
@@ -236,7 +239,9 @@ class _KerasModelArtifactWrapper(BentoServiceArtifactWrapper):
     def save(self, dst):
         # save the keras module name to be used when loading
         with open(self.spec._keras_module_name_path(dst), "wb") as text_file:
-            text_file.write(self.spec._keras_module_name.encode("utf-8"))
+            text_file.write(
+                self.spec._keras_module_name.encode(MODULE_NAME_FILE_ENCODING)
+            )
 
         # save custom_objects for model
         cloudpickle.dump(

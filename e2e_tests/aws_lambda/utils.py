@@ -28,11 +28,8 @@ def run_lambda_create_or_update_command(deploy_command):
         deploy_command_stdout = proc.stdout.read().decode('utf-8')
 
     logger.info('Finish deploying to AWS Lambda')
-    logger.info(deploy_command_stdout)
 
-    if deploy_command_stdout.startswith(
-        'Failed to create deployment'
-    ) or deploy_command_stdout.startswith('Failed to update deployment'):
+    if proc.returncode != 0:
         return False, None
 
     deploy_command_stdout_list = deploy_command_stdout.split('\n')

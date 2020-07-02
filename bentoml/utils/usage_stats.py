@@ -17,15 +17,13 @@ import sys
 import platform
 import json
 import logging
-import time
-import atexit
 
 import uuid
 import requests
 from ruamel.yaml import YAML
 
 from bentoml.utils import ProtoMessageToDict
-from bentoml.configuration import _is_pypi_release
+from bentoml.configuration import _is_pip_installed_bentoml
 from bentoml import config
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -44,7 +42,7 @@ SESSION_ID = str(uuid.uuid4())  # uuid that marks current python session
 
 # Use dev amplitude key
 API_KEY = '7f65f2446427226eb86f6adfacbbf47a'
-if _is_pypi_release():
+if _is_pip_installed_bentoml():
     # Use prod amplitude key
     API_KEY = '1ad6ee0e81b9666761aebd55955bbd3a'
 
@@ -93,16 +91,20 @@ def _bento_service_metadata_to_event_properties(
         properties = {}
 
     artifact_types = set()
-    handler_types = set()
+    input_types = set()
+    output_types = set()
 
     for artifact in bento_service_metadata.artifacts:
         artifact_types.add(artifact.artifact_type)
 
     for api in bento_service_metadata.apis:
-        handler_types.add(api.handler_type)
+        input_types.add(api.input_type)
+        output_types.add(api.output_type)
 
-    if handler_types:
-        properties["handler_types"] = list(handler_types)
+    if input_types:
+        properties["input_types"] = list(input_types)
+    if output_types:
+        properties["output_types"] = list(output_types)
 
     if artifact_types:
         properties["artifact_types"] = list(artifact_types)
@@ -149,31 +151,3 @@ def track_load_start():
 def track_load_finish(bento_service):
     properties = _get_bento_service_event_properties(bento_service)
     return track("load", properties)
-
-
-def track_cli(command, deploy_platform=None, extra_properties=None):
-    properties = {}
-    if deploy_platform is not None:
-        properties['platform'] = deploy_platform
-    if extra_properties is not None:
-        properties.update(extra_properties)
-    return track('cli-' + command, properties)
-
-
-def track_server_stop(server_type, start_time, properties):
-    # track server stop event
-    duration = time.time() - start_time
-    properties['uptime'] = int(duration)
-    return track(
-        'server-{server_type}-stop'.format(server_type=server_type), properties
-    )
-
-
-def track_server(server_type, extra_properties=None):
-    properties = extra_properties or {}
-
-    # track server start event
-    track('server-{server_type}-start'.format(server_type=server_type), properties)
-
-    start_time = time.time()
-    atexit.register(track_server_stop, server_type, start_time, properties)

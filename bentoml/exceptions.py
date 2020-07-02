@@ -74,7 +74,7 @@ class InvalidArgument(BentoMLException):
 
 
 class BadInput(InvalidArgument):
-    """Raise when BentoHandler receiving bad input request"""
+    """Raise when InputAdapter receiving bad input request"""
 
 
 class NotFound(BentoMLException):
@@ -130,3 +130,11 @@ class YataiRepositoryException(YataiServiceException):
 
 class AWSServiceError(YataiDeploymentException):
     """Raise when YataiService encounters an issue with AWS service"""
+
+
+class AzureServiceError(YataiDeploymentException):
+    """Raise when YataiService encounters an issue with Azure service"""
+
+
+class CLIException(BentoMLException):
+    """Raise when CLI encounters an issue"""

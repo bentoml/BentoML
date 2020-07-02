@@ -23,11 +23,8 @@ export namespace bentoml {
         /** DeploymentSpec aws_lambda_operator_config */
         aws_lambda_operator_config?: (bentoml.DeploymentSpec.IAwsLambdaOperatorConfig|null);
 
-        /** DeploymentSpec gcp_function_operator_config */
-        gcp_function_operator_config?: (bentoml.DeploymentSpec.IGcpFunctionOperatorConfig|null);
-
-        /** DeploymentSpec kubernetes_operator_config */
-        kubernetes_operator_config?: (bentoml.DeploymentSpec.IKubernetesOperatorConfig|null);
+        /** DeploymentSpec azure_functions_operator_config */
+        azure_functions_operator_config?: (bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig|null);
     }
 
     /** Represents a DeploymentSpec. */
@@ -57,14 +54,11 @@ export namespace bentoml {
         /** DeploymentSpec aws_lambda_operator_config. */
         public aws_lambda_operator_config?: (bentoml.DeploymentSpec.IAwsLambdaOperatorConfig|null);
 
-        /** DeploymentSpec gcp_function_operator_config. */
-        public gcp_function_operator_config?: (bentoml.DeploymentSpec.IGcpFunctionOperatorConfig|null);
-
-        /** DeploymentSpec kubernetes_operator_config. */
-        public kubernetes_operator_config?: (bentoml.DeploymentSpec.IKubernetesOperatorConfig|null);
+        /** DeploymentSpec azure_functions_operator_config. */
+        public azure_functions_operator_config?: (bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig|null);
 
         /** DeploymentSpec deployment_operator_config. */
-        public deployment_operator_config?: ("custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"gcp_function_operator_config"|"kubernetes_operator_config");
+        public deployment_operator_config?: ("custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"azure_functions_operator_config");
 
         /**
          * Creates a new DeploymentSpec instance using the specified properties.
@@ -145,8 +139,7 @@ export namespace bentoml {
             CUSTOM = 1,
             AWS_SAGEMAKER = 2,
             AWS_LAMBDA = 3,
-            GCP_FUNCTION = 4,
-            KUBERNETES = 5
+            AZURE_FUNCTIONS = 4
         }
 
         /** Properties of a CustomOperatorConfig. */
@@ -473,205 +466,115 @@ export namespace bentoml {
             public toJSON(): { [k: string]: any };
         }
 
-        /** Properties of a GcpFunctionOperatorConfig. */
-        interface IGcpFunctionOperatorConfig {
+        /** Properties of an AzureFunctionsOperatorConfig. */
+        interface IAzureFunctionsOperatorConfig {
 
-            /** GcpFunctionOperatorConfig region */
-            region?: (string|null);
+            /** AzureFunctionsOperatorConfig location */
+            location?: (string|null);
 
-            /** GcpFunctionOperatorConfig api_name */
-            api_name?: (string|null);
+            /** AzureFunctionsOperatorConfig premium_plan_sku */
+            premium_plan_sku?: (string|null);
+
+            /** AzureFunctionsOperatorConfig min_instances */
+            min_instances?: (number|null);
+
+            /** AzureFunctionsOperatorConfig max_burst */
+            max_burst?: (number|null);
+
+            /** AzureFunctionsOperatorConfig function_auth_level */
+            function_auth_level?: (string|null);
         }
 
-        /** Represents a GcpFunctionOperatorConfig. */
-        class GcpFunctionOperatorConfig implements IGcpFunctionOperatorConfig {
+        /** Represents an AzureFunctionsOperatorConfig. */
+        class AzureFunctionsOperatorConfig implements IAzureFunctionsOperatorConfig {
 
             /**
-             * Constructs a new GcpFunctionOperatorConfig.
+             * Constructs a new AzureFunctionsOperatorConfig.
              * @param [properties] Properties to set
              */
-            constructor(properties?: bentoml.DeploymentSpec.IGcpFunctionOperatorConfig);
+            constructor(properties?: bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig);
 
-            /** GcpFunctionOperatorConfig region. */
-            public region: string;
+            /** AzureFunctionsOperatorConfig location. */
+            public location: string;
 
-            /** GcpFunctionOperatorConfig api_name. */
-            public api_name: string;
+            /** AzureFunctionsOperatorConfig premium_plan_sku. */
+            public premium_plan_sku: string;
+
+            /** AzureFunctionsOperatorConfig min_instances. */
+            public min_instances: number;
+
+            /** AzureFunctionsOperatorConfig max_burst. */
+            public max_burst: number;
+
+            /** AzureFunctionsOperatorConfig function_auth_level. */
+            public function_auth_level: string;
 
             /**
-             * Creates a new GcpFunctionOperatorConfig instance using the specified properties.
+             * Creates a new AzureFunctionsOperatorConfig instance using the specified properties.
              * @param [properties] Properties to set
-             * @returns GcpFunctionOperatorConfig instance
+             * @returns AzureFunctionsOperatorConfig instance
              */
-            public static create(properties?: bentoml.DeploymentSpec.IGcpFunctionOperatorConfig): bentoml.DeploymentSpec.GcpFunctionOperatorConfig;
+            public static create(properties?: bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig): bentoml.DeploymentSpec.AzureFunctionsOperatorConfig;
 
             /**
-             * Encodes the specified GcpFunctionOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.GcpFunctionOperatorConfig.verify|verify} messages.
-             * @param message GcpFunctionOperatorConfig message or plain object to encode
+             * Encodes the specified AzureFunctionsOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.verify|verify} messages.
+             * @param message AzureFunctionsOperatorConfig message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encode(message: bentoml.DeploymentSpec.IGcpFunctionOperatorConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encode(message: bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Encodes the specified GcpFunctionOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.GcpFunctionOperatorConfig.verify|verify} messages.
-             * @param message GcpFunctionOperatorConfig message or plain object to encode
+             * Encodes the specified AzureFunctionsOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.verify|verify} messages.
+             * @param message AzureFunctionsOperatorConfig message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encodeDelimited(message: bentoml.DeploymentSpec.IGcpFunctionOperatorConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encodeDelimited(message: bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Decodes a GcpFunctionOperatorConfig message from the specified reader or buffer.
+             * Decodes an AzureFunctionsOperatorConfig message from the specified reader or buffer.
              * @param reader Reader or buffer to decode from
              * @param [length] Message length if known beforehand
-             * @returns GcpFunctionOperatorConfig
+             * @returns AzureFunctionsOperatorConfig
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.DeploymentSpec.GcpFunctionOperatorConfig;
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.DeploymentSpec.AzureFunctionsOperatorConfig;
 
             /**
-             * Decodes a GcpFunctionOperatorConfig message from the specified reader or buffer, length delimited.
+             * Decodes an AzureFunctionsOperatorConfig message from the specified reader or buffer, length delimited.
              * @param reader Reader or buffer to decode from
-             * @returns GcpFunctionOperatorConfig
+             * @returns AzureFunctionsOperatorConfig
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.DeploymentSpec.GcpFunctionOperatorConfig;
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.DeploymentSpec.AzureFunctionsOperatorConfig;
 
             /**
-             * Verifies a GcpFunctionOperatorConfig message.
+             * Verifies an AzureFunctionsOperatorConfig message.
              * @param message Plain object to verify
              * @returns `null` if valid, otherwise the reason why it is not
              */
             public static verify(message: { [k: string]: any }): (string|null);
 
             /**
-             * Creates a GcpFunctionOperatorConfig message from a plain object. Also converts values to their respective internal types.
+             * Creates an AzureFunctionsOperatorConfig message from a plain object. Also converts values to their respective internal types.
              * @param object Plain object
-             * @returns GcpFunctionOperatorConfig
+             * @returns AzureFunctionsOperatorConfig
              */
-            public static fromObject(object: { [k: string]: any }): bentoml.DeploymentSpec.GcpFunctionOperatorConfig;
+            public static fromObject(object: { [k: string]: any }): bentoml.DeploymentSpec.AzureFunctionsOperatorConfig;
 
             /**
-             * Creates a plain object from a GcpFunctionOperatorConfig message. Also converts values to other types if specified.
-             * @param message GcpFunctionOperatorConfig
+             * Creates a plain object from an AzureFunctionsOperatorConfig message. Also converts values to other types if specified.
+             * @param message AzureFunctionsOperatorConfig
              * @param [options] Conversion options
              * @returns Plain object
              */
-            public static toObject(message: bentoml.DeploymentSpec.GcpFunctionOperatorConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+            public static toObject(message: bentoml.DeploymentSpec.AzureFunctionsOperatorConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
             /**
-             * Converts this GcpFunctionOperatorConfig to JSON.
-             * @returns JSON object
-             */
-            public toJSON(): { [k: string]: any };
-        }
-
-        /** Properties of a KubernetesOperatorConfig. */
-        interface IKubernetesOperatorConfig {
-
-            /** KubernetesOperatorConfig kube_namespace */
-            kube_namespace?: (string|null);
-
-            /** KubernetesOperatorConfig replicas */
-            replicas?: (number|null);
-
-            /** KubernetesOperatorConfig service_name */
-            service_name?: (string|null);
-
-            /** KubernetesOperatorConfig service_type */
-            service_type?: (string|null);
-        }
-
-        /** Represents a KubernetesOperatorConfig. */
-        class KubernetesOperatorConfig implements IKubernetesOperatorConfig {
-
-            /**
-             * Constructs a new KubernetesOperatorConfig.
-             * @param [properties] Properties to set
-             */
-            constructor(properties?: bentoml.DeploymentSpec.IKubernetesOperatorConfig);
-
-            /** KubernetesOperatorConfig kube_namespace. */
-            public kube_namespace: string;
-
-            /** KubernetesOperatorConfig replicas. */
-            public replicas: number;
-
-            /** KubernetesOperatorConfig service_name. */
-            public service_name: string;
-
-            /** KubernetesOperatorConfig service_type. */
-            public service_type: string;
-
-            /**
-             * Creates a new KubernetesOperatorConfig instance using the specified properties.
-             * @param [properties] Properties to set
-             * @returns KubernetesOperatorConfig instance
-             */
-            public static create(properties?: bentoml.DeploymentSpec.IKubernetesOperatorConfig): bentoml.DeploymentSpec.KubernetesOperatorConfig;
-
-            /**
-             * Encodes the specified KubernetesOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.KubernetesOperatorConfig.verify|verify} messages.
-             * @param message KubernetesOperatorConfig message or plain object to encode
-             * @param [writer] Writer to encode to
-             * @returns Writer
-             */
-            public static encode(message: bentoml.DeploymentSpec.IKubernetesOperatorConfig, writer?: $protobuf.Writer): $protobuf.Writer;
-
-            /**
-             * Encodes the specified KubernetesOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.KubernetesOperatorConfig.verify|verify} messages.
-             * @param message KubernetesOperatorConfig message or plain object to encode
-             * @param [writer] Writer to encode to
-             * @returns Writer
-             */
-            public static encodeDelimited(message: bentoml.DeploymentSpec.IKubernetesOperatorConfig, writer?: $protobuf.Writer): $protobuf.Writer;
-
-            /**
-             * Decodes a KubernetesOperatorConfig message from the specified reader or buffer.
-             * @param reader Reader or buffer to decode from
-             * @param [length] Message length if known beforehand
-             * @returns KubernetesOperatorConfig
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.DeploymentSpec.KubernetesOperatorConfig;
-
-            /**
-             * Decodes a KubernetesOperatorConfig message from the specified reader or buffer, length delimited.
-             * @param reader Reader or buffer to decode from
-             * @returns KubernetesOperatorConfig
-             * @throws {Error} If the payload is not a reader or valid buffer
-             * @throws {$protobuf.util.ProtocolError} If required fields are missing
-             */
-            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.DeploymentSpec.KubernetesOperatorConfig;
-
-            /**
-             * Verifies a KubernetesOperatorConfig message.
-             * @param message Plain object to verify
-             * @returns `null` if valid, otherwise the reason why it is not
-             */
-            public static verify(message: { [k: string]: any }): (string|null);
-
-            /**
-             * Creates a KubernetesOperatorConfig message from a plain object. Also converts values to their respective internal types.
-             * @param object Plain object
-             * @returns KubernetesOperatorConfig
-             */
-            public static fromObject(object: { [k: string]: any }): bentoml.DeploymentSpec.KubernetesOperatorConfig;
-
-            /**
-             * Creates a plain object from a KubernetesOperatorConfig message. Also converts values to other types if specified.
-             * @param message KubernetesOperatorConfig
-             * @param [options] Conversion options
-             * @returns Plain object
-             */
-            public static toObject(message: bentoml.DeploymentSpec.KubernetesOperatorConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-            /**
-             * Converts this KubernetesOperatorConfig to JSON.
+             * Converts this AzureFunctionsOperatorConfig to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };
@@ -2591,14 +2494,26 @@ export namespace bentoml {
             /** BentoServiceApi name */
             name?: (string|null);
 
-            /** BentoServiceApi handler_type */
-            handler_type?: (string|null);
+            /** BentoServiceApi input_type */
+            input_type?: (string|null);
 
             /** BentoServiceApi docs */
             docs?: (string|null);
 
-            /** BentoServiceApi handler_config */
-            handler_config?: (google.protobuf.IStruct|null);
+            /** BentoServiceApi input_config */
+            input_config?: (google.protobuf.IStruct|null);
+
+            /** BentoServiceApi output_config */
+            output_config?: (google.protobuf.IStruct|null);
+
+            /** BentoServiceApi output_type */
+            output_type?: (string|null);
+
+            /** BentoServiceApi mb_max_latency */
+            mb_max_latency?: (number|null);
+
+            /** BentoServiceApi mb_max_batch_size */
+            mb_max_batch_size?: (number|null);
         }
 
         /** Represents a BentoServiceApi. */
@@ -2613,14 +2528,26 @@ export namespace bentoml {
             /** BentoServiceApi name. */
             public name: string;
 
-            /** BentoServiceApi handler_type. */
-            public handler_type: string;
+            /** BentoServiceApi input_type. */
+            public input_type: string;
 
             /** BentoServiceApi docs. */
             public docs: string;
 
-            /** BentoServiceApi handler_config. */
-            public handler_config?: (google.protobuf.IStruct|null);
+            /** BentoServiceApi input_config. */
+            public input_config?: (google.protobuf.IStruct|null);
+
+            /** BentoServiceApi output_config. */
+            public output_config?: (google.protobuf.IStruct|null);
+
+            /** BentoServiceApi output_type. */
+            public output_type: string;
+
+            /** BentoServiceApi mb_max_latency. */
+            public mb_max_latency: number;
+
+            /** BentoServiceApi mb_max_batch_size. */
+            public mb_max_batch_size: number;
 
             /**
              * Creates a new BentoServiceApi instance using the specified properties.

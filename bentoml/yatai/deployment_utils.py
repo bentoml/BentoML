@@ -78,13 +78,18 @@ def deployment_dict_to_pb(deployment_dict):
                 deployment_pb.spec.aws_lambda_operator_config.__setattr__(
                     field, lambda_conf.get(field)
                 )
-    elif deployment_pb.spec.operator == DeploymentSpec.KUBERNETES:
-        k8s_config = spec_dict.get('kubernetes_operator_config', {})
-
-        for field in ['kube_namespace', 'replicas', 'service_name', 'service_type']:
-            if k8s_config.get(field):
-                deployment_pb.spec.kubernetes_operator_config.__setattr__(
-                    field, k8s_config.get(field)
+    elif deployment_pb.spec.operator == DeploymentSpec.AZURE_FUNCTIONS:
+        azure_functions_config = spec_dict.get('azure_function_operators_config', {})
+        for field in [
+            'location',
+            'min_instances',
+            'max_burst',
+            'premium_plan_sku',
+            'function_auth_level',
+        ]:
+            if azure_functions_config.get(field):
+                deployment_pb.spec.azure_functions_operator_config.__setattr__(
+                    field, azure_functions_config.get(field)
                 )
     else:
         raise InvalidArgument(

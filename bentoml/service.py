@@ -20,6 +20,8 @@ import uuid
 from datetime import datetime
 from abc import abstractmethod, ABCMeta
 
+import flask
+
 from bentoml import config
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import SavedBundleConfig
@@ -30,8 +32,12 @@ from bentoml.marshal.utils import DataLoader
 from bentoml.server.trace import trace
 from bentoml.exceptions import NotFound, InvalidArgument
 
+from werkzeug.utils import cached_property
+
 ARTIFACTS_DIR_NAME = "artifacts"
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
+DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
+DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
 
 logger = logging.getLogger(__name__)
 
@@ -43,20 +49,28 @@ class BentoServiceAPI(object):
     Args:
         service (BentoService): ref to service containing this API
         name (str): API name, by default this is the python function name
-        handler (bentoml.handlers.BentoHandler): A BentoHandler class that transforms
-            HTTP Request and/or CLI options into expected format for the API func
+        handler (bentoml.adapters.BaseInputAdapter): A InputAdapter class that
+        transforms HTTP Request and/or CLI options into expected format for the API func
         func (function): API func contains the actual API callback, this is
             typically the 'predict' method on a model
     """
 
-    def __init__(self, service, name, doc, handler, func):
+    def __init__(
+        self, service, name, doc, handler, func, mb_max_latency, mb_max_batch_size
+    ):
         """
         :param service: ref to service containing this API
         :param name: API name
-        :param handler: A BentoHandler that transforms HTTP Request and/or
+        :param handler: A InputAdapter that transforms HTTP Request and/or
             CLI options into parameters for API func
         :param func: API func contains the actual API callback, this is
             typically the 'predict' method on a model
+        :param mb_max_latency: The latency goal of your service in milliseconds.
+            Default: 300.
+        :param mb_max_batch_size: The maximum size of any batch. This parameter
+            governs the throughput/latency tradeoff, and also avoids having
+            batches that are so large they exceed some resource constraint (e.g.
+            GPU memory to hold a batch's data). Default: 1000.
         """
         self._service = service
         self._name = name
@@ -64,6 +78,8 @@ class BentoServiceAPI(object):
         self._handler = handler
         self._func = func
         self._wrapped_func = None
+        self.mb_max_latency = mb_max_latency
+        self.mb_max_batch_size = mb_max_batch_size
 
     @property
     def service(self):
@@ -82,34 +98,39 @@ class BentoServiceAPI(object):
         return self._handler
 
     @property
+    def output_adapter(self):
+        return self.handler.output_adapter
+
+    @cached_property
     def func(self):
-        if not self._wrapped_func:
+        def _wrapped_func(*args, **kwargs):
+            with trace(
+                ZIPKIN_API_URL,
+                service_name=self.__class__.__name__,
+                span_name="user defined api handler",
+            ):
+                resp = self._func(*args, **kwargs)
+            return resp
 
-            def _wrapped_func(*args, **kwargs):
-                with trace(
-                    ZIPKIN_API_URL,
-                    service_name=self.__class__.__name__,
-                    span_name="user defined api handler",
-                ):
-                    resp = self._func(*args, **kwargs)
-                return resp
-
-            self._wrapped_func = _wrapped_func
-        return self._wrapped_func
+        return _wrapped_func
 
     @property
     def request_schema(self):
-        return self.handler.request_schema
+        # TODO(bojiang): request_schema of adapter
+        schema = self.handler.request_schema
+        if schema.get('application/json'):
+            schema.get('application/json')['example'] = self.handler._http_input_example
+        return schema
 
-    def handle_request(self, request):
+    def handle_request(self, request: flask.Request):
         return self.handler.handle_request(request, self.func)
 
-    def handle_batch_request(self, request):
-        requests = DataLoader.split_requests(request.data)
+    def handle_batch_request(self, request: flask.Request):
+        requests = DataLoader.split_requests(request.get_data())
         with trace(
             ZIPKIN_API_URL,
             service_name=self.__class__.__name__,
-            span_name=f"call `{self._handler.__class__.__name__}`",
+            span_name=f"call `{self.handler.__class__.__name__}`",
         ):
             responses = self.handler.handle_batch_request(requests, self.func)
         return DataLoader.merge_responses(responses)
@@ -155,12 +176,22 @@ class BentoServiceBase(object):
                 api_name = getattr(function, "_api_name")
                 api_doc = getattr(function, "_api_doc")
                 handler = getattr(function, "_handler")
+                mb_max_latency = getattr(function, "_mb_max_latency")
+                mb_max_batch_size = getattr(function, "_mb_max_batch_size")
 
                 # Bind api method call with self(BentoService instance)
                 func = function.__get__(self)
 
                 self._service_apis.append(
-                    BentoServiceAPI(self, api_name, api_doc, handler, func)
+                    BentoServiceAPI(
+                        self,
+                        api_name,
+                        api_doc,
+                        handler=handler,
+                        func=func,
+                        mb_max_latency=mb_max_latency,
+                        mb_max_batch_size=mb_max_batch_size,
+                    )
                 )
 
     def get_service_apis(self):
@@ -186,12 +217,19 @@ class BentoServiceBase(object):
 
 
 def api_decorator(
-    *args, input=None, output=None, api_name=None, api_doc=None, **kwargs
+    *args,
+    input=None,
+    output=None,
+    api_name=None,
+    api_doc=None,
+    mb_max_batch_size=None,
+    mb_max_latency=None,
+    **kwargs,
 ):  # pylint: disable=redefined-builtin
     """Decorator for adding api to a BentoService
 
     Args:
-        handler_cls (bentoml.handlers.BentoHandler): The handler class for the API
+        handler_cls (bentoml.adapters.BaseInputAdapter): The handler class for the API
             function.
 
         api_name (:obj:`str`, optional): API name to replace function name
@@ -203,31 +241,31 @@ def api_decorator(
     Raises:
         InvalidArgument: API name must contains only letters
 
-    after version 0.8
+    >>> # After version 0.8
     >>> from bentoml import BentoService, api
-    >>> from bentoml.handlers import JsonHandler, DataframeHandler
+    >>> from bentoml.adapters import JsonInput, DataframeInput
     >>>
     >>> class FraudDetectionAndIdentityService(BentoService):
     >>>
-    >>>     @api(input=JsonHandler())
+    >>>     @api(input=JsonInput())
     >>>     def fraud_detect(self, parsed_json):
     >>>         # do something
     >>>
-    >>>     @api(input=DataframeHandler(input_json_orient='records'))
+    >>>     @api(input=DataframeInput(input_json_orient='records'))
     >>>     def identity(self, df):
     >>>         # do something
 
-    before version 0.8
+    >>> # Before version 0.8
     >>> from bentoml import BentoService, api
-    >>> from bentoml.handlers import JsonHandler, DataframeHandler
+    >>> from bentoml.handlers import JsonHandler, DataframeHandler  # deprecated
     >>>
     >>> class FraudDetectionAndIdentityService(BentoService):
     >>>
-    >>>     @api(JsonHandler)
+    >>>     @api(JsonHandler)  # deprecated
     >>>     def fraud_detect(self, parsed_json):
     >>>         # do something
     >>>
-    >>>     @api(DataframeHandler, input_json_orient='records')
+    >>>     @api(DataframeHandler, input_json_orient='records')  # deprecated
     >>>     def identity(self, df):
     >>>         # do something
 
@@ -235,31 +273,41 @@ def api_decorator(
 
     DEFAULT_API_DOC = "BentoService API"
 
-    from bentoml.handlers.base_handlers import BentoHandler
+    from bentoml.adapters import BaseInputAdapter
 
     def decorator(func):
         _api_name = func.__name__ if api_name is None else api_name
         _api_doc = (
             (func.__doc__ or DEFAULT_API_DOC).strip() if api_doc is None else api_doc
         )
+        _mb_max_batch_size = (
+            DEFAULT_MAX_BATCH_SIZE if mb_max_batch_size is None else mb_max_batch_size
+        )
+        _mb_max_latency = (
+            DEFAULT_MAX_LATENCY if mb_max_latency is None else mb_max_latency
+        )
 
         if input is None:
             # support bentoml<=0.7
             if not args or not (
-                inspect.isclass(args[0]) and issubclass(args[0], BentoHandler)
+                inspect.isclass(args[0]) and issubclass(args[0], BaseInputAdapter)
             ):
                 raise InvalidArgument(
                     "BentoService @api decorator first parameter must "
-                    "be class derived from bentoml.handlers.BentoHandler"
+                    "be class derived from bentoml.adapters.BaseInputAdapter"
                 )
 
-            handler = args[0](*args[1:], **kwargs)
+            handler = args[0](*args[1:], output_adapter=output, **kwargs)
         else:
+            assert isinstance(input, BaseInputAdapter), (
+                "API input parameter must be an instance of any classes inherited from "
+                "bentoml.adapters.BaseInputAdapter"
+            )
             handler = input
+            handler._output_adapter = output
 
         setattr(func, "_is_api", True)
         setattr(func, "_handler", handler)
-        setattr(func, "_output_adapter", output)
         if not isidentifier(_api_name):
             raise InvalidArgument(
                 "Invalid API name: '{}', a valid identifier must contains only letters,"
@@ -269,6 +317,9 @@ def api_decorator(
             )
         setattr(func, "_api_name", _api_name)
         setattr(func, "_api_doc", _api_doc)
+
+        setattr(func, "_mb_max_batch_size", _mb_max_batch_size)
+        setattr(func, "_mb_max_latency", _mb_max_latency)
 
         return func
 
@@ -447,10 +498,10 @@ class BentoService(BentoServiceBase):
 
     Each BentoService can contain multiple models via the BentoML Artifact class, and
     can define multiple APIs for accessing this service. Each API should specify a type
-    of Handler, which defines the expected input data format for this API.
+    of InputAdapter, which defines the expected input data format for this API.
 
     >>>  from bentoml import BentoService, env, api, artifacts, ver
-    >>>  from bentoml.handlers import DataframeHandler
+    >>>  from bentoml.adapters import DataframeInput
     >>>  from bentoml.artifact import SklearnModelArtifact
     >>>
     >>>  @ver(major=1, minor=4)
@@ -458,7 +509,7 @@ class BentoService(BentoServiceBase):
     >>>  @env(pip_dependencies=["scikit-learn"])
     >>>  class MyMLService(BentoService):
     >>>
-    >>>     @api(DataframeHandler)
+    >>>     @api(input=DataframeInput())
     >>>     def predict(self, df):
     >>>         return self.artifacts.clf.predict(df)
     >>>
@@ -509,6 +560,9 @@ class BentoService(BentoServiceBase):
 
         for api in self._service_apis:
             self._env._add_pip_dependencies_if_missing(api.handler.pip_dependencies)
+            self._env._add_pip_dependencies_if_missing(
+                api.output_adapter.pip_dependencies
+            )
 
         for artifact in self._artifacts:
             self._env._add_pip_dependencies_if_missing(artifact.pip_dependencies)

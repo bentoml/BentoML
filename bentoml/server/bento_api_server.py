@@ -24,7 +24,7 @@ from flask import Flask, jsonify, Response, request, make_response
 from werkzeug.utils import secure_filename
 
 from bentoml import config
-from bentoml.utils.usage_stats import track_server
+from bentoml.configuration import get_debug_mode
 from bentoml.server.trace import trace
 from bentoml.exceptions import BentoMLException
 from bentoml.server.instruments import InstrumentMiddleware
@@ -100,11 +100,11 @@ class BentoAPIServer:
         """
         Start an REST server at the specific port on the instance or parameter.
         """
-        track_server('flask')
-
         # Bentoml api service is not thread safe.
         # Flask dev server enabled threaded by default, disable it.
-        self.app.run(port=self.port, threaded=False)
+        self.app.run(
+            port=self.port, threaded=False, debug=get_debug_mode(), use_reloader=False,
+        )
 
     @staticmethod
     def index_view_func():
@@ -128,7 +128,7 @@ class BentoAPIServer:
         Health check for BentoML API server.
         Make sure it works with Kubernetes liveness probe
         """
-        return Response(response="\n", status=200, mimetype="application/json")
+        return Response(response="\n", status=200, mimetype="text/plain")
 
     def metrics_view_func(self):
         from prometheus_client import generate_latest
@@ -146,7 +146,8 @@ class BentoAPIServer:
                 response="Incorrect content format, require JSON", status=400
             )
 
-        data = json.loads(request.data.decode("utf-8"))
+        data = json.loads(request.get_data().decode("utf-8"))
+
         if "request_id" not in data.keys():
             return Response(response="Missing request id", status=400)
 
@@ -187,7 +188,7 @@ class BentoAPIServer:
                 "/feedback",
                 "feedback",
                 partial(self.feedback_view_func, self.bento_service),
-                methods=["POST", "GET"],
+                methods=["POST"],
             )
 
         self.setup_bento_service_api_routes()
@@ -245,7 +246,7 @@ class BentoAPIServer:
     def bento_service_api_func_wrapper(self, api):
         """
         Create api function for flask route, it wraps around user defined API
-        callback and BentoHandler class, and adds request logging and instrument metrics
+        callback and adapter class, and adds request logging and instrument metrics
         """
         request_id = str(uuid.uuid4())
         service_name = self.bento_service.name

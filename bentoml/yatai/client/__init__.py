@@ -21,6 +21,7 @@ from bentoml.yatai.yatai_service import get_yatai_service
 from bentoml.yatai.client.bento_repository_api import BentoRepositoryAPIClient
 from bentoml.yatai.client.deployment_api import DeploymentAPIClient
 
+from werkzeug.utils import cached_property
 
 logger = logging.getLogger(__name__)
 
@@ -34,18 +35,10 @@ class YataiClient:
         self.bento_repository_api_client = None
         self.deployment_api_client = None
 
-    @property
+    @cached_property
     def repository(self):
-        if not self.bento_repository_api_client:
-            self.bento_repository_api_client = BentoRepositoryAPIClient(
-                self.yatai_service
-            )
+        return BentoRepositoryAPIClient(self.yatai_service)
 
-        return self.bento_repository_api_client
-
-    @property
+    @cached_property
     def deployment(self):
-        if not self.deployment_api_client:
-            self.deployment_api_client = DeploymentAPIClient(self.yatai_service)
-
-        return self.deployment_api_client
+        return DeploymentAPIClient(self.yatai_service)

@@ -16,14 +16,21 @@ import os
 import argparse
 import base64
 from io import BytesIO
+import json
 
 from werkzeug.utils import secure_filename
 from flask import Response
 import numpy as np
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
+from bentoml.utils.dataframe_util import PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
 from bentoml.exceptions import BadInput, MissingDependencyException
-from bentoml.handlers.base_handlers import BentoHandler, api_func_result_to_json
-from bentoml.handlers.image_handler import (
+from bentoml.adapters.base_input import BaseInputAdapter
+from bentoml.adapters.image_input import (
     verify_image_format_or_raise,
     get_default_accept_image_formats,
 )
@@ -34,7 +41,7 @@ def _import_fastai_vision():
         from fastai import vision
     except ImportError:
         raise MissingDependencyException(
-            "fastai.vision package is required to use FastaiImageHandler"
+            "fastai.vision package is required to use FastaiImageInput"
         )
 
     return vision
@@ -45,14 +52,46 @@ def _import_imageio_imread():
         from imageio import imread
     except ImportError:
         raise MissingDependencyException(
-            "imageio package is required to use FastaiImageHandler"
+            "imageio package is required to use FastaiImageInput"
         )
 
     return imread
 
 
-class FastaiImageHandler(BentoHandler):
-    """BentoHandler specified for handling image input following fastai conventions
+class NumpyJsonEncoder(json.JSONEncoder):
+    """ Special json encoder for numpy types """
+
+    def default(self, o):  # pylint: disable=method-hidden
+        if isinstance(o, np.generic):
+            return o.item()
+
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+
+        return json.JSONEncoder.default(self, o)
+
+
+def api_func_result_to_json(result, pandas_dataframe_orient="records"):
+
+    assert (
+        pandas_dataframe_orient in PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
+    ), f"unkown pandas dataframe orient '{pandas_dataframe_orient}'"
+
+    if pd and isinstance(result, pd.DataFrame):
+        return result.to_json(orient=pandas_dataframe_orient)
+
+    if pd and isinstance(result, pd.Series):
+        return pd.DataFrame(result).to_json(orient=pandas_dataframe_orient)
+
+    try:
+        return json.dumps(result, cls=NumpyJsonEncoder)
+    except (TypeError, OverflowError):
+        # when result is not JSON serializable
+        return json.dumps({"result": str(result)})
+
+
+class FastaiImageInput(BaseInputAdapter):
+    """InputAdapter specified for handling image input following fastai conventions
     by passing type fastai.vision.Image to user API function and providing options
     such as div, cls, and after_open
 
@@ -61,7 +100,7 @@ class FastaiImageHandler(BentoHandler):
             Default value is (image,)
         accept_image_formats ([str]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
-            'apiserver/default_image_handler_accept_file_extensions', which is
+            'apiserver/default_image_input_accept_file_extensions', which is
             set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
             List of all supported format can be found here:
             https://imageio.readthedocs.io/en/stable/formats.html
@@ -76,8 +115,8 @@ class FastaiImageHandler(BentoHandler):
             is None
 
     Raises:
-        ImportError: imageio package is required to use FastaiImageHandler
-        ImportError: fastai package is required to use FastaiImageHandler
+        ImportError: imageio package is required to use FastaiImageInput
+        ImportError: fastai package is required to use FastaiImageInput
     """
 
     HTTP_METHODS = ["POST"]
@@ -92,7 +131,7 @@ class FastaiImageHandler(BentoHandler):
         after_open=None,
         **base_kwargs,
     ):
-        super(FastaiImageHandler, self).__init__(**base_kwargs)
+        super(FastaiImageInput, self).__init__(**base_kwargs)
         self.imread = _import_imageio_imread()
         self.fastai_vision = _import_fastai_vision()
 
@@ -154,7 +193,7 @@ class FastaiImageHandler(BentoHandler):
                 input_streams = (data,)
             else:
                 raise BadInput(
-                    "BentoML#ImageHandler unexpected HTTP request: %s" % request
+                    "BentoML#FastaiImageInput unexpected HTTP request: %s" % request
                 )
 
         input_data = []

@@ -2,13 +2,13 @@ import * as React from "react";
 import Table from "../../ui/Table";
 import { Section } from "../../ui/Layout";
 
-const handlerConfigToTableContent = (
-  handler_config
+const inputConfigToTableContent = (
+  input_config
 ): Array<string> | null | undefined => {
-  if (!handler_config) {
+  if (!input_config) {
     return "None";
   }
-  const config = handler_config.fields;
+  const config = input_config.fields;
   /*
     grpc format for JSON:
     example
@@ -22,7 +22,7 @@ const handlerConfigToTableContent = (
     }
     */
 
-  const displayHandlerList = [];
+  const displayInputList = [];
   const configureKeys = Object.keys(config);
   for (let index = 0; index < configureKeys.length; index++) {
     const key = configureKeys[index];
@@ -33,22 +33,22 @@ const handlerConfigToTableContent = (
       value = "null";
     }
 
-    displayHandlerList.push(<p key={index}>{`${key}: ${value}`}</p>);
+    displayInputList.push(<p key={index}>{`${key}: ${value}`}</p>);
   }
-  return displayHandlerList;
+  return displayInputList;
 };
 
 interface IApiProps {
   name: string;
-  handler_type: string;
+  input_type: string;
   docs: string;
-  handler_config: { [key: string]: string };
+  input_config: { [key: string]: string };
 }
 
 const APIS_TABLE_HEADER = [
   "API name",
-  "Handler type",
-  "Handler Config",
+  "Input type",
+  "Input Config",
   "Documentation",
 ];
 
@@ -58,8 +58,8 @@ const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
   const apisTableContent = apis.map((api) => ({
     content: [
       api.name,
-      api.handler_type,
-      handlerConfigToTableContent(api.handler_config),
+      api.input_type,
+      inputConfigToTableContent(api.input_config),
       api.docs,
     ],
   }));

@@ -50,6 +50,7 @@ install_requires = [
 ]
 
 aws_sam_cli = ["aws-sam-cli==0.33.1"]
+azure_cli = ["azure-cli"]
 postgres = ['psycopg2', 'psycopg2-binary']
 
 test_requires = [
@@ -63,7 +64,8 @@ test_requires = [
     "pandas",
     "pylint>=2.5.2",
     "pytest-cov>=2.7.1",
-    "pytest>=4.1.0",
+    "pytest>=5.4.0",
+    "pytest-asyncio",
     "scikit-learn",
     "protobuf==3.6.0",
 ] + aws_sam_cli
@@ -72,7 +74,9 @@ dev_requires = [
     "flake8>=3.8.2",
     "gitpython>=2.0.2",
     "grpcio-reflection<=1.27.2",
-    "grpcio-tools<=1.27.2",
+    # This grpcio-tools version  should be kept in sync with the version found in
+    # `protos/generate-docker.sh` script
+    "grpcio-tools==1.27.2",
     "pylint>=2.5.2",
     "setuptools",
     "tox-conda>=0.2.0",
@@ -90,7 +94,7 @@ docs_requires = [
 
 dev_all = install_requires + dev_requires + docs_requires
 
-yatai_service = install_requires + aws_sam_cli + postgres
+yatai_service = install_requires + aws_sam_cli + postgres + azure_cli
 
 extras_require = {
     "dev": dev_all,

@@ -20,7 +20,6 @@ from bentoml import config
 from bentoml.saved_bundle import load
 from bentoml.server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
-from bentoml.utils.usage_stats import track_server
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +93,5 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         return api_server.app
 
     def run(self):
-        track_server('gunicorn', {"number_of_workers": self.cfg.workers})
         setup_prometheus_multiproc_dir(self.prometheus_lock)
         super(GunicornBentoServer, self).run()

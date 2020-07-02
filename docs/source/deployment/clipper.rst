@@ -3,11 +3,11 @@ Deploying to Clipper Cluster
 
 Clipper(http://clipper.ai/) is a low-latency prediction serving system for machine learning.
 
-It provides a powerful way to orchastrate ML model containers and supports features such as `micro batching`_ which is
+It provides a powerful way to orchestrate ML model containers and supports features such as `micro batching`_ which is
 critical for building low latency online model serving systems.
 
 BentoML makes it easier to build custom containers that can be deployed to Clipper, users can easily add Clipper
-specify API handlers to their prediction service created with BentoML, and deploy them into clipper cluster.
+specify API inputs to their prediction service created with BentoML, and deploy them into clipper cluster.
 In this guide, we will demonstrate how to deploy a scikit-learn model to clipper, using BentoML.
 
 .. _micro batching: https://www.usenix.org/system/files/conference/nsdi17/nsdi17-crankshaw.pdf
@@ -40,28 +40,28 @@ Train Iris classifier model
     >>> clf.fit(X, y)
 
 
-BentoML provides handler types that are specific for use with Clipper, including `ClipperBytesHandler`,
-`ClipperIntsHandler`, `ClipperFloatsHandler`, `ClipperDoublesHandler`, `ClipperStringsHandler` each
+BentoML provides input types that are specific for use with Clipper, including `ClipperBytesInput`,
+`ClipperIntsInput`, `ClipperFloatsInput`, `ClipperDoublesInput`, `ClipperStringsInput` each
 corresponding to one input type that clipper support.
 
-Other than using Clipper specific handler, the rest are the same as defining a regular BentoService class:
+Other than using Clipper specific input, the rest are the same as defining a regular BentoService class:
 
 .. code-block:: python
 
     >>> # save this to a separate iris_classifier.py file
     >>> from bentoml import BentoService, api, env, artifacts
     >>> from bentoml.artifact import PickleArtifact
-    >>> from bentoml.handlers import DataframeHandler, ClipperFloatsHandler
+    >>> from bentoml.adapters import DataframeInput, ClipperFloatsInput
 
     >>> @artifacts([PickleArtifact('model')])
     >>> @env(pip_dependencies=["scikit-learn"])
     >>> class IrisClassifier(BentoService):
 
-    >>>     @api(DataframeHandler)
+    >>>     @api(input=DataframeInput())
     >>>     def predict(self, df):
     >>>         return self.artifacts.model.predict(df)
     >>>
-    >>>     @api(ClipperFloatsHandler)
+    >>>     @api(input=ClipperFloatsInput())
     >>>     def predict_clipper(self, inputs):
     >>>         return self.artifacts.model.predict(inputs)
 
@@ -94,7 +94,7 @@ Save the BentoService
     [2019-11-13 15:41:24,395] INFO - BentoService bundle 'IrisClassifier:20191113154121_E7D3CE' created at: /Users/chaoyuyang/bentoml/repository/IrisClassifier/20191113154121_E7D3CE
 
 
-Test the clipper handler directly with a list of floats as input
+Test the clipper input directly with a list of floats as input
 
 .. code-block:: python
 

@@ -9,19 +9,21 @@
 [![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
 
 
-BentoML is an open-source platform for __high-performance ML model serving__.
 
+BentoML is an open-source framework for __high-performance ML model serving__.
 
 What does BentoML do?
-* Turn trained ML model into production API endpoint with a few lines of code
+* Create API endpoint serving trained models with just a few lines of code
 * Support all major machine learning training frameworks
-* End-to-end model serving solution with DevOps best practices baked-in
-* Micro-batching support, bringing the advantage of batch processing to online serving
-* Model management for teams, providing CLI access and Web UI dashboard
-* Flexible model deployment orchestration supporting Docker, Kubernetes, AWS Lambda, SageMaker, Azure ML and more
+* High-Performance online API serving with adaptive micro-batching support
+* Model Registry for teams, providing Web UI dashboard and CLI/API access
+* Flexible deployment orchestration with DevOps best practices baked-in, supporting 
+ Docker, Kubernetes, Kubeflow, Knative, AWS Lambda, SageMaker, Azure ML, GCP and more
 
+👉 To follow development updates and discussion, join the 
+[Bentoml Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+and the [contributors mailing list](https://groups.google.com/forum/#!forum/bentoml).
 
-👉 Join [BentoML Slack](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg) to follow the latest development updates and roadmap discussions.
 
 ---
 
@@ -54,8 +56,7 @@ on how does BentoML compares to Tensorflow-serving, Clipper, AWS SageMaker, MLFl
 
 ## Getting Started
 
-Before starting, make sure Python version is 3.6 or above , and install BentoML with 
-`pip`:
+BentoML requires python 3.6 or above, install with `pip`:
 ```bash
 pip install bentoml
 ```
@@ -65,28 +66,29 @@ A minimal prediction service in BentoML looks something like this:
 ```python
 # https://github.com/bentoml/BentoML/blob/master/guides/quick-start/iris_classifier.py
 from bentoml import env, artifacts, api, BentoService
-from bentoml.handlers import DataframeHandler
+from bentoml.adapters import DataframeInput
 from bentoml.artifact import SklearnModelArtifact
 
 @env(auto_pip_dependencies=True)
 @artifacts([SklearnModelArtifact('model')])
 class IrisClassifier(BentoService):
 
-    @api(DataframeHandler)
+    @api(input=DataframeInput())
     def predict(self, df):
         # Optional pre-processing, post-processing code goes here
         return self.artifacts.model.predict(df)
 ```
 
 This code defines a prediction service that bundles a scikit-learn model and provides an
- API. The API here is the entry point for accessing this prediction service, and an API
- with `DataframeHandler` will convert HTTP JSON request into `pandas.DataFrame` object
- before passing it to the user-defined API function for inferencing.
+API that expects input data in the form of `pandas.Dataframe`. The user-defined API
+function `predict` defines how the input dataframe data will be processed and used for 
+inference with the bundled scikit-learn model. BentoML also supports other API input 
+types such as `ImageInput`, `JsonInput` and 
+[more](https://docs.bentoml.org/en/latest/api/adapters.html).
 
-The following code trains a scikit-learn model and bundles the trained model with an
-`IrisClassifier` instance. The `IrisClassifier` instance is then saved to disk in the
-BentoML SavedBundle format, which is a versioned file archive that is ready for 
-production models serving deployment.
+The following code trains a scikit-learn model and packages the trained model with the
+`IrisClassifier` class defined above. It then saves the IrisClassifier instance to disk 
+in the BentoML SavedBundle format:
 
 ```python
 # https://github.com/bentoml/BentoML/blob/master/guides/quick-start/main.py
@@ -116,17 +118,21 @@ if __name__ == "__main__":
 
 By default, BentoML stores SavedBundle files under the `~/bentoml` directory. Users 
 can also customize BentoML to use a different directory or cloud storage like
-[AWS S3](https://aws.amazon.com/s3/). BentoML also comes with a model management
-component [YataiService](https://docs.bentoml.org/en/latest/concepts.html#customizing-model-repository),
+[AWS S3](https://aws.amazon.com/s3/) and [MinIO](https://min.io/), via BentoML's
+model management component [YataiService](https://docs.bentoml.org/en/latest/concepts.html#customizing-model-repository),
 which provides advanced model management features including a dashboard web UI:
 
 ![BentoML YataiService Bento Repository Page](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/yatai-service-web-ui-repository.png)
 
 ![BentoML YataiService Bento Details Page](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/yatai-service-web-ui-repository-detail.png)
 
+Learn more about using YataiService for model management and try out the Web UI 
+[here](https://docs.bentoml.org/en/latest/concepts.html#model-management).
 
-To start a REST API server with the saved `IrisClassifier` service, use `bentoml serve`
-command:
+
+The BentoML SavedBundle directory contains all the code, data and configs required to 
+deploy the model. To start a REST API model server with the `IrisClassifier` SavedBundle, use 
+the `bentoml serve` command:
 
 ```bash
 bentoml serve IrisClassifier:latest
@@ -152,23 +158,28 @@ prediction request:
 
 BentoML provides a convenient way to containerize the model API server with Docker:
 
-1. Find the SavedBundle directory with `bentoml get` command
+1. Find where the SavedBundle directory is created in the file system:
+    * The saved path is return by the `iris_classifier_service.save()` call
+    * The saved path is printed in the stdout when saving: `INFO - BentoService bundle 'IrisClassifier:20200121114004_360ECB' saved to: ...`
+    * Use the `bentoml get IrisClassifier:latest` command to view all the metadata including saved path
 
-2. Run `docker build` with the SavedBundle directory which contains a generated Dockerfile
-
-3. Run the generated docker image to start a docker container serving the model
+2. Run `docker build` under the SavedBundle directory which contains a generated Dockerfile,
+    which will build a docker image containing the IrisClassifier API server
 
 
 ```bash
 # If jq command not found, install jq (the command-line JSON processor) here: https://stedolan.github.io/jq/download/
 saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
 
-docker build -t {docker_username}/iris-classifier $saved_path
+# Build the docker image
+docker build -t iris-classifier $saved_path
 
-docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True {docker_username}/iris-classifier
+# Start a container with the image build above
+docker run -p 5000:5000 iris-classifier
 ```
 
-This made it possible to deploy BentoML bundled ML models with platforms such as
+This docker images makes it possible to deploy BentoML saved bundle to container 
+orchestration platforms such as
 [Kubeflow](https://www.kubeflow.org/docs/components/serving/bentoml/),
 [Knative](https://knative.dev/community/samples/serving/machinelearning-python-bentoml/),
 [Kubernetes](https://docs.bentoml.org/en/latest/deployment/kubernetes.html), which
@@ -177,25 +188,9 @@ scale-to-zero, canary rollout and multi-armed bandit.
 
 
 BentoML can also deploy SavedBundle directly to cloud services such as AWS Lambda or 
-AWS SageMaker, with the bentoml CLI command:
-
-```bash
-$ bentoml get IrisClassifier
-BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
-IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeHandler>  model<SklearnModelArtifact>
-IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeHandler>  clf<PickleArtifact>
-...
-
-$ bentoml lambda deploy test-deploy -b IrisClassifier:20200121114004_360ECB
-...
-
-$ bentoml deployment list
-NAME           NAMESPACE    PLATFORM    BENTO_SERVICE                         STATUS    AGE
-test-deploy    dev          aws-lambda  IrisClassifier:20200121114004_360ECB  running   2 days and 11 hours
-...
-```
-
-Check out the deployment guides and other deployment options with BentoML [here](https://docs.bentoml.org/en/latest/deployment/index.html).
+AWS SageMaker, with the bentoml CLI command. For a list of all deployment options with 
+BentoML, check out the 
+[BentoML deployment guides](https://docs.bentoml.org/en/latest/deployment/index.html).
 
 
 ## Documentation
@@ -243,19 +238,24 @@ Visit [bentoml/gallery](https://github.com/bentoml/gallery) repository for more
 * Titanic Survival Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb)
 * League of Legend win Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb)
 
+
 #### LightGBM
 * Titanic Survival Prediction -  [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb)
+
 
 #### H2O
 * Loan Default Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb)
 * Prostate Cancer Prediction - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb)
 
-### FastText
+
+#### FastText
 * Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb)
 
-### ONNX
+
+#### ONNX
 * Scikit-Learn Iris Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb)
 * ResNet50 Image recognition (ONNX model zoo) - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb)
+
 
 ### Deployment guides:
 * End-to-end deployment management with BentoML
@@ -295,7 +295,6 @@ Currently it is a Beta release, __we may change APIs in future releases__.
 Read more about the latest features and changes in BentoML from the [releases page](https://github.com/bentoml/BentoML/releases).
 
 
-
 ## Usage Tracking
 
 BentoML by default collects anonymous usage data using [Amplitude](https://amplitude.com).
@@ -316,6 +315,7 @@ bentoml config set usage_tracking=false
 import bentoml
 bentoml.config().set('core', 'usage_tracking', 'False')
 ```
+
 
 ## License
 

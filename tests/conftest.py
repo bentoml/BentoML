@@ -7,6 +7,22 @@ from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
 
 
+def pytest_configure():
+    # dataframe json orients
+    pytest.DF_ORIENTS = {
+        'split',
+        'records',
+        'index',
+        'columns',
+        'values',
+        # 'table',  # TODO(bojiang)
+    }
+    pytest.DF_AUTO_ORIENTS = {
+        'records',
+        'columns',
+    }
+
+
 @pytest.fixture()
 def img_file(tmpdir):
     img_file_ = tmpdir.join("test_img.jpg")
@@ -31,8 +47,12 @@ class TestModel(object):
             assert input_data is not None
         return [input_data.shape for input_data in input_datas]
 
-    def predict_json(self, input_data):
-        assert input_data is not None
+    def predict_json(self, input_jsons):
+        assert input_jsons
+        return [{"ok": True}] * len(input_jsons)
+
+    def predict_legacy_json(self, input_json):
+        assert input_json is not None
         return {"ok": True}
 
 

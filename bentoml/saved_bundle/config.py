@@ -20,6 +20,7 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from bentoml import __version__ as BENTOML_VERSION
+from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.utils import dump_to_yaml_str
 from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
@@ -34,6 +35,8 @@ metadata:
 """
 
 logger = logging.getLogger(__name__)
+DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
+DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
 
 
 def _get_apis_list(bento_service):
@@ -42,10 +45,15 @@ def _get_apis_list(bento_service):
         api_obj = {
             "name": api.name,
             "docs": api.doc,
-            "handler_type": api.handler.__class__.__name__,
+            "input_type": api.handler.__class__.__name__,
+            "output_type": api.handler.output_adapter.__class__.__name__,
+            "mb_max_batch_size": api.mb_max_batch_size,
+            "mb_max_latency": api.mb_max_latency,
         }
         if api.handler.config:
-            api_obj["handler_config"] = api.handler.config
+            api_obj["input_config"] = api.handler.config
+        if api.output_adapter.config:
+            api_obj["output_config"] = api.output_adapter.config
         result.append(api_obj)
     return result
 
@@ -97,8 +105,8 @@ class SavedBundleConfig(object):
 
         if ver != BENTOML_VERSION:
             msg = (
-                "Saved BentoService bundle version mismatch: loading BentoServie "
-                "bundle create with BentoML version {},  but loading from BentoML "
+                "Saved BentoService bundle version mismatch: loading BentoService "
+                "bundle create with BentoML version {}, but loading from BentoML "
                 "version {}".format(conf["version"], BENTOML_VERSION)
             )
 
@@ -146,14 +154,52 @@ class SavedBundleConfig(object):
 
         if "apis" in self.config:
             for api_config in self.config["apis"]:
+                if 'handler_type' in api_config:
+                    # Convert handler type to input type for saved bundle created
+                    # before version 0.8.0
+                    input_type = api_config.get('handler_type')
+                elif 'input_type' in api_config:
+                    input_type = api_config.get('input_type')
+                else:
+                    input_type = "unknown"
+
+                if 'output_type' in api_config:
+                    output_type = api_config.get('output_type')
+                else:
+                    output_type = "DefaultOutput"
+
                 api_metadata = BentoServiceMetadata.BentoServiceApi(
                     name=api_config["name"],
                     docs=api_config["docs"],
-                    handler_type=api_config.get("handler_type", "unknown"),
+                    input_type=input_type,
+                    output_type=output_type,
                 )
                 if "handler_config" in api_config:
+                    # Supports viewing API input config info for saved bundle created
+                    # before version 0.8.0
                     for k, v in api_config["handler_config"].items():
-                        api_metadata.handler_config[k] = v
+                        if k in {'mb_max_latency', 'mb_max_batch_size'}:
+                            setattr(api_metadata, k, v)
+                        else:
+                            api_metadata.input_config[k] = v
+                else:
+                    if 'mb_max_latency' in api_config:
+                        api_metadata.mb_max_latency = api_config["mb_max_latency"]
+                    else:
+                        api_metadata.mb_max_latency = DEFAULT_MAX_LATENCY
+
+                    if 'mb_max_batch_size' in api_config:
+                        api_metadata.mb_max_batch_size = api_config["mb_max_batch_size"]
+                    else:
+                        api_metadata.mb_max_batch_size = DEFAULT_MAX_BATCH_SIZE
+
+                if "input_config" in api_config:
+                    for k, v in api_config["input_config"].items():
+                        api_metadata.input_config[k] = v
+
+                if "output_config" in api_config:
+                    for k, v in api_config["output_config"].items():
+                        api_metadata.output_config[k] = v
                 bento_service_metadata.apis.extend([api_metadata])
 
         if "artifacts" in self.config:

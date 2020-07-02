@@ -11,20 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from bentoml.handlers.base_handlers import BentoHandler
-
-
-class PytorchTensorHandler(BentoHandler):
-    """
-    Tensor handlers for Pytorch models
-    """
-
-    def handle_request(self, request, func):
-        raise NotImplementedError
-
-    def handle_cli(self, args, func):
-        raise NotImplementedError
-
-    def handle_aws_lambda_event(self, event, func):
-        raise NotImplementedError

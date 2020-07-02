@@ -80,6 +80,21 @@ class Bento(Base):
 
 
 def _bento_orm_obj_to_pb(bento_obj):
+    # Backwards compatible support loading saved bundle created before 0.8.0
+    if (
+        'apis' in bento_obj.bento_service_metadata
+        and bento_obj.bento_service_metadata['apis']
+    ):
+        for api in bento_obj.bento_service_metadata['apis']:
+            if 'handler_type' in api:
+                api['input_type'] = api['handler_type']
+                del api['handler_type']
+            if 'handler_config' in api:
+                api['input_config'] = api['handler_config']
+                del api['handler_config']
+            if 'output_type' not in api:
+                api['output_type'] = 'DefaultOutput'
+
     bento_service_metadata_pb = ParseDict(
         bento_obj.bento_service_metadata, BentoServiceMetadata()
     )

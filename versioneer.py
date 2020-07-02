@@ -1,4 +1,6 @@
-
+# fmt: off
+# flake8: noqa
+# pylint: skip-file
 # Version: 0.18
 
 """The Versioneer - like a rocketeer, but for versions.

@@ -11,16 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from datetime import datetime
 import logging
 
 from bentoml import config
+from bentoml.utils.usage_stats import track
 from bentoml.yatai.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,
     ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
+    DeploymentSpec,
 )
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoResponse,
@@ -49,6 +51,15 @@ from bentoml import __version__ as BENTOML_VERSION
 
 
 logger = logging.getLogger(__name__)
+
+
+def track_deployment_delete(deployment_operator, created_at, force_delete=False):
+    operator_name = DeploymentSpec.DeploymentOperator.Name(deployment_operator)
+    up_time = int((datetime.utcnow() - created_at.ToDatetime()).total_seconds())
+    track(
+        f'deployment-{operator_name}-stop',
+        {'up_time': up_time, 'force_delete': force_delete},
+    )
 
 
 class YataiService(YataiServicer):
@@ -148,7 +159,7 @@ class YataiService(YataiServicer):
             return ApplyDeploymentResponse(status=e.status_proto)
         except Exception as e:
             logger.error("URPC ERROR ApplyDeployment: %s", e)
-            return ApplyDeploymentResponse(status=status_pb2.Status.INTERNAL)
+            return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
 
     def DeleteDeployment(self, request, context=None):
         try:
@@ -166,6 +177,9 @@ class YataiService(YataiServicer):
 
                 # if delete successful, remove it from active deployment records table
                 if response.status.status_code == status_pb2.Status.OK:
+                    track_deployment_delete(
+                        deployment_pb.spec.operator, deployment_pb.created_at
+                    )
                     self.deployment_store.delete(
                         request.deployment_name, request.namespace
                     )
@@ -174,6 +188,10 @@ class YataiService(YataiServicer):
                 # If force delete flag is True, we will remove the record
                 # from yatai database.
                 if request.force_delete:
+                    # Track deployment delete before it vanquishes from deployment store
+                    track_deployment_delete(
+                        deployment_pb.spec.operator, deployment_pb.created_at, True
+                    )
                     self.deployment_store.delete(
                         request.deployment_name, request.namespace
                     )
@@ -205,7 +223,7 @@ class YataiService(YataiServicer):
             return DeleteDeploymentResponse(status=e.status_proto)
         except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR DeleteDeployment: %s", e)
-            return DeleteDeploymentResponse(status=status_pb2.Status.INTERNAL)
+            return DeleteDeploymentResponse(status=Status.INTERNAL(str(e)))
 
     def GetDeployment(self, request, context=None):
         try:

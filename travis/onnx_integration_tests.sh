@@ -7,11 +7,11 @@ error=0
 trap 'error=1' ERR
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd $GIT_ROOT
+cd "$GIT_ROOT" || exit
 
 # Install required packages for onnx model artifacts test
 pip install onnx onnxruntime skl2onnx
-pytest $GIT_ROOT/tests/integration_tests/test_onnx_model_artifact.py --cov=bentoml
+pytest "$GIT_ROOT"/tests/integration_tests/test_onnx_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 
 test $error = 0 # Return non-zero if pytest failed

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import botocore
 import pytest
 from mock import patch, MagicMock

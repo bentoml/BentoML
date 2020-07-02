@@ -26,6 +26,8 @@ global-exclude __pycache__
 # special files to include with PyPI distribution
 include versioneer.py
 include bentoml/_version.py
+include bentoml/saved_bundle/bentoml-init.sh
+include bentoml/saved_bundle/docker-entrypoint.sh
 graft bentoml/server/static
 graft bentoml/configuration
 
@@ -36,8 +38,14 @@ include bentoml/yatai/alembic.ini
 # include yatai server UI distribution files
 graft bentoml/yatai/web/dist
 
-# include ".conf" file
-include bentoml/yatai/deployment/sagemaker/sagemaker_nginx.conf
+# include Sagemaker deployment file
+include bentoml/yatai/deployment/sagemaker/nginx.conf
+include bentoml/yatai/deployment/sagemaker/serve
+
+# include files for Azure function deployment
+include bentoml/yatai/deployment/azure_functions/host.json
+include bentoml/yatai/deployment/azure_functions/local.settings.json
+include bentoml/yatai/deployment/azure_functions/Dockerfile
 
 prune e2e_tests
 prune tests

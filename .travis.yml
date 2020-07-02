@@ -18,25 +18,25 @@ matrix:
   include:
     - os: windows
       language: sh
-      python: "3.6"
+      python: "3.7"
       cache:
         - pip: true
       before_install:
-        - choco install python --version 3.6.8
-        - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
+        - choco install python
+        - refreshenv
 
     - name: "Linting & formatting check"
-      python: "3.6"
+      python: "3.7"
       script:
         - ./travis/linter.sh
 
     - name: "ONNX artifact"
-      python: "3.6"
+      python: "3.7"
       script:
         - ./travis/onnx_integration_tests.sh
 
     - name: "Pytorch Artifact"
-      python: "3.6"
+      python: "3.7"
       script:
         - ./travis/pytorch_integration_tests.sh
 

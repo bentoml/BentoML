@@ -20,9 +20,11 @@ from dataclasses import dataclass
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest, BATCH_REQUEST_HEADER
 
 if TYPE_CHECKING:
+
     @dataclass
     class InputAdapterConfig:
         is_batch_input: bool = False
+
 
 class BaseInputAdapter:
     """InputAdapter is an abstraction layer between user defined API callback function

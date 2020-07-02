@@ -28,4 +28,5 @@ python -m pytest --batch-request --host "localhost:5000" "$GIT_ROOT"/tests/integ
 python -m pytest --host "localhost:5001" "$GIT_ROOT"/tests/integration/api_server
 
 docker container stop test_bento_server_mb test_bento_server
+docker container rm test_bento_server_mb test_bento_server
 test $error = 0 # Return non-zero if pytest failed

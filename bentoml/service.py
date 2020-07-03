@@ -578,6 +578,17 @@ class BentoService(BentoServiceBase):
     def web_static_content(self):
         return self._web_static_content
 
+    @property
+    def get_web_static_content_path(self):
+        if self._bento_service_bundle_path and self.name:
+            return os.path.join(
+                self._bento_service_bundle_path, self.name, 'web_static_content',
+            )
+        elif self.web_static_content:
+            return os.path.join(os.getcwd(), self.web_static_content)
+        else:
+            return None
+
     @hybridmethod
     @property
     def name(self):

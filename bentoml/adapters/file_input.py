@@ -42,6 +42,7 @@ class FileInput(BaseInputAdapter):
     """
 
     HTTP_METHODS = ["POST"]
+    BATCH_MODE_SUPPORTED = True
 
     def __init__(
         self, **base_kwargs,
@@ -77,7 +78,7 @@ class FileInput(BaseInputAdapter):
             if not data:
                 raise BadInput("BentoML#ImageHandler unexpected HTTP request format")
             else:
-                input_stream = data
+                input_stream = BytesIO(data)
 
         return input_stream
 

@@ -69,6 +69,28 @@ async def test_api_server_image(host, img_file):
 
 
 @pytest.mark.asyncio
+async def test_api_server_file(host, bin_file):
+    # Test FileInput as binary
+    with open(str(bin_file), "rb") as f:
+        b = f.read()
+        await pytest.assert_request(
+            "POST",
+            f"http://{host}/predict_file",
+            data=b,
+            assert_data=b'{"b64": "gTCJOQ=="}',
+        )
+
+    # Test FileInput as multipart binary
+    with open(str(bin_file), "rb") as f:
+        await pytest.assert_request(
+            "POST",
+            f"http://{host}/predict_file",
+            data={"file": f},
+            assert_data=b'{"b64": "gTCJOQ=="}',
+        )
+
+
+@pytest.mark.asyncio
 async def test_api_server_json(host):
     req_count = 3 if pytest.enable_microbatch else 1
     tasks = tuple(

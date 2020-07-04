@@ -247,8 +247,8 @@ def add_bento_sub_command(cli):
         click.echo('Service %s artifact directory => %s' % (name, target_dir))
 
     @cli.command(
-        help='Containerize given Bento into a Docker image',
-        short_help="Containerize given Bento into a Docker image",
+        help='Containerizes given Bento into a ready-to-use Docker image.',
+        short_help="Containerizes given Bento into a ready-to-use Docker image",
     )
     @click.argument(
         "bento", type=click.STRING, callback=parse_bento_tag_callback,

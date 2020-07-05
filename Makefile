@@ -31,9 +31,9 @@ endif
 
 # YataiService gRPC
 yatai: ## Start YataiService in debug mode
-	bentoml yatai-service-start --debug || (echo "Error starting... You may need to run `make install-watch-yatai`"; exit 1)
+	bentoml yatai-service-start --debug || (echo "Error starting... You may need to run `make install-yatai-deps`"; exit 1)
 grpcui: ## Start gPRC Web UI
-	grpcui -plain text localhost:50051 || (echo "Error starting... You may need to run `make install-watch-yatai`"; exit 1)
+	grpcui -plain text localhost:50051 || (echo "Error starting... You may need to run `make install-yatai-deps`"; exit 1)
 install-yatai-deps: ## Install dependencies to debug YataiService
 	pip install -e ".[dev]"
 	go get github.com/fullstorydev/grpcui

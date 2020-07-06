@@ -1,4 +1,4 @@
-import sys
+import functools
 
 from sklearn.ensemble import RandomForestRegressor
 
@@ -76,7 +76,8 @@ class PickleModel(object):
         return input_datas
 
 
-if __name__ == "__main__":
+@functools.lru_cache()
+def gen_test_bundle(tmpdir):
     # When the ExampleBentoService got saved and loaded again in the test, the two class
     # attribute below got set to the loaded BentoService class. Resetting it here so it
     # does not effect other tests
@@ -94,5 +95,5 @@ if __name__ == "__main__":
     )
     test_svc.pack('sk_model', sklearn_model)
 
-    tmpdir = sys.argv[1]
     save_to_dir(test_svc, tmpdir, silent=True)
+    return tmpdir

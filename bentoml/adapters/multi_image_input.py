@@ -51,12 +51,15 @@ class MultiImageInput(BaseInputAdapter):
 
     Example usage:
 
+    >>> from bentoml import BentoService
+    >>> import bentoml
+    >>>
     >>> class MyService(BentoService):
-    >>> @bentoml.api(input=MultiImageInput(input_names=('imageX', 'imageY')))
-    >>> def predict(self, image_groups):
-    >>>     for image_group in image_groups:
-    >>>         image_array_x = image_group['imageX']
-    >>>         image_array_y = image_group['imageY']
+    >>>     @bentoml.api(input=MultiImageInput(input_names=('imageX', 'imageY')))
+    >>>     def predict(self, image_groups):
+    >>>         for image_group in image_groups:
+    >>>             image_array_x = image_group['imageX']
+    >>>             image_array_y = image_group['imageY']
     """
 
     def __init__(
@@ -67,8 +70,6 @@ class MultiImageInput(BaseInputAdapter):
         is_batch_input=False,
         **base_kwargs,
     ):
-        if is_batch_input:
-            raise ValueError('MultiImageInput can not accept batch inputs')
         super(MultiImageInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )

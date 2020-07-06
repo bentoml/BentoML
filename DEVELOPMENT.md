@@ -167,7 +167,7 @@ $ ./docs/watch.sh
 
 ## How to debug YataiService GRPC server
 
-Instll all dev dependenci:
+Install all dev dependencies:
 ```bash
 $ pip install -e ".[dev]"
 ```

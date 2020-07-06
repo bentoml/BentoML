@@ -1,9 +1,10 @@
 import base64
 import glob
-import pytest
+import io
 import mock
 
 import flask
+import pytest
 
 from bentoml.exceptions import BadInput
 from bentoml.adapters import ImageInput
@@ -80,7 +81,7 @@ def test_image_input_http_request_multipart_form(img_file):
     file_attr = {
         'filename': 'test_img.png',
         'read.return_value': file_bytes,
-        'stream': file_bytes,
+        'stream': io.BytesIO(file_bytes),
     }
     file = mock.Mock(**file_attr)
 
@@ -102,7 +103,7 @@ def test_image_input_http_request_single_image_different_name(img_file):
     file_attr = {
         'filename': 'test_img.png',
         'read.return_value': file_bytes,
-        'stream': file_bytes,
+        'stream': io.BytesIO(file_bytes),
     }
     file = mock.Mock(**file_attr)
 

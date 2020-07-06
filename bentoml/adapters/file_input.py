@@ -19,6 +19,7 @@ from __future__ import print_function
 import os
 import argparse
 import base64
+import contextlib
 from io import BytesIO
 from typing import Iterable
 
@@ -140,18 +141,18 @@ class FileInput(BaseInputAdapter):
         for i in range(0, len(file_paths), batch_size):
             step_file_paths = file_paths[i : i + batch_size]
             input_list = []
-            for file_path in step_file_paths:
-                if not os.path.isabs(file_path):
-                    file_path = os.path.abspath(file_path)
+            with contextlib.ExitStack() as stack:
+                for file_path in step_file_paths:
+                    if not os.path.isabs(file_path):
+                        file_path = os.path.abspath(file_path)
+                    input_list.append(stack.enter_context(open(file_path, 'rb')))
 
-                input_list.append(open(file_path, 'rb').read())
-
-            results = func(input_list)
+                results = func(input_list)
 
             for result in results:
-                return self.output_adapter.to_cli(result, unknown_args)
+                self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
         f = base64.decodebytes(event["body"])
-        result = func((f,))[0]
+        result = func((BytesIO(f),))[0]
         return self.output_adapter.to_aws_lambda_event(result, event)

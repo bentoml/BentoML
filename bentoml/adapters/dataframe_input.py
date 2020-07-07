@@ -152,10 +152,7 @@ class DataframeInput(BaseInputAdapter):
             # Optimistically assuming Content-Type to be "application/json"
             try:
                 df = pd.read_json(
-                    request.get_data(as_text=True),
-                    orient=self.orient,
-                    typ=self.typ,
-                    dtype=False,
+                    request.get_data(as_text=True), orient=self.orient, typ=self.typ,
                 )
             except ValueError:
                 raise BadInput(
@@ -206,7 +203,7 @@ class DataframeInput(BaseInputAdapter):
             if cli_input.endswith(".csv"):
                 df = pd.read_csv(cli_input)
             elif cli_input.endswith(".json"):
-                df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
+                df = pd.read_json(cli_input, orient=orient, typ=self.typ)
             else:
                 raise BadInput(
                     "Input file format not supported, BentoML cli only accepts .json "
@@ -215,7 +212,7 @@ class DataframeInput(BaseInputAdapter):
         else:
             # Assuming input string is JSON format
             try:
-                df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
+                df = pd.read_json(cli_input, orient=orient, typ=self.typ)
             except ValueError as e:
                 raise BadInput(
                     "Unexpected input format, BentoML DataframeInput expects json "
@@ -234,9 +231,7 @@ class DataframeInput(BaseInputAdapter):
         else:
             # Optimistically assuming Content-Type to be "application/json"
             try:
-                df = pd.read_json(
-                    event["body"], orient=self.orient, typ=self.typ, dtype=False
-                )
+                df = pd.read_json(event["body"], orient=self.orient, typ=self.typ)
             except ValueError:
                 raise BadInput(
                     "Failed parsing request data, only Content-Type application/json "

@@ -88,7 +88,7 @@ above
               "cors": "*"
             },
             "outputType": "DefaultOutput",
-            "mbMaxLatency": 300,
+            "mbMaxLatency": 10000,
             "mbMaxBatchSize": 2000
           }
         ]

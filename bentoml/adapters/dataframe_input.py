@@ -152,10 +152,7 @@ class DataframeInput(BaseInputAdapter):
             # Optimistically assuming Content-Type to be "application/json"
             try:
                 df = pd.read_json(
-                    request.get_data(as_text=True),
-                    orient=self.orient,
-                    typ=self.typ,
-                    dtype=False,
+                    request.get_data(as_text=True), orient=self.orient, typ=self.typ,
                 )
             except ValueError:
                 raise BadInput(
@@ -234,9 +231,7 @@ class DataframeInput(BaseInputAdapter):
         else:
             # Optimistically assuming Content-Type to be "application/json"
             try:
-                df = pd.read_json(
-                    event["body"], orient=self.orient, typ=self.typ, dtype=False
-                )
+                df = pd.read_json(event["body"], orient=self.orient, typ=self.typ)
             except ValueError:
                 raise BadInput(
                     "Failed parsing request data, only Content-Type application/json "

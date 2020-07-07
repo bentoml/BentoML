@@ -2,6 +2,8 @@ import pickle
 from functools import lru_cache
 from typing import NamedTuple, Iterable
 
+from multidict import CIMultiDict
+
 from bentoml import config as bentoml_config
 
 BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")
@@ -18,12 +20,20 @@ class SimpleRequest(NamedTuple):
 
     @property
     @lru_cache()
-    def formated_headers(self):
-        return {hk.decode().lower(): hv.decode() for hk, hv in self.headers or tuple()}
+    def parsed_headers(self):
+        return CIMultiDict(
+            (hk.decode("latin1").lower(), hv.decode("latin1"))
+            for hk, hv in self.headers or tuple()
+        )
 
     @classmethod
     def from_flask_request(cls, request):
-        return cls(tuple(request.headers), request.get_data())
+        # For non latin1 characters: https://tools.ietf.org/html/rfc8187
+        # Also https://github.com/benoitc/gunicorn/issues/1778
+        return cls(
+            tuple((k.encode("latin1"), v.encode("latin1")) for k, v in request.headers),
+            request.get_data(),
+        )
 
 
 class SimpleResponse(NamedTuple):

@@ -117,7 +117,7 @@ def test_dataframe_handle_request_csv():
     input_adapter = DataframeInput()
     csv_data = 'name,game,city\njohn,mario,sf'
     request = MagicMock(spec=flask.Request)
-    request.headers = {'orient': 'records'}
+    request.headers = (('orient', 'records'),)
     request.content_type = 'text/csv'
     request.get_data.return_value = csv_data
 
@@ -142,16 +142,6 @@ def assert_df_equal(left: pd.DataFrame, right: pd.DataFrame):
         )
 
 
-DF_ORIENTS = {
-    'split',
-    'records',
-    'index',
-    'columns',
-    'values',
-    # 'table',  # TODO(bojiang)
-}
-
-
 DF_CASES = (
     pd.DataFrame(np.random.rand(1, 3)),
     pd.DataFrame(np.random.rand(2, 3)),
@@ -171,7 +161,7 @@ def df(request):
     return request.param
 
 
-@pytest.fixture(params=DF_ORIENTS)
+@pytest.fixture(params=pytest.DF_ORIENTS)
 def orient(request):
     return request.param
 
@@ -181,7 +171,7 @@ def test_batch_read_dataframes_from_mixed_json_n_csv(df):
     test_types = []
 
     # test content_type=application/json with various orients
-    for orient in DF_ORIENTS:
+    for orient in pytest.DF_ORIENTS:
         try:
             assert_df_equal(df, pd.read_json(df.to_json(orient=orient)))
         except (AssertionError, ValueError):

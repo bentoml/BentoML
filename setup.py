@@ -47,6 +47,7 @@ install_requires = [
     "sqlalchemy>=1.3.0",
     "tabulate",
     'contextvars;python_version < "3.7"',
+    "multidict",
 ]
 
 aws_sam_cli = ["aws-sam-cli==0.33.1"]
@@ -64,7 +65,8 @@ test_requires = [
     "pandas",
     "pylint>=2.5.2",
     "pytest-cov>=2.7.1",
-    "pytest>=4.6.0",
+    "pytest>=5.4.0",
+    "pytest-asyncio",
     "scikit-learn",
     "protobuf==3.6.0",
 ] + aws_sam_cli

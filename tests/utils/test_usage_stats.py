@@ -57,7 +57,8 @@ def test_get_bento_service_event_properties(bento_service):
     assert 'ImageInput' in properties["input_types"]
     assert 'LegacyImageInput' in properties["input_types"]
     assert 'JsonInput' in properties["input_types"]
-    assert len(properties["input_types"]) == 4
+    assert 'LegacyJsonInput' in properties["input_types"]
+    assert len(properties["input_types"]) == 5
 
     # Disabling fastai related tests to fix travis build
     # assert 'FastaiImageInput' in properties["input_types"]

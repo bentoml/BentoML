@@ -1,12 +1,12 @@
 import pytest
 
-from bentoml.adapters import JsonInput
+from bentoml.adapters import LegacyJsonInput as JsonInput
 from bentoml.exceptions import BadInput
 
 
 def test_json_handle_cli(capsys, tmpdir):
-    def test_func(objs):
-        return [obj["name"] for obj in objs]
+    def test_func(obj):
+        return obj["name"]
 
     input_adapter = JsonInput()
 
@@ -23,8 +23,8 @@ def test_json_handle_cli(capsys, tmpdir):
 def test_json_handle_aws_lambda_event():
     test_content = '{"name": "john","game": "mario","city": "sf"}'
 
-    def test_func(objs):
-        return [obj["name"] for obj in objs]
+    def test_func(obj):
+        return obj["name"]
 
     input_adapter = JsonInput()
     success_event_obj = {

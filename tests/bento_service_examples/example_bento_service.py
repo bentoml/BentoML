@@ -4,6 +4,7 @@ from bentoml.adapters import (
     ImageInput,
     LegacyImageInput,
     JsonInput,
+    LegacyJsonInput,
     # FastaiImageInput,
 )
 from bentoml.handlers import DataframeHandler  # deprecated
@@ -46,6 +47,10 @@ class ExampleBentoService(bentoml.BentoService):
     @bentoml.api(input=JsonInput())
     def predict_json(self, input_data):
         return self.artifacts.model.predict_json(input_data)
+
+    @bentoml.api(input=LegacyJsonInput())
+    def predict_legacy_json(self, input_data):
+        return self.artifacts.model.predict_legacy_json(input_data)
 
     # Disabling fastai related tests to fix travis build
     # @bentoml.api(input=FastaiImageInput())

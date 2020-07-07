@@ -206,7 +206,7 @@ class DataframeInput(BaseInputAdapter):
             if cli_input.endswith(".csv"):
                 df = pd.read_csv(cli_input)
             elif cli_input.endswith(".json"):
-                df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
+                df = pd.read_json(cli_input, orient=orient, typ=self.typ)
             else:
                 raise BadInput(
                     "Input file format not supported, BentoML cli only accepts .json "
@@ -215,7 +215,7 @@ class DataframeInput(BaseInputAdapter):
         else:
             # Assuming input string is JSON format
             try:
-                df = pd.read_json(cli_input, orient=orient, typ=self.typ, dtype=False)
+                df = pd.read_json(cli_input, orient=orient, typ=self.typ)
             except ValueError as e:
                 raise BadInput(
                     "Unexpected input format, BentoML DataframeInput expects json "

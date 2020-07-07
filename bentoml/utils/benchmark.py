@@ -246,9 +246,9 @@ class BenchmarkClient:
     Example usage
     =========
 
-    In a session of one minute, 100 users keep sending POST request with 
+    In a session of one minute, 100 users keep sending POST request with
     one seconds interval:
-   
+
     ``` test.py
     def test_case_producer():
         return ('http://localhost:5000',

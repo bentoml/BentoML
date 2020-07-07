@@ -10,6 +10,9 @@ python:
   - 3.7
   - 3.8
 
+services:
+  - docker
+
 install:
   - "python -m pip install --upgrade pip"
   - "pip install ."
@@ -40,6 +43,11 @@ matrix:
       python: "3.6"
       script:
         - ./travis/pytorch_integration_tests.sh
+
+    - name: "API Server Integration Tests"
+      python: "3.7"
+      script:
+        - ./travis/integration_tests.sh
 
 script:
   - ./travis/unit_tests.sh

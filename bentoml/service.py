@@ -66,7 +66,7 @@ class BentoServiceAPI(object):
         :param func: API func contains the actual API callback, this is
             typically the 'predict' method on a model
         :param mb_max_latency: The latency goal of your service in milliseconds.
-            Default: 300.
+            Default: 10000.
         :param mb_max_batch_size: The maximum size of any batch. This parameter
             governs the throughput/latency tradeoff, and also avoids having
             batches that are so large they exceed some resource constraint (e.g.

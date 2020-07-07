@@ -33,7 +33,7 @@ preprocessing procedure will also benefit from micro-batching.
    batches that are so large they exceed some resource constraint (e.g.
    GPU memory to hold a batch's data). Default: 1000.
 -  ``mb_max_latency`` The latency goal of your service in milliseconds.
-   Default: 300.
+   Default: 10000.
 -  **outbound semaphore:** The semaphore represents the degree of
    parallelism, i.e. the maximum number of batches processed
    concurrently. **It is set automatically** when launching the bento
@@ -95,11 +95,11 @@ latency. It will respond to the fluctuations of server loading.
 
     class MovieReviewService(bentoml.BentoService):
         @bentoml.api(input=DataframeInput(),
-                     mb_max_latency=300, mb_max_batch_size=1000)
+                     mb_max_latency=10000, mb_max_batch_size=1000)
         def predict(self, inputs):
                     pass
 
-``mb_max_batch_size`` is 1000 by default and ``mb_max_latency`` is 300
+``mb_max_batch_size`` is 1000 by default and ``mb_max_latency`` is 10000
 by default.
 
 -  If the RAM of GPU only allowed input with 100 batch size, then you

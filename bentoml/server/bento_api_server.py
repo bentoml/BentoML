@@ -15,13 +15,13 @@
 import os
 import sys
 import uuid
-import json
 import time
 import logging
 from functools import partial
 
 from flask import Flask, jsonify, Response, request, make_response
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import BadRequest
 
 from bentoml import config
 from bentoml.configuration import get_debug_mode
@@ -133,32 +133,26 @@ class BentoAPIServer:
     def metrics_view_func(self):
         from prometheus_client import generate_latest
 
-        return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+        return generate_latest()
 
     @staticmethod
     def feedback_view_func(bento_service):
         """
-        User send feedback along with the request Id. It will be stored and
+        User send feedback along with the request_id. It will be stored is feedback logs
         ready for further process.
         """
-        if request.content_type != "application/json":
-            return Response(
-                response="Incorrect content format, require JSON", status=400
-            )
+        data = request.get_json()
 
-        data = json.loads(request.get_data().decode("utf-8"))
+        if not data:
+            raise BadRequest("Failed parsing feedback JSON data")
 
-        if "request_id" not in data.keys():
-            return Response(response="Missing request id", status=400)
-
-        if len(data.keys()) <= 1:
-            return Response(response="Missing feedback data", status=400)
+        if "request_id" not in data:
+            raise BadRequest("Missing 'request_id' in feedback JSON data")
 
         data["service_name"] = bento_service.name
         data["service_version"] = bento_service.version
-
         feedback_logger.info(data)
-        return Response(response="success", status=200)
+        return "success"
 
     def setup_routes(self):
         """

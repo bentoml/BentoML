@@ -6,7 +6,7 @@ import mock
 from click.testing import CliRunner
 import psutil  # noqa # pylint: disable=unused-import
 
-from bentoml.cli import create_bento_service_cli
+from bentoml.cli.bento_service import create_bento_service_cli
 
 
 def generate_test_input_file():

@@ -114,22 +114,6 @@ def _echo_docker_api_result(docker_generator):
             raise BentoMLException(error["message"])
 
 
-def make_bento_name_docker_compatible(name, tag):
-    """
-    Name components may contain lowercase letters, digits and separators.
-    A separator is defined as a period, one or two underscores, or one or more dashes.
-
-    A tag name must be valid ASCII and may contain lowercase and uppercase letters,
-    digits, underscores, periods and dashes. A tag name may not start with a period
-    or a dash and may contain a maximum of 128 characters.
-
-    https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    """
-    name = name.lower().strip("._-")
-    tag = tag.lstrip(".-")[:128]
-    return name, tag
-
-
 def _print_deployment_info(deployment, output_type):
     if output_type == 'yaml':
         _echo(pb_to_yaml(deployment))

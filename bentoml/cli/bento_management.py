@@ -27,7 +27,6 @@ from bentoml.cli.click_utils import (
 from bentoml.cli.utils import (
     humanfriendly_age_from_datetime,
     _echo_docker_api_result,
-    make_bento_name_docker_compatible,
     Spinner,
 )
 from bentoml.yatai.proto import status_pb2
@@ -258,6 +257,7 @@ def add_bento_sub_command(cli):
         '--tag',
         help="Optional image tag. If not specified, Bento will generate one from "
         "the name of the Bento.",
+        required=False,
     )
     @click.option(
         '-u', '--username', type=click.STRING, required=False,
@@ -279,6 +279,8 @@ def add_bento_sub_command(cli):
         which will push the built image to the Docker repository specified by the
         image tag.
 
+        You can also prefixing the tag with a hostname for the repository you wish
+        to push to.
         e.g. `bentoml containerize IrisClassifier:latest --push --tag username/iris`
         would build a Docker image called `username/iris:latest` and push that to
         Docker Hub.
@@ -286,6 +288,7 @@ def add_bento_sub_command(cli):
         By default, the `containerize` command will use the credentials provided by
         Docker. You may provide your own through `--username` and `--password`.
         """
+
         name, version = bento.split(':')
         yatai_client = YataiClient()
 
@@ -334,9 +337,6 @@ def add_bento_sub_command(cli):
         )
 
         if push:
-            if not docker_repository:
-                raise CLIException('Docker Registry must be specified when pushing.')
-
             auth_config_payload = (
                 {"username": username, "password": password}
                 if username or password

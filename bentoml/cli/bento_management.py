@@ -13,27 +13,19 @@
 # limitations under the License.
 import click
 import os
-import docker
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import (
-    CLI_COLOR_WARNING,
-    CLI_COLOR_SUCCESS,
     _echo,
-    parse_bento_tag_callback,
     parse_bento_tag_list_callback,
 )
-from bentoml.cli.utils import (
-    humanfriendly_age_from_datetime,
-    _echo_docker_api_result,
-    Spinner,
-)
+from bentoml.cli.utils import humanfriendly_age_from_datetime
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.yatai.client import YataiClient
 from bentoml.saved_bundle import safe_retrieve
-from bentoml.exceptions import CLIException, BentoMLException
+from bentoml.exceptions import CLIException
 
 
 def _print_bento_info(bento, output_type):
@@ -244,118 +236,3 @@ def add_bento_sub_command(cli):
         safe_retrieve(bento_service_bundle_path, target_dir)
 
         click.echo('Service %s artifact directory => %s' % (name, target_dir))
-
-    @cli.command(
-        help='Containerizes given Bento into a ready-to-use Docker image.',
-        short_help="Containerizes given Bento into a ready-to-use Docker image",
-    )
-    @click.argument(
-        "bento", type=click.STRING, callback=parse_bento_tag_callback,
-    )
-    @click.option('--push', is_flag=True)
-    @click.option(
-        '--tag',
-        help="Optional image tag. If not specified, Bento will generate one from "
-        "the name of the Bento.",
-        required=False,
-    )
-    @click.option(
-        '-u', '--username', type=click.STRING, required=False,
-    )
-    @click.option(
-        '-p', '--password', type=click.STRING, required=False,
-    )
-    def containerize(bento, push, tag, username, password):
-        """Containerize specified BentoService.
-
-        BENTO is the target BentoService to be containerized, referenced by its name
-        and version in format of name:version. For example: "iris_classifier:v1.2.0"
-
-        `bentoml containerize` command also supports the use of the `latest` tag
-        which will automatically use the last built version of your Bento.
-
-        You can provide a tag for the image built by Bento using the
-        `--docker-image-tag` flag. Additionally, you can provide a `--push` flag, 
-        which will push the built image to the Docker repository specified by the
-        image tag.
-
-        You can also prefixing the tag with a hostname for the repository you wish
-        to push to.
-        e.g. `bentoml containerize IrisClassifier:latest --push --tag username/iris`
-        would build a Docker image called `username/iris:latest` and push that to
-        Docker Hub.
-
-        By default, the `containerize` command will use the credentials provided by
-        Docker. You may provide your own through `--username` and `--password`.
-        """
-
-        name, version = bento.split(':')
-        yatai_client = YataiClient()
-
-        get_bento_result = yatai_client.repository.get(name, version)
-        if get_bento_result.status.status_code != status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                get_bento_result.status
-            )
-            raise CLIException(
-                f'Failed to access BentoService {name}:{version} - '
-                f'{error_code}:{error_message}',
-            )
-
-        if get_bento_result.bento.uri.s3_presigned_url:
-            bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
-        else:
-            bento_service_bundle_path = get_bento_result.bento.uri.uri
-
-        _echo(f"Found Bento: {bento_service_bundle_path}")
-
-        if docker_repository is not None:
-            name = f'{docker_repository}/{name}'
-
-        name, version = make_bento_name_docker_compatible(name, version)
-        tag = f"{name}:{version}"
-        if tag != bento:
-            _echo(
-                f'Bento name or tag was changed to be Docker compatible. \n'
-                f'"{bento}" -> "{tag}"',
-                CLI_COLOR_WARNING,
-            )
-
-        docker_api = docker.APIClient()
-        try:
-            with Spinner(f"Building Docker image: {name}\n"):
-                _echo_docker_api_result(
-                    docker_api.build(
-                        path=bento_service_bundle_path, tag=tag, decode=True,
-                    )
-                )
-        except docker.errors.APIError as error:
-            raise CLIException(f'Could not build Docker image: {error}')
-
-        _echo(
-            f'Finished building {tag} from {bento}', CLI_COLOR_SUCCESS,
-        )
-
-        if push:
-            auth_config_payload = (
-                {"username": username, "password": password}
-                if username or password
-                else None
-            )
-
-            try:
-                with Spinner(f"Pushing docker image to {tag}\n"):
-                    _echo_docker_api_result(
-                        docker_api.push(
-                            repository=name,
-                            tag=version,
-                            stream=True,
-                            decode=True,
-                            auth_config=auth_config_payload,
-                        )
-                    )
-                _echo(
-                    f'Pushed {tag} to {name}', CLI_COLOR_SUCCESS,
-                )
-            except (docker.errors.APIError, BentoMLException) as error:
-                raise CLIException(f'Could not push Docker image: {error}')

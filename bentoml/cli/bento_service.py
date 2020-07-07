@@ -1,3 +1,92 @@
+import docker
+import click
+import os
+import json
+import re
+import multiprocessing
+import tempfile
+import subprocess
+import psutil
+
+from pathlib import Path
+from bentoml.utils.s3 import is_s3_url
+from bentoml.server import BentoAPIServer
+from bentoml.yatai.client import YataiClient
+from bentoml.yatai.proto import status_pb2
+from bentoml.exceptions import BentoMLException, CLIException
+from ruamel.yaml import YAML
+from bentoml.server.utils import get_gunicorn_num_of_workers
+from bentoml.server.open_api import get_open_api_spec_json
+from bentoml.marshal import MarshalService
+from bentoml.utils import (
+    ProtoMessageToDict,
+    reserve_free_port,
+    status_pb_to_error_code_and_message
+)
+from bentoml.cli.click_utils import (
+    CLI_COLOR_WARNING,
+    CLI_COLOR_SUCCESS,
+    _echo,
+    parse_bento_tag_callback,
+    BentoMLCommandGroup,
+    conditional_argument,
+)
+from bentoml.cli.utils import (
+    _echo_docker_api_result,
+    Spinner,
+)
+from bentoml.saved_bundle import (
+    load,
+    load_bento_service_api,
+    load_bento_service_metadata,
+    load_saved_bundle_config,
+)
+try:
+    import click_completion
+
+    click_completion.init()
+    shell_types = click_completion.DocumentedChoice(click_completion.core.shells)
+except ImportError:
+    # click_completion package is optional to use BentoML cli,
+    click_completion = None
+    shell_types = click.Choice(['bash', 'zsh', 'fish', 'powershell'])
+
+
+def escape_shell_params(param):
+    k, v = param.split('=')
+    v = re.sub(r'([^a-zA-Z0-9])', r'\\\1', v)
+    return '{}={}'.format(k, v)
+
+
+def run_with_conda_env(bundle_path, command):
+    config = load_saved_bundle_config(bundle_path)
+    metadata = config['metadata']
+    env_name = metadata['service_name'] + '_' + metadata['service_version']
+
+    yaml = YAML()
+    yaml.default_flow_style = False
+    tmpf = tempfile.NamedTemporaryFile(delete=False)
+    env_path = tmpf.name + '.yaml'
+    yaml.dump(config['env']['conda_env'], Path(env_path))
+
+    pip_req = os.path.join(bundle_path, 'requirements.txt')
+
+    subprocess.call(
+        'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
+        'parameter requires conda but it\'s not installed."; exit 1; }} && '
+        'conda env update -n {env_name} -f {env_file} && '
+        'conda init bash && '
+        'eval "$(conda shell.bash hook)" && '
+        'conda activate {env_name} && '
+        '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
+        'dependencies."; }} && {cmd}'.format(
+            env_name=env_name, env_file=env_path, pip_req=pip_req, cmd=command,
+        ),
+        shell=True,
+    )
+    return
+
+
 def make_bento_name_docker_compatible(name, tag):
     """
     Name components may contain lowercase letters, digits and separators.
@@ -12,6 +101,7 @@ def make_bento_name_docker_compatible(name, tag):
     name = name.lower().strip("._-")
     tag = tag.lstrip(".-")[:128]
     return name, tag
+
 
 def resolve_bundle_path(bento, pip_installed_bundle_path):
     if pip_installed_bundle_path:
@@ -48,6 +138,7 @@ def resolve_bundle_path(bento, pip_installed_bundle_path):
             f'the BentoService saved bundle, or the BentoService id in the form of '
             f'"name:version"'
         )
+
 
 def create_bento_service_cli(pip_installed_bundle_path=None):
     # pylint: disable=unused-variable
@@ -326,6 +417,121 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 "'click_completion' is required for BentoML auto-completion, "
                 "install it with `pip install click_completion`"
             )
+
+    @bentoml_cli.command(
+        help='Containerizes given Bento into a ready-to-use Docker image.',
+        short_help="Containerizes given Bento into a ready-to-use Docker image",
+    )
+    @click.argument(
+        "bento", type=click.STRING, callback=parse_bento_tag_callback,
+    )
+    @click.option('--push', is_flag=True)
+    @click.option(
+        '--tag',
+        help="Optional image tag. If not specified, Bento will generate one from "
+        "the name of the Bento.",
+        required=False,
+    )
+    @click.option(
+        '-u', '--username', type=click.STRING, required=False,
+    )
+    @click.option(
+        '-p', '--password', type=click.STRING, required=False,
+    )
+    def containerize(bento, push, tag, username, password):
+        """Containerize specified BentoService.
+
+        BENTO is the target BentoService to be containerized, referenced by its name
+        and version in format of name:version. For example: "iris_classifier:v1.2.0"
+
+        `bentoml containerize` command also supports the use of the `latest` tag
+        which will automatically use the last built version of your Bento.
+
+        You can provide a tag for the image built by Bento using the
+        `--docker-image-tag` flag. Additionally, you can provide a `--push` flag,
+        which will push the built image to the Docker repository specified by the
+        image tag.
+
+        You can also prefixing the tag with a hostname for the repository you wish
+        to push to.
+        e.g. `bentoml containerize IrisClassifier:latest --push --tag username/iris`
+        would build a Docker image called `username/iris:latest` and push that to
+        Docker Hub.
+
+        By default, the `containerize` command will use the credentials provided by
+        Docker. You may provide your own through `--username` and `--password`.
+        """
+
+        name, version = bento.split(':')
+        yatai_client = YataiClient()
+
+        get_bento_result = yatai_client.repository.get(name, version)
+        if get_bento_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_bento_result.status
+            )
+            raise CLIException(
+                f'Failed to access BentoService {name}:{version} - '
+                f'{error_code}:{error_message}',
+            )
+
+        if get_bento_result.bento.uri.s3_presigned_url:
+            bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
+        else:
+            bento_service_bundle_path = get_bento_result.bento.uri.uri
+
+        _echo(f"Found Bento: {bento_service_bundle_path}")
+
+        if docker_repository is not None:
+            name = f'{docker_repository}/{name}'
+
+        name, version = make_bento_name_docker_compatible(name, version)
+        tag = f"{name}:{version}"
+        if tag != bento:
+            _echo(
+                f'Bento name or tag was changed to be Docker compatible. \n'
+                f'"{bento}" -> "{tag}"',
+                CLI_COLOR_WARNING,
+            )
+
+        docker_api = docker.APIClient()
+        try:
+            with Spinner(f"Building Docker image: {name}\n"):
+                _echo_docker_api_result(
+                    docker_api.build(
+                        path=bento_service_bundle_path, tag=tag, decode=True,
+                    )
+                )
+        except docker.errors.APIError as error:
+            raise CLIException(f'Could not build Docker image: {error}')
+
+        _echo(
+            f'Finished building {tag} from {bento}', CLI_COLOR_SUCCESS,
+        )
+
+        if push:
+            auth_config_payload = (
+                {"username": username, "password": password}
+                if username or password
+                else None
+            )
+
+            try:
+                with Spinner(f"Pushing docker image to {tag}\n"):
+                    _echo_docker_api_result(
+                        docker_api.push(
+                            repository=name,
+                            tag=version,
+                            stream=True,
+                            decode=True,
+                            auth_config=auth_config_payload,
+                        )
+                    )
+                _echo(
+                    f'Pushed {tag} to {name}', CLI_COLOR_SUCCESS,
+                )
+            except (docker.errors.APIError, BentoMLException) as error:
+                raise CLIException(f'Could not push Docker image: {error}')
 
     # pylint: enable=unused-variable
     return bentoml_cli

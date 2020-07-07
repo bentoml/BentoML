@@ -233,7 +233,7 @@ def add_bento_sub_command(cli):
                 get_bento_result.status
             )
             raise CLIException(
-                f'BentoService {name}:{version} not found - '
+                f'Failed to access BentoService {name}:{version} - '
                 f'{error_code}:{error_message}'
             )
 
@@ -255,8 +255,9 @@ def add_bento_sub_command(cli):
     )
     @click.option('--push', is_flag=True)
     @click.option(
-        '--docker-repository',
-        help="Prepends specified Docker repository to image name.",
+        '--tag',
+        help="Optional image tag. If not specified, Bento will generate one from "
+        "the name of the Bento.",
     )
     @click.option(
         '-u', '--username', type=click.STRING, required=False,
@@ -264,22 +265,26 @@ def add_bento_sub_command(cli):
     @click.option(
         '-p', '--password', type=click.STRING, required=False,
     )
-    def containerize(bento, push, docker_repository, username, password):
+    def containerize(bento, push, tag, username, password):
         """Containerize specified BentoService.
 
         BENTO is the target BentoService to be containerized, referenced by its name
         and version in format of name:version. For example: "iris_classifier:v1.2.0"
 
         `bentoml containerize` command also supports the use of the `latest` tag
-        and will automatically use the last built version of your Bento.
+        which will automatically use the last built version of your Bento.
 
-        You can also optionally provide a `--push` flag, which will push the built
-        image to the Docker repository specified by the `--docker-repository`.
+        You can provide a tag for the image built by Bento using the
+        `--docker-image-tag` flag. Additionally, you can provide a `--push` flag, 
+        which will push the built image to the Docker repository specified by the
+        image tag.
 
-        If you would like to push to Docker Hub, `--docker-repository` can just be
-        your Docker Hub username. Otherwise, the tag should include the hostname as
-        well. For example, for Google Container Registry, the `--docker-repository`
-        would be `[HOSTNAME]/[PROJECT-ID]`
+        e.g. `bentoml containerize IrisClassifier:latest --push --tag username/iris`
+        would build a Docker image called `username/iris:latest` and push that to
+        Docker Hub.
+
+        By default, the `containerize` command will use the credentials provided by
+        Docker. You may provide your own through `--username` and `--password`.
         """
         name, version = bento.split(':')
         yatai_client = YataiClient()
@@ -290,7 +295,7 @@ def add_bento_sub_command(cli):
                 get_bento_result.status
             )
             raise CLIException(
-                f'BentoService {name}:{version} not found - '
+                f'Failed to access BentoService {name}:{version} - '
                 f'{error_code}:{error_message}',
             )
 

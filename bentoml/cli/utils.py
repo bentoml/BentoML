@@ -111,7 +111,7 @@ def _echo_docker_api_result(docker_generator):
             _echo(f"Pushed {cur} / {total}")
         if "errorDetail" in line:
             error = line["errorDetail"]
-            raise BentoMLException(f'Could not push Docker image: {error["message"]}')
+            raise BentoMLException(error["message"])
 
 
 def make_bento_name_docker_compatible(name, tag):

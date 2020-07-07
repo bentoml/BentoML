@@ -149,6 +149,7 @@ class LegacyImageInput(BaseInputAdapter):
         Return:
             response object
         """
+
         if len(self.input_names) == 1 and len(request.files) == 1:
             # Ignore multipart form input name when LegacyImageInput is intended
             # to accept only one image file at a time

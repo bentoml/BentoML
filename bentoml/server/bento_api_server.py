@@ -86,7 +86,7 @@ class BentoAPIServer:
         self.bento_service = bento_service
         self.app = Flask(app_name, static_folder=None)
 
-        self.static_path = self.bento_service.get_web_static_content_path
+        self.static_path = self.bento_service.get_web_static_content_path()
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'swagger_static'
@@ -201,16 +201,22 @@ class BentoAPIServer:
         /predict
         """
         if self.static_path:
+            # serve static files for any given path
+            # this will also serve index.html from directory /any_path/
+            # for path as /any_path/
             self.app.add_url_rule(
                 "/<path:file_path>",
                 "static_proxy",
                 partial(self.static_serve, self.static_path),
             )
+            # serve index.html from the directory /any_path
+            # for path as /any_path/index
             self.app.add_url_rule(
                 "/<path:file_path>/index",
                 "static_proxy2",
                 partial(self.static_serve, self.static_path),
             )
+            # serve index.html from root directory for path as /
             self.app.add_url_rule(
                 "/", "index", partial(self.index_view_func, self.static_path)
             )

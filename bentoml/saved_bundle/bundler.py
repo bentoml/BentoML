@@ -142,12 +142,19 @@ def save_to_dir(bento_service, path, version=None, silent=False):
             )
         )
 
-    # copy custom webui if enabled
+    # copy custom web_static_content if enabled
     if bento_service.web_static_content:
-        src_webui_dir = os.path.join(os.getcwd(), bento_service.web_static_content)
-        dest_webui_dir = os.path.join(module_base_path, 'web_static_content')
-        # os.mkdir(dest_webui_dir)
-        shutil.copytree(src_webui_dir, dest_webui_dir)
+        src_web_static_content_dir = os.path.join(
+            os.getcwd(), bento_service.web_static_content
+        )
+        if not os.path.isdir(src_web_static_content_dir):
+            raise BentoMLException(
+                f'web_static_content directory {src_web_static_content_dir} not found'
+            )
+        dest_web_static_content_dir = os.path.join(
+            module_base_path, 'web_static_content'
+        )
+        shutil.copytree(src_web_static_content_dir, dest_web_static_content_dir)
 
     # Copy docker-entrypoint.sh
     docker_entrypoint_sh_file_src = os.path.join(

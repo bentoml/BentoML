@@ -299,13 +299,13 @@ def api_decorator(
     return decorator
 
 
-def webui_decorator(web_static_content):
+def web_static_content_decorator(web_static_content):
     """Define web UI static files required to be bundled with a BentoService
 
     Args:
         web_static_content: path to directory containg index.html and static dir
 
-    >>>  @webui('./ui/')
+    >>>  @web_static_content('./ui/')
     >>>  class MyMLService(BentoService):
     >>>     pass
     """
@@ -533,7 +533,7 @@ class BentoService(BentoServiceBase):
     _version_major = None
     _version_minor = None
 
-    # See `webui` function above for more
+    # See `web_static_content` function above for more
     _web_static_content = None
 
     def __init__(self):
@@ -578,16 +578,15 @@ class BentoService(BentoServiceBase):
     def web_static_content(self):
         return self._web_static_content
 
-    @property
     def get_web_static_content_path(self):
-        if self._bento_service_bundle_path and self.name:
+        if not self.web_static_content:
+            return None
+        if self._bento_service_bundle_path:
             return os.path.join(
                 self._bento_service_bundle_path, self.name, 'web_static_content',
             )
-        elif self.web_static_content:
-            return os.path.join(os.getcwd(), self.web_static_content)
         else:
-            return None
+            return os.path.join(os.getcwd(), self.web_static_content)
 
     @hybridmethod
     @property

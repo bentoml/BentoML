@@ -60,6 +60,17 @@ class MultiImageInput(BaseInputAdapter):
     >>>         for image_group in image_groups:
     >>>             image_array_x = image_group['imageX']
     >>>             image_array_y = image_group['imageY']
+
+    The endpoint could then be used with an HTML form that sends multipart data, like
+    the example below
+
+
+    >>> <form action="http://localhost:8000" method="POST"
+     enctype="multipart/form-data">
+	>>>		<input name="imageX" type="file">
+	>>>		<input name="imageY" type="file">
+	>>>		<input type="submit">
+	>>>	</form>
     """
 
     def __init__(

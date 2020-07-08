@@ -25,7 +25,9 @@ def generate_multipart_body(image_file):
                 bytes(
                     'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(
                         name.replace('"', '\\"'), filename.replace('"', '\\"')
-                    ), 'utf8'),
+                    ),
+                    'utf8',
+                ),
                 bytes('Content-Type: {0}'.format(mime_type), 'utf8'),
                 b'',
                 value['content'],
@@ -92,10 +94,7 @@ def test_multi_image_aws_event(img_file):
     adapter = MultiImageInput(("imageX", "imageY"), is_batch_input=True)
 
     multipart_data, headers = generate_multipart_body(img_file)
-    aws_lambda_event = {
-        "body": multipart_data,
-        "headers": headers
-    }
+    aws_lambda_event = {"body": multipart_data, "headers": headers}
 
     aws_result = adapter.handle_aws_lambda_event(aws_lambda_event, predict)
     assert aws_result["statusCode"] == 200

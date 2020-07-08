@@ -24,8 +24,8 @@ def test_multi_image_input_request():
     request = Request.from_values(
         data=multipart_data,
         content_type="multipart/form-data; boundary"
-                     "=---------------------------309036539235529840702074443043",
-        content_length=len(multipart_data)
+        "=---------------------------309036539235529840702074443043",
+        content_length=len(multipart_data),
     )
 
     response = adapter.handle_request(request, predict)
@@ -37,14 +37,34 @@ def test_multi_image_batch_input():
     adapter = MultiImageInput(("imageX", "imageY"), is_batch_input=True)
 
     multipart_data = open("tests/multipart", 'rb').read()
-    request = SimpleRequest.from_flask_request(Request.from_values(
-        data=multipart_data,
-        content_type="multipart/form-data; boundary"
-                     "=---------------------------309036539235529840702074443043",
-        content_length=len(multipart_data)
-    ))
+    request = SimpleRequest.from_flask_request(
+        Request.from_values(
+            data=multipart_data,
+            content_type="multipart/form-data; boundary"
+            "=---------------------------309036539235529840702074443043",
+            content_length=len(multipart_data),
+        )
+    )
 
     responses = adapter.handle_batch_request([request] * 5, predict)
     for response in responses:
         assert response.status == 200
         assert response.data == '[[779, 935, 3], [779, 935, 3]]'
+
+
+def test_multi_image_aws_event():
+    adapter = MultiImageInput(("imageX", "imageY"), is_batch_input=True)
+
+    multipart_data = open("tests/multipart", 'rb').read()
+    aws_lambda_event = {
+        "body": multipart_data,
+        "headers": {
+            "Content-Type": "multipart/form-data; boundary"
+            "=---------------------------3090365392355298407"
+            "02074443043"
+        },
+    }
+
+    aws_result = adapter.handle_aws_lambda_event(aws_lambda_event, predict)
+    assert aws_result["statusCode"] == 200
+    assert aws_result["body"] == '[[779, 935, 3], [779, 935, 3]]'

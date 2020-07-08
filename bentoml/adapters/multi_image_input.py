@@ -63,12 +63,12 @@ class MultiImageInput(BaseInputAdapter):
     """
 
     def __init__(
-            self,
-            input_names=("image",),
-            accepted_image_formats=None,
-            pilmode="RGB",
-            is_batch_input=False,
-            **base_kwargs,
+        self,
+        input_names=("image",),
+        accepted_image_formats=None,
+        pilmode="RGB",
+        is_batch_input=False,
+        **base_kwargs,
     ):
         super(MultiImageInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
@@ -76,7 +76,7 @@ class MultiImageInput(BaseInputAdapter):
         self.input_names = input_names
         self.pilmode = pilmode
         self.accepted_image_formats = (
-                accepted_image_formats or get_default_accept_image_formats()
+            accepted_image_formats or get_default_accept_image_formats()
         )
 
     def handle_request(self, request: Request, func):
@@ -93,13 +93,14 @@ class MultiImageInput(BaseInputAdapter):
         return imread(file, pilmode=self.pilmode)
 
     def handle_batch_request(
-            self, requests: Iterable[SimpleRequest], func
+        self, requests: Iterable[SimpleRequest], func
     ) -> Iterable[SimpleResponse]:
         inputs = []
         slices = []
         for i, req in enumerate(requests):
             content_type = next(
-                header[1] for header in req.headers if header[0] == b"Content-Type")
+                header[1] for header in req.headers if header[0] == b"Content-Type"
+            )
 
             if b"multipart/form-data" not in content_type:
                 slices.append(None)
@@ -125,7 +126,7 @@ class MultiImageInput(BaseInputAdapter):
         """
         parser = argparse.ArgumentParser()
         for input_name in self.input_names:
-            parser.add_argument('--' + input_name)
+            parser.add_argument('--' + input_name, required=True)
         args, unknown_args = parser.parse_known_args(args)
         args = vars(args)
         files = {
@@ -144,14 +145,15 @@ class MultiImageInput(BaseInputAdapter):
         :param event: AWS lambda event data of the python `dict` type
         :param func: user API function
         """
-        content_type = event.headers['Content-Type']
+        content_type = event['headers']['Content-Type']
         if "multipart/form-data" in content_type:
             files = {}
 
             request = Request.from_values(
-                data=event.body, content_type=content_type, headers=event.headers
+                data=event['body'], content_type=content_type, headers=event['headers']
             )
-            for name, file in request.files:
+            for name in request.files:
+                file = request.files[name]
                 files[name] = self.read_file(file.filename, file.stream)
             result = func((files,))[0]
             return self.output_adapter.to_aws_lambda_event(result, event)

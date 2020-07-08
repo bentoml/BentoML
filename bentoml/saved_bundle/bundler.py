@@ -143,6 +143,20 @@ def save_to_dir(bento_service, path, version=None, silent=False):
             )
         )
 
+    # copy custom web_static_content if enabled
+    if bento_service.web_static_content:
+        src_web_static_content_dir = os.path.join(
+            os.getcwd(), bento_service.web_static_content
+        )
+        if not os.path.isdir(src_web_static_content_dir):
+            raise BentoMLException(
+                f'web_static_content directory {src_web_static_content_dir} not found'
+            )
+        dest_web_static_content_dir = os.path.join(
+            module_base_path, 'web_static_content'
+        )
+        shutil.copytree(src_web_static_content_dir, dest_web_static_content_dir)
+
     # Copy docker-entrypoint.sh
     docker_entrypoint_sh_file_src = os.path.join(
         os.path.dirname(__file__), "docker-entrypoint.sh"

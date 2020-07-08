@@ -66,7 +66,7 @@ class BentoServiceAPI(object):
         :param func: API func contains the actual API callback, this is
             typically the 'predict' method on a model
         :param mb_max_latency: The latency goal of your service in milliseconds.
-            Default: 300.
+            Default: 10000.
         :param mb_max_batch_size: The maximum size of any batch. This parameter
             governs the throughput/latency tradeoff, and also avoids having
             batches that are so large they exceed some resource constraint (e.g.
@@ -326,6 +326,24 @@ def api_decorator(
     return decorator
 
 
+def web_static_content_decorator(web_static_content):
+    """Define web UI static files required to be bundled with a BentoService
+
+    Args:
+        web_static_content: path to directory containg index.html and static dir
+
+    >>>  @web_static_content('./ui/')
+    >>>  class MyMLService(BentoService):
+    >>>     pass
+    """
+
+    def decorator(bento_service_cls):
+        bento_service_cls._web_static_content = web_static_content
+        return bento_service_cls
+
+    return decorator
+
+
 def artifacts_decorator(artifacts):
     """Define artifacts required to be bundled with a BentoService
 
@@ -542,6 +560,9 @@ class BentoService(BentoServiceBase):
     _version_major = None
     _version_minor = None
 
+    # See `web_static_content` function above for more
+    _web_static_content = None
+
     def __init__(self):
         from bentoml.artifact import ArtifactCollection
 
@@ -577,6 +598,20 @@ class BentoService(BentoServiceBase):
     @property
     def env(self):
         return self._env
+
+    @property
+    def web_static_content(self):
+        return self._web_static_content
+
+    def get_web_static_content_path(self):
+        if not self.web_static_content:
+            return None
+        if self._bento_service_bundle_path:
+            return os.path.join(
+                self._bento_service_bundle_path, self.name, 'web_static_content',
+            )
+        else:
+            return os.path.join(os.getcwd(), self.web_static_content)
 
     @hybridmethod
     @property

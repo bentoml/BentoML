@@ -15,13 +15,13 @@
 import os
 import sys
 import uuid
-import json
 import time
 import logging
 from functools import partial
 
-from flask import Flask, jsonify, Response, request, make_response
+from flask import Flask, jsonify, Response, request, make_response, send_from_directory
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import BadRequest, NotFound
 
 from bentoml import config
 from bentoml.configuration import get_debug_mode
@@ -42,10 +42,10 @@ logger = logging.getLogger(__name__)
 INDEX_HTML = '''\
 <!DOCTYPE html>
 <head><link rel="stylesheet" type="text/css"
-            href="/static/swagger-ui.css"></head>
+            href="/swagger_static/swagger-ui.css"></head>
 <body>
 <div id="swagger-ui-container"></div>
-<script src="/static/swagger-ui-bundle.js"></script>
+<script src="/swagger_static/swagger-ui-bundle.js"></script>
 <script>
     SwaggerUIBundle({{
         url: '{url}',
@@ -83,12 +83,12 @@ class BentoAPIServer:
 
         self.port = port
         self.bento_service = bento_service
+        self.app = Flask(app_name, static_folder=None)
 
-        self.app = Flask(
-            app_name,
-            static_folder=os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), 'static'
-            ),
+        self.static_path = self.bento_service.get_web_static_content_path()
+
+        self.swagger_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'swagger_static'
         )
 
         for middleware in (InstrumentMiddleware,):
@@ -107,15 +107,41 @@ class BentoAPIServer:
         )
 
     @staticmethod
-    def index_view_func():
+    def static_serve(static_path, file_path):
+        """
+        The static files route for BentoML API server
+        """
+        try:
+            return send_from_directory(static_path, file_path)
+        except NotFound:
+            return send_from_directory(
+                os.path.join(static_path, file_path), "index.html"
+            )
+
+    @staticmethod
+    def index_view_func(static_path):
         """
         The index route for BentoML API server
+        """
+        return send_from_directory(static_path, 'index.html')
+
+    @staticmethod
+    def swagger_ui_func():
+        """
+        The swagger UI route for BentoML API server
         """
         return Response(
             response=INDEX_HTML.format(url='/docs.json'),
             status=200,
             mimetype="text/html",
         )
+
+    @staticmethod
+    def swagger_static(static_path, filename):
+        """
+        The swagger static files route for BentoML API server
+        """
+        return send_from_directory(static_path, filename)
 
     @staticmethod
     def docs_view_func(bento_service):
@@ -133,38 +159,33 @@ class BentoAPIServer:
     def metrics_view_func(self):
         from prometheus_client import generate_latest
 
-        return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+        return generate_latest()
 
     @staticmethod
     def feedback_view_func(bento_service):
         """
-        User send feedback along with the request Id. It will be stored and
+        User send feedback along with the request_id. It will be stored is feedback logs
         ready for further process.
         """
-        if request.content_type != "application/json":
-            return Response(
-                response="Incorrect content format, require JSON", status=400
-            )
+        data = request.get_json()
 
-        data = json.loads(request.get_data().decode("utf-8"))
+        if not data:
+            raise BadRequest("Failed parsing feedback JSON data")
 
-        if "request_id" not in data.keys():
-            return Response(response="Missing request id", status=400)
-
-        if len(data.keys()) <= 1:
-            return Response(response="Missing feedback data", status=400)
+        if "request_id" not in data:
+            raise BadRequest("Missing 'request_id' in feedback JSON data")
 
         data["service_name"] = bento_service.name
         data["service_version"] = bento_service.version
-
         feedback_logger.info(data)
-        return Response(response="success", status=200)
+        return "success"
 
     def setup_routes(self):
         """
         Setup routes for bento model server, including:
 
         /               Index Page
+        /docs           Swagger UI
         /healthz        Health check ping
         /feedback       Submitting feedback
         /metrics        Prometheus metrics endpoint
@@ -173,8 +194,35 @@ class BentoAPIServer:
         /classify
         /predict
         """
+        if self.static_path:
+            # serve static files for any given path
+            # this will also serve index.html from directory /any_path/
+            # for path as /any_path/
+            self.app.add_url_rule(
+                "/<path:file_path>",
+                "static_proxy",
+                partial(self.static_serve, self.static_path),
+            )
+            # serve index.html from the directory /any_path
+            # for path as /any_path/index
+            self.app.add_url_rule(
+                "/<path:file_path>/index",
+                "static_proxy2",
+                partial(self.static_serve, self.static_path),
+            )
+            # serve index.html from root directory for path as /
+            self.app.add_url_rule(
+                "/", "index", partial(self.index_view_func, self.static_path)
+            )
+        else:
+            self.app.add_url_rule("/", "index", self.swagger_ui_func)
 
-        self.app.add_url_rule("/", "index", self.index_view_func)
+        self.app.add_url_rule("/docs", "swagger", self.swagger_ui_func)
+        self.app.add_url_rule(
+            "/swagger_static/<path:filename>",
+            "swagger_static",
+            partial(self.swagger_static, self.swagger_path),
+        )
         self.app.add_url_rule(
             "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
         )

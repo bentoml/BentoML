@@ -63,12 +63,12 @@ class MultiImageInput(BaseInputAdapter):
     """
 
     def __init__(
-        self,
-        input_names=("image",),
-        accepted_image_formats=None,
-        pilmode="RGB",
-        is_batch_input=False,
-        **base_kwargs,
+            self,
+            input_names=("image",),
+            accepted_image_formats=None,
+            pilmode="RGB",
+            is_batch_input=False,
+            **base_kwargs,
     ):
         super(MultiImageInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
@@ -76,7 +76,7 @@ class MultiImageInput(BaseInputAdapter):
         self.input_names = input_names
         self.pilmode = pilmode
         self.accepted_image_formats = (
-            accepted_image_formats or get_default_accept_image_formats()
+                accepted_image_formats or get_default_accept_image_formats()
         )
 
     def handle_request(self, request: Request, func):
@@ -93,21 +93,23 @@ class MultiImageInput(BaseInputAdapter):
         return imread(file, pilmode=self.pilmode)
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
+            self, requests: Iterable[SimpleRequest], func
     ) -> Iterable[SimpleResponse]:
         inputs = []
         slices = []
         for i, req in enumerate(requests):
-            content_type = req.headers['Content-Type']
+            content_type = next(
+                header[1] for header in req.headers if header[0] == b"Content-Type")
 
-            if "multipart/form-data" not in content_type:
+            if b"multipart/form-data" not in content_type:
                 slices.append(None)
             else:
                 files = {}
                 request = Request.from_values(
                     data=req.data, content_type=content_type, headers=req.headers,
                 )
-                for name, file in request.files:
+                for name in request.files:
+                    file = request.files[name]
                     files[name] = self.read_file(file.filename, file.stream)
                 inputs.append(files)
                 slices.append(i)

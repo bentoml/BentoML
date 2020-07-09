@@ -96,7 +96,6 @@ def parse_key_value_pairs(key_value_pairs_str):
 def _echo_docker_api_result(docker_generator):
     layers = {}
     for line in docker_generator:
-        print(line)
         if "stream" in line:
             cleaned = line['stream'].rstrip("\n")
             if cleaned != "":

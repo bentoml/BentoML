@@ -7,7 +7,10 @@ from humanfriendly import format_size
 from click.testing import CliRunner
 import psutil  # noqa # pylint: disable=unused-import
 
-from bentoml.cli.bento_service import create_bento_service_cli
+from bentoml.cli.bento_service import (
+    create_bento_service_cli,
+    make_bento_name_docker_compatible,
+)
 from bentoml.cli.utils import _echo_docker_api_result
 from bentoml.exceptions import BentoMLException
 
@@ -27,6 +30,29 @@ def generate_test_input_file():
 def assert_equal_lists(res, expected):
     assert len(expected) == len(res)
     assert all([a == b for a, b in zip(expected, res)])
+
+
+def test_make_bento_name_docker_compatible():
+    names = [
+        ("ALLCAPS", "allcaps"),
+        ("...as.df...", "as.df"),
+        ("_asdf_asdf", "asdf_asdf"),
+        ("1234-asdf--", "1234-asdf"),
+    ]
+
+    for name, expected in names:
+        assert make_bento_name_docker_compatible(name, "") == (expected, "")
+
+    tags = [
+        ("....asdf.", "asdf."),
+        ("A" * 128, "A" * 128),
+        ("A" * 129, "A" * 128),
+        ("-asdf-", "asdf-"),
+        (".-asdf", "asdf"),
+    ]
+
+    for tag, expected in tags:
+        assert make_bento_name_docker_compatible("", tag) == ("", expected)
 
 
 def test_run_command_with_input_file(bento_bundle_path):

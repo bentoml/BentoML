@@ -67,19 +67,19 @@ class MultiImageInput(BaseInputAdapter):
 
     >>> <form action="http://localhost:8000" method="POST"
      enctype="multipart/form-data">
-	>>>		<input name="imageX" type="file">
-	>>>		<input name="imageY" type="file">
-	>>>		<input type="submit">
-	>>>	</form>
+    >>>     <input name="imageX" type="file">
+    >>>     <input name="imageY" type="file">
+    >>>		<input type="submit">
+    >>>	</form>
     """
 
     def __init__(
-        self,
-        input_names=("image",),
-        accepted_image_formats=None,
-        pilmode="RGB",
-        is_batch_input=False,
-        **base_kwargs,
+            self,
+            input_names=("image",),
+            accepted_image_formats=None,
+            pilmode="RGB",
+            is_batch_input=False,
+            **base_kwargs,
     ):
         super(MultiImageInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
@@ -87,7 +87,7 @@ class MultiImageInput(BaseInputAdapter):
         self.input_names = input_names
         self.pilmode = pilmode
         self.accepted_image_formats = (
-            accepted_image_formats or get_default_accept_image_formats()
+                accepted_image_formats or get_default_accept_image_formats()
         )
 
     def handle_request(self, request: Request, func):
@@ -104,7 +104,7 @@ class MultiImageInput(BaseInputAdapter):
         return imread(file, pilmode=self.pilmode)
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
+            self, requests: Iterable[SimpleRequest], func
     ) -> Iterable[SimpleResponse]:
         inputs = []
         slices = []

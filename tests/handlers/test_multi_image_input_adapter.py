@@ -84,15 +84,21 @@ def test_bad_multi_image_batch_input(img_file):
     )
 
     responses = adapter.handle_batch_request(
-        [request] * 5 + [SimpleRequest.from_flask_request(
-            Request.from_values(
-                data=multipart_data,
-                content_type='application/octet-stream',
-                content_length=headers['Content-Length'],
+        [request] * 5
+        + [
+            SimpleRequest.from_flask_request(
+                Request.from_values(
+                    data=multipart_data,
+                    content_type='application/octet-stream',
+                    content_length=headers['Content-Length'],
+                )
             )
-        )], predict)
+        ],
+        predict,
+    )
     print(responses[-1])
     assert isinstance(responses[-1], SimpleRequest)
+
 
 def test_multi_image_aws_event(img_file):
     adapter = MultiImageInput(("imageX", "imageY"), is_batch_input=True)

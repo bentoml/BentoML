@@ -96,10 +96,11 @@ def parse_key_value_pairs(key_value_pairs_str):
 def _echo_docker_api_result(docker_generator):
     layers = {}
     for line in docker_generator:
+        print(line)
         if "stream" in line:
             cleaned = line['stream'].rstrip("\n")
             if cleaned != "":
-                _echo(cleaned)
+                yield cleaned
         if "status" in line and line["status"] == "Pushing":
             progress = line["progressDetail"]
             layers[line["id"]] = progress["current"], progress["total"]
@@ -108,7 +109,7 @@ def _echo_docker_api_result(docker_generator):
                 humanfriendly.format_size(sum(cur)),
                 humanfriendly.format_size(sum(total)),
             )
-            _echo(f"Pushed {cur} / {total}")
+            yield (f"Pushed {cur} / {total}")
         if "errorDetail" in line:
             error = line["errorDetail"]
             raise BentoMLException(error["message"])

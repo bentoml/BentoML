@@ -112,7 +112,8 @@ def test_track_cli_with_click_exception():
 
 
 @patch(
-    'bentoml.cli.bento_service.BentoAPIServer', MagicMock(side_effect=mock_bento_api_server)
+    'bentoml.cli.bento_service.BentoAPIServer',
+    MagicMock(side_effect=mock_bento_api_server),
 )
 def test_track_cli_with_keyboard_interrupt(bento_bundle_path):
     with patch('bentoml.cli.click_utils.track') as mock:

@@ -4,8 +4,11 @@ import random
 
 from werkzeug import Request
 
+from bentoml.exceptions import BadInput
 from bentoml.adapters.multi_image_input import MultiImageInput
 from bentoml.marshal.utils import SimpleRequest
+
+import pytest
 
 
 def generate_multipart_body(image_file):
@@ -90,6 +93,29 @@ def test_multi_image_batch_input(img_file):
         assert response.data == '[[10, 10, 3], [10, 10, 3]]'
 
 
+def test_bad_multi_image_batch_input(img_file):
+    adapter = MultiImageInput(("imageX", "imageY"), is_batch_input=True)
+
+    multipart_data, headers = generate_multipart_body(img_file)
+    request = SimpleRequest.from_flask_request(
+        Request.from_values(
+            data=multipart_data,
+            content_type=headers['Content-Type'],
+            content_length=headers['Content-Length'],
+        )
+    )
+
+    responses = adapter.handle_batch_request(
+        [request] * 5 + [SimpleRequest.from_flask_request(
+            Request.from_values(
+                data=multipart_data,
+                content_type='application/octet-stream',
+                content_length=headers['Content-Length'],
+            )
+        )], predict)
+    print(responses[-1])
+    assert isinstance(responses[-1], SimpleRequest)
+
 def test_multi_image_aws_event(img_file):
     adapter = MultiImageInput(("imageX", "imageY"), is_batch_input=True)
 
@@ -99,3 +125,19 @@ def test_multi_image_aws_event(img_file):
     aws_result = adapter.handle_aws_lambda_event(aws_lambda_event, predict)
     assert aws_result["statusCode"] == 200
     assert aws_result["body"] == '[[10, 10, 3], [10, 10, 3]]'
+
+
+def test_bad_multi_image_aws_event(img_file):
+    adapter = MultiImageInput(("imageX", "imageY"), is_batch_input=True)
+
+    multipart_data, headers = generate_multipart_body(img_file)
+    aws_lambda_event = {
+        "body": multipart_data,
+        "headers": {
+            "Content-Type": "application/octet-stream",
+            "Content-Length": headers["Content-Length"],
+        },
+    }
+
+    with pytest.raises(BadInput):
+        adapter.handle_aws_lambda_event(aws_lambda_event, predict)

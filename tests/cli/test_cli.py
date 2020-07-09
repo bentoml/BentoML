@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 import mock
-import humanfriendly.format_size as human_bytes
+from humanfriendly import format_size
 from click.testing import CliRunner
 import psutil  # noqa # pylint: disable=unused-import
 
@@ -149,10 +149,9 @@ def test_echo_docker_api_result_push():
     ]
 
     expected = [
-        "The push refers to repository [docker.io/personal/test]",
-        f"Pushed {human_bytes(5632)} / {human_bytes(532223)}",
-        f"Pushed {human_bytes(5632 + 512)} / {human_bytes(532223 + 699)}",
-        f"Pushed {human_bytes(128512 + 512)} / {human_bytes(532223 + 699)}",
+        f"Pushed {format_size(5632)} / {format_size(532223)}",
+        f"Pushed {format_size(5632 + 512)} / {format_size(532223 + 699)}",
+        f"Pushed {format_size(128512 + 512)} / {format_size(532223 + 699)}",
     ]
 
     res = [line for line in _echo_docker_api_result(push_stream)]

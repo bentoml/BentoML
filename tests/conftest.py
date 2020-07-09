@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 
 import imageio
 import numpy as np

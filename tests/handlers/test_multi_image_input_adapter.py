@@ -1,6 +1,3 @@
-import string
-import random
-
 from werkzeug import Request
 
 from bentoml.exceptions import BadInput
@@ -12,8 +9,6 @@ import pytest
 
 
 def generate_multipart_body(image_file):
-    lines = []
-
     image = ("image.jpg", open(image_file, "rb").read())
     files = {"imageX": image, "imageY": image}
     body, content_type = encode_multipart_formdata(files)

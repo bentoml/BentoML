@@ -44,6 +44,11 @@ matrix:
       script:
         - ./travis/pytorch_integration_tests.sh
 
+    - name: "Tensorflow Artifact"
+      python: "3.6"
+      script:
+        - ./travis/tensorflow_integration_tests.sh
+
     - name: "API Server Integration Tests"
       python: "3.7"
       script:

@@ -1,4 +1,3 @@
-import mimetypes
 import string
 import random
 
@@ -7,41 +6,20 @@ from werkzeug import Request
 from bentoml.exceptions import BadInput
 from bentoml.adapters.multi_image_input import MultiImageInput
 from bentoml.marshal.utils import SimpleRequest
+from urllib3.filepost import encode_multipart_formdata
 
 import pytest
 
 
 def generate_multipart_body(image_file):
-    _BOUNDARY_CHARS = string.digits + string.ascii_letters
-
-    boundary = ''.join(random.choice(_BOUNDARY_CHARS) for i in range(30))
     lines = []
 
-    image = {"filename": "image.jpg", "content": open(image_file, "rb").read()}
+    image = ("image.jpg", open(image_file, "rb").read())
     files = {"imageX": image, "imageY": image}
-    for name, value in files.items():
-        filename = value['filename']
-        mime_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-        lines.extend(
-            (
-                bytes('--{0}'.format(boundary), 'utf8'),
-                bytes(
-                    'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(
-                        name.replace('"', '\\"'), filename.replace('"', '\\"')
-                    ),
-                    'utf8',
-                ),
-                bytes('Content-Type: {0}'.format(mime_type), 'utf8'),
-                b'',
-                value['content'],
-            )
-        )
-
-    lines.extend((bytes('--{0}--'.format(boundary), 'utf8'), b'',))
-    body = b'\r\n'.join(lines)
+    body, content_type = encode_multipart_formdata(files)
 
     headers = {
-        'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary),
+        'Content-Type': content_type,
         'Content-Length': len(body),
     }
     return body, headers

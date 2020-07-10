@@ -18,7 +18,7 @@ import multiprocessing
 from gunicorn.app.base import Application
 
 from bentoml import config
-from bentoml.marshal import MarshalService
+from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
 
 marshal_logger = logging.getLogger("bentoml.marshal")

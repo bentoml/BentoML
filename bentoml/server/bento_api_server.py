@@ -25,7 +25,6 @@ from werkzeug.exceptions import BadRequest, NotFound
 
 from bentoml import config
 from bentoml.configuration import get_debug_mode
-from bentoml.server.trace import trace
 from bentoml.exceptions import BentoMLException
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
@@ -360,14 +359,21 @@ class BentoAPIServer:
 
             return response
 
-        def _wrapped_api_func():
-            with trace(
-                ZIPKIN_API_URL, request.headers, service_name=self.__class__.__name__
-            ):
-                resp = api_func()
-            return resp
+        if ZIPKIN_API_URL:
+            from bentoml.server.trace import trace
 
-        return _wrapped_api_func
+            def _wrapped_api_func():
+                with trace(
+                    ZIPKIN_API_URL,
+                    request.headers,
+                    service_name=self.__class__.__name__,
+                ):
+                    resp = api_func()
+                return resp
+
+            return _wrapped_api_func
+        else:
+            return api_func
 
     def log_exception(self, exc_info):
         """Logs an exception.  This is called by :meth:`handle_exception`

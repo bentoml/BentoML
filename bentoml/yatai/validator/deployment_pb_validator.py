@@ -15,7 +15,7 @@
 from cerberus import Validator
 
 from bentoml.utils import ProtoMessageToDict
-from bentoml.yatai.deployment.azure_functions.operator import (
+from bentoml.yatai.deployment.azure_functions.constants import (
     AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
     AZURE_FUNCTIONS_AUTH_LEVELS,
 )

@@ -14,6 +14,7 @@
 
 import click
 
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     parse_bento_tag_callback,
@@ -23,8 +24,8 @@ from bentoml.cli.click_utils import (
     validate_labels_query_callback,
 )
 from bentoml.cli.deployment import _print_deployment_info, _print_deployments_info
-from bentoml.cli.utils import Spinner
-from bentoml.yatai.deployment.azure_functions.operator import (
+from bentoml.cli.utils import Spinner, get_default_yatai_client
+from bentoml.yatai.deployment.azure_functions.constants import (
     AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
     AZURE_FUNCTIONS_AUTH_LEVELS,
     DEFAULT_MIN_INSTANCE_COUNT,
@@ -32,14 +33,11 @@ from bentoml.yatai.deployment.azure_functions.operator import (
     DEFAULT_PREMIUM_PLAN_SKU,
     DEFAULT_FUNCTION_AUTH_LEVEL,
 )
-from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
+from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.exceptions import CLIException
-from bentoml.yatai.proto import status_pb2
-from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.utils import status_pb_to_error_code_and_message
-from bentoml.yatai.client import YataiClient
 
-PLATFORM_NAME = DeploymentSpec.DeploymentOperator.Name(DeploymentSpec.AZURE_FUNCTIONS)
+yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
 def get_azure_functions_sub_command():
@@ -137,7 +135,7 @@ def get_azure_functions_sub_command():
         wait,
     ):
         bento_name, bento_version = bento.split(':')
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         with Spinner(f'Deploying {bento} to Azure Functions'):
             result = yatai_client.deployment.create_azure_functions_deployment(
                 name=name,
@@ -152,7 +150,7 @@ def get_azure_functions_sub_command():
                 function_auth_level=function_auth_level,
                 wait=wait,
             )
-            if result.status.status_code != status_pb2.Status.OK:
+            if result.status.status_code != yatai_proto.status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
@@ -207,7 +205,7 @@ def get_azure_functions_sub_command():
     def update(
         name, namespace, bento, min_instances, max_burst, premium_plan_sku, output, wait
     ):
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         if bento:
             bento_name, bento_version = bento.split(':')
         else:
@@ -224,7 +222,7 @@ def get_azure_functions_sub_command():
                 premium_plan_sku=premium_plan_sku,
                 wait=wait,
             )
-            if result.status.status_code != status_pb2.Status.OK:
+            if result.status.status_code != yatai_proto.status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
@@ -251,15 +249,15 @@ def get_azure_functions_sub_command():
         'ignore errors when deleting cloud resources',
     )
     def delete(name, namespace, force):
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         get_deployment_result = yatai_client.deployment.get(namespace, name)
-        if get_deployment_result.status.status_code != status_pb2.Status.OK:
+        if get_deployment_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
             raise CLIException(f'{error_code}:{error_message}')
         result = yatai_client.deployment.delete(name, namespace, force)
-        if result.status.status_code != status_pb2.Status.OK:
+        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
@@ -282,15 +280,15 @@ def get_azure_functions_sub_command():
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='json'
     )
     def get(name, namespace, output):
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         get_result = yatai_client.deployment.get(namespace, name)
-        if get_result.status.status_code != status_pb2.Status.OK:
+        if get_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_result.status
             )
             raise CLIException(f'{error_code}:{error_message}')
         describe_result = yatai_client.deployment.describe(namespace, name)
-        if describe_result.status.status_code != status_pb2.Status.OK:
+        if describe_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 describe_result.status
             )
@@ -331,7 +329,7 @@ def get_azure_functions_sub_command():
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
     def list_deployment(namespace, limit, labels, order_by, asc, output):
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list_azure_functions_deployments(
             limit=limit,
             labels_query=labels,
@@ -339,7 +337,7 @@ def get_azure_functions_sub_command():
             order_by=order_by,
             ascending_order=asc,
         )
-        if list_result.status.status_code != status_pb2.Status.OK:
+        if list_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_result.status
             )

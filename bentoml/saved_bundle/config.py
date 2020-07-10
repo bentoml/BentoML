@@ -23,9 +23,7 @@ from bentoml import __version__ as BENTOML_VERSION
 from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.utils import dump_to_yaml_str
-from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
 from bentoml.exceptions import BentoMLConfigException
-
 
 BENTOML_CONFIG_YAML_TEPMLATE = """\
 version: {bentoml_version}
@@ -123,6 +121,8 @@ class SavedBundleConfig(object):
         return conf
 
     def get_bento_service_metadata_pb(self):
+        from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
+
         bento_service_metadata = BentoServiceMetadata()
         bento_service_metadata.name = self.config["metadata"]["service_name"]
         bento_service_metadata.version = self.config["metadata"]["service_version"]

@@ -17,7 +17,6 @@ import shutil
 import stat
 import logging
 
-from setuptools import sandbox
 
 from bentoml.configuration import _is_pip_installed_bentoml
 
@@ -229,6 +228,8 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
         if os.path.isdir(source_dir):
             shutil.rmtree(source_dir, ignore_errors=True)
         os.mkdir(source_dir)
+
+        from setuptools import sandbox
 
         sandbox.run_setup(
             bentoml_setup_py,

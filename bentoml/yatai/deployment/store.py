@@ -30,14 +30,13 @@ from google.protobuf.json_format import ParseDict
 
 from bentoml.exceptions import YataiDeploymentException, BadInput
 from bentoml.yatai.db import Base, create_session
+from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.proto import deployment_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
 from bentoml.utils import ProtoMessageToDict
 
 
 logger = logging.getLogger(__name__)
-
-ALL_NAMESPACE_TAG = '__BENTOML_ALL_NAMESPACE'
 
 
 class Deployment(Base):

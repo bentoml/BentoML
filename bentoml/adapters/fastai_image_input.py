@@ -20,42 +20,22 @@ import json
 
 from werkzeug.utils import secure_filename
 from flask import Response
-import numpy as np
 
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.dataframe_util import PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
-from bentoml.exceptions import BadInput, MissingDependencyException
+from bentoml.exceptions import BadInput
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.image_input import (
     verify_image_format_or_raise,
     get_default_accept_image_formats,
 )
 
+np = LazyLoader('np', globals(), 'numpy')
 
-def _import_fastai_vision():
-    try:
-        from fastai import vision
-    except ImportError:
-        raise MissingDependencyException(
-            "fastai.vision package is required to use FastaiImageInput"
-        )
-
-    return vision
-
-
-def _import_imageio_imread():
-    try:
-        from imageio import imread
-    except ImportError:
-        raise MissingDependencyException(
-            "imageio package is required to use FastaiImageInput"
-        )
-
-    return imread
+# BentoML optional dependencies, using lazy load to avoid ImportError
+pd = LazyLoader('pd', globals(), 'pandas')
+fastai = LazyLoader('fastai', globals(), 'fastai')
+imageio = LazyLoader('imageio', globals(), 'imageio')
 
 
 class NumpyJsonEncoder(json.JSONEncoder):
@@ -132,8 +112,6 @@ class FastaiImageInput(BaseInputAdapter):
         **base_kwargs,
     ):
         super(FastaiImageInput, self).__init__(**base_kwargs)
-        self.imread = _import_imageio_imread()
-        self.fastai_vision = _import_fastai_vision()
 
         self.input_names = input_names
         self.convert_mode = convert_mode
@@ -173,7 +151,7 @@ class FastaiImageInput(BaseInputAdapter):
 
     @property
     def pip_dependencies(self):
-        return ['imageio', 'fastai']
+        return ['imageio', 'fastai', 'pandas']
 
     def handle_batch_request(self, requests, func):
         raise NotImplementedError
@@ -198,12 +176,12 @@ class FastaiImageInput(BaseInputAdapter):
 
         input_data = []
         for input_stream in input_streams:
-            data = self.imread(input_stream, pilmode=self.convert_mode)
+            data = imageio.imread(input_stream, pilmode=self.convert_mode)
 
             if self.after_open:
                 data = self.after_open(data)
 
-            data = self.fastai_vision.pil2tensor(data, np.float32)
+            data = fastai.vision.pil2tensor(data, np.float32)
 
             if self.div:
                 data = data.div_(255)
@@ -211,7 +189,7 @@ class FastaiImageInput(BaseInputAdapter):
             if self.cls:
                 data = self.cls(data)
             else:
-                data = self.fastai_vision.Image(data)
+                data = fastai.vision.Image(data)
             input_data.append(data)
 
         result = func(*input_data)
@@ -229,12 +207,12 @@ class FastaiImageInput(BaseInputAdapter):
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(file_path)
 
-        image_array = self.fastai_vision.open_image(
+        image_array = fastai.vision.open_image(
             fn=file_path,
             convert_mode=self.convert_mode,
             div=self.div,
             after_open=self.after_open,
-            cls=self.cls or self.fastai_vision.Image,
+            cls=self.cls or fastai.vision.Image,
         )
 
         result = func(image_array)
@@ -246,7 +224,7 @@ class FastaiImageInput(BaseInputAdapter):
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):
-            image_data = self.imread(
+            image_data = imageio.imread(
                 base64.decodebytes(event["body"]), pilmode=self.pilmode
             )
         else:
@@ -258,13 +236,13 @@ class FastaiImageInput(BaseInputAdapter):
         if self.after_open:
             image_data = self.after_open(image_data)
 
-        image_data = self.fastai_vision.pil2tensor(image_data, np.float32)
+        image_data = fastai.vision.pil2tensor(image_data, np.float32)
         if self.div:
             image_data = image_data.div_(255)
         if self.cls:
             image_data = self.cls(image_data)
         else:
-            image_data = self.fastai_vision.Image(image_data)
+            image_data = fastai.vision.Image(image_data)
 
         result = func(image_data)
         json_output = api_func_result_to_json(result)

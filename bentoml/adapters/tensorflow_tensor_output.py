@@ -16,12 +16,14 @@ import json
 import itertools
 from typing import Iterable
 
-import numpy as np
 import argparse
 
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.adapters.utils import TfTensorJsonEncoder
 from bentoml.adapters.base_output import BaseOutputAdapter
+
+np = LazyLoader('np', globals(), 'numpy')
 
 
 def tf_to_numpy(tensor):

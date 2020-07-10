@@ -9,10 +9,10 @@ logger = logging.getLogger("bentoml")
 
 
 @bentoml.env(
-        pip_dependencies=['rich'],
-        conda_dependencies=['scikit-learn'],
-        #requirements_txt_file='tests/integration/api_server/requirements.txt',
-        )
+    pip_dependencies=['rich'],
+    conda_dependencies=['scikit-learn'],
+    # requirements_txt_file='tests/integration/api_server/requirements.txt',
+)
 class DependencyVerificationService(bentoml.BentoService):
     """
     This service checks all the dependencies and verifies everything
@@ -22,28 +22,28 @@ class DependencyVerificationService(bentoml.BentoService):
     @bentoml.api(input=JsonInput())
     def test_packages(self, json_input):
         is_installed = {
-                'rich': True,
-                'sklearn': True,
-                'pillow': True,
-                }
+            'rich': True,
+            'sklearn': True,
+            'pillow': True,
+        }
 
         try:
-            import rich
+            import rich  # NOQA pylint: disable=unused-import
         except ImportError:
             is_installed['rich'] = False
 
         try:
-            import sklearn
+            import sklearn  # NOQA pylint: disable=unused-import
         except ImportError:
             is_installed['sklearn'] = False
 
         try:
-            import PIL
+            import PIL  # NOQA pylint: disable=unused-import
         except ImportError:
             is_installed['pillow'] = False
 
         logger.info(json_input, is_installed)
-        out =  json.dumps(is_installed)
+        out = json.dumps(is_installed)
         logger.info(out)
         return [out]
 

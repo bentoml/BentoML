@@ -23,17 +23,19 @@ def docker_container(port=5000):
         print(logs)
 
     print('running container...')
-    container = client.containers.run('dependency_test', detach=True, remove=True,
-                                      ports={5000: port})
+    container = client.containers.run(
+        'dependency_test', detach=True, remove=True, ports={5000: port}
+    )
 
     yield
 
     print(f'Killing container {container.id}')
     container.kill()
 
+
 def wait_till_container_is_up(url, timeout=10):
-    running_time=0
-    while(running_time<timeout):
+    running_time = 0
+    while running_time < timeout:
         try:
             r = requests.post(url, json='')
             print(r.status_code, r.text)
@@ -44,6 +46,7 @@ def wait_till_container_is_up(url, timeout=10):
             # the container is still booting up
             time.sleep(1)
         running_time += 1
+
 
 def test_dependencies_of_docker_container():
     # TODO: change it to 5005

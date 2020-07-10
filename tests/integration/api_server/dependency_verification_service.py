@@ -1,9 +1,18 @@
+import json
+import logging
+
 import bentoml
 from bentoml.saved_bundle import save_to_dir
 from bentoml.adapters import JsonInput
 
+logger = logging.getLogger("bentoml")
 
-@bentoml.env(pip_dependencies=['rich'])
+
+@bentoml.env(
+        pip_dependencies=['rich'],
+        conda_dependencies=['scikit-learn'],
+        #requirements_txt_file='tests/integration/api_server/requirements.txt',
+        )
 class DependencyVerificationService(bentoml.BentoService):
     """
     This service checks all the dependencies and verifies everything
@@ -11,8 +20,32 @@ class DependencyVerificationService(bentoml.BentoService):
     """
 
     @bentoml.api(input=JsonInput())
-    def test_packages(self, json):
-        print(json)
+    def test_packages(self, json_input):
+        is_installed = {
+                'rich': True,
+                'sklearn': True,
+                'pillow': True,
+                }
+
+        try:
+            import rich
+        except ImportError:
+            is_installed['rich'] = False
+
+        try:
+            import sklearn
+        except ImportError:
+            is_installed['sklearn'] = False
+
+        try:
+            import PIL
+        except ImportError:
+            is_installed['pillow'] = False
+
+        logger.info(json_input, is_installed)
+        out =  json.dumps(is_installed)
+        logger.info(out)
+        return [out]
 
 
 def gen_test_bundle(tmpdir):

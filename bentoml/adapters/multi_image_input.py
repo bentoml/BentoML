@@ -28,6 +28,7 @@ from bentoml.adapters.image_input import (
 from bentoml.exceptions import BadInput
 from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 
+
 imread = _import_imageio_imread()
 
 
@@ -65,7 +66,8 @@ class MultiImageInput(BaseInputAdapter):
     the example below
 
 
-    >>> <form action="http://localhost:8000" method="POST" enctype="multipart/form-data">
+    >>> <form action="http://localhost:8000" method="POST"
+    >>>       enctype="multipart/form-data">
     >>>     <input name="imageX" type="file">
     >>>     <input name="imageY" type="file">
     >>>     <input type="submit">
@@ -73,7 +75,9 @@ class MultiImageInput(BaseInputAdapter):
 
     Or the following cURL command
 
-    >>> curl -F imageX=@image_file_x.png -F imageY=@image_file_y.jpg http://localhost:8000
+    >>> curl -F imageX=@image_file_x.png
+    >>>      -F imageY=@image_file_y.jpg
+    >>>      http://localhost:8000
     """
 
     def __init__(

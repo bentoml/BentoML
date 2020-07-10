@@ -19,6 +19,10 @@ ImageInput
 ++++++++++
 .. autoclass:: bentoml.adapters.ImageInput
 
+MultiImageInput
++++++++++++++++
+.. autoclass:: bentoml.adapters.MultiImageInput
+
 LegacyImageInput
 ++++++++++++++++
 .. autoclass:: bentoml.adapters.LegacyImageInput

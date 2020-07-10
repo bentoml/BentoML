@@ -24,7 +24,7 @@ from werkzeug.wrappers import Request
 from bentoml import config
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.marshal.utils import SimpleRequest, SimpleResponse
-from bentoml.exceptions import BadInput, MissingDependencyException
+from bentoml.exceptions import BadInput
 from bentoml.adapters.base_input import BaseInputAdapter
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
@@ -217,7 +217,7 @@ class ImageInput(BaseInputAdapter):
                 if not os.path.isabs(file_path):
                     file_path = os.path.abspath(file_path)
 
-                image_arrays.append(imread(file_path, pilmode=self.pilmode))
+                image_arrays.append(imageio.imread(file_path, pilmode=self.pilmode))
 
             results = func(image_arrays)
             for result in results:
@@ -225,7 +225,9 @@ class ImageInput(BaseInputAdapter):
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):
-            image = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
+            image = imageio.imread(
+                base64.decodebytes(event["body"]), pilmode=self.pilmode
+            )
         else:
             raise BadInput(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

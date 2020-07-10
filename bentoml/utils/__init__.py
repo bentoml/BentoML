@@ -19,12 +19,6 @@ from contextlib import contextmanager
 from functools import wraps
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
-
-from google.protobuf.json_format import MessageToDict
-from ruamel.yaml import YAML
-
-from bentoml.yatai.proto import status_pb2
-
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 
@@ -62,6 +56,8 @@ def isidentifier(s):
 
 
 def dump_to_yaml_str(yaml_dict):
+    from ruamel.yaml import YAML
+
     yaml = YAML()
     string_io = StringIO()
     yaml.dump(yaml_dict, string_io)
@@ -69,11 +65,15 @@ def dump_to_yaml_str(yaml_dict):
 
 
 def pb_to_yaml(message):
+    from google.protobuf.json_format import MessageToDict
+
     message_dict = MessageToDict(message)
     return dump_to_yaml_str(message_dict)
 
 
 def ProtoMessageToDict(protobuf_msg, **kwargs):
+    from google.protobuf.json_format import MessageToDict
+
     if 'preserving_proto_field_name' not in kwargs:
         kwargs['preserving_proto_field_name'] = True
 
@@ -82,6 +82,8 @@ def ProtoMessageToDict(protobuf_msg, **kwargs):
 
 # This function assume the status is not status.OK
 def status_pb_to_error_code_and_message(pb_status):
+    from bentoml.yatai.proto import status_pb2
+
     assert pb_status.status_code != status_pb2.Status.OK
     error_code = status_pb2.Status.Code.Name(pb_status.status_code)
     error_message = pb_status.error_message

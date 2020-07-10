@@ -17,7 +17,6 @@ import logging
 
 import click
 
-from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +71,8 @@ def add_yatai_service_sub_command(cli):
     def yatai_service_start(
         db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url
     ):
+        from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
+
         start_yatai_service_grpc_server(
             db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url
         )

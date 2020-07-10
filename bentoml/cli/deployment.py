@@ -15,6 +15,7 @@
 import click
 import logging
 
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     _echo,
@@ -22,12 +23,17 @@ from bentoml.cli.click_utils import (
     parse_yaml_file_callback,
     validate_labels_query_callback,
 )
-from bentoml.yatai.client import YataiClient
-from bentoml.yatai.deployment.store import ALL_NAMESPACE_TAG
-from bentoml.yatai.proto import status_pb2
+from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.exceptions import CLIException
-from bentoml.cli.utils import Spinner, _print_deployment_info, _print_deployments_info
+from bentoml.cli.utils import (
+    Spinner,
+    _print_deployment_info,
+    _print_deployments_info,
+    get_default_yatai_client,
+)
+
+yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 # pylint: disable=unused-variable
 
@@ -65,11 +71,11 @@ def get_deployment_sub_command():
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def create(deployment_yaml, output, wait):
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         deployment_name = deployment_yaml.get('name')
         with Spinner('Creating deployment '):
             result = yatai_client.deployment.create(deployment_yaml, wait)
-        if result.status.status_code != status_pb2.Status.OK:
+        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
@@ -97,10 +103,10 @@ def get_deployment_sub_command():
     )
     def apply(deployment_yaml, output, wait):
         deployment_name = deployment_yaml.get('name')
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         with Spinner('Applying deployment'):
             result = yatai_client.deployment.apply(deployment_yaml, wait)
-        if result.status.status_code != status_pb2.Status.OK:
+        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
@@ -126,15 +132,15 @@ def get_deployment_sub_command():
         'ignore errors when deleting cloud resources',
     )
     def delete(name, namespace, force):
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         get_deployment_result = yatai_client.deployment.get(namespace, name)
-        if get_deployment_result.status.status_code != status_pb2.Status.OK:
+        if get_deployment_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
             raise CLIException(f'{error_code}:{error_message}')
         result = yatai_client.deployment.delete(name, namespace, force)
-        if result.status.status_code != status_pb2.Status.OK:
+        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
@@ -152,9 +158,9 @@ def get_deployment_sub_command():
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     def get(name, namespace, output):
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         get_result = yatai_client.deployment.get(namespace, name)
-        if get_result.status.status_code != status_pb2.Status.OK:
+        if get_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_result.status
             )
@@ -162,7 +168,7 @@ def get_deployment_sub_command():
         describe_result = yatai_client.deployment.describe(
             namespace=namespace, name=name
         )
-        if describe_result.status.status_code != status_pb2.Status.OK:
+        if describe_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 describe_result.status
             )
@@ -206,7 +212,7 @@ def get_deployment_sub_command():
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
     def list_deployments(namespace, platform, limit, labels, order_by, asc, output):
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list(
             limit=limit,
             labels_query=labels,
@@ -215,7 +221,7 @@ def get_deployment_sub_command():
             order_by=order_by,
             ascending_order=asc,
         )
-        if list_result.status.status_code != status_pb2.Status.OK:
+        if list_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_result.status
             )

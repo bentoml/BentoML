@@ -13,25 +13,28 @@
 # limitations under the License.
 import click
 import os
-from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.cli.click_utils import (
     _echo,
     parse_bento_tag_list_callback,
 )
-from bentoml.cli.utils import humanfriendly_age_from_datetime
-from bentoml.yatai.proto import status_pb2
+from bentoml.cli.utils import humanfriendly_age_from_datetime, get_default_yatai_client
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
-from bentoml.yatai.client import YataiClient
 from bentoml.saved_bundle import safe_retrieve
 from bentoml.exceptions import CLIException
+
+
+yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
 def _print_bento_info(bento, output_type):
     if output_type == 'yaml':
         _echo(pb_to_yaml(bento))
     else:
+        from google.protobuf.json_format import MessageToJson
+
         _echo(MessageToJson(bento))
 
 
@@ -101,12 +104,12 @@ def add_bento_sub_command(cli):
         else:
             name = bento
             version = None
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
 
         if name and version:
             output = output or 'json'
             get_bento_result = yatai_client.repository.get(name, version)
-            if get_bento_result.status.status_code != status_pb2.Status.OK:
+            if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
                     get_bento_result.status
                 )
@@ -120,7 +123,10 @@ def add_bento_sub_command(cli):
             list_bento_versions_result = yatai_client.repository.list(
                 bento_name=name, limit=limit, ascending_order=ascending_order
             )
-            if list_bento_versions_result.status.status_code != status_pb2.Status.OK:
+            if (
+                list_bento_versions_result.status.status_code
+                != yatai_proto.status_pb2.Status.OK
+            ):
                 error_code, error_message = status_pb_to_error_code_and_message(
                     list_bento_versions_result.status
                 )
@@ -146,14 +152,14 @@ def add_bento_sub_command(cli):
         default='table',
     )
     def list_bentos(limit, offset, order_by, ascending_order, output):
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         list_bentos_result = yatai_client.repository.list(
             limit=limit,
             offset=offset,
             order_by=order_by,
             ascending_order=ascending_order,
         )
-        if list_bentos_result.status.status_code != status_pb2.Status.OK:
+        if list_bentos_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_bentos_result.status
             )
@@ -177,7 +183,7 @@ def add_bento_sub_command(cli):
 
         `bentoml delete iris_classifier:v1.2.0,my_svc:v1,my_svc2:v3`
         """
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         for bento in bentos:
             name, version = bento.split(':')
             if not name and not version:
@@ -193,7 +199,7 @@ def add_bento_sub_command(cli):
             result = yatai_client.repository.dangerously_delete_bento(
                 name=name, version=version
             )
-            if result.status.status_code != status_pb2.Status.OK:
+            if result.status.status_code != yatai_proto.status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
@@ -216,10 +222,10 @@ def add_bento_sub_command(cli):
             return
         name, version = bento.split(':')
 
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
 
         get_bento_result = yatai_client.repository.get(name, version)
-        if get_bento_result.status.status_code != status_pb2.Status.OK:
+        if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_bento_result.status
             )

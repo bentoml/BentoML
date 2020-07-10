@@ -21,11 +21,9 @@ import logging
 from datetime import datetime
 
 import humanfriendly
-from google.protobuf.json_format import MessageToDict
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import _echo
-from bentoml.yatai.proto.deployment_pb2 import DeploymentState, DeploymentSpec
 from bentoml.utils import pb_to_yaml
 from bentoml.exceptions import BentoMLException
 
@@ -118,6 +116,8 @@ def _print_deployment_info(deployment, output_type):
     if output_type == 'yaml':
         _echo(pb_to_yaml(deployment))
     else:
+        from google.protobuf.json_format import MessageToDict
+
         deployment_info = MessageToDict(deployment)
         if deployment_info['state'] and deployment_info['state']['infoJson']:
             deployment_info['state']['infoJson'] = json.loads(
@@ -153,6 +153,8 @@ def humanfriendly_age_from_datetime(dt, detailed=False, max_unit=2):
 
 
 def _print_deployments_table(deployments):
+    from bentoml.yatai.proto.deployment_pb2 import DeploymentState, DeploymentSpec
+
     table = []
     headers = [
         'NAME',
@@ -186,3 +188,9 @@ def _print_deployments_info(deployments, output_type):
     else:
         for deployment in deployments:
             _print_deployment_info(deployment, output_type)
+
+
+def get_default_yatai_client():
+    from bentoml.yatai.client import YataiClient
+
+    return YataiClient()

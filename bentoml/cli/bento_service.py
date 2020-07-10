@@ -1,4 +1,3 @@
-import docker
 import click
 import os
 import json
@@ -7,17 +6,15 @@ import multiprocessing
 import tempfile
 import subprocess
 import psutil
-
 from pathlib import Path
+
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.s3 import is_s3_url
 from bentoml.server import BentoAPIServer
-from bentoml.yatai.client import YataiClient
-from bentoml.yatai.proto import status_pb2
 from bentoml.exceptions import BentoMLException, CLIException
 from ruamel.yaml import YAML
 from bentoml.server.utils import get_gunicorn_num_of_workers
 from bentoml.server.open_api import get_open_api_spec_json
-from bentoml.marshal import MarshalService
 from bentoml.utils import (
     ProtoMessageToDict,
     reserve_free_port,
@@ -33,6 +30,7 @@ from bentoml.cli.click_utils import (
 from bentoml.cli.utils import (
     _echo_docker_api_result,
     Spinner,
+    get_default_yatai_client,
 )
 from bentoml.saved_bundle import (
     load,
@@ -50,6 +48,9 @@ except ImportError:
     # click_completion package is optional to use BentoML cli,
     click_completion = None
     shell_types = click.Choice(['bash', 'zsh', 'fish', 'powershell'])
+
+
+yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
 def escape_shell_params(param):
@@ -124,10 +125,10 @@ def resolve_bundle_path(bento, pip_installed_bundle_path):
 
     elif ":" in bento:
         # assuming passing in BentoService in the form of Name:Version tag
-        yatai_client = YataiClient()
+        yatai_client = get_default_yatai_client()
         name, version = bento.split(':')
         get_bento_result = yatai_client.repository.get(name, version)
-        if get_bento_result.status.status_code != status_pb2.Status.OK:
+        if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_bento_result.status
             )
@@ -271,6 +272,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             )
 
         if enable_microbatch:
+            from bentoml.marshal import MarshalService
+
             with reserve_free_port() as api_server_port:
                 # start server right after port released
                 #  to reduce potential race
@@ -490,6 +493,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 f'"{bento}" -> "{full_tag}"',
                 CLI_COLOR_WARNING,
             )
+
+        import docker
 
         docker_api = docker.APIClient()
         try:

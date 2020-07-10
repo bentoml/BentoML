@@ -17,80 +17,21 @@ from bentoml.artifact.artifact import (
     BentoServiceArtifactWrapper,
     ArtifactCollection,
 )
-from bentoml.utils.lazy_loader import LazyLoader
-
-TextFileArtifact = LazyLoader(
-    'TextFileArtifact',
-    globals(),
-    'bentoml.artifact.text_file_artifact.TextFileArtifact',
-)
-JSONArtifact = LazyLoader(
-    'JSONArtifact', globals(), 'bentoml.artifact.json_artifact.JSONArtifact'
-)
-PickleArtifact = LazyLoader(
-    'PickleArtifact', globals(), 'bentoml.artifact.pickle_artifact.PickleArtifact'
-)
-PytorchModelArtifact = LazyLoader(
-    'PytorchModelArtifact',
-    globals(),
-    'bentoml.artifact.pytorch_model_artifact.PytorchModelArtifact',
-)
-KerasModelArtifact = LazyLoader(
-    'KerasModelArtifact',
-    globals(),
-    'bentoml.artifact.keras_model_artifact.KerasModelArtifact',
-)
-XgboostModelArtifact = LazyLoader(
-    'XgboostModelArtifact',
-    globals(),
-    'bentoml.artifact.xgboost_model_artifact.XgboostModelArtifact',
-)
-H2oModelArtifact = LazyLoader(
-    'H2oModelArtifact',
-    globals(),
-    'bentoml.artifact.h2o_model_artifact.H2oModelArtifact',
-)
-FastaiModelArtifact = LazyLoader(
-    'FastaiModelArtifact',
-    globals(),
-    'bentoml.artifact.fastai_model_artifact.FastaiModelArtifact',
-)
-Fastai2ModelArtifact = LazyLoader(
-    'Fastai2ModelArtifact',
-    globals(),
-    'bentoml.artifact.fastai2_model_artifact.Fastai2ModelArtifact',
-)
-SklearnModelArtifact = LazyLoader(
-    'SklearnModelArtifact',
-    globals(),
-    'bentoml.artifact.sklearn_model_artifact.SklearnModelArtifact',
-)
-TensorflowSavedModelArtifact = LazyLoader(
-    'TensorflowSavedModelArtifact',
-    globals(),
-    'bentoml.artifact.tf_savedmodel_artifact.TensorflowSavedModelArtifact',
-)
-LightGBMModelArtifact = LazyLoader(
-    'LightGBMModelArtifact',
-    globals(),
-    'bentoml.artifact.lightgbm_model_artifact.LightGBMModelArtifact',
-)
-FasttextModelArtifact = LazyLoader(
-    'FasttextModelArtifact',
-    globals(),
-    'bentoml.artifact.fasttext_model_artifact.FasttextModelArtifact',
-)
-OnnxModelArtifact = LazyLoader(
-    'OnnxModelArtifact',
-    globals(),
-    'bentoml.artifact.onnx_model_artifact.OnnxModelArtifact',
-)
-SpacyModelArtifact = LazyLoader(
-    'SpacyModelArtifact',
-    globals(),
-    'bentoml.artifact.spacy_model_artifact.SpacyModelArtifact',
-)
-
+from bentoml.artifact.text_file_artifact import TextFileArtifact
+from bentoml.artifact.json_artifact import JSONArtifact
+from bentoml.artifact.pickle_artifact import PickleArtifact
+from bentoml.artifact.pytorch_model_artifact import PytorchModelArtifact
+from bentoml.artifact.keras_model_artifact import KerasModelArtifact
+from bentoml.artifact.xgboost_model_artifact import XgboostModelArtifact
+from bentoml.artifact.h2o_model_artifact import H2oModelArtifact
+from bentoml.artifact.fastai_model_artifact import FastaiModelArtifact
+from bentoml.artifact.fastai2_model_artifact import Fastai2ModelArtifact
+from bentoml.artifact.sklearn_model_artifact import SklearnModelArtifact
+from bentoml.artifact.tf_savedmodel_artifact import TensorflowSavedModelArtifact
+from bentoml.artifact.lightgbm_model_artifact import LightGBMModelArtifact
+from bentoml.artifact.fasttext_model_artifact import FasttextModelArtifact
+from bentoml.artifact.onnx_model_artifact import OnnxModelArtifact
+from bentoml.artifact.spacy_model_artifact import SpacyModelArtifact
 
 __all__ = [
     "BentoServiceArtifact",

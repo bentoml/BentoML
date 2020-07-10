@@ -28,8 +28,6 @@ from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import isidentifier
 from bentoml.utils.hybridmethod import hybridmethod
-from bentoml.marshal.utils import DataLoader
-from bentoml.server.trace import trace
 from bentoml.exceptions import NotFound, InvalidArgument
 
 from werkzeug.utils import cached_property
@@ -103,16 +101,22 @@ class BentoServiceAPI(object):
 
     @cached_property
     def func(self):
-        def _wrapped_func(*args, **kwargs):
-            with trace(
-                ZIPKIN_API_URL,
-                service_name=self.__class__.__name__,
-                span_name="user defined api handler",
-            ):
-                resp = self._func(*args, **kwargs)
-            return resp
+        if ZIPKIN_API_URL:
+            from bentoml.server.trace import trace
 
-        return _wrapped_func
+            def _wrapped_func(*args, **kwargs):
+                with trace(
+                    ZIPKIN_API_URL,
+                    service_name=self.__class__.__name__,
+                    span_name="user defined api handler",
+                ):
+                    resp = self._func(*args, **kwargs)
+                return resp
+
+            return _wrapped_func
+        else:
+            return self._func
+
 
     @property
     def request_schema(self):
@@ -126,13 +130,22 @@ class BentoServiceAPI(object):
         return self.handler.handle_request(request, self.func)
 
     def handle_batch_request(self, request: flask.Request):
+        from bentoml.marshal.utils import DataLoader
+
         requests = DataLoader.split_requests(request.get_data())
-        with trace(
-            ZIPKIN_API_URL,
-            service_name=self.__class__.__name__,
-            span_name=f"call `{self.handler.__class__.__name__}`",
-        ):
+
+        if ZIPKIN_API_URL:
+            from bentoml.server.trace import trace
+
+            with trace(
+                ZIPKIN_API_URL,
+                service_name=self.__class__.__name__,
+                span_name=f"call `{self.handler.__class__.__name__}`",
+            ):
+                responses = self.handler.handle_batch_request(requests, self.func)
+        else:
             responses = self.handler.handle_batch_request(requests, self.func)
+
         return DataLoader.merge_responses(responses)
 
     def handle_cli(self, args):

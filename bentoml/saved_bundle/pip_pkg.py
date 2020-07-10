@@ -15,7 +15,6 @@
 import os
 import sys
 import logging
-import pkg_resources
 import pkgutil
 import ast
 import zipimport
@@ -66,6 +65,9 @@ class ModuleManager(object):
         self.pip_module_map = {}
         self.setuptools_module_set = set()
         self.nonlocal_package_path = set()
+
+        import pkg_resources
+
         for dist in pkg_resources.working_set:  # pylint: disable=not-an-iterable
             self.nonlocal_package_path.add(dist.module_path)
             self.pip_pkg_map[dist._key] = dist._version

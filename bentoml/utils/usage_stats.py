@@ -19,7 +19,6 @@ import json
 import logging
 
 import uuid
-import requests
 from ruamel.yaml import YAML
 
 from bentoml.utils import ProtoMessageToDict
@@ -62,6 +61,8 @@ def _send_amplitude_event(event_type, event_properties):
     event_data = {"api_key": API_KEY, "event": json.dumps(event)}
 
     try:
+        import requests
+
         return requests.post(AMPLITUDE_URL, data=event_data, timeout=1)
     except Exception as err:  # pylint:disable=broad-except
         # silently fail since this error does not concern BentoML end users

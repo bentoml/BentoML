@@ -1,5 +1,7 @@
 # pylint: disable=redefined-outer-name
 import time
+import urllib
+
 import pytest
 import bentoml
 
@@ -26,6 +28,21 @@ def image(tmpdir_factory):
     client.images.remove(image.id)
 
 
+def _wait_until_ready(_host, timeout, check_interval=0.5):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            if (
+                urllib.request.urlopen(f'http://{_host}/healthz', timeout=0.1).status
+                == 200
+            ):
+                break
+        except Exception:  # pylint:disable=broad-except
+            time.sleep(check_interval - 0.1)
+    else:
+        raise AssertionError(f"server didn't get ready in {timeout} seconds")
+
+
 @pytest.fixture(autouse=True, scope='session')
 def host(image, enable_microbatch):
     import docker
@@ -38,15 +55,18 @@ def host(image, enable_microbatch):
         command = "bentoml serve-gunicorn /bento --enable-microbatch --workers 1"
     else:
         command = "bentoml serve-gunicorn /bento --workers 1"
-    container = client.containers.run(
-        command=command,
-        image=image.id,
-        auto_remove=True,
-        tty=True,
-        ports={'5000/tcp': port},
-        detach=True,
-    )
-    time.sleep(10)
-    yield f"127.0.0.1:{port}"
-    container.stop()
-    time.sleep(1)
+    try:
+        container = client.containers.run(
+            command=command,
+            image=image.id,
+            auto_remove=True,
+            tty=True,
+            ports={'5000/tcp': port},
+            detach=True,
+        )
+        _host = f"127.0.0.1:{port}"
+        _wait_until_ready(_host, 10)
+        yield _host
+    finally:
+        container.stop()
+        time.sleep(1)  # make sure container stopped & deleted

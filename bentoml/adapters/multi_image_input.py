@@ -65,14 +65,14 @@ class MultiImageInput(BaseInputAdapter):
     the example below
 
 
-    >>> <form action="http://localhost:8000" method="POST"
-     enctype="multipart/form-data">
+    >>> <form action="http://localhost:8000" method="POST" enctype="multipart/form-data">
     >>>     <input name="imageX" type="file">
     >>>     <input name="imageY" type="file">
     >>>     <input type="submit">
     >>> </form>
 
     Or the following cURL command
+
     >>> curl -F imageX=@image_file_x.png -F imageY=@image_file_y.jpg http://localhost:8000
     """
 

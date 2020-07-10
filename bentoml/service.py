@@ -117,7 +117,6 @@ class BentoServiceAPI(object):
         else:
             return self._func
 
-
     @property
     def request_schema(self):
         # TODO(bojiang): request_schema of adapter

@@ -364,7 +364,9 @@ class BentoAPIServer:
 
             def _wrapped_api_func():
                 with trace(
-                    ZIPKIN_API_URL, request.headers, service_name=self.__class__.__name__
+                    ZIPKIN_API_URL,
+                    request.headers,
+                    service_name=self.__class__.__name__,
                 ):
                     resp = api_func()
                 return resp

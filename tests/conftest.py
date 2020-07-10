@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 
 import imageio
 import numpy as np
@@ -9,6 +8,9 @@ from tests.bento_service_examples.example_bento_service import ExampleBentoServi
 
 
 def pytest_configure():
+    '''
+    global constants for tests
+    '''
     # async request client
     async def assert_request(
         method,
@@ -30,21 +32,20 @@ def pytest_configure():
                     method, url, data=data, headers=headers, timeout=timeout
                 ) as r:
                     data = await r.read()
-                    if callable(assert_status):
-                        assert assert_status(r.status)
-                    else:
-                        assert r.status == assert_status
-                    if assert_data is not None:
-                        if callable(assert_data):
-                            assert assert_data(data)
-                        else:
-                            assert data == assert_data
-        except (
-            asyncio.CancelledError,
-            aiohttp.client_exceptions.ServerDisconnectedError,
-            TimeoutError,
-        ):
-            assert False
+        except RuntimeError:
+            # the event loop has been closed due to previous task failed, ignore
+            return
+
+        if callable(assert_status):
+            assert assert_status(r.status)
+        else:
+            assert r.status == assert_status
+
+        if assert_data is not None:
+            if callable(assert_data):
+                assert assert_data(data)
+            else:
+                assert data == assert_data
 
     pytest.assert_request = assert_request
 
@@ -65,12 +66,6 @@ def pytest_configure():
 
 def pytest_addoption(parser):
     parser.addoption("--batch-request", action="store_false")
-    parser.addoption("--host", action="store", default="localhost:5000")
-
-
-@pytest.fixture()
-def host(pytestconfig):
-    return pytestconfig.getoption("host")
 
 
 @pytest.fixture()

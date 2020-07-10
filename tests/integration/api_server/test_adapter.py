@@ -69,8 +69,8 @@ async def test_api_server_image(host, img_file):
 
 
 @pytest.mark.asyncio
-async def test_api_server_json(host, is_batch_request):
-    req_count = 100 if is_batch_request else 1
+async def test_api_server_json(host):
+    req_count = 3 if pytest.enable_microbatch else 1
     tasks = tuple(
         pytest.assert_request(
             "POST",

@@ -20,13 +20,8 @@ import json
 
 from werkzeug.utils import secure_filename
 from flask import Response
-import numpy as np
 
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.dataframe_util import PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
 from bentoml.exceptions import BadInput, MissingDependencyException
 from bentoml.adapters.base_input import BaseInputAdapter
@@ -35,27 +30,12 @@ from bentoml.adapters.image_input import (
     get_default_accept_image_formats,
 )
 
+np = LazyLoader('np', globals(), 'numpy')
 
-def _import_fastai_vision():
-    try:
-        from fastai import vision
-    except ImportError:
-        raise MissingDependencyException(
-            "fastai.vision package is required to use FastaiImageInput"
-        )
-
-    return vision
-
-
-def _import_imageio_imread():
-    try:
-        from imageio import imread
-    except ImportError:
-        raise MissingDependencyException(
-            "imageio package is required to use FastaiImageInput"
-        )
-
-    return imread
+# BentoML optional dependencies, using lazy load to avoid ImportError
+pd = LazyLoader('pd', globals(), 'pandas')
+fastai = LazyLoader('fastai', globals(), 'fastai')
+imageio = LazyLoader('imageio', globals(), 'imageio')
 
 
 class NumpyJsonEncoder(json.JSONEncoder):
@@ -173,7 +153,7 @@ class FastaiImageInput(BaseInputAdapter):
 
     @property
     def pip_dependencies(self):
-        return ['imageio', 'fastai']
+        return ['imageio', 'fastai', 'pandas']
 
     def handle_batch_request(self, requests, func):
         raise NotImplementedError

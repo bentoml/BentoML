@@ -22,20 +22,13 @@ from werkzeug.utils import secure_filename
 from werkzeug.wrappers import Request
 
 from bentoml import config
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 from bentoml.exceptions import BadInput, MissingDependencyException
 from bentoml.adapters.base_input import BaseInputAdapter
 
-
-def _import_imageio_imread():
-    try:
-        from imageio import imread
-    except ImportError:
-        raise MissingDependencyException(
-            "imageio package is required to use ImageInput"
-        )
-
-    return imread
+# BentoML optional dependencies, using lazy load to avoid ImportError
+imageio = LazyLoader('imageio', globals(), 'imageio')
 
 
 def verify_image_format_or_raise(file_name, accept_format_list):
@@ -94,6 +87,8 @@ class ImageInput(BaseInputAdapter):
         is_batch_input=False,
         **base_kwargs,
     ):
+        assert imageio, "`imageio` dependency can be imported"
+
         if is_batch_input:
             raise ValueError('ImageInput can not accpept batch inputs')
         super(ImageInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
@@ -103,7 +98,6 @@ class ImageInput(BaseInputAdapter):
                 "Update your Service definition "
                 "or use LegacyImageInput instead(not recommended)."
             )
-        self.imread = _import_imageio_imread()
 
         self.pilmode = pilmode
         self.accept_image_formats = (
@@ -157,7 +151,7 @@ class ImageInput(BaseInputAdapter):
             else:
                 input_stream = data
 
-        input_data = self.imread(input_stream, pilmode=self.pilmode)
+        input_data = imageio.imread(input_stream, pilmode=self.pilmode)
         return input_data
 
     def handle_batch_request(
@@ -223,7 +217,7 @@ class ImageInput(BaseInputAdapter):
                 if not os.path.isabs(file_path):
                     file_path = os.path.abspath(file_path)
 
-                image_arrays.append(self.imread(file_path, pilmode=self.pilmode))
+                image_arrays.append(imread(file_path, pilmode=self.pilmode))
 
             results = func(image_arrays)
             for result in results:
@@ -231,7 +225,7 @@ class ImageInput(BaseInputAdapter):
 
     def handle_aws_lambda_event(self, event, func):
         if event["headers"].get("Content-Type", "").startswith("images/"):
-            image = self.imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
+            image = imread(base64.decodebytes(event["body"]), pilmode=self.pilmode)
         else:
             raise BadInput(
                 "BentoML currently doesn't support Content-Type: {content_type} for "

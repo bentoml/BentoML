@@ -13,7 +13,6 @@
 # limitations under the License.
 import click
 import os
-
 from google.protobuf.json_format import MessageToJson
 from tabulate import tabulate
 
@@ -22,11 +21,11 @@ from bentoml.cli.click_utils import (
     parse_bento_tag_list_callback,
 )
 from bentoml.cli.utils import humanfriendly_age_from_datetime
-from bentoml.exceptions import CLIException
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.yatai.client import YataiClient
 from bentoml.saved_bundle import safe_retrieve
+from bentoml.exceptions import CLIException
 
 
 def _print_bento_info(bento, output_type):
@@ -225,7 +224,7 @@ def add_bento_sub_command(cli):
                 get_bento_result.status
             )
             raise CLIException(
-                f'BentoService {name}:{version} not found - '
+                f'Failed to access BentoService {name}:{version} - '
                 f'{error_code}:{error_message}'
             )
 

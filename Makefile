@@ -5,7 +5,7 @@ help: ## Show all Makefile targets
 
 # General Development
 test: ## Run all unit tests with current Python version and env
-	@./travis/unit_tests.sh || (echo "Error running tests... You may need to run `make install-test-deps`"; exit 1)
+	@./travis/unit_tests.sh || (echo "Error running tests... You may need to run 'make install-test-deps'"; exit 1)
 format: ## Format code to adhere to BentoML style
 	./dev/format.sh
 lint: ## Lint code
@@ -19,7 +19,7 @@ install-test-deps: ## Install all test dependencies
 
 # Docs
 watch: ## Build and watch documentation
-	@./docs/watch.sh || (echo "Error building... You may need to run `make install-watch-deps`"; exit 1)
+	@./docs/watch.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
 install-watch-deps: ## Install MacOS dependencies for watching docs
@@ -31,9 +31,9 @@ endif
 
 # YataiService gRPC
 yatai: ## Start YataiService in debug mode
-	bentoml yatai-service-start --debug || (echo "Error starting... You may need to run `make install-yatai-deps`"; exit 1)
+	bentoml yatai-service-start --debug || (echo "Error starting... You may need to run 'make install-yatai-deps'"; exit 1)
 grpcui: ## Start gPRC Web UI
-	grpcui -plain text localhost:50051 || (echo "Error starting... You may need to run `make install-yatai-deps`"; exit 1)
+	grpcui -plain text localhost:50051 || (echo "Error starting... You may need to run 'make install-yatai-deps'"; exit 1)
 install-yatai-deps: ## Install dependencies to debug YataiService
 	pip install -e ".[dev]"
 	go get github.com/fullstorydev/grpcui

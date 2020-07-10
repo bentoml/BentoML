@@ -27,6 +27,7 @@ from tabulate import tabulate
 from bentoml.cli.click_utils import _echo
 from bentoml.yatai.proto.deployment_pb2 import DeploymentState, DeploymentSpec
 from bentoml.utils import pb_to_yaml
+from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +91,27 @@ def parse_key_value_pairs(key_value_pairs_str):
                 logger.warning("duplicated key '%s' found string map parameter", key)
             result[key] = value
     return result
+
+
+def _echo_docker_api_result(docker_generator):
+    layers = {}
+    for line in docker_generator:
+        if "stream" in line:
+            cleaned = line['stream'].rstrip("\n")
+            if cleaned != "":
+                yield cleaned
+        if "status" in line and line["status"] == "Pushing":
+            progress = line["progressDetail"]
+            layers[line["id"]] = progress["current"], progress["total"]
+            cur, total = zip(*layers.values())
+            cur, total = (
+                humanfriendly.format_size(sum(cur)),
+                humanfriendly.format_size(sum(total)),
+            )
+            yield (f"Pushed {cur} / {total}")
+        if "errorDetail" in line:
+            error = line["errorDetail"]
+            raise BentoMLException(error["message"])
 
 
 def _print_deployment_info(deployment, output_type):

@@ -106,7 +106,7 @@ import sys
 import logging
 
 from bentoml import saved_bundle, configure_logging
-from bentoml.cli import create_bento_service_cli
+from bentoml.cli.bento_service import create_bento_service_cli
 
 # By default, ignore warnings when loading BentoService installed as PyPI distribution
 # CLI will change back to default log level in config(info), and by adding --quiet or

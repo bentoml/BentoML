@@ -272,7 +272,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             )
 
         if enable_microbatch:
-            from bentoml.marshal import MarshalService
+            from bentoml.marshal.marshal import MarshalService
 
             with reserve_free_port() as api_server_port:
                 # start server right after port released

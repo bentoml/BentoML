@@ -11,11 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from bentoml.marshal.utils import DataLoader
-from bentoml.marshal.marshal import MarshalService
-
-__all__ = [
-    "MarshalService",
-    "DataLoader",
-]

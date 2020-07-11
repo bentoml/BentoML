@@ -31,11 +31,11 @@ For model training in SageMaker, log in to the AWS management console and naviga
 
 .. image:: ../_static/img/create-notebook-instance
 
-Next,under ** Permissions and encryption ** , select ** Create a new role ** or ** choosing an existing role ** . This allows both the notebook instance and user to access and upload data to Amazon S3. Then, select Any S3 bucket, which allows your SageMaker to access all S3 buckets in your account.
+Next,under **Permissions and encryption** , select **Create a new role** or **choosing an existing role** . This allows both the notebook instance and user to access and upload data to Amazon S3. Then, select Any S3 bucket, which allows your SageMaker to access all S3 buckets in your account.
 
 .. image:: ../_static//img/create-IAM-role
 
-After the notebook instance is created, the status will change from pending to ** InService ** . Select Open Jupyter under Actions, and choose ** Conda_python 3 ** under New tab to launch the Jupyter notebook within SageMaker.
+After the notebook instance is created, the status will change from pending to **InService** . Select Open Jupyter under Actions, and choose **Conda_python 3** under New tab to launch the Jupyter notebook within SageMaker.
 
 .. note::
 
@@ -198,7 +198,7 @@ For defining the BentoML service environment and trouble-shooting, you would als
 3.2 Create and Save BentoService Bundle
 ========================================
 
-The following few lines of codes demonstrate the simplicity and time-saving benefits of using BentoML. Here, we first create a BentoService instance and then use the BentoService ** pack method ** to bundle our trained movie review model together. Finally, we use the BentoService ** save method ** to save this BentoService bundle, which is now ready for inference. This process eliminates the needs for reproducing the same prediction service for testing and production environment - making it easier for data science teams to deploy their models.
+The following few lines of codes demonstrate the simplicity and time-saving benefits of using BentoML. Here, we first create a BentoService instance and then use the BentoService **pack method** to bundle our trained movie review model together. Finally, we use the BentoService **save method** to save this BentoService bundle, which is now ready for inference. This process eliminates the needs for reproducing the same prediction service for testing and production environment - making it easier for data science teams to deploy their models.
 
 By default, the BentoService bundle is saved under  :code: `~/bentoml/repository/directory`. Users could also modify the model repository through BentoML's standalone component  :code: `YataiService`, for more information, please visit here: https://docs.bentoml.org/en/latest/concepts.html#model-management
 

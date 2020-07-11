@@ -19,17 +19,18 @@ from typing import Iterable
 from werkzeug import Request
 from werkzeug.utils import secure_filename
 
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.image_input import (
     get_default_accept_image_formats,
     verify_image_format_or_raise,
-    _import_imageio_imread,
 )
 from bentoml.exceptions import BadInput
 from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 
 
-imread = _import_imageio_imread()
+# BentoML optional dependencies, using lazy load to avoid ImportError
+imageio = LazyLoader('imageio', globals(), 'imageio')
 
 
 class MultiImageInput(BaseInputAdapter):
@@ -108,7 +109,7 @@ class MultiImageInput(BaseInputAdapter):
     def read_file(self, name: str, file: BytesIO):
         safe_name = secure_filename(name)
         verify_image_format_or_raise(safe_name, self.accepted_image_formats)
-        return imread(file, pilmode=self.pilmode)
+        return imageio.imread(file, pilmode=self.pilmode)
 
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func

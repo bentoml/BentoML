@@ -29,12 +29,7 @@ Prerequisites
 
 For model training in SageMaker, log in to the AWS management console and navigate to SageMaker. From the SageMaker dashboard, select Notebook instances. Go ahead enter a notebook name and select the instance type
 
-
 .. image:: _static/img/create-notebook-instance.png
-
-
-.. image:: _static/img/yatai-service-web-ui-repository-detail.png
-
 
 Next,under **Permissions and encryption** , select **Create a new role** or **choosing an existing role** . This allows both the notebook instance and user to access and upload data to Amazon S3. Then, select Any S3 bucket, which allows your SageMaker to access all S3 buckets in your account.
 
@@ -126,12 +121,12 @@ In this section, we will demonstrate on using BentoML to build production-ready 
 
 .. note::
 
-    for AWS SageMaker deployment, you will need the following prerequisites as stated before: 
+   for AWS SageMaker deployment, you will need the following prerequisites as stated before: 
+   
+   * Install and configure the AWS CLI 
+   * Install Docker
 
-    * Install and configure the AWS CLI 
-    * Install Docker
-
-    for more information, please `click here <https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html>`_ 
+   for more information, please `click here <https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html>`_ 
 
 ================================================
 3.1 Create a BentoML Service File for Prediction

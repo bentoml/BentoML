@@ -10,8 +10,7 @@ import psutil  # noqa # pylint: disable=unused-import
 
 from bentoml.cli.bento_service import (
     create_bento_service_cli,
-    to_valid_docker_image_name,
-    to_valid_docker_image_version,
+    make_bento_name_docker_compatible,
     validate_tag,
 )
 from bentoml.cli.utils import echo_docker_api_result
@@ -44,8 +43,13 @@ def assert_equal_lists(res, expected):
         ("1234-asdf--", "1234-asdf"),
     ],
 )
+<<<<<<< HEAD
 def test_to_valid_docker_image_name(name, expected_name):
     assert to_valid_docker_image_name(name) == expected_name
+=======
+def test_make_bento_name_docker_compatible_name(name, expected_name):
+    assert make_bento_name_docker_compatible(name, "") == (expected, "")
+>>>>>>> address comments for containerize command
 
 
 @pytest.mark.parametrize(
@@ -58,6 +62,7 @@ def test_to_valid_docker_image_name(name, expected_name):
         (".-asdf", "asdf"),
     ],
 )
+<<<<<<< HEAD
 def test_to_valid_docker_image_version(tag, expected_tag):
     assert to_valid_docker_image_version(tag) == expected_tag
 
@@ -76,6 +81,18 @@ def test_validate_tag(tag):
 def test_validate_tag_raises(tag):
     with pytest.raises(click.BadParameter):
         validate_tag(None, None, tag)
+=======
+def test_make_bento_name_docker_compatible_tag(tag, expected_tag):
+    assert make_bento_name_docker_compatible("", tag) == ("", expected_tag)
+
+
+@pytest.mark.parametrize(
+    "tag, expected",
+    [("randomtag", "randomtag:latest"), ("name:version", "name:version")],
+)
+def test_validate_tag(tag, expected):
+    assert validate_tag(None, None, tag) == expected
+>>>>>>> address comments for containerize command
 
 
 def test_run_command_with_input_file(bento_bundle_path):

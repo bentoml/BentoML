@@ -52,64 +52,62 @@ def escape_shell_params(param):
     return '{}={}'.format(k, v)
 
 
-def to_valid_docker_image_name(name):
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return name.lower().strip("._-")
+def run_with_conda_env(bundle_path, command):
+    config = load_saved_bundle_config(bundle_path)
+    metadata = config['metadata']
+    env_name = metadata['service_name'] + '_' + metadata['service_version']
+
+    yaml = YAML()
+    yaml.default_flow_style = False
+    tmpf = tempfile.NamedTemporaryFile(delete=False)
+    env_path = tmpf.name + '.yaml'
+    yaml.dump(config['env']['conda_env'], Path(env_path))
+
+    pip_req = os.path.join(bundle_path, 'requirements.txt')
+
+    subprocess.call(
+        'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
+        'parameter requires conda but it\'s not installed."; exit 1; }} && '
+        'conda env update -n {env_name} -f {env_file} && '
+        'conda init bash && '
+        'eval "$(conda shell.bash hook)" && '
+        'conda activate {env_name} && '
+        '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
+        'dependencies."; }} && {cmd}'.format(
+            env_name=env_name, env_file=env_path, pip_req=pip_req, cmd=command,
+        ),
+        shell=True,
+    )
+    return
 
 
-def to_valid_docker_image_version(version):
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return version.encode("ascii", errors="ignore").decode().lstrip(".-")[:128]
+def make_bento_name_docker_compatible(name, version):
+    """
+    Name components may contain lowercase letters, digits and separators.
+    A separator is defined as a period, one or two underscores, or one or more dashes.
+
+    The version must be valid ASCII and may contain lowercase and uppercase letters,
+    digits, underscores, periods and dashes. Version may not start with a period
+    or a dash and may contain a maximum of 128 characters.
+
+    https://docs.docker.com/engine/reference/commandline/tag/#extended-description
+    """
+    name = name.lower().strip("._-")
+    version = tag.lstrip(".-")[:128]
+    return name, version
 
 
 def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
-    if tag is None:
-        return tag
-
     if ":" in tag:
-        name, version = tag.split(":")[:2]
+        tag = tag.split(":")[:2]
     else:
-        name, version = tag, None
-
-    valid_name_pattern = re.compile(
-        r"""
-        ^(
-        [a-z0-9]+      # alphanumeric
-        (.|_{1,2}|-+)? # seperators
-        )*$
-        """,
-        re.VERBOSE,
-    )
-    valid_version_pattern = re.compile(
-        r"""
-        ^
-        [a-zA-Z0-9] # cant start with .-
-        [ -~]{,127} # ascii match rest, cap at 128
-        $
-        """,
-        re.VERBOSE,
-    )
-
-    if not valid_name_pattern.match(name):
-        raise click.BadParameter(
-            f"Provided Docker Image tag {tag} is invalid. "
-            "Name components may contain lowercase letters, digits "
-            "and separators. A separator is defined as a period, "
-            "one or two underscores, or one or more dashes.",
-            ctx=ctx,
-            param=param,
+        _echo(
+            f"Tag {tag} does not specify an image version, " f"using 'latest'",
+            CLI_COLOR_WARNING,
         )
-    if version and not valid_version_pattern.match(version):
-        raise click.BadParameter(
-            f"Provided Docker Image tag {tag} is invalid. "
-            "A tag name must be valid ASCII and may contain "
-            "lowercase and uppercase letters, digits, underscores, "
-            "periods and dashes. A tag name may not start with a period "
-            "or a dash and may contain a maximum of 128 characters.",
-            ctx=ctx,
-            param=param,
-        )
-    return tag
+        tag = tag, "latest"
+    name, version = make_bento_name_docker_compatible(*tag)
+    return f"{name}:{version}"
 
 
 def resolve_bundle_path(bento, pip_installed_bundle_path):
@@ -369,6 +367,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         """
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
 
+<<<<<<< HEAD
         _echo(f"Found Bento: {saved_bundle_path}")
 
         bento_metadata = load_bento_service_metadata(saved_bundle_path)
@@ -385,6 +384,22 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             _echo(
                 "Image version not specified, using version parsed "
                 f"from BentoService: '{version}'",
+=======
+        bento_service_metadata_pb = load_bento_service_metadata(
+            bento_service_bundle_path
+        )
+        name, version = make_bento_name_docker_compatible(
+            bento_service_metadata_pb.name, bento_service_metadata_pb.version,
+        )
+
+        # build docker compatible tag if one isnt provided
+        if tag is None:
+            tag = f"{name}:{version}"
+        if tag != bento:
+            _echo(
+                f'Bento tag was changed to be Docker compatible. \n'
+                f'"{bento}"" -> "{tag}"'
+>>>>>>> address comments for containerize command
                 CLI_COLOR_WARNING,
             )
             tag = f"{tag}:{version}"
@@ -393,9 +408,17 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
 
         docker_api = docker.APIClient()
         try:
+<<<<<<< HEAD
             with Spinner(f"Building Docker image {tag} from {bento} \n"):
                 for line in echo_docker_api_result(
                     docker_api.build(path=saved_bundle_path, tag=tag, decode=True,)
+=======
+            with Spinner(f"Building Docker image: {name}\n"):
+                for line in echo_docker_api_result(
+                    docker_api.build(
+                        path=bento_service_bundle_path, tag=tag, decode=True,
+                    )
+>>>>>>> address comments for containerize command
                 ):
                     _echo(line)
         except docker.errors.APIError as error:

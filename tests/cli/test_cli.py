@@ -48,8 +48,12 @@ def test_to_valid_docker_image_name(name, expected_name):
     assert to_valid_docker_image_name(name) == expected_name
 =======
 def test_make_bento_name_docker_compatible_name(name, expected_name):
+<<<<<<< HEAD
     assert make_bento_name_docker_compatible(name, "") == (expected, "")
 >>>>>>> address comments for containerize command
+=======
+    assert make_bento_name_docker_compatible(name, "") == (expected_name, "")
+>>>>>>> linting + naming fixes
 
 
 @pytest.mark.parametrize(

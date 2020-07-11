@@ -93,7 +93,7 @@ def make_bento_name_docker_compatible(name, version):
     https://docs.docker.com/engine/reference/commandline/tag/#extended-description
     """
     name = name.lower().strip("._-")
-    version = tag.lstrip(".-")[:128]
+    version = version.lstrip(".-")[:128]
     return name, version
 
 
@@ -366,8 +366,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         Docker. You may provide your own through `--username` and `--password`.
         """
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
-
-<<<<<<< HEAD
         _echo(f"Found Bento: {saved_bundle_path}")
 
         bento_metadata = load_bento_service_metadata(saved_bundle_path)
@@ -384,41 +382,15 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             _echo(
                 "Image version not specified, using version parsed "
                 f"from BentoService: '{version}'",
-=======
-        bento_service_metadata_pb = load_bento_service_metadata(
-            bento_service_bundle_path
-        )
-        name, version = make_bento_name_docker_compatible(
-            bento_service_metadata_pb.name, bento_service_metadata_pb.version,
-        )
-
-        # build docker compatible tag if one isnt provided
-        if tag is None:
-            tag = f"{name}:{version}"
-        if tag != bento:
-            _echo(
-                f'Bento tag was changed to be Docker compatible. \n'
-                f'"{bento}"" -> "{tag}"'
->>>>>>> address comments for containerize command
-                CLI_COLOR_WARNING,
-            )
-            tag = f"{tag}:{version}"
 
         import docker
-
         docker_api = docker.APIClient()
         try:
-<<<<<<< HEAD
-            with Spinner(f"Building Docker image {tag} from {bento} \n"):
-                for line in echo_docker_api_result(
-                    docker_api.build(path=saved_bundle_path, tag=tag, decode=True,)
-=======
             with Spinner(f"Building Docker image: {name}\n"):
                 for line in echo_docker_api_result(
                     docker_api.build(
                         path=bento_service_bundle_path, tag=tag, decode=True,
                     )
->>>>>>> address comments for containerize command
                 ):
                     _echo(line)
         except docker.errors.APIError as error:

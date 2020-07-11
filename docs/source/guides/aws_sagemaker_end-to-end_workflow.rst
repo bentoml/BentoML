@@ -9,22 +9,22 @@ Prerequisites
 -------------
 * An active AWS account configured on the machine with AWS CLI installed and configurated
 
-    * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
+   * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
 
-    * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
+   * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 
 * Docker 
 
-  * Install instruction: https://docs.docker.com/install
+   * Install instruction: https://docs.docker.com/install
 
 * Python 3.6 or above and required packages `bentoml` and `bert-for-tf2`:
 
-  * .. code-block:: bash
+   * .. code-block:: bash
+   
+      pip install bentoml bert-for-tf2
 
-        pip install bentoml bert-for-tf2
 
-
-1 Create a SageMaker notebook instance
+1. Create a SageMaker notebook instance
 ---------------------------------------
 
 For model training in SageMaker, log in to the AWS management console and navigate to SageMaker. From the SageMaker dashboard, select Notebook instances. Go ahead enter a notebook name and select the instance type
@@ -69,7 +69,7 @@ In this step, we will create an S3 bucket named movie-review-dataset to store th
 .. image:: _static/img/create-s3-bucket.png
 
 
-2 Model Training -- Movie review sentiment with BERT and TensorFlow 2
+2. Model Training -- Movie review sentiment with BERT and TensorFlow 2
 ---------------------------------------------------------------------
 
 The second step of this tutorial is model training. We will be using the IMDB movie review dataset to create a sentiment analysis model which contains 25K positive and negative movie reviews each.
@@ -107,7 +107,7 @@ Below is the model summary. Please checkout :code:`bentoml/gallery/end-to-end-sa
     Non-trainable params: 0
 
 
-3 BentoML SageMaker API Endpoints Deployment
+3. BentoML SageMaker API Endpoints Deployment
 ---------------------------------------------
 
 In this section, we will demonstrate on using BentoML to build production-ready API endpoints and deploy it to AWS SageMaker. The core steps are as follows:
@@ -197,7 +197,9 @@ For defining the BentoML service environment and trouble-shooting, you would als
 3.2 Create and Save BentoService Bundle
 ========================================
 
-The following few lines of codes demonstrate the simplicity and time-saving benefits of using BentoML. Here, we first create a BentoService instance and then use the BentoService **pack method** to bundle our trained movie review model together. Finally, we use the BentoService **save method** to save this BentoService bundle, which is now ready for inference. This process eliminates the needs for reproducing the same prediction service for testing and production environment - making it easier for data science teams to deploy their models.
+The following few lines of codes demonstrate the simplicity and time-saving benefits of using BentoML. Here, we first create a BentoService instance and then use the BentoService **pack method** to bundle our trained movie review model together. 
+
+Finally, we use the BentoService **save method** to save this BentoService bundle, which is now ready for inference. This process eliminates the needs for reproducing the same prediction service for testing and production environment - making it easier for data science teams to deploy their models.
 
 By default, the BentoService bundle is saved under  :code:`~/bentoml/repository/directory`. Users could also modify the model repository through BentoML's standalone component  :code:`YataiService`, for more information, please visit `here <https://docs.bentoml.org/en/latest/concepts.html#model-management>`_ 
 
@@ -439,7 +441,7 @@ Now, we are ready to test the SageMaker API endpoints by creating a small script
     ['negative']
 
 
-4 Terminate AWS Resources
+4. Terminate AWS Resources
 -------------------------
 
 Lastly, do not forget to terminate the AWS resources used in this tutorial. Users could also clean up used resources by logging into the SageMaker console. For more information, please see `here <https://docs.aws.amazon.com/sagemaker/latest/dg/ex1-cleanup.html>`_ 

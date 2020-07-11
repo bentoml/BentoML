@@ -3,7 +3,7 @@ Building an AWS SageMaker End-to-end Workflow with BentoML
 
 This tutorial provides an end-to-end guide to using BentoML with AWS SageMaker -- a machine learning model training platform. It demonstrates the workflow of integrating BentoML with SageMaker, including: setting up a SageMaker notebook instance, model training, creating an S3 bucket, uploading the BentoService bundle into S3, and deploying the BentoML packaged model to SageMaker as an API endpoint using the BentoML CLI tool.
 
-For demonstration, this tutorial uses the IMDB movie review sentiment dataset with BERT and Tensorflow 2.0.(please note: the following model is a modification of the `original version <https://github.com/kpe/bert-for-tf2/blob/master/examples/gpu_movie_reviews.ipynb>`_)
+For demonstration, this tutorial uses the IMDB movie review sentiment dataset with BERT and Tensorflow 2.0. (please note: the following model is a modification of the `original version <https://github.com/kpe/bert-for-tf2/blob/master/examples/gpu_movie_reviews.ipynb>`_)
 
 Prerequisites
 -------------
@@ -74,7 +74,7 @@ In this step, we will create an S3 bucket named movie-review-dataset to store th
 
 The second step of this tutorial is model training. We will be using the IMDB movie review dataset to create a sentiment analysis model which contains 25K positive and negative movie reviews each.
 
-Below is the model summary. Please checkout :code: 'bentoml/gallery/end-to-end-sagemaker-depoyment' for more details on model training.
+Below is the model summary. Please checkout :code:`bentoml/gallery/end-to-end-sagemaker-depoyment` for more details on model training.
 
 .. code-block:: python
 
@@ -140,7 +140,7 @@ First, let's create a prediction service file using BentoML. The three main Bent
 
 Note: BentoML supports a variety of major ML frameworks and input data format. For more details, please check available model artifacts `here <https://docs.bentoml.org/en/latest/api/artifacts.html>`_ and adapters `here <https://docs.bentoml.org/en/latest/api/adapters.html>`_ 
 
-For defining the BentoML service environment and trouble-shooting, you would also use  :code: `auto_pip_dependencies= True` or pass the BentoML generated requirement.txt through  :code: `@bentoml.env(requirements_tex_file ='./requirements.txt')`
+For defining the BentoML service environment and trouble-shooting, you would also use  :code:`auto_pip_dependencies= True` or pass the BentoML generated requirement.txt through  :code:`@bentoml.env(requirements_tex_file ='./requirements.txt')`
 
 .. code-block:: python
 
@@ -199,7 +199,7 @@ For defining the BentoML service environment and trouble-shooting, you would als
 
 The following few lines of codes demonstrate the simplicity and time-saving benefits of using BentoML. Here, we first create a BentoService instance and then use the BentoService **pack method** to bundle our trained movie review model together. Finally, we use the BentoService **save method** to save this BentoService bundle, which is now ready for inference. This process eliminates the needs for reproducing the same prediction service for testing and production environment - making it easier for data science teams to deploy their models.
 
-By default, the BentoService bundle is saved under  :code: `~/bentoml/repository/directory`. Users could also modify the model repository through BentoML's standalone component  :code: `YataiService`, for more information, please visit `here <https://docs.bentoml.org/en/latest/concepts.html#model-management>`_ 
+By default, the BentoService bundle is saved under  :code:`~/bentoml/repository/directory`. Users could also modify the model repository through BentoML's standalone component  :code:`YataiService`, for more information, please visit `here <https://docs.bentoml.org/en/latest/concepts.html#model-management>`_ 
 
 .. code-block:: python
 
@@ -239,7 +239,7 @@ By default, the BentoService bundle is saved under  :code: `~/bentoml/repository
 Upload BentoService Bundle to S3
 =================================
 
-As mentioned earlier, BentoML also provides ways to change the model repository - allowing data science teams to share the BentoService bundle easily for better collaborations. One way is by uploading it to the cloud services such as AWS S3. Using the same scripts as above and passing the S3 bucket URL into  :code: `.save()` , it will deploy the BentoService bundle directly into the S3 movie-review-dataset bucket we created earlier.
+As mentioned earlier, BentoML also provides ways to change the model repository - allowing data science teams to share the BentoService bundle easily for better collaborations. One way is by uploading it to the cloud services such as AWS S3. Using the same scripts as above and passing the S3 bucket URL into  :code:`.save()` , it will deploy the BentoService bundle directly into the S3 movie-review-dataset bucket we created earlier.
 
 .. code-block:: python
 
@@ -282,7 +282,7 @@ Using the BentoML CLI, we can see a list of BentoService generated here
 3.4.1 Test REST API Locally -- Online API Serving
 =================================================
 
-Before deploying the model to AWS SageMaker, we could test it locally first using the BentoML CLI. By using  :code: `bentoml serve`, it provides a near real-time prediction via API endpoints.
+Before deploying the model to AWS SageMaker, we could test it locally first using the BentoML CLI. By using  :code:`bentoml serve`, it provides a near real-time prediction via API endpoints.
 
 .. image:: ../_static/img/bento-web-ui
 
@@ -311,7 +311,7 @@ Before deploying the model to AWS SageMaker, we could test it locally first usin
 3.4.2 Test REST API Locally -- Offline Batch Serving
 ====================================================
 
-Alternatively, we could also use  :code: `bentoml run` for local testing. BentoML provides many other model serving methods, such as: adaptive micro-batching, edge serving,and programmatic access. Please visit `here <https://docs.bentoml.org/en/latest/concepts.html#model-serving>`_ 
+Alternatively, we could also use  :code:`bentoml run` for local testing. BentoML provides many other model serving methods, such as: adaptive micro-batching, edge serving,and programmatic access. Please visit `here <https://docs.bentoml.org/en/latest/concepts.html#model-serving>`_ 
 
 .. code-block:: bash
 

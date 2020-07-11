@@ -9,19 +9,19 @@ Prerequisites
 -------------
 * An active AWS account configured on the machine with AWS CLI installed and configurated
 
-   * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
+  * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
 
-   * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
+  * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 
 * Docker 
 
-   * Install instruction: https://docs.docker.com/install
+  * Install instruction: https://docs.docker.com/install
 
 * Python 3.6 or above and required packages `bentoml` and `bert-for-tf2`:
 
-   * .. code-block:: bash
+  * .. code-block:: bash
    
-      pip install bentoml bert-for-tf2
+     pip install bentoml bert-for-tf2
 
 
 1. Create a SageMaker notebook instance

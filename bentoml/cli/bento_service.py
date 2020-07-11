@@ -31,7 +31,7 @@ from bentoml.cli.click_utils import (
     conditional_argument,
 )
 from bentoml.cli.utils import (
-    _echo_docker_api_result,
+    echo_docker_api_result,
     Spinner,
 )
 from bentoml.saved_bundle import (
@@ -494,7 +494,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         docker_api = docker.APIClient()
         try:
             with Spinner(f"Building Docker image: {name}\n"):
-                for line in _echo_docker_api_result(
+                for line in echo_docker_api_result(
                     docker_api.build(
                         path=bento_service_bundle_path, tag=full_tag, decode=True,
                     )
@@ -516,7 +516,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
 
             try:
                 with Spinner(f"Pushing docker image to {full_tag}\n"):
-                    for line in _echo_docker_api_result(
+                    for line in echo_docker_api_result(
                         docker_api.push(
                             repository=name,
                             tag=version,

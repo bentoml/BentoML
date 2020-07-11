@@ -43,7 +43,7 @@ def assert_equal_lists(res, expected):
     ],
 )
 def test_make_bento_name_docker_compatible_name(name, expected_name):
-    assert make_bento_name_docker_compatible(name, "") == (expected, "")
+    assert make_bento_name_docker_compatible(name, "") == (expected_name, "")
 
 
 @pytest.mark.parametrize(

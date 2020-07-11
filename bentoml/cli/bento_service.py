@@ -100,7 +100,7 @@ def make_bento_name_docker_compatible(name, version):
     https://docs.docker.com/engine/reference/commandline/tag/#extended-description
     """
     name = name.lower().strip("._-")
-    version = tag.lstrip(".-")[:128]
+    version = version.lstrip(".-")[:128]
     return name, version
 
 
@@ -496,7 +496,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         if tag != bento:
             _echo(
                 f'Bento tag was changed to be Docker compatible. \n'
-                f'"{bento}"" -> "{tag}"'
+                f'"{bento}"" -> "{tag}"',
                 CLI_COLOR_WARNING,
             )
 

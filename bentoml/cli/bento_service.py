@@ -58,14 +58,6 @@ def escape_shell_params(param):
     return '{}={}'.format(k, v)
 
 
-def get_name_version_from_tag(bento):
-    # returns name:version
-    if ":" in bento:
-        return bento.split(":")[:2]
-    else:
-        return bento, None
-
-
 def run_with_conda_env(bundle_path, command):
     config = load_saved_bundle_config(bundle_path)
     metadata = config['metadata']
@@ -95,20 +87,34 @@ def run_with_conda_env(bundle_path, command):
     return
 
 
-def make_bento_name_docker_compatible(name, tag):
+def make_bento_name_docker_compatible(name, version):
     """
     Name components may contain lowercase letters, digits and separators.
     A separator is defined as a period, one or two underscores, or one or more dashes.
 
-    A tag name must be valid ASCII and may contain lowercase and uppercase letters,
-    digits, underscores, periods and dashes. A tag name may not start with a period
-    or a dash and may contain a maximum of 128 characters.
+    A tag name (version) must be valid ASCII and may contain lowercase and uppercase 
+    letters, digits, underscores, periods and dashes. A tag name may not start with 
+    a period or a dash and may contain a maximum of 128 characters.
 
     https://docs.docker.com/engine/reference/commandline/tag/#extended-description
     """
     name = name.lower().strip("._-")
-    tag = tag.lstrip(".-")[:128]
-    return name, tag
+    version = version.lstrip(".-")[:128]
+    return name, version
+
+
+def validate_tag(ctx, param, tag):
+    if ":" in tag:
+        tag = tag.split(":")[:2]
+    else:
+        _echo(
+            f"Tag {tag} does not specify an image version, "
+            f"using 'latest'",
+            CLI_COLOR_WARNING,
+        )
+        tag = tag, "latest"
+    name, version = make_bento_name_docker_compatible(*tag)
+    return f"{name}:{version}"
 
 
 def resolve_bundle_path(bento, pip_installed_bundle_path):
@@ -438,6 +444,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Optional image tag. If not specified, Bento will generate one from "
         "the name of the Bento.",
         required=False,
+        callback=validate_tag,
     )
     @click.option(
         '-u', '--username', type=click.STRING, required=False,
@@ -471,23 +478,23 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
-
         _echo(f"Found Bento: {bento_service_bundle_path}")
 
-        name, version = get_name_version_from_tag(bento)
-        # use tag name and version where applicable
-        if tag is not None:
-            name, v = get_name_version_from_tag(tag)
-            if v is not None:
-                version = v
+        bento_service_metadata_pb = load_bento_service_metadata(
+            bento_service_bundle_path
+        )
+        name, version = make_bento_name_docker_compatible(
+            bento_service_metadata_pb.name,
+            bento_service_metadata_pb.version,
+        )
 
-        name, version = make_bento_name_docker_compatible(name, version)
-
-        full_tag = f"{name}:{version}"
-        if full_tag != bento:
+        # build docker compatible tag if one isnt provided
+        if tag is None:
+            tag = f"{name}:{version}"
+        if tag != bento:
             _echo(
                 f'Bento tag was changed to be Docker compatible. \n'
-                f'"{bento}" -> "{full_tag}"',
+                f'"{bento}" -> "{tag}"',
                 CLI_COLOR_WARNING,
             )
 
@@ -496,7 +503,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             with Spinner(f"Building Docker image: {name}\n"):
                 for line in echo_docker_api_result(
                     docker_api.build(
-                        path=bento_service_bundle_path, tag=full_tag, decode=True,
+                        path=bento_service_bundle_path, tag=tag, decode=True,
                     )
                 ):
                     _echo(line)
@@ -504,7 +511,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             raise CLIException(f'Could not build Docker image: {error}')
 
         _echo(
-            f'Finished building {full_tag} from {bento}', CLI_COLOR_SUCCESS,
+            f'Finished building {tag} from {bento}', CLI_COLOR_SUCCESS,
         )
 
         if push:
@@ -515,7 +522,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             )
 
             try:
-                with Spinner(f"Pushing docker image to {full_tag}\n"):
+                with Spinner(f"Pushing docker image to {tag}\n"):
                     for line in echo_docker_api_result(
                         docker_api.push(
                             repository=name,
@@ -527,7 +534,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     ):
                         _echo(line)
                 _echo(
-                    f'Pushed {full_tag} to {name}', CLI_COLOR_SUCCESS,
+                    f'Pushed {tag} to {name}', CLI_COLOR_SUCCESS,
                 )
             except (docker.errors.APIError, BentoMLException) as error:
                 raise CLIException(f'Could not push Docker image: {error}')

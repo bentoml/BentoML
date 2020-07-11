@@ -30,6 +30,8 @@ Prerequisites
 For model training in SageMaker, log in to the AWS management console and navigate to SageMaker. From the SageMaker dashboard, select Notebook instances. Go ahead enter a notebook name and select the instance type
 
 .. image:: _static/img/create-notebook-instance.png
+    :alt: sagemaker end-to-end guide
+
 
 Next,under **Permissions and encryption** , select **Create a new role** or **choosing an existing role** . This allows both the notebook instance and user to access and upload data to Amazon S3. Then, select Any S3 bucket, which allows your SageMaker to access all S3 buckets in your account.
 
@@ -37,7 +39,7 @@ Next,under **Permissions and encryption** , select **Create a new role** or **ch
 
 After the notebook instance is created, the status will change from pending to **InService** . Select Open Jupyter under Actions, and choose **Conda_python 3** under New tab to launch the Jupyter notebook within SageMaker.
 
-.. tip::
+.. note::
 
    SageMaker also provides a local model through pip install SageMaker.
 

@@ -3,7 +3,7 @@ Building an AWS SageMaker End-to-end Workflow with BentoML
 
 This tutorial provides an end-to-end guide to using BentoML with AWS SageMaker -- a machine learning model training platform. It demonstrates the workflow of integrating BentoML with SageMaker, including: setting up a SageMaker notebook instance, model training, creating an S3 bucket, uploading the BentoService bundle into S3, and deploying the BentoML packaged model to SageMaker as an API endpoint using the BentoML CLI tool.
 
-For demonstration, this tutorial uses the IMDB movie review sentiment dataset with BERT and Tensorflow 2.0.(please note: the following model is a modification of the original version: https://github.com/kpe/bert-for-tf2/blob/master/examples/gpu_movie_reviews.ipynb)
+For demonstration, this tutorial uses the IMDB movie review sentiment dataset with BERT and Tensorflow 2.0.(please note: the following model is a modification of the `original version <https://github.com/kpe/bert-for-tf2/blob/master/examples/gpu_movie_reviews.ipynb>`_)
 
 Prerequisites
 -------------
@@ -126,7 +126,7 @@ In this section, we will demonstrate on using BentoML to build production-ready 
     * Install and configure the AWS CLI 
     * Install Docker
 
-    for more information, please click here: https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html
+    for more information, please `click here <https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html>`_ 
 
 ================================================
 3.1 Create a BentoML Service File for Prediction
@@ -138,8 +138,7 @@ First, let's create a prediction service file using BentoML. The three main Bent
 2. Define the model artifacts based on the ML frameworks used for the trained model
 3. Choose the relevant input adapters (formerly handlers) for the API
 
-Note: BentoML supports a variety of major ML frameworks and input data format. For more details, please check available model artifacts here
-https://docs.bentoml.org/en/latest/api/artifacts.html and adapters here https://docs.bentoml.org/en/latest/api/adapters.html
+Note: BentoML supports a variety of major ML frameworks and input data format. For more details, please check available model artifacts `here <https://docs.bentoml.org/en/latest/api/artifacts.html>`_ and adapters `here <https://docs.bentoml.org/en/latest/api/adapters.html>`_ 
 
 For defining the BentoML service environment and trouble-shooting, you would also use  :code: `auto_pip_dependencies= True` or pass the BentoML generated requirement.txt through  :code: `@bentoml.env(requirements_tex_file ='./requirements.txt')`
 
@@ -200,7 +199,7 @@ For defining the BentoML service environment and trouble-shooting, you would als
 
 The following few lines of codes demonstrate the simplicity and time-saving benefits of using BentoML. Here, we first create a BentoService instance and then use the BentoService **pack method** to bundle our trained movie review model together. Finally, we use the BentoService **save method** to save this BentoService bundle, which is now ready for inference. This process eliminates the needs for reproducing the same prediction service for testing and production environment - making it easier for data science teams to deploy their models.
 
-By default, the BentoService bundle is saved under  :code: `~/bentoml/repository/directory`. Users could also modify the model repository through BentoML's standalone component  :code: `YataiService`, for more information, please visit here: https://docs.bentoml.org/en/latest/concepts.html#model-management
+By default, the BentoService bundle is saved under  :code: `~/bentoml/repository/directory`. Users could also modify the model repository through BentoML's standalone component  :code: `YataiService`, for more information, please visit `here <https://docs.bentoml.org/en/latest/concepts.html#model-management>`_ 
 
 .. code-block:: python
 
@@ -312,7 +311,7 @@ Before deploying the model to AWS SageMaker, we could test it locally first usin
 3.4.2 Test REST API Locally -- Offline Batch Serving
 ====================================================
 
-Alternatively, we could also use  :code: `bentoml run` for local testing. BentoML provides many other model serving methods, such as: adaptive micro-batching, edge serving,and programmatic access. Please visit here: https://docs.bentoml.org/en/latest/concepts.html#model-serving
+Alternatively, we could also use  :code: `bentoml run` for local testing. BentoML provides many other model serving methods, such as: adaptive micro-batching, edge serving,and programmatic access. Please visit `here <https://docs.bentoml.org/en/latest/concepts.html#model-serving>`_ 
 
 .. code-block:: bash
 
@@ -328,7 +327,7 @@ Alternatively, we could also use  :code: `bentoml run` for local testing. BentoM
 3.5 Deploy to AWS SageMaker
 ===========================
 
-Finally, we are ready to deploy our BentoML packaged model to AWS SageMaker. We need to pass the deployment name, the BentoService name and the API name. Depending on the size of the BentoService generated, the deployment for this tutorial took about 30mins.
+Finally, we are ready to deploy our BentoML packaged model to AWS SageMaker. We need to pass the deployment name, the BentoService name and the API name. Depending on the size of the BentoService generated, the deployment for this tutorial took about 30 mins.
 
 .. code-block:: bash
 
@@ -417,7 +416,7 @@ Finally, we are ready to deploy our BentoML packaged model to AWS SageMaker. We 
 3.6 Test API Endpoints Using Boto3 SDK
 ======================================
 
-Now, we are ready to test the SageMaker API endpoints by creating a small script using the AWS boto3 SDK. Alternatively, users could also use the AWS CLI to test the endpoint. Please visit https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sagemaker-runtime/invoke-endpoint.html
+Now, we are ready to test the SageMaker API endpoints by creating a small script using the AWS boto3 SDK. Alternatively, users could also use the AWS CLI to test the endpoint. Please visit `here <https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sagemaker-runtime/invoke-endpoint.html>`_
 
 .. code-block:: python
 
@@ -443,7 +442,7 @@ Now, we are ready to test the SageMaker API endpoints by creating a small script
 4 Terminate AWS Resources
 -------------------------
 
-Lastly, do not forget to terminate the AWS resources used in this tutorial. Users could also clean up used resources by logging into the SageMaker console. For more information, please see here: https://docs.aws.amazon.com/sagemaker/latest/dg/ex1-cleanup.html
+Lastly, do not forget to terminate the AWS resources used in this tutorial. Users could also clean up used resources by logging into the SageMaker console. For more information, please see `here <https://docs.aws.amazon.com/sagemaker/latest/dg/ex1-cleanup.html>`_ 
 
 .. code-block:: python
 

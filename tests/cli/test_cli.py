@@ -10,6 +10,7 @@ import psutil  # noqa # pylint: disable=unused-import
 from bentoml.cli.bento_service import (
     create_bento_service_cli,
     make_bento_name_docker_compatible,
+    validate_tag,
 )
 from bentoml.cli.utils import echo_docker_api_result
 from bentoml.exceptions import BentoMLException
@@ -32,25 +33,39 @@ def assert_equal_lists(res, expected):
     assert all([a == b for a, b in zip(expected, res)])
 
 
-@pytest.mark.parametrize("name, expected_name", [
-    ("ALLCAPS", "allcaps"),
-    ("...as.df...", "as.df"),
-    ("_asdf_asdf", "asdf_asdf"),
-    ("1234-asdf--", "1234-asdf"),
-])
+@pytest.mark.parametrize(
+    "name, expected_name",
+    [
+        ("ALLCAPS", "allcaps"),
+        ("...as.df...", "as.df"),
+        ("_asdf_asdf", "asdf_asdf"),
+        ("1234-asdf--", "1234-asdf"),
+    ],
+)
 def test_make_bento_name_docker_compatible_name(name, expected_name):
     assert make_bento_name_docker_compatible(name, "") == (expected_name, "")
 
 
-@pytest.mark.parametrize("tag, expected_tag", [
-    ("....asdf.", "asdf."),
-    ("A" * 128, "A" * 128),
-    ("A" * 129, "A" * 128),
-    ("-asdf-", "asdf-"),
-    (".-asdf", "asdf"),
-])
+@pytest.mark.parametrize(
+    "tag, expected_tag",
+    [
+        ("....asdf.", "asdf."),
+        ("A" * 128, "A" * 128),
+        ("A" * 129, "A" * 128),
+        ("-asdf-", "asdf-"),
+        (".-asdf", "asdf"),
+    ],
+)
 def test_make_bento_name_docker_compatible_tag(tag, expected_tag):
     assert make_bento_name_docker_compatible("", tag) == ("", expected_tag)
+
+
+@pytest.mark.parametrize(
+    "tag, expected",
+    [("randomtag", "randomtag:latest"), ("name:version", "name:version")],
+)
+def test_validate_tag(tag, expected):
+    assert validate_tag(None, None, tag) == expected
 
 
 def test_run_command_with_input_file(bento_bundle_path):

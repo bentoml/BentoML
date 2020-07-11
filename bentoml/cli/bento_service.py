@@ -92,8 +92,8 @@ def make_bento_name_docker_compatible(name, version):
     Name components may contain lowercase letters, digits and separators.
     A separator is defined as a period, one or two underscores, or one or more dashes.
 
-    A tag name (version) must be valid ASCII and may contain lowercase and uppercase 
-    letters, digits, underscores, periods and dashes. A tag name may not start with 
+    A tag name (version) must be valid ASCII and may contain lowercase and uppercase
+    letters, digits, underscores, periods and dashes. A tag name may not start with
     a period or a dash and may contain a maximum of 128 characters.
 
     https://docs.docker.com/engine/reference/commandline/tag/#extended-description
@@ -103,13 +103,12 @@ def make_bento_name_docker_compatible(name, version):
     return name, version
 
 
-def validate_tag(ctx, param, tag):
+def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
     if ":" in tag:
         tag = tag.split(":")[:2]
     else:
         _echo(
-            f"Tag {tag} does not specify an image version, "
-            f"using 'latest'",
+            f"Tag {tag} does not specify an image version, " f"using 'latest'",
             CLI_COLOR_WARNING,
         )
         tag = tag, "latest"
@@ -484,8 +483,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             bento_service_bundle_path
         )
         name, version = make_bento_name_docker_compatible(
-            bento_service_metadata_pb.name,
-            bento_service_metadata_pb.version,
+            bento_service_metadata_pb.name, bento_service_metadata_pb.version,
         )
 
         # build docker compatible tag if one isnt provided

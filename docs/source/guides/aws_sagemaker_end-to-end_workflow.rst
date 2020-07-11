@@ -1,4 +1,4 @@
-Tutorial : Building an AWS SageMaker End-to-end Workflow with BentoML
+Building an AWS SageMaker End-to-end Workflow with BentoML
 =====================================================================
 
 This tutorial provides an end-to-end guide to using BentoML with AWS SageMaker -- a machine learning model training platform. It demonstrates the workflow of integrating BentoML with SageMaker, including: setting up a SageMaker notebook instance, model training, creating an S3 bucket, uploading the BentoService bundle into S3, and deploying the BentoML packaged model to SageMaker as an API endpoint using the BentoML CLI tool.
@@ -69,7 +69,7 @@ In this step, we will create an S3 bucket named movie-review-dataset to store th
 .. image:: ../_static/img/create-s3-bucket
 
 
-2 Model Training -- Movie review sentiment with BERT and TensorFlow2
+2 Model Training -- Movie review sentiment with BERT and TensorFlow 2
 ---------------------------------------------------------------------
 
 The second step of this tutorial is model training. We will be using the IMDB movie review dataset to create a sentiment analysis model which contains 25K positive and negative movie reviews each.
@@ -199,6 +199,7 @@ For defining the BentoML service environment and trouble-shooting, you would als
 ========================================
 
 The following few lines of codes demonstrate the simplicity and time-saving benefits of using BentoML. Here, we first create a BentoService instance and then use the BentoService ** pack method ** to bundle our trained movie review model together. Finally, we use the BentoService ** save method ** to save this BentoService bundle, which is now ready for inference. This process eliminates the needs for reproducing the same prediction service for testing and production environment - making it easier for data science teams to deploy their models.
+
 By default, the BentoService bundle is saved under  :code: `~/bentoml/repository/directory`. Users could also modify the model repository through BentoML's standalone component  :code: `YataiService`, for more information, please visit here: https://docs.bentoml.org/en/latest/concepts.html#model-management
 
 .. code-block:: python
@@ -224,17 +225,14 @@ By default, the BentoService bundle is saved under  :code: `~/bentoml/repository
     writing BentoML.egg-info/PKG-INFO
     writing dependency_links to BentoML.egg-info/dependency_links.txt
     writing entry points to BentoML.egg-info/entry_points.txt
-    writing requirements to BentoML.egg-info/requires.txt
-    writing top-level names to BentoML.egg-info/top_level.txt
-    reading manifest file 'BentoML.egg-info/SOURCES.txt'
-    reading manifest template 'MANIFEST.in'
+ 
     ...
     ...
+    
     UPDATING BentoML-0.8.1+0.g5b6bd29.dirty/bentoml/_version.py
     set BentoML-0.8.1+0.g5b6bd29.dirty/bentoml/_version.py to '0.8.1+0.g5b6bd29.dirty'
     Creating tar archive
     removing 'BentoML-0.8.1+0.g5b6bd29.dirty' (and everything under it)
-    [2020-06-25 19:57:03,142] WARNING - Saved BentoService bundle version mismatch: loading BentoService bundle create with BentoML version 0.8.1,  but loading from BentoML version 0.8.1+0.g5b6bd29.dirty
     [2020-06-25 19:57:03,958] INFO - BentoService bundle 'Service:20200625195616_62D0DB' saved to: /Users/amy/bentoml/repository/Service/20200625195616_62D0DB
 
 
@@ -295,14 +293,10 @@ Before deploying the model to AWS SageMaker, we could test it locally first usin
 
     # sample output
 
-    2020-06-26 13:43:49.603289: I tensorflow/core/platform/cpu_feature_guard.cc:143] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
-    2020-06-26 13:43:49.634653: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x7f8e1d8f9410 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
+
     2020-06-26 13:43:49.634673: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
     * Serving Flask app "Service" (lazy loading)
     * Environment: production
-    WARNING: This is a development server. Do not use it in a production deployment.
-    Use a production WSGI server instead.
-    * Debug mode: off
     * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
     127.0.0.1 - - [26/Jun/2020 13:44:08] "GET / HTTP/1.1" 200 -
     127.0.0.1 - - [26/Jun/2020 13:44:09] "GET /static/swagger-ui.css HTTP/1.1" 200 -
@@ -326,11 +320,6 @@ Alternatively, we could also use  :code: `bentoml run` for local testing. BentoM
 
     # sample output
 
-    [2020-06-25 19:59:59,724] WARNING - BentoML local changes detected - Local BentoML repository including all code changes will be packaged together with saved bundle created, under './bundled_pip_dependencies' directory. For using a modified version of BentoML for production deployment, it is recommended to set the 'core/bentoml_deploy_version' config to a http location or your BentoML for on github, e.g.: 'bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{branch}'
-    [2020-06-25 19:59:59,747] WARNING - Saved BentoService bundle version mismatch: loading BentoService bundle create with BentoML version 0.8.1,  but loading from BentoML version 0.8.1+0.g5b6bd29.dirty
-    [2020-06-25 20:00:03,274] WARNING - bert package does not exist in the current python session
-    2020-06-25 20:00:04.447236: I tensorflow/core/platform/cpu_feature_guard.cc:143] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
-    2020-06-25 20:00:04.460749: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x7faeed381050 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
     2020-06-25 20:00:04.460780: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
     ['negative']
 
@@ -362,7 +351,8 @@ Finally, we are ready to deploy our BentoML packaged model to AWS SageMaker. We 
 
     [2020-06-25 20:18:34,085] INFO - Successfully tagged 899399195124.dkr.ecr.us-east-1.amazonaws.com/service-sagemaker:20200625195616_62D0DB
 
-    \[2020-06-25 20:53:09,669] INFO - ApplyDeployment (bert-moviereview-sagemaker, namespace dev) succeeded
+    \[2020-06-25 20:53:09,669] INFO - ApplyDeployment (bert-moviereview-sagemaker, namespace dev) succeeded
+    
     Successfully created AWS Sagemaker deployment bert-moviereview-sagemaker
     {
     "namespace": "dev",

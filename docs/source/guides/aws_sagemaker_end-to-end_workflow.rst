@@ -37,7 +37,8 @@ Next,under **Permissions and encryption** , select **Create a new role** or **ch
 
 After the notebook instance is created, the status will change from pending to **InService** . Select Open Jupyter under Actions, and choose **Conda_python 3** under New tab to launch the Jupyter notebook within SageMaker.
 
-.. note::
+.. tip::
+
    SageMaker also provides a local model through pip install SageMaker.
 
 Finally to prepare for the model training, let's import some libraries -- Boto3 and SageMaker and set up the IAM role. Boto3 is the AWS SDK for Python, which makes it easier to integrate our model with AWS services such as Amazon S3
@@ -292,7 +293,6 @@ Before deploying the model to AWS SageMaker, we could test it locally first usin
     > bentoml serve Service:20200702134432_033DAB  
 
     # sample output
-
 
     2020-06-26 13:43:49.634673: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
     * Serving Flask app "Service" (lazy loading)

@@ -1,37 +1,45 @@
 Tutorial : Building an AWS SageMaker End-to-end Workflow with BentoML
 =====================================================================
 
-This tutorial provides an end-to-end guide using BentoML with AWS SageMaker -- a machine learning model training platform. It demonstrates the workflow of integrating BentoML with SageMaker, including: setting up a SageMaker notebook instance, model training, creating an S3 bucket, uploading the BentoService bundle into S3, and deploying the BentoML packaged model to SageMaker as an API endpoint using the BentoML CLI tool.
+This tutorial provides an end-to-end guide to using BentoML with AWS SageMaker -- a machine learning model training platform. It demonstrates the workflow of integrating BentoML with SageMaker, including: setting up a SageMaker notebook instance, model training, creating an S3 bucket, uploading the BentoService bundle into S3, and deploying the BentoML packaged model to SageMaker as an API endpoint using the BentoML CLI tool.
+
 For demonstration, this tutorial uses the IMDB movie review sentiment dataset with BERT and Tensorflow 2.0.(please note: the following model is a modification of the original version: https://github.com/kpe/bert-for-tf2/blob/master/examples/gpu_movie_reviews.ipynb)
 
 Prerequisites
 -------------
+* An active AWS account configured on the machine with AWS CLI installed and configurated
 
-* Docker is installed and running on the machine.
+    * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
+
+    * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
+
+* Docker 
 
   * Install instruction: https://docs.docker.com/install
 
-* Python 3.6 or above and required packages `bentoml` and `scikit-learn`:
+* Python 3.6 or above and required packages `bentoml` and `bert-for-tf2`:
 
   * .. code-block:: bash
 
-        pip install bentoml scikit-learn
+        pip install bentoml bert-for-tf2
 
 
 1 Create a SageMaker notebook instance
 ---------------------------------------
 
-For model training in SageMaker, we will start by creating a ** notebook instance ** . After logging into the AWS management console -- type SageMaker to launch the service. From the SageMaker dashboard, select Notebook instances. Go ahead enter a notebook name and select the instance type
+For model training in SageMaker, log in to the AWS management console and navigate to SageMaker. From the SageMaker dashboard, select Notebook instances. Go ahead enter a notebook name and select the instance type
 
-.. image:: ../sagemaker/static/Screen Shot 2020-06-26 at 3.41.23 PM
+.. image:: ../_static/img/create-notebook-instance
 
 Next,under ** Permissions and encryption ** , select ** Create a new role ** or ** choosing an existing role ** . This allows both the notebook instance and user to access and upload data to Amazon S3. Then, select Any S3 bucket, which allows your SageMaker to access all S3 buckets in your account.
 
-.. image:: ../sagemaker/static/Screen Shot 2020-06-24 at 12.13.02 PM
+.. image:: ../_static//img/create-IAM-role
 
 After the notebook instance is created, the status will change from pending to ** InService ** . Select Open Jupyter under Actions, and choose ** Conda_python 3 ** under New tab to launch the Jupyter notebook within SageMaker.
 
-Note: SageMaker also provides a local model through pip install SageMaker.
+.. note::
+
+    SageMaker also provides a local model through pip install SageMaker.
 
 Finally to prepare for the model training, let's import some libraries -- Boto3 and SageMaker and set up the IAM role. Boto3 is the AWS SDK for Python, which makes it easier to integrate our model with AWS services such as Amazon S3
 
@@ -58,29 +66,67 @@ In this step, we will create an S3 bucket named movie-review-dataset to store th
     s3.Bucket(name='movie-review-dataset')
 
 
-.. image:: ../sagemaker/static/Screen Shot 2020-06-24 at 4.26.33 PM
+.. image:: ../_static/img/create-s3-bucket
 
 
 2 Model Training -- Movie review sentiment with BERT and TensorFlow2
 ---------------------------------------------------------------------
 
-Ignore this section for now
+The second step of this tutorial is model training. We will be using the IMDB movie review dataset to create a sentiment analysis model which contains 25K positive and negative movie reviews each.
+
+Below is the model summary. Please checkout :code: 'bentoml/gallery/end-to-end-sagemaker-depoyment' for more details on model training.
+
+.. code-block:: python
+
+    model = tf.keras.models.load_model('saved_model/my_model')
+
+    model.summary()
+
+    # sample output
+
+        Model: "model"
+    _________________________________________________________________
+    Layer (type)                 Output Shape              Param #   
+    =================================================================
+    input_ids (InputLayer)       [(None, 128)]             0         
+    _________________________________________________________________
+    bert (BertModelLayer)        (None, 128, 768)          108890112 
+    _________________________________________________________________
+    lambda (Lambda)              (None, 768)               0         
+    _________________________________________________________________
+    dropout (Dropout)            (None, 768)               0         
+    _________________________________________________________________
+    dense (Dense)                (None, 768)               590592    
+    _________________________________________________________________
+    dropout_1 (Dropout)          (None, 768)               0         
+    _________________________________________________________________
+    dense_1 (Dense)              (None, 2)                 1538      
+    =================================================================
+    Total params: 109,482,242
+    Trainable params: 109,482,242
+    Non-trainable params: 0
 
 
 3 BentoML SageMaker API Endpoints Deployment
 ---------------------------------------------
 
-In this section, we will demonstrate on using BentoML to build production-ready API endpoints and deploy it to AWS SageMaker. The core steps are as follow:
+In this section, we will demonstrate on using BentoML to build production-ready API endpoints and deploy it to AWS SageMaker. The core steps are as follows:
 
 1. Create a BentoML service file for model prediction 
-2. Create and save a BentoMl packaged model called a BentoService bundle for model deployment
+2. Create and save a BentoMl packaged model called BentoService bundle for model deployment
 3. Upload the BentoService bundle to cloud storage like S3 (optional)
 4. Use Bento CLI and its web UI for local testing
 5. Deploy AWS SageMaker API endpoints through Bento CLI
-6. Use AWS CLI for endpoints testing
+6. Use AWS boto3 SDK or AWS CLI for endpoints testing
 
-Note: for AWS SageMaker deployment, you will need the following prerequisites: 1) Install and configure the AWS CLI 2) Install Docker
-for more information, please click here: https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html
+.. note::
+
+    for AWS SageMaker deployment, you will need the following prerequisites as stated before: 
+
+    * Install and configure the AWS CLI 
+    * Install Docker
+
+    for more information, please click here: https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html
 
 ================================================
 3.1 Create a BentoML Service File for Prediction
@@ -95,7 +141,7 @@ First, let's create a prediction service file using BentoML. The three main Bent
 Note: BentoML supports a variety of major ML frameworks and input data format. For more details, please check available model artifacts here
 https://docs.bentoml.org/en/latest/api/artifacts.html and adapters here https://docs.bentoml.org/en/latest/api/adapters.html
 
-For defining the BentoML service environment and trouble-shooting, you would also use `auto_pip_dependencies= True` or pass the BentoML generated requirement.txt through `@bentoml.env(requirements_tex_file ='./requirements.txt')`
+For defining the BentoML service environment and trouble-shooting, you would also use  :code: `auto_pip_dependencies= True` or pass the BentoML generated requirement.txt through  :code: `@bentoml.env(requirements_tex_file ='./requirements.txt')`
 
 .. code-block:: python
 
@@ -153,7 +199,7 @@ For defining the BentoML service environment and trouble-shooting, you would als
 ========================================
 
 The following few lines of codes demonstrate the simplicity and time-saving benefits of using BentoML. Here, we first create a BentoService instance and then use the BentoService ** pack method ** to bundle our trained movie review model together. Finally, we use the BentoService ** save method ** to save this BentoService bundle, which is now ready for inference. This process eliminates the needs for reproducing the same prediction service for testing and production environment - making it easier for data science teams to deploy their models.
-By default, the BentoService bundle is saved under `~/bentoml/repository/directory`. Users could also modify the model repository through BentoML's standalone component `YataiService`, for more information, please visit here: https://docs.bentoml.org/en/latest/concepts.html#model-management
+By default, the BentoService bundle is saved under  :code: `~/bentoml/repository/directory`. Users could also modify the model repository through BentoML's standalone component  :code: `YataiService`, for more information, please visit here: https://docs.bentoml.org/en/latest/concepts.html#model-management
 
 .. code-block:: python
 
@@ -169,7 +215,7 @@ By default, the BentoService bundle is saved under `~/bentoml/repository/directo
     #save the prediction service for model serving 
     saved_path = bento_svc.save()
 
-    #Sample output
+    # sample output
 
     INFO:tensorflow:Assets written to: /private/var/folders/vn/bytl5x0n3vgg1vmg7n6qkqtc0000gn/T/bentoml-temp-35n_doz7/Service/artifacts/model_saved_model/assets
     [2020-06-25 19:57:01,302] INFO - Detect BentoML installed in development model, copying local BentoML module file to target saved bundle path
@@ -196,7 +242,7 @@ By default, the BentoService bundle is saved under `~/bentoml/repository/directo
 Upload BentoService Bundle to S3
 =================================
 
-As mentioned earlier, BentoML also provides ways to change the model repository - allowing data science teams to share the BentoService bundle easily for better collaborations. One way is by uploading it to the cloud services such as AWS S3. Using the same scripts as above and passing the S3 bucket URL into .save(), it will deploy the BentoService bundle directly into the S3 movie-review-dataset bucket we created earlier.
+As mentioned earlier, BentoML also provides ways to change the model repository - allowing data science teams to share the BentoService bundle easily for better collaborations. One way is by uploading it to the cloud services such as AWS S3. Using the same scripts as above and passing the S3 bucket URL into  :code: `.save()` , it will deploy the BentoService bundle directly into the S3 movie-review-dataset bucket we created earlier.
 
 .. code-block:: python
 
@@ -212,7 +258,7 @@ As mentioned earlier, BentoML also provides ways to change the model repository 
     #save the prediction service to aws S3
     saved_path = bento_svc.save(''s3://movie-review-dataset/'')
 
-.. image:: ../sagemaker/static/Screen Shot 2020-07-01 at 10.52.24 PM
+.. image:: ../_static/img/show-saved-bentoservice-in-s3
 
 
 ================================
@@ -223,7 +269,7 @@ Using the BentoML CLI, we can see a list of BentoService generated here
 
 .. code-block:: bash
 
-    !bentoml list
+    > bentoml list
 
     #sample output
 
@@ -239,19 +285,16 @@ Using the BentoML CLI, we can see a list of BentoService generated here
 3.4.1 Test REST API Locally -- Online API Serving
 =================================================
 
-Before deploying the model to AWS SageMaker, we could test it locally first using the BentoML CLI. By using `bentoml serve`, it provides a near real-time prediction via API endpoints.
+Before deploying the model to AWS SageMaker, we could test it locally first using the BentoML CLI. By using  :code: `bentoml serve`, it provides a near real-time prediction via API endpoints.
 
-.. image:: ../sagemaker/static/Screen Shot 2020-06-26 at 1.45.31 PM
+.. image:: ../_static/img/bento-web-ui
 
 .. code-block:: bash
 
-    !bentoml serve Service:20200702134432_033DAB  
+    > bentoml serve Service:20200702134432_033DAB  
 
-    #sample output
+    # sample output
 
-    [2020-06-26 13:43:43,372] WARNING - BentoML local changes detected - Local BentoML repository including all code changes will be packaged together with saved bundle created, under './bundled_pip_dependencies' directory. For using a modified version of BentoML for production deployment, it is recommended to set the 'core/bentoml_deploy_version' config to a http location or your BentoML for on github, e.g.: 'bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{branch}'
-    [2020-06-26 13:43:43,399] WARNING - Saved BentoService bundle version mismatch: loading BentoService bundle create with BentoML version 0.8.1,  but loading from BentoML version 0.8.1+0.g5b6bd29.dirty
-    [2020-06-26 13:43:48,611] WARNING - bert package does not exist in the current python session
     2020-06-26 13:43:49.603289: I tensorflow/core/platform/cpu_feature_guard.cc:143] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA
     2020-06-26 13:43:49.634653: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x7f8e1d8f9410 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
     2020-06-26 13:43:49.634673: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
@@ -268,20 +311,20 @@ Before deploying the model to AWS SageMaker, we could test it locally first usin
     127.0.0.1 - - [26/Jun/2020 13:44:39] "POST /predict HTTP/1.1" 200 -
 
 
-.. image:: ../sagemaker/static/Screen Shot 2020-06-26 at 1.45.14 PM
+.. image:: ../_static/img/bento-serve-testing
 
 
 ====================================================
 3.4.2 Test REST API Locally -- Offline Batch Serving
 ====================================================
 
-Alternatively, we could also use `bentoml run` for local testing. BentoML provides many other model serving methods, such as: adaptive micro-batching, edge serving,and programmatic access. Please visit here: https://docs.bentoml.org/en/latest/concepts.html#model-serving
+Alternatively, we could also use  :code: `bentoml run` for local testing. BentoML provides many other model serving methods, such as: adaptive micro-batching, edge serving,and programmatic access. Please visit here: https://docs.bentoml.org/en/latest/concepts.html#model-serving
 
 .. code-block:: bash
 
-    !bentoml run Service:20200702134432_033DAB   predict --input '["the acting was a bit lacking."]'
+    > bentoml run Service:20200702134432_033DAB   predict --input '["the acting was a bit lacking."]'
 
-    #sample output
+    # sample output
 
     [2020-06-25 19:59:59,724] WARNING - BentoML local changes detected - Local BentoML repository including all code changes will be packaged together with saved bundle created, under './bundled_pip_dependencies' directory. For using a modified version of BentoML for production deployment, it is recommended to set the 'core/bentoml_deploy_version' config to a http location or your BentoML for on github, e.g.: 'bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{branch}'
     [2020-06-25 19:59:59,747] WARNING - Saved BentoService bundle version mismatch: loading BentoService bundle create with BentoML version 0.8.1,  but loading from BentoML version 0.8.1+0.g5b6bd29.dirty
@@ -300,7 +343,7 @@ Finally, we are ready to deploy our BentoML packaged model to AWS SageMaker. We 
 
 .. code-block:: bash
 
-    !bentoml sagemaker deploy sagemaker-moviereview-deployment -b Service:20200702134432_033DAB  --api-name predict
+    > bentoml sagemaker deploy sagemaker-moviereview-deployment -b Service:20200702134432_033DAB  --api-name predict
 
     # sample output
 
@@ -323,10 +366,10 @@ Finally, we are ready to deploy our BentoML packaged model to AWS SageMaker. We 
     Successfully created AWS Sagemaker deployment bert-moviereview-sagemaker
     {
     "namespace": "dev",
-    "name": "bert-moviereview-sagemaker",
+    "name": "sagemaker-moviereview-sagemaker",
     "spec": {
         "bentoName": "Service",
-        "bentoVersion": "20200625195616_62D0DB",
+        "bentoVersion": "20200702134432_033DAB",
         "operator": "AWS_SAGEMAKER",
         "sagemakerOperatorConfig": {
         "region": "us-east-1",
@@ -340,14 +383,14 @@ Finally, we are ready to deploy our BentoML packaged model to AWS SageMaker. We 
         "state": "RUNNING",
         "infoJson": {
         "EndpointName": "dev-bert-moviereview-sagemaker",
-        "EndpointArn": "arn:aws:sagemaker:us-east-1:899399195124:endpoint/dev-bert-moviereview-sagemaker",
-        "EndpointConfigName": "dev-bert-moviereview-sagemaker-Service-20200625195616-62D0DB",
+        "EndpointArn": "arn:aws:sagemaker:us-east-1:899399195124:endpoint/dev-sagemaker-moviereview-sagemaker",
+        "EndpointConfigName": "dev-bert-moviereview-sagemaker-Service-20200702134432_033DAB",
         "ProductionVariants": [
             {
-            "VariantName": "dev-bert-moviereview-sagemaker-Service-20200625195616-62D0DB",
+            "VariantName": "dev-sagemaker-moviereview-sagemaker-Service-20200702134432_033DAB",
             "DeployedImages": [
                 {
-                "SpecifiedImage": "899399195124.dkr.ecr.us-east-1.amazonaws.com/service-sagemaker:20200625195616_62D0DB",
+                "SpecifiedImage": "899399195124.dkr.ecr.us-east-1.amazonaws.com/service-sagemaker:20200702134432_033DAB",
                 "ResolvedImage": "899399195124.dkr.ecr.us-east-1.amazonaws.com/service-sagemaker@sha256:c064de18b75b18da26f5b8743491e13542a179915d5ea36ce4b8e971c6611062",
                 "ResolutionTime": "2020-06-25 20:53:14.176000-04:00"
                 }
@@ -381,10 +424,10 @@ Finally, we are ready to deploy our BentoML packaged model to AWS SageMaker. We 
 
 
 ======================================
-3.7 Test API Endpoints Using Boto3 SDK
+3.6 Test API Endpoints Using Boto3 SDK
 ======================================
 
-Now, we are ready to test the SageMaker API endpoints by creating a small script using the boto3 SDK. Alternatively, users could also use the AWS CLI to test the endpoint. Please visit https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sagemaker-runtime/invoke-endpoint.html
+Now, we are ready to test the SageMaker API endpoints by creating a small script using the AWS boto3 SDK. Alternatively, users could also use the AWS CLI to test the endpoint. Please visit https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sagemaker-runtime/invoke-endpoint.html
 
 .. code-block:: python
 

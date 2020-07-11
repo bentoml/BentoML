@@ -38,7 +38,7 @@ Next,under **Permissions and encryption** , select **Create a new role** or **ch
 After the notebook instance is created, the status will change from pending to **InService** . Select Open Jupyter under Actions, and choose **Conda_python 3** under New tab to launch the Jupyter notebook within SageMaker.
 
 .. note::
- SageMaker also provides a local model through pip install SageMaker.
+   SageMaker also provides a local model through pip install SageMaker.
 
 Finally to prepare for the model training, let's import some libraries -- Boto3 and SageMaker and set up the IAM role. Boto3 is the AWS SDK for Python, which makes it easier to integrate our model with AWS services such as Amazon S3
 

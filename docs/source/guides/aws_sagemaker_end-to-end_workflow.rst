@@ -31,7 +31,7 @@ For model training in SageMaker, log in to the AWS management console and naviga
 
 .. image:: _static/img/create-notebook-instance.png
 
-.. image:: _static/img/yatai-service-web-ui-repository-detail.png
+.. image:: _static/img/gcloud-setting.png
 
 Next,under **Permissions and encryption** , select **Create a new role** or **choosing an existing role** . This allows both the notebook instance and user to access and upload data to Amazon S3. Then, select Any S3 bucket, which allows your SageMaker to access all S3 buckets in your account.
 

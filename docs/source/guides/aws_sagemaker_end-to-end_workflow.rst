@@ -53,7 +53,8 @@ Finally to prepare for the model training, let's import some libraries -- Boto3 
     # Define IAM role
     role = get_execution_role()
     prefix = 'sagemaker/bert-moviereview-bento'
-    my_region = boto3.session.Session().region_name # set the region of the instance    
+    # set the region of the instance 
+    my_region = boto3.session.Session().region_name    
 
 In this step, we will create an S3 bucket named movie-review-dataset to store the dataset. Users could click on the bucket name and upload the dataset directly into S3. Alternatively, for cost-efficiency, users could train the model locally using the SageMaker local mode
 
@@ -86,7 +87,7 @@ Below is the model summary. Please checkout :code:`bentoml/gallery/end-to-end-sa
 
     # sample output
 
-        Model: "model"
+    Model: "model"
     _________________________________________________________________
     Layer (type)                 Output Shape              Param #   
     =================================================================
@@ -121,14 +122,6 @@ In this section, we will demonstrate on using BentoML to build production-ready 
 5. Deploy AWS SageMaker API endpoints through Bento CLI
 6. Use AWS boto3 SDK or AWS CLI for endpoints testing
 
-.. note::
-
-   for AWS SageMaker deployment, you will need the following prerequisites as stated before: 
-   
-   * Install and configure the AWS CLI 
-   * Install Docker
-
-   for more information, please `click here <https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html>`_ 
 
 ================================================
 3.1 Create a BentoML Service File for Prediction
@@ -140,7 +133,9 @@ First, let's create a prediction service file using BentoML. The three main Bent
 2. Define the model artifacts based on the ML frameworks used for the trained model
 3. Choose the relevant input adapters (formerly handlers) for the API
 
-Note: BentoML supports a variety of major ML frameworks and input data format. For more details, please check available model artifacts `here <https://docs.bentoml.org/en/latest/api/artifacts.html>`_ and adapters `here <https://docs.bentoml.org/en/latest/api/adapters.html>`_ 
+.. note:: 
+
+ BentoML supports a variety of major ML frameworks and input data format. For more details, please check available model artifacts `here <https://docs.bentoml.org/en/latest/api/artifacts.html>`_ and adapters `here <https://docs.bentoml.org/en/latest/api/adapters.html>`_ 
 
 For defining the BentoML service environment and trouble-shooting, you would also use  :code:`auto_pip_dependencies= True` or pass the BentoML generated requirement.txt through  :code:`@bentoml.env(requirements_tex_file ='./requirements.txt')`
 
@@ -193,6 +188,7 @@ For defining the BentoML service environment and trouble-shooting, you would als
             return [CLASSES[i] for i in res]
     
     #Sample output
+    
     Overwriting bentoml_service.py
 
 ========================================
@@ -224,7 +220,6 @@ By default, the BentoService bundle is saved under  :code:`~/bentoml/repository/
     INFO:tensorflow:Assets written to: /private/var/folders/vn/bytl5x0n3vgg1vmg7n6qkqtc0000gn/T/bentoml-temp-35n_doz7/Service/artifacts/model_saved_model/assets
     [2020-06-25 19:57:01,302] INFO - Detect BentoML installed in development model, copying local BentoML module file to target saved bundle path
     running sdist
-    running egg_info
     writing BentoML.egg-info/PKG-INFO
     writing dependency_links to BentoML.egg-info/dependency_links.txt
     writing entry points to BentoML.egg-info/entry_points.txt
@@ -243,7 +238,7 @@ By default, the BentoService bundle is saved under  :code:`~/bentoml/repository/
 Upload BentoService Bundle to S3
 =================================
 
-As mentioned earlier, BentoML also provides ways to change the model repository - allowing data science teams to share the BentoService bundle easily for better collaborations. One way is by uploading it to the cloud services such as AWS S3. Using the same scripts as above and passing the S3 bucket URL into  :code:`.save()` , it will deploy the BentoService bundle directly into the S3 movie-review-dataset bucket we created earlier.
+As mentioned earlier, BentoML also provides ways to change the model repository -- allowing data science teams to share the BentoService bundle easily for better collaborations. One way is by uploading it to the cloud services such as AWS S3. Using the same scripts as above and passing the S3 bucket URL into  :code:`.save()` , it will deploy the BentoService bundle directly into the S3 movie-review-dataset bucket we created earlier.
 
 .. code-block:: python
 

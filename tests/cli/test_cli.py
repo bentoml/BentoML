@@ -10,8 +10,9 @@ import psutil  # noqa # pylint: disable=unused-import
 from bentoml.cli.bento_service import (
     create_bento_service_cli,
     make_bento_name_docker_compatible,
+    validate_tag,
 )
-from bentoml.cli.utils import _echo_docker_api_result
+from bentoml.cli.utils import echo_docker_api_result
 from bentoml.exceptions import BentoMLException
 
 
@@ -32,27 +33,39 @@ def assert_equal_lists(res, expected):
     assert all([a == b for a, b in zip(expected, res)])
 
 
-def test_make_bento_name_docker_compatible():
-    names = [
+@pytest.mark.parametrize(
+    "name, expected_name",
+    [
         ("ALLCAPS", "allcaps"),
         ("...as.df...", "as.df"),
         ("_asdf_asdf", "asdf_asdf"),
         ("1234-asdf--", "1234-asdf"),
-    ]
+    ],
+)
+def test_make_bento_name_docker_compatible_name(name, expected_name):
+    assert make_bento_name_docker_compatible(name, "") == (expected, "")
 
-    for name, expected in names:
-        assert make_bento_name_docker_compatible(name, "") == (expected, "")
 
-    tags = [
+@pytest.mark.parametrize(
+    "tag, expected_tag",
+    [
         ("....asdf.", "asdf."),
         ("A" * 128, "A" * 128),
         ("A" * 129, "A" * 128),
         ("-asdf-", "asdf-"),
         (".-asdf", "asdf"),
-    ]
+    ],
+)
+def test_make_bento_name_docker_compatible_tag(tag, expected_tag):
+    assert make_bento_name_docker_compatible("", tag) == ("", expected_tag)
 
-    for tag, expected in tags:
-        assert make_bento_name_docker_compatible("", tag) == ("", expected)
+
+@pytest.mark.parametrize(
+    "tag, expected",
+    [("randomtag", "randomtag:latest"), ("name:version", "name:version")],
+)
+def test_validate_tag(tag, expected):
+    assert validate_tag(None, None, tag) == expected
 
 
 def test_run_command_with_input_file(bento_bundle_path):
@@ -116,7 +129,7 @@ def test_echo_docker_api_result_build():
         "Successfully tagged personal/test:latest",
     ]
 
-    res = [line for line in _echo_docker_api_result(build_stream)]
+    res = [line for line in echo_docker_api_result(build_stream)]
     assert_equal_lists(res, expected)
 
 
@@ -138,7 +151,7 @@ def test_echo_docker_api_result_push_no_access():
     ]
 
     with pytest.raises(BentoMLException) as e:
-        _ = [line for line in _echo_docker_api_result(push_stream)]
+        _ = [line for line in echo_docker_api_result(push_stream)]
     assert str(e.value) == 'denied: requested access to the resource is denied'
 
 
@@ -180,7 +193,7 @@ def test_echo_docker_api_result_push():
         f"Pushed {format_size(128512 + 512)} / {format_size(532223 + 699)}",
     ]
 
-    res = [line for line in _echo_docker_api_result(push_stream)]
+    res = [line for line in echo_docker_api_result(push_stream)]
     assert_equal_lists(res, expected)
 
 

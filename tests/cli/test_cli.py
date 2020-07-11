@@ -32,7 +32,7 @@ def assert_equal_lists(res, expected):
     assert all([a == b for a, b in zip(expected, res)])
 
 
-@pytest.mark.parametrize("input,expected", [
+@pytest.mark.parametrize("name, expected_name", [
     ("ALLCAPS", "allcaps"),
     ("...as.df...", "as.df"),
     ("_asdf_asdf", "asdf_asdf"),
@@ -42,15 +42,15 @@ def test_make_bento_name_docker_compatible_name(name, expected_name):
     assert make_bento_name_docker_compatible(name, "") == (expected_name, "")
 
 
-@pytest.mark.parametrize("input,expected", [
+@pytest.mark.parametrize("tag, expected_tag", [
     ("....asdf.", "asdf."),
     ("A" * 128, "A" * 128),
     ("A" * 129, "A" * 128),
     ("-asdf-", "asdf-"),
     (".-asdf", "asdf"),
 ])
-def test_make_bento_name_docker_compatible_tag(tag, expected_name):
-    assert make_bento_name_docker_compatible(tag, "") == (expected_tag, "")
+def test_make_bento_name_docker_compatible_tag(tag, expected_tag):
+    assert make_bento_name_docker_compatible("", tag) == ("", expected_tag)
 
 
 def test_run_command_with_input_file(bento_bundle_path):

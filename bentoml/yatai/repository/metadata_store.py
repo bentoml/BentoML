@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 DEFAULT_UPLOAD_STATUS = UploadStatus(status=UploadStatus.UNINITIALIZED)
+DEFAULT_LIST_LIMIT = 40
 
 
 class Bento(Base):
@@ -233,7 +234,7 @@ class BentoMetadataStore(object):
 
             # We are not defaulting limit to 200 in the signature,
             # because protobuf will pass 0 as value
-            limit = limit or 200
+            limit = limit or DEFAULT_LIST_LIMIT
             # Limit and offset need to be called after order_by filter/filter_by is
             # called
             query = query.limit(limit)

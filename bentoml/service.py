@@ -36,7 +36,14 @@ ARTIFACTS_DIR_NAME = "artifacts"
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
 DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
-
+BENTOML_RESERVED_API_NAMES = [
+    "index",
+    "swagger",
+    "docs",
+    "healthz",
+    "metrics",
+    "feedback",
+]
 logger = logging.getLogger(__name__)
 
 
@@ -324,6 +331,13 @@ def api_decorator(
             raise InvalidArgument(
                 "Invalid API name: '{}', a valid identifier must contains only letters,"
                 " numbers, underscores and not starting with a number.".format(
+                    _api_name
+                )
+            )
+
+        if _api_name in BENTOML_RESERVED_API_NAMES:
+            raise InvalidArgument(
+                "Reserved API name: '{}' is reserved for infra endpoints".format(
                     _api_name
                 )
             )

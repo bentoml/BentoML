@@ -81,33 +81,41 @@ def run_with_conda_env(bundle_path, command):
     return
 
 
-def make_bento_name_docker_compatible(name, version):
-    """
-    Name components may contain lowercase letters, digits and separators.
-    A separator is defined as a period, one or two underscores, or one or more dashes.
+def to_valid_docker_image_name(name):
+    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
+    return name.lower().strip("._-")
 
-    The version must be valid ASCII and may contain lowercase and uppercase letters,
-    digits, underscores, periods and dashes. Version may not start with a period
-    or a dash and may contain a maximum of 128 characters.
 
-    https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    """
-    name = name.lower().strip("._-")
-    version = version.lstrip(".-")[:128]
-    return name, version
+def to_valid_docker_image_version(version):
+    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
+    return version.lstrip(".-")[:128]
 
 
 def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
     if ":" in tag:
-        tag = tag.split(":")[:2]
+        name, version = tag.split(":")[:2]
     else:
-        _echo(
-            f"Tag {tag} does not specify an image version, " f"using 'latest'",
-            CLI_COLOR_WARNING,
+        name, version = tag, ""
+    if to_valid_docker_image_name(name) != name:
+        raise click.BadParameter(
+            f"Provided Docker Image tag {tag} is invalid. "
+            "Name components may contain lowercase letters, digits "
+            "and separators. A separator is defined as a period, "
+            "one or two underscores, or one or more dashes.",
+            ctx=ctx,
+            param=param,
         )
-        tag = tag, "latest"
-    name, version = make_bento_name_docker_compatible(*tag)
-    return f"{name}:{version}"
+    if to_valid_docker_image_version(version) != version:
+        raise click.BadParameter(
+            f"Provided Docker Image tag {tag} is invalid. "
+            "A tag name must be valid ASCII and may contain "
+            "lowercase and uppercase letters, digits, underscores, "
+            "periods and dashes. A tag name may not start with a period "
+            "or a dash and may contain a maximum of 128 characters.",
+            ctx=ctx,
+            param=param,
+        )
+    return tag
 
 
 def resolve_bundle_path(bento, pip_installed_bundle_path):
@@ -368,7 +376,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
         _echo(f"Found Bento: {saved_bundle_path}")
 
-        bento_metadata = load_bento_service_metadata(saved_bundle_path)
+        bento_metadata = load_bento_service_metadata(bento_service_bundle_path)
         name = to_valid_docker_image_name(bento_metadata.name)
         version = to_valid_docker_image_version(bento_metadata.version)
 
@@ -376,17 +384,10 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             _echo(
                 "Tag not specified, using tag parsed from "
                 f"BentoService: '{name}:{version}'"
-            )
-            tag = f"{name}:{version}"
-        if ":" not in tag:
-            _echo(
-                "Image version not specified, using version parsed "
-                f"from BentoService: '{version}'",
 
         import docker
         docker_api = docker.APIClient()
-        try:
-            with Spinner(f"Building Docker image: {name}\n"):
+            with Spinner(f"Building Docker image {tag} from {bento} \n"):
                 for line in echo_docker_api_result(
                     docker_api.build(
                         path=bento_service_bundle_path, tag=tag, decode=True,

@@ -43,17 +43,12 @@ def assert_equal_lists(res, expected):
         ("1234-asdf--", "1234-asdf"),
     ],
 )
-<<<<<<< HEAD
+
 def test_to_valid_docker_image_name(name, expected_name):
     assert to_valid_docker_image_name(name) == expected_name
-=======
+
 def test_make_bento_name_docker_compatible_name(name, expected_name):
-<<<<<<< HEAD
-    assert make_bento_name_docker_compatible(name, "") == (expected, "")
->>>>>>> address comments for containerize command
-=======
     assert make_bento_name_docker_compatible(name, "") == (expected_name, "")
->>>>>>> linting + naming fixes
 
 
 @pytest.mark.parametrize(
@@ -66,26 +61,6 @@ def test_make_bento_name_docker_compatible_name(name, expected_name):
         (".-asdf", "asdf"),
     ],
 )
-<<<<<<< HEAD
-def test_to_valid_docker_image_version(tag, expected_tag):
-    assert to_valid_docker_image_version(tag) == expected_tag
-
-
-@pytest.mark.parametrize(
-    "tag", ["randomtag", "name:version", "asdf123:" + "A" * 128, "a-a.a__a", None]
-)
-def test_validate_tag(tag):
-    # check to make sure tag is returned and nothing is raised
-    assert validate_tag(None, None, tag) == tag
-
-
-@pytest.mark.parametrize(
-    "tag", ["AAA--", ".asdf", "asdf:...", "asdf:" + "A" * 129, "asdf:å"]
-)
-def test_validate_tag_raises(tag):
-    with pytest.raises(click.BadParameter):
-        validate_tag(None, None, tag)
-=======
 def test_make_bento_name_docker_compatible_tag(tag, expected_tag):
     assert make_bento_name_docker_compatible("", tag) == ("", expected_tag)
 
@@ -96,7 +71,6 @@ def test_make_bento_name_docker_compatible_tag(tag, expected_tag):
 )
 def test_validate_tag(tag, expected):
     assert validate_tag(None, None, tag) == expected
->>>>>>> address comments for containerize command
 
 
 def test_run_command_with_input_file(bento_bundle_path):

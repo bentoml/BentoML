@@ -384,8 +384,18 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             _echo(
                 "Tag not specified, using tag parsed from "
                 f"BentoService: '{name}:{version}'"
+            )
+            tag = f"{name}:{version}"
+        if ":" not in tag:
+            _echo(
+                "Image version not specified, using version parsed "
+                f"from BentoService: '{version}'",
+                CLI_COLOR_WARNING,
+            )
+            tag = f"{tag}:{version}"
 
         import docker
+
         docker_api = docker.APIClient()
             with Spinner(f"Building Docker image {tag} from {bento} \n"):
                 for line in echo_docker_api_result(

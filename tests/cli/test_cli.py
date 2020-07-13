@@ -70,9 +70,7 @@ def test_validate_tag(tag, expected):
     assert validate_tag(None, None, "name:version") == "name:version"
 
 
-@pytest.mark.parametrize(
-    "tag", ["AAA--", "asdf:...", "asdf:" + "A" * 129,],
-)
+@pytest.mark.parametrize("tag", ["AAA--", "asdf:...", "asdf:" + "A" * 129, "asdf:å"])
 def test_validate_tag_raises(tag):
     with pytest.raises(click.BadParameter):
         validate_tag(None, None, tag)

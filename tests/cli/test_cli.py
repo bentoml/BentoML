@@ -63,8 +63,7 @@ def test_to_valid_docker_image_version(tag, expected_tag):
 
 
 @pytest.mark.parametrize(
-    "tag, expected",
-    [("randomtag", "randomtag"), ("name:version", "name:version")],
+    "tag, expected", [("randomtag", "randomtag"), ("name:version", "name:version")],
 )
 def test_validate_tag(tag, expected):
     assert validate_tag(None, None, tag) == expected
@@ -72,16 +71,12 @@ def test_validate_tag(tag, expected):
 
 
 @pytest.mark.parametrize(
-    "tag",
-    [
-        "AAA--",
-        "asdf:...",
-        "asdf:" + "A" * 129,
-    ],
+    "tag", ["AAA--", "asdf:...", "asdf:" + "A" * 129,],
 )
 def test_validate_tag_raises(tag):
-    with pytest.raises(click.BadParameter) as e:
+    with pytest.raises(click.BadParameter):
         validate_tag(None, None, tag)
+
 
 def test_run_command_with_input_file(bento_bundle_path):
     input_path = generate_test_input_file()

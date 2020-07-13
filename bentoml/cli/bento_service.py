@@ -88,7 +88,7 @@ def to_valid_docker_image_name(name):
 
 def to_valid_docker_image_version(version):
     # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return version.lstrip(".-")[:128]
+    return version.encode("ascii", errors="ignore").decode().lstrip(".-")[:128]
 
 
 def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument

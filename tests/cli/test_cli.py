@@ -63,14 +63,16 @@ def test_to_valid_docker_image_version(tag, expected_tag):
 
 
 @pytest.mark.parametrize(
-    "tag, expected", [("randomtag", "randomtag"), ("name:version", "name:version")],
+    "tag", ["randomtag", "name:version", "asdf123:" + "A" * 128, "a-a.a__a"]
 )
-def test_validate_tag(tag, expected):
-    assert validate_tag(None, None, tag) == expected
-    assert validate_tag(None, None, "name:version") == "name:version"
+def test_validate_tag(tag):
+    # check to make sure tag is returned and nothing is raised
+    assert validate_tag(None, None, tag) == tag
 
 
-@pytest.mark.parametrize("tag", ["AAA--", "asdf:...", "asdf:" + "A" * 129, "asdf:å"])
+@pytest.mark.parametrize(
+    "tag", ["AAA--", ".asdf", "asdf:...", "asdf:" + "A" * 129, "asdf:å"]
+)
 def test_validate_tag_raises(tag):
     with pytest.raises(click.BadParameter):
         validate_tag(None, None, tag)

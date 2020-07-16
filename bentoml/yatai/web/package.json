@@ -5,7 +5,7 @@
   "description": "",
   "license": "Apache-2.0",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node dist/bundle.js",
     "dev": "bash -c 'concurrently \"nodemon -- ${0} ${1} ${2}\" \"npm run watch:client\"'",
     "watch": "concurrently \"npm:watch:*\"",
     "watch:server": "nodemon",

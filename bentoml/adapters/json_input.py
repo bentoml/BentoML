@@ -117,8 +117,8 @@ class JsonInput(BaseInputAdapter):
             parsed_json = json.loads(event["body"])
         except JSONDecodeError:
             raise BadInput(
-                "Request content-type must be 'application/json' for this "
-                "BentoService API lambda endpoint"
+                "The input provided is not proper JSON. Please make"
+                "sure to send correctly formatted JSON."
             )
 
         result = func([parsed_json])[0]

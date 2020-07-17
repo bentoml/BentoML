@@ -21,14 +21,13 @@ def start_dev_server(saved_bundle_path: str, port: int, enable_microbatch: bool)
     logger.info("Starting BentoML API server in development mode..")
 
     from bentoml import load
-    from bentoml.utils import reserve_free_port
     from bentoml.server.api_server import BentoAPIServer
+    from bentoml.marshal.marshal import MarshalService
+    from bentoml.utils import reserve_free_port
 
     bento_service = load(saved_bundle_path)
 
     if enable_microbatch:
-        from bentoml.marshal.marshal import MarshalService
-
         with reserve_free_port() as api_server_port:
             # start server right after port released
             #  to reduce potential race

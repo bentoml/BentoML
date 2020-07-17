@@ -59,6 +59,7 @@ class PickleArtifact(BentoServiceArtifact):
 
     def pack(self, obj):  # pylint:disable=arguments-differ
         self._obj = obj
+        return self
 
     def load(self, path):
         with open(self._pkl_file_path(path), "rb") as pkl_file:

@@ -49,6 +49,7 @@ class TextFileArtifact(BentoServiceArtifact):
 
     def pack(self, content):  # pylint:disable=arguments-differ
         self._content = content
+        return self
 
     def get(self):
         return self._content

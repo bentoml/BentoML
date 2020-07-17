@@ -807,12 +807,6 @@ class BentoService:
             "BentoService#pack class method is deprecated, use instance method `pack` "
             "instead. e.g.: svc = MyBentoService(); svc.pack('model', model_object)"
         )
-        from bentoml.artifact import ArtifactCollection
-
-        if args and isinstance(args[0], ArtifactCollection):
-            bento_svc = cls(*args[1:], **kwargs)  # pylint: disable=not-callable
-            bento_svc._packed_artifacts = args[0]
-            return bento_svc
 
         packed_artifacts = []
         for artifact in cls._artifacts:

@@ -78,6 +78,7 @@ class LightGBMModelArtifact(BentoServiceArtifact):
             )
 
         self._model = model
+        return self
 
     def load(self, path):
         try:

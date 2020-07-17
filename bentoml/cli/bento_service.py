@@ -225,8 +225,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         envvar='BENTOML_PORT',
     )
     @click.option(
-        '--enable-microbatch',
-        is_flag=True,
+        '--enable-microbatch/--disable-microbatch',
         default=False,
         help="(Beta) Run API server with micro-batch enabled",
         envvar='BENTOML_ENABLE_MICROBATCH',
@@ -263,8 +262,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     )
     @click.option("--timeout", type=click.INT, default=None)
     @click.option(
-        '--enable-microbatch',
-        is_flag=True,
+        '--enable-microbatch/--disable-microbatch',
         default=False,
         help="(Beta) Run API server with micro batch enabled",
         envvar='BENTOML_ENABLE_MICROBATCH',

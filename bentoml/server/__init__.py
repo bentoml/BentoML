@@ -12,8 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def start_dev_server(saved_bundle_path: str, port: int, enable_microbatch: bool):
+    logger.info("Starting BentoML API server in development mode..")
+
     from bentoml import load
     from bentoml.utils import reserve_free_port
     from bentoml.server.api_server import BentoAPIServer
@@ -48,6 +54,8 @@ def start_prod_server(
     enable_microbatch: bool,
     microbatch_workers: int,
 ):
+    logger.info("Starting BentoML API server in production mode..")
+
     import psutil
     import multiprocessing
 

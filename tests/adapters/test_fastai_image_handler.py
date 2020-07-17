@@ -19,7 +19,7 @@ def test_fastai_image_input(capsys, tmpdir):
 
     img_file = tmpdir.join("img.png")
     imageio.imwrite(str(img_file), np.zeros((10, 10)))
-    api = ms.get_service_apis()[0]
+    api = ms.get_inference_apis()[0]
     test_args = ["--input={}".format(img_file)]
     api.handle_cli(test_args)
     out, _ = capsys.readouterr()

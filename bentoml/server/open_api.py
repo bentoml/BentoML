@@ -82,7 +82,7 @@ def get_open_api_spec_json(bento_service):
             ),
         )
 
-    for api in bento_service.get_service_apis():
+    for api in bento_service.get_inference_apis():
         path = "/{}".format(api.name)
         paths[path] = OrderedDict(
             post=OrderedDict(

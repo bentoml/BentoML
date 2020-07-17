@@ -68,9 +68,9 @@ def _request_to_json(req):
 class BentoAPIServer:
     """
     BentoAPIServer creates a REST API server based on APIs defined with a BentoService
-    via BentoService#get_service_apis call. Each BentoServiceAPI will become one
+    via BentoService#get_service_apis call. Each InferenceAPI will become one
     endpoint exposed on the REST server, and the RequestHandler defined on each
-    BentoServiceAPI object will be used to handle Request object before feeding the
+    InferenceAPI object will be used to handle Request object before feeding the
     request data into a Service API function
     """
 
@@ -189,7 +189,7 @@ class BentoAPIServer:
         /feedback       Submitting feedback
         /metrics        Prometheus metrics endpoint
 
-        And user defined BentoServiceAPI list into flask routes, e.g.:
+        And user defined InferenceAPI list into flask routes, e.g.:
         /classify
         /predict
         """
@@ -242,9 +242,9 @@ class BentoAPIServer:
 
     def setup_bento_service_api_routes(self):
         """
-        Setup a route for each BentoServiceAPI object defined in bento_service
+        Setup a route for each InferenceAPI object defined in bento_service
         """
-        for api in self.bento_service.get_service_apis():
+        for api in self.bento_service.get_inference_apis():
             route_function = self.bento_service_api_func_wrapper(api)
             self.app.add_url_rule(
                 rule="/{}".format(api.name),

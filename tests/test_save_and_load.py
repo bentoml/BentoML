@@ -34,7 +34,7 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
     expected_version = "2.10.{}".format(version)
     assert model_service.version == expected_version
 
-    api = model_service.get_service_api('predict')
+    api = model_service.get_inference_api('predict')
     assert api.name == "predict"
     assert api.mb_max_latency == 1000
     assert api.mb_max_batch_size == 2000
@@ -78,7 +78,7 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
     expected_version = "2.10.{}".format(version)
     assert model_service.version == expected_version
 
-    api = model_service.get_service_api('predict')
+    api = model_service.get_inference_api('predict')
     assert api.name == "predict"
     assert isinstance(api.handler, DataframeInput)
     assert api.func(1) == 2
@@ -98,7 +98,7 @@ def test_bento_without_artifact(tmpdir):
     TestBentoWithOutArtifact().save_to_dir(str(tmpdir))
     model_service = bentoml.load(str(tmpdir))
     assert model_service.test(1) == 1
-    assert len(model_service.get_service_apis()) == 1
+    assert len(model_service.get_inference_apis()) == 1
 
 
 def test_save_duplicated_bento_exception_raised(example_bento_service_class):

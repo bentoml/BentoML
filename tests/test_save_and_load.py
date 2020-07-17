@@ -98,7 +98,7 @@ def test_bento_without_artifact(tmpdir):
     TestBentoWithOutArtifact().save_to_dir(str(tmpdir))
     model_service = bentoml.load(str(tmpdir))
     assert model_service.test(1) == 1
-    assert len(model_service.get_inference_apis()) == 1
+    assert len(model_service.inference_apis) == 1
 
 
 def test_save_duplicated_bento_exception_raised(example_bento_service_class):

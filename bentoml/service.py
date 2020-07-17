@@ -510,58 +510,6 @@ class BentoService:
     # List of inference APIs that this BentoService provides
     _inference_apis = []
 
-    def _config_inference_apis(self):
-        self._inference_apis = []
-
-        for _, function in inspect.getmembers(
-            self.__class__,
-            predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x),
-        ):
-            if hasattr(function, "_is_api"):
-                api_name = getattr(function, "_api_name")
-                api_doc = getattr(function, "_api_doc")
-                handler = getattr(function, "_handler")
-                mb_max_latency = getattr(function, "_mb_max_latency")
-                mb_max_batch_size = getattr(function, "_mb_max_batch_size")
-
-                # Bind api method call with self(BentoService instance)
-                func = function.__get__(self)
-
-                self._inference_apis.append(
-                    InferenceAPI(
-                        self,
-                        api_name,
-                        api_doc,
-                        handler=handler,
-                        func=func,
-                        mb_max_latency=mb_max_latency,
-                        mb_max_batch_size=mb_max_batch_size,
-                    )
-                )
-
-    def get_inference_apis(self):
-        """Return a list of user defined API functions
-
-        Returns:
-            list(InferenceAPI): List of Inference API objects
-        """
-        return self._inference_apis
-
-    def get_inference_api(self, api_name=None):
-        if api_name:
-            try:
-                return next(
-                    (api for api in self._inference_apis if api.name == api_name)
-                )
-            except StopIteration:
-                raise NotFound(
-                    "Can't find API '{}' in service '{}'".format(api_name, self.name)
-                )
-        elif len(self._inference_apis):
-            return self._inference_apis[0]
-        else:
-            raise NotFound("Can't find default API for service '{}'".format(self.name))
-
     # Name of this BentoService. It is default the class name of this BentoService class
     _bento_service_name = None
 
@@ -612,6 +560,67 @@ class BentoService:
 
         for artifact in self._artifacts:
             self._env._add_pip_dependencies_if_missing(artifact.pip_dependencies)
+
+    def _config_inference_apis(self):
+        self._inference_apis = []
+
+        for _, function in inspect.getmembers(
+            self.__class__,
+            predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x),
+        ):
+            if hasattr(function, "_is_api"):
+                api_name = getattr(function, "_api_name")
+                api_doc = getattr(function, "_api_doc")
+                handler = getattr(function, "_handler")
+                mb_max_latency = getattr(function, "_mb_max_latency")
+                mb_max_batch_size = getattr(function, "_mb_max_batch_size")
+
+                # Bind api method call with self(BentoService instance)
+                func = function.__get__(self)
+
+                self._inference_apis.append(
+                    InferenceAPI(
+                        self,
+                        api_name,
+                        api_doc,
+                        handler=handler,
+                        func=func,
+                        mb_max_latency=mb_max_latency,
+                        mb_max_batch_size=mb_max_batch_size,
+                    )
+                )
+
+    @property
+    def inference_apis(self):
+        """Return a list of user defined API functions
+
+        Returns:
+            list(InferenceAPI): List of Inference API objects
+        """
+        return self._inference_apis
+
+    def get_inference_api(self, api_name):
+        """Find the inference API in this BentoService with a specific name.
+
+        When the api_name is None, this returns the first Inference API found in the
+        `self.inference_apis` list.
+
+        :param api_name: the target Inference API's name
+        :return:
+        """
+        if api_name:
+            try:
+                return next(
+                    (api for api in self.inference_apis if api.name == api_name)
+                )
+            except StopIteration:
+                raise NotFound(
+                    "Can't find API '{}' in service '{}'".format(api_name, self.name)
+                )
+        elif len(self.inference_apis) > 0:
+            return self.inference_apis[0]
+        else:
+            raise NotFound(f"Can't find any inference API in service '{self.name}'")
 
     @property
     def artifacts(self):

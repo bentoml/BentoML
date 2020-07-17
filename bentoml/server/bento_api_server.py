@@ -244,7 +244,7 @@ class BentoAPIServer:
         """
         Setup a route for each InferenceAPI object defined in bento_service
         """
-        for api in self.bento_service.get_inference_apis():
+        for api in self.bento_service.inference_apis:
             route_function = self.bento_service_api_func_wrapper(api)
             self.app.add_url_rule(
                 rule="/{}".format(api.name),

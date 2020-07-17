@@ -53,7 +53,7 @@ logger.debug('Loading BentoService bundle from path: "%s"', bento_bundle_path)
 bento_service = load(bento_bundle_path)
 logger.debug('BentoService "%s" loaded successfully', bento_service.name)
 bento_service_api = bento_service.get_inference_api(api_name)
-logger.debug('BentoService API "%s" loaded successfully', {api_name})
+logger.debug('BentoService API "%s" loaded successfully', {bento_service_api.name})
 
 this_module = sys.modules[__name__]
 

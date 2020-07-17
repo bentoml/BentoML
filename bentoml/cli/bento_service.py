@@ -9,11 +9,10 @@ from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.s3 import is_s3_url
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.exceptions import BentoMLException, CLIException
-from bentoml.server.utils import get_gunicorn_num_of_workers
+from bentoml.server import start_dev_server, start_prod_server
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import (
     ProtoMessageToDict,
-    reserve_free_port,
     status_pb_to_error_code_and_message,
 )
 from bentoml.cli.click_utils import (
@@ -213,8 +212,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
 
     # Example Usage: bentoml serve {BUNDLE_PATH} --port={PORT}
     @bentoml_cli.command(
-        help="Start REST API server hosting BentoService loaded from saved bundle",
-        short_help="Start local rest server",
+        help="Start a dev API server serving specified BentoService",
+        short_help="Start local dev API server",
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.option(
@@ -236,26 +235,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
-        bento_service = load(bento_service_bundle_path)
-
-        if enable_microbatch:
-            from bentoml.marshal.marshal import MarshalService
-
-            with reserve_free_port() as api_server_port:
-                # start server right after port released
-                #  to reduce potential race
-                marshal_server = MarshalService(
-                    bento_service_bundle_path,
-                    outbound_host="localhost",
-                    outbound_port=api_server_port,
-                    outbound_workers=1,
-                )
-                api_server = BentoAPIServer(bento_service, port=api_server_port)
-            marshal_server.async_start(port=port)
-            api_server.start()
-        else:
-            api_server = BentoAPIServer(bento_service, port=port)
-            api_server.start()
+        start_dev_server(bento_service_bundle_path, port, enable_microbatch)
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
@@ -315,42 +295,14 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento_service_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path
         )
-
-        if workers is None:
-            workers = get_gunicorn_num_of_workers()
-
-        # Gunicorn only supports POSIX platforms
-        from bentoml.server.gunicorn_server import GunicornBentoServer
-        from bentoml.server.marshal_server import GunicornMarshalServer
-
-        if enable_microbatch:
-            prometheus_lock = multiprocessing.Lock()
-            # avoid load model before gunicorn fork
-            with reserve_free_port() as api_server_port:
-                marshal_server = GunicornMarshalServer(
-                    bundle_path=bento_service_bundle_path,
-                    port=port,
-                    workers=microbatch_workers,
-                    prometheus_lock=prometheus_lock,
-                    outbound_host="localhost",
-                    outbound_port=api_server_port,
-                    outbound_workers=workers,
-                )
-
-                gunicorn_app = GunicornBentoServer(
-                    bento_service_bundle_path,
-                    api_server_port,
-                    workers,
-                    timeout,
-                    prometheus_lock,
-                )
-            marshal_server.async_run()
-            gunicorn_app.run()
-        else:
-            gunicorn_app = GunicornBentoServer(
-                bento_service_bundle_path, port, workers, timeout
-            )
-            gunicorn_app.run()
+        start_prod_server(
+            bento_service_bundle_path,
+            port,
+            timeout,
+            workers,
+            enable_microbatch,
+            microbatch_workers,
+        )
 
     @bentoml_cli.command(
         help="Install shell command completion",

@@ -2,7 +2,6 @@ import click
 import os
 import json
 import re
-import multiprocessing
 import psutil
 
 from bentoml.utils.lazy_loader import LazyLoader

@@ -167,11 +167,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.argument("api_name", type=click.STRING)
     @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
     def run(api_name, run_args, bento=None):
-        bento_service_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path
-        )
+        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
 
-        api = load_bento_service_api(bento_service_bundle_path, api_name)
+        api = load_bento_service_api(saved_bundle_path, api_name)
         api.handle_cli(run_args)
 
     # Example Usage: bentoml info {BUNDLE_PATH}
@@ -184,13 +182,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         """
         List all APIs defined in the BentoService loaded from saved bundle
         """
-        bento_service_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path
-        )
+        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
 
-        bento_service_metadata_pb = load_bento_service_metadata(
-            bento_service_bundle_path
-        )
+        bento_service_metadata_pb = load_bento_service_metadata(saved_bundle_path)
         output = json.dumps(ProtoMessageToDict(bento_service_metadata_pb), indent=2)
         _echo(output)
 
@@ -202,11 +196,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     def open_api_spec(bento=None):
-        bento_service_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path
-        )
+        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
 
-        bento_service = load(bento_service_bundle_path)
+        bento_service = load(saved_bundle_path)
 
         _echo(json.dumps(get_open_api_spec_json(bento_service), indent=2))
 
@@ -227,14 +219,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '--enable-microbatch/--disable-microbatch',
         default=False,
-        help="(Beta) Run API server with micro-batch enabled",
+        help="Run API server with micro-batch enabled",
         envvar='BENTOML_ENABLE_MICROBATCH',
     )
     def serve(port, bento=None, enable_microbatch=False):
-        bento_service_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path
-        )
-        start_dev_server(bento_service_bundle_path, port, enable_microbatch)
+        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
+        start_dev_server(saved_bundle_path, port, enable_microbatch)
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
@@ -264,14 +254,14 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '--enable-microbatch/--disable-microbatch',
         default=False,
-        help="(Beta) Run API server with micro batch enabled",
+        help="Run API server with micro batch enabled",
         envvar='BENTOML_ENABLE_MICROBATCH',
     )
     @click.option(
         '--microbatch-workers',
         type=click.INT,
         default=1,
-        help="(Beta) Number of micro-batch request dispatcher workers",
+        help="Number of micro-batch request dispatcher workers",
         envvar='BENTOML_MICROBATCH_WORKERS',
     )
     def serve_gunicorn(
@@ -290,11 +280,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 "https://docs.docker.com/docker-for-windows/ "
             )
             return
-        bento_service_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path
-        )
+        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
         start_prod_server(
-            bento_service_bundle_path,
+            saved_bundle_path,
             port,
             timeout,
             workers,
@@ -369,13 +357,11 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         By default, the `containerize` command will use the credentials provided by
         Docker. You may provide your own through `--username` and `--password`.
         """
-        bento_service_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path
-        )
+        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
 
-        _echo(f"Found Bento: {bento_service_bundle_path}")
+        _echo(f"Found Bento: {saved_bundle_path}")
 
-        bento_metadata = load_bento_service_metadata(bento_service_bundle_path)
+        bento_metadata = load_bento_service_metadata(saved_bundle_path)
         name = to_valid_docker_image_name(bento_metadata.name)
         version = to_valid_docker_image_version(bento_metadata.version)
 
@@ -399,9 +385,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         try:
             with Spinner(f"Building Docker image {tag} from {bento} \n"):
                 for line in echo_docker_api_result(
-                    docker_api.build(
-                        path=bento_service_bundle_path, tag=tag, decode=True,
-                    )
+                    docker_api.build(path=saved_bundle_path, tag=tag, decode=True,)
                 ):
                     _echo(line)
         except docker.errors.APIError as error:

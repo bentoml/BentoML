@@ -15,7 +15,7 @@
 import os
 import re
 
-from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact
 
 
 class TextFileArtifact(BentoServiceArtifact):
@@ -34,6 +34,7 @@ class TextFileArtifact(BentoServiceArtifact):
         super(TextFileArtifact, self).__init__(name)
         self._file_extension = file_extension
         self._encoding = encoding
+        self._content = None
 
     def _text_file_path(self, base_path):
         return os.path.join(
@@ -47,18 +48,12 @@ class TextFileArtifact(BentoServiceArtifact):
         return self.pack(content)
 
     def pack(self, content):  # pylint:disable=arguments-differ
-        return _TextFileArtifactWrapper(self, content)
-
-
-class _TextFileArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, content):
-        super(_TextFileArtifactWrapper, self).__init__(spec)
-
         self._content = content
+        return self
 
     def get(self):
         return self._content
 
     def save(self, dst):
-        with open(self.spec._text_file_path(dst), "wb") as f:
-            f.write(self._content.encode(self.spec._encoding))
+        with open(self._text_file_path(dst), "wb") as f:
+            f.write(self._content.encode(self._encoding))

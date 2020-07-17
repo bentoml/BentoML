@@ -14,7 +14,7 @@
 
 import os
 
-from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
 
 
@@ -79,6 +79,7 @@ class SklearnModelArtifact(BentoServiceArtifact):
         super(SklearnModelArtifact, self).__init__(name)
 
         self._pickle_extension = pickle_extension
+        self._model = None
 
     @property
     def pip_dependencies(self):
@@ -88,7 +89,8 @@ class SklearnModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + self._pickle_extension)
 
     def pack(self, sklearn_model):  # pylint:disable=arguments-differ
-        return _SklearnModelArtifactWrapper(self, sklearn_model)
+        self._model = sklearn_model
+        return self
 
     def load(self, path):
         joblib = _import_joblib_module()
@@ -97,17 +99,10 @@ class SklearnModelArtifact(BentoServiceArtifact):
         sklearn_model = joblib.load(model_file_path, mmap_mode='r')
         return self.pack(sklearn_model)
 
-
-class _SklearnModelArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, model):
-        super(_SklearnModelArtifactWrapper, self).__init__(spec)
-
-        self._model = model
-
     def get(self):
         return self._model
 
     def save(self, dst):
         joblib = _import_joblib_module()
 
-        joblib.dump(self._model, self.spec._model_file_path(dst))
+        joblib.dump(self._model, self._model_file_path(dst))

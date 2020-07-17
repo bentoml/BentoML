@@ -14,7 +14,7 @@
 
 import os
 
-from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
 
@@ -62,6 +62,7 @@ class XgboostModelArtifact(BentoServiceArtifact):
     def __init__(self, name, model_extension=".model"):
         super(XgboostModelArtifact, self).__init__(name)
         self._model_extension = model_extension
+        self._model = None
 
     @property
     def pip_dependencies(self):
@@ -71,25 +72,6 @@ class XgboostModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + self._model_extension)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        return _XgboostModelArtifactWrapper(self, model)
-
-    def load(self, path):
-        try:
-            import xgboost as xgb
-        except ImportError:
-            raise MissingDependencyException(
-                "xgboost package is required to use XgboostModelArtifact"
-            )
-        bst = xgb.Booster()
-        bst.load_model(self._model_file_path(path))
-
-        return self.pack(bst)
-
-
-class _XgboostModelArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, model):
-        super(_XgboostModelArtifactWrapper, self).__init__(spec)
-
         try:
             import xgboost as xgb
         except ImportError:
@@ -103,9 +85,22 @@ class _XgboostModelArtifactWrapper(BentoServiceArtifactWrapper):
             )
 
         self._model = model
+        return self
+
+    def load(self, path):
+        try:
+            import xgboost as xgb
+        except ImportError:
+            raise MissingDependencyException(
+                "xgboost package is required to use XgboostModelArtifact"
+            )
+        bst = xgb.Booster()
+        bst.load_model(self._model_file_path(path))
+
+        return self.pack(bst)
 
     def save(self, dst):
-        return self._model.save_model(self.spec._model_file_path(dst))
+        return self._model.save_model(self._model_file_path(dst))
 
     def get(self):
         return self._model

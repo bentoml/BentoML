@@ -1,6 +1,20 @@
+# Copyright 2019 Atalaya Tech, Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+# http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 
-from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
 
 
@@ -39,6 +53,11 @@ class FasttextModelArtifact(BentoServiceArtifact):
     >>> svc.pack('model', model)
     """
 
+    def __init__(self, name):
+        super(FasttextModelArtifact, self).__init__(name)
+
+        self._model = None
+
     @property
     def pip_dependencies(self):
         return ["fasttext"]
@@ -47,7 +66,14 @@ class FasttextModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name)
 
     def pack(self, fasttext_model):  # pylint:disable=arguments-differ
-        return _FasttextModelArtifactWrapper(self, fasttext_model)
+        try:
+            import fasttext  # noqa # pylint: disable=unused-import
+        except ImportError:
+            raise MissingDependencyException(
+                "fasttext package is required to use FasttextModelArtifact"
+            )
+        self._model = fasttext_model
+        return self
 
     def load(self, path):
         try:
@@ -59,20 +85,8 @@ class FasttextModelArtifact(BentoServiceArtifact):
         model = fasttext.load_model(self._model_file_path(path))
         return self.pack(model)
 
-
-class _FasttextModelArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, model):
-        super(_FasttextModelArtifactWrapper, self).__init__(spec)
-        try:
-            import fasttext  # noqa # pylint: disable=unused-import
-        except ImportError:
-            raise MissingDependencyException(
-                "fasttext package is required to use FasttextModelArtifact"
-            )
-        self._model = model
-
     def get(self):
         return self._model
 
     def save(self, dst):
-        self._model.save_model(self.spec._model_file_path(dst))
+        self._model.save_model(self._model_file_path(dst))

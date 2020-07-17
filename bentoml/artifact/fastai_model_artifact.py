@@ -16,7 +16,7 @@ import os
 import shutil
 import logging
 
-from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
 logger = logging.getLogger(__name__)
@@ -78,6 +78,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
     def __init__(self, name):
         super(FastaiModelArtifact, self).__init__(name)
         self._file_name = name + '.pkl'
+        self._model = None
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self._file_name)
@@ -90,7 +91,8 @@ class FastaiModelArtifact(BentoServiceArtifact):
                 "Expect `model` argument to be `fastai.basic_train.Learner` instance"
             )
 
-        return _FastaiModelArtifactWrapper(self, model)
+        self._model = model
+        return self
 
     def load(self, path):
         fastai_module = _import_fastai_module()
@@ -109,19 +111,11 @@ class FastaiModelArtifact(BentoServiceArtifact):
         )
         return ['torch', "fastai"]
 
-
-class _FastaiModelArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, model):
-        super(_FastaiModelArtifactWrapper, self).__init__(spec)
-
-        self._model = model
-
     def save(self, dst):
-        self._model.export(file=self.spec._file_name)
+        self._model.export(file=self._file_name)
 
         shutil.copyfile(
-            os.path.join(self._model.path, self.spec._file_name),
-            self.spec._model_file_path(dst),
+            os.path.join(self._model.path, self._file_name), self._model_file_path(dst),
         )
 
     def get(self):

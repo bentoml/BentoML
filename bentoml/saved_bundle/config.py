@@ -58,10 +58,9 @@ def _get_apis_list(bento_service):
 
 def _get_artifacts_list(bento_service):
     result = []
-    for artifact_name in bento_service.artifacts:
-        artifact_spec = bento_service.artifacts[artifact_name].spec
+    for artifact_name, artifact in bento_service.artifacts.items():
         result.append(
-            {'name': artifact_name, 'artifact_type': artifact_spec.__class__.__name__}
+            {'name': artifact_name, 'artifact_type': artifact.__class__.__name__}
         )
     return result
 

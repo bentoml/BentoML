@@ -229,8 +229,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
     @bentoml_cli.command(
-        help="Start REST API server from saved BentoService bundle with gunicorn",
-        short_help="Start local gunicorn server",
+        help="Start a production API server serving specified BentoService",
+        short_help="Start production API server",
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.option(

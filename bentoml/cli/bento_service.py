@@ -7,7 +7,7 @@ import psutil
 
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.s3 import is_s3_url
-from bentoml.server import BentoAPIServer
+from bentoml.server.api_server import BentoAPIServer
 from bentoml.exceptions import BentoMLException, CLIException
 from bentoml.server.utils import get_gunicorn_num_of_workers
 from bentoml.server.open_api import get_open_api_spec_json

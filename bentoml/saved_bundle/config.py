@@ -39,7 +39,7 @@ DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size
 
 def _get_apis_list(bento_service):
     result = []
-    for api in bento_service.get_service_apis():
+    for api in bento_service.inference_apis:
         api_obj = {
             "name": api.name,
             "docs": api.doc,

@@ -209,4 +209,4 @@ def load_bento_service_api(bundle_path, api_name=None):
             return load_bento_service_api(local_bundle_path, api_name)
 
     bento_service = load(bundle_path)
-    return bento_service.get_service_api(api_name)
+    return bento_service.get_inference_api(api_name)

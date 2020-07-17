@@ -17,7 +17,7 @@ import shutil
 import logging
 import pathlib
 
-from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
 
 
@@ -197,6 +197,11 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     >>> svc.pack('model', '/tmp/adder/1')
     """
 
+    def __init__(self, name):
+        super(TensorflowSavedModelArtifact, self).__init__(name)
+
+        self._wrapper = None
+
     @property
     def pip_dependencies(self):
         return ['tensorflow']
@@ -216,11 +221,14 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
             signatures:
             options:
         """
-
         if _is_path_like(obj):
-            return _ExportedTensorflowSavedModelArtifactWrapper(self, obj)
+            self._wrapper = _ExportedTensorflowSavedModelArtifactWrapper(self, obj)
+        else:
+            self._wrapper = _TensorflowSavedModelArtifactWrapper(
+                self, obj, signatures, options
+            )
 
-        return _TensorflowSavedModelArtifactWrapper(self, obj, signatures, options)
+        return self
 
     def load(self, path):
         saved_model_path = self._saved_model_path(path)
@@ -228,17 +236,22 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         _TensorflowFunctionWrapper.hook_loaded_model(loaded_model)
         return self.pack(loaded_model)
 
+    def save(self, dst):
+        return self._wrapper.save(dst)
 
-class _ExportedTensorflowSavedModelArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, path):
-        super(_ExportedTensorflowSavedModelArtifactWrapper, self).__init__(spec)
+    def get(self):
+        return self._wrapper.get()
 
+
+class _ExportedTensorflowSavedModelArtifactWrapper:
+    def __init__(self, tf_artifact, path):
+        self.tf_artifact = tf_artifact
         self.path = path
         self.model = None
 
     def save(self, dst):
         # Copy exported SavedModel model directory to BentoML saved artifact directory
-        shutil.copytree(self.path, self.spec._saved_model_path(dst))
+        shutil.copytree(self.path, self.tf_artifact._saved_model_path(dst))
 
     def get(self):
         if not self.model:
@@ -247,10 +260,9 @@ class _ExportedTensorflowSavedModelArtifactWrapper(BentoServiceArtifactWrapper):
         return self.model
 
 
-class _TensorflowSavedModelArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, obj, signatures=None, options=None):
-        super(_TensorflowSavedModelArtifactWrapper, self).__init__(spec)
-
+class _TensorflowSavedModelArtifactWrapper:
+    def __init__(self, tf_artifact, obj, signatures=None, options=None):
+        self.tf_artifact = tf_artifact
         self.obj = obj
         self.signatures = signatures
         self.options = options
@@ -268,7 +280,7 @@ class _TensorflowSavedModelArtifactWrapper(BentoServiceArtifactWrapper):
         if TF2:
             return tf.saved_model.save(
                 self.obj,
-                self.spec._saved_model_path(dst),
+                self.tf_artifact._saved_model_path(dst),
                 signatures=self.signatures,
                 options=self.options,
             )
@@ -281,7 +293,9 @@ class _TensorflowSavedModelArtifactWrapper(BentoServiceArtifactWrapper):
                 )
 
             return tf.saved_model.save(
-                self.obj, self.spec._saved_model_path(dst), signatures=self.signatures
+                self.obj,
+                self.tf_artifact._saved_model_path(dst),
+                signatures=self.signatures,
             )
 
     def get(self):

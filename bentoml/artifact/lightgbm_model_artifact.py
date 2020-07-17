@@ -14,7 +14,7 @@
 
 import os
 
-from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
 
@@ -59,12 +59,25 @@ class LightGBMModelArtifact(BentoServiceArtifact):
     def __init__(self, name, model_extension=".txt"):
         super(LightGBMModelArtifact, self).__init__(name)
         self.model_extension = model_extension
+        self._model = None
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self.model_extension)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        return _LightGBMModelArtifactWrapper(self, model)
+        try:
+            import lightgbm as lgb
+        except ImportError:
+            raise MissingDependencyException(
+                "lightgbm package is required to use LightGBMModelArtifact"
+            )
+
+        if not isinstance(model, lgb.Booster):
+            raise InvalidArgument(
+                "Expect `model` argument to be a `lightgbm.Booster` instance"
+            )
+
+        self._model = model
 
     def load(self, path):
         try:
@@ -81,28 +94,8 @@ class LightGBMModelArtifact(BentoServiceArtifact):
     def pip_dependencies(self):
         return ['lightgbm']
 
-
-class _LightGBMModelArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, model):
-
-        super(_LightGBMModelArtifactWrapper, self).__init__(spec)
-
-        try:
-            import lightgbm as lgb
-        except ImportError:
-            raise MissingDependencyException(
-                "lightgbm package is required to use LightGBMModelArtifact"
-            )
-
-        if not isinstance(model, lgb.Booster):
-            raise InvalidArgument(
-                "Expect `model` argument to be a `lightgbm.Booster` instance"
-            )
-
-        self._model = model
-
     def save(self, dst):
-        return self._model.save_model(self.spec._model_file_path(dst))
+        return self._model.save_model(self._model_file_path(dst))
 
     def get(self):
         return self._model

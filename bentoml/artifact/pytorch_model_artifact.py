@@ -15,7 +15,7 @@
 import os
 import logging
 
-from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact
 from bentoml.utils import cloudpickle
 from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
@@ -74,12 +74,25 @@ class PytorchModelArtifact(BentoServiceArtifact):
     def __init__(self, name, file_extension=".pt"):
         super(PytorchModelArtifact, self).__init__(name)
         self._file_extension = file_extension
+        self._model = None
 
     def _file_path(self, base_path):
         return os.path.join(base_path, self.name + self._file_extension)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        return _PytorchModelArtifactWrapper(self, model)
+        try:
+            import torch
+        except ImportError:
+            raise MissingDependencyException(
+                "torch package is required to use PytorchModelArtifact"
+            )
+
+        if not isinstance(model, torch.nn.Module):
+            raise InvalidArgument(
+                "PytorchModelArtifact can only pack type 'torch.nn.Module'"
+            )
+
+        self._model = model
 
     def load(self, path):
         try:
@@ -110,27 +123,8 @@ class PytorchModelArtifact(BentoServiceArtifact):
         )
         return ['torch']
 
-
-class _PytorchModelArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, model):
-        super(_PytorchModelArtifactWrapper, self).__init__(spec)
-
-        try:
-            import torch
-        except ImportError:
-            raise MissingDependencyException(
-                "torch package is required to use PytorchModelArtifact"
-            )
-
-        if not isinstance(model, torch.nn.Module):
-            raise InvalidArgument(
-                "PytorchModelArtifact can only pack type 'torch.nn.Module'"
-            )
-
-        self._model = model
-
     def get(self):
         return self._model
 
     def save(self, dst):
-        return cloudpickle.dump(self._model, open(self.spec._file_path(dst), "wb"))
+        return cloudpickle.dump(self._model, open(self._file_path(dst), "wb"))

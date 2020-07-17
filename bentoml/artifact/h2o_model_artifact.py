@@ -15,7 +15,7 @@
 import os
 import shutil
 
-from bentoml.artifact import BentoServiceArtifact, BentoServiceArtifactWrapper
+from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
 
 
@@ -58,6 +58,11 @@ class H2oModelArtifact(BentoServiceArtifact):
     >>> svc.pack('model', model_to_save)
     """
 
+    def __init__(self, name):
+        super(H2oModelArtifact, self).__init__(name)
+
+        self._model = None
+
     @property
     def pip_dependencies(self):
         return ['h2o']
@@ -66,7 +71,8 @@ class H2oModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name)
 
     def pack(self, model):  # pylint:disable=arguments-differ
-        return _H2oModelArtifactWrapper(self, model)
+        self._model = model
+        return self
 
     def load(self, path):
         try:
@@ -78,13 +84,8 @@ class H2oModelArtifact(BentoServiceArtifact):
 
         h2o.init()
         model = h2o.load_model(self._model_file_path(path))
-        return self.pack(model)
-
-
-class _H2oModelArtifactWrapper(BentoServiceArtifactWrapper):
-    def __init__(self, spec, model):
-        super(_H2oModelArtifactWrapper, self).__init__(spec)
         self._model = model
+        return self
 
     def save(self, dst):
         try:
@@ -95,7 +96,7 @@ class _H2oModelArtifactWrapper(BentoServiceArtifactWrapper):
             )
 
         h2o_saved_path = h2o.save_model(model=self._model, path=dst, force=True)
-        shutil.move(h2o_saved_path, self.spec._model_file_path(dst))
+        shutil.move(h2o_saved_path, self._model_file_path(dst))
         return
 
     def get(self):

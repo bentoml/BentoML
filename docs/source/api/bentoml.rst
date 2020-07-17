@@ -14,12 +14,10 @@ BentoService
 
   .. automethod:: bentoml.BentoService.set_version
 
-  .. automethod:: bentoml.BentoService.get_service_apis
+  .. autoattribute:: bentoml.BentoService.inference_apis
 
-  .. method:: bentoml.BentoService.artifacts
+  .. autoattribute:: bentoml.BentoService.artifacts
 
-        returns a dictionary of packed artifacts from the artifact name to the artifact
-        model instance in its native form
 
   .. _bentoml-bentoservice-pack-label:
 

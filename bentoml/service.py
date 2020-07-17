@@ -624,8 +624,11 @@ class BentoService:
 
     @property
     def artifacts(self):
-        """
-        :return: List of model artifacts
+        """ Returns all packed artifacts in an ArtifactCollection object
+
+        Returns:
+            artifacts(ArtifactCollection): A dictionary of packed artifacts from the
+            artifact name to the loaded artifact model instance in its native form
         """
         return self._packed_artifacts
 

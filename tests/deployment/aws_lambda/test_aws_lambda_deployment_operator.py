@@ -65,7 +65,7 @@ def test_aws_lambda_app_py(monkeypatch):
         def _load_artifacts(self, path):
             return
 
-        def get_service_api(self, name):
+        def get_inference_api(self, name):
             if name == 'predict':
                 mock_api = Mock()
                 mock_api.handle_aws_lambda_event = test_predict

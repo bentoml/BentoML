@@ -13,8 +13,33 @@
 # limitations under the License.
 
 import logging
+from contextlib import contextmanager
+
+from bentoml import config
+
 
 logger = logging.getLogger(__name__)
+ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
+
+
+@contextmanager
+def trace(*args, **kwargs):
+    if ZIPKIN_API_URL:
+        from bentoml.server.trace import trace as _trace
+
+        return _trace(ZIPKIN_API_URL, *args, **kwargs)
+    else:
+        yield
+
+
+@contextmanager
+def async_trace(*args, **kwargs):
+    if ZIPKIN_API_URL:
+        from bentoml.server.trace import async_trace as _async_trace
+
+        return _async_trace(ZIPKIN_API_URL, *args, **kwargs)
+    else:
+        yield
 
 
 def start_dev_server(saved_bundle_path: str, port: int, enable_microbatch: bool):

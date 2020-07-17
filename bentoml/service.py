@@ -20,6 +20,7 @@ import uuid
 from datetime import datetime
 
 import flask
+from werkzeug.utils import cached_property
 
 from bentoml import config
 from bentoml.saved_bundle import save_to_dir
@@ -28,11 +29,10 @@ from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import isidentifier
 from bentoml.utils.hybridmethod import hybridmethod
 from bentoml.exceptions import NotFound, InvalidArgument
+from bentoml.server import trace
 
-from werkzeug.utils import cached_property
 
 ARTIFACTS_DIR_NAME = "artifacts"
-ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
 DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
 BENTOML_RESERVED_API_NAMES = [
@@ -132,21 +132,15 @@ class InferenceAPI(object):
         """
         :return: user-defined inference API callback function
         """
-        if ZIPKIN_API_URL:
-            from bentoml.server.trace import trace
 
-            def _wrapped_func(*args, **kwargs):
-                with trace(
-                    ZIPKIN_API_URL,
-                    service_name=self.__class__.__name__,
-                    span_name="user defined api handler",
-                ):
-                    resp = self._func(*args, **kwargs)
-                return resp
+        def func_with_tracing(*args, **kwargs):
+            with trace(
+                service_name=self.__class__.__name__,
+                span_name="user defined inference api callback function",
+            ):
+                return self._func(*args, **kwargs)
 
-            return _wrapped_func
-        else:
-            return self._func
+        return func_with_tracing
 
     @property
     def request_schema(self):
@@ -166,16 +160,10 @@ class InferenceAPI(object):
 
         requests = DataLoader.split_requests(request.get_data())
 
-        if ZIPKIN_API_URL:
-            from bentoml.server.trace import trace
-
-            with trace(
-                ZIPKIN_API_URL,
-                service_name=self.__class__.__name__,
-                span_name=f"call `{self.handler.__class__.__name__}`",
-            ):
-                responses = self.handler.handle_batch_request(requests, self.func)
-        else:
+        with trace(
+            service_name=self.__class__.__name__,
+            span_name=f"call `{self.handler.__class__.__name__}`",
+        ):
             responses = self.handler.handle_batch_request(requests, self.func)
 
         return DataLoader.merge_responses(responses)

@@ -28,9 +28,9 @@ from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
+from bentoml.server import trace
 
 
-ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
 prediction_logger = logging.getLogger("bentoml.prediction")
@@ -359,21 +359,13 @@ class BentoAPIServer:
 
             return response
 
-        if ZIPKIN_API_URL:
-            from bentoml.server.trace import trace
+        def api_func_with_tracing():
+            with trace(
+                request.headers, service_name=self.__class__.__name__,
+            ):
+                return api_func()
 
-            def _wrapped_api_func():
-                with trace(
-                    ZIPKIN_API_URL,
-                    request.headers,
-                    service_name=self.__class__.__name__,
-                ):
-                    resp = api_func()
-                return resp
-
-            return _wrapped_api_func
-        else:
-            return api_func
+        return api_func_with_tracing
 
     def log_exception(self, exc_info):
         """Logs an exception.  This is called by :meth:`handle_exception`

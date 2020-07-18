@@ -88,7 +88,7 @@ def _create_aws_lambda_cloudformation_template_file(
             'Function': {'Timeout': timeout, 'Runtime': py_runtime},
             'Api': {
                 'BinaryMediaTypes': ['image~1*'],
-                'Cors': {'AllowOrigin': "'*'"},
+                'Cors': "'*'",
                 'Auth': {
                     'ApiKeyRequired': False,
                     'DefaultAuthorizer': 'NONE',

@@ -23,7 +23,8 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
     )
 
     test_model = TestModel()
-    svc = example_bento_service_class.pack(model=test_model)
+    svc = example_bento_service_class()
+    svc.pack('model', test_model)
 
     assert svc.predict(1000) == 2000
     version = "test_" + uuid.uuid4().hex

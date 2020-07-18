@@ -28,7 +28,7 @@ from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import isidentifier
 from bentoml.utils.hybridmethod import hybridmethod
-from bentoml.exceptions import NotFound, InvalidArgument
+from bentoml.exceptions import NotFound, InvalidArgument, BentoMLException
 from bentoml.server import trace
 
 
@@ -794,31 +794,12 @@ class BentoService:
     @pack.classmethod
     def pack(cls, *args, **kwargs):  # pylint: disable=no-self-argument
         """
-        **Deprecated**: Legacy `BentoService#pack` class method, which can be used to
-        initialize a BentoService instance along with trained model artifacts. This will
-        be deprecated soon:
-
-        :param args: args passing to the BentoService class
-        :param kwargs: kwargs passing to the BentoService class and (artifact_name,
-            args) pair for creating declared model artifacts
-        :return: a new BentoService instance
+        **Deprecated**: Legacy `BentoService#pack` class method, no longer supported
         """
-        logger.warning(
+        raise BentoMLException(
             "BentoService#pack class method is deprecated, use instance method `pack` "
             "instead. e.g.: svc = MyBentoService(); svc.pack('model', model_object)"
         )
-
-        packed_artifacts = []
-        for artifact in cls._artifacts:
-            if artifact.name in kwargs:
-                artifact_args = kwargs.pop(artifact.name)
-                packed_artifacts.append(artifact.pack(artifact_args))
-
-        bento_svc = cls(*args, **kwargs)  # pylint: disable=not-callable
-        for packed_artifact in packed_artifacts:
-            bento_svc.artifacts.add(packed_artifact)
-
-        return bento_svc
 
     def _load_artifacts(self, path):
         # For pip installed BentoService, artifacts directory is located at

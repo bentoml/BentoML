@@ -10,18 +10,19 @@ const logger = getLogger();
 
 const createRoutes = (app, yataiClient) => {
   app.get("/api/ListBento", async (req: Request, res: Response) => {
+    const requestQuery: any = Object.assign({}, req.query);
     if (req.query.limit && typeof req.query.limit == "string") {
-      req.query.limit = Number(req.query.limit);
+      requestQuery.limit = Number(req.query.limit);
     }
     if (req.query.offset && typeof req.query.offset == "string") {
-      req.query.offset = Number(req.query.offset);
+      requestQuery.offset = Number(req.query.offset);
     }
-    let verifyError = bentoml.ListBentoRequest.verify(req.query);
+    let verifyError = bentoml.ListBentoRequest.verify(requestQuery);
     if (verifyError) {
       logger.error({ request: "ListBento", error: verifyError });
       return res.status(400).json({ error: verifyError });
     }
-    let requestMessage = bentoml.ListBentoRequest.create(req.query);
+    let requestMessage = bentoml.ListBentoRequest.create(requestQuery);
     try {
       const result = await yataiClient.listBento(requestMessage);
       logger.info({
@@ -88,15 +89,16 @@ const createRoutes = (app, yataiClient) => {
   });
 
   app.get("/api/ListDeployments", async (req: Request, res: Response) => {
+    const requestQuery :any = Object.assign({}, req.query);
     if (req.query.limit && typeof req.query.limit == "string") {
-      req.query.limit = Number(req.query.limit);
+      requestQuery.limit = Number(req.query.limit);
     }
-    let verifyError = bentoml.ListDeploymentsRequest.verify(req.query);
+    let verifyError = bentoml.ListDeploymentsRequest.verify(requestQuery);
     if (verifyError) {
       logger.error({ request: "ListDeployments", error: verifyError });
       return res.status(400).json({ error: verifyError });
     }
-    let requestMessage = bentoml.ListDeploymentsRequest.create(req.query);
+    let requestMessage = bentoml.ListDeploymentsRequest.create(requestQuery);
     try {
       const result = await yataiClient.listDeployments(requestMessage);
       logger.info({

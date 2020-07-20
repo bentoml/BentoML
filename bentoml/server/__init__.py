@@ -55,7 +55,7 @@ def start_dev_server(
     bento_service = load(saved_bundle_path)
 
     if run_with_ngrok:
-        from flask_ngrok import start_ngrok
+        from bentoml.utils.flask_ngrok import start_ngrok
         from threading import Timer
 
         thread = Timer(1, start_ngrok, args=(port,))

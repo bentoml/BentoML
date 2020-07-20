@@ -225,8 +225,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         '--run-with-ngrok',
         is_flag=True,
         default=False,
-        help="(Beta) Run API server with ngrok enabled",
-        envvar='BENTOML_ENABLE_MICROBATCH',
+        help="Use ngrok to relay traffic on a public endpoint to this API server on localhost",
+        envvar='BENTOML_ENABLE_NGROK',
     )
     def serve(port, bento=None, enable_microbatch=False, run_with_ngrok=False):
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)

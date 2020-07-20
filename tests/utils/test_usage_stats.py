@@ -45,7 +45,7 @@ def mock_get_operator_func():
     return func
 
 
-def mock_start_dev_server(bundle_path, port, enable_microbatch):
+def mock_start_dev_server(bundle_path, port, enable_microbatch, run_with_ngrok):
     raise KeyboardInterrupt()
 
 

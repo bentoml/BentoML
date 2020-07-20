@@ -54,6 +54,14 @@ def start_dev_server(
 
     bento_service = load(saved_bundle_path)
 
+    if run_with_ngrok:
+        from flask_ngrok import start_ngrok
+        from threading import Timer
+
+        thread = Timer(1, start_ngrok, args=(port,))
+        thread.setDaemon(True)
+        thread.start()
+
     if enable_microbatch:
         with reserve_free_port() as api_server_port:
             # start server right after port released
@@ -68,9 +76,7 @@ def start_dev_server(
         marshal_server.async_start(port=port)
         api_server.start()
     else:
-        api_server = BentoAPIServer(
-            bento_service, port=port, run_with_ngrok=run_with_ngrok
-        )
+        api_server = BentoAPIServer(bento_service, port=port)
         api_server.start()
 
 

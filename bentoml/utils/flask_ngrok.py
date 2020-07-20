@@ -8,7 +8,6 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
-from threading import Timer
 import logging
 import requests
 from bentoml.exceptions import BentoMLException
@@ -91,22 +90,3 @@ def start_ngrok(port):
     ngrok_address = _run_ngrok(port)
     logger.info(f" * Running on {ngrok_address}")
     logger.info(" * Traffic stats available on http://127.0.0.1:4040")
-
-
-def run_with_ngrok(app):
-    """
-    The provided Flask app will be securely exposed to the public
-    internet via ngrok when run, and the its ngrok address will be printed to stdout
-    :param app: a Flask application object
-    :return: None
-    """
-    old_run = app.run
-
-    def new_run(*args, **kwargs):
-        port = kwargs.get('port', 5000)
-        thread = Timer(1, start_ngrok, args=(port,))
-        thread.setDaemon(True)
-        thread.start()
-        old_run(*args, **kwargs)
-
-    app.run = new_run

@@ -83,7 +83,6 @@ class BentoAPIServer:
         self.port = port
         self.bento_service = bento_service
         self.app = Flask(app_name, static_folder=None)
-
         self.static_path = self.bento_service.get_web_static_content_path()
 
         self.swagger_path = os.path.join(

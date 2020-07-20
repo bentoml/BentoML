@@ -42,7 +42,9 @@ def async_trace(*args, **kwargs):
         yield
 
 
-def start_dev_server(saved_bundle_path: str, port: int, enable_microbatch: bool):
+def start_dev_server(
+    saved_bundle_path: str, port: int, enable_microbatch: bool, run_with_ngrok: bool
+):
     logger.info("Starting BentoML API server in development mode..")
 
     from bentoml import load
@@ -51,6 +53,14 @@ def start_dev_server(saved_bundle_path: str, port: int, enable_microbatch: bool)
     from bentoml.utils import reserve_free_port
 
     bento_service = load(saved_bundle_path)
+
+    if run_with_ngrok:
+        from bentoml.utils.flask_ngrok import start_ngrok
+        from threading import Timer
+
+        thread = Timer(1, start_ngrok, args=(port,))
+        thread.setDaemon(True)
+        thread.start()
 
     if enable_microbatch:
         with reserve_free_port() as api_server_port:

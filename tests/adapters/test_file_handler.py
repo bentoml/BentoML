@@ -21,18 +21,18 @@ def test_file_input_cli(capsys, bin_file):
     test_args = ["--input", bin_file]
     test_file_input.handle_cli(test_args, predict)
     out, _ = capsys.readouterr()
-    assert '{"b64": "gTCJOQ=="}' in out
+    assert '\\x810\\x899' in out
 
 
-def test_file_input_cli_list(capsys, img_files):
+def test_file_input_cli_list(capsys, bin_files):
     test_file_input = FileInput()
 
-    test_args = ["--input"] + glob.glob(img_files)
+    test_args = ["--input"] + glob.glob(bin_files)
     test_file_input.handle_cli(test_args, predict)
     out, _ = capsys.readouterr()
     lines = out.strip().split('\n')
     for line in lines[-10:]:
-        assert line == "(10, 10, 3)"
+        assert '\\x810\\x899' in line
 
 
 def test_file_input_aws_lambda_event(bin_file):

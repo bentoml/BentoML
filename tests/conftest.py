@@ -89,6 +89,15 @@ def bin_file(tmpdir):
 
 
 @pytest.fixture()
+def bin_files(tmpdir):
+    for i in range(10):
+        bin_file_ = tmpdir.join(f"{i}")
+        with open(bin_file_, "wb") as of:
+            of.write(f"â{i}".encode('gb18030'))
+    return str(tmpdir.join("*"))
+
+
+@pytest.fixture()
 def img_files(tmpdir):
     for i in range(10):
         img_file_ = tmpdir.join(f"test_img_{i}.jpg")

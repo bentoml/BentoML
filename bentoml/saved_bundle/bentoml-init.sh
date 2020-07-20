@@ -14,7 +14,7 @@ command -v conda >/dev/null && conda env update -n base -f ./environment.yml \
   || echo "conda command not found, ignoring environment.yml"
 
 # Install PyPI packages specified in requirements.txt
-pip install -r ./requirements.txt
+pip install -r ./requirements.txt --no-cache-dir
 
 # install sdist or wheel format archives stored under bundled_pip_dependencies directory
 for filename in ./bundled_pip_dependencies/*.tar.gz; do

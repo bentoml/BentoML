@@ -9,11 +9,17 @@ import time
 import zipfile
 from pathlib import Path
 from threading import Timer
-
+import logging
 import requests
+from bentoml.exceptions import BentoMLException
+
+logger = logging.getLogger(__name__)
 
 
 def _get_command():
+    """
+    ngrok command based on OS
+    """
     system = platform.system()
     if system == "Darwin":
         command = "ngrok"
@@ -22,7 +28,7 @@ def _get_command():
     elif system == "Linux":
         command = "ngrok"
     else:
-        raise Exception("{system} is not supported".format(system=system))
+        raise BentoMLException("{system} is not supported".format(system=system))
     return command
 
 
@@ -45,6 +51,9 @@ def _run_ngrok(port):
 
 
 def _download_ngrok(ngrok_path):
+    """
+    Check OS and decide on ngrok download URL
+    """
     if Path(ngrok_path).exists():
         return
     system = platform.system()
@@ -62,6 +71,11 @@ def _download_ngrok(ngrok_path):
 
 
 def _download_file(url):
+    """
+    Download ngrok bibary file to local
+    :param url:
+    :return:
+    """
     local_filename = url.split('/')[-1]
     r = requests.get(url, stream=True)
     download_path = str(Path(tempfile.gettempdir(), local_filename))
@@ -71,15 +85,18 @@ def _download_file(url):
 
 
 def start_ngrok(port):
+    """
+    Start ngrok server
+    """
     ngrok_address = _run_ngrok(port)
-    print(f" * Running on {ngrok_address}")
-    print(f" * Traffic stats available on http://127.0.0.1:4040")
+    logger.info(f" * Running on {ngrok_address}")
+    logger.info(" * Traffic stats available on http://127.0.0.1:4040")
 
 
 def run_with_ngrok(app):
     """
-    The provided Flask app will be securely exposed to the public internet via ngrok when run,
-    and the its ngrok address will be printed to stdout
+    The provided Flask app will be securely exposed to the public
+    internet via ngrok when run, and the its ngrok address will be printed to stdout
     :param app: a Flask application object
     :return: None
     """
@@ -91,4 +108,5 @@ def run_with_ngrok(app):
         thread.setDaemon(True)
         thread.start()
         old_run(*args, **kwargs)
+
     app.run = new_run

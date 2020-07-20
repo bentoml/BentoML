@@ -77,7 +77,9 @@ class BentoAPIServer:
     _DEFAULT_PORT = config("apiserver").getint("default_port")
     _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
 
-    def __init__(self, bento_service, port=_DEFAULT_PORT, app_name=None, run_with_ngrok=False):
+    def __init__(
+        self, bento_service, port=_DEFAULT_PORT, app_name=None, run_with_ngrok=False
+    ):
         app_name = bento_service.name if app_name is None else app_name
 
         self.port = port
@@ -85,6 +87,7 @@ class BentoAPIServer:
         self.app = Flask(app_name, static_folder=None)
         if run_with_ngrok:
             from bentoml.utils.flask_ngrok import run_with_ngrok
+
             run_with_ngrok(self.app)
         self.static_path = self.bento_service.get_web_static_content_path()
 

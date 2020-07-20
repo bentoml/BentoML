@@ -221,9 +221,16 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Run API server with micro-batch enabled",
         envvar='BENTOML_ENABLE_MICROBATCH',
     )
-    def serve(port, bento=None, enable_microbatch=False):
+    @click.option(
+        '--run-with-ngrok',
+        is_flag=True,
+        default=False,
+        help="(Beta) Run API server with ngrok enabled",
+        envvar='BENTOML_ENABLE_MICROBATCH',
+    )
+    def serve(port, bento=None, enable_microbatch=False, run_with_ngrok=False):
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
-        start_dev_server(saved_bundle_path, port, enable_microbatch)
+        start_dev_server(saved_bundle_path, port, enable_microbatch, run_with_ngrok)
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}

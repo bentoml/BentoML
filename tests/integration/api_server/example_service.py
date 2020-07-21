@@ -1,4 +1,5 @@
 import functools
+import time
 
 from sklearn.ensemble import RandomForestRegressor
 
@@ -55,8 +56,14 @@ class ExampleBentoService(bentoml.BentoService):
         return self.artifacts.model.predict_legacy_images(original, compared)
 
     @bentoml.api(input=JsonInput())
-    def predict_json(self, input_data):
-        return self.artifacts.model.predict_json(input_data)
+    def predict_json(self, input_datas):
+        return self.artifacts.model.predict_json(input_datas)
+
+    @bentoml.api(input=JsonInput(), mb_max_latency=10000 * 1000)
+    def echo_with_delay(self, input_datas):
+        data = input_datas[0]
+        time.sleep(data['b'] + data['a'] * len(input_datas))
+        return input_datas
 
 
 class PickleModel(object):

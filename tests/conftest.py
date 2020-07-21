@@ -17,7 +17,7 @@ def pytest_configure():
         url,
         headers=None,
         data=None,
-        timeout=10,
+        timeout=None,
         assert_status=None,
         assert_data=None,
     ):

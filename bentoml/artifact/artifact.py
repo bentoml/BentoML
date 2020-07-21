@@ -13,8 +13,12 @@
 # limitations under the License.
 
 import os
+import logging
 
-from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import InvalidArgument, FailedPrecondition
+from bentoml.service_env import BentoServiceEnv
+
+logger = logging.getLogger(__name__)
 
 ARTIFACTS_DIR_NAME = "artifacts"
 
@@ -34,10 +38,22 @@ class BentoServiceArtifact:
                 A valid identifier cannot start with a number, or contain any spaces."
             )
         self._name = name
+        self._packed = False
+        self._loaded = False
 
     @property
     def pip_dependencies(self):
         return []
+
+    @property
+    def packed(self):
+        return self._packed
+
+    @property
+    def loaded(self):
+    @property
+    def is_ready(self):
+        return self.packed or self.loaded
 
     @property
     def name(self):
@@ -47,7 +63,7 @@ class BentoServiceArtifact:
         """
         return self._name
 
-    def pack(self, data):
+    def pack(self, model):
         """
         Pack the in-memory trained model object to this BentoServiceArtifact
 
@@ -70,10 +86,83 @@ class BentoServiceArtifact:
         """
 
 
+    def __getattribute__(self, item):
+        if item == 'pack':
+            original = object.__getattribute__(self, item)
+
+            def wrapped_pack(*args, **kwargs):
+                if self.packed:
+                    logger.warning(
+                        "`pack` an artifact multiple times may lead to unexpected "
+                        "behaviors"
+                    )
+                ret = original(*args, **kwargs)
+                # do not set `self._pack` if `pack` has failed with an exception raised
+                self._packed = True
+                return ret
+
+            return wrapped_pack
+
+        elif item == 'load':
+            original = object.__getattribute__(self, item)
+
+            def wrapped_load(*args, **kwargs):
+                if self.packed:
+                    logger.warning(
+                        "`load` on a 'packed' artifact may lead to unexpected behaviors"
+                    )
+                if self.loaded:
+                    logger.warning(
+                        "`load` an artifact multiple times may lead to unexpected "
+                        "behaviors"
+                    )
+                ret = original(*args, **kwargs)
+                # do not set self._loaded if `load` has failed with an exception raised
+                self._loaded = True
+                return ret
+
+            return wrapped_load
+
+        elif item == 'save':
+
+            def wrapped_save(*args, **kwargs):
+                if not self.is_ready:
+                    raise FailedPrecondition(
+                        "Trying to save empty artifact. An artifact needs to be `pack` "
+                        "with model instance or `load` from saved path before saving"
+                    )
+                original = object.__getattribute__(self, item)
+                return original(*args, **kwargs)
+
+            return wrapped_save
+
+        elif item == 'get':
+
+            def wrapped_get(*args, **kwargs):
+                if not self.is_ready:
+                    raise FailedPrecondition(
+                        "Trying to access empty artifact. An artifact needs to be "
+                        "`pack` with model instance or `load` from saved path before "
+                        "it can be used for inference"
+                    )
+                original = object.__getattribute__(self, item)
+                return original(*args, **kwargs)
+
+            return wrapped_get
+
+        return object.__getattribute__(self, item)
+
+
 class BentoServiceArtifactWrapper:
     """
     Deprecated: use only the BentoServiceArtifact to define artifact operations
     """
+
+    def __init__(self):
+        logger.warning(
+            "BentoServiceArtifactWrapper is deprecated now, use BentoServiceArtifact "
+            "to define artifact operations"
+        )
 
 
 class ArtifactCollection(dict):

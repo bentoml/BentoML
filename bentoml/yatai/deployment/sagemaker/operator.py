@@ -97,7 +97,7 @@ def get_arn_role_from_current_aws_user():
                 "again"
             )
         return arn
-    elif type_role[0] == "role":
+    elif type_role[0] in ["role", "assumed-role"]:
         role_response = iam_client.get_role(RoleName=type_role[1])
         return role_response["Role"]["Arn"]
 

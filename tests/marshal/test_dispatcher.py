@@ -3,6 +3,8 @@ import contextlib
 import pytest
 import time
 import asyncio
+
+import psutil  # noqa # pylint: disable=unused-import
 from bentoml.marshal.dispatcher import CorkDispatcher
 
 
@@ -79,6 +81,7 @@ async def test_dispatcher_basic(model):
     assert all([o == p for p, o in zip(await model(inputs), outputs)])
 
 
+@pytest.mark.skipif('not psutil.POSIX')
 @pytest.mark.asyncio
 async def test_dispatcher_preheating(model):
     dispatcher = CorkDispatcher(max_latency_in_ms=2000, max_batch_size=1000)
@@ -103,6 +106,7 @@ async def test_dispatcher_preheating(model):
     assert model.n_called <= BENCHMARK.N_PREHEAT_90
 
 
+@pytest.mark.skipif('not psutil.POSIX')
 @pytest.mark.asyncio
 async def test_dispatcher_overload(model):
     dispatcher = CorkDispatcher(max_latency_in_ms=2000, max_batch_size=1000)

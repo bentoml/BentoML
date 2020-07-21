@@ -547,7 +547,7 @@ class BentoService:
             )
 
         for artifact in self._artifacts:
-            self._env._add_pip_dependencies_if_missing(artifact.pip_dependencies)
+            artifact.set_dependencies(self.env)
 
     def _config_inference_apis(self):
         self._inference_apis = []

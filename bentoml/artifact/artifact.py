@@ -51,6 +51,8 @@ class BentoServiceArtifact:
 
     @property
     def loaded(self):
+        return self._loaded
+
     @property
     def is_ready(self):
         return self.packed or self.loaded

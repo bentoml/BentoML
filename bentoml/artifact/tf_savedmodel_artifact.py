@@ -19,7 +19,7 @@ import pathlib
 
 from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
-
+from bentoml.service_env import BentoServiceEnv
 
 logger = logging.getLogger(__name__)
 
@@ -202,9 +202,8 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
 
         self._wrapper = None
 
-    @property
-    def pip_dependencies(self):
-        return ['tensorflow']
+    def set_dependencies(self, env: BentoServiceEnv):
+        env._add_pip_dependencies_if_missing(['tensorflow'])
 
     def _saved_model_path(self, base_path):
         return os.path.join(base_path, self.name + '_saved_model')

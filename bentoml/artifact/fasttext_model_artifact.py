@@ -16,6 +16,7 @@ import os
 
 from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
+from bentoml.service_env import BentoServiceEnv
 
 
 class FasttextModelArtifact(BentoServiceArtifact):
@@ -58,9 +59,8 @@ class FasttextModelArtifact(BentoServiceArtifact):
 
         self._model = None
 
-    @property
-    def pip_dependencies(self):
-        return ["fasttext"]
+    def set_dependencies(self, env: BentoServiceEnv):
+        env._add_pip_dependencies_if_missing(["fasttext"])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)

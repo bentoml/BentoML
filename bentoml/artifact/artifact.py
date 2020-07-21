@@ -16,6 +16,7 @@ import os
 import logging
 
 from bentoml.exceptions import InvalidArgument, FailedPrecondition
+from bentoml.service_env import BentoServiceEnv
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +40,6 @@ class BentoServiceArtifact:
         self._name = name
         self._packed = False
         self._loaded = False
-
-    @property
-    def pip_dependencies(self):
-        return []
 
     @property
     def packed(self):
@@ -84,6 +81,13 @@ class BentoServiceArtifact:
     def get(self):
         """
         Get returns a reference to the artifact being packed or loaded from path
+        """
+
+    def set_dependencies(self, env: BentoServiceEnv):
+        """modify target BentoServiceEnv instance to ensure the required dependencies
+        are listed in the BentoService environment spec
+
+        :param env: target BentoServiceEnv instance to modify
         """
 
     def __getattribute__(self, item):

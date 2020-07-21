@@ -18,6 +18,7 @@ import logging
 
 from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException, InvalidArgument
+from bentoml.service_env import BentoServiceEnv
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +72,7 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
         model = fastai2_module.basics.load_learner(path + '/' + self._file_name)
         return self.pack(model)
 
-    @property
-    def pip_dependencies(self):
+    def set_dependencies(self, env: BentoServiceEnv):
         logger.warning(
             "BentoML by default does not include spacy and torchvision package when "
             "using Fastai2ModelArtifact. To make sure BentoML bundle those packages if "
@@ -80,7 +80,7 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
             "BentoService definition file or manually add them via "
             "`@env(pip_dependencies=['torchvision'])` when defining a BentoService"
         )
-        return ['torch', "fastcore", "fastai2"]
+        env._add_pip_dependencies_if_missing(['torch', "fastcore", "fastai2"])
 
     def save(self, dst):
         self._model.export(fname=self._file_name)

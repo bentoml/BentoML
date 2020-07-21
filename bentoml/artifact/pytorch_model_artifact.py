@@ -16,6 +16,7 @@ import os
 import logging
 
 from bentoml.artifact import BentoServiceArtifact
+from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import cloudpickle
 from bentoml.exceptions import MissingDependencyException, InvalidArgument
 
@@ -113,8 +114,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
 
         return self.pack(model)
 
-    @property
-    def pip_dependencies(self):
+    def set_dependencies(self, env: BentoServiceEnv):
         logger.warning(
             "BentoML by default does not include spacy and torchvision package when "
             "using PytorchModelArtifact. To make sure BentoML bundle those packages if "
@@ -122,7 +122,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
             "BentoService definition file or manually add them via "
             "`@env(pip_dependencies=['torchvision'])` when defining a BentoService"
         )
-        return ['torch']
+        env._add_pip_dependencies_if_missing(['torch'])
 
     def get(self):
         return self._model

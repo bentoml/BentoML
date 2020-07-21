@@ -16,6 +16,7 @@ import os
 
 from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException, InvalidArgument
+from bentoml.service_env import BentoServiceEnv
 
 
 class XgboostModelArtifact(BentoServiceArtifact):
@@ -64,9 +65,8 @@ class XgboostModelArtifact(BentoServiceArtifact):
         self._model_extension = model_extension
         self._model = None
 
-    @property
-    def pip_dependencies(self):
-        return ['xgboost']
+    def set_dependencies(self, env: BentoServiceEnv):
+        env._add_pip_dependencies_if_missing(['xgboost'])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._model_extension)

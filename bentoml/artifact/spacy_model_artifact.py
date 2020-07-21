@@ -17,6 +17,7 @@ import os
 
 from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException, InvalidArgument
+from bentoml.service_env import BentoServiceEnv
 
 logger = logging.getLogger(__name__)
 
@@ -109,9 +110,8 @@ class SpacyModelArtifact(BentoServiceArtifact):
 
         return self.pack(model)
 
-    @property
-    def pip_dependencies(self):
-        return ['spacy']
+    def set_dependencies(self, env: BentoServiceEnv):
+        env._add_pip_dependencies_if_missing(['spacy'])
 
     def get(self):
         return self._model

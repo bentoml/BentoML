@@ -1,3 +1,4 @@
+import logging
 import uuid
 import mock
 import pytest
@@ -10,6 +11,8 @@ from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.exceptions import BentoMLException
 
 from tests.conftest import delete_saved_bento_service
+
+from sys import version_info
 
 
 class TestModel(object):
@@ -125,3 +128,38 @@ def test_save_duplicated_bento_exception_raised(example_bento_service_class):
 
     delete_saved_bento_service(svc_metadata.name, svc_metadata.version)
     delete_saved_bento_service(svc_metadata_new.name, svc_metadata_new.version)
+
+
+def test_version_mismatch_warnings_raised(tmp_path_factory,
+                                          example_bento_service_class, capsys):
+    # Set logging level so version mismatch warnings are output
+    bentoml.configure_logging(logging_level=logging.WARNING)
+    # (Note that logger.warning() is captured by stdout in pytest, NOT stdlog.
+    #  So the warning is in capsys.readouterr().out, NOT caplog.text.)
+
+    test_model = TestModel()
+    svc = example_bento_service_class()
+    svc.pack('model', test_model)
+
+    # Should not warn for default `_python_version` value
+    match_dir = tmp_path_factory.mktemp("match")
+    svc.save_to_dir(match_dir)
+    match_service = bentoml.load(str(match_dir))
+    assert "Python version mismatch" not in capsys.readouterr().out
+
+    # Should not warn for micro version mismatches
+    svc.env._python_version = f"{version_info.major}.{version_info.minor}.X"
+    micro_dir = tmp_path_factory.mktemp("micro_mismatch")
+    svc.save_to_dir(micro_dir)
+    micro_service = bentoml.load(str(micro_dir))
+    assert "Python version mismatch" not in capsys.readouterr().out
+
+    # Should warn for minor version mismatches
+    svc.env._python_version = f"{version_info.major}.X.{version_info.micro}"
+    minor_dir = tmp_path_factory.mktemp("minor_mismatch")
+    svc.save_to_dir(minor_dir)
+    minor_service = bentoml.load(str(minor_dir))
+    assert "Python version mismatch" in capsys.readouterr().out
+
+    # Reset logging level to default
+    bentoml.configure_logging()

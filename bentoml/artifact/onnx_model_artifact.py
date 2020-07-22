@@ -23,6 +23,7 @@ from bentoml.exceptions import (
     InvalidArgument,
     BentoMLException,
 )
+from bentoml.service_env import BentoServiceEnv
 
 logger = logging.getLogger(__name__)
 
@@ -148,12 +149,9 @@ class OnnxModelArtifact(BentoServiceArtifact):
     def load(self, path):
         return self.pack(self._saved_model_file_path(path))
 
-    @property
-    def pip_dependencies(self):
-        dependencies = []
+    def set_dependencies(self, env: BentoServiceEnv):
         if self.backend == 'onnxruntime':
-            dependencies.append('onnxruntime')
-        return dependencies
+            env.add_pip_dependencies_if_missing(['onnxruntime'])
 
     def _get_onnx_inference_session(self):
         if self.backend == "onnxruntime":

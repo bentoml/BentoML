@@ -16,6 +16,7 @@ import os
 
 from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException, InvalidArgument
+from bentoml.service_env import BentoServiceEnv
 
 
 class LightGBMModelArtifact(BentoServiceArtifact):
@@ -91,9 +92,8 @@ class LightGBMModelArtifact(BentoServiceArtifact):
 
         return self.pack(bst)
 
-    @property
-    def pip_dependencies(self):
-        return ['lightgbm']
+    def set_dependencies(self, env: BentoServiceEnv):
+        env.add_pip_dependencies_if_missing(['lightgbm'])
 
     def save(self, dst):
         return self._model.save_model(self._model_file_path(dst))

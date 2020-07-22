@@ -17,6 +17,7 @@ import shutil
 
 from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
+from bentoml.service_env import BentoServiceEnv
 
 
 class H2oModelArtifact(BentoServiceArtifact):
@@ -63,9 +64,8 @@ class H2oModelArtifact(BentoServiceArtifact):
 
         self._model = None
 
-    @property
-    def pip_dependencies(self):
-        return ['h2o']
+    def set_dependencies(self, env: BentoServiceEnv):
+        env.add_pip_dependencies_if_missing(['h2o'])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)

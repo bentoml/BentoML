@@ -134,7 +134,7 @@ def test_pyversion_warnings_on_load(tmp_path_factory, capsys,
                                     example_bento_service_class):
     # Set logging level so version mismatch warnings are output
     bentoml.configure_logging(logging_level=logging.WARNING)
-    # (Note that logger.warning() is captured by stdout in pytest, NOT stdlog.
+    # (Note that logger.warning() is captured by pytest in stdout, NOT stdlog.
     #  So the warning is in capsys.readouterr().out, NOT caplog.text.)
 
     test_model = TestModel()

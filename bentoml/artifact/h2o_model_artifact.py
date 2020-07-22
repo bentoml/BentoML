@@ -65,7 +65,7 @@ class H2oModelArtifact(BentoServiceArtifact):
         self._model = None
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env._add_pip_dependencies_if_missing(['h2o'])
+        env.add_pip_dependencies_if_missing(['h2o'])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)

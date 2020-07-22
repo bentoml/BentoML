@@ -18,6 +18,7 @@ import inspect
 import logging
 import uuid
 from datetime import datetime
+from typing import List
 
 import flask
 from werkzeug.utils import cached_property
@@ -337,13 +338,13 @@ def artifacts_decorator(artifacts):
 
 
 def env_decorator(
-    pip_dependencies=None,
-    auto_pip_dependencies=False,
-    requirements_txt_file=None,
-    conda_channels=None,
-    conda_dependencies=None,
-    setup_sh=None,
-    docker_base_image=None,
+    pip_dependencies: List[str] = None,
+    auto_pip_dependencies: bool = False,
+    requirements_txt_file: str = None,
+    conda_channels: List[str] = None,
+    conda_dependencies: List[str] = None,
+    setup_sh: str = None,
+    docker_base_image: str = None,
 ):
     """Define environment and dependencies required for the BentoService being created
 
@@ -355,10 +356,13 @@ def env_decorator(
         requirements_txt_file: pip dependencies in the form of a requirements.txt file,
             this can be a relative path to the requirements.txt file or the content
             of the file
-        conda_channels: extra conda channels to be used
+        conda_channels: list of extra conda channels to be used
         conda_dependencies: list of conda dependencies required
         setup_sh: user defined setup bash script, it is executed in docker build time
-        docker_base_image: used when generating Dockerfile in saved bundle
+        docker_base_image: used for customizing the docker container image built with
+            BentoML saved bundle. Base image must either have both `bash` and `conda`
+            installed; or have `bash`, `pip`, `python` installed, in which case the user
+            is required to ensure the python version matches the BentoService bundle
     """
 
     def decorator(bento_service_cls):
@@ -541,8 +545,8 @@ class BentoService:
         self._env = self.__class__._env or BentoServiceEnv(self.name)
 
         for api in self._inference_apis:
-            self._env._add_pip_dependencies_if_missing(api.handler.pip_dependencies)
-            self._env._add_pip_dependencies_if_missing(
+            self._env.add_pip_dependencies_if_missing(api.handler.pip_dependencies)
+            self._env.add_pip_dependencies_if_missing(
                 api.output_adapter.pip_dependencies
             )
 

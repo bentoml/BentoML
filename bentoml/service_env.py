@@ -18,6 +18,7 @@ import logging
 from sys import version_info
 import stat
 from pathlib import Path
+from typing import List
 
 from ruamel.yaml import YAML
 
@@ -96,7 +97,7 @@ class BentoServiceEnv(object):
         requirements_txt_file: pip dependencies in the form of a requirements.txt file,
             this can be a relative path to the requirements.txt file or the content
             of the file
-        conda_channels: extra conda channels to be used
+        conda_channels: list of extra conda channels to be used
         conda_dependencies: list of conda dependencies required
         setup_sh: user defined setup bash script, it is executed in docker build time
         docker_base_image: used when generating Dockerfile in saved bundle
@@ -129,9 +130,7 @@ class BentoServiceEnv(object):
                     pip_dependencies,
                 )
             else:
-                for dependency in pip_dependencies:
-                    self.check_dependency(dependency)
-                self._pip_dependencies += pip_dependencies
+                self.add_pip_dependencies(pip_dependencies)
 
         if requirements_txt_file:
             if auto_pip_dependencies:
@@ -148,9 +147,13 @@ class BentoServiceEnv(object):
         self._set_setup_sh(setup_sh)
 
         if conda_channels:
-            self._add_conda_channels(conda_channels)
+            if not isinstance(conda_channels, list):
+                conda_channels = [conda_channels]
+            self.add_conda_channels(conda_channels)
         if conda_dependencies:
-            self._add_conda_dependencies(conda_dependencies)
+            if not isinstance(conda_dependencies, list):
+                conda_dependencies = [conda_dependencies]
+            self.add_conda_dependencies(conda_dependencies)
 
         if docker_base_image:
             self._docker_base_image = docker_base_image
@@ -172,34 +175,21 @@ class BentoServiceEnv(object):
                 name,
             )
 
-    def get_conda_env_name(self):
-        return self._conda_env.get_name()
-
-    def set_conda_env_name(self, name):
-        self._conda_env.set_name(name)
-
-    def _add_conda_channels(self, channels):
-        if not isinstance(channels, list):
-            channels = [channels]
+    def add_conda_channels(self, channels: List[str]):
         self._conda_env.add_channels(channels)
 
-    def _add_conda_dependencies(self, conda_dependencies):
-        if not isinstance(conda_dependencies, list):
-            conda_dependencies = [conda_dependencies]
+    def add_conda_dependencies(self, conda_dependencies: List[str]):
         self._conda_env.add_conda_dependencies(conda_dependencies)
 
-    def _add_pip_dependencies(self, pip_dependencies):
-        if not isinstance(pip_dependencies, list):
-            pip_dependencies = [pip_dependencies]
+    def add_pip_dependencies(self, pip_dependencies: List[str]):
+        for dependency in pip_dependencies:
+            self.check_dependency(dependency)
         self._pip_dependencies += pip_dependencies
 
-    def _add_pip_dependencies_if_missing(self, pip_dependencies):
+    def add_pip_dependencies_if_missing(self, pip_dependencies: List[str]):
         # Insert dependencies to the beginning of self.dependencies, so that user
         # specified dependency version could overwrite this. This is used by BentoML
         # to inject ModelArtifact or Adapter's optional pip dependencies
-        assert isinstance(
-            pip_dependencies, list
-        ), 'pip_dependencies parameter must be list of str'
         self._pip_dependencies = pip_dependencies + self._pip_dependencies
 
     def _set_setup_sh(self, setup_sh_path_or_content):
@@ -222,7 +212,7 @@ class BentoServiceEnv(object):
         with requirements_txt_file.open("rb") as f:
             content = f.read()
             module_list = content.decode("utf-8").split("\n")
-            self._pip_dependencies += module_list
+            self.add_pip_dependencies(module_list)
 
     def save(self, path, bento_service):
         conda_yml_file = os.path.join(path, "environment.yml")

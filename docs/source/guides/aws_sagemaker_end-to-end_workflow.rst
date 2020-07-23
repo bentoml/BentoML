@@ -74,7 +74,7 @@ In this step, we will create an S3 bucket named movie-review-dataset to store th
 
 The second step of this tutorial is model training. We will be using the IMDB movie review dataset to create a sentiment analysis model which contains 25K positive and negative movie reviews each.
 
-Below is the model summary. Please checkout :code:'bentoml/gallery/end-to-end-sagemaker-depoyment' for more details on model training.
+Below is the model summary. Please check `here <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/end-to-end-sagemaker-deployment/MovieReview-sagemaker-deployment.ipynb>`_ for more details on model training.
 
 .. code-block:: python
 

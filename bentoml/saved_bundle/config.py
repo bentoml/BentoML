@@ -123,15 +123,11 @@ class SavedBundleConfig(object):
                 logger.warning(msg)
 
         if py_ver != PYTHON_VERSION:
-            msg = (
+            logger.warning(
                 f"Saved BentoService Python version mismatch: loading "
                 f"BentoService bundle created with Python version {py_ver}, "
                 f"but current environment version is {PYTHON_VERSION}."
             )
-
-            # Warn for major/minor Python version differences, but not micro
-            if py_ver.split(".")[0:2] != PYTHON_VERSION.split(".")[0:2]:
-                logger.warning(msg)
 
         return conf
 

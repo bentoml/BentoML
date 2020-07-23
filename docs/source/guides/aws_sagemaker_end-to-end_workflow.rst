@@ -7,15 +7,15 @@ For demonstration, this tutorial uses the IMDB movie review sentiment dataset wi
 
 Prerequisites
 -------------
-* An active AWS account configured on the machine with AWS CLI installed and configurated
+* An active AWS account configurated on the machine with AWS CLI installed and configurated
 
-    * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
+    * Installation instructions: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
 
-    * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
+    * AWS account configuration instructions: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 
 * Docker 
 
-  * Install instruction: https://docs.docker.com/install
+  * Installation instructions: https://docs.docker.com/install
 
 * Python 3.6 or above and required packages `bentoml` and `bert-for-tf2`:
 
@@ -27,19 +27,19 @@ Prerequisites
 1 Create a SageMaker notebook instance
 ---------------------------------------
 
-For model training in SageMaker, log in to the AWS management console and navigate to SageMaker. From the SageMaker dashboard, select Notebook instances. Go ahead enter a notebook name and select the instance type
+For model training in SageMaker, go ahead and enter to the AWS management console and navigate to SageMaker. From the SageMaker dashboard, select Notebook instances. Go ahead enter a notebook name and select the instance type
 
 .. image:: ../_static/img/create-notebook-instance.png
 
-Next,under **Permissions and encryption** , select **Create a new role** or **choosing an existing role** . This allows both the notebook instance and user to access and upload data to Amazon S3. Then, select Any S3 bucket, which allows your SageMaker to access all S3 buckets in your account.
+Next,under Permissions and encryption , select Create a new role or Choosing an existing role. This allows both the notebook instance and user to access and upload data to Amazon S3. Then, select Any S3 bucket, which allows your SageMaker to access all S3 buckets in your account.
 
 .. image:: ../_static//img/create-IAM-role.png
 
-After the notebook instance is created, the status will change from pending to **InService** . Select Open Jupyter under Actions, and choose **Conda_python 3** under New tab to launch the Jupyter notebook within SageMaker.
+After the notebook instance is created, the status will change from pending to InService. Select Open Jupyter under Actions, and choose Conda_python 3 under New tab to launch the Jupyter notebook within SageMaker.
 
 .. note::
 
-    SageMaker also provides a local model through pip install SageMaker.
+    SageMaker also provides a local model through :code:`pip install SageMaker`.
 
 Finally to prepare for the model training, let's import some libraries -- Boto3 and SageMaker and set up the IAM role. Boto3 is the AWS SDK for Python, which makes it easier to integrate our model with AWS services such as Amazon S3
 
@@ -110,7 +110,7 @@ Below is the model summary. Please checkout :code:'bentoml/gallery/end-to-end-sa
 3 BentoML SageMaker API Endpoints Deployment
 ---------------------------------------------
 
-In this section, we will demonstrate on using BentoML to build production-ready API endpoints and deploy it to AWS SageMaker. The core steps are as follows:
+In this section, we will demonstrate how to use BentoML to build production-ready API endpoints and deploy it to AWS SageMaker. The core steps are as follows:
 
 1. Create a BentoML service file for model prediction 
 2. Create and save a BentoMl packaged model called BentoService bundle for model deployment
@@ -189,7 +189,9 @@ For defining the BentoML service environment and trouble-shooting, you would als
             pred_token_ids = self.tokenize(inputs)
             res = model(pred_token_ids).numpy().argmax(axis =-1)
             return [CLASSES[i] for i in res]
-    
+
+.. code-block:: python
+
     #Sample output
     Overwriting bentoml_service.py
 
@@ -213,6 +215,8 @@ By default, the BentoService bundle is saved under  :code:`~/bentoml/repository/
 
     #save the prediction service for model serving 
     saved_path = bento_svc.save()
+
+.. code-block:: python
 
     # sample output
 

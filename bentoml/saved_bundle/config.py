@@ -36,9 +36,7 @@ metadata:
 logger = logging.getLogger(__name__)
 DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
 DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
-PYTHON_VERSION = "{major}.{minor}.{micro}".format(
-    major=version_info.major, minor=version_info.minor, micro=version_info.micro
-)
+PYTHON_VERSION = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
 
 
 def _get_apis_list(bento_service):

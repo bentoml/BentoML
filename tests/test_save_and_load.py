@@ -128,9 +128,9 @@ def test_save_duplicated_bento_exception_raised(example_bento_service_class):
     delete_saved_bento_service(svc_metadata_new.name, svc_metadata_new.version)
 
 
-def test_pyversion_warnings_on_load(tmp_path_factory, capsys,
+def test_pyversion_warning_on_load(tmp_path_factory, capsys,
                                     example_bento_service_class):
-    # Set logging level so version mismatch warnings are output
+    # Set logging level so version mismatch warnings are outputted
     bentoml.configure_logging(logging_level=logging.WARNING)
     # (Note that logger.warning() is captured by pytest in stdout, NOT stdlog.
     #  So the warning is in capsys.readouterr().out, NOT caplog.text.)

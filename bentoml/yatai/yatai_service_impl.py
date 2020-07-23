@@ -302,10 +302,10 @@ class YataiService(YataiServicer):
             )
         except BentoMLException as e:
             logger.error("RPC ERROR ListDeployments: %s", e)
-            return DeleteDeploymentResponse(status=e.status_proto)
+            return ListDeploymentsResponse(status=e.status_proto)
         except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR ListDeployments: %s", e)
-            return DeleteDeploymentResponse(status=Status.INTERNAL())
+            return ListDeploymentsResponse(status=Status.INTERNAL())
 
     def AddBento(self, request, context=None):
         try:

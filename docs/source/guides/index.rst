@@ -18,5 +18,5 @@ and ask in the bentoml-users channel.
   custom_artifact
   custom_input_adapter
   yatai_service
-  aws sagemaker end-to-end workflow  
+  aws_sagemaker_end-to-end_workflow  
 

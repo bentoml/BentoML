@@ -29,11 +29,11 @@ Prerequisites
 
 For model training in SageMaker, log in to the AWS management console and navigate to SageMaker. From the SageMaker dashboard, select Notebook instances. Go ahead enter a notebook name and select the instance type
 
-.. image:: ../_static/img/create-notebook-instance
+.. image:: ../_static/img/create-notebook-instance.png
 
 Next,under ** Permissions and encryption ** , select ** Create a new role ** or ** choosing an existing role ** . This allows both the notebook instance and user to access and upload data to Amazon S3. Then, select Any S3 bucket, which allows your SageMaker to access all S3 buckets in your account.
 
-.. image:: ../_static//img/create-IAM-role
+.. image:: ../_static//img/create-IAM-role.png
 
 After the notebook instance is created, the status will change from pending to ** InService ** . Select Open Jupyter under Actions, and choose ** Conda_python 3 ** under New tab to launch the Jupyter notebook within SageMaker.
 
@@ -66,7 +66,7 @@ In this step, we will create an S3 bucket named movie-review-dataset to store th
     s3.Bucket(name='movie-review-dataset')
 
 
-.. image:: ../_static/img/create-s3-bucket
+.. image:: ../_static/img/create-s3-bucket.png
 
 
 2 Model Training -- Movie review sentiment with BERT and TensorFlow2
@@ -287,7 +287,7 @@ Using the BentoML CLI, we can see a list of BentoService generated here
 
 Before deploying the model to AWS SageMaker, we could test it locally first using the BentoML CLI. By using  :code: `bentoml serve`, it provides a near real-time prediction via API endpoints.
 
-.. image:: ../_static/img/bento-web-ui
+.. image:: ../_static/img/bento-web-ui.png
 
 .. code-block:: bash
 
@@ -311,7 +311,7 @@ Before deploying the model to AWS SageMaker, we could test it locally first usin
     127.0.0.1 - - [26/Jun/2020 13:44:39] "POST /predict HTTP/1.1" 200 -
 
 
-.. image:: ../_static/img/bento-serve-testing
+.. image:: ../_static/img/bento-serve-testing.png
 
 
 ====================================================

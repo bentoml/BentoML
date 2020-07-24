@@ -39,7 +39,7 @@ def tf2_svc():
     return svc
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def tf2_svc_saved_dir(tmpdir, tf2_svc):
     """Save a TensorFlow2 BentoService and return the saved directory."""
     tmpdir = str(tmpdir)

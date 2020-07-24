@@ -1,3 +1,5 @@
+import time
+import urllib
 import pytest
 
 import tensorflow as tf
@@ -52,6 +54,58 @@ def tf2_svc_loaded(tf2_svc_saved_dir):
     return bentoml.load(tf2_svc_saved_dir)
 
 
+@pytest.fixture()
+def tf2_image(tf2_svc_saved_dir):
+    import docker
+
+    client = docker.from_env()
+    image = client.images.build(path=tf2_svc_saved_dir,
+                                tag="example_service", rm=True)[0]
+    yield image
+    client.images.remove(image.id)
+
+
+def _wait_until_ready(_host, timeout, check_interval=0.5):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            if (
+                urllib.request.urlopen(f'http://{_host}/healthz', timeout=0.1).status
+                == 200
+            ):
+                break
+        except Exception:  # pylint:disable=broad-except
+            time.sleep(check_interval - 0.1)
+    else:
+        raise AssertionError(f"server didn't get ready in {timeout} seconds")
+
+
+@pytest.fixture()
+def tf2_host(tf2_image):
+    import docker
+
+    client = docker.from_env()
+
+    with bentoml.utils.reserve_free_port() as port:
+        pass
+    command = "bentoml serve-gunicorn /bento --workers 1"
+    try:
+        container = client.containers.run(
+            command=command,
+            image=tf2_image.id,
+            auto_remove=True,
+            tty=True,
+            ports={'5000/tcp': port},
+            detach=True,
+        )
+        _host = f"127.0.0.1:{port}"
+        _wait_until_ready(_host, 10)
+        yield _host
+    finally:
+        container.stop()
+        time.sleep(1)  # make sure container stopped & deleted
+
+
 test_df = tf.expand_dims(tf.constant([1, 2, 3, 4, 5]), 0)
 
 
@@ -63,3 +117,14 @@ def test_tensorflow_2_artifact(tf2_svc):
 def test_tensorflow_2_artifact_loaded(tf2_svc_loaded):
     assert tf2_svc_loaded.predict(test_df) == 15.0,\
         'Inference on saved and loaded TF2 artifact does not match expected'
+
+
+def test_tensorflow_2_artifact_with_docker(tf2_host):
+    pytest.assert_request(
+        "POST",
+        f"http://{tf2_host}/predict",
+        headers=(("Content-Type", "application/json"),),
+        data="[1, 2, 3, 4, 5]",
+        assert_status=200,
+        assert_data=b'15.0',
+    )

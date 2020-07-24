@@ -10,6 +10,7 @@ from bentoml.adapters import (
     ImageInput,
     LegacyImageInput,
     JsonInput,
+    FileInput,
     # FastaiImageInput,
 )
 from bentoml.handlers import DataframeHandler  # deprecated
@@ -51,6 +52,10 @@ class ExampleBentoService(bentoml.BentoService):
     def predict_image(self, images):
         return self.artifacts.model.predict_image(images)
 
+    @bentoml.api(input=FileInput())
+    def predict_file(self, files):
+        return self.artifacts.model.predict_file(files)
+
     @bentoml.api(input=LegacyImageInput(input_names=('original', 'compared')))
     def predict_legacy_images(self, original, compared):
         return self.artifacts.model.predict_legacy_images(original, compared)
@@ -74,6 +79,9 @@ class PickleModel(object):
         for input_data in input_datas:
             assert input_data is not None
         return [input_data.shape for input_data in input_datas]
+
+    def predict_file(self, input_files):
+        return [f.read() for f in input_files]
 
     def predict_legacy_images(self, original, compared):
         return (original == compared).all()

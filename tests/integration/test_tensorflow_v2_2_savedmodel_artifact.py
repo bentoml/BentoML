@@ -3,23 +3,12 @@ import pytest
 import tensorflow as tf
 
 import bentoml
-from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.tensorflow_classifier import TensorflowClassifier
 
 
-@pytest.fixture()
-def tensorflow_classifier_class():
-    # When the ExampleBentoService got saved and loaded again in the test, the
-    # two class attribute below got set to the loaded BentoService class.
-    # Resetting it here so it does not effect other tests
-    TensorflowClassifier._bento_service_bundle_path = None
-    TensorflowClassifier._bento_service_bundle_version = None
-    return TensorflowClassifier
-
-
-class TensorflowModel(tf.keras.Model):
+class Tensorflow2Model(tf.keras.Model):
     def __init__(self):
-        super(TensorflowModel, self).__init__()
+        super(Tensorflow2Model, self).__init__()
         # Simple linear layer which sums the inputs
         self.dense = tf.keras.layers.Dense(
             units=1,
@@ -32,19 +21,45 @@ class TensorflowModel(tf.keras.Model):
         return self.dense(inputs)
 
 
+@pytest.fixture(scope="module")
+def tf2_svc():
+    """Return a TensorFlow2 BentoService."""
+    # When the ExampleBentoService got saved and loaded again in the test, the
+    # two class attribute below got set to the loaded BentoService class.
+    # Resetting it here so it does not effect other tests
+    TensorflowClassifier._bento_service_bundle_path = None
+    TensorflowClassifier._bento_service_bundle_version = None
+
+    svc = TensorflowClassifier()
+    model = Tensorflow2Model()
+    svc.pack('model', model)
+
+    return svc
+
+
+@pytest.fixture()
+def tf2_svc_saved_dir(tmpdir, tf2_svc):
+    """Save a TensorFlow2 BentoService and return the saved directory."""
+    tmpdir = str(tmpdir)
+    tf2_svc.save_to_dir(tmpdir)
+
+    return tmpdir
+
+
+@pytest.fixture()
+def tf2_svc_loaded(tf2_svc_saved_dir):
+    """Return a TensorFlow2 BentoService that has been saved and loaded."""
+    return bentoml.load(tf2_svc_saved_dir)
+
+
 test_df = tf.expand_dims(tf.constant([1, 2, 3, 4, 5]), 0)
 
 
-def test_tensorflow_artifact_pack(tensorflow_classifier_class):
-    svc = tensorflow_classifier_class()
-    model = TensorflowModel()
-    svc.pack('model', model)
-    assert svc.predict(test_df) == 15.0, 'Run inference before save the artifact'
+def test_tensorflow_2_artifact(tf2_svc):
+    assert tf2_svc.predict(test_df) == 15.0,\
+        'Inference on unsaved TF2 artifact does not match expected'
 
-    saved_path = svc.save()
-    loaded_svc = bentoml.load(saved_path)
-    assert loaded_svc.predict(test_df) == 15.0, 'Run inference from saved artifact'
 
-    # clean up saved bundle
-    yc = YataiClient()
-    yc.repository.dangerously_delete_bento(svc.name, svc.version)
+def test_tensorflow_2_artifact_loaded(tf2_svc_loaded):
+    assert tf2_svc_loaded.predict(test_df) == 15.0,\
+        'Inference on saved and loaded TF2 artifact does not match expected'

@@ -19,7 +19,7 @@ class Tensorflow2Model(tf.keras.Model):
             kernel_initializer=tf.keras.initializers.Ones(),
         )
 
-    def call(self, inputs):
+    def __call__(self, inputs):
         return self.dense(inputs)
 
 
@@ -40,9 +40,9 @@ def tf2_svc():
 
 
 @pytest.fixture(scope="module")
-def tf2_svc_saved_dir(tmpdir, tf2_svc):
+def tf2_svc_saved_dir(tmp_path_factory, tf2_svc):
     """Save a TensorFlow2 BentoService and return the saved directory."""
-    tmpdir = str(tmpdir)
+    tmpdir = str(tmp_path_factory.mktemp("tf2_svc"))
     tf2_svc.save_to_dir(tmpdir)
 
     return tmpdir

@@ -119,8 +119,9 @@ def test_tensorflow_2_artifact_loaded(tf2_svc_loaded):
         'Inference on saved and loaded TF2 artifact does not match expected'
 
 
-def test_tensorflow_2_artifact_with_docker(tf2_host):
-    pytest.assert_request(
+@pytest.mark.asyncio
+async def test_tensorflow_2_artifact_with_docker(tf2_host):
+    await pytest.assert_request(
         "POST",
         f"http://{tf2_host}/predict",
         headers=(("Content-Type", "application/json"),),

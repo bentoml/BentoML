@@ -1,0 +1,50 @@
+### Yatai Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 1
+  labels:
+    app: yatai-service
+  name: yatai-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yatai-service
+  template:
+    metadata:
+      labels:
+        app: yatai-service
+    spec:
+      containers:
+      - image: bentoml/yatai-service:0.7.2
+        imagePullPolicy: IfNotPresent
+        name: yatai-service
+        ports:
+        - containerPort: 50051 #grpc
+        - containerPort: 3000 #web
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+
+---
+### Yatai Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: yatai-service
+  name: yatai-service
+  namespace: default
+spec:
+  ports:
+  - name: web
+    port: 3000
+    targetPort: 3000
+  - name: grpc
+    port: 50051
+    targetPort: 50051
+  selector:
+    app: yatai-service
+  type: LoadBalancer

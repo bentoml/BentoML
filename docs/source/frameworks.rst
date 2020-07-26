@@ -7,7 +7,7 @@ repository, group by the ML training frameworks used in the project.
 
 You can download the examples below and run them on your computer. Links to run them on
 Google Colab are also available, although some of the features demo'd in the notebooks
-does not work in the Colab environment due to its limitations, including running the 
+does not work in the Colab environment due to its limitations, including running the
 BentoML API model server, building docker image or creating cloud deployment.
 
 
@@ -113,3 +113,10 @@ Example Projects:
 * Prostate Cancer Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`_
 
 .. autoclass:: bentoml.artifact.H2oModelArtifact
+
+
+======
+CoreML
+======
+
+.. autoclass:: bentoml.artifact.CoreMLModelArtifact

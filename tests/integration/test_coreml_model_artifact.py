@@ -1,5 +1,4 @@
 import coremltools as ct
-import pandas
 import pytest
 import torch
 from coremltools.models import MLModel
@@ -8,6 +7,7 @@ import bentoml
 from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.coreml_classifier import CoreMLClassifier
 from tests.integration.test_pytorch_model_artifact import PytorchModel
+from tests.integration.test_pytorch_model_artifact import test_df
 
 
 @pytest.fixture()
@@ -20,10 +20,11 @@ def coreml_classifier_class():
     return CoreMLClassifier
 
 
-test_df = pandas.DataFrame([[1, 1, 1, 1, 1]])
-
-
 def convert_pytorch_to_coreml(pytorch_model: PytorchModel) -> ct.models.MLModel:
+    """CoreML is not for training ML models but rather for converting pretrained models
+    and running them on Apple devices. Therefore, in this train we convert the
+    pretrained PytorchModel from the tests.integration.test_pytorch_model_artifact
+    module into a CoreML module."""
     pytorch_model.eval()
     traced_pytorch_model = torch.jit.trace(pytorch_model, torch.Tensor(test_df.values))
     model: MLModel = ct.convert(

@@ -38,7 +38,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
 
     Example usage:
 
-    >>> import coremltools
+    >>> import coremltools as ct
     >>> import torch.nn as nn
     >>>
     >>> class Net(nn.Module):

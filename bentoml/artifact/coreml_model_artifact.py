@@ -25,15 +25,16 @@ logger = logging.getLogger(__name__)
 
 class CoreMLModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading objects with torch.save and torch.load
+    Abstraction for saving/loading coreml.models.MLModel objects
+    with coremltools.models.MLModel.save and coremltools.models.MLModel(path).
 
     Args:
         name (string): name of the artifact
 
     Raises:
-        MissingDependencyException: torch package is required for PytorchModelArtifact
+        MissingDependencyException: coremltools package required for CoreMLModelArtifact
         InvalidArgument: invalid argument type, model being packed must be instance of
-            torch.nn.Module
+            coremltools.models.MLModel
 
     Example usage:
 
@@ -49,27 +50,29 @@ class CoreMLModelArtifact(BentoServiceArtifact):
     >>>         ...
     >>>
     >>> net = Net()
-    >>> # Train model with data
-    >>>
+    >>> # Train model with data, then convert to CoreML.
+    >>> model = ct.convert(net, ...)
     >>>
     >>> import bentoml
+    >>> import PIL.Image
     >>> from bentoml.adapters import ImageInput
-    >>> from bentoml.artifact import PytorchModelArtifact
+    >>> from bentoml.artifact import CoreMLModelArtifact
     >>>
     >>> @bentoml.env(auto_pip_dependencies=True)
-    >>> @bentoml.artifacts([PytorchModelArtifact('net')])
-    >>> class PytorchModelService(bentoml.BentoService):
+    >>> @bentoml.artifacts([CoreMLModelArtifact('model')])
+    >>> class CoreMLModelService(bentoml.BentoService):
     >>>
     >>>     @bentoml.api(input=ImageInput())
     >>>     def predict(self, imgs):
-    >>>         outputs = self.artifacts.net(imgs)
+    >>>         outputs = [self.artifacts.model(PIL.Image.fromarray(_.astype("uint8")))
+    >>>                    for img in imgs]
     >>>         return outputs
     >>>
     >>>
-    >>> svc = PytorchModelService()
+    >>> svc = CoreMLModelService()
     >>>
     >>> # Pytorch model can be packed directly.
-    >>> svc.pack('net', net)
+    >>> svc.pack('model', model)
     """
 
     def __init__(self, name, file_extension=".mlmodel"):
@@ -104,6 +107,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
                 "coremltools package is required to use CoreMLModelArtifact"
             )
 
+        # model = cloudpickle.load(open(self._file_path(path), 'rb'))
         model = coremltools.models.MLModel(self._file_path(path))
 
         if not isinstance(model, coremltools.models.MLModel):
@@ -123,4 +127,3 @@ class CoreMLModelArtifact(BentoServiceArtifact):
     def save(self, dst):
         # return cloudpickle.dump(self._model, open(self._file_path(dst), "wb"))
         self._model.save(self._file_path(dst))
-        return None

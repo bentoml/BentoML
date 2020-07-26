@@ -26,8 +26,9 @@ test_df = pandas.DataFrame([[1, 1, 1, 1, 1]])
 def convert_pytorch_to_coreml(pytorch_model: PytorchModel) -> ct.models.MLModel:
     pytorch_model.eval()
     traced_pytorch_model = torch.jit.trace(pytorch_model, torch.Tensor(test_df.values))
-    model: MLModel = ct.convert(traced_pytorch_model,
-                                inputs=[ct.TensorType(name="input", shape=test_df.shape)])
+    model: MLModel = ct.convert(
+        traced_pytorch_model, inputs=[ct.TensorType(name="input", shape=test_df.shape)]
+    )
     return model
 
 

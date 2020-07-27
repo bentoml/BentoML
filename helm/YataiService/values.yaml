@@ -1,23 +1,23 @@
 # Default values for YataiService.
 # This is a YAML-formatted file.
 
+db_url: {}
+repo_base_url: {}
+
 replicaCount: 1
 image:
-  repository: nginx
+  repository: bentoml/yatai-service
   pullPolicy: IfNotPresent
 
+
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
   # Annotations to add to the service account
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name:
+  name: "yataiServiceAccount"
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -32,7 +32,21 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 80
+  ports:
+    grpc: 50051
+    web: 3000
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: http
+    initialDelaySeconds: 3
+    periodSeconds: 5
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: http
+    initialDelaySeconds: 3
+    periodSeconds: 5
 
 ingress:
   enabled: false

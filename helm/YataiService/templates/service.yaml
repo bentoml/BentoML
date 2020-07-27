@@ -1,15 +1,18 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "YataiService.fullname" . }}
+  name: yatai-service
   labels:
-    {{- include "YataiService.labels" . | nindent 4 }}
+    app: yatai-service
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
+  - name: web
+    port: {{ .Values.service.ports.web }}
+    targetPort: {{ .Values.service.ports.web }}
+  - name: grpc
+    port: {{ .Values.service.ports.grpc }}
+    targetPort: {{ .Values.service.ports.grpc }}
   selector:
-    {{- include "YataiService.selectorLabels" . | nindent 4 }}
+    matchLabels:
+      app: yatai-service

@@ -1,24 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "YataiService.fullname" . }}
+  name: yatai-service
   labels:
-    {{- include "YataiService.labels" . | nindent 4 }}
+    app: yatai-service
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "YataiService.selectorLabels" . | nindent 6 }}
+      app: yatai-service
   template:
     metadata:
       labels:
-        {{- include "YataiService.selectorLabels" . | nindent 8 }}
+        app: yatai-service
     spec:
-    {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-      serviceAccountName: {{ include "YataiService.serviceAccountName" . }}
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -28,28 +26,24 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
+          - containerPort: {{ .Values.service.ports.grpc }}
+          - containerPort: {{ .Values.service.ports.web }}
           livenessProbe:
-            httpGet:
-              path: /
-              port: http
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /
-              port: http
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          args:
+            {{- if .Values.db_url -}}
+            - "--db-url {{ .Values.db_url }}"
+            {{- end -}}
+            {{- if .Values.repo_base_url -}}
+            - "--repo-base-url {{ .Values.repo_base_url}}"
+            {{- end -}}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-    {{- with .Values.affinity }}
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
       affinity:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.tolerations }}
+        {{- toYaml .Values.affinity | nindent 8 }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
+        {{- toYaml .Values.tolerations | nindent 8 }}

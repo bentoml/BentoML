@@ -18,9 +18,9 @@ def tensorflow_classifier_class():
     return TensorflowClassifier
 
 
-class TensorflowModel(tf.keras.Model):
+class Tensorflow1Model(tf.keras.Model):
     def __init__(self):
-        super(TensorflowModel, self).__init__()
+        super(Tensorflow1Model, self).__init__()
         self.sess = tf.compat.v1.Session()
         self.X = tf.compat.v1.placeholder(tf.float32)
 
@@ -37,9 +37,10 @@ class TensorflowModel(tf.keras.Model):
 test_df = tf.expand_dims(tf.constant([1, 2, 3, 4, 5], dtype=tf.float32), 0)
 
 
-def test_tensorflow_artifact_pack(tensorflow_classifier_class):
+
+def test_tensorflow_1_artifact_pack(tensorflow_classifier_class):
     svc = tensorflow_classifier_class()
-    model = TensorflowModel()
+    model = Tensorflow1Model()
     svc.pack('model', model)
     assert svc.predict(test_df) == 15.0, 'Run inference before save the artifact'
 

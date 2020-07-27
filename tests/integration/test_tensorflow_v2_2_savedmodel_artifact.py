@@ -1,4 +1,5 @@
 import time
+import json
 import urllib
 import pytest
 
@@ -129,7 +130,7 @@ async def test_tensorflow_2_artifact_with_docker(tf2_host):
         "POST",
         f"http://{tf2_host}/predict",
         headers=(("Content-Type", "application/json"),),
-        data="[[1, 2, 3, 4, 1]]",
+        data=json.dumps({"instances": [[1, 2, 3, 4, 5]]}),
         assert_status=200,
-        assert_data=b'15.0',
+        assert_data=b'[[15.0]]',
     )

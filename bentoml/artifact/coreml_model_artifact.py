@@ -88,7 +88,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
             import coremltools
         except ImportError:
             raise MissingDependencyException(
-                "coremltools>=4.0 package is required to use CoreMLModelArtifact"
+                "coremltools>=4.0b1 package is required to use CoreMLModelArtifact"
             )
 
         if not isinstance(model, coremltools.models.MLModel):
@@ -107,7 +107,6 @@ class CoreMLModelArtifact(BentoServiceArtifact):
                 "coremltools package is required to use CoreMLModelArtifact"
             )
 
-        # model = cloudpickle.load(open(self._file_path(path), 'rb'))
         model = coremltools.models.MLModel(self._file_path(path))
 
         if not isinstance(model, coremltools.models.MLModel):
@@ -119,11 +118,10 @@ class CoreMLModelArtifact(BentoServiceArtifact):
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_dependencies_if_missing(['coremltools>=4.0'])
+        env.add_pip_dependencies_if_missing(['coremltools>=4.0b1'])
 
     def get(self):
         return self._model
 
     def save(self, dst):
-        # return cloudpickle.dump(self._model, open(self._file_path(dst), "wb"))
         self._model.save(self._file_path(dst))

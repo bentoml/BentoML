@@ -49,6 +49,12 @@ matrix:
       script:
         - ./travis/tensorflow_integration_tests.sh
 
+    - name: "CoreML artifact"
+      python: "3.6"
+      script:
+        - ./travis/coreml_integration_tests.sh
+
+
     - name: "API Server Integration Tests"
       python: "3.7"
       script:

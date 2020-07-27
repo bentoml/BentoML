@@ -20,7 +20,7 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: yatai-service
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
@@ -38,7 +38,7 @@ spec:
             {{- end -}}
             {{- if .Values.repo_base_url -}}
             - "--repo-base-url {{ .Values.repo_base_url}}"
-            {{- end -}}
+            {{- end}}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       nodeSelector:

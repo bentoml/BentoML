@@ -9,7 +9,6 @@ image:
   repository: bentoml/yatai-service
   pullPolicy: IfNotPresent
 
-
 imagePullSecrets: []
 
 serviceAccount:
@@ -17,7 +16,7 @@ serviceAccount:
   create: true
   # Annotations to add to the service account
   annotations: {}
-  name: "yataiServiceAccount"
+  name: "yatai-service-account"
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -31,7 +30,7 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     grpc: 50051
     web: 3000

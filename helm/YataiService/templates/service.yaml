@@ -14,5 +14,4 @@ spec:
     port: {{ .Values.service.ports.grpc }}
     targetPort: {{ .Values.service.ports.grpc }}
   selector:
-    matchLabels:
-      app: yatai-service
+    app: yatai-service

@@ -25,9 +25,6 @@ spec:
         ports:
         - containerPort: 50051 #grpc
         - containerPort: 3000 #web
-        args:
-          - "--db-url "
-          - "--repo-base-url "
       restartPolicy: Always
       securityContext: {}
       terminationGracePeriodSeconds: 30

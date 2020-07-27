@@ -45,3 +45,13 @@ web-ui: ## Build BentoML Web UI server and frontend
 install-web-deps: ## Install dependencies to run web server and frontend
 	cd bentoml/yatai/web && yarn install
 	cd bentoml/yatai/web/client && yarn install
+
+# Helm
+helm-lint: ## Helm Lint
+	helm lint ./helm/YataiService
+helm-dry: ## Helm Dry Install
+	helm install --dry-run --debug yatai-service ./helm/YataiService
+helm-install: ## Helm Install
+	helm install yatai-service ./helm/YataiService || (echo "Error installing chart... You may need to run 'minikube start'"; make helm-uninstall; exit 1)
+helm-uninstall: ## Helm Uninstall
+	helm uninstall yatai-service

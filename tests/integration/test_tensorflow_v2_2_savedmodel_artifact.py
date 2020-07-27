@@ -9,6 +9,10 @@ import bentoml
 from tests.bento_service_examples.tensorflow_classifier import TensorflowClassifier
 
 
+test_data = [[1, 2, 3, 4, 5]]
+test_tensor = tf.constant(test_data)
+
+
 class Tensorflow2Model(tf.keras.Model):
     def __init__(self):
         super(Tensorflow2Model, self).__init__()
@@ -45,7 +49,7 @@ def tf2_svc_saved_dir(tmp_path_factory, tf2_svc):
     """Save a TensorFlow2 BentoService and return the saved directory."""
     # Must be called at least once before saving so that layers are built
     # See: https://github.com/tensorflow/tensorflow/issues/37439
-    tf2_svc.predict(test_df)
+    tf2_svc.predict(test_tensor)
 
     tmpdir = str(tmp_path_factory.mktemp("tf2_svc"))
     tf2_svc.save_to_dir(tmpdir)
@@ -111,16 +115,13 @@ def tf2_host(tf2_image):
         time.sleep(1)  # make sure container stopped & deleted
 
 
-test_df = tf.expand_dims(tf.constant([1, 2, 3, 4, 5]), 0)
-
-
 def test_tensorflow_2_artifact(tf2_svc):
-    assert tf2_svc.predict(test_df) == 15.0,\
+    assert tf2_svc.predict(test_tensor) == 15.0,\
         'Inference on unsaved TF2 artifact does not match expected'
 
 
 def test_tensorflow_2_artifact_loaded(tf2_svc_loaded):
-    assert tf2_svc_loaded.predict(test_df) == 15.0,\
+    assert tf2_svc_loaded.predict(test_tensor) == 15.0,\
         'Inference on saved and loaded TF2 artifact does not match expected'
 
 
@@ -130,7 +131,7 @@ async def test_tensorflow_2_artifact_with_docker(tf2_host):
         "POST",
         f"http://{tf2_host}/predict",
         headers=(("Content-Type", "application/json"),),
-        data=json.dumps({"instances": [[1, 2, 3, 4, 5]]}),
+        data=json.dumps({"instances": test_data}),
         assert_status=200,
         assert_data=b'[[15.0]]',
     )

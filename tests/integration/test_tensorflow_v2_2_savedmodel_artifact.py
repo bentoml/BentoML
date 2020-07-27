@@ -19,7 +19,7 @@ class Tensorflow2Model(tf.keras.Model):
             kernel_initializer=tf.keras.initializers.Ones(),
         )
 
-    def __call__(self, inputs):
+    def call(self, inputs):
         return self.dense(inputs)
 
 

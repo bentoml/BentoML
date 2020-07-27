@@ -42,6 +42,10 @@ def tf2_svc():
 @pytest.fixture(scope="module")
 def tf2_svc_saved_dir(tmp_path_factory, tf2_svc):
     """Save a TensorFlow2 BentoService and return the saved directory."""
+    # Must be called at least once before saving so that layers are built
+    # See: https://github.com/tensorflow/tensorflow/issues/37439
+    tf2_svc.predict(test_df)
+
     tmpdir = str(tmp_path_factory.mktemp("tf2_svc"))
     tf2_svc.save_to_dir(tmpdir)
 

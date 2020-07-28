@@ -49,12 +49,13 @@ matrix:
       script:
         - ./travis/tensorflow_integration_tests.sh
 
+    # https://docs.travis-ci.com/user/reference/osx#using-macos
     - name: "CoreML artifact"
       python: "3.6"
-      os: osx  # https://docs.travis-ci.com/user/reference/osx#using-macos
+      os: osx  
+      osx_image: xcode12
       script:
         - ./travis/coreml_integration_tests.sh
-
 
     - name: "API Server Integration Tests"
       python: "3.7"

@@ -51,6 +51,7 @@ matrix:
 
     - name: "CoreML artifact"
       python: "3.6"
+      os: osx  # https://docs.travis-ci.com/user/reference/osx#using-macos
       script:
         - ./travis/coreml_integration_tests.sh
 

@@ -68,8 +68,9 @@ def tf2_image(tf2_svc_saved_dir):
     import docker
 
     client = docker.from_env()
-    image = client.images.build(path=tf2_svc_saved_dir,
-                                tag="example_service", rm=True)[0]
+    image = client.images.build(path=tf2_svc_saved_dir, tag="example_service", rm=True)[
+        0
+    ]
     yield image
     client.images.remove(image.id)
 
@@ -116,13 +117,15 @@ def tf2_host(tf2_image):
 
 
 def test_tensorflow_2_artifact(tf2_svc):
-    assert tf2_svc.predict(test_tensor) == 15.0,\
-        'Inference on unsaved TF2 artifact does not match expected'
+    assert (
+        tf2_svc.predict(test_tensor) == 15.0
+    ), 'Inference on unsaved TF2 artifact does not match expected'
 
 
 def test_tensorflow_2_artifact_loaded(tf2_svc_loaded):
-    assert tf2_svc_loaded.predict(test_tensor) == 15.0,\
-        'Inference on saved and loaded TF2 artifact does not match expected'
+    assert (
+        tf2_svc_loaded.predict(test_tensor) == 15.0
+    ), 'Inference on saved and loaded TF2 artifact does not match expected'
 
 
 @pytest.mark.asyncio

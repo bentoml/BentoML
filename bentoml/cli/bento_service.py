@@ -63,6 +63,9 @@ def to_valid_docker_image_version(version):
 
 
 def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
+    if not tag:
+        return tag
+
     if ":" in tag:
         name, version = tag.split(":")[:2]
     else:

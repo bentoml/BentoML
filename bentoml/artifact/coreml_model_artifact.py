@@ -88,7 +88,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
             import coremltools
         except ImportError:
             raise MissingDependencyException(
-                "coremltools>=4.0b1 package is required to use CoreMLModelArtifact"
+                "coremltools>=4.0b2 package is required to use CoreMLModelArtifact"
             )
 
         if not isinstance(model, coremltools.models.MLModel):
@@ -118,7 +118,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_dependencies_if_missing(['coremltools>=4.0b1'])
+        env.add_pip_dependencies_if_missing(['coremltools>=4.0b2'])
 
     def get(self):
         return self._model

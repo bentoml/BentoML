@@ -17,17 +17,8 @@ hash -r
 # On Linux we'd might install torch==1.5.0+cpu torchvision==0.6.0+cpu but this runs on Mac.
 pip install coremltools==4.0b2 torch==1.5.0 torchvision==0.6.0 -f https://download.pytorch.org/whl/torch_stable.html
 
-command -v python
-python -V
-command -v pip
-pip -V
-command -v pytest
-head -n1 "$(command -v pytest)"
-pip list | grep -i yaml
 conda install -c conda-forge --yes ruamel.yaml
-python -c 'from ruamel.yaml import YAML'
-python -c 'from bentoml.utils.usage_stats import track_save'
 
-pytest "$GIT_ROOT"/tests/integration/test_coreml_model_artifact.py --cov=bentoml --cov-config=.coveragerc || true
+pytest "$GIT_ROOT"/tests/integration/test_coreml_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

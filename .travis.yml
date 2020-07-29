@@ -20,35 +20,6 @@ install:
 
 matrix:
   include:
-    - os: windows
-      language: sh
-      python: "3.6"
-      cache:
-        - pip: true
-      before_install:
-        - choco install python --version 3.6.8
-        - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
-
-    - name: "Linting & formatting check"
-      python: "3.6"
-      script:
-        - ./travis/linter.sh
-
-    - name: "ONNX artifact"
-      python: "3.6"
-      script:
-        - ./travis/onnx_integration_tests.sh
-
-    - name: "Pytorch Artifact"
-      python: "3.6"
-      script:
-        - ./travis/pytorch_integration_tests.sh
-
-    - name: "Tensorflow Artifact"
-      python: "3.6"
-      script:
-        - ./travis/tensorflow_integration_tests.sh
-
     # https://docs.travis-ci.com/user/reference/osx#using-macos
     - name: "CoreML artifact (minimal)"
       os: osx
@@ -57,17 +28,12 @@ matrix:
       install:
         - ./travis/install_python36_osx.sh
         - export PATH=${HOME}/miniconda/bin:${PATH}
-        - hash -r"
+        - hash -r
         - python -m pip install --upgrade pip
-        - pip install ."
+        - pip install .
         - pip install --upgrade .[test]
       script:
         - ./travis/coreml_integration_tests.sh
-
-    - name: "API Server Integration Tests"
-      python: "3.7"
-      script:
-        - ./travis/integration_tests.sh
 
 script:
   - ./travis/unit_tests.sh

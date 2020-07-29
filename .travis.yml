@@ -54,14 +54,13 @@ matrix:
       os: osx
       osx_image: xcode12
       language: minimal
-      before_install:
-        - ./travis/install_python36_osx.sh
       install:
-        - 'export PATH="${HOME}/miniconda/bin:${PATH}"'
-        - "hash -r"
-        - "python -m pip install --upgrade pip"
-        - "pip install ."
-        - "pip install --upgrade .[test]"
+        - ./travis/install_python36_osx.sh
+        - export PATH=${HOME}/miniconda/bin:${PATH}
+        - hash -r"
+        - python -m pip install --upgrade pip
+        - pip install ."
+        - pip install --upgrade .[test]
       script:
         - ./travis/coreml_integration_tests.sh
 

@@ -50,12 +50,41 @@ matrix:
         - ./travis/tensorflow_integration_tests.sh
 
     # https://docs.travis-ci.com/user/reference/osx#using-macos
-    - name: "CoreML artifact"
+    - name: "CoreML artifact (2.7)"
       os: osx
       osx_image: xcode12
+      python: 2.7
       before_install:
         - ./travis/install_python36_osx.sh
 
+      script:
+        - ./travis/coreml_integration_tests.sh
+
+    - name: "CoreML artifact (3.5)"
+      os: osx
+      osx_image: xcode12
+      python: 3.5
+      before_install:
+        - ./travis/install_python36_osx.sh
+      script:
+        - ./travis/coreml_integration_tests.sh
+
+    - name: "CoreML artifact (3.7)"
+      os: osx
+      osx_image: xcode12
+      python: 3.7
+      before_install:
+        - ./travis/install_python36_osx.sh
+      script:
+        - ./travis/coreml_integration_tests.sh
+
+
+    - name: "CoreML artifact (minimal)"
+      os: osx
+      osx_image: xcode12
+      language: minimal
+      before_install:
+        - ./travis/install_python36_osx.sh
       script:
         - ./travis/coreml_integration_tests.sh
 

@@ -23,6 +23,8 @@ command -v pip
 pip -V
 command -v pytest
 head -n1 "$(command -v pytest)"
+pip list | grep -i yaml
+conda install -c conda-forge --yes ruamel.yaml
 python -c 'from ruamel.yaml import YAML'
 python -c 'from bentoml.utils.usage_stats import track_save'
 

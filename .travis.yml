@@ -51,8 +51,11 @@ matrix:
 
     # https://docs.travis-ci.com/user/reference/osx#using-macos
     - name: "CoreML artifact"
-      os: osx  
+      os: osx
       osx_image: xcode12
+      before_install:
+        - ./travis/install_python36_osx.sh
+
       script:
         - ./travis/coreml_integration_tests.sh
 

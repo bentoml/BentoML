@@ -65,6 +65,18 @@ def _request_to_json(req):
     return {}
 
 
+def log_exception(exc_info):
+    """
+    Logs an exception.  This is called by :meth:`handle_exception`
+    if debugging is disabled and right before the handler is called.
+    The default implementation logs the exception as error on the
+    :attr:`logger`.
+    """
+    logger.error(
+        "Exception on %s [%s]", request.path, request.method, exc_info=exc_info
+    )
+
+
 class BentoAPIServer:
     """
     BentoAPIServer creates a REST API server based on APIs defined with a BentoService
@@ -314,7 +326,7 @@ class BentoAPIServer:
                 else:
                     response = api.handle_request(request)
             except BentoMLException as e:
-                self.log_exception(sys.exc_info())
+                log_exception(sys.exc_info())
 
                 if 400 <= e.status_code < 500 and e.status_code not in (401, 403):
                     response = make_response(
@@ -329,7 +341,7 @@ class BentoAPIServer:
             except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
-                self.log_exception(sys.exc_info())
+                log_exception(sys.exc_info())
 
                 response = make_response(
                     'An error has occurred in BentoML user code when handling this '
@@ -365,13 +377,3 @@ class BentoAPIServer:
                 return api_func()
 
         return api_func_with_tracing
-
-    def log_exception(self, exc_info):
-        """Logs an exception.  This is called by :meth:`handle_exception`
-        if debugging is disabled and right before the handler is called.
-        The default implementation logs the exception as error on the
-        :attr:`logger`.
-        """
-        logger.error(
-            "Exception on %s [%s]", request.path, request.method, exc_info=exc_info
-        )

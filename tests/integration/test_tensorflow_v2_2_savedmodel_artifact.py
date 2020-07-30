@@ -6,7 +6,7 @@ import pytest
 import tensorflow as tf
 
 import bentoml
-from tests.bento_service_examples.tensorflow_classifier import TensorflowClassifier
+from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
 
 
 test_data = [[1, 2, 3, 4, 5]]
@@ -34,10 +34,10 @@ def tf2_svc():
     # When the ExampleBentoService got saved and loaded again in the test, the
     # two class attribute below got set to the loaded BentoService class.
     # Resetting it here so it does not effect other tests
-    TensorflowClassifier._bento_service_bundle_path = None
-    TensorflowClassifier._bento_service_bundle_version = None
+    Tensorflow2Classifier._bento_service_bundle_path = None
+    Tensorflow2Classifier._bento_service_bundle_version = None
 
-    svc = TensorflowClassifier()
+    svc = Tensorflow2Classifier()
     model = Tensorflow2Model()
     svc.pack('model', model)
 

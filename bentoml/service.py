@@ -32,8 +32,7 @@ from bentoml.utils.hybridmethod import hybridmethod
 from bentoml.exceptions import NotFound, InvalidArgument, BentoMLException
 from bentoml.server import trace
 from bentoml.artifact import BentoServiceArtifact, ArtifactCollection
-from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
-
+from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 
 ARTIFACTS_DIR_NAME = "artifacts"
 DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
@@ -57,14 +56,14 @@ class InferenceAPI(object):
     """
 
     def __init__(
-        self, service, name, doc, handler, func, mb_max_latency, mb_max_batch_size
+        self, service, name, doc, input_adapter, func, mb_max_latency, mb_max_batch_size
     ):
         """
         :param service: ref to service containing this API
         :param name: API name
         :param doc: the user facing document of this inference API, default to the
             docstring of the inference API function
-        :param handler: A InputAdapter that transforms HTTP Request and/or
+        :param input_adapter: A InputAdapter that transforms HTTP Request and/or
             CLI options into parameters for API func
         :param func: the user-defined API callback function, this is
             typically the 'predict' method on a model
@@ -78,7 +77,7 @@ class InferenceAPI(object):
         """
         self._service = service
         self._name = name
-        self._handler = handler
+        self._handler = input_adapter
         self._func = func
         self._wrapped_func = None
         self.mb_max_latency = mb_max_latency
@@ -88,8 +87,8 @@ class InferenceAPI(object):
             # generate a default doc string for this inference API
             doc = (
                 f"BentoService inference API '{self.name}', input: "
-                f"'{type(handler).__name__}', output: "
-                f"'{type(handler.output_adapter).__name__}'"
+                f"'{type(input_adapter).__name__}', output: "
+                f"'{type(input_adapter.output_adapter).__name__}'"
             )
         self._doc = doc
 
@@ -195,10 +194,10 @@ def api_decorator(
     *args,
     input: BaseInputAdapter = None,
     output: BaseOutputAdapter = None,
-    api_name=None,
-    api_doc=None,
-    mb_max_batch_size=DEFAULT_MAX_BATCH_SIZE,
-    mb_max_latency=DEFAULT_MAX_LATENCY,
+    api_name: str = None,
+    api_doc: str = None,
+    mb_max_batch_size: int = DEFAULT_MAX_BATCH_SIZE,
+    mb_max_latency: int = DEFAULT_MAX_LATENCY,
     **kwargs,
 ):  # pylint: disable=redefined-builtin
     """
@@ -233,23 +232,6 @@ def api_decorator(
     >>>     @api(input=DataframeInput(input_json_orient='records'))
     >>>     def identity(self, df):
     >>>         # user-defined callback function that process inference requests
-
-
-    Deprecated syntax before version 0.8.0:
-
-    >>> from bentoml import BentoService, api
-    >>> from bentoml.handlers import JsonHandler, DataframeHandler  # deprecated
-    >>>
-    >>> class FraudDetectionAndIdentityService(BentoService):
-    >>>
-    >>>     @api(JsonHandler)  # deprecated
-    >>>     def fraud_detect(self, parsed_json_list):
-    >>>         # do something
-    >>>
-    >>>     @api(DataframeHandler, input_json_orient='records')  # deprecated
-    >>>     def identity(self, df):
-    >>>         # do something
-
     """
 
     def decorator(func):
@@ -257,26 +239,31 @@ def api_decorator(
         validate_inference_api_name(_api_name)
 
         if input is None:
-            # support bentoml<=0.7
+            # Support passing the desired adapter without instantiation
             if not args or not (
                 inspect.isclass(args[0]) and issubclass(args[0], BaseInputAdapter)
             ):
                 raise InvalidArgument(
                     "BentoService @api decorator first parameter must "
-                    "be class derived from bentoml.adapters.BaseInputAdapter"
+                    "be an instance of a class derived from "
+                    "bentoml.adapters.BaseInputAdapter "
                 )
 
-            handler = args[0](*args[1:], output_adapter=output, **kwargs)
+            # noinspection PyPep8Naming
+            InputAdapter = args[0]
+            input_adapter = InputAdapter(*args[1:], **kwargs)
+            output_adapter = DefaultOutput()
         else:
             assert isinstance(input, BaseInputAdapter), (
-                "API input parameter must be an instance of any classes inherited from "
+                "API input parameter must be an instance of a class derived from "
                 "bentoml.adapters.BaseInputAdapter"
             )
-            handler = input
-            handler._output_adapter = output
+            input_adapter = input
+            output_adapter = output
 
         setattr(func, "_is_api", True)
-        setattr(func, "_handler", handler)
+        setattr(func, "_input_adapter", input_adapter)
+        setattr(func, "_output_adapter", output_adapter)
         setattr(func, "_api_name", _api_name)
         setattr(func, "_api_doc", api_doc)
         setattr(func, "_mb_max_batch_size", mb_max_batch_size)
@@ -437,7 +424,7 @@ def _validate_version_str(version_str):
         raise InvalidArgument(
             'Invalid BentoService version: "{}", it can only consist'
             ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'
-            "128 characthers".format(version_str)
+            "128 characters".format(version_str)
         )
 
     if version_str.lower() == "latest":
@@ -576,7 +563,7 @@ class BentoService:
                         self,
                         api_name,
                         api_doc,
-                        handler=handler,
+                        input_adapter=handler,
                         func=func,
                         mb_max_latency=mb_max_latency,
                         mb_max_batch_size=mb_max_batch_size,

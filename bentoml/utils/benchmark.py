@@ -310,7 +310,7 @@ class BenchmarkClient:
                         if not self.verify_response(r.status, msg):
                             group = f"{r.status}"
                             err = f"<status: {r.status}>\n{msg}"
-                except asyncio.CancelledError:
+                except asyncio.CancelledError:  # pylint: disable=try-except-raise
                     raise
                 except (
                     aiohttp.client_exceptions.ServerDisconnectedError,

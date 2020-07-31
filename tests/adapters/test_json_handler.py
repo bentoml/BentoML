@@ -51,7 +51,7 @@ def test_json_handle_aws_lambda_event():
     error_event_obj = {
         "headers": {"Content-Type": "application/json"},
         "body": "not a valid, json {}"
-    }    
+    }
     with pytest.raises(BadInput) as e:
         input_adapter.handle_aws_lambda_event(error_event_obj, test_func)
 

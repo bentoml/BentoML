@@ -64,6 +64,8 @@ def tf2_svc_loaded(tf2_svc_saved_dir):
 
 @pytest.fixture()
 def tf2_image(tf2_svc_saved_dir):
+    # Based on `image()` in tests/integration/api_server/conftest.py
+    # Better refactoring might be possible to combine both functions
     import docker
 
     client = docker.from_env()
@@ -76,6 +78,8 @@ def tf2_image(tf2_svc_saved_dir):
 
 @pytest.fixture()
 def tf2_host(tf2_image):
+    # Based on `host()` in tests/integration/api_server/conftest.py
+    # Better refactoring might be possible to combine both functions
     import docker
 
     client = docker.from_env()

@@ -52,35 +52,6 @@ def escape_shell_params(param):
     return '{}={}'.format(k, v)
 
 
-def run_with_conda_env(bundle_path, command):
-    config = load_saved_bundle_config(bundle_path)
-    metadata = config['metadata']
-    env_name = metadata['service_name'] + '_' + metadata['service_version']
-
-    yaml = YAML()
-    yaml.default_flow_style = False
-    tmpf = tempfile.NamedTemporaryFile(delete=False)
-    env_path = tmpf.name + '.yaml'
-    yaml.dump(config['env']['conda_env'], Path(env_path))
-
-    pip_req = os.path.join(bundle_path, 'requirements.txt')
-
-    subprocess.call(
-        'command -v conda >/dev/null 2>&1 || {{ echo >&2 "--with-conda '
-        'parameter requires conda but it\'s not installed."; exit 1; }} && '
-        'conda env update -n {env_name} -f {env_file} && '
-        'conda init bash && '
-        'eval "$(conda shell.bash hook)" && '
-        'conda activate {env_name} && '
-        '{{ [ -f {pip_req} ] && pip install -r {pip_req} || echo "no pip '
-        'dependencies."; }} && {cmd}'.format(
-            env_name=env_name, env_file=env_path, pip_req=pip_req, cmd=command,
-        ),
-        shell=True,
-    )
-    return
-
-
 def to_valid_docker_image_name(name):
     # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
     return name.lower().strip("._-")
@@ -92,6 +63,9 @@ def to_valid_docker_image_version(version):
 
 
 def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
+    if tag is None:
+        return tag
+
     if ":" in tag:
         name, version = tag.split(":")[:2]
     else:
@@ -394,9 +368,10 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         Docker. You may provide your own through `--username` and `--password`.
         """
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
+
         _echo(f"Found Bento: {saved_bundle_path}")
 
-        bento_metadata = load_bento_service_metadata(bento_service_bundle_path)
+        bento_metadata = load_bento_service_metadata(saved_bundle_path)
         name = to_valid_docker_image_name(bento_metadata.name)
         version = to_valid_docker_image_version(bento_metadata.version)
 
@@ -417,6 +392,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         import docker
 
         docker_api = docker.APIClient()
+        try:
             with Spinner(f"Building Docker image {tag} from {bento} \n"):
                 for line in echo_docker_api_result(
                     docker_api.build(

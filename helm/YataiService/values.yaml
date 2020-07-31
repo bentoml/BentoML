@@ -1,6 +1,7 @@
 # Default values for YataiService.
 # This is a YAML-formatted file.
 
+usePostgres: false
 db_url: {}
 repo_base_url: {}
 

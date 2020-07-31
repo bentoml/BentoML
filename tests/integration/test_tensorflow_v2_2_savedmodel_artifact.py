@@ -1,13 +1,12 @@
 import time
 import json
-import urllib
 import pytest
 
 import tensorflow as tf
 
 import bentoml
 from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
-
+from tests.integration.api_server.conftest import _wait_until_ready
 
 test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(test_data)
@@ -73,21 +72,6 @@ def tf2_image(tf2_svc_saved_dir):
     ]
     yield image
     client.images.remove(image.id)
-
-
-def _wait_until_ready(_host, timeout, check_interval=0.5):
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        try:
-            if (
-                urllib.request.urlopen(f'http://{_host}/healthz', timeout=0.1).status
-                == 200
-            ):
-                break
-        except Exception:  # pylint:disable=broad-except
-            time.sleep(check_interval - 0.1)
-    else:
-        raise AssertionError(f"server didn't get ready in {timeout} seconds")
 
 
 @pytest.fixture()

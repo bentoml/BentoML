@@ -5,6 +5,4 @@ metadata:
   labels:
     app: postgres
 data:
-  POSTGRES_DB: postgresdb
-  POSTGRES_USER: postgresadmin
-  POSTGRES_PASSWORD: admin123
+  {{- toYaml .Values.postgres.data | nindent 2 }}

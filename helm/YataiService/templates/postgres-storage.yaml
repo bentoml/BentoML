@@ -8,7 +8,7 @@ metadata:
 spec:
   storageClassName: manual
   capacity:
-    storage: 5Gi
+    storage: {{ .Values.postgres.storageCapacity }}
   accessModes:
     - ReadWriteMany
   hostPath:
@@ -26,4 +26,4 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 5Gi
+      storage: {{ .Values.postgres.storageCapacity }}

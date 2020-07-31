@@ -395,9 +395,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         try:
             with Spinner(f"Building Docker image {tag} from {bento} \n"):
                 for line in echo_docker_api_result(
-                    docker_api.build(
-                        path=bento_service_bundle_path, tag=tag, decode=True,
-                    )
+                    docker_api.build(path=saved_bundle_path, tag=tag, decode=True,)
                 ):
                     _echo(line)
         except docker.errors.APIError as error:

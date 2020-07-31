@@ -1,9 +1,15 @@
 # Default values for YataiService.
 
-#
+# Database URL following RFC-1738, and usually can
+# include username, password, hostname, database name as
+# well as optional keyword arguments for additional
+# configuration
+# (leave empty for SQLite)
 db_url: {}
 
-#
+# Base URL for storing saved BentoService bundle files,
+# this can be a filesystem path(POSIX/Windows), or an S3
+# URL, usually starts with "s3://"
 repo_base_url: {}
 
 # Yatai Service
@@ -13,18 +19,6 @@ yatai:
     repo: bentoml/yatai-service
     version: 0.7.2
     pullPolicy: IfNotPresent
-
-# Postgres Service
-usePostgres: false
-postgres:
-  image:
-    repo: postgres
-    version: 10.4
-    pullPolicy: IfNotPresent
-  dbName: postgresdb
-  user: postgresadmin
-  password: admin123
-
 service:
   type: LoadBalancer
   ports:
@@ -42,6 +36,19 @@ service:
       port: http
     initialDelaySeconds: 3
     periodSeconds: 5
+
+# Local Postgres Service
+usePostgres: false
+postgres:
+  image:
+    repo: postgres
+    version: 10.4
+    pullPolicy: IfNotPresent
+  data:
+    dbName: postgresdb
+    user: postgresadmin
+    password: admin123
+  storageCapacity: 5Gi
 
 ### Advanced Settings ###
 # Only change these if you know what you're doing

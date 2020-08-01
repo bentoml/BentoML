@@ -49,6 +49,11 @@ matrix:
       script:
         - ./travis/tensorflow_v2.2_integration_tests.sh
 
+    - name: "API Server Integration Tests"
+      python: "3.7"
+      script:
+        - ./travis/integration_tests.sh
+
     # https://docs.travis-ci.com/user/reference/osx#using-macos
     - name: "CoreML artifact (minimal)"
       os: osx
@@ -63,11 +68,6 @@ matrix:
         - pip install --upgrade .[test]
       script:
         - ./travis/coreml_integration_tests.sh
-
-    - name: "API Server Integration Tests"
-      python: "3.7"
-      script:
-        - ./travis/integration_tests.sh
 
 script:
   - ./travis/unit_tests.sh

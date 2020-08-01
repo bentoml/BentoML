@@ -116,9 +116,7 @@ class JsonInput(BaseInputAdapter):
         try:
             parsed_json = json.loads(event["body"])
         except JSONDecodeError:
-            raise BadInput(
-                "Request body must contain valid json"
-            )
+            raise BadInput("Request body must contain valid json")
 
         result = func([parsed_json])[0]
         return self.output_adapter.to_aws_lambda_event(result, event)

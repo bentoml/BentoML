@@ -16,6 +16,7 @@ import os
 import json
 import argparse
 from typing import Iterable
+from json import JSONDecodeError
 
 import flask
 
@@ -112,13 +113,10 @@ class JsonInput(BaseInputAdapter):
         return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
-        if event["headers"]["Content-Type"] == "application/json":
+        try:
             parsed_json = json.loads(event["body"])
-        else:
-            raise BadInput(
-                "Request content-type must be 'application/json' for this "
-                "BentoService API lambda endpoint"
-            )
+        except JSONDecodeError:
+            raise BadInput("Request body must contain valid json")
 
         result = func([parsed_json])[0]
         return self.output_adapter.to_aws_lambda_event(result, event)

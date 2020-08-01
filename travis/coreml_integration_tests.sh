@@ -19,6 +19,7 @@ pip install coremltools==4.0b2 torch==1.5.0 torchvision==0.6.0 -f https://downlo
 
 conda install -c conda-forge --yes ruamel.yaml
 
+python "$GIT_ROOT/guides/quick-start/main.py"
 pytest "$GIT_ROOT"/tests/integration/test_coreml_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

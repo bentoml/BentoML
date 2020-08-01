@@ -117,8 +117,7 @@ class JsonInput(BaseInputAdapter):
             parsed_json = json.loads(event["body"])
         except JSONDecodeError:
             raise BadInput(
-                "The input provided is not proper JSON. Please make"
-                "sure to send correctly formatted JSON."
+                "Request body must contain valid json"
             )
 
         result = func([parsed_json])[0]

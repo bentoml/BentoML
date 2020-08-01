@@ -17,7 +17,7 @@ hash -r  # https://stackoverflow.com/q/45257534/2064085
 conda config --set always_yes yes --set changeps1 no
 conda update -q conda
 conda config --add channels conda-forge
-conda install -y python=3.6 pip  # change base env Python to conda
+conda install -y python=3.7 pip  # change base env Python to conda
 # Useful for debugging any issues with conda
 conda info -a
 command -v python

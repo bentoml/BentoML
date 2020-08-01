@@ -38,11 +38,21 @@ def test_json_handle_aws_lambda_event():
     assert success_response["statusCode"] == 200
     assert success_response["body"] == '"john"'
 
-    error_event_obj = {
-        "headers": {"Content-Type": "this_will_fail"},
+    success_event_obj = {
+        "headers": {"Content-Type": "this_will_also_work"},
         "body": test_content,
+    }
+    success_response = input_adapter.handle_aws_lambda_event(
+        success_event_obj, test_func
+    )
+    assert success_response["statusCode"] == 200
+    assert success_response["body"] == '"john"'
+
+    error_event_obj = {
+        "headers": {"Content-Type": "application/json"},
+        "body": "not a valid, json {}",
     }
     with pytest.raises(BadInput) as e:
         input_adapter.handle_aws_lambda_event(error_event_obj, test_func)
 
-    assert "Request content-type must be 'application/json" in str(e.value)
+    assert "Request body must contain valid json" in str(e.value)

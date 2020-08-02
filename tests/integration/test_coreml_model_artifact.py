@@ -1,6 +1,8 @@
-import coremltools as ct
+import sys
 import pytest
+
 import torch
+import coremltools as ct
 from coremltools.models import MLModel
 
 import bentoml
@@ -17,7 +19,13 @@ def coreml_classifier_class():
     # does not effect other tests
     CoreMLClassifier._bento_service_bundle_path = None
     CoreMLClassifier._bento_service_bundle_version = None
-    return CoreMLClassifier
+
+    # Set higher recursion limit to avoid RecursionError on Travis MacOS environment
+    # See also https://github.com/bentoml/BentoML/pull/939#issuecomment-667615310
+    recursionlimit = sys.getrecursionlimit()
+    sys.setrecursionlimit(recursionlimit * 2)  # increase the recursion limit
+    yield CoreMLClassifier
+    sys.setrecursionlimit(recursionlimit)  # reset the recursion limit
 
 
 def convert_pytorch_to_coreml(pytorch_model: PytorchModel) -> ct.models.MLModel:
@@ -34,11 +42,6 @@ def convert_pytorch_to_coreml(pytorch_model: PytorchModel) -> ct.models.MLModel:
 
 
 def test_pytorch_artifact_pack(coreml_classifier_class):
-    import sys
-
-    recursionlimit = sys.getrecursionlimit()
-    sys.setrecursionlimit(recursionlimit * 2)  # increase the recursion limit
-
     svc = coreml_classifier_class()
     pytorch_model = PytorchModel()
     model = convert_pytorch_to_coreml(pytorch_model)
@@ -52,5 +55,3 @@ def test_pytorch_artifact_pack(coreml_classifier_class):
     # clean up saved bundle
     yc = YataiClient()
     yc.repository.dangerously_delete_bento(svc.name, svc.version)
-
-    sys.setrecursionlimit(recursionlimit)  # reset the recursion limit

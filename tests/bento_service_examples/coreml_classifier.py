@@ -1,7 +1,7 @@
 import numpy
 import pandas as pd
 
-from coremltools.models import MLModel
+from coremltools.models import MLModel  # pylint: disable=import-error
 
 import bentoml
 from bentoml.adapters import DataframeInput

@@ -64,7 +64,7 @@ matrix:
         - export PATH=${HOME}/miniconda/bin:${PATH}
         - hash -r
         - python -m pip install --upgrade pip
-        - pip install -e .
+        - pip install .
         - pip install --upgrade .[test]
       script:
         - ./travis/coreml_integration_tests.sh

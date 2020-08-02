@@ -13,10 +13,10 @@
 #services:
 #  - docker
 #
-install:
-  - "python -m pip install --upgrade pip"
-  - "pip install -e ."
-  - "pip install --upgrade .[test]"
+#install:
+#  - "python -m pip install --upgrade pip"
+#  - "pip install ."
+#  - "pip install --upgrade .[test]"
 
 matrix:
   include:
@@ -58,18 +58,14 @@ matrix:
     - name: "CoreML artifact (minimal)"
       os: osx
       osx_image: xcode12
-      language: shell
+      language: minimal
       install:
-        - "python3 -m pip install --upgrade pip"
-        - "pip3 install -e ."
-        - "pip3 install --upgrade .[test]"
-      before_install:
         - ./travis/install_python36_osx.sh
-#        - export PATH=${HOME}/miniconda/bin:${PATH}
-#        - hash -r
-#        - python -m pip install --upgrade pip
-#        - pip install -e .
-#        - pip install --upgrade .[test]
+        - export PATH=${HOME}/miniconda/bin:${PATH}
+        - hash -r
+        - python -m pip install --upgrade pip
+        - pip install -e .
+        - pip install --upgrade .[test]
       script:
         - ./travis/coreml_integration_tests.sh
 

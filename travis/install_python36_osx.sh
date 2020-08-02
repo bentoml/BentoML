@@ -9,20 +9,20 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-## Install miniconda - adapted from https://stackoverflow.com/q/45257534/2064085
-#wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
-#bash miniconda.sh -b -p "${HOME}/miniconda"
-#export PATH="${HOME}/miniconda/bin:${PATH}"
-#hash -r  # https://stackoverflow.com/q/45257534/2064085
-#conda config --set always_yes yes --set changeps1 no
-#conda update -q conda
-#conda config --add channels conda-forge
-#conda install -y python=3.6 pip  # change base env Python to conda
-## Useful for debugging any issues with conda
-#conda info -a
-command -v python3
-command -v pip3
-python3 -V
-pip3 -V
+# Install miniconda - adapted from https://stackoverflow.com/q/45257534/2064085
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
+bash miniconda.sh -b -p "${HOME}/miniconda"
+export PATH="${HOME}/miniconda/bin:${PATH}"
+hash -r  # https://stackoverflow.com/q/45257534/2064085
+conda config --set always_yes yes --set changeps1 no
+conda update -q conda
+conda config --add channels conda-forge
+conda install -y python=3.6 pip  # change base env Python to conda
+# Useful for debugging any issues with conda
+conda info -a
+command -v python
+command -v pip
+python -V
+pip -V
 
 test $error = 0 # Return non-zero if pytest failed

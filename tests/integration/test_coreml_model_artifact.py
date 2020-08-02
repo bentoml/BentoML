@@ -34,13 +34,6 @@ def convert_pytorch_to_coreml(pytorch_model: PytorchModel) -> ct.models.MLModel:
 
 
 def test_pytorch_artifact_pack(coreml_classifier_class):
-    import modulefinder
-    import importlib
-    finder = modulefinder.ModuleFinder()
-    module_name = coreml_classifier_class.__module__
-    module = importlib.import_module(module_name)
-    finder.run_script(module.__file__)
-
     svc = coreml_classifier_class()
     pytorch_model = PytorchModel()
     model = convert_pytorch_to_coreml(pytorch_model)

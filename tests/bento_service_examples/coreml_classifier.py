@@ -10,7 +10,7 @@ from bentoml.artifact import CoreMLModelArtifact
 class CoreMLClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput())
     def predict(self, df: pd.DataFrame) -> float:
-        model = self.artifacts.model
+        model: "coremltools.models.MLModel" = self.artifacts.model
         input_data = df.to_numpy().astype(numpy.float32)
         output = model.predict({"input": input_data})
         return next(iter(output.values())).item()

@@ -1,58 +1,58 @@
-#language: python
-#
-#dist: xenial
-#
-#cache:
-#  pip: true
-#
-#python:
-#  - 3.6
-#  - 3.7
-#  - 3.8
-#
-#services:
-#  - docker
-#
-#install:
-#  - "python -m pip install --upgrade pip"
-#  - "pip install ."
-#  - "pip install --upgrade .[test]"
+language: python
+
+dist: xenial
+
+cache:
+  pip: true
+
+python:
+  - 3.6
+  - 3.7
+  - 3.8
+
+services:
+  - docker
+
+install:
+  - "python -m pip install --upgrade pip"
+  - "pip install ."
+  - "pip install --upgrade .[test]"
 
 matrix:
   include:
-#    - os: windows
-#      language: sh
-#      python: "3.6"
-#      cache:
-#        - pip: true
-#      before_install:
-#        - choco install python --version 3.6.8
-#        - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
-#
-#    - name: "Linting & formatting check"
-#      python: "3.6"
-#      script:
-#        - ./travis/linter.sh
-#
-#    - name: "ONNX artifact"
-#      python: "3.6"
-#      script:
-#        - ./travis/onnx_integration_tests.sh
-#
-#    - name: "Pytorch Artifact"
-#      python: "3.6"
-#      script:
-#        - ./travis/pytorch_integration_tests.sh
-#
-#    - name: "Tensorflow v2.2 Artifact"
-#      python: "3.6"
-#      script:
-#        - ./travis/tensorflow_v2.2_integration_tests.sh
-#
-#    - name: "API Server Integration Tests"
-#      python: "3.7"
-#      script:
-#        - ./travis/integration_tests.sh
+    - os: windows
+      language: sh
+      python: "3.6"
+      cache:
+        - pip: true
+      before_install:
+        - choco install python --version 3.6.8
+        - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
+
+    - name: "Linting & formatting check"
+      python: "3.6"
+      script:
+        - ./travis/linter.sh
+
+    - name: "ONNX artifact"
+      python: "3.6"
+      script:
+        - ./travis/onnx_integration_tests.sh
+
+    - name: "Pytorch Artifact"
+      python: "3.6"
+      script:
+        - ./travis/pytorch_integration_tests.sh
+
+    - name: "Tensorflow v2.2 Artifact"
+      python: "3.6"
+      script:
+        - ./travis/tensorflow_v2.2_integration_tests.sh
+
+    - name: "API Server Integration Tests"
+      python: "3.7"
+      script:
+        - ./travis/integration_tests.sh
 
     # https://docs.travis-ci.com/user/reference/osx#using-macos
     - name: "CoreML artifact (minimal)"
@@ -69,9 +69,9 @@ matrix:
       script:
         - ./travis/coreml_integration_tests.sh
 
-#script:
-#  - ./travis/unit_tests.sh
-#
-#after_success:
-#  - codecov
+script:
+  - ./travis/unit_tests.sh
+
+after_success:
+  - codecov
 

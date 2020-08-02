@@ -34,6 +34,11 @@ def convert_pytorch_to_coreml(pytorch_model: PytorchModel) -> ct.models.MLModel:
 
 
 def test_pytorch_artifact_pack(coreml_classifier_class):
+    import sys
+
+    recursionlimit = sys.getrecursionlimit()
+    sys.setrecursionlimit(recursionlimit * 2)  # increase the recursion limit
+
     svc = coreml_classifier_class()
     pytorch_model = PytorchModel()
     model = convert_pytorch_to_coreml(pytorch_model)
@@ -47,3 +52,5 @@ def test_pytorch_artifact_pack(coreml_classifier_class):
     # clean up saved bundle
     yc = YataiClient()
     yc.repository.dangerously_delete_bento(svc.name, svc.version)
+
+    sys.setrecursionlimit(recursionlimit)  # reset the recursion limit

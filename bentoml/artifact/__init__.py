@@ -37,6 +37,7 @@ from bentoml.frameworks.sklearn import SklearnModelArtifact
 from bentoml.frameworks.spacy import SpacyModelArtifact
 from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
 from bentoml.frameworks.xgboost import XgboostModelArtifact
+from bentoml.artifact.pyspark_model_artifact import PysparkModelArtifact
 
 __all__ = [
     "ArtifactCollection",
@@ -58,4 +59,6 @@ __all__ = [
     "TensorflowSavedModelArtifact",
     "TextFileArtifact",
     "XgboostModelArtifact",
+    "CoreMLModelArtifact",
+    "PysparkModelArtifact"
 ]

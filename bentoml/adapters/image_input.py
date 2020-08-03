@@ -62,6 +62,9 @@ class ImageInput(BaseInputAdapter):
     Handle incoming image data from different sources, transform them into numpy array
     and pass down to user defined API functions
 
+    * If you want to operate raw image file stream or PIL.Image objects, use lowlevel
+    alternative FileInput.
+
     Args:
         accept_image_formats (string[]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
@@ -75,6 +78,23 @@ class ImageInput(BaseInputAdapter):
 
     Raises:
         ImportError: imageio package is required to use ImageInput
+
+    Example:
+
+        ```python
+        from bentoml import BentoService, api, artifacts
+        from bentoml.artifact import TensorflowArtifact
+        from bentoml.adapters import ImageInput
+
+        CLASS_NAEMS = ['cat', 'dog']
+
+        @artifacts([TensorflowArtifact('classifer')])
+        class PetClassification(BentoService):
+            @api(input=ImageInput())
+            def predict(self, image_ndarrays):
+                results = self.artifacts.classifer.predict(image_ndarrays)
+                return [CLASS_NAEMS[r] for r in results]
+        ```
     """
 
     HTTP_METHODS = ["POST"]

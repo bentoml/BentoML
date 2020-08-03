@@ -45,4 +45,6 @@ TextFileArtifact
 ++++++++++++++++
 .. autoclass:: bentoml.artifact.TextFileArtifact
 
+CoreMLModelArtifact
+.. autoclass:: bentoml.artifact.CoreMLModelArtifact
 

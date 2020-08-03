@@ -45,8 +45,7 @@ class FileInput(BaseInputAdapter):
         ```python
         import bentoml
         from PIL import Image
-        import torch
-        from torchvision import transforms
+        import numpy as np
 
         from bentoml.artifact import PytorchModelArtifact
         from bentoml.adapters import FileInput
@@ -56,28 +55,22 @@ class FileInput(BaseInputAdapter):
                                  'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
 
-        @bentoml.env(pip_dependencies=['torch', 'numpy', 'torchvision', 'pillow'])
+        @bentoml.env(pip_dependencies=['torch', 'pillow', 'numpy'])
         @bentoml.artifacts([PytorchModelArtifact('classifier')])
         class PyTorchFashionClassifier(bentoml.BentoService):
-                
-            @bentoml.utils.cached_property  # reuse transformer
-            def transform(self):
-                return transforms.Compose(
-                    [transforms.CenterCrop((29, 29)), transforms.ToTensor()])
 
             @bentoml.api(input=FileInput())
             def predict(self, file_streams):
-                img_tensors = []
+                img_arrays = []
                 for fs in file_streams:
-                    img = Image.open(fs).convert(mode="L").resize((28, 28))
-                    img_tensors.append(self.transform(img))
-                inputs = torch.stack(img_tensors)
+                    im = Image.open(fs).convert(mode="L").resize((28, 28))
+                    img_array = np.array(im)
+                    img_arrays.append(img_array)
+
+                inputs = np.stack(img_arrays, axis=0)
 
                 outputs = self.artifacts.classifier(inputs)
-
-                _, output_classes = outputs.max(dim=1)
-
-                return [FASHION_MNIST_CLASSES[c] for c in output_classes]
+                return [FASHION_MNIST_CLASSES[c] for c in outputs]
         ```
 
     """

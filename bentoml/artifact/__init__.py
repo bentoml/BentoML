@@ -33,6 +33,7 @@ from bentoml.artifact.fasttext_model_artifact import FasttextModelArtifact
 from bentoml.artifact.onnx_model_artifact import OnnxModelArtifact
 from bentoml.artifact.spacy_model_artifact import SpacyModelArtifact
 from bentoml.artifact.coreml_model_artifact import CoreMLModelArtifact
+from bentoml.artifact.pyspark_model_artifact import PysparkModelArtifact
 
 __all__ = [
     "BentoServiceArtifact",
@@ -54,4 +55,5 @@ __all__ = [
     "OnnxModelArtifact",
     "SpacyModelArtifact",
     "CoreMLModelArtifact",
+    "PysparkModelArtifact"
 ]

@@ -2,7 +2,7 @@ Deploying to SQL Server Machine Learning Services
 =================================================
 
 Microsoft's Machine Learning Services is a feature in SQL Server that gives the ability to run Python and R scripts with relational data.
-We can use BentoML and other open-source packages, along with the Microsoft Python packages, for predictive analytics and machine learning. 
+It allows to use BentoML and other open-source packages, along with the Microsoft Python packages, for predictive analytics and machine learning. 
 The scripts are executed in-database without moving data outside SQL Server or over the network.
 
 
@@ -72,7 +72,7 @@ Create a new database to store the dataset for prediction.
 
     GO
 
-Now create new table in the database we just created and put columns similar to the iris dataset. We will later save the data here.
+Now create new table in the database just created and put columns similar to the iris dataset. Data will be saved here later.
 
 .. code-block:: bash
 
@@ -96,7 +96,7 @@ Now create new table in the database we just created and put columns similar to 
 
     );
 
-Next we will create a procedure which works similar to a method(function) in python. We list a set of steps that will get executed when we'll use this procedure. We are going to use procedure get_iris_dataset to insert values in the table. Find more in the documentation here.
+Next create a procedure which works similar to a method(function) in python. List a set of steps that will get executed while using this procedure. Procedure `get_iris_dataset` will be used to insert values in the table.
 
 .. code-block:: bash
 
@@ -144,13 +144,13 @@ Finally insert data into the table iris_data and execute the procedure get_iris_
 
 
 
-The last step is to create a procedure for model deployment and prediction. We will create a procedure predict_species and as an external script we will run the bento saved bundle.
+The last step is to create a procedure for model deployment and prediction. Create a procedure predict_species and as an external script run the bento saved bundle.
 
 .. code-block:: bash
 
     import bentoml as usual and set the saved_path to the location where the bento bundle is saved.
 
-    Load the bundle using bentoml.load(). Now we can use this model loaded from the saved bundle to make predictions and deploy the model. List all the input and output features.
+    Load the bundle using bentoml.load(). Now use this model loaded from the saved bundle to make predictions and deploy the model. List all the input and output features.
 
     Here is the complete script
 
@@ -200,7 +200,7 @@ The last step is to create a procedure for model deployment and prediction. We w
 
     GO
 
-The procedure is ready now. We can deploy it using Execute predict_species 'SVM'; where SVM is the name given to the model.
+The procedure is ready now. Deploy it using Execute predict_species 'SVM'; where SVM is the name given to the model.
 
 .. code-block:: bash
 
@@ -209,4 +209,4 @@ The procedure is ready now. We can deploy it using Execute predict_species 'SVM'
     GO
 
 
-After running the final query you can see the predictions in form of a table. Our model is served with SQL server easily with the help of BentoML.
+After running the final query you can see the predictions in form of a table. The model is served with SQL server easily with the help of BentoML.

@@ -69,6 +69,23 @@ matrix:
       script:
         - ./travis/coreml_integration_tests.sh
 
+    - name: "H2o Artifact"
+      python: "3.6"
+      before_install:
+        # Install the latest version of Miniconda
+        - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+        - chmod +x miniconda.sh
+        - ./miniconda.sh -b
+        - export PATH=/home/travis/miniconda/bin:$PATH
+        - conda update --yes conda  # Update CONDA without command line prompt
+        - conda config --add channels h2oai
+      install:
+        - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
+        - source activate test
+        - conda install --yes h2o==3.24.0.2 openjdk
+      script:
+        - ./travis/h2o_integration_tests.sh
+
 script:
   - ./travis/unit_tests.sh
 

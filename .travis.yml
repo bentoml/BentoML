@@ -77,7 +77,7 @@ matrix:
         - chmod +x miniconda.sh
         - ./miniconda.sh -b
         - export PATH=/home/travis/miniconda/bin:$PATH
-        - conda update --yes conda  # Update CONDA without command line prompt
+        - conda update --yes  # Update CONDA without command line prompt
         - conda config --add channels h2oai
       install:
         - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION

@@ -32,3 +32,7 @@ def test_pyspark_model_pack(spark_session, tmpdir):
     output_df = loaded_svc.predict(test_pddf)
     assert list(output_df.prediction) == [0.0, 1.0, 0.0, 1.0]
 
+    # TODO: Refactor service making into fixtures (like TensorFlow 2.0 tests)
+
+    # TODO: Test PySparkModelArtifact with Docker (like TensorFlow 2.0 tests)
+

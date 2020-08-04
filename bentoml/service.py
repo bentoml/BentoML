@@ -387,6 +387,9 @@ def ver_decorator(major, minor):
     'Patch' is provided(or auto generated) when calling BentoService#save,
     while 'Major' and 'Minor' can be defined with '@ver' decorator
 
+    >>>  from bentoml import ver, artifacts
+    >>>  from bentoml.artifact import PickleArtifact
+    >>>
     >>>  @ver(major=1, minor=4)
     >>>  @artifacts([PickleArtifact('model')])
     >>>  class MyMLService(BentoService):
@@ -408,7 +411,7 @@ def ver_decorator(major, minor):
     return decorator
 
 
-def _validate_version_str(version_str):
+def validate_version_str(version_str):
     """
     Validate that version str format is either a simple version string that:
         * Consist of only ALPHA / DIGIT / "-" / "." / "_"
@@ -551,7 +554,7 @@ class BentoService:
             if hasattr(function, "_is_api"):
                 api_name = getattr(function, "_api_name")
                 api_doc = getattr(function, "_api_doc")
-                handler = getattr(function, "_handler")
+                input_adapter = getattr(function, "_input_adapter")
                 mb_max_latency = getattr(function, "_mb_max_latency")
                 mb_max_batch_size = getattr(function, "_mb_max_batch_size")
 
@@ -563,7 +566,7 @@ class BentoService:
                         self,
                         api_name,
                         api_doc,
-                        input_adapter=handler,
+                        input_adapter=input_adapter,
                         func=func,
                         mb_max_latency=mb_max_latency,
                         mb_max_batch_size=mb_max_batch_size,
@@ -696,7 +699,7 @@ class BentoService:
                 [str(self._version_major), str(self._version_minor), version_str]
             )
 
-        _validate_version_str(version_str)
+        validate_version_str(version_str)
 
         if self.__class__._bento_service_bundle_version is not None:
             logger.warning(

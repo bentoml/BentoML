@@ -3,7 +3,7 @@ import pytest
 import bentoml
 from bentoml.artifact import PickleArtifact
 from bentoml.adapters import DataframeInput, FastaiImageInput, ImageInput
-from bentoml.service import _validate_version_str
+from bentoml.service import validate_version_str
 from bentoml.exceptions import InvalidArgument
 
 
@@ -40,6 +40,7 @@ def test_fastai_image_input_pip_dependencies():
     assert 'fastai' in service._env._pip_dependencies
 
 
+# noinspection PyUnusedLocal
 def test_invalid_artifact_type():
     with pytest.raises(InvalidArgument) as e:
 
@@ -52,6 +53,7 @@ def test_invalid_artifact_type():
     assert "only accept list of BentoServiceArtifact" in str(e.value)
 
 
+# noinspection PyUnusedLocal
 def test_duplicated_artifact_name():
     with pytest.raises(InvalidArgument) as e:
 
@@ -64,18 +66,20 @@ def test_duplicated_artifact_name():
     assert "Duplicated artifact name `model` detected" in str(e.value)
 
 
+# noinspection PyUnusedLocal
 def test_invalid_api_input():
     with pytest.raises(InvalidArgument) as e:
 
-        class ExampleBentoService(
+        class ExampleBentoService(  # pylint: disable=unused-variable
             bentoml.BentoService
-        ):  # pylint: disable=unused-variable
+        ):
             @bentoml.api("Not A InputAdapter")
             def test(self):
                 pass
 
-    assert "must be class derived from bentoml.adapters.BaseInputAdapter" in str(
-        e.value
+    assert (
+        "must be an instance of a class derived from "
+        "bentoml.adapters.BaseInputAdapter" in str(e.value)
     )
 
 
@@ -91,20 +95,20 @@ def test_image_input_pip_dependencies():
 
 def test_validate_version_str_fails():
     with pytest.raises(InvalidArgument):
-        _validate_version_str("44&")
+        validate_version_str("44&")
 
     with pytest.raises(InvalidArgument):
-        _validate_version_str("44 123")
+        validate_version_str("44 123")
 
     with pytest.raises(InvalidArgument):
-        _validate_version_str("")
+        validate_version_str("")
 
 
 def test_validate_version_str_pass():
-    _validate_version_str("abc_123")
-    _validate_version_str("1")
-    _validate_version_str("a_valid_version")
-    _validate_version_str("AValidVersion")
-    _validate_version_str("_AValidVersion")
-    _validate_version_str("1.3.4")
-    _validate_version_str("1.3.4-g375a71b")
+    validate_version_str("abc_123")
+    validate_version_str("1")
+    validate_version_str("a_valid_version")
+    validate_version_str("AValidVersion")
+    validate_version_str("_AValidVersion")
+    validate_version_str("1.3.4")
+    validate_version_str("1.3.4-g375a71b")

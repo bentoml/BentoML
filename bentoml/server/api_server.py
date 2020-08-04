@@ -167,6 +167,7 @@ class BentoAPIServer:
         return Response(response="\n", status=200, mimetype="text/plain")
 
     def metrics_view_func(self):
+        # noinspection PyProtectedMember
         from prometheus_client import generate_latest
 
         return generate_latest()
@@ -269,16 +270,15 @@ class BentoAPIServer:
         if not config('logging').getboolean('log_request_image_files'):
             return []
 
-        img_prefix = 'image/'
         log_folder = config('logging').get('base_log_dir')
 
         all_paths = []
 
-        if req.content_type and req.content_type.startswith(img_prefix):
+        if req.content_type and req.content_type.startswith('image/'):
             filename = '{timestamp}-{request_id}.{ext}'.format(
                 timestamp=int(time.time()),
                 request_id=request_id,
-                ext=req.content_type[len(img_prefix) :],
+                ext=req.content_type[len('image/') :],
             )
             path = os.path.join(log_folder, filename)
             all_paths.append(path)

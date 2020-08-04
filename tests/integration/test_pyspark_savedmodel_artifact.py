@@ -1,5 +1,7 @@
+import pandas as pd
 import pyspark
 from pyspark.ml.classification import LogisticRegression
+from pyspark.ml.feature import VectorAssembler
 
 import bentoml
 from tests.bento_service_examples.pyspark_classifier import PysparkClassifier
@@ -54,33 +56,29 @@ def test_spark_mllib_example(spark_session):
     print("Multinomial intercepts: " + str(mlrModel.interceptVector))
 
 
+train_pddf = pd.DataFrame([[0, -1.0], [1, 1.0]], columns=["label", "feature1"])
+test_pddf = pd.DataFrame([-5.0, 5.0, -0.5, 0.5], columns=["feature1"])
+
+
 def test_pyspark_model_pack(spark_session, tmpdir):
-    from pyspark.ml.feature import VectorAssembler
-    vector_assembler = VectorAssembler(inputCols=['val'], outputCol='features')
+    # Put pandas training df into Spark df form with Vector features
+    train_spdf = spark_session.createDataFrame(train_pddf)
+    assembler = VectorAssembler(inputCols=['feature1'], outputCol='features')
+    train_spdf = assembler.transform(train_spdf).select(['features', 'label'])
 
-    # Create toy training df
-    train_df = spark_session.createDataFrame([[0, -1], [1, 1]],
-                                             "label: int, val: int")
-    train_df = vector_assembler.transform(train_df)
-    train_df = train_df.select(['features', 'label'])
-
-    # Create toy testing df
-    test_df = spark_session.createDataFrame([[0, -5], [1, 5]],
-                                            "label: int, val: int")
-    test_df = vector_assembler.transform(test_df)
-    test_df = test_df.select(['features', 'label'])
-
-    # Train model
+    # Train model (should result in x=neg => y=0, x=pos => y=1)
     lr = LogisticRegression()
-    lr_model = lr.fit(train_df)
+    lr_model = lr.fit(train_spdf)
 
-    # Check predictions
-    lr_predictions = lr_model.transform(test_df)
-    pred_list = lr_predictions.select("prediction").toPandas().values.tolist()
-    assert pred_list == [[0.0], [1.0]]
-
+    # Test service with packed PySpark model
     svc = PysparkClassifier()
     svc.pack('model', lr_model)
+    output_df = svc.predict(test_pddf)
+    assert list(output_df.prediction) == [0.0, 1.0, 0.0, 1.0]
+
+    # Test service that has been saved and loaded
     saved_dir = svc.save(str(tmpdir))
     loaded_svc = bentoml.load(saved_dir)
+    output_df = loaded_svc.predict(test_pddf)
+    assert list(output_df.prediction) == [0.0, 1.0, 0.0, 1.0]
 

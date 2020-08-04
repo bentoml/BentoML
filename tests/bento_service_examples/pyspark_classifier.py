@@ -8,7 +8,7 @@ spark_session = SparkSession.builder.appName('BentoService').getOrCreate()
 
 
 @bentoml.env(auto_pip_dependencies=True)
-@bentoml.artifacts([PysparkModelArtifact('model', spark_version="2.4.0")])
+@bentoml.artifacts([PysparkModelArtifact('model')])
 class PysparkClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput())
     def predict(self, pandas_df):

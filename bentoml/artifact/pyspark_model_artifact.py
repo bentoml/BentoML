@@ -17,7 +17,7 @@ class PysparkModelArtifact(BentoServiceArtifact):
 
     """
 
-    def __init__(self, name, spark_version):
+    def __init__(self, name, spark_version=None):
         super(PysparkModelArtifact, self).__init__(name)
         # internal attribute assignment goes here
         self._model = None

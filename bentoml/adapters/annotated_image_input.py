@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+import json
 import os
 import argparse
 import base64
@@ -130,30 +132,46 @@ class AnnotatedImageInput(BaseInputAdapter):
     def pip_dependencies(self):
         return ["imageio"]
 
-    def _load_image_data(self, request: Request):
-        if len(request.files):
-            if len(request.files) > 2:
-                raise BadInput(
-                    "Too many files. AnnotatedImageInput takes one image file and an \
-                    optional JSON annotation file"
-                )
+    def _load_image_and_json_data(self, request: Request):
+        if len(request.files) == 0:
+            raise BadInput("BentoML#AnnotatedImageInput unexpected HTTP request format.")
+        elif len(request.files) > 2:
+            raise BadInput(
+                "Too many input files. AnnotatedImageInput takes one image file and an \
+                optional JSON annotation file"
+            )
 
-            input_files = []
+        json_file = None
+        image_file = None
 
-            for f in iter(request.files.values()):
-                print(f)
-                input_files.append(f)
+        for f in iter(request.files.values()):
+            if re.match("image/", f.mimetype):
+                if image_file:
+                    raise BadInput("BentoML#AnnotatedImageInput received two images instead of an image file and JSON file")
+                image_file = f
+            elif f.mimetype == "application/json":
+                if json_file:
+                    raise BadInput("BentoML#AnnotatedImageInput received two JSON files instead of an image file and JSON file")
+                json_file = f
+            else:
+                raise BadInput("BentoML#AnnotatedImageInput received unexpected file type.")
 
-            if not input_file:
-                raise BadInput("BentoML#AnnotatedImageInput unexpected HTTP request format")
-            file_name = secure_filename(input_file.filename)
-            verify_image_format_or_raise(file_name, self.accept_image_formats)
-            input_stream = input_file.stream
-        else:
-            raise BadInput("BentoML#AnnotatedImageInput unexpected HTTP request format")
+        if not image_file:
+            raise BadInput("BentoML#AnnotatedImageInput requires an image file")
 
-        input_data = imageio.imread(input_stream, pilmode=self.pilmode)
-        return input_data
+        file_name = secure_filename(image_file.filename)
+        verify_image_format_or_raise(file_name, self.accept_image_formats)
+        input_stream = image_file.stream
+        input_image = imageio.imread(input_stream, pilmode=self.pilmode)
+        input_json = {}
+
+        if json_file:
+            try:
+                input_json = json.load(json_file)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                raise BadInput("BentoML#AnnotatedImageInput received invalid JSON file")
+
+        return (input_image, input_json)
 
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func: callable
@@ -173,7 +191,7 @@ class AnnotatedImageInput(BaseInputAdapter):
                 headers=req.headers,
             )
             try:
-                input_data = self._load_image_data(request)
+                input_data = self._load_image_and_json_data(request)
             except BadInput:
                 ids.append(None)
                 continue
@@ -195,11 +213,12 @@ class AnnotatedImageInput(BaseInputAdapter):
         Return:
             response object
         """
-        input_data = self._load_image_data(request)
-        result = func((input_data,))[0]
+        input_data = self._load_image_and_json_data(request)
+        result = func(*input_data)[0]
         return self.output_adapter.to_response(result, request)
 
     def handle_cli(self, args, func):
+        raise NotImplementedError
         parser = argparse.ArgumentParser()
         parser.add_argument("--input", required=True, nargs='+')
         parser.add_argument("--batch-size", default=None, type=int)
@@ -225,15 +244,5 @@ class AnnotatedImageInput(BaseInputAdapter):
                 return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
-        if event["headers"].get("Content-Type", "").startswith("images/"):
-            image = imageio.imread(
-                base64.decodebytes(event["body"]), pilmode=self.pilmode
-            )
-        else:
-            raise BadInput(
-                "BentoML currently doesn't support Content-Type: {content_type} for "
-                "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
-            )
+        raise NotImplementedError
 
-        result = func((image,))[0]
-        return self.output_adapter.to_aws_lambda_event(result, event)

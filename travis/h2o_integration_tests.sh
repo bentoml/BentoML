@@ -11,6 +11,9 @@ cd "$GIT_ROOT" || exit
 
 
 # Install required packages for h2o model artifacts test
+conda config --add channels h2oai
+source activate test
+conda install --yes openjdk
 pip install h2o
 
 pytest "$GIT_ROOT"/tests/integration/test_h2o_model_artifact.py --cov=bentoml --cov-config=.coveragerc

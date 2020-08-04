@@ -84,15 +84,15 @@ class CondaEnv(object):
 
     def conda_env_yaml(self, filepath):
         with open(filepath) as file:
-            data=self._yaml.load(file)
-        for k,v in data.items():
-            if k=="name":
+            data = self._yaml.load(file)
+        for k, v in data.items():
+            if k == "name":
                 self._conda_env["name"] = v
-            elif k=="channels":
+            elif k == "channels":
                 self._conda_env["channels"] = v
             else:
                 self._conda_env["dependencies"] = v
- 
+
 
 class BentoServiceEnv(object):
     """Defines all aspect of the system environment requirements for a custom

@@ -82,6 +82,17 @@ class CondaEnv(object):
         with open(filepath, 'wb') as output_yaml:
             self._yaml.dump(self._conda_env, output_yaml)
 
+    def conda_env_yaml(self, filepath):
+        with open(filepath) as file:
+            data=self._yaml.load(file)
+        for k,v in data.items():
+            if k=="name":
+                self._conda_env["name"] = v
+            elif k=="channels":
+                self._conda_env["channels"] = v
+            else:
+                self._conda_env["dependencies"] = v
+ 
 
 class BentoServiceEnv(object):
     """Defines all aspect of the system environment requirements for a custom
@@ -111,6 +122,7 @@ class BentoServiceEnv(object):
         requirements_txt_file=None,
         conda_channels=None,
         conda_dependencies=None,
+        conda_yaml_file=None,
         setup_sh=None,
         docker_base_image=None,
     ):

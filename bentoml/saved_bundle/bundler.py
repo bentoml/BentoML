@@ -70,8 +70,8 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     if not os.path.exists(path):
         raise BentoMLException("Directory '{}' not found".format(path))
 
-    for artifact in bento_service._artifacts:
-        if artifact.name not in bento_service._packed_artifacts:
+    for artifact in bento_service.artifacts.get_artifact_list():
+        if not artifact.packed:
             logger.warning(
                 "Missing declared artifact '%s' for BentoService '%s'",
                 artifact.name,
@@ -98,8 +98,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
         f.write(saved_bundle_readme)
 
     # save all model artifacts to 'base_path/name/artifacts/' directory
-    if bento_service.artifacts:
-        bento_service.artifacts.save(module_base_path)
+    bento_service.artifacts.save(module_base_path)
 
     # write conda environment, requirement.txt
     bento_service.env.save(path, bento_service)

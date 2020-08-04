@@ -14,6 +14,7 @@
 
 import os
 import logging
+from typing import List
 
 from bentoml.exceptions import InvalidArgument, FailedPrecondition
 from bentoml.service_env import BentoServiceEnv
@@ -76,6 +77,17 @@ class BentoServiceArtifact:
     def save(self, dst):
         """
         Save artifact to given dst path
+
+        In a BentoService saved bundle, all artifacts are being saved to the
+        `{service.name}/artifact/` directory. Thus, `save` must use the artifact name
+        as a way to differentiate its files from other artifacts.
+
+        For example, a BentoServiceArtifact class' save implementation should not create
+        a file named `config.json` in the `dst` directory. Because when a BentoService
+        has multiple artifacts of this same artifact type, they will all try to create
+        this `config.json` file and overwrite each other. The right way to do it here,
+        is use the name as the prefix(or part of the file name), e.g.
+         f"{artifact.name}-config.json"
         """
 
     def get(self):
@@ -89,6 +101,13 @@ class BentoServiceArtifact:
 
         :param env: target BentoServiceEnv instance to modify
         """
+
+    def _copy(self):
+        """Create a new empty artifact instance with the same name, this is only used
+        internally for BentoML to create new artifact instances when create a new
+        BentoService instance
+        """
+        return self.__class__(self.name)
 
     def __getattribute__(self, item):
         if item == 'pack':
@@ -184,16 +203,50 @@ class ArtifactCollection(dict):
         self.add(artifact)
 
     def __getattr__(self, item: str):
+        """Proxy to `BentoServiceArtifact#get()` to allow easy access to the model
+        artifact in its native form. E.g. for a BentoService class with an artifact
+        `SklearnModelArtifact('model')`, when user code accesses `self.artifacts.model`
+        in the BentoService API callback function, instead of returning an instance of
+        BentoServcieArtifact, it returns a Sklearn model object
+        """
         return self[item].get()
+
+    def get(self, item: str) -> BentoServiceArtifact:
+        """Access the BentoServiceArtifact instance by artifact name
+        """
+        return self[item]
+
+    def get_artifact_list(self) -> List[BentoServiceArtifact]:
+        """Access the list of BentoServiceArtifact instances
+        """
+        return super(ArtifactCollection, self).values()
 
     def add(self, artifact: BentoServiceArtifact):
         super(ArtifactCollection, self).__setitem__(artifact.name, artifact)
 
     def save(self, dst):
-        """
-        bulk operation for saving all artifacts in self.values() to `dst` path
+        """Save all BentoServiceArtifact instances in self.values() to `dst` path
+        if they are `packed` or `loaded`
         """
         save_path = os.path.join(dst, ARTIFACTS_DIR_NAME)
         os.mkdir(save_path)
+        for artifact in self.get_artifact_list():
+            if artifact.is_ready:
+                artifact.save(save_path)
+            else:
+                logger.warning(
+                    "Skip saving empty artifact, %s('%s')",
+                    artifact.__class__.__name__,
+                    artifact.name,
+                )
+
+    @classmethod
+    def from_artifact_list(cls, artifacts_list: List[BentoServiceArtifact]):
+        artifact_collection = cls()
+        for artifact in artifacts_list:
+            artifact_collection.add(artifact._copy())
+        return artifact_collection
+
+    def load_all(self, path):
         for artifact in self.values():
-            artifact.save(save_path)
+            artifact.load(path)

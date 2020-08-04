@@ -54,6 +54,9 @@ BentoML API model server, building docker image or creating cloud deployment.
 * Scikit-Learn Iris Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb)
 * ResNet50 Image recognition (ONNX model zoo) - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb)
 
+### SQL Server Machine Learning Services
+ * Iris Classifier deployed with SQL Server - [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/end-to-end/sql-server-deployment/sql-server-deployment.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/end-to-end/sql-server-deployment/sql-server-deployment.ipynb)
+
 #### Community Projects
 
 * Stress Analysis in Social Media (Tensorflow, BERT) - [Project Link](https://github.com/gillian850413/Insight_Stress_Analysis)

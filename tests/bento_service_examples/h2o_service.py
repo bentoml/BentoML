@@ -1,5 +1,4 @@
 import h2o
-import json
 
 import bentoml
 from bentoml.artifact import H2oModelArtifact

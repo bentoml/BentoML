@@ -22,7 +22,8 @@ def h2o_svc():
     h2o.init()
 
     df = h2o.import_file(
-        "https://github.com/yubozhao/bentoml-h2o-data-for-testing/raw/master/powerplant_output.csv"
+        "https://github.com/yubozhao/bentoml-h2o-data-for-testing/raw/master/"
+        "powerplant_output.csv"
     )
     splits = df.split_frame(ratios=[0.8], seed=1)
     train = splits[0]

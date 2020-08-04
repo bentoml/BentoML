@@ -104,12 +104,11 @@ def test_h2o_artifact_with_docker(h2o_docker_host):
     result = requests.post(
         f'http://{h2o_docker_host}/predict',
         json=test_data,
-        headers={'Content-Type': 'application/json'}
+        headers={'Content-Type': 'application/json'},
     )
     assert result.status_code == 200, 'Failed to make successful request'
     result_json = json.loads(result.json())
     inference_result = result_json[0]['predict']
     assert (
-            inference_result > 448 and inference_result < 453
+        inference_result > 448 and inference_result < 453
     ), 'Prediction on the saved h2o artifact does not match expect result'
-

@@ -69,6 +69,11 @@ matrix:
       script:
         - ./travis/coreml_integration_tests.sh
 
+    - name: "H2o Artifact"
+      python: "3.6"
+      script:
+        - ./travis/h2o_integration_tests.sh
+
 script:
   - ./travis/unit_tests.sh
 

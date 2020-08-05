@@ -1,3 +1,4 @@
+{{- if .Values.usePostgres -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,3 +7,4 @@ metadata:
     app: postgres
 data:
   {{- toYaml .Values.postgres.data | nindent 2 }}
+{{- end -}}

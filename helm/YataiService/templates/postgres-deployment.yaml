@@ -1,3 +1,4 @@
+{{- if .Values.usePostgres -}}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -30,3 +31,4 @@ spec:
         - name: postgredb
           persistentVolumeClaim:
             claimName: postgres-pv-claim
+{{- end -}}

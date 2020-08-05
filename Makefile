@@ -50,8 +50,8 @@ install-web-deps: ## Install dependencies to run web server and frontend
 helm-lint: ## Helm Lint
 	helm lint ./helm/YataiService
 helm-dry: ## Helm Dry Install
-	helm install --dry-run --debug yatai-service ./helm/YataiService
+	helm install --dry-run --debug yatai-service ./helm/YataiService --set usePostgres=true
 helm-install: ## Helm Install
-	helm install yatai-service ./helm/YataiService || (echo "Error installing chart... You may need to run 'minikube start'"; make helm-uninstall; exit 1)
+	helm install yatai-service ./helm/YataiService --set usePostgres=true || (echo "Error installing chart... You may need to run 'minikube start'"; make helm-uninstall; exit 1)
 helm-uninstall: ## Helm Uninstall
 	helm uninstall yatai-service

@@ -1,3 +1,4 @@
+{{- if .Values.usePostgres -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -11,3 +12,4 @@ spec:
       nodePort: 30007
   selector:
    app: postgres
+{{ end }}

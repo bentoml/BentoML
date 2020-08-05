@@ -12,12 +12,17 @@ spark_session = SparkSession.builder.appName('BentoService').getOrCreate()
 class PysparkClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput())
     def predict(self, pandas_df):
-        # Convert Pandas to Spark DataFrame (w/required 'features' column)
-        # (SparkDataFrameAdapter could do this instead)
+        # Pandas DF -> Spark DF -> Spark DF with "features" Vector column
         spark_df = spark_session.createDataFrame(pandas_df)
-        assembler = VectorAssembler(inputCols=list(pandas_df.columns),
+        column_labels = [str(c) for c in list(pandas_df.columns)]
+        assembler = VectorAssembler(inputCols=column_labels,
                                     outputCol='features')
         spark_df = assembler.transform(spark_df).select(['features'])
 
+        # Run inference
         output_df = self.artifacts.model.transform(spark_df)
-        return output_df.select("prediction").toPandas()
+
+        # Spark DF -> Pandas DF -> Numpy Array
+        pred = output_df.select("prediction").toPandas().prediction.values
+
+        return pred

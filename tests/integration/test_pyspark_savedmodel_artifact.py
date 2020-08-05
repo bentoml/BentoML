@@ -7,6 +7,7 @@ from pyspark.ml.classification import LogisticRegression
 from pyspark.ml.feature import VectorAssembler
 
 import bentoml
+from bentoml.server.api_server import BentoAPIServer
 from tests.bento_service_examples.pyspark_classifier import PysparkClassifier
 from tests.integration.api_server.conftest import _wait_until_ready
 
@@ -96,15 +97,26 @@ def pyspark_host(pyspark_image):
 
 
 def test_pyspark_artifact(pyspark_svc):
-    output_df = pyspark_svc.predict(test_pddf)
-    assert list(output_df.prediction) == [0.0, 1.0, 0.0, 1.0]
+    assert pyspark_svc.predict(test_pddf).tolist() == [0.0, 1.0, 0.0, 1.0]
 
 
 def test_pyspark_artifact_loaded(pyspark_svc_loaded):
-    output_df = pyspark_svc_loaded.predict(test_pddf)
-    assert list(output_df.prediction) == [0.0, 1.0, 0.0, 1.0]
+    assert pyspark_svc_loaded.predict(test_pddf).tolist() == [0.0, 1.0, 0.0, 1.0]
 
 
+def test_pyspark_rest_api(pyspark_svc):
+    rest_server = BentoAPIServer(pyspark_svc)
+    test_client = rest_server.app.test_client()
+
+    response = test_client.post(
+        "/predict",
+        data=json.dumps(test_data),
+        content_type="application/json"
+    )
+    assert response.data.decode().strip() == '[0.0, 1.0, 0.0, 1.0]'
+
+
+@pytest.mark.skip(msg="Fix Docker tests once JAR dependencies are sorted")
 @pytest.mark.asyncio
 async def test_pyspark_artifact_with_docker(pyspark_host):
     await pytest.assert_request(

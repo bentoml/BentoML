@@ -61,9 +61,9 @@ def pyspark_image(pyspark_svc_saved_dir):
     import docker
 
     client = docker.from_env()
-    image = client.images.build(path=pyspark_svc_saved_dir, tag="example_service", rm=True)[
-        0
-    ]
+    image = client.images.build(
+        path=pyspark_svc_saved_dir, tag="example_service", rm=True
+    )[0]
     yield image
     client.images.remove(image.id)
 
@@ -109,9 +109,7 @@ def test_pyspark_rest_api(pyspark_svc):
     test_client = rest_server.app.test_client()
 
     response = test_client.post(
-        "/predict",
-        data=json.dumps(test_data),
-        content_type="application/json"
+        "/predict", data=json.dumps(test_data), content_type="application/json"
     )
     assert response.data.decode().strip() == '[0.0, 1.0, 0.0, 1.0]'
 
@@ -127,4 +125,3 @@ async def test_pyspark_artifact_with_docker(pyspark_host):
         assert_status=200,
         assert_data=b'[[15.0]]',
     )
-

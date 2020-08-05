@@ -6,7 +6,9 @@ import os
 from bentoml.artifact import BentoServiceArtifact
 from bentoml.service_env import BentoServiceEnv
 from bentoml.exceptions import (
-    MissingDependencyException, InvalidArgument, BentoMLException
+    MissingDependencyException,
+    InvalidArgument,
+    BentoMLException,
 )
 
 logger = logging.getLogger(__name__)
@@ -67,7 +69,7 @@ class PysparkModelArtifact(BentoServiceArtifact):
             )
 
         model_path = self._file_path(path)
-        metadata_path = model_path+"/metadata/part-00000"
+        metadata_path = model_path + "/metadata/part-00000"
 
         # TODO: Verify that "part-00000" is a reliable metadata filename
         with open(metadata_path) as f:
@@ -103,8 +105,6 @@ class PysparkModelArtifact(BentoServiceArtifact):
     def save(self, dst):
         if not self._model:
             # TODO: Find appropriate Exception type
-            raise Exception(
-                "Model file not packed before attempting to save."
-            )
+            raise Exception("Model file not packed before attempting to save.")
 
         return self._model.save(self._file_path(dst))

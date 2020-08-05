@@ -60,5 +60,5 @@ __all__ = [
     "TextFileArtifact",
     "XgboostModelArtifact",
     "CoreMLModelArtifact",
-    "PysparkModelArtifact"
+    "PysparkModelArtifact",
 ]

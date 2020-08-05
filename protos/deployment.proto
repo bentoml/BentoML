@@ -5,6 +5,7 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 import "status.proto";
+import "labels_selector.proto";
 
 // DeploymentSpec defines a model serving deployment that can be reproduced to target
 // deployment target
@@ -181,9 +182,7 @@ message ListDeploymentsRequest {
   DeploymentSpec.DeploymentOperator operator = 4;
   SORTABLE_COLUMN order_by = 5;
   bool ascending_order = 6;
-  // Optional, currently only handle label filter with key=value pairs. In the future,
-  // we should handle more advanced filter query such as `in` and `notin`.
-  string labels_query =7;
+  LabelsSelector labels_selector =7;
 }
 
 message ListDeploymentsResponse {

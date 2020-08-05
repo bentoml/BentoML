@@ -55,5 +55,5 @@ __all__ = [
     "OnnxModelArtifact",
     "SpacyModelArtifact",
     "CoreMLModelArtifact",
-    "PysparkModelArtifact"
+    "PysparkModelArtifact",
 ]

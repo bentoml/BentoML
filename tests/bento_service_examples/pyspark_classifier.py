@@ -4,6 +4,7 @@ from bentoml.artifact import PysparkModelArtifact
 
 from pyspark.ml.feature import VectorAssembler
 from pyspark.sql import SparkSession
+
 spark_session = SparkSession.builder.appName('BentoService').getOrCreate()
 
 
@@ -15,8 +16,7 @@ class PysparkClassifier(bentoml.BentoService):
         # Pandas DF -> Spark DF -> Spark DF with "features" Vector column
         spark_df = spark_session.createDataFrame(pandas_df)
         column_labels = [str(c) for c in list(pandas_df.columns)]
-        assembler = VectorAssembler(inputCols=column_labels,
-                                    outputCol='features')
+        assembler = VectorAssembler(inputCols=column_labels, outputCol='features')
         spark_df = assembler.transform(spark_df).select(['features'])
 
         # Run inference

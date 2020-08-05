@@ -66,8 +66,11 @@ class PysparkModelArtifact(BentoServiceArtifact):
                 "pyspark package is required to use PysparkModelArtifact"
             )
 
+        model_path = self._file_path(path)
+        metadata_path = model_path+"/metadata/part-00000"
+
         # TODO: Verify that "part-00000" is a reliable metadata filename
-        with open(f"{self._file_path(path)}/metadata/part-00000") as f:
+        with open(metadata_path) as f:
             metadata = json.load(f)
 
         if "class" not in metadata:
@@ -81,7 +84,8 @@ class PysparkModelArtifact(BentoServiceArtifact):
 
         # Use load method specific to the pyspark.ml model class
         ModelClass = getattr(importlib.import_module(module_name), model_type)
-        model = ModelClass.load(self._file_path(path))
+        logger.info(f"Loading {ModelClass} model from {model_path}.")
+        model = ModelClass.load(model_path)
 
         # TODO: Confirm supported model typing. Possible nuances:
         #  - spark.ml vs spark.mllib (pyspark.mllib.Model?)

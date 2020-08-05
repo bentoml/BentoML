@@ -5,8 +5,9 @@ import os
 
 from bentoml.artifact import BentoServiceArtifact
 from bentoml.service_env import BentoServiceEnv
-from bentoml.exceptions import MissingDependencyException, InvalidArgument
-
+from bentoml.exceptions import (
+    MissingDependencyException, InvalidArgument, BentoMLException
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,9 @@ class PysparkModelArtifact(BentoServiceArtifact):
         # TODO: Verify that "part-00000" is a reliable metadata filename
         with open(f"{self._file_path(path)}/metadata/part-00000") as f:
             metadata = json.load(f)
+
+        if "class" not in metadata:
+            raise BentoMLException("Malformed metadata file.")
 
         # TODO: Verify cases where model type can/can't be inferred this way
         # Follows convention ["org", "apache", "spark", "ml",  [...], "Model"]

@@ -107,11 +107,4 @@ class PysparkModelArtifact(BentoServiceArtifact):
                 "Model file not packed before attempting to save."
             )
 
-        try:
-            import pyspark
-        except ImportError:
-            raise MissingDependencyException(
-                "pyspark package is required to use PysparkModelArtifact"
-            )
-
         return self._model.save(self._file_path(dst))

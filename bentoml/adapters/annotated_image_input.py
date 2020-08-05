@@ -122,7 +122,7 @@ class AnnotatedImageInput(BaseInputAdapter):
                     "type": "object",
                     "properties": {
                         "image_file": {"type": "string", "format": "binary"},
-                        "json_file": {"type": "string", "format": "binary", "required": "false"}
+                        "json_file": {"type": "string", "format": "binary"}
                     },
                 }
             },
@@ -218,31 +218,66 @@ class AnnotatedImageInput(BaseInputAdapter):
         return self.output_adapter.to_response(result, request)
 
     def handle_cli(self, args, func):
-        raise NotImplementedError
+        """Handles an CLI command call, convert CLI arguments into
+        corresponding data format that user API function is expecting, and
+        prints the API function result to console output
+        :param args: CLI arguments
+        :param func: user API function
+        """
         parser = argparse.ArgumentParser()
-        parser.add_argument("--input", required=True, nargs='+')
-        parser.add_argument("--batch-size", default=None, type=int)
-        parsed_args, unknown_args = parser.parse_known_args(args)
-        file_paths = parsed_args.input
+        parser.add_argument("--image", required=True)
+        parser.add_argument("--json", required=False)
+        args, unknown_args = parser.parse_known_args(args)
 
-        batch_size = (
-            parsed_args.batch_size if parsed_args.batch_size else len(file_paths)
-        )
+        image_array = []
+        json_data = {}
 
-        for i in range(0, len(file_paths), batch_size):
-            step_file_paths = file_paths[i : i + batch_size]
-            image_arrays = []
-            for file_path in step_file_paths:
-                verify_image_format_or_raise(file_path, self.accept_image_formats)
-                if not os.path.isabs(file_path):
-                    file_path = os.path.abspath(file_path)
+        image_path = os.path.expanduser(args.image)
 
-                image_arrays.append(imageio.imread(file_path, pilmode=self.pilmode))
+        verify_image_format_or_raise(image_path, self.accept_image_formats)
 
-            results = func(image_arrays)
-            for result in results:
-                return self.output_adapter.to_cli(result, unknown_args)
+        if not os.path.isabs(image_path):
+            image_path = os.path.abspath(image_path)
+
+        image_array = imageio.imread(image_path, pilmode=self.pilmode)
+
+
+        if args.json:
+            json_path = os.path.expanduser(args.json)
+            if not os.path.isabs(json_path):
+                json_path = os.path.abspath(json_path)
+            try:
+                with open(json_path, "r") as content_file:
+                    json_data = json.load(content_file)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                raise BadInput("BentoML#AnnotatedImageInput received invalid JSON file")
+
+        result = func(image_array,json_data)
+        return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
-        raise NotImplementedError
+        """Handles a Lambda event, convert event dict into corresponding
+        data format that user API function is expecting, and use API
+        function result as response
+        :param event: AWS lambda event data of the python `dict` type
+        :param func: user API function
+        """
+        content_type = event['headers']['Content-Type']
+        if "multipart/form-data" in content_type:
+            files = {}
+
+            request = Request.from_values(
+                data=event['body'], content_type=content_type, headers=event['headers']
+            )
+
+            input_data = self._load_image_and_json_data(request)
+            result = func(*input_data)[0]
+
+            return self.output_adapter.to_aws_lambda_event(result, event)
+        else:
+            raise BadInput(
+                "Annotated image requests don't support the {} content type".format(
+                    content_type
+                )
+            )
 

@@ -211,6 +211,11 @@ The procedure is ready now. Deploy it using Execute predict_species 'SVM';
     GO
 
 
-After executing the final query you can see the predictions in form of a table. To disconnect from the server, click the disconnect icon on the left panel under
-Object Explorer in SSMS.
+After executing the final query you can see the predictions in form of a table. 
+
+.. code-block:: bash
+
+    SELECT * FROM predict_species;
+
+To disconnect from the server, click the disconnect icon on the left panel under Object Explorer in SSMS.
 The model is served with SQL server easily with the help of BentoML.

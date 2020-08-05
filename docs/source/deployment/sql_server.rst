@@ -33,6 +33,8 @@ Before starting this guide, make sure you have the following:
 
           $ pip.exe install bentoml
 
+As long as the server is not connected to remote compute, no server costs will be accumulated.
+
 
 
 SQL Server deployment with BentoML
@@ -72,7 +74,7 @@ Create a new database to store the dataset for prediction.
 
     GO
 
-Now create new table in the database just created and put columns similar to the iris dataset. Data will be saved here later.
+Create new table in the database just created and put columns similar to the iris dataset. Data will be saved here later.
 
 .. code-block:: bash
 
@@ -200,7 +202,7 @@ The last step is to create a procedure for model deployment and prediction. Crea
 
     GO
 
-The procedure is ready now. Deploy it using Execute predict_species 'SVM'; where SVM is the name given to the model.
+The procedure is ready now. Deploy it using Execute predict_species 'SVM';
 
 .. code-block:: bash
 
@@ -209,4 +211,6 @@ The procedure is ready now. Deploy it using Execute predict_species 'SVM'; where
     GO
 
 
-After running the final query you can see the predictions in form of a table. The model is served with SQL server easily with the help of BentoML.
+After executing the final query you can see the predictions in form of a table. To disconnect from the server, click the disconnect icon on the left panel under
+Object Explorer in SSMS.
+The model is served with SQL server easily with the help of BentoML.

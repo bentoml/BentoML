@@ -19,7 +19,6 @@ class PysparkModelArtifact(BentoServiceArtifact):
 
     def __init__(self, name, spark_version=None):
         super(PysparkModelArtifact, self).__init__(name)
-        # internal attribute assignment goes here
         self._model = None
         # TODO: Find a use for this attribute (e.g. Does the spark version
         #  affect how saving/loading is conducted?)
@@ -77,8 +76,8 @@ class PysparkModelArtifact(BentoServiceArtifact):
         model_type = model_class_str_list[-1]
 
         # Use load method specific to the pyspark.ml model class
-        model_class = getattr(importlib.import_module(module_name), model_type)
-        model = model_class.load(self._file_path(path))
+        ModelClass = getattr(importlib.import_module(module_name), model_type)
+        model = ModelClass.load(self._file_path(path))
 
         # TODO: Confirm supported model typing. Possible nuances:
         #  - spark.ml vs spark.mllib (pyspark.mllib.Model?)

@@ -55,10 +55,11 @@ class Bento(Base):
     name = Column(String, nullable=False)
     version = Column(String, nullable=False)
 
+    labels = Column(JSON, nullable=False, default={})
     # Storage URI for this Bento
     uri = Column(String, nullable=False)
 
-    # Name is is required for PostgreSQL and any future supported database which
+    # Name is required for PostgreSQL and any future supported database which
     # requires an explicitly named type, or an explicitly named constraint in order to
     # generate the type and/or a table that uses it.
     uri_type = Column(

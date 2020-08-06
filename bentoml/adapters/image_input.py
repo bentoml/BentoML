@@ -21,9 +21,9 @@ from typing import Iterable
 from werkzeug.utils import secure_filename
 from werkzeug.wrappers import Request
 
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml import config
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 from bentoml.exceptions import BadInput
 from bentoml.adapters.base_input import BaseInputAdapter
 from numpy.core import ndarray
@@ -174,8 +174,8 @@ class ImageInput(BaseInputAdapter[ndarray]):
         return input_data
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func: callable
-    ) -> Iterable[SimpleResponse]:
+        self, requests: Iterable[HTTPRequest], func: callable
+    ) -> Iterable[HTTPResponse]:
         """
         Batch version of handle_request
         """

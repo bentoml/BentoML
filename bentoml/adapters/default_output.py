@@ -14,7 +14,7 @@
 
 from typing import Iterable
 
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.types import HTTPRequest, HTTPResponse
 from .base_output import BaseOutputAdapter
 
 
@@ -71,8 +71,8 @@ class DefaultOutput(BaseOutputAdapter):
         result_conc,
         slices=None,
         fallbacks=None,
-        requests: Iterable[SimpleRequest] = None,
-    ) -> Iterable[SimpleResponse]:
+        requests: Iterable[HTTPRequest] = None,
+    ) -> Iterable[HTTPResponse]:
         """Converts corresponding data merged by batching service into HTTP responses
 
         :param result_conc: result of user API function

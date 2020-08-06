@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, TypeVar, Generic, Dict
+from typing import Iterable, Generic, Dict
 
-from bentoml.marshal.utils import SimpleRequest, BATCH_REQUEST_HEADER
-
-Input = TypeVar("Input")
+from bentoml.types import HTTPRequest, HTTPResponse, Input
+from bentoml.marshal.utils import BATCH_REQUEST_HEADER
 
 
 class BaseInputAdapter(Generic[Input]):
@@ -44,7 +43,7 @@ class BaseInputAdapter(Generic[Input]):
             self._config = {}
         return self._config
 
-    def is_batch_request(self, request: SimpleRequest):
+    def is_batch_request(self, request: HTTPRequest):
         if BATCH_REQUEST_HEADER in request.parsed_headers:
             return request.parsed_headers[BATCH_REQUEST_HEADER] != 'false'
         return self.config.get("is_batch_input", False)
@@ -60,7 +59,7 @@ class BaseInputAdapter(Generic[Input]):
         raise NotImplementedError
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
+        self, requests: Iterable[HTTPRequest], func
     ) -> Iterable[Input]:
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API

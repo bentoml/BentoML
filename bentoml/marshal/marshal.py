@@ -24,11 +24,11 @@ import aiohttp
 
 from bentoml import config
 from bentoml.exceptions import RemoteException
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml.server.trace import async_trace, make_http_headers
-from bentoml.marshal.utils import DataLoader, SimpleRequest
+from bentoml.marshal.utils import DataLoader
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
-from bentoml.marshal.utils import SimpleResponse
 
 logger = logging.getLogger(__name__)
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
@@ -203,7 +203,7 @@ class MarshalService:
         ):
             api_name = request.match_info.get("name")
             if api_name in self.batch_handlers:
-                req = SimpleRequest(request.raw_headers, await request.read())
+                req = HTTPRequest(request.raw_headers, await request.read())
                 try:
                     resp = await self.batch_handlers[api_name](req)
                 except RemoteException as e:
@@ -269,12 +269,12 @@ class MarshalService:
                         raw = await resp.read()
             except aiohttp.client_exceptions.ClientConnectionError as e:
                 raise RemoteException(
-                    e, payload=SimpleResponse(503, None, b"Service Unavailable")
+                    e, payload=HTTPResponse(503, None, b"Service Unavailable")
                 )
             if resp.status != 200:
                 raise RemoteException(
                     f"Bad response status from model server:\n{resp.status}\n{raw}",
-                    payload=SimpleResponse(resp.status, resp.headers, raw),
+                    payload=HTTPResponse(resp.status, resp.headers, raw),
                 )
             merged = DataLoader.split_responses(raw)
             return tuple(

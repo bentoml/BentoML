@@ -22,7 +22,7 @@ import uuid
 import flask
 
 from bentoml.exceptions import BadInput
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.utils import concat_list
 
@@ -52,9 +52,7 @@ class DefaultHandler(NamedTuple):
     output_adapter: 'BaseOutputAdapter'
     user_func: callable
 
-    def handle_http_request(
-        self, reqs: List[SimpleRequest]
-    ) -> Iterable[SimpleResponse]:
+    def handle_http_request(self, reqs: List[HTTPRequest]) -> Iterable[HTTPResponse]:
         tasks = self.input_adapter.from_http_request(reqs)
         inputs = self.input_adapter.extract(tasks)
         try:
@@ -85,9 +83,7 @@ class DefaultHandler(NamedTuple):
 
 
 class JsonInput(BaseInputAdapter):
-    def from_http_request(
-        self, reqs: List[SimpleRequest]
-    ) -> Iterable[JsonInferenceTask]:
+    def from_http_request(self, reqs: List[HTTPRequest]) -> Iterable[JsonInferenceTask]:
         return [
             JsonInferenceTask(inf_id=uuid.uuid4(), meta=dict(), data=r.data,)
             for r in reqs
@@ -155,14 +151,14 @@ class JsonInput(BaseInputAdapter):
                 "BentoService API"
             )
         resps = self.handle_batch_request(
-            [SimpleRequest.from_flask_request(request)], func
+            [HTTPRequest.from_flask_request(request)], func
         )
         return resps[0].to_flask_response()
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
-        bad_resp = SimpleResponse(400, None, "Bad Input")
+        self, requests: Iterable[HTTPRequest], func
+    ) -> Iterable[HTTPResponse]:
+        bad_resp = HTTPResponse(400, None, "Bad Input")
         instances_list = [None] * len(requests)
         fallbacks = [bad_resp] * len(requests)
         batch_flags = [None] * len(requests)
@@ -174,14 +170,12 @@ class JsonInput(BaseInputAdapter):
                 parsed_json = json.loads(raw_str)
                 instances_list[i] = parsed_json
             except (json.JSONDecodeError, UnicodeDecodeError):
-                fallbacks[i] = SimpleResponse(400, None, "Not a valid json")
+                fallbacks[i] = HTTPResponse(400, None, "Not a valid json")
             except Exception:  # pylint: disable=broad-except
                 import traceback
 
                 err = traceback.format_exc()
-                fallbacks[i] = SimpleResponse(
-                    500, None, f"Internal Server Error: {err}"
-                )
+                fallbacks[i] = HTTPResponse(500, None, f"Internal Server Error: {err}")
 
         merged_instances, slices = concat_list(instances_list, batch_flags=batch_flags)
         merged_result = func(merged_instances)

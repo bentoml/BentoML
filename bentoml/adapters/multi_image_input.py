@@ -26,7 +26,7 @@ from bentoml.adapters.image_input import (
     verify_image_format_or_raise,
 )
 from bentoml.exceptions import BadInput
-from bentoml.marshal.utils import SimpleRequest, SimpleResponse
+from bentoml.types import HTTPRequest, HTTPResponse
 
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
@@ -112,8 +112,8 @@ class MultiImageInput(BaseInputAdapter):
         return imageio.imread(file, pilmode=self.pilmode)
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
+        self, requests: Iterable[HTTPRequest], func
+    ) -> Iterable[HTTPResponse]:
         inputs = []
         slices = []
         for i, req in enumerate(requests):

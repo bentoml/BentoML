@@ -30,7 +30,7 @@ from bentoml.utils.dataframe_util import (
     check_dataframe_column_contains,
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
 )
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml.utils.s3 import is_s3_url
 from bentoml.exceptions import BadInput, MissingDependencyException
 
@@ -167,8 +167,8 @@ class DataframeInput(BaseInputAdapter):
         return self.output_adapter.to_response(result, request)
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
+        self, requests: Iterable[HTTPRequest], func
+    ) -> Iterable[HTTPResponse]:
 
         datas = [r.data for r in requests]
         content_types = [

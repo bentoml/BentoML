@@ -17,8 +17,8 @@ from typing import Iterable
 import argparse
 
 from bentoml.exceptions import BentoMLException
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml.utils.dataframe_util import PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.adapters.base_output import BaseOutputAdapter
 
 
@@ -68,8 +68,8 @@ class DataframeOutput(BaseOutputAdapter):
         result_conc,
         slices=None,
         fallbacks=None,
-        requests: Iterable[SimpleRequest] = None,
-    ) -> Iterable[SimpleResponse]:
+        requests: Iterable[HTTPRequest] = None,
+    ) -> Iterable[HTTPResponse]:
         # TODO(bojiang): header content_type
 
         if slices is None:
@@ -87,13 +87,13 @@ class DataframeOutput(BaseOutputAdapter):
                 json_output = df_to_json(
                     result, pandas_dataframe_orient=self.output_orient
                 )
-                responses[i] = SimpleResponse(
+                responses[i] = HTTPResponse(
                     200, (("Content-Type", "application/json"),), json_output
                 )
             except AssertionError as e:
-                responses[i] = SimpleResponse(400, None, str(e))
+                responses[i] = HTTPResponse(400, None, str(e))
             except Exception as e:  # pylint: disable=broad-except
-                responses[i] = SimpleResponse(500, None, str(e))
+                responses[i] = HTTPResponse(500, None, str(e))
         return responses
 
     def to_cli(self, result, args):

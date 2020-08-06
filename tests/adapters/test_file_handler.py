@@ -7,8 +7,8 @@ import mock
 import flask
 
 from bentoml.exceptions import BadInput
+from bentoml.types import HTTPRequest
 from bentoml.adapters import FileInput
-from bentoml.marshal.utils import SimpleRequest
 
 
 def predict(files):
@@ -67,7 +67,7 @@ def test_file_input_http_request_post_binary(bin_file):
     assert response.status_code == 200
     assert b'{"b64": "gTCJOQ=="}' in response.data
 
-    simple_request = SimpleRequest.from_flask_request(request)
+    simple_request = HTTPRequest.from_flask_request(request)
     responses = test_file_input.handle_batch_request([simple_request], predict)
 
     assert responses[0].status == 200

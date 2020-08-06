@@ -21,7 +21,7 @@ import logging
 from bentoml.configuration import _is_pip_installed_bentoml
 
 from bentoml.exceptions import BentoMLException
-from bentoml.saved_bundle.py_module_utils import copy_used_py_modules
+from bentoml.saved_bundle.py_module_utils import copy_local_py_modules
 from bentoml.saved_bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
@@ -106,7 +106,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     # TODO: add bentoml.find_packages helper for more fine grained control over this
     # process, e.g. packages=find_packages(base, [], exclude=[], used_module_only=True)
     # copy over all custom model code
-    module_name, module_file = copy_used_py_modules(
+    module_name, module_file = copy_local_py_modules(
         bento_service.__class__.__module__, os.path.join(path, bento_service.name)
     )
 
@@ -213,8 +213,8 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
     # development mode via "pip install --editable ."
     if not _is_pip_installed_bentoml() and os.path.isfile(bentoml_setup_py):
         logger.info(
-            "Detect BentoML installed in development model, copying local BentoML "
-            "module file to target saved bundle path"
+            "Detected non-PyPI-released BentoML installed, copying local BentoML module"
+            "files to target saved bundle path.."
         )
 
         # Create tmp directory inside bentoml module for storing the bundled
@@ -232,7 +232,7 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
 
         sandbox.run_setup(
             bentoml_setup_py,
-            ['sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name],
+            ['-q', 'sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name],
         )
 
         # copy the generated targz to saved bundle directory and remove it from

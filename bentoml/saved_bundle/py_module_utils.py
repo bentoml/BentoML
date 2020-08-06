@@ -158,7 +158,6 @@ def copy_local_py_modules(target_module, destination):
     # decorator when creating a new BentoService class
     user_packages_and_modules = {}
     for name, module in finder.modules.items():
-        logger.debug(f"### {name}, {module.__file__}")
         if hasattr(module, "__file__") and module.__file__ is not None:
             user_packages_and_modules[name] = module
 

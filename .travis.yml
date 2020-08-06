@@ -18,6 +18,14 @@ install:
   - "pip install ."
   - "pip install --upgrade .[test]"
 
+git:
+  # BentoML uses the python-versioneer to manage release version tags. On dev branches, as well as
+  # testing environments, the BentoML version specified in the saved bundle, including the
+  # dockerfile and requirements.txt, will be pointing to the last PyPI release, determined by the
+  # latest git tag. Having a shallow git clone depth may lead to problem where it failedto fetch
+  # the commit/tag of the latest BentoML PyPI release.
+  depth: 200
+
 matrix:
   include:
     - os: windows

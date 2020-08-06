@@ -53,7 +53,13 @@ def get_all_pip_installed_modules():
     global __mm  # pylint: disable=global-statement
     if __mm is None:
         __mm = ModuleManager()
-    return __mm.searched_modules.keys()
+
+    installed_modules = list(
+        # local modules are the ones imported from current directory, either from a
+        # module.py file or a module directory that contains a `__init__.py` file
+        filter(lambda m: not m.is_local, __mm.searched_modules.values())
+    )
+    return list(map(lambda m: m.name, installed_modules))
 
 
 class ModuleInfo(object):

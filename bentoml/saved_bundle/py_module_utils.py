@@ -14,6 +14,7 @@
 
 import os
 import re
+import sys
 import inspect
 import importlib
 import logging
@@ -111,7 +112,9 @@ def copy_used_py_modules(target_module, destination):
         )
 
     # Find all non pip installed modules must be packaged for target module to run
-    finder = modulefinder.ModuleFinder(excludes=get_all_pip_installed_modules())
+    finder = modulefinder.ModuleFinder(
+        excludes=['bentoml'] + get_all_pip_installed_modules()
+    )
     # NOTE: This method could take a few seconds to run
     try:
         logger.debug(

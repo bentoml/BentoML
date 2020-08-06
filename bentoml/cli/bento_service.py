@@ -215,7 +215,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         type=click.INT,
         default=BentoAPIServer._DEFAULT_PORT,
         help=f"The port to listen on for the REST api server, "
-        f"default is ${BentoAPIServer._DEFAULT_PORT}",
+        f"default is {BentoAPIServer._DEFAULT_PORT}",
         envvar='BENTOML_PORT',
     )
     @click.option(
@@ -249,7 +249,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         type=click.INT,
         default=BentoAPIServer._DEFAULT_PORT,
         help=f"The port to listen on for the REST api server, "
-        f"default is ${BentoAPIServer._DEFAULT_PORT}",
+        f"default is {BentoAPIServer._DEFAULT_PORT}",
         envvar='BENTOML_PORT',
     )
     @click.option(

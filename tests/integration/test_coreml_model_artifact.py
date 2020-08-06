@@ -19,13 +19,7 @@ def coreml_classifier_class():
     # does not effect other tests
     CoreMLClassifier._bento_service_bundle_path = None
     CoreMLClassifier._bento_service_bundle_version = None
-
-    # Set higher recursion limit to avoid RecursionError on Travis MacOS environment
-    # See also https://github.com/bentoml/BentoML/pull/939#issuecomment-667615310
-    recursionlimit = sys.getrecursionlimit()
-    sys.setrecursionlimit(recursionlimit * 2)  # increase the recursion limit
-    yield CoreMLClassifier
-    sys.setrecursionlimit(recursionlimit)  # reset the recursion limit
+    return CoreMLClassifier
 
 
 def convert_pytorch_to_coreml(pytorch_model: PytorchModel) -> ct.models.MLModel:

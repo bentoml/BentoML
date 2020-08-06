@@ -15,15 +15,125 @@
 import os
 import json
 import argparse
-from typing import Iterable
+from typing import Iterable, Union, List, Dict, NamedTuple
 from json import JSONDecodeError
 
+import uuid
 import flask
 
 from bentoml.exceptions import BadInput
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.utils import concat_list
+
+
+JsonSerializable = Union[List, Dict, str, int, float, None]
+AwsLambdaEvent = Union[Dict, List, str, int, float, None]
+
+
+class InferenceTask(NamedTuple):
+    inf_id: str
+    meta: dict
+    data: object
+
+
+class InferenceResult(NamedTuple):
+    inf_id: str
+    meta: dict
+    data: object
+
+
+class JsonInferenceTask(InferenceTask):
+    data: str  # json string
+
+
+class DefaultHandler(NamedTuple):
+    input_adapter: 'BaseInputAdapter'
+    output_adapter: 'BaseOutputAdapter'
+    user_func: callable
+
+    def handle_http_request(
+        self, reqs: List[SimpleRequest]
+    ) -> Iterable[SimpleResponse]:
+        tasks = self.input_adapter.from_http_request(reqs)
+        inputs = self.input_adapter.extract(tasks)
+        try:
+            outputs = self.user_func(inputs, http_requests=reqs)
+        except TypeError:
+            outputs = self.user_func(inputs)
+        return self.output_adapter.to_batch_response(outputs)
+
+    def handle_aws_lambda_event(
+        self, events: List[AwsLambdaEvent]
+    ) -> Iterable[AwsLambdaEvent]:
+        tasks = self.input_adapter.from_aws_lambda_event(events)
+        inputs = self.input_adapter.extract(tasks)
+        try:
+            outputs = self.user_func(inputs, aws_lambda_event=events)
+        except TypeError:
+            outputs = self.user_func(inputs)
+        return self.output_adapter.to_aws_lambda_event(outputs)
+
+    def handle_cli(self, args) -> int:
+        tasks = self.input_adapter.from_cli(args)
+        inputs = self.input_adapter.extract(tasks)
+        try:
+            outputs = self.user_func(inputs, cli_args=args)  # for other args
+        except TypeError:
+            outputs = self.user_func(inputs)
+        return self.output_adapter.to_cli(outputs, cli_args=args)
+
+
+class JsonInput(BaseInputAdapter):
+    def from_http_request(
+        self, reqs: List[SimpleRequest]
+    ) -> Iterable[JsonInferenceTask]:
+        return [
+            JsonInferenceTask(inf_id=uuid.uuid4(), meta=dict(), data=r.data,)
+            for r in reqs
+        ]
+
+    def from_aws_lambda_event(
+        self, events: List[AwsLambdaEvent]
+    ) -> Iterable[JsonInferenceTask]:
+        return [
+            JsonInferenceTask(inf_id=uuid.uuid4(), meta=dict(), data=e['body'],)
+            for e in events
+        ]
+
+    def from_cli(self, args) -> Iterable[JsonInferenceTask]:
+        pass
+
+    def extract(self, tasks: List[InferenceTask]) -> Iterable[JsonSerializable]:
+        bad_resp = SimpleResponse(400, None, "Bad Input")
+
+        instances_list = [None] * len(requests)
+        fallbacks = [bad_resp] * len(requests)
+        batch_flags = [None] * len(requests)
+
+        bad_resp = SimpleResponse(400, None, "Bad Input")
+
+        instances_list = [None] * len(requests)
+        fallbacks = [bad_resp] * len(requests)
+        batch_flags = [None] * len(requests)
+
+        for i, request in enumerate(requests):
+            batch_flags[i] = self.is_batch_request(request)
+            try:
+                raw_str = request.data
+                parsed_json = json.loads(raw_str)
+                instances_list[i] = parsed_json
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                fallbacks[i] = SimpleResponse(400, None, "Not a valid json")
+            except Exception:  # pylint: disable=broad-except
+                import traceback
+
+                err = traceback.format_exc()
+                fallbacks[i] = SimpleResponse(
+                    500, None, f"Internal Server Error: {err}"
+                )
+
+        return instances_list
 
 
 class JsonInput(BaseInputAdapter):

@@ -82,7 +82,10 @@ class ModuleManager(object):
         import pkg_resources
 
         for dist in pkg_resources.working_set:  # pylint: disable=not-an-iterable
-            self.nonlocal_package_path.add(dist.module_path)
+            if os.path.realpath(dist.module_path) != os.getcwd():
+                # add to nonlocal_package path only if it's not current directory
+                self.nonlocal_package_path.add(dist.module_path)
+
             self.pip_pkg_map[dist._key] = dist._version
             for mn in dist._get_metadata("top_level.txt"):
                 if dist._key != "setuptools":

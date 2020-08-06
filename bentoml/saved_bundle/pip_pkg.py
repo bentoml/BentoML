@@ -181,6 +181,9 @@ class DepSeekWork(object):
                 if node.module is not None and node.level == 0:
                     import_set.add(node.module.partition(".")[0])
         for module_name in import_set:
+            # Avoid parsing BentoML when BentoML is imported from local source code repo
+            if module_name == 'bentoml':
+                continue
             if module_name in self.parsed_module_set:
                 continue
             self.parsed_module_set.add(module_name)

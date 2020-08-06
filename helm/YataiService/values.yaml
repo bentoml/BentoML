@@ -17,7 +17,7 @@ yatai:
   replicaCount: 1
   image:
     repo: bentoml/yatai-service
-    version: latest
+    version: 0.7.2
     pullPolicy: IfNotPresent
 service:
   type: LoadBalancer
@@ -45,7 +45,8 @@ postgres:
     version: 10.4
     pullPolicy: IfNotPresent
   data:
-    dbName: postgresdb
+    port: "5432"
+    dbName: bentomldb
     user: postgresadmin
     password: admin123
   storageCapacity: 5Gi

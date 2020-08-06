@@ -1,0 +1,2 @@
+usePostgres: true
+db_url: postgresql://postgresadmin:admin123@postgres:5432/bentomldb

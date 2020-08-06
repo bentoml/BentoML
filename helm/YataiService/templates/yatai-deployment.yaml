@@ -33,12 +33,12 @@ spec:
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           args:
-            {{- if .Values.db_url -}}
-            - "--db-url {{ .Values.db_url }}"
-            {{- end -}}
-            {{- if .Values.repo_base_url -}}
-            - "--repo-base-url {{ .Values.repo_base_url}}"
-            {{- end}}
+            {{ if .Values.db_url -}}
+            - "--db-url={{ .Values.db_url }}"
+            {{- end }}
+            {{ if .Values.repo_base_url -}}
+            - "--repo-base-url={{ .Values.repo_base_url}}"
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       nodeSelector:

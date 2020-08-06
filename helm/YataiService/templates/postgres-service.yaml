@@ -8,7 +8,7 @@ metadata:
 spec:
   type: NodePort
   ports:
-    - port: 5432
+    - port: {{ .Values.postgres.data.port }}
       nodePort: 30007
   selector:
    app: postgres

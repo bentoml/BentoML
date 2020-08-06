@@ -105,35 +105,10 @@ class JsonInput(BaseInputAdapter):
         pass
 
     def extract(self, tasks: List[InferenceTask]) -> Iterable[JsonSerializable]:
-        bad_resp = SimpleResponse(400, None, "Bad Input")
-
-        instances_list = [None] * len(requests)
-        fallbacks = [bad_resp] * len(requests)
-        batch_flags = [None] * len(requests)
-
-        bad_resp = SimpleResponse(400, None, "Bad Input")
-
-        instances_list = [None] * len(requests)
-        fallbacks = [bad_resp] * len(requests)
-        batch_flags = [None] * len(requests)
-
-        for i, request in enumerate(requests):
-            batch_flags[i] = self.is_batch_request(request)
-            try:
-                raw_str = request.data
-                parsed_json = json.loads(raw_str)
-                instances_list[i] = parsed_json
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                fallbacks[i] = SimpleResponse(400, None, "Not a valid json")
-            except Exception:  # pylint: disable=broad-except
-                import traceback
-
-                err = traceback.format_exc()
-                fallbacks[i] = SimpleResponse(
-                    500, None, f"Internal Server Error: {err}"
-                )
-
-        return instances_list
+        # TODO
+        inputs = [json.loads(t.data) for t in tasks]
+        filtered_inputs = map(self.validate, inputs)
+        return filtered_inputs
 
 
 class JsonInput(BaseInputAdapter):

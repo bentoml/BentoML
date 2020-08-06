@@ -49,6 +49,13 @@ def seek_pip_dependencies(target_py_file_path):
     return __mm.seek_pip_dependencies(target_py_file_path)
 
 
+def get_all_pip_installed_modules():
+    global __mm  # pylint: disable=global-statement
+    if __mm is None:
+        __mm = ModuleManager()
+    return __mm.searched_modules.keys()
+
+
 class ModuleInfo(object):
     def __init__(self, name, path, is_local, is_pkg):
         super(ModuleInfo, self).__init__()

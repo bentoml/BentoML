@@ -14,7 +14,6 @@
 
 import os
 import re
-import sys
 import inspect
 import importlib
 import logging
@@ -23,6 +22,7 @@ from shutil import copyfile
 import modulefinder
 from unittest.mock import patch
 
+from bentoml.saved_bundle.pip_pkg import get_all_pip_installed_modules
 from bentoml.exceptions import BentoMLException
 
 
@@ -110,8 +110,8 @@ def copy_used_py_modules(target_module, destination):
             target_module_file,
         )
 
-    # Find all modules must be imported for target module to run
-    finder = modulefinder.ModuleFinder(excludes=['bentoml'])
+    # Find all non pip installed modules must be packaged for target module to run
+    finder = modulefinder.ModuleFinder(excludes=get_all_pip_installed_modules())
     # NOTE: This method could take a few seconds to run
     try:
         logger.debug(

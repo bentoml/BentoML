@@ -23,6 +23,7 @@ from shutil import copyfile
 import modulefinder
 from unittest.mock import patch
 
+from bentoml.saved_bundle.pip_pkg import get_all_pip_installed_modules
 from bentoml.exceptions import BentoMLException
 
 
@@ -110,8 +111,10 @@ def copy_used_py_modules(target_module, destination):
             target_module_file,
         )
 
-    # Find all modules must be imported for target module to run
-    finder = modulefinder.ModuleFinder()
+    # Find all non pip installed modules must be packaged for target module to run
+    finder = modulefinder.ModuleFinder(
+        excludes=['bentoml'] + get_all_pip_installed_modules()
+    )
     # NOTE: This method could take a few seconds to run
     try:
         logger.debug(
@@ -178,9 +181,7 @@ def copy_used_py_modules(target_module, destination):
     # decorator when creating a new BentoService class
     user_packages_and_modules = {}
     for name, module in finder.modules.items():
-        if name == "bentoml" or name.startswith("bentoml."):
-            pass
-        elif hasattr(module, "__file__") and module.__file__ is not None:
+        if hasattr(module, "__file__") and module.__file__ is not None:
             module_src_file = _get_module_src_file(module)
 
             is_module_in_site_or_dist_package = False

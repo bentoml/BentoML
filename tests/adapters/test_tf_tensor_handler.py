@@ -124,7 +124,7 @@ def test_tf_tensor_handle_batch_request(test_cases):
     ref: https://www.tensorflow.org/tfx/serving/api_rest#request_format_2
     '''
     from bentoml.adapters import TfTensorInput
-    from bentoml.marshal.utils import SimpleRequest
+    from bentoml.types import HTTPRequest
 
     input_adapter = TfTensorInput()
     request = MagicMock(spec=flask.Request)
@@ -133,7 +133,7 @@ def test_tf_tensor_handle_batch_request(test_cases):
     request.get_data.return_value = json.dumps(input_data).encode('utf-8')
     request.headers = headers
     responses = input_adapter.handle_batch_request(
-        [SimpleRequest.from_flask_request(request)] * 3, lambda i: i
+        [HTTPRequest.from_flask_request(request)] * 3, lambda i: i
     )
 
     for response in responses:

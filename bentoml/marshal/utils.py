@@ -4,49 +4,10 @@ from typing import NamedTuple, Iterable
 
 from multidict import CIMultiDict
 
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml import config as bentoml_config
 
 BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")
-
-
-class SimpleRequest(NamedTuple):
-    '''
-    headers: tuple of key value pairs in bytes
-    data: str
-    '''
-
-    headers: tuple
-    data: str
-
-    @property
-    @lru_cache()
-    def parsed_headers(self):
-        return CIMultiDict(
-            (hk.decode("latin1").lower(), hv.decode("latin1"))
-            for hk, hv in self.headers or tuple()
-        )
-
-    @classmethod
-    def from_flask_request(cls, request):
-        # For non latin1 characters: https://tools.ietf.org/html/rfc8187
-        # Also https://github.com/benoitc/gunicorn/issues/1778
-        return cls(
-            tuple((k.encode("latin1"), v.encode("latin1")) for k, v in request.headers),
-            request.get_data(),
-        )
-
-
-class SimpleResponse(NamedTuple):
-    status: int
-    headers: tuple
-    data: str
-
-    def to_flask_response(self):
-        import flask
-
-        return flask.Response(
-            headers=self.headers, response=self.data, status=self.status
-        )
 
 
 class PlasmaDataLoader:
@@ -100,19 +61,19 @@ class PlasmaDataLoader:
 
 class PickleDataLoader:
     @classmethod
-    def merge_requests(cls, reqs: Iterable[SimpleRequest]) -> bytes:
+    def merge_requests(cls, reqs: Iterable[HTTPRequest]) -> bytes:
         return pickle.dumps(reqs)
 
     @classmethod
-    def split_requests(cls, raw: bytes) -> Iterable[SimpleRequest]:
+    def split_requests(cls, raw: bytes) -> Iterable[HTTPRequest]:
         return pickle.loads(raw)
 
     @classmethod
-    def merge_responses(cls, resps: Iterable[SimpleResponse]) -> bytes:
+    def merge_responses(cls, resps: Iterable[HTTPResponse]) -> bytes:
         return pickle.dumps(resps)
 
     @classmethod
-    def split_responses(cls, raw: bytes) -> Iterable[SimpleResponse]:
+    def split_responses(cls, raw: bytes) -> Iterable[HTTPResponse]:
         try:
             return pickle.loads(raw)
         except pickle.UnpicklingError:

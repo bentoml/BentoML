@@ -18,8 +18,8 @@ from typing import Iterable
 
 import argparse
 
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.adapters.utils import TfTensorJsonEncoder
 from bentoml.adapters.base_output import BaseOutputAdapter
 
@@ -61,8 +61,8 @@ class TfTensorOutput(BaseOutputAdapter):
         result_conc,
         slices=None,
         fallbacks=None,
-        requests: Iterable[SimpleRequest] = None,
-    ) -> Iterable[SimpleResponse]:
+        requests: Iterable[HTTPRequest] = None,
+    ) -> Iterable[HTTPResponse]:
         # TODO(bojiang): header content_type
         results = tf_to_numpy(result_conc)
         assert isinstance(results, np.ndarray)
@@ -78,7 +78,7 @@ class TfTensorOutput(BaseOutputAdapter):
                 continue
             result = results[s]
             result_str = json.dumps(result, cls=TfTensorJsonEncoder)
-            responses[i] = SimpleResponse(200, dict(), result_str)
+            responses[i] = HTTPResponse(200, dict(), result_str)
         return responses
 
     def to_cli(self, result, args):

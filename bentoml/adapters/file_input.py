@@ -25,9 +25,9 @@ from typing import Iterable
 
 from werkzeug.wrappers import Request
 
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml.exceptions import BadInput
 from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
 
 class FileInput(BaseInputAdapter):
@@ -117,8 +117,8 @@ class FileInput(BaseInputAdapter):
         return input_stream
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func: callable
-    ) -> Iterable[SimpleResponse]:
+        self, requests: Iterable[HTTPRequest], func: callable
+    ) -> Iterable[HTTPResponse]:
         """
         Batch version of handle_request
         """

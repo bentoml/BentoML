@@ -15,7 +15,8 @@
 from typing import Iterable
 
 
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest, BATCH_REQUEST_HEADER
+from bentoml.types import HTTPRequest, HTTPResponse
+from bentoml.marshal.utils import BATCH_REQUEST_HEADER
 
 
 class BaseInputAdapter:
@@ -67,8 +68,8 @@ class BaseInputAdapter:
         raise NotImplementedError
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
+        self, requests: Iterable[HTTPRequest], func
+    ) -> Iterable[HTTPResponse]:
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API
         function result as the HTTP response to client

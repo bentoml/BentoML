@@ -7,8 +7,8 @@ import flask
 import pytest
 
 from bentoml.exceptions import BadInput
+from bentoml.types import HTTPRequest
 from bentoml.adapters import ImageInput
-from bentoml.marshal.utils import SimpleRequest
 
 
 def predict(images):
@@ -67,7 +67,7 @@ def test_image_input_http_request_post_binary(img_file):
     assert response.status_code == 200
     assert "[10, 10, 3]" in str(response.response)
 
-    simple_request = SimpleRequest.from_flask_request(request)
+    simple_request = HTTPRequest.from_flask_request(request)
     responses = test_image_input.handle_batch_request([simple_request], predict)
 
     assert responses[0].status == 200

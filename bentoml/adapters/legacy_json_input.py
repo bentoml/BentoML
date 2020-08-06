@@ -20,7 +20,7 @@ from typing import Iterable
 import flask
 
 from bentoml.exceptions import BadInput
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml.adapters.base_input import BaseInputAdapter
 
 
@@ -50,8 +50,8 @@ class LegacyJsonInput(BaseInputAdapter):
         return self.output_adapter.to_response(result, request)
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
+        self, requests: Iterable[HTTPRequest], func
+    ) -> Iterable[HTTPResponse]:
         raise NotImplementedError("Use JsonInput instead to enable micro batching")
 
     def handle_cli(self, args, func):

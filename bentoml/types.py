@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import NamedTuple
+from typing import NamedTuple, Union, Dict, List
 
 from multidict import CIMultiDict
 
@@ -55,3 +55,24 @@ class HTTPResponse(NamedTuple):
         return flask.Response(
             headers=self.headers, response=self.data, status=self.status
         )
+
+
+# https://tools.ietf.org/html/rfc7159#section-3
+JsonSerializable = Union[bool, None, Dict, List, int, float, str]
+
+# https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html
+AwsLambdaEvent = Union[Dict, List, str, int, float, None]
+
+
+class InferenceTask(NamedTuple):
+    context: dict
+    data: object
+
+
+class InferenceResult(NamedTuple):
+    context: dict
+    data: object
+
+
+class JsonInferenceTask(InferenceTask):
+    data: str  # json string

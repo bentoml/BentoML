@@ -14,51 +14,60 @@
 
 import os
 import json
+import inspect
+import functools
 import argparse
-from typing import Iterable, Union, List, Dict, NamedTuple
+from typing import Iterable, List
 from json import JSONDecodeError
 
 import uuid
 import flask
 
 from bentoml.exceptions import BadInput
-from bentoml.types import HTTPRequest, HTTPResponse
+from bentoml.types import (
+    HTTPRequest,
+    HTTPResponse,
+    JsonSerializable,
+    AwsLambdaEvent,
+    InferenceTask,
+)
 from bentoml.adapters.base_input import BaseInputAdapter
+from bentoml.adapters.base_output import BaseOutputAdapter
 from bentoml.adapters.utils import concat_list
-
-
-JsonSerializable = Union[List, Dict, str, int, float, None]
-AwsLambdaEvent = Union[Dict, List, str, int, float, None]
-
-
-class InferenceTask(NamedTuple):
-    inf_id: str
-    meta: dict
-    data: object
-
-
-class InferenceResult(NamedTuple):
-    inf_id: str
-    meta: dict
-    data: object
 
 
 class JsonInferenceTask(InferenceTask):
     data: str  # json string
 
 
-class DefaultHandler(NamedTuple):
-    input_adapter: 'BaseInputAdapter'
-    output_adapter: 'BaseOutputAdapter'
-    user_func: callable
+class InferenceAPI:
+    def __init__(
+        self,
+        input_adapter: BaseInputAdapter,
+        output_adapter: BaseOutputAdapter,
+        user_func: callable,
+    ):
+        self.input_adapter = input_adapter
+        self.output_adapter = output_adapter
+
+        # allow user to define handlers without 'contexts' kwargs
+        _sig = inspect.signature(user_func)
+        try:
+            _sig.bind(contexts=None)
+            self.user_func = user_func
+        except TypeError:
+
+            @functools.wraps(user_func)
+            def safe_user_func(*args, **kwargs):
+                kwargs.pop('contexts')
+                return user_func(*args, **kwargs)
+
+            self.user_func = safe_user_func
 
     def handle_http_request(self, reqs: List[HTTPRequest]) -> Iterable[HTTPResponse]:
         tasks = self.input_adapter.from_http_request(reqs)
         inputs = self.input_adapter.extract(tasks)
-        try:
-            outputs = self.user_func(inputs, http_requests=reqs)
-        except TypeError:
-            outputs = self.user_func(inputs)
+        outputs = self.user_func(inputs, contexts=[t.context for t in tasks])
         return self.output_adapter.to_batch_response(outputs)
 
     def handle_aws_lambda_event(
@@ -66,26 +75,47 @@ class DefaultHandler(NamedTuple):
     ) -> Iterable[AwsLambdaEvent]:
         tasks = self.input_adapter.from_aws_lambda_event(events)
         inputs = self.input_adapter.extract(tasks)
-        try:
-            outputs = self.user_func(inputs, aws_lambda_event=events)
-        except TypeError:
-            outputs = self.user_func(inputs)
+        outputs = self.user_func(inputs, contexts=[t.context for t in tasks])
         return self.output_adapter.to_aws_lambda_event(outputs)
 
-    def handle_cli(self, args) -> int:
-        tasks = self.input_adapter.from_cli(args)
-        inputs = self.input_adapter.extract(tasks)
-        try:
-            outputs = self.user_func(inputs, cli_args=args)  # for other args
-        except TypeError:
-            outputs = self.user_func(inputs)
-        return self.output_adapter.to_cli(outputs, cli_args=args)
+    def handle_cli(self, args: List[str]) -> int:
+        parser = argparse.ArgumentParser()
+        input_g = parser.add_mutually_exclusive_group(required=True)
+        input_g.add_argument('--input', nargs="+", type=bytes)
+        input_g.add_argument('--input-file', nargs="+")
+
+        parser.add_argument("--max-batch-size", default=None, type=int)
+        parsed_args, other_args = parser.parse_known_args(args)
+
+        input_args = (
+            parsed_args.input
+            if parsed_args.input_file is None
+            else parsed_args.input_file
+        )
+        is_file = parsed_args.input_file is not None
+
+        batch_size = parsed_args.batch_size or len(input_args)
+
+        for i in range(0, len(input_args), batch_size):
+            cli_inputs = input_args[i : i + batch_size]
+            if is_file:
+                cli_inputs = [open(file_path, 'rb').read() for file_path in cli_inputs]
+            tasks = self.input_adapter.from_cli(cli_inputs, other_args)
+            inputs = self.input_adapter.extract(tasks)
+            contexts = [t.context for t in tasks]
+            outputs = self.user_func(inputs, contexts)
+            self.output_adapter.to_cli(outputs, contexts)
+
+        return 0
 
 
 class JsonInput(BaseInputAdapter):
     def from_http_request(self, reqs: List[HTTPRequest]) -> Iterable[JsonInferenceTask]:
         return [
-            JsonInferenceTask(inf_id=uuid.uuid4(), meta=dict(), data=r.data,)
+            JsonInferenceTask(
+                meta=dict(inf_id=uuid.uuid4(), http_headers=r.parsed_headers),
+                data=r.data,
+            )
             for r in reqs
         ]
 
@@ -93,12 +123,23 @@ class JsonInput(BaseInputAdapter):
         self, events: List[AwsLambdaEvent]
     ) -> Iterable[JsonInferenceTask]:
         return [
-            JsonInferenceTask(inf_id=uuid.uuid4(), meta=dict(), data=e['body'],)
+            JsonInferenceTask(
+                meta=dict(inf_id=uuid.uuid4(), aws_event=e), data=e['body'],
+            )
             for e in events
         ]
 
-    def from_cli(self, args) -> Iterable[JsonInferenceTask]:
-        pass
+    def from_cli(self, cli_inputs, other_args) -> Iterable[JsonInferenceTask]:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--charset", default="utf-8", type=str)
+        parsed_args, _ = parser.parse_known_args(other_args)
+        return [
+            JsonInferenceTask(
+                meta=dict(inf_id=uuid.uuid4(), cli_args=other_args),
+                data=i.decode(parsed_args.charset),
+            )
+            for i in cli_inputs
+        ]
 
     def extract(self, tasks: List[InferenceTask]) -> Iterable[JsonSerializable]:
         # TODO

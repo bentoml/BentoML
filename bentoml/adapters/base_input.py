@@ -16,10 +16,10 @@ from typing import Iterable, TypeVar, Generic, Dict
 
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest, BATCH_REQUEST_HEADER
 
-I = TypeVar("I")
+Input = TypeVar("Input")
 
 
-class BaseInputAdapter(Generic[I]):
+class BaseInputAdapter(Generic[Input]):
     """
     InputAdapter is an abstraction layer between user defined API callback function
     and prediction request input in a variety of different forms, such as HTTP request
@@ -30,13 +30,12 @@ class BaseInputAdapter(Generic[I]):
 
     BATCH_MODE_SUPPORTED = False
 
-    def __init__(self, output_adapter=None, http_input_example=None, **base_config):
+    def __init__(self, http_input_example=None, **base_config):
         """
         base_configs:
             - is_batch_input
         """
         self._config = base_config
-        self._output_adapter = output_adapter
         self._http_input_example = http_input_example
 
     @property
@@ -50,15 +49,7 @@ class BaseInputAdapter(Generic[I]):
             return request.parsed_headers[BATCH_REQUEST_HEADER] != 'false'
         return self.config.get("is_batch_input", False)
 
-    @property
-    def output_adapter(self):
-        if self._output_adapter is None:
-            from .default_output import DefaultOutput
-
-            self._output_adapter = DefaultOutput()
-        return self._output_adapter
-
-    def handle_request(self, headers: Dict[str, str], body) -> I:
+    def handle_request(self, headers: Dict[str, str], body) -> Input:
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API
         function result as the HTTP response to client
@@ -69,8 +60,8 @@ class BaseInputAdapter(Generic[I]):
         raise NotImplementedError
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[I]:
+            self, requests: Iterable[SimpleRequest], func
+    ) -> Iterable[Input]:
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API
         function result as the HTTP response to client
@@ -106,7 +97,13 @@ class BaseInputAdapter(Generic[I]):
         :return: OpenAPI json schema for the HTTP API endpoint created with this input
                  adapter
         """
-        return {"application/json": {"schema": {"type": "object"}}}
+        return {
+            "application/json": {
+                "schema": {
+                    "type": "object"
+                }
+            }
+        }
 
     @property
     def pip_dependencies(self):

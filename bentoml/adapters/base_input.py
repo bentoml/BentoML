@@ -14,7 +14,7 @@
 
 from typing import Iterable, TypeVar, Generic, Dict
 
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest, BATCH_REQUEST_HEADER
+from bentoml.marshal.utils import SimpleRequest, BATCH_REQUEST_HEADER
 
 Input = TypeVar("Input")
 
@@ -31,10 +31,10 @@ class BaseInputAdapter(Generic[Input]):
     BATCH_MODE_SUPPORTED = False
 
     def __init__(self, http_input_example=None, **base_config):
-        """
+        '''
         base_configs:
             - is_batch_input
-        """
+        '''
         self._config = base_config
         self._http_input_example = http_input_example
 
@@ -44,7 +44,7 @@ class BaseInputAdapter(Generic[Input]):
             self._config = {}
         return self._config
 
-    def is_batch_request(self, request):
+    def is_batch_request(self, request: SimpleRequest):
         if BATCH_REQUEST_HEADER in request.parsed_headers:
             return request.parsed_headers[BATCH_REQUEST_HEADER] != 'false'
         return self.config.get("is_batch_input", False)
@@ -60,7 +60,7 @@ class BaseInputAdapter(Generic[Input]):
         raise NotImplementedError
 
     def handle_batch_request(
-            self, requests: Iterable[SimpleRequest], func
+        self, requests: Iterable[SimpleRequest], func
     ) -> Iterable[Input]:
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API
@@ -97,13 +97,7 @@ class BaseInputAdapter(Generic[Input]):
         :return: OpenAPI json schema for the HTTP API endpoint created with this input
                  adapter
         """
-        return {
-            "application/json": {
-                "schema": {
-                    "type": "object"
-                }
-            }
-        }
+        return {"application/json": {"schema": {"type": "object"}}}
 
     @property
     def pip_dependencies(self):

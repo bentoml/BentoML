@@ -21,7 +21,7 @@ import logging
 from bentoml.configuration import _is_pip_installed_bentoml
 
 from bentoml.exceptions import BentoMLException
-from bentoml.saved_bundle.py_module_utils import copy_local_py_modules
+from bentoml.saved_bundle.local_py_modules import copy_local_py_modules
 from bentoml.saved_bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
@@ -103,9 +103,8 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     # write conda environment, requirement.txt
     bento_service.env.save(path, bento_service)
 
-    # TODO: add bentoml.find_packages helper for more fine grained control over this
-    # process, e.g. packages=find_packages(base, [], exclude=[], used_module_only=True)
-    # copy over all custom model code
+    # Copy all local python modules used by the module containing the `bento_service`'s
+    # class definition to saved bundle directory
     module_name, module_file = copy_local_py_modules(
         bento_service.__class__.__module__, os.path.join(path, bento_service.name)
     )

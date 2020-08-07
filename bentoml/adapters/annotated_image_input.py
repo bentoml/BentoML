@@ -119,8 +119,6 @@ class AnnotatedImageInput(BaseInputAdapter):
     ):
         assert imageio, "`imageio` dependency can be imported"
 
-        if is_batch_input:
-            raise ValueError('AnnotatedImageInput can not accpept batch inputs')
         super(AnnotatedImageInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )
@@ -239,6 +237,7 @@ class AnnotatedImageInput(BaseInputAdapter):
         """
         input_datas = []
         ids = []
+
         for i, req in enumerate(requests):
             if not req.data:
                 ids.append(None)
@@ -257,7 +256,7 @@ class AnnotatedImageInput(BaseInputAdapter):
             input_datas.append(input_data)
             ids.append(i)
 
-        results = func(input_datas) if input_datas else []
+        results = [func(*d) for d in input_datas] if input_datas else []
         return self.output_adapter.to_batch_response(results, ids, requests)
 
     def handle_request(self, request, func):
@@ -333,7 +332,7 @@ class AnnotatedImageInput(BaseInputAdapter):
             )
 
             input_data = self._load_image_and_json_data(request)
-            result = func(*input_data)  # TODO: Ensure we don't need a [0] here
+            result = func(*input_data)
 
             return self.output_adapter.to_aws_lambda_event(result, event)
         else:

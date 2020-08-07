@@ -46,9 +46,9 @@ postgres:
     pullPolicy: IfNotPresent
   data:
     port: "5432"
-    dbName: bentomldb
-    user: postgresadmin
-    password: admin123
+    POSTGRES_DB: bentomldb
+    POSTGRES_USER: postgresadmin
+    POSTGRES_PASSWORD: admin123
   storageCapacity: 5Gi
 
 ### Advanced Settings ###

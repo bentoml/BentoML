@@ -26,6 +26,7 @@ from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 from bentoml.exceptions import BadInput
 from bentoml.adapters.base_input import BaseInputAdapter
+from numpy.core import ndarray
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')
@@ -55,7 +56,7 @@ def get_default_accept_image_formats():
     ]
 
 
-class ImageInput(BaseInputAdapter):
+class ImageInput(BaseInputAdapter[ndarray]):
     """Transform incoming image data from http request, cli or lambda event into numpy
     array.
 
@@ -202,8 +203,7 @@ class ImageInput(BaseInputAdapter):
         return self.output_adapter.to_batch_response(results, ids, requests)
 
     def handle_request(self, headers, body):
-        """
-        Handle http request that has one image file. It will convert image into a
+        """Handle http request that has one image file. It will convert image into a
         ndarray for the function to consume.
 
         :param headers: the request's HTTP HEADERS

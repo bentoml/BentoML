@@ -43,9 +43,9 @@ def percentile(data, pers):
 
 
 class DynamicBucketMerge:
-    """
+    '''
     real time speed stat
-    """
+    '''
 
     def __init__(self, sample_range=1, bucket_num=10):
         self.bucket_num = bucket_num

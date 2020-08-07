@@ -4,6 +4,7 @@ import json
 import re
 import psutil
 
+from bentoml import __version__
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.s3 import is_s3_url
 from bentoml.server.api_server import BentoAPIServer
@@ -153,7 +154,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     # pylint: disable=unused-variable
 
     @click.group(cls=BentoMLCommandGroup)
-    @click.version_option()
+    @click.version_option(version=__version__)
     def bentoml_cli():
         """
         BentoML CLI tool

@@ -217,15 +217,16 @@ class AnnotatedImageInput(BaseInputAdapter):
         verify_image_format_or_raise(image_file_name, self.accept_image_formats)
         input_stream = image_file.stream
         input_image = imageio.imread(input_stream, pilmode=self.pilmode)
-        input_json = {}
 
         if json_file:
+            input_json = {}
             try:
                 input_json = json.load(json_file)
             except (json.JSONDecodeError, UnicodeDecodeError):
                 raise BadInput("BentoML#AnnotatedImageInput received invalid JSON file")
+            return (input_image, input_json)
 
-        return (input_image, input_json)
+        return (input_image,)
 
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func: callable
@@ -268,7 +269,7 @@ class AnnotatedImageInput(BaseInputAdapter):
             response object
         """
         input_data = self._load_image_and_json_data(request)
-        result = func(*input_data)[0] # TODO: Should we remove the [0]?
+        result = func(*input_data)
         return self.output_adapter.to_response(result, request)
 
     def handle_cli(self, args, func):

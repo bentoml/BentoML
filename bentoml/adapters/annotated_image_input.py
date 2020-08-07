@@ -32,6 +32,35 @@ from bentoml.adapters.base_input import BaseInputAdapter
 imageio = LazyLoader('imageio', globals(), 'imageio')
 
 
+def has_json_extension(file_name):
+    """
+    Check if file's extension is an acceptable JSON extension
+    (currently only .json is allowed)
+    """
+    _, extension = os.path.splitext(file_name)
+
+    if extension.lower() in ["json"]:
+        return True
+
+    return False
+
+
+def has_image_extension(file_name, accept_format_list):
+    """
+    Check if file's extension is an acceptable image extension
+    """
+    if accept_format_list:
+        _, extension = os.path.splitext(file_name)
+        if extension.lower() in accept_format_list:
+            return True
+        return False
+    else:
+        if extension.lower() in get_default_accept_image_formats():
+            return True
+
+    return False
+
+
 def verify_image_format_or_raise(file_name, accept_format_list):
     """
     Raise error if file's extension is not in the accept_format_list
@@ -148,30 +177,44 @@ class AnnotatedImageInput(BaseInputAdapter):
         image_file = None
 
         for f in iter(request.files.values()):
-            if re.match("image/", f.mimetype):
-                if image_file:
+            if f and hasattr(f, "mimetype"):
+                file_name = secure_filename(f.filename)
+                if (re.match("image/", f.mimetype) or 
+                        (f.mimetype == "application/octet-stream" and has_image_extension(file_name))):
+                    if image_file:
+                        raise BadInput(
+                            "BentoML#AnnotatedImageInput received two images instead "
+                            "of an image file and JSON file"
+                        )
+                    image_file = f
+                elif (f.mimetype == "application/json" or
+                    (f.mimetype == "application/octet-stream" and has_json_extension(file_name))):
+                    if json_file:
+                        raise BadInput(
+                            "BentoML#AnnotatedImageInput received two JSON files instead "
+                            "of an image file and JSON file"
+                        )
+                    json_file = f
+                else:
                     raise BadInput(
-                        "BentoML#AnnotatedImageInput received two images instead "
-                        "of an image file and JSON file"
+                         "BentoML#AnnotatedImageInput received unexpected file type: "
+                         f"{f.mimetype} with filename {f.filename}.\n"
+                         "AnnotatedInputAdapter expects an 'image/*' file and optional "
+                         "'application/json' file.  Alternatively, it will accept two "
+                         "'application/octet-stream' files with a valid image extension and "
+                         "'.json' extension respectively"
                     )
-                image_file = f
-            elif f.mimetype == "application/json":
-                if json_file:
-                    raise BadInput(
-                        "BentoML#AnnotatedImageInput received two JSON files instead "
-                        "of an image file and JSON file"
-                    )
-                json_file = f
             else:
                 raise BadInput(
-                    "BentoML#AnnotatedImageInput received unexpected file type."
+                    "BentoML#AnnotatedImageInput unexpected HTTP request format"
                 )
+
 
         if not image_file:
             raise BadInput("BentoML#AnnotatedImageInput requires an image file")
 
-        file_name = secure_filename(image_file.filename)
-        verify_image_format_or_raise(file_name, self.accept_image_formats)
+        image_file_name = secure_filename(image_file.filename)
+        verify_image_format_or_raise(image_file_name, self.accept_image_formats)
         input_stream = image_file.stream
         input_image = imageio.imread(input_stream, pilmode=self.pilmode)
         input_json = {}
@@ -225,7 +268,7 @@ class AnnotatedImageInput(BaseInputAdapter):
             response object
         """
         input_data = self._load_image_and_json_data(request)
-        result = func(*input_data)[0]
+        result = func(*input_data)[0] # TODO: Should we remove the [0]?
         return self.output_adapter.to_response(result, request)
 
     def handle_cli(self, args, func):
@@ -241,7 +284,6 @@ class AnnotatedImageInput(BaseInputAdapter):
         args, unknown_args = parser.parse_known_args(args)
 
         image_array = []
-        json_data = {}
 
         image_path = os.path.expanduser(args.image)
 
@@ -253,6 +295,7 @@ class AnnotatedImageInput(BaseInputAdapter):
         image_array = imageio.imread(image_path, pilmode=self.pilmode)
 
         if args.json:
+            json_data = {}
             json_path = os.path.expanduser(args.json)
             if not os.path.isabs(json_path):
                 json_path = os.path.abspath(json_path)
@@ -263,17 +306,27 @@ class AnnotatedImageInput(BaseInputAdapter):
                 raise BadInput("BentoML#AnnotatedImageInput received "
                                "invalid JSON file")
 
-        result = func(image_array, json_data)
+            result = func(image_array, json_data)
+        else:
+            result = func(image_array)
+
         return self.output_adapter.to_cli(result, unknown_args)
+
+    def read_file(self, name: str, file: BytesIO):
+        safe_name = secure_filename(name)
+        verify_image_format_or_raise(safe_name, self.accepted_image_formats)
+        return imageio.imread(file, pilmode=self.pilmode)
 
     def handle_aws_lambda_event(self, event, func):
         """Handles a Lambda event, convert event dict into corresponding
         data format that user API function is expecting, and use API
         function result as response
-        :param event: AWS lambda event data of the python `dict` type
+        :param event: AWS lambda event data of the python `dict` type with
+        an event body including an "image" and optional "json" file
         :param func: user API function
         """
         content_type = event['headers']['Content-Type']
+
         if "multipart/form-data" in content_type:
             request = Request.from_values(
                 data=event['body'],
@@ -282,7 +335,7 @@ class AnnotatedImageInput(BaseInputAdapter):
             )
 
             input_data = self._load_image_and_json_data(request)
-            result = func(*input_data)[0]
+            result = func(*input_data) # TODO: Ensure we don't need a [0] here
 
             return self.output_adapter.to_aws_lambda_event(result, event)
         else:

@@ -1,5 +1,3 @@
-import base64
-import glob
 import io
 import mock
 
@@ -10,7 +8,6 @@ from urllib3.filepost import encode_multipart_formdata
 
 from bentoml.exceptions import BadInput
 from bentoml.adapters import AnnotatedImageInput
-from bentoml.marshal.utils import SimpleRequest
 
 
 def generate_multipart_body(image_file, json_file):
@@ -26,6 +23,7 @@ def generate_multipart_body(image_file, json_file):
         'Content-Length': len(body),
     }
     return body, headers
+
 
 def predict_image_only(image):
     return image.shape
@@ -62,7 +60,8 @@ def test_anno_image_input_aws_lambda_event(img_file, json_file):
 
     aws_lambda_event = {"body": multipart_data, "headers": headers}
     aws_result = test_anno_image_input.handle_aws_lambda_event(
-            aws_lambda_event, predict_image_and_json)
+        aws_lambda_event, predict_image_and_json
+    )
 
     assert aws_result["statusCode"] == 200
     assert aws_result["body"] == '[[10, 10, 3], "kaith"]'
@@ -145,4 +144,3 @@ def test_anno_image_input_http_request_malformatted_input_wrong_input_name():
 
 
 # TODO: Add tests for handle_batch_request
-

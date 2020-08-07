@@ -177,38 +177,41 @@ class AnnotatedImageInput(BaseInputAdapter):
         image_file = None
 
         for f in iter(request.files.values()):
-            if f and hasattr(f, "mimetype"):
+            if f and hasattr(f, "mimetype") and isinstance(f.mimetype, str):
                 file_name = secure_filename(f.filename)
-                if (re.match("image/", f.mimetype) or 
-                        (f.mimetype == "application/octet-stream" and has_image_extension(file_name))):
+                if re.match("image/", f.mimetype) or (
+                    f.mimetype == "application/octet-stream"
+                    and has_image_extension(file_name, self.accept_image_formats)
+                ):
                     if image_file:
                         raise BadInput(
                             "BentoML#AnnotatedImageInput received two images instead "
                             "of an image file and JSON file"
                         )
                     image_file = f
-                elif (f.mimetype == "application/json" or
-                    (f.mimetype == "application/octet-stream" and has_json_extension(file_name))):
+                elif f.mimetype == "application/json" or (
+                    f.mimetype == "application/octet-stream"
+                    and has_json_extension(file_name)
+                ):
                     if json_file:
                         raise BadInput(
-                            "BentoML#AnnotatedImageInput received two JSON files instead "
-                            "of an image file and JSON file"
+                            "BentoML#AnnotatedImageInput received two JSON files "
+                            "instead of an image file and JSON file"
                         )
                     json_file = f
                 else:
                     raise BadInput(
-                         "BentoML#AnnotatedImageInput received unexpected file type: "
-                         f"{f.mimetype} with filename {f.filename}.\n"
-                         "AnnotatedInputAdapter expects an 'image/*' file and optional "
-                         "'application/json' file.  Alternatively, it will accept two "
-                         "'application/octet-stream' files with a valid image extension and "
-                         "'.json' extension respectively"
+                        "BentoML#AnnotatedImageInput received unexpected file type: "
+                        f"{f.mimetype} with filename {f.filename}.\n"
+                        "AnnotatedInputAdapter expects an 'image/*' file and optional "
+                        "'application/json' file.  Alternatively, it can accept two "
+                        "'application/octet-stream' files, one with a valid image "
+                        "extension and one with a '.json' extension respectively"
                     )
             else:
                 raise BadInput(
                     "BentoML#AnnotatedImageInput unexpected HTTP request format"
                 )
-
 
         if not image_file:
             raise BadInput("BentoML#AnnotatedImageInput requires an image file")
@@ -304,19 +307,15 @@ class AnnotatedImageInput(BaseInputAdapter):
                 with open(json_path, "r") as content_file:
                     json_data = json.load(content_file)
             except (json.JSONDecodeError, UnicodeDecodeError):
-                raise BadInput("BentoML#AnnotatedImageInput received "
-                               "invalid JSON file")
+                raise BadInput(
+                    "BentoML#AnnotatedImageInput received " "invalid JSON file"
+                )
 
             result = func(image_array, json_data)
         else:
             result = func(image_array)
 
         return self.output_adapter.to_cli(result, unknown_args)
-
-    def read_file(self, name: str, file: BytesIO):
-        safe_name = secure_filename(name)
-        verify_image_format_or_raise(safe_name, self.accepted_image_formats)
-        return imageio.imread(file, pilmode=self.pilmode)
 
     def handle_aws_lambda_event(self, event, func):
         """Handles a Lambda event, convert event dict into corresponding
@@ -330,13 +329,11 @@ class AnnotatedImageInput(BaseInputAdapter):
 
         if "multipart/form-data" in content_type:
             request = Request.from_values(
-                data=event['body'],
-                content_type=content_type,
-                headers=event['headers']
+                data=event['body'], content_type=content_type, headers=event['headers']
             )
 
             input_data = self._load_image_and_json_data(request)
-            result = func(*input_data) # TODO: Ensure we don't need a [0] here
+            result = func(*input_data)  # TODO: Ensure we don't need a [0] here
 
             return self.output_adapter.to_aws_lambda_event(result, event)
         else:

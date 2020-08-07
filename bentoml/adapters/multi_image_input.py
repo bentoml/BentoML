@@ -98,7 +98,7 @@ class MultiImageInput(BaseInputAdapter):
             accepted_image_formats or get_default_accept_image_formats()
         )
 
-    def handle_request(self, request: Request, func):
+    def handle_request(self, request: Request):
         files = {
             name: self.read_file(file.filename, file.stream)
             for (name, file) in request.files.items()

@@ -113,7 +113,7 @@ def test_tf_tensor_handle_request(test_cases):
     input_data, headers, except_result = test_cases
     request.get_data.return_value = json.dumps(input_data).encode('utf-8')
     request.headers = headers
-    response = input_adapter.handle_request(request, lambda i: i)
+    response = input_adapter.handle_request(request)
 
     prediction = json.loads(response.get_data())
     assert_eq_or_both_nan(except_result, prediction)

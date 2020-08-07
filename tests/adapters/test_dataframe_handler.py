@@ -122,7 +122,7 @@ def test_dataframe_handle_request_csv():
     request.content_type = 'text/csv'
     request.get_data.return_value = csv_data
 
-    result = input_adapter.handle_request(request, test_function)
+    result = input_adapter.handle_request(request)
     assert result.get_data().decode('utf-8') == '"john"'
 
 

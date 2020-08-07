@@ -23,13 +23,13 @@ from flask import Flask, jsonify, Response, request, make_response, send_from_di
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import BadRequest, NotFound
 
-from bentoml import config
+from bentoml import config, BentoService
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.server import trace
-
+from bentoml.service import InferenceAPI
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
@@ -89,7 +89,7 @@ class BentoAPIServer:
     _DEFAULT_PORT = config("apiserver").getint("default_port")
     _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
 
-    def __init__(self, bento_service, port=_DEFAULT_PORT, app_name=None):
+    def __init__(self, bento_service: BentoService, port=_DEFAULT_PORT, app_name=None):
         app_name = bento_service.name if app_name is None else app_name
 
         self.port = port
@@ -262,46 +262,10 @@ class BentoAPIServer:
                 rule="/{}".format(api.name),
                 endpoint=api.name,
                 view_func=route_function,
-                methods=api.handler.HTTP_METHODS,
+                methods=api.input_adapter.HTTP_METHODS,
             )
 
-    @staticmethod
-    def log_image(req, request_id):
-        if not config('logging').getboolean('log_request_image_files'):
-            return []
-
-        log_folder = config('logging').get('base_log_dir')
-
-        all_paths = []
-
-        if req.content_type and req.content_type.startswith('image/'):
-            filename = '{timestamp}-{request_id}.{ext}'.format(
-                timestamp=int(time.time()),
-                request_id=request_id,
-                ext=req.content_type[len('image/') :],
-            )
-            path = os.path.join(log_folder, filename)
-            all_paths.append(path)
-            with open(path, 'wb') as f:
-                f.write(req.get_data())
-
-        for name in req.files:
-            file = req.files[name]
-            if file and file.filename:
-                orig_filename = secure_filename(file.filename)
-                filename = '{timestamp}-{request_id}-{orig_filename}'.format(
-                    timestamp=int(time.time()),
-                    request_id=request_id,
-                    orig_filename=orig_filename,
-                )
-                path = os.path.join(log_folder, filename)
-                all_paths.append(path)
-                file.save(path)
-                file.stream.seek(0)
-
-        return all_paths
-
-    def bento_service_api_func_wrapper(self, api):
+    def bento_service_api_func_wrapper(self, api: InferenceAPI):
         """
         Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
@@ -311,20 +275,15 @@ class BentoAPIServer:
         service_version = self.bento_service.version
 
         def api_func():
-            # Log image files in request if there is any
-            image_paths = self.log_image(request, request_id)
-
-            # _request_to_json parses request as JSON; in case errors, it raises
-            # a 400 exception. (consider 4xx before 5xx.)
-            request_for_log = _request_to_json(request)
-
             # handle_request may raise 4xx or 5xx exception.
             try:
                 if request.headers.get(self._MARSHAL_FLAG):
                     response_body = api.handle_batch_request(request)
                     response = make_response(response_body)
                 else:
-                    response = api.handle_request(request)
+                    function_input = api.input_adapter.handle_request(request)
+                    result = api.func(function_input)
+                    response = api.output_adapter.to_response(result, request)
             except BentoMLException as e:
                 log_exception(sys.exc_info())
 
@@ -348,23 +307,6 @@ class BentoAPIServer:
                     'request, find the error details in server logs',
                     500,
                 )
-
-            request_log = {
-                "request_id": request_id,
-                "service_name": service_name,
-                "service_version": service_version,
-                "api": api.name,
-                "request": request_for_log,
-                "response_code": response.status_code,
-            }
-
-            if len(image_paths) > 0:
-                request_log['image_paths'] = image_paths
-
-            if 200 <= response.status_code < 300:
-                request_log['response'] = response.response
-
-            prediction_logger.info(request_log)
 
             response.headers["request_id"] = request_id
 

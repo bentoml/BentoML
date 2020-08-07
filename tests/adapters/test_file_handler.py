@@ -62,7 +62,7 @@ def test_file_input_http_request_post_binary(bin_file):
     request.headers = {}
     request.get_data.return_value = open(str(bin_file), 'rb').read()
 
-    response = test_file_input.handle_request(request, predict)
+    response = test_file_input.handle_request(request)
 
     assert response.status_code == 200
     assert b'{"b64": "gTCJOQ=="}' in response.data
@@ -90,7 +90,7 @@ def test_file_input_http_request_multipart_form(bin_file):
     request.headers = {}
     request.get_data.return_value = None
 
-    response = test_file_input.handle_request(request, predict)
+    response = test_file_input.handle_request(request)
 
     assert response.status_code == 200
     assert b'{"b64": "gTCJOQ=="}' in response.data
@@ -112,7 +112,7 @@ def test_file_input_http_request_single_file_different_name(bin_file):
     request.headers = {}
     request.get_data.return_value = None
 
-    response = test_file_input.handle_request(request, predict)
+    response = test_file_input.handle_request(request)
 
     assert response.status_code == 200
     assert b'{"b64": "gTCJOQ=="}' in response.data
@@ -128,7 +128,7 @@ def test_file_input_http_request_malformatted_input_missing_file_file():
     request.get_data.return_value = None
 
     with pytest.raises(BadInput) as e:
-        test_file_input.handle_request(request, predict)
+        test_file_input.handle_request(request)
 
     assert "unexpected HTTP request format" in str(e.value)
 
@@ -143,6 +143,6 @@ def test_file_input_http_request_malformatted_input_wrong_input_name():
     request.get_data.return_value = None
 
     with pytest.raises(BadInput) as e:
-        test_file_input.handle_request(request, predict)
+        test_file_input.handle_request(request)
 
     assert "unexpected HTTP request format" in str(e.value)

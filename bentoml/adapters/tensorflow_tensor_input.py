@@ -141,7 +141,7 @@ class TfTensorInput(BaseInputAdapter):
             merged_result, slices=slices, fallbacks=responses, requests=requests
         )
 
-    def handle_request(self, request, func):
+    def handle_request(self, request):
         """Handle http request that has jsonlized tensorflow tensor. It will convert it
         into a tf tensor for the function to consume.
 

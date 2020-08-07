@@ -39,7 +39,7 @@ class ClipperInput(BaseInputAdapter):
         # to a clipper cluster, not required by the API Server itself
         return []
 
-    def handle_request(self, request, func):
+    def handle_request(self, request):
         raise NotImplementedError(
             "ClipperInput does not support handling REST API prediction request"
         )

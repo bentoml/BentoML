@@ -37,7 +37,7 @@ class LegacyJsonInput(BaseInputAdapter):
             is_batch_input=is_batch_input, **base_kwargs
         )
 
-    def handle_request(self, request: flask.Request, func):
+    def handle_request(self, request: flask.Request):
         if request.content_type.lower() == "application/json":
             parsed_json = json.loads(request.get_data(as_text=True))
         else:

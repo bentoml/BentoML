@@ -10,10 +10,10 @@ BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")
 
 
 class SimpleRequest(NamedTuple):
-    '''
+    """
     headers: tuple of key value pairs in bytes
     data: str
-    '''
+    """
 
     headers: tuple
     data: str

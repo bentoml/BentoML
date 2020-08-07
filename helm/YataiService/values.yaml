@@ -40,12 +40,12 @@ service:
 # Local Postgres Service
 usePostgres: false
 postgres:
+  port: "5432"
   image:
     repo: postgres
     version: 10.4
     pullPolicy: IfNotPresent
   data:
-    port: "5432"
     POSTGRES_DB: bentomldb
     POSTGRES_USER: postgresadmin
     POSTGRES_PASSWORD: admin123

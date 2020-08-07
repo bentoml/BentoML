@@ -201,20 +201,15 @@ class ImageInput(BaseInputAdapter):
         results = func(input_datas) if input_datas else []
         return self.output_adapter.to_batch_response(results, ids, requests)
 
-    def handle_request(self, request, func):
-        """Handle http request that has one image file. It will convert image into a
+    def handle_request(self, headers, body):
+        """
+        Handle http request that has one image file. It will convert image into a
         ndarray for the function to consume.
 
-        Args:
-            request: incoming request object.
-            func: function that will take ndarray as its arg.
-            options: configuration for handling request object.
-        Return:
-            response object
+        :param headers: the request's HTTP HEADERS
+        :param body: the request body
         """
-        input_data = self._load_image_data(request)
-        result = func((input_data,))[0]
-        return self.output_adapter.to_response(result, request)
+        return self._load_image_data(Request.from_values(headers=headers, data=body))
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()

@@ -63,7 +63,7 @@ class JsonInput(BaseInputAdapter):
     def __init__(self, is_batch_input=False, **base_kwargs):
         super(JsonInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
 
-    def handle_request(self, request: flask.Request, func):
+    def handle_request(self, request: flask.Request):
         if request.content_type != "application/json":
             raise BadInput(
                 "Request content-type must be 'application/json' for this "

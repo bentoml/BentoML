@@ -146,7 +146,7 @@ class FileInput(BaseInputAdapter):
         results = func(input_datas) if input_datas else []
         return self.output_adapter.to_batch_response(results, ids, requests)
 
-    def handle_request(self, request, func):
+    def handle_request(self, request):
         """Handle http request that has one file. It will convert file into a
         BytesIO object for the function to consume.
 

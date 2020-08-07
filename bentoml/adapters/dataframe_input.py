@@ -144,7 +144,7 @@ class DataframeInput(BaseInputAdapter):
 
         return default
 
-    def handle_request(self, request: flask.Request, func):
+    def handle_request(self, request: flask.Request):
         if request.content_type == "text/csv":
             csv_string = StringIO(request.get_data(as_text=True))
             df = pd.read_csv(csv_string)

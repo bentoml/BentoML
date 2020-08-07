@@ -56,7 +56,15 @@ class InferenceAPI(object):
     """
 
     def __init__(
-        self, service, name, doc, input_adapter, func, mb_max_latency, mb_max_batch_size
+        self,
+        service,
+        name,
+        doc,
+        input_adapter,
+        func,
+        output_adapter,
+        mb_max_latency,
+        mb_max_batch_size,
     ):
         """
         :param service: ref to service containing this API
@@ -79,6 +87,7 @@ class InferenceAPI(object):
         self._name = name
         self._handler = input_adapter
         self._func = func
+        self._output_adapter = output_adapter
         self._wrapped_func = None
         self.mb_max_latency = mb_max_latency
         self.mb_max_batch_size = mb_max_batch_size
@@ -114,7 +123,7 @@ class InferenceAPI(object):
         return self._doc
 
     @property
-    def handler(self):
+    def input_adapter(self) -> BaseInputAdapter:
         """
         handler is a deprecated concept, we are moving it to the new input/output
         adapter interface. Currently this `handler` property returns the input adapter
@@ -123,11 +132,11 @@ class InferenceAPI(object):
         return self._handler
 
     @property
-    def output_adapter(self):
+    def output_adapter(self) -> BaseOutputAdapter:
         """
         :return: the output adapter of this inference API
         """
-        return self.handler.output_adapter
+        return self._output_adapter
 
     @cached_property
     def func(self):
@@ -149,13 +158,15 @@ class InferenceAPI(object):
         """
         :return: the HTTP API request schema in OpenAPI/Swagger format
         """
-        schema = self.handler.request_schema
+        schema = self.input_adapter.request_schema
         if schema.get('application/json'):
-            schema.get('application/json')['example'] = self.handler._http_input_example
+            schema.get('application/json')[
+                'example'
+            ] = self.input_adapter._http_input_example
         return schema
 
     def handle_request(self, request: flask.Request):
-        return self.handler.handle_request(request, self.func)
+        return self.input_adapter.handle_request(request)
 
     def handle_batch_request(self, request: flask.Request):
         from bentoml.marshal.utils import DataLoader
@@ -164,23 +175,23 @@ class InferenceAPI(object):
 
         with trace(
             service_name=self.__class__.__name__,
-            span_name=f"call `{self.handler.__class__.__name__}`",
+            span_name=f"call `{self.input_adapter.__class__.__name__}`",
         ):
-            responses = self.handler.handle_batch_request(requests, self.func)
+            responses = self.input_adapter.handle_batch_request(requests, self.func)
 
         return DataLoader.merge_responses(responses)
 
     def handle_cli(self, args):
-        return self.handler.handle_cli(args, self.func)
+        return self.input_adapter.handle_cli(args, self.func)
 
     def handle_aws_lambda_event(self, event):
-        return self.handler.handle_aws_lambda_event(event, self.func)
+        return self.input_adapter.handle_aws_lambda_event(event, self.func)
 
 
 def validate_inference_api_name(api_name):
     if not isidentifier(api_name):
         raise InvalidArgument(
-            "Invalid API name: '{}', a valid identifier must contains only letters,"
+            "Invalid API name: '{}', a valid identifier may only contain letters,"
             " numbers, underscores and not starting with a number.".format(api_name)
         )
 
@@ -536,7 +547,9 @@ class BentoService:
         self._env = self.__class__._env or BentoServiceEnv(self.name)
 
         for api in self._inference_apis:
-            self._env.add_pip_dependencies_if_missing(api.handler.pip_dependencies)
+            self._env.add_pip_dependencies_if_missing(
+                api.input_adapter.pip_dependencies
+            )
             self._env.add_pip_dependencies_if_missing(
                 api.output_adapter.pip_dependencies
             )

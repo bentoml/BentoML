@@ -62,7 +62,7 @@ def test_image_input_http_request_post_binary(img_file):
     request.headers = {}
     request.get_data.return_value = open(str(img_file), 'rb').read()
 
-    response = test_image_input.handle_request(request, predict)
+    response = test_image_input.handle_request(request)
 
     assert response.status_code == 200
     assert "[10, 10, 3]" in str(response.response)
@@ -90,7 +90,7 @@ def test_image_input_http_request_multipart_form(img_file):
     request.headers = {}
     request.get_data.return_value = None
 
-    response = test_image_input.handle_request(request, predict)
+    response = test_image_input.handle_request(request)
 
     assert response.status_code == 200
     assert "[10, 10, 3]" in str(response.response)
@@ -112,7 +112,7 @@ def test_image_input_http_request_single_image_different_name(img_file):
     request.headers = {}
     request.get_data.return_value = None
 
-    response = test_image_input.handle_request(request, predict)
+    response = test_image_input.handle_request(request)
 
     assert response.status_code == 200
     assert "[10, 10, 3]" in str(response.response)
@@ -128,7 +128,7 @@ def test_image_input_http_request_malformatted_input_missing_image_file():
     request.get_data.return_value = None
 
     with pytest.raises(BadInput) as e:
-        test_image_input.handle_request(request, predict)
+        test_image_input.handle_request(request)
 
     assert "unexpected HTTP request format" in str(e.value)
 
@@ -143,6 +143,6 @@ def test_image_input_http_request_malformatted_input_wrong_input_name():
     request.get_data.return_value = None
 
     with pytest.raises(BadInput) as e:
-        test_image_input.handle_request(request, predict)
+        test_image_input.handle_request(request)
 
     assert "unexpected HTTP request format" in str(e.value)

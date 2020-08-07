@@ -156,7 +156,7 @@ class FastaiImageInput(BaseInputAdapter):
     def handle_batch_request(self, requests, func):
         raise NotImplementedError
 
-    def handle_request(self, request, func):
+    def handle_request(self, request):
         input_streams = []
         for filename in self.input_names:
             file = request.files.get(filename)

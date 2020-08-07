@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable
-
+from typing import Iterable, TypeVar, Generic, Dict
 
 from bentoml.marshal.utils import SimpleResponse, SimpleRequest, BATCH_REQUEST_HEADER
 
+I = TypeVar("I")
 
-class BaseInputAdapter:
-    """InputAdapter is an abstraction layer between user defined API callback function
+
+class BaseInputAdapter(Generic[I]):
+    """
+    InputAdapter is an abstraction layer between user defined API callback function
     and prediction request input in a variety of different forms, such as HTTP request
     body, command line arguments or AWS Lambda event object.
     """
@@ -29,10 +31,10 @@ class BaseInputAdapter:
     BATCH_MODE_SUPPORTED = False
 
     def __init__(self, output_adapter=None, http_input_example=None, **base_config):
-        '''
+        """
         base_configs:
             - is_batch_input
-        '''
+        """
         self._config = base_config
         self._output_adapter = output_adapter
         self._http_input_example = http_input_example
@@ -56,19 +58,19 @@ class BaseInputAdapter:
             self._output_adapter = DefaultOutput()
         return self._output_adapter
 
-    def handle_request(self, request, func):
+    def handle_request(self, headers: Dict[str, str], body) -> I:
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API
         function result as the HTTP response to client
 
-        :param request: Flask request object
-        :param func: user API function
+        :param headers: The request's HTTP headers
+        :param body: The request's body
         """
         raise NotImplementedError
 
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
+    ) -> Iterable[I]:
         """Handles an HTTP request, convert it into corresponding data
         format that user API function is expecting, and return API
         function result as the HTTP response to client

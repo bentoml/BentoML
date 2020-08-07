@@ -43,7 +43,7 @@ def test_multi_image_input_request(img_file):
         content_length=headers['Content-Length'],
     )
 
-    response = adapter.handle_request(request, predict)
+    response = adapter.handle_request(request)
     assert response.status_code == 200
     assert response.data == b'[[10, 10, 3], [10, 10, 3]]'
 

@@ -40,7 +40,7 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
     assert api.name == "predict"
     assert api.mb_max_latency == 1000
     assert api.mb_max_batch_size == 2000
-    assert isinstance(api.handler, DataframeInput)
+    assert isinstance(api.input_adapter, DataframeInput)
     assert api.func(1) == 2
 
     # Check api methods are available
@@ -82,7 +82,7 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
 
     api = model_service.get_inference_api('predict')
     assert api.name == "predict"
-    assert isinstance(api.handler, DataframeInput)
+    assert isinstance(api.input_adapter, DataframeInput)
     assert api.func(1) == 2
     # Check api methods are available
     assert model_service.predict(1) == 2

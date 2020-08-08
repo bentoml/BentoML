@@ -86,11 +86,13 @@ def get_default_accept_image_formats():
 
 
 class AnnotatedImageInput(BaseInputAdapter):
-    """Transform incoming image data from http request, cli or lambda event into numpy
-    array.
+    """Transform incoming image data from http request, cli or lambda event into a
+    numpy array, while allowing an optional JSON file for image annotations (such
+    as object bounding boxes, class labels, etc.)
 
-    Handle incoming image data from different sources, transform them into numpy array
-    and pass down to user defined API functions
+    Transforms input image file into a numpy array, and loads JSON file as
+    a JSON serializable Python object, providing them to user-defined
+    API functions.
 
     Args:
         accept_image_formats (string[]):  A list of acceptable image formats.
@@ -105,6 +107,23 @@ class AnnotatedImageInput(BaseInputAdapter):
 
     Raises:
         ImportError: imageio package is required to use AnnotatedImageInput
+
+    Example:
+
+        >>> python
+        >>> from bentoml import BentoService, api, artifacts
+        >>> from bentoml.artifact import TensorflowArtifact
+        >>> from bentoml.adapters import AnnotatedImageInput
+        >>>
+        >>> CLASS_NAMES = ['cat', 'dog']
+        >>>
+        >>> @artifacts([TensorflowArtifact('classifer')])
+        >>> class PetClassification(BentoService):
+        >>>    @api(input=AnnotatedImageInput())
+        >>>    def predict(self, image_ndarrays, annotations):
+        >>>        cropped_pets = some_pet_finder(image_ndarrays, annotations)
+        >>>        results = self.artifacts.classifer.predict(cropped_pets)
+        >>>        return [CLASS_NAMES[r] for r in results]
     """
 
     HTTP_METHODS = ["POST"]
@@ -278,6 +297,10 @@ class AnnotatedImageInput(BaseInputAdapter):
         """Handles an CLI command call, convert CLI arguments into
         corresponding data format that user API function is expecting, and
         prints the API function result to console output
+
+        Processes one image file, or one image file with associated JSON
+        annotations
+
         :param args: CLI arguments
         :param func: user API function
         """

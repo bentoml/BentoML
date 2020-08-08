@@ -47,7 +47,7 @@ def test_invalid_artifact_type():
         class ExampleBentoService(bentoml.BentoService):
             pass
 
-    assert "only accept list of type BentoServiceArtifact" in str(e.value)
+    assert "only accept list of BentoServiceArtifact" in str(e.value)
 
 
 def test_duplicated_artifact_name():

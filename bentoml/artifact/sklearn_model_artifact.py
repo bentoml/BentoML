@@ -81,10 +81,6 @@ class SklearnModelArtifact(BentoServiceArtifact):
         self._pickle_extension = pickle_extension
         self._model = None
 
-    @property
-    def pip_dependencies(self):
-        return ['scikit-learn']
-
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._pickle_extension)
 
@@ -106,3 +102,6 @@ class SklearnModelArtifact(BentoServiceArtifact):
         joblib = _import_joblib_module()
 
         joblib.dump(self._model, self._model_file_path(dst))
+
+    def set_dependencies(self, env):
+        env.add_pip_dependencies_if_missing(['scikit-learn'])

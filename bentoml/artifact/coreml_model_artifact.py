@@ -12,32 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import logging
+import os
 
 from bentoml.artifact import BentoServiceArtifact
+from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import MissingDependencyException
 from bentoml.service_env import BentoServiceEnv
-from bentoml.utils import cloudpickle
-from bentoml.exceptions import MissingDependencyException, InvalidArgument
-
 
 logger = logging.getLogger(__name__)
 
 
-class PytorchModelArtifact(BentoServiceArtifact):
+class CoreMLModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading objects with torch.save and torch.load
+    Abstraction for saving/loading coreml.models.MLModel objects
+    with coremltools.models.MLModel.save and coremltools.models.MLModel(path).
 
     Args:
         name (string): name of the artifact
 
     Raises:
-        MissingDependencyException: torch package is required for PytorchModelArtifact
+        MissingDependencyException: coremltools package required for CoreMLModelArtifact
         InvalidArgument: invalid argument type, model being packed must be instance of
-            torch.nn.Module
+            coremltools.models.MLModel
 
     Example usage:
 
+    >>> import coremltools as ct
     >>> import torch.nn as nn
     >>>
     >>> class Net(nn.Module):
@@ -49,31 +50,33 @@ class PytorchModelArtifact(BentoServiceArtifact):
     >>>         ...
     >>>
     >>> net = Net()
-    >>> # Train model with data
-    >>>
+    >>> # Train model with data, then convert to CoreML.
+    >>> model = ct.convert(net, ...)
     >>>
     >>> import bentoml
+    >>> import PIL.Image
     >>> from bentoml.adapters import ImageInput
-    >>> from bentoml.artifact import PytorchModelArtifact
+    >>> from bentoml.artifact import CoreMLModelArtifact
     >>>
     >>> @bentoml.env(auto_pip_dependencies=True)
-    >>> @bentoml.artifacts([PytorchModelArtifact('net')])
-    >>> class PytorchModelService(bentoml.BentoService):
+    >>> @bentoml.artifacts([CoreMLModelArtifact('model')])
+    >>> class CoreMLModelService(bentoml.BentoService):
     >>>
     >>>     @bentoml.api(input=ImageInput())
     >>>     def predict(self, imgs):
-    >>>         outputs = self.artifacts.net(imgs)
+    >>>         outputs = [self.artifacts.model(PIL.Image.fromarray(_.astype("uint8")))
+    >>>                    for img in imgs]
     >>>         return outputs
     >>>
     >>>
-    >>> svc = PytorchModelService()
+    >>> svc = CoreMLModelService()
     >>>
     >>> # Pytorch model can be packed directly.
-    >>> svc.pack('net', net)
+    >>> svc.pack('model', model)
     """
 
-    def __init__(self, name, file_extension=".pt"):
-        super(PytorchModelArtifact, self).__init__(name)
+    def __init__(self, name, file_extension=".mlmodel"):
+        super(CoreMLModelArtifact, self).__init__(name)
         self._file_extension = file_extension
         self._model = None
 
@@ -82,15 +85,15 @@ class PytorchModelArtifact(BentoServiceArtifact):
 
     def pack(self, model):  # pylint:disable=arguments-differ
         try:
-            import torch
+            import coremltools
         except ImportError:
             raise MissingDependencyException(
-                "torch package is required to use PytorchModelArtifact"
+                "coremltools>=4.0b2 package is required to use CoreMLModelArtifact"
             )
 
-        if not isinstance(model, torch.nn.Module):
+        if not isinstance(model, coremltools.models.MLModel):
             raise InvalidArgument(
-                "PytorchModelArtifact can only pack type 'torch.nn.Module'"
+                "CoreMLModelArtifact can only pack type 'coremltools.models.MLModel'"
             )
 
         self._model = model
@@ -98,34 +101,27 @@ class PytorchModelArtifact(BentoServiceArtifact):
 
     def load(self, path):
         try:
-            import torch
+            import coremltools
         except ImportError:
             raise MissingDependencyException(
-                "torch package is required to use PytorchModelArtifact"
+                "coremltools package is required to use CoreMLModelArtifact"
             )
 
-        model = cloudpickle.load(open(self._file_path(path), 'rb'))
+        model = coremltools.models.MLModel(self._file_path(path))
 
-        if not isinstance(model, torch.nn.Module):
+        if not isinstance(model, coremltools.models.MLModel):
             raise InvalidArgument(
-                "Expecting PytorchModelArtifact loaded object type to be "
-                "'torch.nn.Module' but actually it is {}".format(type(model))
+                "Expecting CoreMLModelArtifact loaded object type to be "
+                "'coremltools.models.MLModel' but actually it is {}".format(type(model))
             )
 
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        logger.warning(
-            "BentoML by default does not include spacy and torchvision package when "
-            "using PytorchModelArtifact. To make sure BentoML bundle those packages if "
-            "they are required for your model, either import those packages in "
-            "BentoService definition file or manually add them via "
-            "`@env(pip_dependencies=['torchvision'])` when defining a BentoService"
-        )
-        env.add_pip_dependencies_if_missing(['torch'])
+        env.add_pip_dependencies_if_missing(['coremltools>=4.0b2'])
 
     def get(self):
         return self._model
 
     def save(self, dst):
-        return cloudpickle.dump(self._model, open(self._file_path(dst), "wb"))
+        self._model.save(self._file_path(dst))

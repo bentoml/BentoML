@@ -49,6 +49,19 @@ def seek_pip_dependencies(target_py_file_path):
     return __mm.seek_pip_dependencies(target_py_file_path)
 
 
+def get_all_pip_installed_modules():
+    global __mm  # pylint: disable=global-statement
+    if __mm is None:
+        __mm = ModuleManager()
+
+    installed_modules = list(
+        # local modules are the ones imported from current directory, either from a
+        # module.py file or a module directory that contains a `__init__.py` file
+        filter(lambda m: not m.is_local, __mm.searched_modules.values())
+    )
+    return list(map(lambda m: m.name, installed_modules))
+
+
 class ModuleInfo(object):
     def __init__(self, name, path, is_local, is_pkg):
         super(ModuleInfo, self).__init__()
@@ -69,7 +82,10 @@ class ModuleManager(object):
         import pkg_resources
 
         for dist in pkg_resources.working_set:  # pylint: disable=not-an-iterable
-            self.nonlocal_package_path.add(dist.module_path)
+            if os.path.realpath(dist.module_path) != os.getcwd():
+                # add to nonlocal_package path only if it's not current directory
+                self.nonlocal_package_path.add(dist.module_path)
+
             self.pip_pkg_map[dist._key] = dist._version
             for mn in dist._get_metadata("top_level.txt"):
                 if dist._key != "setuptools":
@@ -165,6 +181,9 @@ class DepSeekWork(object):
                 if node.module is not None and node.level == 0:
                     import_set.add(node.module.partition(".")[0])
         for module_name in import_set:
+            # Avoid parsing BentoML when BentoML is imported from local source code repo
+            if module_name == 'bentoml':
+                continue
             if module_name in self.parsed_module_set:
                 continue
             self.parsed_module_set.add(module_name)

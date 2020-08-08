@@ -18,6 +18,7 @@ import inspect
 import logging
 import uuid
 from datetime import datetime
+from typing import List
 
 import flask
 from werkzeug.utils import cached_property
@@ -30,6 +31,8 @@ from bentoml.utils import isidentifier
 from bentoml.utils.hybridmethod import hybridmethod
 from bentoml.exceptions import NotFound, InvalidArgument, BentoMLException
 from bentoml.server import trace
+from bentoml.artifact import BentoServiceArtifact, ArtifactCollection
+from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
 
 
 ARTIFACTS_DIR_NAME = "artifacts"
@@ -190,8 +193,8 @@ def validate_inference_api_name(api_name):
 
 def api_decorator(
     *args,
-    input=None,
-    output=None,
+    input: BaseInputAdapter = None,
+    output: BaseOutputAdapter = None,
     api_name=None,
     api_doc=None,
     mb_max_batch_size=DEFAULT_MAX_BATCH_SIZE,
@@ -240,7 +243,7 @@ def api_decorator(
     >>> class FraudDetectionAndIdentityService(BentoService):
     >>>
     >>>     @api(JsonHandler)  # deprecated
-    >>>     def fraud_detect(self, parsed_json):
+    >>>     def fraud_detect(self, parsed_json_list):
     >>>         # do something
     >>>
     >>>     @api(DataframeHandler, input_json_orient='records')  # deprecated
@@ -248,8 +251,6 @@ def api_decorator(
     >>>         # do something
 
     """
-
-    from bentoml.adapters import BaseInputAdapter
 
     def decorator(func):
         _api_name = func.__name__ if api_name is None else api_name
@@ -304,22 +305,22 @@ def web_static_content_decorator(web_static_content):
     return decorator
 
 
-def artifacts_decorator(artifacts):
+def artifacts_decorator(artifacts: List[BentoServiceArtifact]):
     """Define artifacts required to be bundled with a BentoService
 
     Args:
         artifacts (list(bentoml.artifact.BentoServiceArtifact)): A list of desired
             artifacts required by this BentoService
     """
-    from bentoml.artifact import BentoServiceArtifact
 
     def decorator(bento_service_cls):
         artifact_names = set()
         for artifact in artifacts:
             if not isinstance(artifact, BentoServiceArtifact):
                 raise InvalidArgument(
-                    "BentoService @artifacts decorator only accept list of type "
-                    "BentoServiceArtifact, instead got type: '%s'" % type(artifact)
+                    "BentoService @artifacts decorator only accept list of "
+                    "BentoServiceArtifact instances, instead got type: '%s'"
+                    % type(artifact)
                 )
 
             if artifact.name in artifact_names:
@@ -330,20 +331,20 @@ def artifacts_decorator(artifacts):
 
             artifact_names.add(artifact.name)
 
-        bento_service_cls._artifacts = artifacts
+        bento_service_cls._declared_artifacts = artifacts
         return bento_service_cls
 
     return decorator
 
 
 def env_decorator(
-    pip_dependencies=None,
-    auto_pip_dependencies=False,
-    requirements_txt_file=None,
-    conda_channels=None,
-    conda_dependencies=None,
-    setup_sh=None,
-    docker_base_image=None,
+    pip_dependencies: List[str] = None,
+    auto_pip_dependencies: bool = False,
+    requirements_txt_file: str = None,
+    conda_channels: List[str] = None,
+    conda_dependencies: List[str] = None,
+    setup_sh: str = None,
+    docker_base_image: str = None,
 ):
     """Define environment and dependencies required for the BentoService being created
 
@@ -355,10 +356,13 @@ def env_decorator(
         requirements_txt_file: pip dependencies in the form of a requirements.txt file,
             this can be a relative path to the requirements.txt file or the content
             of the file
-        conda_channels: extra conda channels to be used
+        conda_channels: list of extra conda channels to be used
         conda_dependencies: list of conda dependencies required
         setup_sh: user defined setup bash script, it is executed in docker build time
-        docker_base_image: used when generating Dockerfile in saved bundle
+        docker_base_image: used for customizing the docker container image built with
+            BentoML saved bundle. Base image must either have both `bash` and `conda`
+            installed; or have `bash`, `pip`, `python` installed, in which case the user
+            is required to ensure the python version matches the BentoService bundle
     """
 
     def decorator(bento_service_cls):
@@ -506,8 +510,13 @@ class BentoService:
     # installed site-package location of current python environment
     _bento_service_bundle_path = None
 
-    # A list of artifacts required by this BentoService
-    _artifacts = []
+    # List of artifacts required by this BentoService class, declared via the `@env`
+    # decorator. This list is used for initializing an empty ArtifactCollection when
+    # the BentoService class is instantiated
+    _declared_artifacts: List[BentoServiceArtifact] = []
+
+    # An instance of ArtifactCollection, containing all required trained model artifacts
+    _artifacts: ArtifactCollection = None
 
     #  A `BentoServiceEnv` instance specifying the required dependencies and all system
     #  environment setups
@@ -525,15 +534,11 @@ class BentoService:
     _web_static_content = None
 
     def __init__(self):
-        from bentoml.artifact import ArtifactCollection
-
+        # When creating BentoService instance from a saved bundle, set version to the
+        # version specified in the saved bundle
         self._bento_service_version = self.__class__._bento_service_bundle_version
-        self._packed_artifacts = ArtifactCollection()
 
-        if self._bento_service_bundle_path:
-            # load artifacts from saved BentoService bundle
-            self._load_artifacts(self._bento_service_bundle_path)
-
+        self._config_artifacts()
         self._config_inference_apis()
         self._config_environments()
 
@@ -541,13 +546,13 @@ class BentoService:
         self._env = self.__class__._env or BentoServiceEnv(self.name)
 
         for api in self._inference_apis:
-            self._env._add_pip_dependencies_if_missing(api.handler.pip_dependencies)
-            self._env._add_pip_dependencies_if_missing(
+            self._env.add_pip_dependencies_if_missing(api.handler.pip_dependencies)
+            self._env.add_pip_dependencies_if_missing(
                 api.output_adapter.pip_dependencies
             )
 
-        for artifact in self._artifacts:
-            self._env._add_pip_dependencies_if_missing(artifact.pip_dependencies)
+        for artifact in self.artifacts.get_artifact_list():
+            artifact.set_dependencies(self.env)
 
     def _config_inference_apis(self):
         self._inference_apis = []
@@ -577,6 +582,28 @@ class BentoService:
                         mb_max_batch_size=mb_max_batch_size,
                     )
                 )
+
+    def _config_artifacts(self):
+        self._artifacts = ArtifactCollection.from_artifact_list(
+            self._declared_artifacts
+        )
+
+        if self._bento_service_bundle_path:
+            # For pip installed BentoService, artifacts directory is located at
+            # 'package_path/artifacts/', but for loading from bundle directory, it is
+            # in 'path/{service_name}/artifacts/'
+            if os.path.isdir(
+                os.path.join(self._bento_service_bundle_path, ARTIFACTS_DIR_NAME)
+            ):
+                artifacts_path = os.path.join(
+                    self._bento_service_bundle_path, ARTIFACTS_DIR_NAME
+                )
+            else:
+                artifacts_path = os.path.join(
+                    self._bento_service_bundle_path, self.name, ARTIFACTS_DIR_NAME
+                )
+
+            self.artifacts.load_all(artifacts_path)
 
     @property
     def inference_apis(self):
@@ -612,13 +639,14 @@ class BentoService:
 
     @property
     def artifacts(self):
-        """ Returns all packed artifacts in an ArtifactCollection object
+        """ Returns the ArtifactCollection instance specified with this BentoService
+        class
 
         Returns:
             artifacts(ArtifactCollection): A dictionary of packed artifacts from the
-            artifact name to the loaded artifact model instance in its native form
+            artifact name to the BentoServiceArtifact instance
         """
-        return self._packed_artifacts
+        return self._artifacts
 
     @property
     def env(self):
@@ -776,19 +804,7 @@ class BentoService:
         :param kwargs: kwargs passing to the target model artifact to be packed
         :return: this BentoService instance
         """
-        if name in self.artifacts:
-            logger.warning(
-                "BentoService '%s' #pack overriding existing artifact '%s'",
-                self.name,
-                name,
-            )
-            del self.artifacts[name]
-
-        artifact = next(
-            artifact for artifact in self._artifacts if artifact.name == name
-        )
-        packed_artifact = artifact.pack(*args, **kwargs)
-        self._packed_artifacts.add(packed_artifact)
+        self.artifacts.get(name).pack(*args, **kwargs)
         return self
 
     @pack.classmethod
@@ -800,19 +816,6 @@ class BentoService:
             "BentoService#pack class method is deprecated, use instance method `pack` "
             "instead. e.g.: svc = MyBentoService(); svc.pack('model', model_object)"
         )
-
-    def _load_artifacts(self, path):
-        # For pip installed BentoService, artifacts directory is located at
-        # 'package_path/artifacts/', but for loading from bundle directory, it is
-        # in 'path/{service_name}/artifacts/'
-        if not os.path.isdir(os.path.join(path, ARTIFACTS_DIR_NAME)):
-            artifacts_path = os.path.join(path, self.name, ARTIFACTS_DIR_NAME)
-        else:
-            artifacts_path = os.path.join(path, ARTIFACTS_DIR_NAME)
-
-        for artifact in self._artifacts:
-            packed_artifact = artifact.load(artifacts_path)
-            self._packed_artifacts.add(packed_artifact)
 
     def get_bento_service_metadata_pb(self):
         return SavedBundleConfig(self).get_bento_service_metadata_pb()

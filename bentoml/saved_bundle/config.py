@@ -16,6 +16,7 @@ import os
 import logging
 from datetime import datetime
 from pathlib import Path
+from sys import version_info
 
 from ruamel.yaml import YAML
 
@@ -35,6 +36,7 @@ metadata:
 logger = logging.getLogger(__name__)
 DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
 DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
+PYTHON_VERSION = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
 
 
 def _get_apis_list(bento_service):
@@ -99,6 +101,7 @@ class SavedBundleConfig(object):
             yml_content = config_file.read()
         conf.config = conf._yaml.load(yml_content)
         ver = str(conf["version"])
+        py_ver = conf.config["env"]["python_version"]
 
         if ver != BENTOML_VERSION:
             msg = (
@@ -116,6 +119,13 @@ class SavedBundleConfig(object):
                     logger.warning(msg)
             else:  # Otherwise just show a warning.
                 logger.warning(msg)
+
+        if py_ver != PYTHON_VERSION:
+            logger.warning(
+                f"Saved BentoService Python version mismatch: loading "
+                f"BentoService bundle created with Python version {py_ver}, "
+                f"but current environment version is {PYTHON_VERSION}."
+            )
 
         return conf
 

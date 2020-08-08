@@ -49,15 +49,12 @@ class Optimizer:
             maxlen=self.N_KEPT_SAMPLE
         )  # to store outbound stat data
         self.o_a = 2
-        self.o_b = 0.1
+        self.o_b = 1
 
         self.wait = 0.01  # the avg wait time before outbound called
 
         self._refresh_tb = TokenBucket(2)  # to limit params refresh interval
         self._outbound_counter = 0
-        self._o_a = self.o_a
-        self._o_b = self.o_b
-        self._o_w = self.wait
 
     def log_outbound(self, n, wait, duration):
         if (
@@ -74,16 +71,16 @@ class Optimizer:
     def trigger_refresh(self):
         x = tuple((i, 1) for i, _, _ in self.o_stat)
         y = tuple(i for _, i, _ in self.o_stat)
-        self._o_a, self._o_b = np.linalg.lstsq(x, y, rcond=None)[0]
-        self._o_w = sum(w for _, _, w in self.o_stat) * 1.0 / len(self.o_stat)
+        _o_a, _o_b = np.linalg.lstsq(x, y, rcond=None)[0]
+        _o_w = sum(w for _, _, w in self.o_stat) * 1.0 / len(self.o_stat)
 
-        self.o_a, self.o_b = max(0.000001, self._o_a), max(0, self._o_b)
-        self.wait = max(0, self._o_w)
+        self.o_a, self.o_b = max(0.000001, _o_a), max(0, _o_b)
+        self.wait = max(0, _o_w)
         logger.info(
             "optimizer params updated: o_a: %.6f, o_b: %.6f, wait: %.6f",
-            self._o_a,
-            self._o_b,
-            self._o_w,
+            _o_a,
+            _o_b,
+            _o_w,
         )
 
 
@@ -173,7 +170,7 @@ class CorkDispatcher:
                         continue
                     await asyncio.sleep(self.tick_interval)
                     continue
-                if n * (wn + dt + a) <= self.optimizer.wait * decay:
+                if n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay:
                     await asyncio.sleep(self.tick_interval)
                     continue
 

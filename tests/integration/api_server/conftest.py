@@ -43,7 +43,7 @@ def _wait_until_ready(_host, timeout, check_interval=0.5):
         raise AssertionError(f"server didn't get ready in {timeout} seconds")
 
 
-@pytest.fixture(autouse=True, scope='session')
+@pytest.fixture(autouse=True)
 def host(image, enable_microbatch):
     import docker
 

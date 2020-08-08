@@ -17,7 +17,7 @@ def pytest_configure():
         url,
         headers=None,
         data=None,
-        timeout=10,
+        timeout=None,
         assert_status=None,
         assert_data=None,
     ):
@@ -78,6 +78,23 @@ def img_file(tmpdir):
     img_file_ = tmpdir.join("test_img.jpg")
     imageio.imwrite(str(img_file_), np.zeros((10, 10)))
     return str(img_file_)
+
+
+@pytest.fixture()
+def bin_file(tmpdir):
+    bin_file_ = tmpdir.join("bin_file")
+    with open(bin_file_, "wb") as of:
+        of.write("â".encode('gb18030'))
+    return str(bin_file_)
+
+
+@pytest.fixture()
+def bin_files(tmpdir):
+    for i in range(10):
+        bin_file_ = tmpdir.join(f"{i}")
+        with open(bin_file_, "wb") as of:
+            of.write(f"â{i}".encode('gb18030'))
+    return str(tmpdir.join("*"))
 
 
 @pytest.fixture()

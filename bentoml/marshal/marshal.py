@@ -216,7 +216,7 @@ class MarshalService:
                     )
                 except Exception:  # pylint: disable=broad-except
                     logger.error(traceback.format_exc())
-                    resp = aiohttp.web.InternalServerError()
+                    resp = aiohttp.web.HTTPInternalServerError()
             else:
                 resp = await self.relay_handler(request)
         return resp
@@ -261,9 +261,16 @@ class MarshalService:
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
             reqs_s = DataLoader.merge_requests(requests)
-            async with aiohttp.ClientSession() as client:
-                async with client.post(api_url, data=reqs_s, headers=headers) as resp:
-                    raw = await resp.read()
+            try:
+                async with aiohttp.ClientSession() as client:
+                    async with client.post(
+                        api_url, data=reqs_s, headers=headers
+                    ) as resp:
+                        raw = await resp.read()
+            except aiohttp.client_exceptions.ClientConnectionError as e:
+                raise RemoteException(
+                    e, payload=SimpleResponse(503, None, b"Service Unavailable")
+                )
             if resp.status != 200:
                 raise RemoteException(
                     f"Bad response status from model server:\n{resp.status}\n{raw}",

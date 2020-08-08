@@ -63,7 +63,7 @@ def test_to_valid_docker_image_version(tag, expected_tag):
 
 
 @pytest.mark.parametrize(
-    "tag", ["randomtag", "name:version", "asdf123:" + "A" * 128, "a-a.a__a"]
+    "tag", ["randomtag", "name:version", "asdf123:" + "A" * 128, "a-a.a__a", None]
 )
 def test_validate_tag(tag):
     # check to make sure tag is returned and nothing is raised

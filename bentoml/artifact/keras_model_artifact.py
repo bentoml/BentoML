@@ -15,6 +15,7 @@
 import os
 import importlib
 
+from bentoml.service_env import BentoServiceEnv
 from bentoml.utils import cloudpickle
 from bentoml.artifact import BentoServiceArtifact
 from bentoml.exceptions import (
@@ -99,15 +100,14 @@ class KerasModelArtifact(BentoServiceArtifact):
         self._custom_objects = None
         self._model_wrapper = None
 
-    @property
-    def pip_dependencies(self):
+    def set_dependencies(self, env: BentoServiceEnv):
         # Note that keras module is not required, user can use tf.keras as an
         # replacement for the keras module. Although tensorflow module is required to
         #  be used as the default Keras backend
-        deps = ['tensorflow']
+        pip_deps = ['tensorflow']
         if self._keras_module_name == 'keras':
-            deps.append('keras')
-        return deps
+            pip_deps.append('keras')
+        env.add_pip_dependencies_if_missing(pip_deps)
 
     def _keras_module_name_path(self, base_path):
         # The name of the keras module used, can be 'keras' or 'tensorflow.keras'

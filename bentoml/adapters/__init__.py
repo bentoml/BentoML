@@ -21,6 +21,7 @@ from bentoml.adapters.image_input import ImageInput
 from bentoml.adapters.multi_image_input import MultiImageInput
 from bentoml.adapters.legacy_image_input import LegacyImageInput
 from bentoml.adapters.fastai_image_input import FastaiImageInput
+from bentoml.adapters.file_input import FileInput
 from bentoml.adapters.clipper_input import (
     ClipperBytesInput,
     ClipperDoublesInput,
@@ -55,6 +56,7 @@ __all__ = [
     "MultiImageInput",
     "LegacyImageInput",
     "FastaiImageInput",
+    "FileInput",
     "ClipperBytesInput",
     "ClipperDoublesInput",
     "ClipperFloatsInput",

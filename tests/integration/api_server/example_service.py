@@ -1,4 +1,5 @@
 import functools
+import time
 
 from sklearn.ensemble import RandomForestRegressor
 
@@ -9,6 +10,7 @@ from bentoml.adapters import (
     ImageInput,
     LegacyImageInput,
     JsonInput,
+    FileInput,
     # FastaiImageInput,
 )
 from bentoml.handlers import DataframeHandler  # deprecated
@@ -50,13 +52,23 @@ class ExampleBentoService(bentoml.BentoService):
     def predict_image(self, images):
         return self.artifacts.model.predict_image(images)
 
+    @bentoml.api(input=FileInput())
+    def predict_file(self, files):
+        return self.artifacts.model.predict_file(files)
+
     @bentoml.api(input=LegacyImageInput(input_names=('original', 'compared')))
     def predict_legacy_images(self, original, compared):
         return self.artifacts.model.predict_legacy_images(original, compared)
 
     @bentoml.api(input=JsonInput())
-    def predict_json(self, input_data):
-        return self.artifacts.model.predict_json(input_data)
+    def predict_json(self, input_datas):
+        return self.artifacts.model.predict_json(input_datas)
+
+    @bentoml.api(input=JsonInput(), mb_max_latency=10000 * 1000)
+    def echo_with_delay(self, input_datas):
+        data = input_datas[0]
+        time.sleep(data['b'] + data['a'] * len(input_datas))
+        return input_datas
 
 
 class PickleModel(object):
@@ -67,6 +79,9 @@ class PickleModel(object):
         for input_data in input_datas:
             assert input_data is not None
         return [input_data.shape for input_data in input_datas]
+
+    def predict_file(self, input_files):
+        return [f.read() for f in input_files]
 
     def predict_legacy_images(self, original, compared):
         return (original == compared).all()

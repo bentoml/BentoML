@@ -1,3 +1,4 @@
+import logging
 import uuid
 import mock
 import pytest
@@ -125,3 +126,32 @@ def test_save_duplicated_bento_exception_raised(example_bento_service_class):
 
     delete_saved_bento_service(svc_metadata.name, svc_metadata.version)
     delete_saved_bento_service(svc_metadata_new.name, svc_metadata_new.version)
+
+
+def test_pyversion_warning_on_load(
+    tmp_path_factory, capsys, example_bento_service_class
+):
+    # Set logging level so version mismatch warnings are outputted
+    bentoml.configure_logging(logging_level=logging.WARNING)
+    # (Note that logger.warning() is captured by pytest in stdout, NOT stdlog.
+    #  So the warning is in capsys.readouterr().out, NOT caplog.text.)
+
+    test_model = TestModel()
+    svc = example_bento_service_class()
+    svc.pack('model', test_model)
+
+    # Should not warn for default `_python_version` value
+    match_dir = tmp_path_factory.mktemp("match")
+    svc.save_to_dir(match_dir)
+    _ = bentoml.load(str(match_dir))
+    assert "Python version mismatch" not in capsys.readouterr().out
+
+    # Should warn for any version mismatch (major, minor, or micro)
+    svc.env._python_version = "X.Y.Z"
+    mismatch_dir = tmp_path_factory.mktemp("mismatch")
+    svc.save_to_dir(mismatch_dir)
+    _ = bentoml.load(str(mismatch_dir))
+    assert "Python version mismatch" in capsys.readouterr().out
+
+    # Reset logging level to default
+    bentoml.configure_logging()

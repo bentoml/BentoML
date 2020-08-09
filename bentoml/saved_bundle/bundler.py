@@ -140,6 +140,15 @@ def save_to_dir(bento_service, path, version=None, silent=False):
             )
         )
 
+    # write Dockerfile-gpu
+    logger.debug("Using Docker Base Image %s", bento_service._env._docker_gpu_base_image)
+    with open(os.path.join(path, "Dockerfile-gpu"), "w") as f:
+        f.write(
+            MODEL_SERVER_DOCKERFILE_CPU.format(
+                docker_base_image=bento_service._env._docker_gpu_base_image
+            )
+        )
+
     # copy custom web_static_content if enabled
     if bento_service.web_static_content:
         src_web_static_content_dir = os.path.join(

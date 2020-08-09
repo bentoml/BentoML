@@ -34,4 +34,14 @@ do
     docker push bentoml/model-server:$BENTOML_VERSION-slim-py${version//.}
 
 done
+
+CUDA_VERSION=10.1
+echo "Releasing nvidia based docker gpu base image.. for CUDA $CUDA_VERSION"
+docker build --pull \
+    --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
+    --build-arg CUDA_VERSION=$CUDA_VERSION \
+    -t bentoml/model-server:$BENTOML_VERSION-gpu \
+    -f Dockerfile-gpu \
+    .
+docker push bentoml/model-server:$BENTOML_VERSION-gpu
 echo "Done"

@@ -5,7 +5,7 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 import "status.proto";
-import "labels_selector.proto";
+import "label_selectors.proto";
 
 // DeploymentSpec defines a model serving deployment that can be reproduced to target
 // deployment target
@@ -182,7 +182,7 @@ message ListDeploymentsRequest {
   DeploymentSpec.DeploymentOperator operator = 4;
   SORTABLE_COLUMN order_by = 5;
   bool ascending_order = 6;
-  LabelsSelector labels_selector =7;
+  LabelSelectors label_selectors =7;
 }
 
 message ListDeploymentsResponse {

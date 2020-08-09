@@ -5,7 +5,7 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 import "status.proto";
-import "labels_selector.proto";
+import "label_selectors.proto";
 
 
 message BentoUri {
@@ -131,7 +131,7 @@ message ListBentoRequest {
   int32 limit = 3;
   SORTABLE_COLUMN order_by = 4;
   bool ascending_order = 5;
-  LabelsSelector labels_selector = 6;
+  LabelSelectors label_selectors = 6;
 }
 
 message ListBentoResponse {

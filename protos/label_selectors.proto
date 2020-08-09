@@ -1,7 +1,7 @@
 syntax = "proto3";
 package bentoml;
 
-message LabelsSelector {
+message LabelSelectors {
     message LabelSelectorExpression {
         enum OPERATOR_TYPE {
             In = 0;

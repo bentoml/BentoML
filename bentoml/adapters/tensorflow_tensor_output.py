@@ -78,7 +78,7 @@ class TfTensorOutput(BaseOutputAdapter):
                 continue
             result = results[s]
             result_str = json.dumps(result, cls=TfTensorJsonEncoder)
-            responses[i] = HTTPResponse(200, dict(), result_str)
+            responses[i] = HTTPResponse(status=200, body=result_str)
         return responses
 
     def to_cli(self, result, args):

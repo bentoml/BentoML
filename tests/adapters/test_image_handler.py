@@ -71,7 +71,7 @@ def test_image_input_http_request_post_binary(img_file):
     responses = test_image_input.handle_batch_request([simple_request], predict)
 
     assert responses[0].status == 200
-    assert "[10, 10, 3]" in str(responses[0].data)
+    assert "[10, 10, 3]" in str(responses[0].body)
 
 
 def test_image_input_http_request_multipart_form(img_file):

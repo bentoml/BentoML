@@ -104,14 +104,14 @@ class TfTensorInput(BaseInputAdapter):
         """
         import tensorflow as tf
 
-        bad_resp = HTTPResponse(400, None, "input format error")
+        bad_resp = HTTPResponse(400, body="input format error")
         instances_list = [None] * len(requests)
         responses = [bad_resp] * len(requests)
         batch_flags = [None] * len(requests)
 
         for i, request in enumerate(requests):
             try:
-                raw_str = request.data
+                raw_str = request.body
                 batch_flags[i] = self.is_batch_request(request)
                 parsed_json = json.loads(raw_str, object_hook=b64_hook)
                 if parsed_json.get("instances") is not None:
@@ -122,7 +122,7 @@ class TfTensorInput(BaseInputAdapter):
 
                 elif parsed_json.get("inputs"):
                     responses[i] = HTTPResponse(
-                        501, None, "Column format 'inputs' not implemented"
+                        501, body="Column format 'inputs' not implemented"
                     )
 
             except (json.JSONDecodeError, UnicodeDecodeError):
@@ -131,7 +131,7 @@ class TfTensorInput(BaseInputAdapter):
                 import traceback
 
                 err = traceback.format_exc()
-                responses[i] = HTTPResponse(500, None, f"Internal Server Error: {err}")
+                responses[i] = HTTPResponse(500, body=f"Internal Server Error: {err}")
         merged_instances, slices = concat_list(instances_list, batch_flags=batch_flags)
         parsed_tensor = tf.constant(merged_instances)
         merged_result = func(parsed_tensor)

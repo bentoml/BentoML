@@ -63,7 +63,7 @@ def test_multi_image_batch_input(img_file):
     responses = adapter.handle_batch_request([request] * 5, predict)
     for response in responses:
         assert response.status == 200
-        assert response.data == '[[10, 10, 3], [10, 10, 3]]'
+        assert response.body == '[[10, 10, 3], [10, 10, 3]]'
 
 
 def test_bad_multi_image_batch_input(img_file):

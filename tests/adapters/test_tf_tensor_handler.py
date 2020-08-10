@@ -137,5 +137,5 @@ def test_tf_tensor_handle_batch_request(test_cases):
     )
 
     for response in responses:
-        prediction = json.loads(response.data)
+        prediction = json.loads(response.body)
         assert_eq_or_both_nan(except_result, prediction)

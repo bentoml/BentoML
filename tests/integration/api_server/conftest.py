@@ -50,7 +50,7 @@ def host(image, enable_microbatch):
     yield start_api_server_docker_container(image, enable_microbatch)
 
 
-def start_api_server_docker_container(image, enable_microbatch, timeout=60):
+def start_api_server_docker_container(image, enable_microbatch=False, timeout=60):
     """
     yields the host URL
     """
@@ -61,12 +61,12 @@ def start_api_server_docker_container(image, enable_microbatch, timeout=60):
     with bentoml.utils.reserve_free_port() as port:
         pass
     if enable_microbatch:
-        command = "bentoml serve-gunicorn /bento --enable-microbatch --workers 1"
+        command_args = "--enable-microbatch --workers 1"
     else:
-        command = "bentoml serve-gunicorn /bento --workers 1"
+        command_args = "--workers 1"
     try:
         container = client.containers.run(
-            command=command,
+            command=command_args,
             image=image.id,
             auto_remove=True,
             tty=True,

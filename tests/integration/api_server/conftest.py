@@ -33,12 +33,14 @@ def _wait_until_ready(_host, timeout, check_interval=0.5):
     while time.time() - start_time < timeout:
         try:
             if (
-                urllib.request.urlopen(f'http://{_host}/healthz', timeout=0.1).status
+                urllib.request.urlopen(f'http://{_host}/healthz', timeout=1).status
                 == 200
             ):
                 break
+        except Exception:  # pylint:disable=broad-except
+            pass
         finally:
-            time.sleep(check_interval - 0.1)
+            time.sleep(check_interval)
     else:
         raise AssertionError(f"server didn't get ready in {timeout} seconds")
 

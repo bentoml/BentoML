@@ -82,9 +82,14 @@ class ModuleManager(object):
         import pkg_resources
 
         for dist in pkg_resources.working_set:  # pylint: disable=not-an-iterable
-            if os.path.realpath(dist.module_path) != os.getcwd():
+            module_path = dist.module_path or dist.location
+            if not module_path:
+                # Skip if no module path was found for pkg distribution
+                continue
+
+            if os.path.realpath(module_path) != os.getcwd():
                 # add to nonlocal_package path only if it's not current directory
-                self.nonlocal_package_path.add(dist.module_path)
+                self.nonlocal_package_path.add(module_path)
 
             self.pip_pkg_map[dist._key] = dist._version
             for mn in dist._get_metadata("top_level.txt"):

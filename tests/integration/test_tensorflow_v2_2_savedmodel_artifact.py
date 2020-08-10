@@ -6,7 +6,7 @@ import tensorflow as tf
 
 import bentoml
 from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
-from tests.integration.api_server.conftest import _wait_until_ready
+from tests.integration.api_server.conftest import start_api_server_docker_container
 
 test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(test_data)
@@ -78,30 +78,7 @@ def tf2_image(tf2_svc_saved_dir):
 
 @pytest.fixture()
 def tf2_host(tf2_image):
-    # Based on `host()` in tests/integration/api_server/conftest.py
-    # Better refactoring might be possible to combine both functions
-    import docker
-
-    client = docker.from_env()
-
-    with bentoml.utils.reserve_free_port() as port:
-        pass
-    command = "bentoml serve-gunicorn /bento --workers 1"
-    try:
-        container = client.containers.run(
-            command=command,
-            image=tf2_image.id,
-            auto_remove=True,
-            tty=True,
-            ports={'5000/tcp': port},
-            detach=True,
-        )
-        _host = f"127.0.0.1:{port}"
-        _wait_until_ready(_host, 60)
-        yield _host
-    finally:
-        container.stop()
-        time.sleep(1)  # make sure container stopped & deleted
+    yield start_api_server_docker_container(tf2_image, timeout=300)
 
 
 def test_tensorflow_2_artifact(tf2_svc):

@@ -47,6 +47,13 @@ def _wait_until_ready(_host, timeout, check_interval=0.5):
 
 @pytest.fixture(autouse=True)
 def host(image, enable_microbatch):
+    yield start_api_server_docker_container(image, enable_microbatch)
+
+
+def start_api_server_docker_container(image, enable_microbatch, timeout=60):
+    """
+    yields the host URL
+    """
     import docker
 
     client = docker.from_env()
@@ -67,7 +74,7 @@ def host(image, enable_microbatch):
             detach=True,
         )
         _host = f"127.0.0.1:{port}"
-        _wait_until_ready(_host, 60)
+        _wait_until_ready(_host, timeout)
         yield _host
     finally:
         container.stop()

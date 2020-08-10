@@ -97,7 +97,7 @@ def tf2_host(tf2_image):
             detach=True,
         )
         _host = f"127.0.0.1:{port}"
-        _wait_until_ready(_host, 10)
+        _wait_until_ready(_host, 60)
         yield _host
     finally:
         container.stop()

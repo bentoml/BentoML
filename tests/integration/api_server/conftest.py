@@ -37,7 +37,7 @@ def _wait_until_ready(_host, timeout, check_interval=0.5):
                 == 200
             ):
                 break
-        except Exception:  # pylint:disable=broad-except
+        finally:
             time.sleep(check_interval - 0.1)
     else:
         raise AssertionError(f"server didn't get ready in {timeout} seconds")
@@ -65,7 +65,7 @@ def host(image, enable_microbatch):
             detach=True,
         )
         _host = f"127.0.0.1:{port}"
-        _wait_until_ready(_host, 10)
+        _wait_until_ready(_host, 60)
         yield _host
     finally:
         container.stop()

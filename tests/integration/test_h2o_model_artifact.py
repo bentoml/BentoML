@@ -92,7 +92,7 @@ def h2o_docker_host(h2o_image):
             detach=True,
         )
         _host = f"127.0.0.1:{port}"
-        _wait_until_ready(_host, 500)
+        _wait_until_ready(_host, 60)
         yield _host
     finally:
         container.stop()

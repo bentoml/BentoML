@@ -71,7 +71,7 @@ def test_file_input_http_request_post_binary(bin_file):
     responses = test_file_input.handle_batch_request([simple_request], predict)
 
     assert responses[0].status == 200
-    assert '{"b64": "gTCJOQ=="}' == responses[0].data
+    assert '{"b64": "gTCJOQ=="}' == responses[0].body
 
 
 def test_file_input_http_request_multipart_form(bin_file):

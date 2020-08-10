@@ -11,11 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import io
+import functools
 from typing import NamedTuple, Union, Dict, List
 
 from multidict import CIMultiDict
 
 from bentoml.utils import cached_property
+
+
+# For non latin1 characters: https://tools.ietf.org/html/rfc8187
+# Also https://github.com/benoitc/gunicorn/issues/1778
+HEADER_CHARSET = 'latin1'
+JSON_CHARSET = 'utf-8'
 
 
 class HTTPRequest(NamedTuple):
@@ -24,36 +32,47 @@ class HTTPRequest(NamedTuple):
     data: str
     '''
 
-    headers: tuple
-    data: str
+    headers: tuple = tuple()
+    body: bytes = b""
 
-    @cached_property
+    @property
+    @functools.lru_cache()
     def parsed_headers(self):
         return CIMultiDict(
-            (hk.decode("latin1").lower(), hv.decode("latin1"))
-            for hk, hv in self.headers or tuple()
+            (k.decode(HEADER_CHARSET), v.decode(HEADER_CHARSET))
+            for k, v in self.headers or tuple()
         )
 
     @classmethod
     def from_flask_request(cls, request):
-        # For non latin1 characters: https://tools.ietf.org/html/rfc8187
-        # Also https://github.com/benoitc/gunicorn/issues/1778
         return cls(
-            tuple((k.encode("latin1"), v.encode("latin1")) for k, v in request.headers),
+            tuple(
+                (k.encode(HEADER_CHARSET), v.encode(HEADER_CHARSET))
+                for k, v in request.headers
+            ),
             request.get_data(),
+        )
+
+    def to_flask_request(self):
+        from werkzeug.wrappers import Request
+
+        return Request.from_values(
+            input_stream=io.BytesIO(self.body),
+            content_length=len(self.body),
+            headers=self.headers,
         )
 
 
 class HTTPResponse(NamedTuple):
-    status: int
-    headers: tuple
-    data: str
+    status: int = 200
+    headers: tuple = tuple()
+    body: str = ""  # TODO(bojiang): bytes
 
     def to_flask_response(self):
         import flask
 
         return flask.Response(
-            headers=self.headers, response=self.data, status=self.status
+            status=self.status, headers=self.headers, response=self.body
         )
 
 

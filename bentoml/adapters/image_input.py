@@ -182,12 +182,12 @@ class ImageInput(BaseInputAdapter[ndarray]):
         input_datas = []
         ids = []
         for i, req in enumerate(requests):
-            if not req.data:
+            if not req.body:
                 ids.append(None)
                 continue
             request = Request.from_values(
-                input_stream=BytesIO(req.data),
-                content_length=len(req.data),
+                input_stream=BytesIO(req.body),
+                content_length=len(req.body),
                 headers=req.headers,
             )
             try:

@@ -269,7 +269,7 @@ class MarshalService:
                         raw = await resp.read()
             except aiohttp.client_exceptions.ClientConnectionError as e:
                 raise RemoteException(
-                    e, payload=HTTPResponse(503, None, b"Service Unavailable")
+                    e, payload=HTTPResponse(status=503, body=b"Service Unavailable")
                 )
             if resp.status != 200:
                 raise RemoteException(
@@ -278,7 +278,7 @@ class MarshalService:
                 )
             merged = DataLoader.split_responses(raw)
             return tuple(
-                aiohttp.web.Response(body=i.data, headers=i.headers, status=i.status)
+                aiohttp.web.Response(body=i.body, headers=i.headers, status=i.status)
                 for i in merged
             )
 

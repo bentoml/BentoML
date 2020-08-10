@@ -114,7 +114,7 @@ class JsonInput(BaseInputAdapter):
         return [
             JsonInferenceTask(
                 meta=dict(inf_id=uuid.uuid4(), http_headers=r.parsed_headers),
-                data=r.data,
+                data=r.body,
             )
             for r in reqs
         ]
@@ -199,7 +199,7 @@ class JsonInput(BaseInputAdapter):
     def handle_batch_request(
         self, requests: Iterable[HTTPRequest], func
     ) -> Iterable[HTTPResponse]:
-        bad_resp = HTTPResponse(400, None, "Bad Input")
+        bad_resp = HTTPResponse(400, body="Bad Input")
         instances_list = [None] * len(requests)
         fallbacks = [bad_resp] * len(requests)
         batch_flags = [None] * len(requests)
@@ -207,16 +207,16 @@ class JsonInput(BaseInputAdapter):
         for i, request in enumerate(requests):
             batch_flags[i] = self.is_batch_request(request)
             try:
-                raw_str = request.data
+                raw_str = request.body
                 parsed_json = json.loads(raw_str)
                 instances_list[i] = parsed_json
             except (json.JSONDecodeError, UnicodeDecodeError):
-                fallbacks[i] = HTTPResponse(400, None, "Not a valid json")
+                fallbacks[i] = HTTPResponse(400, body="Not a valid json")
             except Exception:  # pylint: disable=broad-except
                 import traceback
 
                 err = traceback.format_exc()
-                fallbacks[i] = HTTPResponse(500, None, f"Internal Server Error: {err}")
+                fallbacks[i] = HTTPResponse(500, body=f"Internal Server Error: {err}")
 
         merged_instances, slices = concat_list(instances_list, batch_flags=batch_flags)
         merged_result = func(merged_instances)

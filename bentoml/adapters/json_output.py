@@ -60,9 +60,9 @@ class JsonSerializableOutput(BaseOutputAdapter):
                     200, (("Content-Type", "application/json"),), json_output
                 )
             except AssertionError as e:
-                responses[i] = HTTPResponse(400, None, str(e))
+                responses[i] = HTTPResponse(400, body=str(e))
             except Exception as e:  # pylint: disable=broad-except
-                responses[i] = HTTPResponse(500, None, str(e))
+                responses[i] = HTTPResponse(500, body=str(e))
         return responses
 
     def to_cli(self, result, args):

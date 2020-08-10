@@ -170,7 +170,7 @@ class DataframeInput(BaseInputAdapter):
         self, requests: Iterable[HTTPRequest], func
     ) -> Iterable[HTTPResponse]:
 
-        datas = [r.data for r in requests]
+        datas = [r.body for r in requests]
         content_types = [
             r.parsed_headers.get('content-type', 'application/json') for r in requests
         ]

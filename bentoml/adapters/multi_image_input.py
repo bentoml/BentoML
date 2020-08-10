@@ -126,7 +126,7 @@ class MultiImageInput(BaseInputAdapter):
             else:
                 files = {}
                 request = Request.from_values(
-                    data=req.data, content_type=content_type, headers=req.headers,
+                    data=req.body, content_type=content_type, headers=req.headers,
                 )
                 for name in request.files:
                     file = request.files[name]

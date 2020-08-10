@@ -58,6 +58,7 @@ test_requires = [
     "black==19.10b0",
     "codecov",
     "coverage>=4.4",
+    "docker<=4.2.2",
     "flake8>=3.8.2",
     "imageio>=2.5.0",
     "mock>=2.0.0",

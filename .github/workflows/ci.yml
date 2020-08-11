@@ -107,3 +107,47 @@ jobs:
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1
 
+  api_server_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Install test dependencies
+        run: ./travis/install-test-deps.sh
+      - name: Run tests
+        run: ./travis/integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1
+
+  tensorflow_v2_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./travis/install-test-deps.sh
+      - name: Run tests
+        run: ./travis/tensorflow_v2.2_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1
+
+  h2o_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Install test dependencies
+        run: ./travis/install-test-deps.sh
+      - name: Run tests
+        run: ./travis/h2o_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1

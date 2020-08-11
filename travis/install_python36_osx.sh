@@ -25,4 +25,7 @@ command -v pip
 python -V
 pip -V
 
+export PATH=${HOME}/miniconda/bin:${PATH}
+hash -r
+
 test $error = 0 # Return non-zero if pytest failed

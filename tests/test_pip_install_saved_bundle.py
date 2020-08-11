@@ -6,8 +6,6 @@ import pytest
 import pandas as pd
 import psutil
 
-from bentoml.configuration import get_bentoml_deploy_version
-
 
 def format_path(path_str):
     if psutil.WINDOWS:

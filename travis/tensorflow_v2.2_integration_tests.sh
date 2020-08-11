@@ -10,6 +10,6 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
 pip install tensorflow==2.2.0
-pytest "$GIT_ROOT"/tests/integration/test_tensorflow_v2_2_savedmodel_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest -s "$GIT_ROOT"/tests/integration/test_tensorflow_v2_2_savedmodel_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

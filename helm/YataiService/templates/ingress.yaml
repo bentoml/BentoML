@@ -23,4 +23,11 @@ spec:
         - backend:
             serviceName: yatai-service
             servicePort: grpc
+---
+apiVersion: "stable.k8s.psg.io/v1"
+kind: "Certificate"
+metadata:
+  name: {{ .Values.ingress.hostname }}
+spec:
+  domain: {{ .Values.ingress.hostname }}
 {{- end }}

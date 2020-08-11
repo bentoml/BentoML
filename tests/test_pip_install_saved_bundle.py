@@ -13,6 +13,7 @@ def format_path(path_str):
     return path_str
 
 
+@pytest.mark.skipif('not psutil.POSIX')
 def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     import subprocess
     from pip._internal.cli.main import main as pipmain

@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+import sys
 import contextlib
 import pytest
 import time
@@ -81,6 +82,7 @@ async def test_dispatcher_basic(model):
     assert all([o == p for p, o in zip(await model(inputs), outputs)])
 
 
+@pytest.mark.skipif(sys.platform == "darwin", reason="Skip test for Mac OS")
 @pytest.mark.skipif('not psutil.POSIX')
 @pytest.mark.asyncio
 async def test_dispatcher_preheating(model):

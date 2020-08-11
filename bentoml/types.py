@@ -13,16 +13,15 @@
 # limitations under the License.
 import io
 import functools
-from typing import NamedTuple, Union, Dict, List
+from typing import NamedTuple, Union, Dict, List, Generic, TypeVar
 
 from multidict import CIMultiDict
-
-from bentoml.utils import cached_property
 
 
 # For non latin1 characters: https://tools.ietf.org/html/rfc8187
 # Also https://github.com/benoitc/gunicorn/issues/1778
 HEADER_CHARSET = 'latin1'
+
 JSON_CHARSET = 'utf-8'
 
 
@@ -83,15 +82,19 @@ JsonSerializable = Union[bool, None, Dict, List, int, float, str]
 AwsLambdaEvent = Union[Dict, List, str, int, float, None]
 
 
-class InferenceTask(NamedTuple):
-    context: dict
-    data: object
+Input = TypeVar("Input")
+Output = TypeVar("Output")
 
 
-class InferenceResult(NamedTuple):
-    context: dict
-    data: object
+class InferenceTask(Generic[Input]):
+    def __init__(self, data: Input, context: dict = None, is_fallback: bool = False):
+        self.data = data
+        self.context = context or {}
+        self.is_fallback = is_fallback
 
 
-class JsonInferenceTask(InferenceTask):
-    data: str  # json string
+class InferenceResult(Generic[Output]):
+    def __init__(self, data: Output, context: dict = None, is_fallback: bool = False):
+        self.data = data
+        self.context = context or {}
+        self.is_fallback = is_fallback

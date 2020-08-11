@@ -17,7 +17,7 @@ import json
 import inspect
 import functools
 import argparse
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 from json import JSONDecodeError
 
 import uuid
@@ -30,14 +30,11 @@ from bentoml.types import (
     JsonSerializable,
     AwsLambdaEvent,
     InferenceTask,
+    InferenceResult,
 )
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.base_output import BaseOutputAdapter
 from bentoml.adapters.utils import concat_list
-
-
-class JsonInferenceTask(InferenceTask):
-    data: str  # json string
 
 
 class InferenceAPI:
@@ -66,7 +63,7 @@ class InferenceAPI:
 
     def handle_http_request(self, reqs: List[HTTPRequest]) -> Iterable[HTTPResponse]:
         tasks = self.input_adapter.from_http_request(reqs)
-        inputs = self.input_adapter.extract(tasks)
+        inputs, fallback_results = self.input_adapter.extract(tasks)
         outputs = self.user_func(inputs, contexts=[t.context for t in tasks])
         return self.output_adapter.to_batch_response(outputs)
 
@@ -109,11 +106,39 @@ class InferenceAPI:
         return 0
 
 
+class BaseInputAdapter:
+    def validate_task(self, _: InferenceTask):
+        return True
+
+    def validate_input(self, _):
+        return True
+
+    def from_http_request(
+        self, reqs: List[HTTPRequest]
+    ) -> Iterable[InferenceTask[str]]:
+        raise NotImplementedError()
+
+    def from_aws_lambda_event(
+        self, events: List[AwsLambdaEvent]
+    ) -> Iterable[InferenceTask[str]]:
+        raise NotImplementedError()
+
+    def from_cli(self, cli_inputs, other_args) -> Iterable[InferenceTask[str]]:
+        raise NotImplementedError()
+
+    def extract(
+        self, tasks: List[InferenceTask[str]]
+    ) -> Tuple[Iterable[JsonSerializable], Iterable[InferenceResult]]:
+        raise NotImplementedError()
+
+
 class JsonInput(BaseInputAdapter):
-    def from_http_request(self, reqs: List[HTTPRequest]) -> Iterable[JsonInferenceTask]:
+    def from_http_request(
+        self, reqs: List[HTTPRequest]
+    ) -> Iterable[InferenceTask[str]]:
         return [
-            JsonInferenceTask(
-                meta=dict(inf_id=uuid.uuid4(), http_headers=r.parsed_headers),
+            InferenceTask(
+                context=dict(inf_id=uuid.uuid4(), http_headers=r.parsed_headers),
                 data=r.body,
             )
             for r in reqs
@@ -121,31 +146,69 @@ class JsonInput(BaseInputAdapter):
 
     def from_aws_lambda_event(
         self, events: List[AwsLambdaEvent]
-    ) -> Iterable[JsonInferenceTask]:
+    ) -> Iterable[InferenceTask[str]]:
         return [
-            JsonInferenceTask(
-                meta=dict(inf_id=uuid.uuid4(), aws_event=e), data=e['body'],
+            InferenceTask(
+                context=dict(inf_id=uuid.uuid4(), aws_event=e), data=e['body'],
             )
             for e in events
         ]
 
-    def from_cli(self, cli_inputs, other_args) -> Iterable[JsonInferenceTask]:
+    def from_cli(self, cli_inputs, other_args) -> Iterable[InferenceTask[str]]:
         parser = argparse.ArgumentParser()
         parser.add_argument("--charset", default="utf-8", type=str)
         parsed_args, _ = parser.parse_known_args(other_args)
         return [
-            JsonInferenceTask(
-                meta=dict(inf_id=uuid.uuid4(), cli_args=other_args),
+            InferenceTask(
+                context=dict(inf_id=uuid.uuid4(), cli_args=other_args),
                 data=i.decode(parsed_args.charset),
             )
             for i in cli_inputs
         ]
 
-    def extract(self, tasks: List[InferenceTask]) -> Iterable[JsonSerializable]:
-        # TODO
-        inputs = [json.loads(t.data) for t in tasks]
-        filtered_inputs = map(self.validate, inputs)
-        return filtered_inputs
+    def extract(
+        self, tasks: List[InferenceTask[str]]
+    ) -> Tuple[Iterable[JsonSerializable], Iterable[InferenceResult]]:
+        json_inputs = []
+        fallback_results = []
+        for task in tasks:
+            try:
+                parsed_json = json.loads(task.data)
+                json_inputs.append(parsed_json)
+            except AssertionError:
+                fallback_results.append(
+                    InferenceResult(
+                        context=dict(http_status=400),
+                        data="Input validation failed",
+                        is_fallback=True,
+                    )
+                )
+            except BadInput as e:
+                fallback_results.append(
+                    InferenceResult(
+                        context=dict(http_status=400), data=e.value, is_fallback=True,
+                    )
+                )
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                fallback_results.append(
+                    InferenceResult(
+                        context=dict(http_status=400),
+                        data="Not a valid json",
+                        is_fallback=True,
+                    )
+                )
+            except Exception:  # pylint: disable=broad-except
+                import traceback
+
+                err = traceback.format_exc()
+                fallback_results.append(
+                    InferenceResult(
+                        context=dict(http_status=500),
+                        data=f"Internal Server Error: {err}",
+                        is_fallback=True,
+                    )
+                )
+        return json_inputs, fallback_results
 
 
 class JsonInput(BaseInputAdapter):

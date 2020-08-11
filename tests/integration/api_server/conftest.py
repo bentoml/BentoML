@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 import time
 import urllib
+from contextlib import contextmanager
 
 import pytest
 import bentoml
@@ -47,10 +48,12 @@ def _wait_until_ready(_host, timeout, check_interval=0.5):
 
 @pytest.fixture(autouse=True)
 def host(image, enable_microbatch):
-    yield start_api_server_docker_container(image, enable_microbatch)
+    with run_api_server_docker_container(image, enable_microbatch) as host:
+        yield host
 
 
-def start_api_server_docker_container(image, enable_microbatch=False, timeout=60):
+@contextmanager
+def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
     """
     yields the host URL
     """

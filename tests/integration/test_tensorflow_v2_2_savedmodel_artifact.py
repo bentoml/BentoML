@@ -5,7 +5,7 @@ import tensorflow as tf
 
 import bentoml
 from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
-from tests.integration.api_server.conftest import start_api_server_docker_container
+from tests.integration.api_server.conftest import run_api_server_docker_container
 
 test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(test_data)
@@ -77,7 +77,8 @@ def tf2_image(tf2_svc_saved_dir):
 
 @pytest.fixture()
 def tf2_host(tf2_image):
-    yield start_api_server_docker_container(tf2_image, timeout=300)
+    with run_api_server_docker_container(tf2_image, timeout=300) as host:
+        yield host
 
 
 def test_tensorflow_2_artifact(tf2_svc):

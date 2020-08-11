@@ -3,7 +3,7 @@ import pytest
 
 import bentoml
 from tests.bento_service_examples.h2o_service import H2oExampleBentoService
-from tests.integration.api_server.conftest import start_api_server_docker_container
+from tests.integration.api_server.conftest import run_api_server_docker_container
 
 test_data = {
     "TemperatureCelcius": {"0": 21.6},
@@ -75,7 +75,8 @@ def h2o_image(h2o_svc_saved_dir):
 
 @pytest.fixture()
 def h2o_docker_host(h2o_image):
-    yield start_api_server_docker_container(h2o_image, timeout=300)
+    with run_api_server_docker_container(h2o_image, timeout=300) as host:
+        yield host
 
 
 def test_h2o_artifact_with_docker(h2o_docker_host):

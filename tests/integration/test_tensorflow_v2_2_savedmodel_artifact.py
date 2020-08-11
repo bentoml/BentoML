@@ -90,7 +90,6 @@ def test_tensorflow_2_artifact_loaded(tf2_svc_loaded):
     ), 'Inference on saved and loaded TF2 artifact does not match expected'
 
 
-@pytest.mark.skip(reason="Test currently failling on Travis-CI environment")
 @pytest.mark.asyncio
 async def test_tensorflow_2_artifact_with_docker(tf2_host):
     await pytest.assert_request(

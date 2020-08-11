@@ -5,7 +5,7 @@ help: ## Show all Makefile targets
 
 # General Development
 test: ## Run all unit tests with current Python version and env
-	@./travis/unit_tests.sh || (echo "Error running tests... You may need to run 'make install-test-deps'"; exit 1)
+	@./ci/unit_tests.sh || (echo "Error running tests... You may need to run 'make install-test-deps'"; exit 1)
 format: ## Format code to adhere to BentoML style
 	./dev/format.sh
 lint: ## Lint code

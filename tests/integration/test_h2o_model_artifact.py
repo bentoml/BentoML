@@ -78,7 +78,7 @@ def h2o_docker_host(h2o_image):
         yield host
 
 
-@pytest.mark.skip(reason="Test currently failling on Travis-CI environment")
+@pytest.mark.skip(reason="Test currently failling on CI environment")
 def test_h2o_artifact_with_docker(h2o_docker_host):
     import requests
 

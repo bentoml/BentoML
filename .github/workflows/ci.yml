@@ -1,0 +1,163 @@
+name: BentoML CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  lint_and_format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install-test-deps.sh
+      - name: Run linting script
+        run: ./ci/linter.sh
+
+
+  unit_tests:
+    name: ${{ matrix.os }} Python ${{ matrix.python-version }} Unit Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [ '3.6', '3.7', '3.8' ]
+        exclude:
+          - os: macos-latest
+            python-version: 3.8
+          - os: macos-latest
+            python-version: 3.6
+          - os: windows-latest
+            python-version: 3.8
+          - os: windows-latest
+            python-version: 3.6
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Install test dependencies
+        run: ./ci/install-test-deps.sh
+        shell: bash
+      - name: Run Unit Tests
+        run: ./ci/unit_tests.sh
+        shell: bash
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+        with:
+          name: codecov-${{ matrix.os}}-python${{ matrix.python-version }}
+          fail_ci_if_error: true
+
+  onnx_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install-test-deps.sh
+      - name: Run tests
+        run: ./ci/onnx_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  pytorch_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install-test-deps.sh
+      - name: Run tests
+        run: ./ci/pytorch_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  coreml_integration_tests:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install-test-deps.sh
+      - name: Run tests
+        run: ./ci/coreml_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  api_server_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Install test dependencies
+        run: ./ci/install-test-deps.sh
+      - name: Run tests
+        run: ./ci/integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  tensorflow_v2_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install-test-deps.sh
+      - name: Run tests
+        run: ./ci/tensorflow_v2.2_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  h2o_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Install test dependencies
+        run: ./ci/install-test-deps.sh
+      - name: Run tests
+        run: ./ci/h2o_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12

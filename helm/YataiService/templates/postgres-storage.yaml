@@ -1,4 +1,4 @@
-{{- if .Values.usePostgres -}}
+{{- if .Values.postgres.enabled -}}
 kind: PersistentVolume
 apiVersion: v1
 metadata:

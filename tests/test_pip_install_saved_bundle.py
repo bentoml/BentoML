@@ -72,3 +72,5 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     ).decode()
     output = json.loads(output)
     assert output["info"]["version"] == svc.version
+
+    assert False, "should show error and fail job"

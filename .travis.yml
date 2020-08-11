@@ -27,8 +27,29 @@ git:
   # the commit/tag of the latest BentoML PyPI release.
   depth: 200
 
+script:
+  - ./travis/unit_tests.sh
+
+after_success:
+  - codecov
+
 matrix:
   include:
+    - name: "Linting & formatting check"
+      python: "3.6"
+      script:
+        - ./travis/linter.sh
+
+    - name: "Tensorflow v2.2 Artifact"
+      python: "3.6"
+      script:
+        - travis_wait 20 ./travis/tensorflow_v2.2_integration_tests.sh
+
+    - name: "H2o Artifact"
+      python: "3.6"
+      script:
+        - travis_wait 20 ./travis/h2o_integration_tests.sh
+
     - os: windows
       language: sh
       python: "3.6"
@@ -37,11 +58,6 @@ matrix:
       before_install:
         - choco install python --version 3.6.8
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
-
-    - name: "Linting & formatting check"
-      python: "3.6"
-      script:
-        - ./travis/linter.sh
 
     - name: "ONNX artifact"
       python: "3.6"
@@ -52,11 +68,6 @@ matrix:
       python: "3.6"
       script:
         - ./travis/pytorch_integration_tests.sh
-
-    - name: "Tensorflow v2.2 Artifact"
-      python: "3.6"
-      script:
-        - travis_wait 20 ./travis/tensorflow_v2.2_integration_tests.sh
 
     - name: "API Server Integration Tests"
       python: "3.7"
@@ -72,15 +83,3 @@ matrix:
         - source ./travis/install_python36_osx.sh
       script:
         - ./travis/coreml_integration_tests.sh
-
-    - name: "H2o Artifact"
-      python: "3.6"
-      script:
-        - travis_wait 20 ./travis/h2o_integration_tests.sh
-
-script:
-  - ./travis/unit_tests.sh
-
-after_success:
-  - codecov
-

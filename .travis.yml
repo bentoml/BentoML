@@ -43,12 +43,12 @@ matrix:
     - name: "Tensorflow v2.2 Artifact"
       python: "3.6"
       script:
-        - travis_wait 20 ./travis/tensorflow_v2.2_integration_tests.sh
+        - ./travis/tensorflow_v2.2_integration_tests.sh
 
     - name: "H2o Artifact"
       python: "3.6"
       script:
-        - travis_wait 20 ./travis/h2o_integration_tests.sh
+        - ./travis/h2o_integration_tests.sh
 
     - os: windows
       language: sh

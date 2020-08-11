@@ -52,7 +52,7 @@ class ExampleBentoService(bentoml.BentoService):
     def predict_legacy_json(self, input_data):
         return self.artifacts.model.predict_legacy_json(input_data)
 
-    # Disabling fastai related tests to fix travis build
+    # Disabling fastai related tests to fix ci build
     # @bentoml.api(input=FastaiImageInput())
     # def predict_fastai_image(self, input_data):
     #     return self.artifacts.model.predict_image(input_data)

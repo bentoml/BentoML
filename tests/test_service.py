@@ -27,7 +27,7 @@ def test_custom_api_name():
     assert str(e.value).startswith("Invalid API name")
 
 
-@pytest.mark.skip("skip fastai tests to fix travis build")
+@pytest.mark.skip("skip fastai tests to fix CI build")
 def test_fastai_image_input_pip_dependencies():
     class TestFastAiImageService(bentoml.BentoService):
         @bentoml.api(input=FastaiImageInput())

@@ -17,9 +17,9 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./travis/install-test-deps.sh
+        run: ./ci/install-test-deps.sh
       - name: Run linting script
-        run: ./travis/linter.sh
+        run: ./ci/linter.sh
 
 
   unit_tests:
@@ -49,10 +49,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
       - name: Install test dependencies
-        run: ./travis/install-test-deps.sh
+        run: ./ci/install-test-deps.sh
         shell: bash
       - name: Run Unit Tests
-        run: ./travis/unit_tests.sh
+        run: ./ci/unit_tests.sh
         shell: bash
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
@@ -71,9 +71,9 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./travis/install-test-deps.sh
+        run: ./ci/install-test-deps.sh
       - name: Run tests
-        run: ./travis/onnx_integration_tests.sh
+        run: ./ci/onnx_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -88,9 +88,9 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./travis/install-test-deps.sh
+        run: ./ci/install-test-deps.sh
       - name: Run tests
-        run: ./travis/pytorch_integration_tests.sh
+        run: ./ci/pytorch_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -105,9 +105,9 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./travis/install-test-deps.sh
+        run: ./ci/install-test-deps.sh
       - name: Run tests
-        run: ./travis/coreml_integration_tests.sh
+        run: ./ci/coreml_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -122,9 +122,9 @@ jobs:
         with:
           python-version: 3.6
       - name: Install test dependencies
-        run: ./travis/install-test-deps.sh
+        run: ./ci/install-test-deps.sh
       - name: Run tests
-        run: ./travis/integration_tests.sh
+        run: ./ci/integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -139,9 +139,9 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./travis/install-test-deps.sh
+        run: ./ci/install-test-deps.sh
       - name: Run tests
-        run: ./travis/tensorflow_v2.2_integration_tests.sh
+        run: ./ci/tensorflow_v2.2_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -156,8 +156,8 @@ jobs:
         with:
           python-version: 3.6
       - name: Install test dependencies
-        run: ./travis/install-test-deps.sh
+        run: ./ci/install-test-deps.sh
       - name: Run tests
-        run: ./travis/h2o_integration_tests.sh
+        run: ./ci/h2o_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12

@@ -1,4 +1,5 @@
 import io
+import os
 import mock
 
 import flask
@@ -9,6 +10,7 @@ from urllib3.filepost import encode_multipart_formdata
 
 from bentoml.exceptions import BadInput
 from bentoml.adapters import AnnotatedImageInput
+from bentoml.adapters.annotated_image_input import has_image_extension
 from bentoml.marshal.utils import SimpleRequest
 
 
@@ -57,6 +59,17 @@ def test_anno_image_input_cli_image_and_json(capsys, img_file, json_file):
     assert out.strip() == "((10, 10, 3), 'kaith')"
 
 
+def test_anno_image_input_cli_relative_paths(capsys, img_file, json_file):
+    test_anno_image_input = AnnotatedImageInput()
+
+    test_args = ["--image", os.path.relpath(img_file),
+            "--json", os.path.relpath(json_file)]
+    test_anno_image_input.handle_cli(test_args, predict_image_and_json)
+    out, _ = capsys.readouterr()
+
+    assert out.strip() == "((10, 10, 3), 'kaith')"
+
+
 def test_anno_image_input_aws_lambda_event(img_file, json_file):
     test_anno_image_input = AnnotatedImageInput()
 
@@ -69,6 +82,23 @@ def test_anno_image_input_aws_lambda_event(img_file, json_file):
 
     assert aws_result["statusCode"] == 200
     assert aws_result["body"] == '[[10, 10, 3], "kaith"]'
+
+
+def test_anno_image_input_aws_lambda_event_bad_content_type(img_file, json_file):
+    test_anno_image_input = AnnotatedImageInput()
+
+    multipart_data, headers = generate_multipart_body(img_file, json_file)
+    headers['Content-Type'] = 'image/jpeg'
+
+    aws_lambda_event = {"body": multipart_data, "headers": headers}
+
+    with pytest.raises(BadInput) as e:
+        test_anno_image_input.handle_aws_lambda_event(
+            aws_lambda_event, predict_image_and_json
+        )
+
+    assert "only supports multipart/form-data" in str(e.value)
+
 
 
 def test_anno_image_input_http_request_multipart_form(img_file, json_file):
@@ -103,6 +133,39 @@ def test_anno_image_input_http_request_multipart_form(img_file, json_file):
     assert '[10, 10, 3], "kaith"' in str(response.response)
 
 
+def test_anno_image_input_http_request_invalid_json(img_file, json_file):
+    test_anno_image_input = AnnotatedImageInput()
+    request = mock.MagicMock(spec=flask.Request)
+    image_file_bytes = open(str(img_file), 'rb').read()
+    image_file_attr = {
+        'filename': 'test_img.png',
+        'read.return_value': image_file_bytes,
+        'mimetype': 'image/png',
+        'stream': io.BytesIO(image_file_bytes),
+    }
+    image_file = mock.Mock(**image_file_attr)
+
+    json_file_bytes = open(str(json_file), 'rb').read()
+    json_file_bytes = json_file_bytes[:int(len(json_file_bytes)/2)]
+    json_file_attr = {
+        'filename': 'annotations.json',
+        'read.return_value': json_file_bytes,
+        'mimetype': 'application/json',
+        'stream': io.BytesIO(json_file_bytes),
+    }
+    json_file = mock.Mock(**json_file_attr)
+
+    request.method = "POST"
+    request.files = {"image_file": image_file, "json_file": json_file}
+
+    request.get_data.return_value = None
+
+    with pytest.raises(BadInput) as e:
+        test_anno_image_input.handle_request(request, predict_image_and_json)
+
+    assert "invalid JSON" in str(e.value)
+
+
 def test_anno_image_input_http_request_multipart_form_image_only(img_file):
     test_anno_image_input = AnnotatedImageInput()
     request = mock.MagicMock(spec=flask.Request)
@@ -126,6 +189,108 @@ def test_anno_image_input_http_request_multipart_form_image_only(img_file):
     assert "[10, 10, 3]" in str(response.response)
 
 
+def test_anno_image_input_http_request_too_many_files(img_file, json_file):
+    test_anno_image_input = AnnotatedImageInput()
+    request = mock.MagicMock(spec=flask.Request)
+    image_file_bytes = open(str(img_file), 'rb').read()
+    image_file_attr = {
+        'filename': 'test_img.png',
+        'read.return_value': image_file_bytes,
+        'mimetype': 'image/png',
+        'stream': io.BytesIO(image_file_bytes),
+    }
+    image_file = mock.Mock(**image_file_attr)
+
+    json_file_bytes = open(str(json_file), 'rb').read()
+    json_file_attr = {
+        'filename': 'annotations.json',
+        'read.return_value': json_file_bytes,
+        'mimetype': 'application/json',
+        'stream': io.BytesIO(json_file_bytes),
+    }
+    json_file = mock.Mock(**json_file_attr)
+
+    request.method = "POST"
+    request.files = {"image_file": image_file,
+            "json_file": json_file, "image_file_2": image_file}
+    request.headers = {}
+    request.get_data.return_value = None
+
+    with pytest.raises(BadInput) as e:
+        test_anno_image_input.handle_request(request, predict_image_and_json)
+
+    assert "Too many input files" in str(e.value)
+
+
+def test_anno_image_input_http_request_two_image_files(img_file):
+    test_anno_image_input = AnnotatedImageInput()
+    request = mock.MagicMock(spec=flask.Request)
+    image_file_bytes = open(str(img_file), 'rb').read()
+    image_file_attr = {
+        'filename': 'test_img.png',
+        'read.return_value': image_file_bytes,
+        'mimetype': 'image/png',
+        'stream': io.BytesIO(image_file_bytes),
+    }
+    image_file = mock.Mock(**image_file_attr)
+
+    request.method = "POST"
+    request.files = {"image_file": image_file, "image_file_2": image_file}
+    request.headers = {}
+    request.get_data.return_value = None
+
+    with pytest.raises(BadInput) as e:
+        test_anno_image_input.handle_request(request, predict_image_only)
+
+    assert "received two images" in str(e.value)
+
+
+def test_anno_image_input_http_request_two_json_files(json_file):
+    test_anno_image_input = AnnotatedImageInput()
+    request = mock.MagicMock(spec=flask.Request)
+    json_file_bytes = open(str(json_file), 'rb').read()
+    json_file_attr = {
+        'filename': 'annotations.json',
+        'read.return_value': json_file_bytes,
+        'mimetype': 'application/json',
+        'stream': io.BytesIO(json_file_bytes),
+    }
+    json_file = mock.Mock(**json_file_attr)
+
+    request.method = "POST"
+    request.files = {"json_file": json_file, "json_file_2": json_file}
+    request.headers = {}
+    request.get_data.return_value = None
+
+    with pytest.raises(BadInput) as e:
+        test_anno_image_input.handle_request(request, predict_image_only)
+
+    assert "received two JSON files" in str(e.value)
+
+
+def test_anno_image_input_http_request_only_json_file(json_file):
+    test_anno_image_input = AnnotatedImageInput()
+    request = mock.MagicMock(spec=flask.Request)
+    json_file_bytes = open(str(json_file), 'rb').read()
+    json_file_attr = {
+        'filename': 'annotations.json',
+        'read.return_value': json_file_bytes,
+        'mimetype': 'application/json',
+        'stream': io.BytesIO(json_file_bytes),
+    }
+    json_file = mock.Mock(**json_file_attr)
+
+    request.method = "POST"
+    request.files = {"json_file": json_file}
+    request.headers = {}
+    request.get_data.return_value = None
+
+    with pytest.raises(BadInput) as e:
+        test_anno_image_input.handle_request(request, predict_image_only)
+
+    assert "requires an image file" in str(e.value)
+
+
 def test_anno_image_input_batch_request(img_file, json_file):
     adapter = AnnotatedImageInput(is_batch_input=True)
 
@@ -144,6 +309,67 @@ def test_anno_image_input_batch_request(img_file, json_file):
         assert response.data == '[[10, 10, 3], "kaith"]'
 
 
+def test_anno_image_input_check_config():
+    adapter = AnnotatedImageInput()
+    config = adapter.config
+    assert (isinstance(config["accept_image_formats"], list) and
+            isinstance(config["pilmode"], str))
+
+
+def test_anno_image_input_check_request_schema():
+    adapter = AnnotatedImageInput()
+    assert isinstance(adapter.request_schema, dict)
+
+
+def test_anno_image_input_check_pip_deps():
+    adapter = AnnotatedImageInput()
+    assert isinstance(adapter.pip_dependencies, list)
+
+
+def test_anno_image_input_batch_request_skip_bad(img_file, json_file):
+    adapter = AnnotatedImageInput(is_batch_input=True)
+
+    multipart_data, headers = generate_multipart_body(img_file, json_file)
+
+    empty_request = SimpleRequest(headers=headers, data = None)
+
+    request = SimpleRequest.from_flask_request(
+        Request.from_values(
+            data=multipart_data,
+            content_type=headers['Content-Type'],
+            content_length=headers['Content-Length'],
+        )
+    )
+
+    image = ("image.jpg", open(img_file, "rb").read())
+    json = ("annotations.jso", open(json_file, "rb").read())
+    files = {"image.invalid": image, "annotations.invalid": json}
+    bad_data, content_type = encode_multipart_formdata(files)
+
+    bad_request = SimpleRequest.from_flask_request(
+        Request.from_values(
+            data=bad_data,
+            content_type=content_type,
+            content_length=len(bad_data),
+        )
+    )
+
+    responses = adapter.handle_batch_request(
+            [empty_request, request, bad_request],
+            predict_image_and_json)
+
+    assert(len(responses) == 3)
+    assert(responses[0] == None)
+    assert(responses[1].status == 200 
+            and responses[1].data == '[[10, 10, 3], "kaith"]')
+    assert(responses[2] == None)
+
+    bad_responses = adapter.handle_batch_request(
+            [empty_request], predict_image_and_json)
+    assert len(bad_responses) == 1
+    assert bad_responses[0] == None
+
+
 def test_anno_image_input_batch_request_image_only(img_file):
     adapter = AnnotatedImageInput(is_batch_input=True)
 
@@ -160,6 +386,149 @@ def test_anno_image_input_batch_request_image_only(img_file):
     for response in responses:
         assert response.status == 200
         assert response.data == '[10, 10, 3]'
+
+
+def test_anno_image_input_http_request_multipart_octet_streams(img_file, json_file):
+    test_anno_image_input = AnnotatedImageInput()
+    request = mock.MagicMock(spec=flask.Request)
+    image_file_bytes = open(str(img_file), 'rb').read()
+    image_file_attr = {
+        'filename': 'test_img.png',
+        'read.return_value': image_file_bytes,
+        'mimetype': 'application/octet-stream',
+        'stream': io.BytesIO(image_file_bytes),
+    }
+    image_file = mock.Mock(**image_file_attr)
+
+    json_file_bytes = open(str(json_file), 'rb').read()
+    json_file_attr = {
+        'filename': 'annotations.json',
+        'read.return_value': json_file_bytes,
+        'mimetype': 'application/octet-stream',
+        'stream': io.BytesIO(json_file_bytes),
+    }
+    json_file = mock.Mock(**json_file_attr)
+
+    request.method = "POST"
+    request.files = {"image_file": image_file, "json_file": json_file}
+
+    request.get_data.return_value = None
+
+    response = test_anno_image_input.handle_request(request, predict_image_and_json)
+
+    assert response.status_code == 200
+    assert '[10, 10, 3], "kaith"' in str(response.response)
+
+
+def test_anno_image_input_octet_stream_custom_image_extension(img_file):
+    test_anno_image_input = AnnotatedImageInput(accept_image_formats=[".custom"])
+    request = mock.MagicMock(spec=flask.Request)
+    file_bytes = open(str(img_file), 'rb').read()
+    file_attr = {
+        'filename': 'test_img.custom',
+        'read.return_value': file_bytes,
+        'mimetype': 'application/octet-stream',
+        'stream': io.BytesIO(file_bytes),
+    }
+    file = mock.Mock(**file_attr)
+
+    request.method = "POST"
+    request.files = {"test_img": file}
+    request.headers = {}
+    request.get_data.return_value = None
+
+    response = test_anno_image_input.handle_request(request, predict_image_only)
+
+    assert response.status_code == 200
+    assert "[10, 10, 3]" in str(response.response)
+
+
+def test_anno_image_input_custom_accept_extension_not_accepted(img_file):
+    test_anno_image_input = AnnotatedImageInput(accept_image_formats=[".custom"])
+    request = mock.MagicMock(spec=flask.Request)
+    file_bytes = open(str(img_file), 'rb').read()
+    file_attr = {
+        'filename': 'test_img.jpg',
+        'read.return_value': file_bytes,
+        'mimetype': 'image/jpg',
+        'stream': io.BytesIO(file_bytes),
+    }
+    file = mock.Mock(**file_attr)
+
+    request.method = "POST"
+    request.files = {"test_img": file}
+    request.headers = {}
+    request.get_data.return_value = None
+
+    with pytest.raises(BadInput) as e:
+        test_anno_image_input.handle_request(request, predict_image_only)
+
+    assert "Input file not in supported format list" in str(e.value)
+
+
+def test_anno_image_input_input_names_invalid():
+    with pytest.raises(TypeError) as e:
+        test_anno_image_input = AnnotatedImageInput(input_names=["anything"])
+    assert "AnnotatedImageInput doesn't take input_names" in str(e.value)
+
+
+def test_anno_image_input_has_image_extension_no_format_list():
+    assert has_image_extension("image.jpg", None) is True
+
+
+def test_anno_image_input_octet_stream_json(img_file):
+    test_anno_image_input = AnnotatedImageInput(accept_image_formats=[".custom"])
+    request = mock.MagicMock(spec=flask.Request)
+    file_bytes = open(str(img_file), 'rb').read()
+    file_attr = {
+        'filename': 'test_img.custom',
+        'read.return_value': file_bytes,
+        'mimetype': 'application/octet-stream',
+        'stream': io.BytesIO(file_bytes),
+    }
+    file = mock.Mock(**file_attr)
+
+    request.method = "POST"
+    request.files = {"a_different_name_used": file}
+    request.headers = {}
+    request.get_data.return_value = None
+
+    response = test_anno_image_input.handle_request(request, predict_image_only)
+
+    assert response.status_code == 200
+    assert "[10, 10, 3]" in str(response.response)
+
+
+def test_anno_image_input_octet_stream_bad_json_filename(img_file, json_file):
+    test_anno_image_input = AnnotatedImageInput()
+    request = mock.MagicMock(spec=flask.Request)
+    image_file_bytes = open(str(img_file), 'rb').read()
+    image_file_attr = {
+        'filename': 'test_img.png',
+        'read.return_value': image_file_bytes,
+        'mimetype': 'application/octet-stream',
+        'stream': io.BytesIO(image_file_bytes),
+    }
+    image_file = mock.Mock(**image_file_attr)
+
+    json_file_bytes = open(str(json_file), 'rb').read()
+    json_file_attr = {
+        'filename': 'annotations.jso',
+        'read.return_value': json_file_bytes,
+        'mimetype': 'application/octet-stream',
+        'stream': io.BytesIO(json_file_bytes),
+    }
+    json_file = mock.Mock(**json_file_attr)
+
+    request.method = "POST"
+    request.files = {"image_file": image_file, "json_file": json_file}
+
+    request.get_data.return_value = None
+
+    with pytest.raises(BadInput) as e:
+        test_anno_image_input.handle_request(request, predict_image_and_json)
+
+    assert "unexpected file" in str(e.value)
 
 
 def test_anno_image_input_http_request_single_image_different_name(img_file):

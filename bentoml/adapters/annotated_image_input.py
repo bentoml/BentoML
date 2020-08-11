@@ -39,7 +39,7 @@ def has_json_extension(file_name):
     """
     _, extension = os.path.splitext(file_name)
 
-    if extension.lower() in ["json"]:
+    if extension.lower() in [".json"]:
         return True
 
     return False
@@ -49,16 +49,24 @@ def has_image_extension(file_name, accept_format_list):
     """
     Check if file's extension is an acceptable image extension
     """
+    _, extension = os.path.splitext(file_name)
     if accept_format_list:
-        _, extension = os.path.splitext(file_name)
         if extension.lower() in accept_format_list:
             return True
-        return False
     else:
         if extension.lower() in get_default_accept_image_formats():
             return True
 
     return False
+
+
+def read_json_file(json_file):
+    try:
+        parsed = json.load(json_file)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise BadInput("BentoML#AnnotatedImageInput received invalid JSON file")
+
+    return parsed
 
 
 def verify_image_format_or_raise(file_name, accept_format_list):
@@ -145,7 +153,7 @@ class AnnotatedImageInput(BaseInputAdapter):
             raise TypeError(
                 "AnnotatedImageInput doesn't take input_names as parameters. "
                 "Update your Service definition "
-                "or use LegacyAnnotatedImageInput instead(not recommended)."
+                "or use LegacyImageInput instead (not recommended)."
             )
 
         self.pilmode = pilmode
@@ -218,7 +226,7 @@ class AnnotatedImageInput(BaseInputAdapter):
                     json_file = f
                 else:
                     raise BadInput(
-                        "BentoML#AnnotatedImageInput received unexpected file type: "
+                        "BentoML#AnnotatedImageInput received unexpected file of type "
                         f"{f.mimetype} with filename {f.filename}.\n"
                         "AnnotatedInputAdapter expects an 'image/*' file and optional "
                         "'application/json' file.  Alternatively, it can accept two "
@@ -239,14 +247,11 @@ class AnnotatedImageInput(BaseInputAdapter):
         input_image = imageio.imread(input_stream, pilmode=self.pilmode)
 
         if json_file:
-            input_json = {}
-            try:
-                input_json = json.load(json_file)
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                raise BadInput("BentoML#AnnotatedImageInput received invalid JSON file")
+            input_json = read_json_file(json_file)
             return (input_image, input_json)
 
         return (input_image,)
+
 
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func: callable
@@ -255,11 +260,12 @@ class AnnotatedImageInput(BaseInputAdapter):
         Batch version of handle_request
         """
         input_datas = []
-        ids = []
+        slices = []
 
         for i, req in enumerate(requests):
             if not req.data:
-                ids.append(None)
+                slices.append(None)
+                input_datas.append(None)
                 continue
             request = Request.from_values(
                 input_stream=BytesIO(req.data),
@@ -269,14 +275,17 @@ class AnnotatedImageInput(BaseInputAdapter):
             try:
                 input_data = self._load_image_and_json_data(request)
             except BadInput:
-                ids.append(None)
+                slices.append(None)
+                input_datas.append(None)
                 continue
 
             input_datas.append(input_data)
-            ids.append(i)
+            slices.append(i)
 
-        results = [func(*d) for d in input_datas] if input_datas else []
-        return self.output_adapter.to_batch_response(results, ids, requests)
+        results = [func(*d) if d else {} for d in input_datas]
+
+        return self.output_adapter.to_batch_response(result_conc=results,
+                slices=slices, fallbacks=[None]*len(slices), requests=requests)
 
     def handle_request(self, request, func):
         """Handle http request that has one image file. It will convert image into a
@@ -325,13 +334,8 @@ class AnnotatedImageInput(BaseInputAdapter):
             json_path = os.path.expanduser(args.json)
             if not os.path.isabs(json_path):
                 json_path = os.path.abspath(json_path)
-            try:
-                with open(json_path, "r") as content_file:
-                    json_data = json.load(content_file)
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                raise BadInput(
-                    "BentoML#AnnotatedImageInput received " "invalid JSON file"
-                )
+            with open(json_path, "r") as content_file:
+                json_data = read_json_file(content_file)
 
             result = func(image_array, json_data)
         else:
@@ -360,7 +364,6 @@ class AnnotatedImageInput(BaseInputAdapter):
             return self.output_adapter.to_aws_lambda_event(result, event)
         else:
             raise BadInput(
-                "Annotated image requests don't support the {} content type".format(
-                    content_type
-                )
+                "AnnotatedImageInput only supports multipart/form-data input, "
+                f"received {content_type}"
             )

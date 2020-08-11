@@ -29,7 +29,13 @@ def image(tmpdir_factory):
         yield image
 
 
-def wait_until_api_server_ready(host_url, timeout, check_interval=1):
+@pytest.fixture(autouse=True)
+def host(image, enable_microbatch):
+    with run_api_server_docker_container(image, enable_microbatch) as host:
+        yield host
+
+
+def _wait_until_api_server_ready(host_url, timeout, container, check_interval=1):
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
@@ -44,16 +50,16 @@ def wait_until_api_server_ready(host_url, timeout, check_interval=1):
         except Exception:  # pylint:disable=broad-except
             logger.info("Waiting for host %s to be ready..", host_url)
             time.sleep(check_interval)
+        finally:
+            container_logs = container.logs()
+            if container_logs:
+                logger.info(f"Container {container.id} logs:")
+                for log_record in container_logs.decode().split('\r\n'):
+                    logger.info(f">>> {log_record}")
     else:
         raise AssertionError(
             f"Timed out waiting {timeout} seconds for Server {host_url} to be ready"
         )
-
-
-@pytest.fixture(autouse=True)
-def host(image, enable_microbatch):
-    with run_api_server_docker_container(image, enable_microbatch) as host:
-        yield host
 
 
 @contextmanager
@@ -73,15 +79,15 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
         command_args = "--workers 1"
     try:
         container = client.containers.run(
-            command=command_args,
             image=image.id,
+            command=command_args,
             auto_remove=True,
             tty=True,
             ports={'5000/tcp': port},
             detach=True,
         )
         host_url = f"127.0.0.1:{port}"
-        wait_until_api_server_ready(host_url, timeout)
+        _wait_until_api_server_ready(host_url, timeout, container)
         yield host_url
     finally:
         container.stop()

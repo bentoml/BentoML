@@ -54,6 +54,13 @@ jobs:
       - name: Run Unit Tests
         run: ./travis/unit_tests.sh
         shell: bash
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          name: codecov-${{ matrix.os}}-python${{ matrix.python-version }}
+          fail_ci_if_error: true
+          path_to_write_report: ./coverage/codecov_report.gz
+
 
   onnx_integration_tests:
     runs-on: ubuntu-latest
@@ -67,6 +74,8 @@ jobs:
         run: ./travis/install-test-deps.sh
       - name: Run tests
         run: ./travis/onnx_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1
 
   pytorch_integration_tests:
     runs-on: ubuntu-latest
@@ -80,6 +89,8 @@ jobs:
         run: ./travis/install-test-deps.sh
       - name: Run tests
         run: ./travis/pytorch_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1
 
   coreml_integration_tests:
     runs-on: macos-latest
@@ -93,4 +104,6 @@ jobs:
         run: ./travis/install-test-deps.sh
       - name: Run tests
         run: ./travis/coreml_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1
 

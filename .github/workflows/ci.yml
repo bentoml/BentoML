@@ -15,7 +15,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 
+          python-version: 3.7
       - name: Install test dependencies
         run: ./travis/install-test-deps.sh
       - name: Run linting script

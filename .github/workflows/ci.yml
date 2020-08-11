@@ -54,3 +54,43 @@ jobs:
       - name: Run Unit Tests
         run: ./travis/unit_tests.sh
         shell: bash
+
+  onnx_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./travis/install-test-deps.sh
+      - name: Run tests
+        run: ./travis/onnx_integration_tests.sh
+
+  pytorch_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./travis/install-test-deps.sh
+      - name: Run tests
+        run: ./travis/pytorch_integration_tests.sh
+
+  coreml_integration_tests:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./travis/install-test-deps.sh
+      - name: Run tests
+        run: ./travis/coreml_integration_tests.sh
+

@@ -56,7 +56,7 @@ matrix:
     - name: "Tensorflow v2.2 Artifact"
       python: "3.6"
       script:
-        - ./travis/tensorflow_v2.2_integration_tests.sh
+        - travis_wait 20 ./travis/tensorflow_v2.2_integration_tests.sh
 
     - name: "API Server Integration Tests"
       python: "3.7"
@@ -76,7 +76,7 @@ matrix:
     - name: "H2o Artifact"
       python: "3.6"
       script:
-        - ./travis/h2o_integration_tests.sh
+        - travis_wait 20 ./travis/h2o_integration_tests.sh
 
 script:
   - ./travis/unit_tests.sh

@@ -62,8 +62,12 @@ def test_anno_image_input_cli_image_and_json(capsys, img_file, json_file):
 def test_anno_image_input_cli_relative_paths(capsys, img_file, json_file):
     test_anno_image_input = AnnotatedImageInput()
 
-    test_args = ["--image", os.path.relpath(img_file),
-            "--json", os.path.relpath(json_file)]
+    test_args = [
+        "--image",
+        os.path.relpath(img_file),
+        "--json",
+        os.path.relpath(json_file),
+    ]
     test_anno_image_input.handle_cli(test_args, predict_image_and_json)
     out, _ = capsys.readouterr()
 
@@ -98,7 +102,6 @@ def test_anno_image_input_aws_lambda_event_bad_content_type(img_file, json_file)
         )
 
     assert "only supports multipart/form-data" in str(e.value)
-
 
 
 def test_anno_image_input_http_request_multipart_form(img_file, json_file):
@@ -146,7 +149,7 @@ def test_anno_image_input_http_request_invalid_json(img_file, json_file):
     image_file = mock.Mock(**image_file_attr)
 
     json_file_bytes = open(str(json_file), 'rb').read()
-    json_file_bytes = json_file_bytes[:int(len(json_file_bytes)/2)]
+    json_file_bytes = json_file_bytes[: int(len(json_file_bytes) / 2)]
     json_file_attr = {
         'filename': 'annotations.json',
         'read.return_value': json_file_bytes,
@@ -211,8 +214,11 @@ def test_anno_image_input_http_request_too_many_files(img_file, json_file):
     json_file = mock.Mock(**json_file_attr)
 
     request.method = "POST"
-    request.files = {"image_file": image_file,
-            "json_file": json_file, "image_file_2": image_file}
+    request.files = {
+        "image_file": image_file,
+        "json_file": json_file,
+        "image_file_2": image_file,
+    }
     request.headers = {}
     request.get_data.return_value = None
 
@@ -312,8 +318,9 @@ def test_anno_image_input_batch_request(img_file, json_file):
 def test_anno_image_input_check_config():
     adapter = AnnotatedImageInput()
     config = adapter.config
-    assert (isinstance(config["accept_image_formats"], list) and
-            isinstance(config["pilmode"], str))
+    assert isinstance(config["accept_image_formats"], list) and isinstance(
+        config["pilmode"], str
+    )
 
 
 def test_anno_image_input_check_request_schema():
@@ -331,7 +338,7 @@ def test_anno_image_input_batch_request_skip_bad(img_file, json_file):
 
     multipart_data, headers = generate_multipart_body(img_file, json_file)
 
-    empty_request = SimpleRequest(headers=headers, data = None)
+    empty_request = SimpleRequest(headers=headers, data=None)
 
     request = SimpleRequest.from_flask_request(
         Request.from_values(
@@ -348,26 +355,24 @@ def test_anno_image_input_batch_request_skip_bad(img_file, json_file):
 
     bad_request = SimpleRequest.from_flask_request(
         Request.from_values(
-            data=bad_data,
-            content_type=content_type,
-            content_length=len(bad_data),
+            data=bad_data, content_type=content_type, content_length=len(bad_data),
         )
     )
 
     responses = adapter.handle_batch_request(
-            [empty_request, request, bad_request],
-            predict_image_and_json)
+        [empty_request, request, bad_request], predict_image_and_json
+    )
 
-    assert(len(responses) == 3)
-    assert(responses[0] == None)
-    assert(responses[1].status == 200 
-            and responses[1].data == '[[10, 10, 3], "kaith"]')
-    assert(responses[2] == None)
+    assert len(responses) == 3
+    assert responses[0] is None
+    assert responses[1].status == 200 and responses[1].data == '[[10, 10, 3], "kaith"]'
+    assert responses[2] is None
 
     bad_responses = adapter.handle_batch_request(
-            [empty_request], predict_image_and_json)
+        [empty_request], predict_image_and_json
+    )
     assert len(bad_responses) == 1
-    assert bad_responses[0] == None
+    assert bad_responses[0] is None
 
 
 def test_anno_image_input_batch_request_image_only(img_file):
@@ -468,7 +473,7 @@ def test_anno_image_input_custom_accept_extension_not_accepted(img_file):
 
 def test_anno_image_input_input_names_invalid():
     with pytest.raises(TypeError) as e:
-        test_anno_image_input = AnnotatedImageInput(input_names=["anything"])
+        AnnotatedImageInput(input_names=["anything"])
     assert "AnnotatedImageInput doesn't take input_names" in str(e.value)
 
 

@@ -252,7 +252,6 @@ class AnnotatedImageInput(BaseInputAdapter):
 
         return (input_image,)
 
-
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func: callable
     ) -> Iterable[SimpleResponse]:
@@ -284,8 +283,12 @@ class AnnotatedImageInput(BaseInputAdapter):
 
         results = [func(*d) if d else {} for d in input_datas]
 
-        return self.output_adapter.to_batch_response(result_conc=results,
-                slices=slices, fallbacks=[None]*len(slices), requests=requests)
+        return self.output_adapter.to_batch_response(
+            result_conc=results,
+            slices=slices,
+            fallbacks=[None] * len(slices),
+            requests=requests,
+        )
 
     def handle_request(self, request, func):
         """Handle http request that has one image file. It will convert image into a

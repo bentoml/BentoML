@@ -55,7 +55,7 @@ jobs:
         run: ./travis/unit_tests.sh
         shell: bash
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v1.0.12
         with:
           name: codecov-${{ matrix.os}}-python${{ matrix.python-version }}
           fail_ci_if_error: true
@@ -77,7 +77,7 @@ jobs:
       - name: Run tests
         run: ./travis/onnx_integration_tests.sh
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v1.0.12
 
   pytorch_integration_tests:
     runs-on: ubuntu-latest
@@ -94,7 +94,7 @@ jobs:
       - name: Run tests
         run: ./travis/pytorch_integration_tests.sh
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v1.0.12
 
   coreml_integration_tests:
     runs-on: macos-latest
@@ -111,7 +111,7 @@ jobs:
       - name: Run tests
         run: ./travis/coreml_integration_tests.sh
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v1.0.12
 
   api_server_integration_tests:
     runs-on: ubuntu-latest
@@ -128,7 +128,7 @@ jobs:
       - name: Run tests
         run: ./travis/integration_tests.sh
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v1.0.12
 
   tensorflow_v2_integration_tests:
     runs-on: ubuntu-latest
@@ -145,7 +145,7 @@ jobs:
       - name: Run tests
         run: ./travis/tensorflow_v2.2_integration_tests.sh
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v1.0.12
 
   h2o_integration_tests:
     runs-on: ubuntu-latest
@@ -162,4 +162,4 @@ jobs:
       - name: Run tests
         run: ./travis/h2o_integration_tests.sh
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v1.0.12

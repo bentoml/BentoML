@@ -17,6 +17,7 @@ install:
   - "python -m pip install --upgrade pip"
   - "pip install ."
   - "pip install --upgrade .[test]"
+  - "pip install --upgrade docker==4.2.2" # Travis support max API version 1.3.8
 
 git:
   # BentoML uses the python-versioneer to manage release version tags. On dev branches, as well as
@@ -26,8 +27,29 @@ git:
   # the commit/tag of the latest BentoML PyPI release.
   depth: 200
 
+script:
+  - ./travis/unit_tests.sh
+
+after_success:
+  - codecov
+
 matrix:
   include:
+    - name: "Linting & formatting check"
+      python: "3.6"
+      script:
+        - ./travis/linter.sh
+
+    - name: "Tensorflow v2.2 Artifact"
+      python: "3.6"
+      script:
+        - ./travis/tensorflow_v2.2_integration_tests.sh
+
+    - name: "H2o Artifact"
+      python: "3.6"
+      script:
+        - ./travis/h2o_integration_tests.sh
+
     - os: windows
       language: sh
       python: "3.6"
@@ -36,11 +58,6 @@ matrix:
       before_install:
         - choco install python --version 3.6.8
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
-
-    - name: "Linting & formatting check"
-      python: "3.6"
-      script:
-        - ./travis/linter.sh
 
     - name: "ONNX artifact"
       python: "3.6"
@@ -52,11 +69,6 @@ matrix:
       script:
         - ./travis/pytorch_integration_tests.sh
 
-    - name: "Tensorflow v2.2 Artifact"
-      python: "3.6"
-      script:
-        - ./travis/tensorflow_v2.2_integration_tests.sh
-
     - name: "API Server Integration Tests"
       python: "3.7"
       script:
@@ -67,24 +79,7 @@ matrix:
       os: osx
       osx_image: xcode12
       language: minimal
-      install:
-        - ./travis/install_python36_osx.sh
-        - export PATH=${HOME}/miniconda/bin:${PATH}
-        - hash -r
-        - python -m pip install --upgrade pip
-        - pip install .
-        - pip install --upgrade .[test]
+      before_install:
+        - source ./travis/install_python36_osx.sh
       script:
         - ./travis/coreml_integration_tests.sh
-
-    - name: "H2o Artifact"
-      python: "3.6"
-      script:
-        - ./travis/h2o_integration_tests.sh
-
-script:
-  - ./travis/unit_tests.sh
-
-after_success:
-  - codecov
-

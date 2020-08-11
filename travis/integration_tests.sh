@@ -12,6 +12,6 @@ python -m pip install -e .
 
 # Run test
 #python -m pytest --batch-request --host "localhost:5000" "$GIT_ROOT"/tests/integration/api_server
-python -m pytest "$GIT_ROOT"/tests/integration/api_server
+python -m pytest -s "$GIT_ROOT"/tests/integration/api_server
 
 test $error = 0 # Return non-zero if pytest failed

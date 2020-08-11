@@ -47,8 +47,8 @@ def _wait_until_api_server_ready(host_url, timeout, container, check_interval=1)
             else:
                 logger.info("Waiting for host %s to be ready..", host_url)
                 time.sleep(check_interval)
-        except Exception:  # pylint:disable=broad-except
-            logger.info("Waiting for host %s to be ready..", host_url)
+        except Exception as e:  # pylint:disable=broad-except
+            logger.info(f"Error {e} caught waiting for host {host_url} to be ready..")
             time.sleep(check_interval)
         finally:
             container_logs = container.logs()

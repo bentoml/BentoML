@@ -75,7 +75,7 @@ def h2o_image(h2o_svc_saved_dir):
 
 @pytest.fixture()
 def h2o_docker_host(h2o_image):
-    with run_api_server_docker_container(h2o_image, timeout=300) as host:
+    with run_api_server_docker_container(h2o_image, timeout=500) as host:
         yield host
 
 

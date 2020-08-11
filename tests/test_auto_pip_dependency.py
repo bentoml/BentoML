@@ -18,6 +18,7 @@ def test_auto_adapter_dependencies(bento_bundle_path):
     assert 'bentoml' in dependencies
 
     # Test that dependencies also wrote to BentoServiceMetadat config file
+    assert False, "should show error and fail job"
 
 
 def test_auto_artifact_dependencies():

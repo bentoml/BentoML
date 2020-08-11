@@ -81,7 +81,6 @@ class ImageInput(BaseInputAdapter):
 
     Example:
 
-        >>> python
         >>> from bentoml import BentoService, api, artifacts
         >>> from bentoml.artifact import TensorflowArtifact
         >>> from bentoml.adapters import ImageInput

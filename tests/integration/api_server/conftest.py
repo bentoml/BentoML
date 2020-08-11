@@ -1,12 +1,16 @@
 # pylint: disable=redefined-outer-name
 import time
 import urllib
+import logging
 from contextlib import contextmanager
 
 import pytest
 import bentoml
 
 from .example_service import gen_test_bundle
+
+
+logger = logging.getLogger("bentoml.tests")
 
 
 @pytest.fixture(params=[True, False], scope="session")
@@ -17,33 +21,33 @@ def enable_microbatch(request):
 
 @pytest.fixture(autouse=True, scope='session')
 def image(tmpdir_factory):
-    import docker
-
-    client = docker.from_env()
-
     bundle_dir = tmpdir_factory.mktemp('test_bundle')
     bundle_path = str(bundle_dir)
     gen_test_bundle(bundle_path)
-    image = client.images.build(path=bundle_path, tag="example_service", rm=True)[0]
-    yield image
-    client.images.remove(image.id)
+
+    with build_api_server_docker_image(bundle_path, "example_service") as image:
+        yield image
 
 
-def _wait_until_ready(_host, timeout, check_interval=0.5):
+def wait_until_api_server_ready(host_url, timeout, check_interval=1):
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
             if (
-                urllib.request.urlopen(f'http://{_host}/healthz', timeout=1).status
+                urllib.request.urlopen(f'http://{host_url}/healthz', timeout=1).status
                 == 200
             ):
                 break
+            else:
+                logger.info("Waiting for host %s to be ready..", host_url)
+                time.sleep(check_interval)
         except Exception:  # pylint:disable=broad-except
-            pass
-        finally:
+            logger.info("Waiting for host %s to be ready..", host_url)
             time.sleep(check_interval)
     else:
-        raise AssertionError(f"server didn't get ready in {timeout} seconds")
+        raise AssertionError(
+            f"Timed out waiting {timeout} seconds for Server {host_url} to be ready"
+        )
 
 
 @pytest.fixture(autouse=True)
@@ -76,9 +80,24 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
             ports={'5000/tcp': port},
             detach=True,
         )
-        _host = f"127.0.0.1:{port}"
-        _wait_until_ready(_host, timeout)
-        yield _host
+        host_url = f"127.0.0.1:{port}"
+        wait_until_api_server_ready(host_url, timeout)
+        yield host_url
     finally:
         container.stop()
         time.sleep(1)  # make sure container stopped & deleted
+
+
+@contextmanager
+def build_api_server_docker_image(saved_bundle_path, image_tag):
+    import docker
+
+    client = docker.from_env()
+    try:
+        logger.info(
+            f"Building API server docker image from build context: {saved_bundle_path}"
+        )
+        image = client.images.build(path=saved_bundle_path, tag=image_tag, rm=True)[0]
+        yield image
+    finally:
+        client.images.remove(image.id)

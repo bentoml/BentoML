@@ -5,7 +5,10 @@ import tensorflow as tf
 
 import bentoml
 from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
-from tests.integration.api_server.conftest import run_api_server_docker_container
+from tests.integration.api_server.conftest import (
+    run_api_server_docker_container,
+    build_api_server_docker_image,
+)
 
 test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(test_data)
@@ -63,16 +66,10 @@ def tf2_svc_loaded(tf2_svc_saved_dir):
 
 @pytest.fixture()
 def tf2_image(tf2_svc_saved_dir):
-    # Based on `image()` in tests/integration/api_server/conftest.py
-    # Better refactoring might be possible to combine both functions
-    import docker
-
-    client = docker.from_env()
-    image = client.images.build(path=tf2_svc_saved_dir, tag="example_service", rm=True)[
-        0
-    ]
-    yield image
-    client.images.remove(image.id)
+    with build_api_server_docker_image(
+        tf2_svc_saved_dir, "tf2_example_service"
+    ) as image:
+        yield image
 
 
 @pytest.fixture()

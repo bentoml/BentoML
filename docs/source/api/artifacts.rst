@@ -13,25 +13,41 @@ KerasModelArtifact
 ++++++++++++++++++++
 .. autoclass:: bentoml.artifact.KerasModelArtifact
 
-FastaiModelArtifact
-+++++++++++++++++++
-.. autoclass:: bentoml.artifact.FastaiModelArtifact
-
 TensorflowSavedModelArtifact
 ++++++++++++++++++++++++++++
 .. autoclass:: bentoml.artifact.TensorflowSavedModelArtifact
+
+OnnxModelArtifact
++++++++++++++++++
+.. autoclass:: bentoml.artifact.OnnxModelArtifact
+
+Fastai2ModelArtifact
+++++++++++++++++++++
+.. autoclass:: bentoml.artifact.Fastai2ModelArtifact
+
+FastaiModelArtifact
++++++++++++++++++++
+.. autoclass:: bentoml.artifact.FastaiModelArtifact
 
 XgboostModelArtifact
 ++++++++++++++++++++
 .. autoclass:: bentoml.artifact.XgboostModelArtifact
 
+SpacyModelArtifact
+++++++++++++++++++
+.. autoclass:: bentoml.artifact.SpacyModelArtifact
+
+FasttextModelArtifact
++++++++++++++++++++++
+.. autoclass:: bentoml.artifact.FasttextModelArtifact
+
 LightGBMModelArtifact
 +++++++++++++++++++++
 .. autoclass:: bentoml.artifact.LightGBMModelArtifact
 
-OnnxModelArtifact
-+++++++++++++++++
-.. autoclass:: bentoml.artifact.OnnxModelArtifact
+CoreMLModelArtifact
++++++++++++++++++++
+.. autoclass:: bentoml.artifact.CoreMLModelArtifact
 
 H2oModelArtifact
 ++++++++++++++++
@@ -41,10 +57,11 @@ PickleArtifact
 ++++++++++++++
 .. autoclass:: bentoml.artifact.PickleArtifact
 
+JSONArtifact
+++++++++++++
+.. autoclass:: bentoml.artifact.JSONArtifact
+
 TextFileArtifact
 ++++++++++++++++
 .. autoclass:: bentoml.artifact.TextFileArtifact
-
-CoreMLModelArtifact
-.. autoclass:: bentoml.artifact.CoreMLModelArtifact
 

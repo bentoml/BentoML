@@ -23,7 +23,7 @@ jobs:
 
 
   unit_tests:
-    name: Python ${{ matrix.python-version }} Unit Tests on ${{ matrix.os}} 
+    name: ${{ matrix.os }} Python ${{ matrix.python-version }} Unit Tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -49,6 +49,7 @@ jobs:
           architecture: x64
       - name: Install test dependencies
         run: ./travis/install-test-deps.sh
+        shell: bash
       - name: Run Unit Tests
         run: ./travis/unit_tests.sh
-
+        shell: bash

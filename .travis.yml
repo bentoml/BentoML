@@ -44,22 +44,22 @@ matrix:
 #      script:
 #        - ./travis/linter.sh
 
-    - name: "Tensorflow v2.2 Artifact"
-      python: "3.6"
-      script:
-        - ./travis/tensorflow_v2.2_integration_tests.sh
+    #- name: "Tensorflow v2.2 Artifact"
+    #  python: "3.6"
+    #  script:
+    #    - ./travis/tensorflow_v2.2_integration_tests.sh
 
-    - name: "All docker based integration tests"
-      python: "3.6"
-      script:
-        - ./travis/integration_tests.sh
-        - ./travis/tensorflow_v2.2_integration_tests.sh
-        - ./travis/h2o_integration_tests.sh
+    #- name: "All docker based integration tests"
+    #  python: "3.6"
+    #  script:
+    #    - ./travis/integration_tests.sh
+    #    - ./travis/tensorflow_v2.2_integration_tests.sh
+    #    - ./travis/h2o_integration_tests.sh
 
-    - name: "H2O Artifact"
-      python: "3.6"
-      script:
-        - ./travis/h2o_integration_tests.sh
+    #- name: "H2O Artifact"
+    #  python: "3.6"
+    #  script:
+    #    - ./travis/h2o_integration_tests.sh
 
 #    - os: windows
 #      language: sh

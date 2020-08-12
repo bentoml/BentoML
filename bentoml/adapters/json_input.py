@@ -16,6 +16,7 @@ import os
 import json
 import argparse
 from typing import Iterable
+from json import JSONDecodeError
 
 import flask
 
@@ -37,17 +38,24 @@ class JsonInput(BaseInputAdapter):
         ```
         @bentoml.api(input=LegacyJsonInput())
         def predict(self, parsed_json):
-            result = do_something_to_json(parsed_json)
-            return result
+            results = self.artifacts.classifier([parsed_json['text']])
+            return results[0]
         ```
     --->
         ```
         @bentoml.api(input=JsonInput())
         def predict(self, parsed_jsons):
-            results = do_something_to_list_of_json(parsed_jsons)
+            results = self.artifacts.classifier([j['text'] for j in parsed_jsons])
             return results
         ```
     For clients, the request is the same as LegacyJsonInput, each includes single json.
+        ```
+        curl -i \
+            --header "Content-Type: application/json" \
+            --request POST \
+            --data '{"text": "best movie ever"}' \
+            localhost:5000/predict
+        ```
     """
 
     BATCH_MODE_SUPPORTED = True
@@ -112,13 +120,10 @@ class JsonInput(BaseInputAdapter):
         return self.output_adapter.to_cli(result, unknown_args)
 
     def handle_aws_lambda_event(self, event, func):
-        if event["headers"]["Content-Type"] == "application/json":
+        try:
             parsed_json = json.loads(event["body"])
-        else:
-            raise BadInput(
-                "Request content-type must be 'application/json' for this "
-                "BentoService API lambda endpoint"
-            )
+        except JSONDecodeError:
+            raise BadInput("Request body must contain valid json")
 
         result = func([parsed_json])[0]
         return self.output_adapter.to_aws_lambda_event(result, event)

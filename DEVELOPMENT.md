@@ -65,7 +65,7 @@ $ pip install -e ".[test]"
 
 2. Run all unit tests with current python version and environment
 ```bash
-$ ./travis/unit_tests.sh
+$ ./ci/unit_tests.sh
 ```
 
 ## Optional: Run unit test with all supported python versions

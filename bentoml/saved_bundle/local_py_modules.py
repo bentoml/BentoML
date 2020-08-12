@@ -23,6 +23,7 @@ from shutil import copyfile
 import modulefinder
 from unittest.mock import patch
 
+from bentoml.saved_bundle.pip_pkg import get_all_pip_installed_modules
 from bentoml.exceptions import BentoMLException
 
 
@@ -64,11 +65,11 @@ def _get_module_relative_file_path(module_name, module_file):
     return relative_path
 
 
-def copy_used_py_modules(target_module, destination):
-    """
-    bundle given module, and all its dependencies within top level package,
-    and copy all source files to destination path, essentially creating
-    a source distribution of target_module
+def copy_local_py_modules(target_module, destination):
+    """Find all local python module dependencies of target_module, and copy all the
+    local module python files to the destination directory while maintaining the module
+    structure unchanged to ensure all imports in target_module still works when loading
+    from the destination directory again
     """
 
     # When target_module is a string, try import it
@@ -94,7 +95,7 @@ def copy_used_py_modules(target_module, destination):
 
     target_module_file = _get_module_src_file(target_module)
     logger.debug(
-        "copy_used_py_modules target_module_name: %s, target_module_file: %s",
+        "copy_local_py_modules target_module_name: %s, target_module_file: %s",
         target_module_name,
         target_module_file,
     )
@@ -110,12 +111,13 @@ def copy_used_py_modules(target_module, destination):
             target_module_file,
         )
 
-    # Find all modules must be imported for target module to run
-    finder = modulefinder.ModuleFinder()
-    # NOTE: This method could take a few seconds to run
+    # Find all non pip installed modules must be packaged for target module to run
+    exclude_modules = ['bentoml'] + get_all_pip_installed_modules()
+    finder = modulefinder.ModuleFinder(excludes=exclude_modules)
+
     try:
         logger.debug(
-            "Searching for dependant modules of %s:%s",
+            "Searching for local dependant modules of %s:%s",
             target_module_name,
             target_module_file,
         )
@@ -145,53 +147,19 @@ def copy_used_py_modules(target_module, destination):
         # with current python version. And that may result in SyntaxError.
         pass
 
-    # extra site-packages or dist-packages directory
-    site_or_dist_package_path = []
-
-    for path in sys.path:
-        folder_name = os.path.split(path)[1]
-        # exclude pypi/conda/system installed packages
-        if (
-            "site-packages" in path
-            or "anaconda" in path
-            or path.endswith("packages")
-            or folder_name == "bin"
-            or folder_name.startswith("lib")
-            or folder_name.startswith("python")
-            or folder_name.startswith("plat")
-        ):
-            site_or_dist_package_path.append(path)
-    # prefix used to find installed Python library
-    site_or_dist_package_path.append(sys.prefix)
-    # prefix used to find machine-specific Python library
-    try:
-        site_or_dist_package_path.append(sys.base_prefix)
-    except AttributeError:
-        # ignore when in PY2 there is no sys.base_prefix
-        pass
-    logger.debug(
-        "Ignoring deps within local site-packages path: %s", site_or_dist_package_path
-    )
+    if finder.badmodules:
+        logger.debug(
+            "Find bad module imports that can not be parsed properly: %s",
+            finder.badmodules.keys(),
+        )
 
     # Look for dependencies that are not distributed python package, but users'
     # local python code, all other dependencies must be defined with @env
     # decorator when creating a new BentoService class
     user_packages_and_modules = {}
     for name, module in finder.modules.items():
-        if name == "bentoml" or name.startswith("bentoml."):
-            pass
-        elif hasattr(module, "__file__") and module.__file__ is not None:
-            module_src_file = _get_module_src_file(module)
-
-            is_module_in_site_or_dist_package = False
-            for path in site_or_dist_package_path:
-                if module_src_file.startswith(path):
-                    is_module_in_site_or_dist_package = True
-                    break
-
-            if not is_module_in_site_or_dist_package:
-                logger.debug("User local module deps found: %s", name)
-                user_packages_and_modules[name] = module
+        if hasattr(module, "__file__") and module.__file__ is not None:
+            user_packages_and_modules[name] = module
 
     # Remove "__main__" module, if target module is loaded as __main__, it should
     # be in module_files as (module_name, module_file) in current context

@@ -3,7 +3,7 @@ import pytest
 import bentoml
 from bentoml.adapters import FastaiImageInput
 
-pytestmark = pytest.mark.skip("skipping entire test file to debug travis build issue")
+pytestmark = pytest.mark.skip("skipping due to test being flaky on CI")
 
 
 def test_fastai_image_input(capsys, tmpdir):

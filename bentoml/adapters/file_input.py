@@ -31,14 +31,47 @@ from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
 
 class FileInput(BaseInputAdapter):
-    """Transform incoming file data from http request, cli or lambda event into numpy
-    array.
+    """Transform incoming file data from http request, cli or lambda event into file
+    stream object.
 
-    Handle incoming file data from different sources, transform them into numpy array
+    Handle incoming file data from different sources, transform them into file streams
     and pass down to user defined API functions
 
     Args:
         None
+
+    Example:
+
+        ```python
+        import bentoml
+        from PIL import Image
+        import numpy as np
+
+        from bentoml.artifact import PytorchModelArtifact
+        from bentoml.adapters import FileInput
+
+
+        FASHION_MNIST_CLASSES = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+                                 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
+
+        @bentoml.env(pip_dependencies=['torch', 'pillow', 'numpy'])
+        @bentoml.artifacts([PytorchModelArtifact('classifier')])
+        class PyTorchFashionClassifier(bentoml.BentoService):
+
+            @bentoml.api(input=FileInput())
+            def predict(self, file_streams):
+                img_arrays = []
+                for fs in file_streams:
+                    im = Image.open(fs).convert(mode="L").resize((28, 28))
+                    img_array = np.array(im)
+                    img_arrays.append(img_array)
+
+                inputs = np.stack(img_arrays, axis=0)
+
+                outputs = self.artifacts.classifier(inputs)
+                return [FASHION_MNIST_CLASSES[c] for c in outputs]
+        ```
 
     """
 

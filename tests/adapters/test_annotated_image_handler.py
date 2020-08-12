@@ -61,11 +61,21 @@ def test_anno_image_input_cli_image_and_json(capsys, img_file, json_file):
 def test_anno_image_input_cli_relative_paths(capsys, img_file, json_file):
     test_anno_image_input = AnnotatedImageInput()
 
+    try:
+        # This fails on Windows if our file is on a different drive
+        relative_image_path = os.path.relpath(img_file)
+        relative_annotation_path = os.path.relpath(json_file)
+    except ValueError:
+        # Switch to the drive with the files image on it, and try again
+        os.chdir(img_file[:2])
+        relative_image_path = os.path.relpath(img_file)
+        relative_annotation_path = os.path.relpath(json_file)
+
     test_args = [
         "--image",
-        os.path.relpath(img_file),
+        relative_image_path,
         "--annotations",
-        os.path.relpath(json_file),
+        relative_annotation_path,
     ]
     test_anno_image_input.handle_cli(test_args, predict_image_and_json)
     out, _ = capsys.readouterr()

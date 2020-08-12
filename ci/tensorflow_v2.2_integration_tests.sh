@@ -9,8 +9,7 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-# Install tensorflow
-pip install torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-pytest "$GIT_ROOT"/tests/integration/test_pytorch_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pip install tensorflow==2.2.0
+pytest -s "$GIT_ROOT"/tests/integration/test_tensorflow_v2_2_savedmodel_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

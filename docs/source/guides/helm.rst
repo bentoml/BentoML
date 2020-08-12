@@ -168,7 +168,7 @@ To tell Helm to use these custom values, we can do this
     enabled: true
     ...
 
-Or, if you prefer a shortcut, `make helm-dry`. You can see a full example K8s manifest here: https://ctrl-v.app/25OF7eK.
+Or, if you prefer a shortcut, `make helm-dry`. You can see a full example K8s manifest here: https://ctrl-v.app/4X2hf7h
 
 Now that we've done a dry-run and we're happy with the resources Helm plans on creating, let's apply it by removing the `--dry-run` and `--debug` flags. Alternatively, you can run `make helm-install`. Let's double check everything started up correctly.
 

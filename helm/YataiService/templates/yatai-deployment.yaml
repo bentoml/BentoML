@@ -29,9 +29,9 @@ spec:
           - containerPort: {{ .Values.service.ports.grpc }}
           - containerPort: {{ .Values.service.ports.web }}
           livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            {{- toYaml .Values.service.livenessProbe | nindent 12 }}
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
+            {{- toYaml .Values.service.readinessProbe | nindent 12 }}
           args:
             {{ if .Values.db_url -}}
             - "--db-url={{ .Values.db_url }}"

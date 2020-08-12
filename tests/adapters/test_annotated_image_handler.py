@@ -10,7 +10,6 @@ from urllib3.filepost import encode_multipart_formdata
 
 from bentoml.exceptions import BadInput
 from bentoml.adapters import AnnotatedImageInput
-from bentoml.adapters.annotated_image_input import has_image_extension
 from bentoml.marshal.utils import SimpleRequest
 
 
@@ -35,8 +34,8 @@ def predict_image_only(image):
     return image.shape
 
 
-def predict_image_and_json(image, json_input):
-    return (image.shape, json_input["name"])
+def predict_image_and_json(image, annotations):
+    return (image.shape, annotations["name"])
 
 
 def test_anno_image_input_cli_image_only(capsys, img_file):
@@ -52,7 +51,7 @@ def test_anno_image_input_cli_image_only(capsys, img_file):
 def test_anno_image_input_cli_image_and_json(capsys, img_file, json_file):
     test_anno_image_input = AnnotatedImageInput()
 
-    test_args = ["--image", img_file, "--json", json_file]
+    test_args = ["--image", img_file, "--annotations", json_file]
     test_anno_image_input.handle_cli(test_args, predict_image_and_json)
     out, _ = capsys.readouterr()
 
@@ -65,7 +64,7 @@ def test_anno_image_input_cli_relative_paths(capsys, img_file, json_file):
     test_args = [
         "--image",
         os.path.relpath(img_file),
-        "--json",
+        "--annotations",
         os.path.relpath(json_file),
     ]
     test_anno_image_input.handle_cli(test_args, predict_image_and_json)
@@ -474,11 +473,9 @@ def test_anno_image_input_custom_accept_extension_not_accepted(img_file):
 def test_anno_image_input_input_names_invalid():
     with pytest.raises(TypeError) as e:
         AnnotatedImageInput(input_names=["anything"])
-    assert "AnnotatedImageInput doesn't take input_names" in str(e.value)
-
-
-def test_anno_image_input_has_image_extension_no_format_list():
-    assert has_image_extension("image.jpg", None) is True
+    assert "AnnotatedImageInput takes specific arguments for image_input_name" in str(
+        e.value
+    )
 
 
 def test_anno_image_input_octet_stream_json(img_file):

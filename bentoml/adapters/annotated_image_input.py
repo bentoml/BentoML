@@ -32,55 +32,6 @@ from bentoml.adapters.base_input import BaseInputAdapter
 imageio = LazyLoader('imageio', globals(), 'imageio')
 
 
-def has_json_extension(file_name):
-    """
-    Check if file's extension is an acceptable JSON extension
-    (currently only .json is allowed)
-    """
-    _, extension = os.path.splitext(file_name)
-
-    if extension.lower() in [".json"]:
-        return True
-
-    return False
-
-
-def has_image_extension(file_name, accept_format_list):
-    """
-    Check if file's extension is an acceptable image extension
-    """
-    _, extension = os.path.splitext(file_name)
-    if accept_format_list:
-        if extension.lower() in accept_format_list:
-            return True
-    else:
-        if extension.lower() in get_default_accept_image_formats():
-            return True
-
-    return False
-
-
-def read_json_file(json_file):
-    try:
-        parsed = json.load(json_file)
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        raise BadInput("BentoML#AnnotatedImageInput received invalid JSON file")
-
-    return parsed
-
-
-def verify_image_format_or_raise(file_name, accept_format_list):
-    """
-    Raise error if file's extension is not in the accept_format_list
-    """
-    if accept_format_list:
-        _, extension = os.path.splitext(file_name)
-        if extension.lower() not in accept_format_list:
-            raise BadInput(
-                "Input file not in supported format list: {}".format(accept_format_list)
-            )
-
-
 def get_default_accept_image_formats():
     """With default bentoML config, this returns:
         ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
@@ -93,6 +44,54 @@ def get_default_accept_image_formats():
     ]
 
 
+def has_json_extension(file_name: str):
+    """
+    Check if file's extension is an acceptable JSON extension
+    (currently only .json is allowed)
+    """
+    _, extension = os.path.splitext(file_name)
+
+    if extension.lower() in [".json"]:
+        return True
+
+    return False
+
+
+def has_image_extension(file_name: str, accept_format_list: [str]):
+    """
+    Check if file's extension is within the provided accept_format_list
+    """
+    _, extension = os.path.splitext(file_name)
+    if extension.lower() in accept_format_list:
+        return True
+
+    return False
+
+
+def read_json_file(json_file):
+    """
+    Read the provided JSON file and return the parsed Python object
+    json_file can be any text or binary file that supports .read()
+    """
+    try:
+        parsed = json.load(json_file)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise BadInput("BentoML#AnnotatedImageInput received invalid JSON file")
+
+    return parsed
+
+
+def verify_image_format_or_raise(file_name: str, accept_format_list: [str]):
+    """
+    Raise error if file's extension is not in the provided accept_format_list
+    """
+    _, extension = os.path.splitext(file_name)
+    if extension.lower() not in accept_format_list:
+        raise BadInput(
+            "Input file not in supported format list: {}".format(accept_format_list)
+        )
+
+
 class AnnotatedImageInput(BaseInputAdapter):
     """Transform incoming image data from http request, cli or lambda event into a
     numpy array, while allowing an optional JSON file for image annotations (such
@@ -103,6 +102,10 @@ class AnnotatedImageInput(BaseInputAdapter):
     API functions.
 
     Args:
+        image_input_name (string): An acceptable input name for HTTP request
+            and function keyword argument. Default value is "image"
+        annotation_input_name (string): An acceptable input name for HTTP request
+            and function keyword argument. Default value is "annotations"
         accept_image_formats (string[]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
             'apiserver/default_image_input_accept_file_extensions', which is
@@ -127,8 +130,8 @@ class AnnotatedImageInput(BaseInputAdapter):
         >>> @artifacts([TensorflowArtifact('classifer')])
         >>> class PetClassification(BentoService):
         >>>    @api(input=AnnotatedImageInput())
-        >>>    def predict(self, image_ndarrays, annotations):
-        >>>        cropped_pets = some_pet_finder(image_ndarrays, annotations)
+        >>>    def predict(self, image, annotations):
+        >>>        cropped_pets = some_pet_finder(image, annotations)
         >>>        results = self.artifacts.classifer.predict(cropped_pets)
         >>>        return [CLASS_NAMES[r] for r in results]
     """
@@ -139,6 +142,8 @@ class AnnotatedImageInput(BaseInputAdapter):
     def __init__(
         self,
         accept_image_formats=None,
+        image_input_name="image",
+        annotation_input_name="annotations",
         pilmode="RGB",
         is_batch_input=False,
         **base_kwargs,
@@ -150,12 +155,14 @@ class AnnotatedImageInput(BaseInputAdapter):
         )
         if 'input_names' in base_kwargs:
             raise TypeError(
-                "AnnotatedImageInput doesn't take input_names as parameters. "
-                "Update your Service definition "
-                "or use LegacyImageInput instead (not recommended)."
+                "AnnotatedImageInput takes specific arguments for image_input_name "
+                "and annotation_input_name.  This adapter supports a single image "
+                "with an optional JSON annotation file"
             )
 
         self.pilmode = pilmode
+        self.image_input_name = image_input_name
+        self.annotation_input_name = annotation_input_name
         self.accept_image_formats = (
             accept_image_formats or get_default_accept_image_formats()
         )
@@ -175,8 +182,11 @@ class AnnotatedImageInput(BaseInputAdapter):
                 "schema": {
                     "type": "object",
                     "properties": {
-                        "image_file": {"type": "string", "format": "binary"},
-                        "json_file": {"type": "string", "format": "binary"},
+                        self.image_input_name: {"type": "string", "format": "binary"},
+                        self.annotation_input_name: {
+                            "type": "string",
+                            "format": "binary",
+                        },
                     },
                 }
             },
@@ -247,9 +257,12 @@ class AnnotatedImageInput(BaseInputAdapter):
 
         if json_file:
             input_json = read_json_file(json_file)
-            return (input_image, input_json)
+            return {
+                self.image_input_name: input_image,
+                self.annotation_input_name: input_json,
+            }
 
-        return (input_image,)
+        return {self.image_input_name: input_image}
 
     def handle_batch_request(
         self, requests: Iterable[SimpleRequest], func: callable
@@ -280,7 +293,7 @@ class AnnotatedImageInput(BaseInputAdapter):
             input_datas.append(input_data)
             slices.append(i)
 
-        results = [func(*d) if d else {} for d in input_datas]
+        results = [func(**d) if d else {} for d in input_datas]
 
         return self.output_adapter.to_batch_response(
             result_conc=results,
@@ -290,8 +303,8 @@ class AnnotatedImageInput(BaseInputAdapter):
         )
 
     def handle_request(self, request, func):
-        """Handle http request that has one image file. It will convert image into a
-        ndarray for the function to consume.
+        """Handle http request that has one image file. It will convert image into
+        a ndarray for the function to consume
 
         Args:
             request: incoming request object.
@@ -301,7 +314,7 @@ class AnnotatedImageInput(BaseInputAdapter):
             response object
         """
         input_data = self._load_image_and_json_data(request)
-        result = func(*input_data)
+        result = func(**input_data)
         return self.output_adapter.to_response(result, request)
 
     def handle_cli(self, args, func):
@@ -316,13 +329,13 @@ class AnnotatedImageInput(BaseInputAdapter):
         :param func: user API function
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument("--image", required=True)
-        parser.add_argument("--json", required=False)
+        parser.add_argument("--" + self.image_input_name, required=True)
+        parser.add_argument("--" + self.annotation_input_name, required=False)
         args, unknown_args = parser.parse_known_args(args)
 
         image_array = []
 
-        image_path = os.path.expanduser(args.image)
+        image_path = os.path.expanduser(getattr(args, self.image_input_name))
 
         verify_image_format_or_raise(image_path, self.accept_image_formats)
 
@@ -331,9 +344,9 @@ class AnnotatedImageInput(BaseInputAdapter):
 
         image_array = imageio.imread(image_path, pilmode=self.pilmode)
 
-        if args.json:
+        if getattr(args, self.annotation_input_name):
             json_data = {}
-            json_path = os.path.expanduser(args.json)
+            json_path = os.path.expanduser(getattr(args, self.annotation_input_name))
             if not os.path.isabs(json_path):
                 json_path = os.path.abspath(json_path)
             with open(json_path, "r") as content_file:
@@ -361,7 +374,7 @@ class AnnotatedImageInput(BaseInputAdapter):
             )
 
             input_data = self._load_image_and_json_data(request)
-            result = func(*input_data)
+            result = func(**input_data)
 
             return self.output_adapter.to_aws_lambda_event(result, event)
         else:

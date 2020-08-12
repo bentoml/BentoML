@@ -18,4 +18,5 @@ and ask in the bentoml-users channel.
   custom_artifact
   custom_input_adapter
   yatai_service
+  helm
 

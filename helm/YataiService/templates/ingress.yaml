@@ -1,20 +1,18 @@
 {{- if .Values.ingress.enabled -}}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1beta1
-{{- else -}}
-apiVersion: extensions/v1beta1
-{{- end }}
 kind: Ingress
 metadata:
   name: yatai-ingress
-  labels:
-    app: yatai-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
 spec:
-{{- if .Values.ingress.tls }}
+{{- if .Values.ingress.tls.enabled }}
   tls:
     - hosts:
       - {{ .Values.ingress.hostname }}
-      secretName: {{ .secretName }}
+      secretName: {{ .Values.ingress.tls.secretName }}
 {{- end }}
   rules:
     - host: {{ .Values.ingress.hostname }}
@@ -22,12 +20,5 @@ spec:
         paths:
         - backend:
             serviceName: yatai-service
-            servicePort: grpc
----
-apiVersion: "stable.k8s.psg.io/v1"
-kind: "Certificate"
-metadata:
-  name: {{ .Values.ingress.hostname }}
-spec:
-  domain: {{ .Values.ingress.hostname }}
+            servicePort: {{ .Values.service.ports.grpc }}
 {{- end }}

@@ -1,6 +1,3 @@
 db_url: postgresql://postgresadmin:admin123@postgres:5432/bentomldb
 postgres:
   enabled: true
-ingress:
-  enabled: true
-  hostname: yatai-service.local

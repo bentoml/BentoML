@@ -1,0 +1,3 @@
+ingress:
+  enabled: true
+  hostname: yatai-service.local

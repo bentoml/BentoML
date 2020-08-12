@@ -15,16 +15,39 @@ Ingress
 
 2. Configuration
 ==============================================================
-Helm charts rely on a values file to configure how to template and create your resources. You can find the default values in `BentoML/helm/YataiService/values.yaml`. If you wish to modify more values, you can create a file under `BentoML/helm/YataiService/values/<name>.yaml`. You can find more details about deployment in the next section.
+Helm charts rely on a values file to configure how to template and create your resources. You can find the default values in `BentoML/helm/YataiService/values.yaml`. These basic values describe a basic local `YataiService` instance with ephemereal storage.
+
+If you wish to modify more values, you can create a file under `BentoML/helm/YataiService/values/<name>.yaml`. You can find more details about deployment in the next section.
 
 2.1 Persistent Storage
 ---------------------------
+The recommended way to deploy `YataiService` is with a PostgreSQL DB instance within the cluster, backed with a Persistent Volume. The Helm chart makes it really easy to go this route. You can find all the configuration for this under the Postgres block,
+
+.. code-block:: yaml
+
+    # in BentoML/helm/YataiService/values.yaml
+
+    # Local Postgres Service
+    postgres:
+    enabled: false # just change this to true
+    port: "5432"
+    image:
+        repo: postgres
+        version: 10.4
+        pullPolicy: IfNotPresent
+    data:
+        POSTGRES_DB: bentomldb
+        POSTGRES_USER: postgresadmin
+        POSTGRES_PASSWORD: admin123
+    storageCapacity: 5Gi
 
 2.2 Ingress
 ---------------------------
 An Ingress helps to manage incoming external traffic into your cluster. The configuration for this can be found under the ingress block,
 
 .. code-block:: yaml
+
+    # in BentoML/helm/YataiService/values.yaml
 
     ingress:
         enabled: false

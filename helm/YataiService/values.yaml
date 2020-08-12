@@ -51,6 +51,7 @@ postgres:
     POSTGRES_PASSWORD: admin123
   storageCapacity: 5Gi
 
+# Ingress Resource
 ingress:
   enabled: false
   hostname: {}

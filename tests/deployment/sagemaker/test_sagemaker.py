@@ -68,7 +68,12 @@ def test_get_arn_from_aws_user():
                             "Statement": [
                                 {
                                     "Effect": "Allow",
-                                    "Principal": {"Service": "sagemaker.amazonaws.com"},
+                                    "Principal": {
+                                        "Service": [
+                                            "sagemaker.amazonaws.com",
+                                            "redshift.amazonaws.com",
+                                        ]
+                                    },
                                 }
                             ]
                         },

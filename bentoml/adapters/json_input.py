@@ -142,24 +142,30 @@ class BaseInputAdapter:
 class InferenceCollection:
     def __init__(self, tasks: List[InferenceTask] = None):
         self.tasks = tasks or []
+        self._masks = [False] * len(self.tasks)
         self.results = [None] * len(self.tasks)
 
     def __len__(self):
         return len(self.tasks)
 
+    def __iter__(self):
+        return iter(self.tasks)
+
     @property
     def contexts(self):
-        return [t.context for t, r in zip(self.tasks, self.results) if r is not None]
+        return [t.context for t, m in zip(self.tasks, self._masks) if not m]
 
     def mask(self, i: int, result: InferenceResult):
         self.results[i] = result
+        self._masks[i] = True
 
     def fill(self, results: Iterable[InferenceTask]):
         j = 0
         try:
             for i in range(len(self)):
-                if self.results[i] is None:
+                if not self._masks[i]:
                     self.results[i] = results[j]
+                    self._masks[i] = True
                 j += 1
             assert j == len(results)
         except (IndexError, AssertionError):
@@ -202,7 +208,7 @@ class JsonInput(BaseInputAdapter):
 
     def extract(self, collection: InferenceCollection) -> Iterable[JsonSerializable]:
         json_inputs = []
-        for i, task in enumerate(collection.tasks):
+        for i, task in enumerate(collection):
             try:
                 parsed_json = json.loads(task.data)
                 json_inputs.append(parsed_json)

@@ -87,10 +87,14 @@ Output = TypeVar("Output")
 
 
 class InferenceTask(Generic[Input]):
-    def __init__(self, data: Input, context: dict = None, is_error: bool = False):
+    def __init__(self, data: Input, context: dict = None):
         self.data = data
         self.context = context or {}
-        self.is_error = is_error
+        self.is_discarded = False
+
+    def discard(self, msg: str):
+        self.is_discarded = True
+        self.data = msg
 
 
 class InferenceResult(Generic[Output]):
@@ -99,10 +103,6 @@ class InferenceResult(Generic[Output]):
     def __init__(self, data: Output, context: dict = None):
         self.data = data
         self.context = context or {}
-
-
-class InferenceError(InferenceResult):
-    is_error = True
 
 
 class InferenceCollection(Generic[Input]):

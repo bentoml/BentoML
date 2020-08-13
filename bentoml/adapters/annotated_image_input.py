@@ -130,10 +130,27 @@ class AnnotatedImageInput(BaseInputAdapter):
         >>> @artifacts([TensorflowArtifact('classifer')])
         >>> class PetClassification(BentoService):
         >>>    @api(input=AnnotatedImageInput())
-        >>>    def predict(self, image, annotations):
+        >>>    def predict(self, image: Numpy.array, annotations: JsonSerializable):
         >>>        cropped_pets = some_pet_finder(image, annotations)
         >>>        results = self.artifacts.classifer.predict(cropped_pets)
         >>>        return [CLASS_NAMES[r] for r in results]
+        >>>
+
+        The endpoint could then be used with an HTML form that sends multipart data,
+        like the example below
+
+        >>> <form action="http://localhost:8000" method="POST"
+        >>>       enctype="multipart/form-data">
+        >>>     <input name="image" type="file">
+        >>>     <input name="annotations" type="file">
+        >>>     <input type="submit">
+        >>> </form>
+
+        Or the following cURL command
+
+        >>> curl -F image=@image.png
+        >>>      -F annotations=@annotations.json
+        >>>      http://localhost:8000/predict
     """
 
     HTTP_METHODS = ["POST"]
@@ -153,12 +170,6 @@ class AnnotatedImageInput(BaseInputAdapter):
         super(AnnotatedImageInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )
-        if 'input_names' in base_kwargs:
-            raise TypeError(
-                "AnnotatedImageInput takes specific arguments for image_input_name "
-                "and annotation_input_name.  This adapter supports a single image "
-                "with an optional JSON annotation file"
-            )
 
         self.pilmode = pilmode
         self.image_input_name = image_input_name

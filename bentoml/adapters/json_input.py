@@ -140,31 +140,26 @@ class BaseInputAdapter:
 
 
 class InferenceCollection:
-    def __init__(self, input_tasks: List[InferenceTask] = None):
-        self._tasks = input_tasks or []
-        self._len = len(input_tasks)
-        self._results = [None] * self._len
+    def __init__(self, tasks: List[InferenceTask] = None):
+        self.tasks = tasks or []
+        self.results = [None] * len(self.tasks)
 
     def __len__(self):
-        return self._len
-
-    def mask(self, i: int, result: InferenceResult):
-        self._results[i] = result
-
-    @property
-    def inputs(self):
-        return [t.data for t, r in zip(self._tasks, self._results) if r is not None]
+        return len(self.tasks)
 
     @property
     def contexts(self):
-        return [t.context for t, r in zip(self._tasks, self._results) if r is not None]
+        return [t.context for t, r in zip(self.tasks, self.results) if r is not None]
+
+    def mask(self, i: int, result: InferenceResult):
+        self.results[i] = result
 
     def fill(self, results: Iterable[InferenceTask]):
         j = 0
         try:
             for i in range(len(self)):
-                if self._results[i] is None:
-                    self._results[i] = results[j]
+                if self.results[i] is None:
+                    self.results[i] = results[j]
                 j += 1
             assert j == len(results)
         except (IndexError, AssertionError):
@@ -205,42 +200,42 @@ class JsonInput(BaseInputAdapter):
             for i in cli_inputs
         ]
 
-    def extract(
-        self, tasks: List[InferenceTask[str]]
-    ) -> Tuple[Iterable[JsonSerializable], Iterable[InferenceResult]]:
+    def extract(self, collection: InferenceCollection) -> Iterable[JsonSerializable]:
         json_inputs = []
-        fallback_results = []
-        for task in tasks:
+        for i, task in enumerate(collection.tasks):
             try:
                 parsed_json = json.loads(task.data)
                 json_inputs.append(parsed_json)
             except AssertionError:
-                fallback_results.append(
+                collection.mask(
+                    i,
                     InferenceError(
                         context=dict(http_status=400), data="Input validation failed",
-                    )
+                    ),
                 )
             except BadInput as e:
-                fallback_results.append(
-                    InferenceError(context=dict(http_status=400), data=e.value)
+                collection.mask(
+                    i, InferenceError(context=dict(http_status=400), data=e.value)
                 )
             except (json.JSONDecodeError, UnicodeDecodeError):
-                fallback_results.append(
+                collection.mask(
+                    i,
                     InferenceError(
                         context=dict(http_status=400), data="Not a valid JSON input",
-                    )
+                    ),
                 )
             except Exception:  # pylint: disable=broad-except
                 import traceback
 
                 err = traceback.format_exc()
-                fallback_results.append(
+                collection.mask(
+                    i,
                     InferenceError(
                         context=dict(http_status=500),
                         data=f"Internal Server Error: {err}",
-                    )
+                    ),
                 )
-        return json_inputs, fallback_results
+        return json_inputs
 
 
 class JsonInput(BaseInputAdapter):

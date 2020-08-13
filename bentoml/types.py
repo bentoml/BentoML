@@ -87,14 +87,23 @@ Output = TypeVar("Output")
 
 
 class InferenceTask(Generic[Input]):
-    def __init__(self, data: Input, context: dict = None, is_fallback: bool = False):
+    def __init__(self, data: Input, context: dict = None, is_error: bool = False):
         self.data = data
         self.context = context or {}
-        self.is_fallback = is_fallback
+        self.is_error = is_error
 
 
 class InferenceResult(Generic[Output]):
-    def __init__(self, data: Output, context: dict = None, is_fallback: bool = False):
+    is_error = False
+
+    def __init__(self, data: Output, context: dict = None):
         self.data = data
         self.context = context or {}
-        self.is_fallback = is_fallback
+
+
+class InferenceError(InferenceResult):
+    is_error = True
+
+
+class InferenceCollection(Generic[Input]):
+    pass

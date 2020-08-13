@@ -31,6 +31,7 @@ from bentoml.types import (
     AwsLambdaEvent,
     InferenceTask,
     InferenceResult,
+    InferenceError,
 )
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.base_output import BaseOutputAdapter
@@ -63,9 +64,15 @@ class InferenceAPI:
 
     def handle_http_request(self, reqs: List[HTTPRequest]) -> Iterable[HTTPResponse]:
         tasks = self.input_adapter.from_http_request(reqs)
-        inputs, fallback_results = self.input_adapter.extract(tasks)
-        outputs = self.user_func(inputs, contexts=[t.context for t in tasks])
-        return self.output_adapter.to_batch_response(outputs)
+        task_collection = InferenceCollection(tasks)
+        inputs = self.input_adapter.extract(task_collection)
+        if inputs:
+            outputs = self.user_func(inputs, contexts=task_collection.contexts)
+        else:
+            outputs = []
+        results = self.output_adapter.pack(outputs)
+        task_collection.fill(results)
+        return self.output_adapter.to_batch_response(task_collection.results)
 
     def handle_aws_lambda_event(
         self, events: List[AwsLambdaEvent]
@@ -132,6 +139,38 @@ class BaseInputAdapter:
         raise NotImplementedError()
 
 
+class InferenceCollection:
+    def __init__(self, input_tasks: List[InferenceTask] = None):
+        self._tasks = input_tasks or []
+        self._len = len(input_tasks)
+        self._results = [None] * self._len
+
+    def __len__(self):
+        return self._len
+
+    def mask(self, i: int, result: InferenceResult):
+        self._results[i] = result
+
+    @property
+    def inputs(self):
+        return [t.data for t, r in zip(self._tasks, self._results) if r is not None]
+
+    @property
+    def contexts(self):
+        return [t.context for t, r in zip(self._tasks, self._results) if r is not None]
+
+    def fill(self, results: Iterable[InferenceTask]):
+        j = 0
+        try:
+            for i in range(len(self)):
+                if self._results[i] is None:
+                    self._results[i] = results[j]
+                j += 1
+            assert j == len(results)
+        except (IndexError, AssertionError):
+            raise IndexError('Length mismatch') from None
+
+
 class JsonInput(BaseInputAdapter):
     def from_http_request(
         self, reqs: List[HTTPRequest]
@@ -177,24 +216,18 @@ class JsonInput(BaseInputAdapter):
                 json_inputs.append(parsed_json)
             except AssertionError:
                 fallback_results.append(
-                    InferenceResult(
-                        context=dict(http_status=400),
-                        data="Input validation failed",
-                        is_fallback=True,
+                    InferenceError(
+                        context=dict(http_status=400), data="Input validation failed",
                     )
                 )
             except BadInput as e:
                 fallback_results.append(
-                    InferenceResult(
-                        context=dict(http_status=400), data=e.value, is_fallback=True,
-                    )
+                    InferenceError(context=dict(http_status=400), data=e.value)
                 )
             except (json.JSONDecodeError, UnicodeDecodeError):
                 fallback_results.append(
-                    InferenceResult(
-                        context=dict(http_status=400),
-                        data="Not a valid json",
-                        is_fallback=True,
+                    InferenceError(
+                        context=dict(http_status=400), data="Not a valid JSON input",
                     )
                 )
             except Exception:  # pylint: disable=broad-except
@@ -202,10 +235,9 @@ class JsonInput(BaseInputAdapter):
 
                 err = traceback.format_exc()
                 fallback_results.append(
-                    InferenceResult(
+                    InferenceError(
                         context=dict(http_status=500),
                         data=f"Internal Server Error: {err}",
-                        is_fallback=True,
                     )
                 )
         return json_inputs, fallback_results

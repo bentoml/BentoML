@@ -14,7 +14,7 @@
 
 from typing import Iterable, Generic, Dict
 
-from bentoml.types import HTTPRequest, HTTPResponse, Input
+from bentoml.types import HTTPRequest, Input
 from bentoml.marshal.utils import BATCH_REQUEST_HEADER
 
 

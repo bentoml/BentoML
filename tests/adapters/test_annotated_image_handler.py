@@ -480,14 +480,6 @@ def test_anno_image_input_custom_accept_extension_not_accepted(img_file):
     assert "Input file not in supported format list" in str(e.value)
 
 
-def test_anno_image_input_input_names_invalid():
-    with pytest.raises(TypeError) as e:
-        AnnotatedImageInput(input_names=["anything"])
-    assert "AnnotatedImageInput takes specific arguments for image_input_name" in str(
-        e.value
-    )
-
-
 def test_anno_image_input_octet_stream_json(img_file):
     test_anno_image_input = AnnotatedImageInput(accept_image_formats=[".custom"])
     request = mock.MagicMock(spec=flask.Request)

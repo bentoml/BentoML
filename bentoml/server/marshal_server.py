@@ -15,11 +15,23 @@
 import logging
 import multiprocessing
 
+import psutil
 from gunicorn.app.base import Application
 
 from bentoml import config
 from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
+
+
+if psutil.POSIX:
+    # After Python 3.8, the default start method of multiprocessing for MacOS changed to
+    # spawn, which would cause RecursionError when launching Gunicorn Application.
+    # Ref:
+    # https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+    #
+    # Note: https://bugs.python.org/issue33725 claims that fork method may cause crashes
+    # on MacOS.
+    multiprocessing.set_start_method('fork')
 
 marshal_logger = logging.getLogger("bentoml.marshal")
 

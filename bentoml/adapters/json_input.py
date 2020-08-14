@@ -17,7 +17,8 @@ import json
 import inspect
 import functools
 import argparse
-from typing import Iterable, List, Tuple
+import traceback
+from typing import Iterable, List, Union, Tuple, overload
 from json import JSONDecodeError
 
 import uuid
@@ -25,13 +26,16 @@ import flask
 
 from bentoml.exceptions import BadInput
 from bentoml.types import (
+    Input,
+    UserArg,
+    UserReturnValue,
     HTTPRequest,
     HTTPResponse,
     JsonSerializable,
     AwsLambdaEvent,
     InferenceTask,
     InferenceResult,
-    InferenceError,
+    InferenceContext,
 )
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.base_output import BaseOutputAdapter
@@ -62,25 +66,42 @@ class InferenceAPI:
 
             self.user_func = safe_user_func
 
-    def handle_http_request(self, reqs: List[HTTPRequest]) -> Iterable[HTTPResponse]:
-        tasks = self.input_adapter.from_http_request(reqs)
-        task_collection = InferenceCollection(tasks)
-        inputs = self.input_adapter.extract(task_collection)
-        if inputs:
-            outputs = self.user_func(inputs, contexts=task_collection.contexts)
-        else:
-            outputs = []
-        results = self.output_adapter.pack(outputs)
-        task_collection.fill(results)
-        return self.output_adapter.to_batch_response(task_collection.results)
+    def infer(self, inf_tasks: Iterable[InferenceTask]) -> List[InferenceResult]:
+        # task validation
+        def _validation(inf_tasks):
+            for task in inf_tasks:
+                if self.input_adapter.validate_task(task):
+                    yield task
+                else:
+                    task.discard(http_status=400, err_msg="Input validation failed")
+
+        # extract args
+        user_args = self.input_adapter.extract_user_func_args(_validation(inf_tasks))
+        contexts = [t.contexts for t in inf_tasks if not t.is_discarded]
+
+        # call user function
+        user_return = self.user_func(*user_args, contexts=contexts)
+
+        # pack return value
+        inf_results = self.output_adapter.pack_user_func_return_value(
+            user_return, contexts=contexts
+        )
+        full_results = InferenceResult.complete_discarded(inf_tasks, inf_results)
+        return full_results
+
+    def handle_http_request(
+        self, reqs: Iterable[HTTPRequest]
+    ) -> Iterable[HTTPResponse]:
+        inf_tasks = self.input_adapter.from_http_request(reqs)
+        results = self.infer(inf_tasks)
+        return self.output_adapter.to_batch_response(results)
 
     def handle_aws_lambda_event(
         self, events: List[AwsLambdaEvent]
     ) -> Iterable[AwsLambdaEvent]:
-        tasks = self.input_adapter.from_aws_lambda_event(events)
-        inputs = self.input_adapter.extract(tasks)
-        outputs = self.user_func(inputs, contexts=[t.context for t in tasks])
-        return self.output_adapter.to_aws_lambda_event(outputs)
+        inf_tasks = self.input_adapter.from_aws_lambda_event(events)
+        results = self.infer(inf_tasks)
+        return self.output_adapter.to_aws_lambda_event(results)
 
     def handle_cli(self, args: List[str]) -> int:
         parser = argparse.ArgumentParser()
@@ -105,23 +126,17 @@ class InferenceAPI:
             if is_file:
                 cli_inputs = [open(file_path, 'rb').read() for file_path in cli_inputs]
             tasks = self.input_adapter.from_cli(cli_inputs, other_args)
-            inputs = self.input_adapter.extract(tasks)
-            contexts = [t.context for t in tasks]
-            outputs = self.user_func(inputs, contexts)
-            self.output_adapter.to_cli(outputs, contexts)
+            results = self.infer(tasks)
+            self.output_adapter.to_cli(results)
 
         return 0
 
 
 class BaseInputAdapter:
-    def validate_task(self, _: InferenceTask):
-        return True
-
-    def validate_input(self, _):
-        return True
+    BATCH_MODE_SUPPORTED = True
 
     def from_http_request(
-        self, reqs: List[HTTPRequest]
+        self, reqs: Iterable[HTTPRequest]
     ) -> Iterable[InferenceTask[str]]:
         raise NotImplementedError()
 
@@ -133,49 +148,80 @@ class BaseInputAdapter:
     def from_cli(self, cli_inputs, other_args) -> Iterable[InferenceTask[str]]:
         raise NotImplementedError()
 
-    def extract(
-        self, tasks: List[InferenceTask[str]]
-    ) -> Tuple[Iterable[JsonSerializable], Iterable[InferenceResult]]:
+    def validate_task(self, _: InferenceTask):
+        raise NotImplementedError()
+
+    def extract_user_func_args(
+        self, tasks: Iterable[InferenceTask]
+    ) -> Tuple[UserArg, ...]:
         raise NotImplementedError()
 
 
-class InferenceCollection:
-    def __init__(self, tasks: List[InferenceTask] = None):
-        self.tasks = tasks or []
-        self._masks = [False] * len(self.tasks)
-        self.results = [None] * len(self.tasks)
+class BaseOutputAdapter:
+    @overload
+    def pack_user_func_return_value(
+        self, return_value: UserReturnValue, contexts: List[InferenceContext]
+    ) -> List[InferenceResult]:
+        pass
 
-    def __len__(self):
-        return len(self.tasks)
+    @overload
+    def pack_user_func_return_value(
+        self, return_result: List[InferenceResult], contexts: List[InferenceContext]
+    ) -> List[InferenceResult]:
+        pass
 
-    def __iter__(self):
-        return iter(self.tasks)
+    def pack_user_func_return_value(
+        self, return_result, contexts
+    ) -> List[InferenceResult]:
+        raise NotImplementedError()
 
-    @property
-    def contexts(self):
-        return [t.context for t, m in zip(self.tasks, self._masks) if not m]
+    def to_http_request(self, results: Iterable[InferenceResult]):
+        raise NotImplementedError()
 
-    def mask(self, i: int, result: InferenceResult):
-        self.results[i] = result
-        self._masks[i] = True
+    def to_cli(self, results: Iterable[InferenceResult]):
+        raise NotImplementedError()
 
-    def fill(self, results: Iterable[InferenceTask]):
-        j = 0
-        try:
-            for i in range(len(self)):
-                if not self._masks[i]:
-                    self.results[i] = results[j]
-                    self._masks[i] = True
-                j += 1
-            assert j == len(results)
-        except (IndexError, AssertionError):
-            raise IndexError('Length mismatch') from None
+    def to_aws_lambda_event(self, results: Iterable[InferenceResult]):
+        raise NotImplementedError()
 
 
 class JsonInput(BaseInputAdapter):
+    """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
+    json serializable object in python) and pass down to user defined API function
+
+    ****
+    How to upgrade from LegacyJsonInput(JsonInput before 0.8.3)
+
+    To enable micro batching for API with json inputs, custom bento service should use
+    JsonInput and modify the handler method like this:
+        ```
+        @bentoml.api(input=LegacyJsonInput())
+        def predict(self, parsed_json):
+            results = self.artifacts.classifier([parsed_json['text']])
+            return results[0]
+        ```
+    --->
+        ```
+        @bentoml.api(input=JsonInput())
+        def predict(self, parsed_jsons):
+            results = self.artifacts.classifier([j['text'] for j in parsed_jsons])
+            return results
+        ```
+    For clients, the request is the same as LegacyJsonInput, each includes single json.
+        ```
+        curl -i \
+            --header "Content-Type: application/json" \
+            --request POST \
+            --data '{"text": "best movie ever"}' \
+            localhost:5000/predict
+        ```
+    """
+
+    BATCH_MODE_SUPPORTED = True
+
     def from_http_request(
-        self, reqs: List[HTTPRequest]
-    ) -> Iterable[InferenceTask[str]]:
+        self, reqs: Iterable[HTTPRequest]
+    ) -> List[InferenceTask[str]]:
         return [
             InferenceTask(
                 context=dict(inf_id=uuid.uuid4(), http_headers=r.parsed_headers),
@@ -206,41 +252,19 @@ class JsonInput(BaseInputAdapter):
             for i in cli_inputs
         ]
 
-    def extract(self, collection: InferenceCollection) -> Iterable[JsonSerializable]:
+    def extract_user_func_args(
+        self, tasks: Iterable[InferenceTask[str]]
+    ) -> Iterable[JsonSerializable]:
         json_inputs = []
-        for i, task in enumerate(collection):
+        for task in tasks:
             try:
                 parsed_json = json.loads(task.data)
                 json_inputs.append(parsed_json)
-            except AssertionError:
-                collection.mask(
-                    i,
-                    InferenceError(
-                        context=dict(http_status=400), data="Input validation failed",
-                    ),
-                )
-            except BadInput as e:
-                collection.mask(
-                    i, InferenceError(context=dict(http_status=400), data=e.value)
-                )
             except (json.JSONDecodeError, UnicodeDecodeError):
-                collection.mask(
-                    i,
-                    InferenceError(
-                        context=dict(http_status=400), data="Not a valid JSON input",
-                    ),
-                )
+                task.discard(http_status=400, err_msg="Not a valid JSON input")
             except Exception:  # pylint: disable=broad-except
-                import traceback
-
                 err = traceback.format_exc()
-                collection.mask(
-                    i,
-                    InferenceError(
-                        context=dict(http_status=500),
-                        data=f"Internal Server Error: {err}",
-                    ),
-                )
+                task.discard(http_status=500, err_msg=f"Internal Server Error: {err}")
         return json_inputs
 
 

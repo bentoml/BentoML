@@ -13,7 +13,19 @@
 # limitations under the License.
 import io
 import functools
-from typing import NamedTuple, Union, Dict, List, Generic, TypeVar
+from collections import OrderedDict
+from typing import (
+    NamedTuple,
+    Tuple,
+    Union,
+    Dict,
+    List,
+    Generic,
+    TypeVar,
+    Optional,
+    Iterable,
+    Iterator,
+)
 
 from multidict import CIMultiDict
 
@@ -86,24 +98,69 @@ Input = TypeVar("Input")
 Output = TypeVar("Output")
 
 
+UserArg = TypeVar("UserArg")
+UserReturnValue = TypeVar("UserReturnValue")
+
+
+class UserArgs(OrderedDict):
+    '''
+    >>> print(*InputPair(x=[1, 2, 3], y=[4, 5, 6]))
+    [1, 2, 3] [4, 5, 6]
+    '''
+
+    def __iter__(self):
+        return iter(self.values())
+
+
+class InferenceContext(NamedTuple):
+    task_id: Optional[str] = None
+    err_msg: str = ''
+
+    http_method: Optional[str] = None
+    http_status: Optional[int] = None
+    http_headers: Optional[CIMultiDict] = None
+
+    aws_lambda_event: Optional[dict] = None
+
+    cli_status: Optional[int] = 0
+    cli_args: Optional[Tuple[str]] = None
+
+
+class DefaultErrorContext(InferenceContext):
+    http_status: int = 500
+    cli_status: int = 1
+
+
 class InferenceTask(Generic[Input]):
-    def __init__(self, data: Input, context: dict = None):
+    def __init__(self, data: Input, context: InferenceContext = None):
         self.data = data
-        self.context = context or {}
+        self.context = context or InferenceContext()
         self.is_discarded = False
 
-    def discard(self, msg: str):
+    def discard(self, err_msg="", **context):
         self.is_discarded = True
-        self.data = msg
+        self.context.err_msg = err_msg
+        for k, v in context.items():
+            setattr(self.context, k, v)
 
 
 class InferenceResult(Generic[Output]):
-    is_error = False
-
-    def __init__(self, data: Output, context: dict = None):
+    def __init__(self, data: Output, context: InferenceContext = None):
         self.data = data
-        self.context = context or {}
+        self.context = context or InferenceContext()
 
-
-class InferenceCollection(Generic[Input]):
-    pass
+    @classmethod
+    def complete_discarded(
+        cls, tasks: Iterable[InferenceTask], results: Iterable[InferenceResult],
+    ) -> Iterator[InferenceResult]:
+        iresults = iter(results)
+        try:
+            for task in tasks:
+                if task.is_discarded:
+                    yield cls(None, context=DefaultErrorContext(*task.context))
+                else:
+                    yield next(iresults)
+        except StopIteration:
+            raise StopIteration(
+                'The results does not match the number of tasks'
+            ) from None

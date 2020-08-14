@@ -17,7 +17,7 @@ yatai:
   replicaCount: 1 # only supports 1 at the moment
   image:
     repo: bentoml/yatai-service
-    version: 0.8.5
+    version: 0.7.2
     pullPolicy: IfNotPresent
 service:
   type: LoadBalancer
@@ -26,14 +26,14 @@ service:
     web: 3000
   livenessProbe:
     httpGet:
-      path: /healthz
-      port: http
+      path: /
+      port: 3000
     initialDelaySeconds: 3
     periodSeconds: 5
   readinessProbe:
     httpGet:
-      path: /healthz
-      port: http
+      path: /
+      port: 3000
     initialDelaySeconds: 3
     periodSeconds: 5
 

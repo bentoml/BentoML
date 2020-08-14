@@ -27,6 +27,10 @@ MultiImageInput
 +++++++++++++++
 .. autoclass:: bentoml.adapters.MultiImageInput
 
+AnnotatedImageInput
++++++++++++++++++++
+.. autoclass:: bentoml.adapters.AnnotatedImageInput
+
 LegacyImageInput
 ++++++++++++++++
 .. autoclass:: bentoml.adapters.LegacyImageInput

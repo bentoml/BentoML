@@ -81,6 +81,14 @@ def img_file(tmpdir):
 
 
 @pytest.fixture()
+def json_file(tmpdir):
+    json_file_ = tmpdir.join("test_json.json")
+    with open(json_file_, "w") as of:
+        of.write('{"name": "kaith", "game": "morrowind"}')
+    return str(json_file_)
+
+
+@pytest.fixture()
 def bin_file(tmpdir):
     bin_file_ = tmpdir.join("bin_file")
     with open(bin_file_, "wb") as of:

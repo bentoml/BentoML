@@ -18,6 +18,7 @@ from bentoml.adapters.tensorflow_tensor_input import TfTensorInput
 from bentoml.adapters.json_input import JsonInput
 from bentoml.adapters.legacy_json_input import LegacyJsonInput
 from bentoml.adapters.image_input import ImageInput
+from bentoml.adapters.annotated_image_input import AnnotatedImageInput
 from bentoml.adapters.multi_image_input import MultiImageInput
 from bentoml.adapters.legacy_image_input import LegacyImageInput
 from bentoml.adapters.fastai_image_input import FastaiImageInput
@@ -57,6 +58,7 @@ __all__ = [
     "LegacyImageInput",
     "FastaiImageInput",
     "FileInput",
+    "AnnotatedImageInput",
     "ClipperBytesInput",
     "ClipperDoublesInput",
     "ClipperFloatsInput",

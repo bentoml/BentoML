@@ -78,7 +78,7 @@ class DataframeInput(BaseInputAdapter):
                 import pandas as pd  # pylint: disable=redefined-outer-name
             except ImportError:
                 raise MissingDependencyException(
-                    "Missing required dependency 'pandas' for DataframeInput, install"
+                    "Missing required dependency 'pandas' for DataframeInput, install "
                     "with `pip install pandas`"
                 )
 

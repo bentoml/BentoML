@@ -81,20 +81,18 @@ class ImageInput(BaseInputAdapter):
 
     Example:
 
-        ```python
-        from bentoml import BentoService, api, artifacts
-        from bentoml.artifact import TensorflowArtifact
-        from bentoml.adapters import ImageInput
-
-        CLASS_NAEMS = ['cat', 'dog']
-
-        @artifacts([TensorflowArtifact('classifer')])
-        class PetClassification(BentoService):
-            @api(input=ImageInput())
-            def predict(self, image_ndarrays):
-                results = self.artifacts.classifer.predict(image_ndarrays)
-                return [CLASS_NAEMS[r] for r in results]
-        ```
+        >>> from bentoml import BentoService, api, artifacts
+        >>> from bentoml.artifact import TensorflowArtifact
+        >>> from bentoml.adapters import ImageInput
+        >>>
+        >>> CLASS_NAMES = ['cat', 'dog']
+        >>>
+        >>> @artifacts([TensorflowArtifact('classifer')])
+        >>> class PetClassification(BentoService):
+        >>>     @api(input=ImageInput())
+        >>>     def predict(self, image_ndarrays):
+        >>>         results = self.artifacts.classifer.predict(image_ndarrays)
+        >>>         return [CLASS_NAMES[r] for r in results]
     """
 
     HTTP_METHODS = ["POST"]

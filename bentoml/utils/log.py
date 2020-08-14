@@ -87,7 +87,7 @@ def get_logging_config_dict(logging_level, base_log_directory):
                 "propagate": False,
             },
             "bentoml.prediction": {
-                "handlers": ["prediction"],
+                "handlers": ["prediction", "console"],
                 "level": "INFO",
                 "propagate": False,
             },

@@ -49,6 +49,8 @@ install-web-deps: ## Install dependencies to run web server and frontend
 # Helm
 helm-lint: ## Helm Lint
 	helm lint ./helm/YataiService
+helm-deps: ## Helm installed dependencies
+	helm dependencies build helm/YataiService
 helm-dry: ## Helm Dry Install
 	cd helm && helm install -f YataiService/values/postgres.yaml --dry-run --debug yatai-service YataiService
 helm-install: ## Helm Install

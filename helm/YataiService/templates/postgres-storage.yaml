@@ -2,10 +2,10 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: postgres-pv-volume
+  name: yatai-postgres-pv-volume
   labels:
     type: local
-    app: postgres
+    app: yatai-postgres
 spec:
   storageClassName: manual
   capacity:
@@ -18,9 +18,9 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: postgres-pv-claim
+  name: yatai-postgres-pv-claim
   labels:
-    app: postgres
+    app: yatai-postgres
 spec:
   storageClassName: manual
   accessModes:

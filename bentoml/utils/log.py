@@ -92,7 +92,7 @@ def get_logging_config_dict(logging_level, base_log_directory):
                 "propagate": False,
             },
             "bentoml.feedback": {
-                "handlers": ["feedback"],
+                "handlers": ["feedback", "console"],
                 "level": "INFO",
                 "propagate": False,
             },

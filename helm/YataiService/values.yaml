@@ -17,7 +17,7 @@ yatai:
   replicaCount: 1 # only supports 1 at the moment
   image:
     repo: bentoml/yatai-service
-    version: 0.7.2
+    version: 0.8.5
     pullPolicy: IfNotPresent
 service:
   type: LoadBalancer

@@ -1,7 +1,7 @@
 Using Helm to install YataiService
 =============================================
 
-*Helm* is a tool that streamlines installing and managing K8s applications. It lets us easily configure a set of K8s resources that make up our application -- YataiService in this case. Helm enables us to
+*Helm* is a tool that streamlines installing and managing K8s applications. It lets developers easily configure a set of K8s resources that make up an application -- YataiService in this case. Helm enables developers to
 
 - easily deploy recommended configuration and setup for YataiService
 - easily change settings
@@ -9,11 +9,11 @@ Using Helm to install YataiService
 
 1. Configuration
 ==============================================================
-Helm charts rely on a values file to configure how to template and create your resources. You can find the default values in `BentoML/helm/YataiService/values.yaml`. These basic values describe a basic local `YataiService` instance with ephemereal storage.
+Helm charts rely on a values file to configure how to template and create Kubernetes resources. The default values for these resources can be found in `BentoML/helm/YataiService/values.yaml`. These basic values describe a basic local `YataiService` instance with ephemereal storage.
 
 1.1 Persistent Storage
 ---------------------------
-The recommended way to deploy `YataiService` is with a PostgreSQL DB instance within the cluster, backed with a Persistent Volume. The Helm chart makes it really easy to go this route. You can find all the configuration for this under the Postgres block,
+The recommended way to deploy `YataiService` is with a PostgreSQL DB instance within the cluster, backed with a Persistent Volume. The Helm chart makes it really easy to go this route. All the configuration for this can be found under the Postgres block,
 
 .. code-block:: yaml
 
@@ -35,7 +35,7 @@ The recommended way to deploy `YataiService` is with a PostgreSQL DB instance wi
 
 1.2 Ingress
 ---------------------------
-An Ingress helps to manage incoming external traffic into your cluster. The configuration for this can be found under the ingress block,
+An Ingress helps to manage incoming external traffic into the cluster. The configuration for this can be found under the ingress block,
 
 .. code-block:: yaml
 
@@ -50,12 +50,12 @@ An Ingress helps to manage incoming external traffic into your cluster. The conf
 
 1.3 TLS
 ---------------------------
-If you would like to secure your ingress with TLS, you can enable it by setting `ingress.tls.enabled` to `true`.
+To secure your ingress with TLS, you can enable it by setting `ingress.tls.enabled` to `true`.
 
 .. note::
-   If you plan on enabling TLS, the Ingress must be enabled as well. Please keep in mind that you will need to have a TLS private key and certificate for your hostname if you choose to deploy it.
+   When enabling TLS, the Ingress must also be enabled. Please keep in mind that you will need to have a TLS private key and certificate for your hostname if you choose to deploy it.
 
-For local development, you can create a self-signed key as follows.
+For local development, create a self-signed key as follows.
 
 .. code-block:: bash
 
@@ -75,16 +75,18 @@ Read more here: https://kubernetes.github.io/ingress-nginx/user-guide/tls/
 ==============================================================
 2.1 Minikube (Local)
 ---------------------------
-Minikube is a tool that lets you run a small Kubernetes cluster on your local machine. Recommended for testing. You can get Minikube here: https://kubernetes.io/docs/tasks/tools/install-minikube/
+Minikube is a tool that lets developers run a small Kubernetes cluster on their local machine. Get Minikube here: https://kubernetes.io/docs/tasks/tools/install-minikube/
 
-Helm is a CLI tool that helps us define, configure, and install K8s applications. Install it here: https://helm.sh/docs/intro/install/
+Then, start a local K8s cluster running by doing `minikube start`.
 
-Then, make sure you have a local K8s cluster running by doing `minikube start`.
+.. note::
+
+    Before installing the chart, make sure to fetch the `ingress-nginx` dependency by doing `helm dependency build helm/YataiService`
 
 =======
 Dry Run
 =======
-Let's do a dry run of the helm chart installation to see if our configuration is valid.
+Developers can do a dry run of the helm chart installation to see if the configuration is valid.
 
 .. code-block:: bash
 
@@ -101,7 +103,7 @@ Let's do a dry run of the helm chart installation to see if our configuration is
     ---
     ...
 
-Looks like all of the resource we need to deploy are all there! Let's install it into our cluster.
+Then, to install it into the cluster,
 
 .. code-block:: bash
 
@@ -118,7 +120,7 @@ Looks like all of the resource we need to deploy are all there! Let's install it
     NAME                             READY   STATUS    RESTARTS   AGE
     yatai-service-85898d6c9c-ndlfg   1/1     Running   0          91s
 
-Awesome! The service is healthy. Let's check out the web UI by telling `minikube` to tunnel all of the ports that we defined earlier to our local machine. This should open 2 browser tabs.
+After this step, the service should be healthy. Visit the web UI by telling `minikube` to tunnel all of the ports that were defined earlier to your local machine. This should open 2 browser tabs.
 
 .. code-block:: bash
 
@@ -140,7 +142,7 @@ Awesome! The service is healthy. Let's check out the web UI by telling `minikube
     🎉  Opening service default/yatai-service in default browser...
     ❗  Because you are using a Docker driver on darwin, the terminal needs to be open to run it.
 
-Woo! You now have `YataiService` running on a local K8s cluster :) To cleanup, run `helm uninstall yatai-service` then `minikube stop`.
+Woo! You now have a `YataiService` instance running on a local K8s cluster :) To cleanup, run `helm uninstall yatai-service` then `minikube stop`.
 
 Keep reading for more info on configuring `YataiService` using Helm.
 
@@ -148,9 +150,9 @@ Keep reading for more info on configuring `YataiService` using Helm.
 Custom Values
 =======
 
-Now, say you wanted to deploy `YataiService` with a a PostgreSQL DB instance within the cluster. We created a custom values file just for this reason. You can find it in `helm/YataiService/values/postgres.yaml`. Feel free to create your own custom values files to configure `YataiService` in a way that works for you/your company.
+To deploy a `YataiService` instance with a PostgreSQL DB instance within the cluster, developers can use the custom values found in `helm/YataiService/values.yaml`. If this doesn't match the your needs, feel free to create your own custom values files to configure `YataiService` in a way that works for you/your company.
 
-To tell Helm to use these custom values, we can do this
+To tell Helm to use these custom values,
 
 .. code-block:: bash
 
@@ -168,9 +170,9 @@ To tell Helm to use these custom values, we can do this
     enabled: true
     ...
 
-Or, if you prefer a shortcut, `make helm-dry`. You can see a full example K8s manifest here: https://ctrl-v.app/4X2hf7h
+You can see a full example K8s manifest here: https://ctrl-v.app/4X2hf7h
 
-Now that we've done a dry-run and we're happy with the resources Helm plans on creating, let's apply it by removing the `--dry-run` and `--debug` flags. Alternatively, you can run `make helm-install`. Let's double check everything started up correctly.
+If the configuration looks correct, apply it by removing the `--dry-run` and `--debug` flags. Alternatively, run `make helm-install`. Let's double check everything started up correctly.
 
 .. code-block:: bash
 
@@ -192,7 +194,7 @@ Now that we've done a dry-run and we're happy with the resources Helm plans on c
     replicaset.apps/postgres-5649dd765c        1         1         1       3s
     replicaset.apps/yatai-service-556487fb55   1         1         1       3s
 
-Everything looks good! Enjoy your new `YataiService` cluster :))
+Everything looks good!
 
 2.2 Cloud Providers
 ----------------------------

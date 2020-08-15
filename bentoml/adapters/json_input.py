@@ -26,8 +26,7 @@ import flask
 
 from bentoml.exceptions import BadInput
 from bentoml.types import (
-    Input,
-    UserArg,
+    UserArgs,
     UserReturnValue,
     HTTPRequest,
     HTTPResponse,
@@ -133,7 +132,35 @@ class InferenceAPI:
 
 
 class BaseInputAdapter:
-    BATCH_MODE_SUPPORTED = True
+    HTTP_METHODS = ["POST", "GET"]
+    BATCH_MODE_SUPPORTED = False
+
+    def __init__(self, http_input_example=None, **base_config):
+        '''
+        base_configs:
+            - is_batch_input
+        '''
+        self._config = base_config
+        self._http_input_example = http_input_example
+
+    @property
+    def config(self):
+        return self._config
+
+    @property
+    def request_schema(self):
+        """
+        :return: OpenAPI json schema for the HTTP API endpoint created with this input
+                 adapter
+        """
+        return {"application/json": {"schema": {"type": "object"}}}
+
+    @property
+    def pip_dependencies(self):
+        """
+        :return: List of PyPI package names required by this InputAdapter
+        """
+        return []
 
     def from_http_request(
         self, reqs: Iterable[HTTPRequest]
@@ -151,27 +178,29 @@ class BaseInputAdapter:
     def validate_task(self, _: InferenceTask):
         raise NotImplementedError()
 
-    def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask]
-    ) -> Tuple[UserArg, ...]:
+    def extract_user_func_args(self, tasks: Iterable[InferenceTask]) -> UserArgs:
         raise NotImplementedError()
 
 
 class BaseOutputAdapter:
-    @overload
-    def pack_user_func_return_value(
-        self, return_value: UserReturnValue, contexts: List[InferenceContext]
-    ) -> List[InferenceResult]:
-        pass
+    def __init__(self, cors='*'):
+        self.cors = cors
 
-    @overload
-    def pack_user_func_return_value(
-        self, return_result: List[InferenceResult], contexts: List[InferenceContext]
-    ) -> List[InferenceResult]:
-        pass
+    @property
+    def config(self):
+        return dict(cors=self.cors,)
+
+    @property
+    def pip_dependencies(self):
+        """
+        :return: List of PyPI package names required by this OutputAdapter
+        """
+        return []
 
     def pack_user_func_return_value(
-        self, return_result, contexts
+        self,
+        return_result: Union[UserReturnValue, List[InferenceResult]],
+        contexts: List[InferenceContext],
     ) -> List[InferenceResult]:
         raise NotImplementedError()
 

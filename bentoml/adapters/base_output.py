@@ -12,12 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Union, List, Generic
-
-import flask
+from typing import Iterable, List, Generic
 
 from bentoml.types import (
-    HTTPRequest,
+    AwsLambdaEvent,
     HTTPResponse,
     UserReturnValue,
     InferenceResult,
@@ -26,6 +24,12 @@ from bentoml.types import (
 
 
 class BaseOutputAdapter(Generic[UserReturnValue]):
+    """
+    OutputAdapter is an layer between result of user defined API callback function
+    and final output in a variety of different forms,
+    such as HTTP response, command line stdout or AWS Lambda event object.
+    """
+
     def __init__(self, cors='*'):
         self.cors = cors
 
@@ -43,71 +47,29 @@ class BaseOutputAdapter(Generic[UserReturnValue]):
     def pack_user_func_return_value(
         self, return_result: UserReturnValue, contexts: List[InferenceContext],
     ) -> List[InferenceResult]:
-        raise NotImplementedError()
-
-    def to_http_response(self, results: Iterable[InferenceResult]):
-        raise NotImplementedError()
-
-    def to_cli(self, results: Iterable[InferenceResult]):
-        raise NotImplementedError()
-
-    def to_aws_lambda_event(self, results: Iterable[InferenceResult]):
-        raise NotImplementedError()
-
-
-class _BaseOutputAdapter:
-    """OutputAdapter is an layer between result of user defined API callback function
-    and final output in a variety of different forms,
-    such as HTTP response, command line stdout or AWS Lambda event object.
-    """
-
-    def __init__(self, cors='*'):
-        self.cors = cors
-
-    @property
-    def config(self):
-        return dict(cors=self.cors,)
-
-    def to_response(self, result, request: flask.Request) -> flask.Response:
-        """Converts corresponding data into an HTTP response
-
-        :param result: result of user API function
-        :param request: request object
         """
-        simple_req = HTTPRequest.from_flask_request(request)
-        simple_resp = self.to_batch_response((result,), requests=(simple_req,))[0]
-        return simple_resp.to_flask_response()
+        Pack the return value of user defined API function into InferenceResults
+        """
+        raise NotImplementedError()
 
     def to_http_response(
-        self, result_conc, slices=None, fallbacks=None, requests=None,
+        self, results: Iterable[InferenceResult]
     ) -> Iterable[HTTPResponse]:
-        """Converts corresponding data merged by batching service into HTTP responses
-
-        :param result_conc: result of user API function
-        :param slices: auto-batching slices
-        :param requests: request objects
+        """
+        Converts InferenceResults into HTTP responses.
         """
         raise NotImplementedError()
 
-    def to_cli(self, result, args):
-        """Converts corresponding data into an CLI output.
-
-        :param result: result of user API function
-        :param args: CLI args
+    def to_cli(self, results: Iterable[InferenceResult]) -> int:
+        """
+        Converts InferenceResults into CLI output.
         """
         raise NotImplementedError()
 
-    def to_aws_lambda_event(self, result, event):
-        """Converts corresponding data into a Lambda event.
-
-        :param result: result of user API function
-        :param event: input event
+    def to_aws_lambda_event(
+        self, results: Iterable[InferenceResult]
+    ) -> Iterable[AwsLambdaEvent]:
         """
-        raise NotImplementedError
-
-    @property
-    def pip_dependencies(self):
+        Converts InferenceResults into AWS lambda events.
         """
-        :return: List of PyPI package names required by this OutputAdapter
-        """
-        return []
+        raise NotImplementedError()

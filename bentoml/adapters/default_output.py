@@ -23,7 +23,7 @@ from bentoml.types import (
 from .base_output import BaseOutputAdapter
 
 
-def detect_suitable_adapter(result):
+def detect_suitable_adapter(result) -> BaseOutputAdapter:
     try:
         import pandas as pd
 
@@ -80,26 +80,10 @@ class DefaultOutput(BaseOutputAdapter):
         raise NotImplementedError()
 
     def to_http_response(self, results) -> Iterable[HTTPResponse]:
-        """Converts corresponding data merged by batching service into HTTP responses
-
-        :param result_conc: result of user API function
-        :param slices: auto-batching slices
-        :param requests: request objects
-        """
         return self.actual_adapter.to_http_response(results)
 
     def to_cli(self, results):
-        """Converts corresponding data into an CLI output.
-
-        :param result: result of user API function
-        :param args: CLI args
-        """
         return self.actual_adapter.to_cli(results)
 
     def to_aws_lambda_event(self, results):
-        """Converts corresponding data into a Lambda event.
-
-        :param result: result of user API function
-        :param event: input event
-        """
         return self.actual_adapter.to_aws_lambda_event(results)

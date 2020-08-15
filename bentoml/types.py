@@ -101,16 +101,6 @@ UserArgs = TypeVar("UserArgs")
 UserReturnValue = TypeVar("UserReturnValue")
 
 
-# class UserArgs(OrderedDict):
-# '''
-# >>> print(*InputPair(x=[1, 2, 3], y=[4, 5, 6]))
-# [1, 2, 3] [4, 5, 6]
-# '''
-
-# def __iter__(self):
-# return iter(self.values())
-
-
 class InferenceContext(NamedTuple):
     task_id: Optional[str] = None
     err_msg: str = ''

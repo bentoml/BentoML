@@ -70,7 +70,7 @@ class PickleDataLoader:
 
     @classmethod
     def merge_responses(cls, resps: Iterable[HTTPResponse]) -> bytes:
-        return pickle.dumps(resps)
+        return pickle.dumps(list(resps))
 
     @classmethod
     def split_responses(cls, raw: bytes) -> Iterable[HTTPResponse]:

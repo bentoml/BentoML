@@ -24,7 +24,7 @@ from werkzeug.wrappers import Request
 
 from bentoml import config
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.marshal.utils import SimpleRequest, SimpleResponse
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml.exceptions import BadInput
 from bentoml.adapters.base_input import BaseInputAdapter
 
@@ -276,8 +276,8 @@ class AnnotatedImageInput(BaseInputAdapter):
         return {self.image_input_name: input_image}
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func: callable
-    ) -> Iterable[SimpleResponse]:
+        self, requests: Iterable[HTTPRequest], func: callable
+    ) -> Iterable[HTTPResponse]:
         """
         Batch version of handle_request
         """
@@ -306,7 +306,7 @@ class AnnotatedImageInput(BaseInputAdapter):
 
         results = [func(**d) if d else {} for d in input_datas]
 
-        return self.output_adapter.to_batch_response(
+        return self.output_adapter.to_http_response(
             result_conc=results,
             slices=slices,
             fallbacks=[None] * len(slices),

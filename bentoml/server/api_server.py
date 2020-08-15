@@ -281,9 +281,7 @@ class BentoAPIServer:
                     response_body = api.handle_batch_request(request)
                     response = make_response(response_body)
                 else:
-                    function_input = api.input_adapter.handle_request(request)
-                    result = api.func(function_input)
-                    response = api.output_adapter.to_response(result, request)
+                    response = api.handle_request(request)
             except BentoMLException as e:
                 log_exception(sys.exc_info())
 

@@ -12,13 +12,71 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Generic, Dict
+from typing import Iterable, Generic, Dict, List
 
-from bentoml.types import HTTPRequest, Input
+from bentoml.types import (
+    UserArgs,
+    HTTPRequest,
+    Input,
+    InferenceTask,
+    AwsLambdaEvent,
+)
 from bentoml.marshal.utils import BATCH_REQUEST_HEADER
 
 
-class BaseInputAdapter(Generic[Input]):
+class BaseInputAdapter(Generic[UserArgs]):
+    HTTP_METHODS = ["POST", "GET"]
+    BATCH_MODE_SUPPORTED = False
+
+    def __init__(self, http_input_example=None, **base_config):
+        '''
+        base_configs:
+            - is_batch_input
+        '''
+        self._config = base_config
+        self._http_input_example = http_input_example
+
+    @property
+    def config(self):
+        return self._config
+
+    @property
+    def request_schema(self):
+        """
+        :return: OpenAPI json schema for the HTTP API endpoint created with this input
+                 adapter
+        """
+        return {"application/json": {"schema": {"type": "object"}}}
+
+    @property
+    def pip_dependencies(self):
+        """
+        :return: List of PyPI package names required by this InputAdapter
+        """
+        return []
+
+    def from_http_request(self, reqs: Iterable[HTTPRequest]) -> Iterable[InferenceTask]:
+        raise NotImplementedError()
+
+    def from_aws_lambda_event(
+        self, events: List[AwsLambdaEvent]
+    ) -> Iterable[InferenceTask]:
+        raise NotImplementedError()
+
+    def from_cli(
+        self, cli_inputs: Iterable[bytes], other_args: List[str]
+    ) -> Iterable[InferenceTask]:
+        raise NotImplementedError()
+
+    def validate_task(self, _: InferenceTask):
+        return True
+        # raise NotImplementedError()
+
+    def extract_user_func_args(self, tasks: Iterable[InferenceTask]) -> UserArgs:
+        raise NotImplementedError()
+
+
+class _BaseInputAdapter(Generic[Input]):
     """
     InputAdapter is an abstraction layer between user defined API callback function
     and prediction request input in a variety of different forms, such as HTTP request

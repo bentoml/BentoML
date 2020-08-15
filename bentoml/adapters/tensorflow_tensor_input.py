@@ -135,7 +135,7 @@ class TfTensorInput(BaseInputAdapter):
         merged_instances, slices = concat_list(instances_list, batch_flags=batch_flags)
         parsed_tensor = tf.constant(merged_instances)
         merged_result = func(parsed_tensor)
-        return self.output_adapter.to_batch_response(
+        return self.output_adapter.to_http_response(
             merged_result, slices=slices, fallbacks=responses, requests=requests
         )
 

@@ -12,14 +12,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable
+from typing import Iterable, Union, List, Generic
 
 import flask
 
-from bentoml.types import HTTPRequest, HTTPResponse
+from bentoml.types import (
+    HTTPRequest,
+    HTTPResponse,
+    UserReturnValue,
+    InferenceResult,
+    InferenceContext,
+)
 
 
-class BaseOutputAdapter:
+class BaseOutputAdapter(Generic[UserReturnValue]):
+    def __init__(self, cors='*'):
+        self.cors = cors
+
+    @property
+    def config(self):
+        return dict(cors=self.cors,)
+
+    @property
+    def pip_dependencies(self):
+        """
+        :return: List of PyPI package names required by this OutputAdapter
+        """
+        return []
+
+    def pack_user_func_return_value(
+        self, return_result: UserReturnValue, contexts: List[InferenceContext],
+    ) -> List[InferenceResult]:
+        raise NotImplementedError()
+
+    def to_http_response(self, results: Iterable[InferenceResult]):
+        raise NotImplementedError()
+
+    def to_cli(self, results: Iterable[InferenceResult]):
+        raise NotImplementedError()
+
+    def to_aws_lambda_event(self, results: Iterable[InferenceResult]):
+        raise NotImplementedError()
+
+
+class _BaseOutputAdapter:
     """OutputAdapter is an layer between result of user defined API callback function
     and final output in a variety of different forms,
     such as HTTP response, command line stdout or AWS Lambda event object.
@@ -42,7 +78,7 @@ class BaseOutputAdapter:
         simple_resp = self.to_batch_response((result,), requests=(simple_req,))[0]
         return simple_resp.to_flask_response()
 
-    def to_batch_response(
+    def to_http_response(
         self, result_conc, slices=None, fallbacks=None, requests=None,
     ) -> Iterable[HTTPResponse]:
         """Converts corresponding data merged by batching service into HTTP responses

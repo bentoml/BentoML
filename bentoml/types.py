@@ -13,7 +13,6 @@
 # limitations under the License.
 import io
 import functools
-from collections import OrderedDict
 from typing import (
     NamedTuple,
     Tuple,
@@ -139,20 +138,18 @@ class InferenceTask(Generic[Input]):
 
     def discard(self, err_msg="", **context):
         self.is_discarded = True
-        self.context.err_msg = err_msg
-        for k, v in context.items():
-            setattr(self.context, k, v)
+        self.context = DefaultErrorContext(err_msg=err_msg, **context)
 
 
 class InferenceResult(Generic[Output]):
-    def __init__(self, data: Output, context: InferenceContext = None):
+    def __init__(self, data: Output = None, context: InferenceContext = None):
         self.data = data
         self.context = context or InferenceContext()
 
     @classmethod
     def complete_discarded(
-        cls, tasks: Iterable[InferenceTask], results: Iterable[InferenceResult],
-    ) -> Iterator[InferenceResult]:
+        cls, tasks: Iterable[InferenceTask], results: Iterable['InferenceResult'],
+    ) -> Iterator['InferenceResult']:
         iresults = iter(results)
         try:
             for task in tasks:

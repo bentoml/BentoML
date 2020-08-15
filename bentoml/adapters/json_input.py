@@ -14,207 +14,31 @@
 
 import os
 import json
-import inspect
-import functools
 import argparse
 import traceback
-from typing import Iterable, List, Union, Tuple, overload
+from typing import Iterable, List, Tuple
 from json import JSONDecodeError
 
-import uuid
 import flask
 
 from bentoml.exceptions import BadInput
 from bentoml.types import (
-    UserArgs,
-    UserReturnValue,
     HTTPRequest,
     HTTPResponse,
     JsonSerializable,
     AwsLambdaEvent,
     InferenceTask,
-    InferenceResult,
     InferenceContext,
+    JSON_CHARSET,
 )
 from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.adapters.base_output import BaseOutputAdapter
 from bentoml.adapters.utils import concat_list
 
 
-class InferenceAPI:
-    def __init__(
-        self,
-        input_adapter: BaseInputAdapter,
-        output_adapter: BaseOutputAdapter,
-        user_func: callable,
-    ):
-        self.input_adapter = input_adapter
-        self.output_adapter = output_adapter
-
-        # allow user to define handlers without 'contexts' kwargs
-        _sig = inspect.signature(user_func)
-        try:
-            _sig.bind(contexts=None)
-            self.user_func = user_func
-        except TypeError:
-
-            @functools.wraps(user_func)
-            def safe_user_func(*args, **kwargs):
-                kwargs.pop('contexts')
-                return user_func(*args, **kwargs)
-
-            self.user_func = safe_user_func
-
-    def infer(self, inf_tasks: Iterable[InferenceTask]) -> List[InferenceResult]:
-        # task validation
-        def _validation(inf_tasks):
-            for task in inf_tasks:
-                if self.input_adapter.validate_task(task):
-                    yield task
-                else:
-                    task.discard(http_status=400, err_msg="Input validation failed")
-
-        # extract args
-        user_args = self.input_adapter.extract_user_func_args(_validation(inf_tasks))
-        contexts = [t.contexts for t in inf_tasks if not t.is_discarded]
-
-        # call user function
-        user_return = self.user_func(*user_args, contexts=contexts)
-
-        # pack return value
-        inf_results = self.output_adapter.pack_user_func_return_value(
-            user_return, contexts=contexts
-        )
-        full_results = InferenceResult.complete_discarded(inf_tasks, inf_results)
-        return full_results
-
-    def handle_http_request(
-        self, reqs: Iterable[HTTPRequest]
-    ) -> Iterable[HTTPResponse]:
-        inf_tasks = self.input_adapter.from_http_request(reqs)
-        results = self.infer(inf_tasks)
-        return self.output_adapter.to_batch_response(results)
-
-    def handle_aws_lambda_event(
-        self, events: List[AwsLambdaEvent]
-    ) -> Iterable[AwsLambdaEvent]:
-        inf_tasks = self.input_adapter.from_aws_lambda_event(events)
-        results = self.infer(inf_tasks)
-        return self.output_adapter.to_aws_lambda_event(results)
-
-    def handle_cli(self, args: List[str]) -> int:
-        parser = argparse.ArgumentParser()
-        input_g = parser.add_mutually_exclusive_group(required=True)
-        input_g.add_argument('--input', nargs="+", type=bytes)
-        input_g.add_argument('--input-file', nargs="+")
-
-        parser.add_argument("--max-batch-size", default=None, type=int)
-        parsed_args, other_args = parser.parse_known_args(args)
-
-        input_args = (
-            parsed_args.input
-            if parsed_args.input_file is None
-            else parsed_args.input_file
-        )
-        is_file = parsed_args.input_file is not None
-
-        batch_size = parsed_args.batch_size or len(input_args)
-
-        for i in range(0, len(input_args), batch_size):
-            cli_inputs = input_args[i : i + batch_size]
-            if is_file:
-                cli_inputs = [open(file_path, 'rb').read() for file_path in cli_inputs]
-            tasks = self.input_adapter.from_cli(cli_inputs, other_args)
-            results = self.infer(tasks)
-            self.output_adapter.to_cli(results)
-
-        return 0
+UserArgs = Tuple[List[JsonSerializable]]
 
 
-class BaseInputAdapter:
-    HTTP_METHODS = ["POST", "GET"]
-    BATCH_MODE_SUPPORTED = False
-
-    def __init__(self, http_input_example=None, **base_config):
-        '''
-        base_configs:
-            - is_batch_input
-        '''
-        self._config = base_config
-        self._http_input_example = http_input_example
-
-    @property
-    def config(self):
-        return self._config
-
-    @property
-    def request_schema(self):
-        """
-        :return: OpenAPI json schema for the HTTP API endpoint created with this input
-                 adapter
-        """
-        return {"application/json": {"schema": {"type": "object"}}}
-
-    @property
-    def pip_dependencies(self):
-        """
-        :return: List of PyPI package names required by this InputAdapter
-        """
-        return []
-
-    def from_http_request(
-        self, reqs: Iterable[HTTPRequest]
-    ) -> Iterable[InferenceTask[str]]:
-        raise NotImplementedError()
-
-    def from_aws_lambda_event(
-        self, events: List[AwsLambdaEvent]
-    ) -> Iterable[InferenceTask[str]]:
-        raise NotImplementedError()
-
-    def from_cli(self, cli_inputs, other_args) -> Iterable[InferenceTask[str]]:
-        raise NotImplementedError()
-
-    def validate_task(self, _: InferenceTask):
-        raise NotImplementedError()
-
-    def extract_user_func_args(self, tasks: Iterable[InferenceTask]) -> UserArgs:
-        raise NotImplementedError()
-
-
-class BaseOutputAdapter:
-    def __init__(self, cors='*'):
-        self.cors = cors
-
-    @property
-    def config(self):
-        return dict(cors=self.cors,)
-
-    @property
-    def pip_dependencies(self):
-        """
-        :return: List of PyPI package names required by this OutputAdapter
-        """
-        return []
-
-    def pack_user_func_return_value(
-        self,
-        return_result: Union[UserReturnValue, List[InferenceResult]],
-        contexts: List[InferenceContext],
-    ) -> List[InferenceResult]:
-        raise NotImplementedError()
-
-    def to_http_request(self, results: Iterable[InferenceResult]):
-        raise NotImplementedError()
-
-    def to_cli(self, results: Iterable[InferenceResult]):
-        raise NotImplementedError()
-
-    def to_aws_lambda_event(self, results: Iterable[InferenceResult]):
-        raise NotImplementedError()
-
-
-class JsonInput(BaseInputAdapter):
+class JsonInput(BaseInputAdapter[UserArgs]):
     """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
     json serializable object in python) and pass down to user defined API function
 
@@ -250,54 +74,51 @@ class JsonInput(BaseInputAdapter):
 
     def from_http_request(
         self, reqs: Iterable[HTTPRequest]
-    ) -> List[InferenceTask[str]]:
+    ) -> List[InferenceTask[bytes]]:
         return [
             InferenceTask(
-                context=dict(inf_id=uuid.uuid4(), http_headers=r.parsed_headers),
-                data=r.body,
+                context=InferenceContext(http_headers=r.parsed_headers), data=r.body,
             )
             for r in reqs
         ]
 
     def from_aws_lambda_event(
         self, events: List[AwsLambdaEvent]
-    ) -> Iterable[InferenceTask[str]]:
+    ) -> Iterable[InferenceTask[bytes]]:
         return [
             InferenceTask(
-                context=dict(inf_id=uuid.uuid4(), aws_event=e), data=e['body'],
+                context=InferenceContext(aws_lambda_event=e),
+                data=e['body'].encode(JSON_CHARSET),
             )
             for e in events
         ]
 
-    def from_cli(self, cli_inputs, other_args) -> Iterable[InferenceTask[str]]:
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--charset", default="utf-8", type=str)
-        parsed_args, _ = parser.parse_known_args(other_args)
+    def from_cli(self, cli_inputs, other_args) -> Iterable[InferenceTask[bytes]]:
         return [
-            InferenceTask(
-                context=dict(inf_id=uuid.uuid4(), cli_args=other_args),
-                data=i.decode(parsed_args.charset),
-            )
+            InferenceTask(context=InferenceContext(cli_args=other_args), data=i)
             for i in cli_inputs
         ]
 
-    def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[str]]
-    ) -> Iterable[JsonSerializable]:
+    def extract_user_func_args(self, tasks: Iterable[InferenceTask[bytes]]) -> UserArgs:
         json_inputs = []
         for task in tasks:
             try:
-                parsed_json = json.loads(task.data)
+                json_str = task.data.decode(JSON_CHARSET)
+                parsed_json = json.loads(json_str)
                 json_inputs.append(parsed_json)
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                task.discard(http_status=400, err_msg="Not a valid JSON input")
+            except UnicodeDecodeError:
+                task.discard(
+                    http_status=400, err_msg=f"JSON must be encoded in {JSON_CHARSET}"
+                )
+            except json.JSONDecodeError:
+                task.discard(http_status=400, err_msg="Not a valid JSON format")
             except Exception:  # pylint: disable=broad-except
                 err = traceback.format_exc()
                 task.discard(http_status=500, err_msg=f"Internal Server Error: {err}")
-        return json_inputs
+        return (json_inputs,)
 
 
-class JsonInput(BaseInputAdapter):
+class _JsonInput(BaseInputAdapter):
     """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
     json serializable object in python) and pass down to user defined API function
 
@@ -332,9 +153,9 @@ class JsonInput(BaseInputAdapter):
     BATCH_MODE_SUPPORTED = True
 
     def __init__(self, is_batch_input=False, **base_kwargs):
-        super(JsonInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
+        super().__init__(is_batch_input=is_batch_input, **base_kwargs)
 
-    def handle_request(self, request: flask.Request):
+    def handle_request(self, request: flask.Request, func):
         if request.content_type != "application/json":
             raise BadInput(
                 "Request content-type must be 'application/json' for this "

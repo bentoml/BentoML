@@ -46,7 +46,7 @@ def _get_apis_list(bento_service):
             "name": api.name,
             "docs": api.doc,
             "input_type": api.input_adapter.__class__.__name__,
-            "output_type": api.input_adapter.output_adapter.__class__.__name__,
+            "output_type": api.output_adapter.__class__.__name__,
             "mb_max_batch_size": api.mb_max_batch_size,
             "mb_max_latency": api.mb_max_latency,
         }

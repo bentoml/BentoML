@@ -56,7 +56,7 @@ def get_default_accept_image_formats():
     ]
 
 
-class ImageInput(BaseInputAdapter[ndarray]):
+class ImageInput(BaseInputAdapter):
     """Transform incoming image data from http request, cli or lambda event into numpy
     array.
 

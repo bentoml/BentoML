@@ -89,6 +89,11 @@ def json_file(tmpdir):
 
 
 @pytest.fixture()
+def non_utf8_bytes():
+    return "â".encode('gb18030')
+
+
+@pytest.fixture()
 def bin_file(tmpdir):
     bin_file_ = tmpdir.join("bin_file")
     with open(bin_file_, "wb") as of:
@@ -108,9 +113,18 @@ def bin_files(tmpdir):
 @pytest.fixture()
 def img_files(tmpdir):
     for i in range(10):
-        img_file_ = tmpdir.join(f"test_img_{i}.jpg")
+        img_file_ = tmpdir.join(f"img_{i}.jpg")
         imageio.imwrite(str(img_file_), np.zeros((10, 10)))
     return str(tmpdir.join("*.jpg"))
+
+
+@pytest.fixture()
+def json_files_dir(tmpdir):
+    for i in range(10):
+        file_ = tmpdir.join(f"json_{i}.json")
+        with open(file_, "w") as of:
+            of.write('{"i": %d, "name": "kaith", "game": "morrowind"}' % i)
+    return str(tmpdir.join("*.json"))
 
 
 class TestModel(object):

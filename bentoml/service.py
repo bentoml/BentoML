@@ -18,13 +18,20 @@ import re
 import inspect
 import logging
 import uuid
+import argparse
+import functools
 from datetime import datetime
-from typing import List
+from typing import List, Iterable
 
 import flask
 from werkzeug.utils import cached_property
 
 from bentoml import config
+from bentoml.types import (
+    HTTPRequest,
+    InferenceTask,
+    InferenceResult,
+)
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.service_env import BentoServiceEnv
@@ -61,11 +68,11 @@ class InferenceAPI(object):
         service,
         name,
         doc,
-        input_adapter,
-        func,
-        output_adapter,
-        mb_max_latency,
-        mb_max_batch_size,
+        input_adapter: BaseInputAdapter,
+        user_func: callable,
+        output_adapter: BaseOutputAdapter,
+        mb_max_latency=10000,
+        mb_max_batch_size=1000,
     ):
         """
         :param service: ref to service containing this API
@@ -74,8 +81,12 @@ class InferenceAPI(object):
             docstring of the inference API function
         :param input_adapter: A InputAdapter that transforms HTTP Request and/or
             CLI options into parameters for API func
-        :param func: the user-defined API callback function, this is
+        :param user_func: the user-defined API callback function, this is
             typically the 'predict' method on a model
+        :param output_adapter: A OutputAdapter is an layer between result of user
+            defined API callback function
+            and final output in a variety of different forms,
+            such as HTTP response, command line stdout or AWS Lambda event object.
         :param mb_max_latency: The latency goal of this inference API in milliseconds.
             Default: 10000.
         :param mb_max_batch_size: The maximum size of requests batch accepted by this
@@ -86,10 +97,9 @@ class InferenceAPI(object):
         """
         self._service = service
         self._name = name
-        self._handler = input_adapter
-        self._func = func
+        self._input_adapter = input_adapter
+        self._user_func = user_func
         self._output_adapter = output_adapter
-        self._wrapped_func = None
         self.mb_max_latency = mb_max_latency
         self.mb_max_batch_size = mb_max_batch_size
 
@@ -98,7 +108,7 @@ class InferenceAPI(object):
             doc = (
                 f"BentoService inference API '{self.name}', input: "
                 f"'{type(input_adapter).__name__}', output: "
-                f"'{type(input_adapter.output_adapter).__name__}'"
+                f"'{type(output_adapter).__name__}'"
             )
         self._doc = doc
 
@@ -126,11 +136,9 @@ class InferenceAPI(object):
     @property
     def input_adapter(self) -> BaseInputAdapter:
         """
-        handler is a deprecated concept, we are moving it to the new input/output
-        adapter interface. Currently this `handler` property returns the input adapter
-        of this inference API
+        :return: the input adapter of this inference API
         """
-        return self._handler
+        return self._input_adapter
 
     @property
     def output_adapter(self) -> BaseOutputAdapter:
@@ -140,19 +148,30 @@ class InferenceAPI(object):
         return self._output_adapter
 
     @cached_property
-    def func(self):
+    def user_func(self):
         """
         :return: user-defined inference API callback function
         """
 
-        def func_with_tracing(*args, **kwargs):
+        # allow user to define handlers without 'contexts' kwargs
+        _sig = inspect.signature(self._user_func)
+        try:
+            _sig.bind(contexts=None)
+            append_contexts = False
+        except TypeError:
+            append_contexts = True
+
+        @functools.wraps(self._user_func)
+        def wrapped_func(*args, **kwargs):
             with trace(
                 service_name=self.__class__.__name__,
                 span_name="user defined inference api callback function",
             ):
-                return self._func(*args, **kwargs)
+                if append_contexts:
+                    kwargs.pop('contexts')
+                return self._user_func(*args, **kwargs)
 
-        return func_with_tracing
+        return wrapped_func
 
     @property
     def request_schema(self):
@@ -166,27 +185,95 @@ class InferenceAPI(object):
             ] = self.input_adapter._http_input_example
         return schema
 
+    def infer(self, inf_tasks: Iterable[InferenceTask]) -> List[InferenceResult]:
+        # task validation
+        def _validation(inf_tasks):
+            for task in inf_tasks:
+                if task.is_discarded:
+                    continue
+                if self.input_adapter.validate_task(task):
+                    yield task
+                else:
+                    task.discard(http_status=400, err_msg="Input validation failed")
+
+        # extract args
+        user_args = self.input_adapter.extract_user_func_args(_validation(inf_tasks))
+        contexts = [t.context for t in inf_tasks if not t.is_discarded]
+
+        # call user function
+        user_return = self.user_func(*user_args, contexts=contexts)
+
+        if (
+            isinstance(user_return, (tuple, list))
+            and user_return
+            and isinstance(user_return[0], InferenceResult)
+        ):
+            inf_results = user_return
+        else:
+            # pack return value
+            inf_results = self.output_adapter.pack_user_func_return_value(
+                user_return, contexts=contexts
+            )
+        full_results = InferenceResult.complete_discarded(inf_tasks, inf_results)
+        return full_results
+
     def handle_request(self, request: flask.Request):
-        return self.input_adapter.handle_request(request)
+        reqs = [HTTPRequest.from_flask_request(request)]
+        inf_tasks = self.input_adapter.from_http_request(reqs)
+        results = self.infer(inf_tasks)
+        resps = self.output_adapter.to_http_response(results)
+        response = next(iter(resps))
+        return response.to_flask_response()
 
     def handle_batch_request(self, request: flask.Request):
         from bentoml.marshal.utils import DataLoader
 
-        requests = DataLoader.split_requests(request.get_data())
+        reqs = DataLoader.split_requests(request.get_data())
 
         with trace(
             service_name=self.__class__.__name__,
             span_name=f"call `{self.input_adapter.__class__.__name__}`",
         ):
-            responses = self.input_adapter.handle_batch_request(requests, self.func)
+            inf_tasks = self.input_adapter.from_http_request(reqs)
+            results = self.infer(inf_tasks)
+            responses = self.output_adapter.to_http_response(results)
 
         return DataLoader.merge_responses(responses)
 
-    def handle_cli(self, args):
-        return self.input_adapter.handle_cli(args, self.func)
+    def handle_cli(self, args: List[str]) -> int:
+        parser = argparse.ArgumentParser()
+        input_g = parser.add_mutually_exclusive_group(required=True)
+        input_g.add_argument('--input', nargs="+", type=str)
+        input_g.add_argument('--input-file', nargs="+")
+
+        parser.add_argument("--max-batch-size", default=None, type=int)
+        parsed_args, other_args = parser.parse_known_args(args)
+
+        input_args = (
+            parsed_args.input
+            if parsed_args.input_file is None
+            else parsed_args.input_file
+        )
+        is_file = parsed_args.input_file is not None
+
+        batch_size = parsed_args.max_batch_size or len(input_args)
+
+        for i in range(0, len(input_args), batch_size):
+            cli_inputs = input_args[i : i + batch_size]
+            if is_file:
+                cli_inputs = [open(file_path, 'rb').read() for file_path in cli_inputs]
+            else:
+                cli_inputs = [inp.encode() for inp in cli_inputs]
+            tasks = self.input_adapter.from_cli(cli_inputs, other_args)
+            results = self.infer(tasks)
+            self.output_adapter.to_cli(results)
+
+        return 0
 
     def handle_aws_lambda_event(self, event):
-        return self.input_adapter.handle_aws_lambda_event(event, self.func)
+        inf_tasks = self.input_adapter.from_aws_lambda_event([event])
+        results = self.infer(inf_tasks)
+        return next(iter(self.output_adapter.to_aws_lambda_event(results)))
 
 
 def validate_inference_api_name(api_name):
@@ -271,7 +358,7 @@ def api_decorator(
                 "bentoml.adapters.BaseInputAdapter"
             )
             input_adapter = input
-            output_adapter = output
+            output_adapter = output or DefaultOutput()
 
         setattr(func, "_is_api", True)
         setattr(func, "_input_adapter", input_adapter)
@@ -569,11 +656,12 @@ class BentoService:
                 api_name = getattr(function, "_api_name")
                 api_doc = getattr(function, "_api_doc")
                 input_adapter = getattr(function, "_input_adapter")
+                output_adapter = getattr(function, "_output_adapter")
                 mb_max_latency = getattr(function, "_mb_max_latency")
                 mb_max_batch_size = getattr(function, "_mb_max_batch_size")
 
                 # Bind api method call with self(BentoService instance)
-                func = function.__get__(self)
+                user_func = function.__get__(self)
 
                 self._inference_apis.append(
                     InferenceAPI(
@@ -581,7 +669,8 @@ class BentoService:
                         api_name,
                         api_doc,
                         input_adapter=input_adapter,
-                        func=func,
+                        user_func=user_func,
+                        output_adapter=output_adapter,
                         mb_max_latency=mb_max_latency,
                         mb_max_batch_size=mb_max_batch_size,
                     )

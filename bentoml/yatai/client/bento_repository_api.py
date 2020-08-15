@@ -23,6 +23,7 @@ import shutil
 
 
 from bentoml.exceptions import BentoMLException
+from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoRequest,
     GetBentoRequest,
@@ -183,6 +184,7 @@ class BentoRepositoryAPIClient:
         bento_name=None,
         offset=None,
         limit=None,
+        labels=None,
         order_by=None,
         ascending_order=None,
     ):
@@ -193,6 +195,9 @@ class BentoRepositoryAPIClient:
             order_by=order_by,
             ascending_order=ascending_order,
         )
+        if labels is not None:
+            generate_gprc_labels_selector(list_bento_request.label_selectors, labels)
+
         return self.yatai_service.ListBento(list_bento_request)
 
     def dangerously_delete_bento(self, name, version):

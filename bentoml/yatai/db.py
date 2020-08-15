@@ -81,7 +81,7 @@ def create_all_or_upgrade_db(engine, db_url):
     inspector = inspect(engine)
     tables = inspector.get_table_names()
 
-    if 'deployments' not in tables and 'bentos' not in tables:
+    if 'deployments' not in tables or 'bentos' not in tables or 'labels' not in tables:
         logger.debug('Creating tables')
         Base.metadata.create_all(engine)
         command.stamp(alembic_config, 'head')

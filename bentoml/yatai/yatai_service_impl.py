@@ -289,7 +289,7 @@ class YataiService(YataiServicer):
             namespace = request.namespace or self.default_namespace
             deployment_pb_list = self.deployment_store.list(
                 namespace=namespace,
-                labels_query=request.labels_query,
+                label_selectors=request.label_selectors,
                 offset=request.offset,
                 limit=request.limit,
                 operator=request.operator,
@@ -427,6 +427,7 @@ class YataiService(YataiServicer):
                 offset=request.offset,
                 limit=request.limit,
                 order_by=request.order_by,
+                label_selectors=request.label_selectors,
                 ascending_order=request.ascending_order,
             )
 

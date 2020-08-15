@@ -141,6 +141,7 @@ def add_bento_sub_command(cli):
     @click.option(
         '--offset', type=click.INT, help='How many BentoServices will be skipped'
     )
+    @click.option('--labels', type=click.STRING, help='labels')
     @click.option(
         '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
     )
@@ -151,11 +152,12 @@ def add_bento_sub_command(cli):
         type=click.Choice(['json', 'yaml', 'table', 'wide']),
         default='table',
     )
-    def list_bentos(limit, offset, order_by, ascending_order, output):
+    def list_bentos(limit, offset, labels, order_by, ascending_order, output):
         yatai_client = get_default_yatai_client()
         list_bentos_result = yatai_client.repository.list(
             limit=limit,
             offset=offset,
+            labels=labels,
             order_by=order_by,
             ascending_order=ascending_order,
         )

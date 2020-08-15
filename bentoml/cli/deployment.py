@@ -197,7 +197,7 @@ def get_deployment_sub_command():
         '-l',
         '--labels',
         type=click.STRING,
-        callback=validate_labels_query_callback,
+        # callback=validate_labels_query_callback,
         help='List deployments matching the giving labels',
     )
     @click.option(
@@ -215,7 +215,7 @@ def get_deployment_sub_command():
         yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list(
             limit=limit,
-            labels_query=labels,
+            label_selectors=labels,
             namespace=namespace,
             operator=platform,
             order_by=order_by,

@@ -32,6 +32,7 @@ from google.protobuf.json_format import ParseDict
 from bentoml.utils import ProtoMessageToDict
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.yatai.db import Base, create_session
+from bentoml.yatai.label_store import filter_label_query
 from bentoml.yatai.proto.repository_pb2 import (
     UploadStatus,
     BentoUri,
@@ -55,7 +56,6 @@ class Bento(Base):
     name = Column(String, nullable=False)
     version = Column(String, nullable=False)
 
-    labels = Column(JSON, nullable=False, default={})
     # Storage URI for this Bento
     uri = Column(String, nullable=False)
 
@@ -217,6 +217,7 @@ class BentoMetadataStore(object):
         bento_name=None,
         offset=None,
         limit=None,
+        label_selectors=None,
         order_by=ListBentoRequest.created_at,
         ascending_order=False,
     ):
@@ -232,6 +233,9 @@ class BentoMetadataStore(object):
                 # filter_by apply filtering criterion to a copy of the query
                 query = query.filter_by(name=bento_name)
             query = query.filter_by(deleted=False)
+            if label_selectors.match_labels or label_selectors.match_expressions:
+                bento_ids = filter_label_query(sess, 'bento', label_selectors)
+                query = query.filter(Bento.id.in_(bento_ids))
 
             # We are not defaulting limit to 200 in the signature,
             # because protobuf will pass 0 as value

@@ -19,6 +19,7 @@ import logging
 import time
 
 from bentoml.utils import status_pb_to_error_code_and_message
+from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentRequest,
@@ -52,7 +53,7 @@ class DeploymentAPIClient:
         self,
         limit=None,
         offset=None,
-        labels_query=None,
+        label_selectors=None,
         namespace=None,
         is_all_namespaces=False,
         operator=None,
@@ -76,17 +77,16 @@ class DeploymentAPIClient:
             else:
                 raise BentoMLException(f'Unrecognized operator {operator}')
 
-        return self.yatai_service.ListDeployments(
-            ListDeploymentsRequest(
-                limit=limit,
-                offset=offset,
-                labels_query=labels_query,
-                namespace=namespace,
-                operator=operator,
-                order_by=order_by,
-                ascending_order=ascending_order,
-            )
+        list_deployment_request = ListDeploymentsRequest(
+            limit=limit,
+            offset=offset,
+            namespace=namespace,
+            label_selectors=generate_gprc_labels_selector(label_selectors),
+            operator=operator,
+            order_by=order_by,
+            ascending_order=ascending_order,
         )
+        return self.yatai_service.ListDeployments(list_deployment_request)
 
     def get(self, namespace, name):
         return self.yatai_service.GetDeployment(

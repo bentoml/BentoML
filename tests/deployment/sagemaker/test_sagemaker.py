@@ -20,7 +20,7 @@ from bentoml.yatai.proto.repository_pb2 import (
     BentoUri,
 )
 from bentoml.yatai.proto.status_pb2 import Status
-from bentoml.exceptions import AWSServiceError
+from bentoml.exceptions import AWSServiceError, YataiDeploymentException
 from tests.deployment.sagemaker.sagemaker_moto import moto_mock_sagemaker
 
 
@@ -88,6 +88,46 @@ def test_get_arn_from_aws_user():
 
     with patch('botocore.client.BaseClient._make_api_call', new=mock_user_path_call):
         assert get_arn_role_from_current_aws_user() == USER_PATH_ARN_RESULT
+
+    def mock_role_path_call_no_service_principal(
+        self, operation_name, kwarg
+    ):  # pylint: disable=unused-argument
+        if operation_name == 'GetCallerIdentity':
+            return {'Arn': 'something:something:user/random'}
+        elif operation_name == 'ListRoles':
+            return {
+                "Roles": [
+                    {
+                        "AssumeRolePolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Principal": {
+                                        "AWS": "arn:aws:iam::112233445566:root"
+                                    },
+                                    "Action": "sts:AssumeRole",
+                                    "Condition": {
+                                        "Bool": {"aws:MultiFactorAuthPresent": "true"}
+                                    },
+                                }
+                            ]
+                        },
+                        "Arn": ROLE_PATH_ARN_RESULT,
+                    }
+                ]
+            }
+        else:
+            raise Exception(
+                'This test does not handle operation: {}'.format(operation_name)
+            )
+
+    with patch(
+        'botocore.client.BaseClient._make_api_call',
+        new=mock_role_path_call_no_service_principal,
+    ):
+        assert pytest.raises(
+            YataiDeploymentException, get_arn_role_from_current_aws_user
+        )
 
 
 TEST_AWS_REGION = 'us-west-2'

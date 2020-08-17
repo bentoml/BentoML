@@ -55,6 +55,8 @@ message BentoServiceMetadata {
   BentoServiceEnv env = 4;
   repeated BentoArtifact artifacts = 5;
   repeated BentoServiceApi apis = 6;
+  // Optional, used for managing BentoService
+  map<string, string> labels = 7;
 }
 
 message Bento {
@@ -63,8 +65,6 @@ message Bento {
   BentoUri uri = 3;
   BentoServiceMetadata bento_service_metadata = 4;
   UploadStatus status = 5;
-  // Optional, used for managing BentoService
-  map<string, string> labels = 6;
 }
 
 message AddBentoRequest {

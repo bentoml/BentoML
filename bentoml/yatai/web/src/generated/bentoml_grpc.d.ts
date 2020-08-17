@@ -2394,6 +2394,9 @@ export namespace bentoml {
 
         /** BentoServiceMetadata apis */
         apis?: (bentoml.BentoServiceMetadata.IBentoServiceApi[]|null);
+
+        /** BentoServiceMetadata labels */
+        labels?: ({ [k: string]: string }|null);
     }
 
     /** Represents a BentoServiceMetadata. */
@@ -2422,6 +2425,9 @@ export namespace bentoml {
 
         /** BentoServiceMetadata apis. */
         public apis: bentoml.BentoServiceMetadata.IBentoServiceApi[];
+
+        /** BentoServiceMetadata labels. */
+        public labels: { [k: string]: string };
 
         /**
          * Creates a new BentoServiceMetadata instance using the specified properties.
@@ -2856,9 +2862,6 @@ export namespace bentoml {
 
         /** Bento status */
         status?: (bentoml.IUploadStatus|null);
-
-        /** Bento labels */
-        labels?: ({ [k: string]: string }|null);
     }
 
     /** Represents a Bento. */
@@ -2884,9 +2887,6 @@ export namespace bentoml {
 
         /** Bento status. */
         public status?: (bentoml.IUploadStatus|null);
-
-        /** Bento labels. */
-        public labels: { [k: string]: string };
 
         /**
          * Creates a new Bento instance using the specified properties.

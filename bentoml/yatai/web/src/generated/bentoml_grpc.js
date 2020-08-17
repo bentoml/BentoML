@@ -5944,6 +5944,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {bentoml.BentoServiceMetadata.IBentoServiceEnv|null} [env] BentoServiceMetadata env
          * @property {Array.<bentoml.BentoServiceMetadata.IBentoArtifact>|null} [artifacts] BentoServiceMetadata artifacts
          * @property {Array.<bentoml.BentoServiceMetadata.IBentoServiceApi>|null} [apis] BentoServiceMetadata apis
+         * @property {Object.<string,string>|null} [labels] BentoServiceMetadata labels
          */
 
         /**
@@ -5957,6 +5958,7 @@ export const bentoml = $root.bentoml = (() => {
         function BentoServiceMetadata(properties) {
             this.artifacts = [];
             this.apis = [];
+            this.labels = {};
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -6012,6 +6014,14 @@ export const bentoml = $root.bentoml = (() => {
         BentoServiceMetadata.prototype.apis = $util.emptyArray;
 
         /**
+         * BentoServiceMetadata labels.
+         * @member {Object.<string,string>} labels
+         * @memberof bentoml.BentoServiceMetadata
+         * @instance
+         */
+        BentoServiceMetadata.prototype.labels = $util.emptyObject;
+
+        /**
          * Creates a new BentoServiceMetadata instance using the specified properties.
          * @function create
          * @memberof bentoml.BentoServiceMetadata
@@ -6049,6 +6059,9 @@ export const bentoml = $root.bentoml = (() => {
             if (message.apis != null && message.apis.length)
                 for (let i = 0; i < message.apis.length; ++i)
                     $root.bentoml.BentoServiceMetadata.BentoServiceApi.encode(message.apis[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+            if (message.labels != null && Object.hasOwnProperty.call(message, "labels"))
+                for (let keys = Object.keys(message.labels), i = 0; i < keys.length; ++i)
+                    writer.uint32(/* id 7, wireType 2 =*/58).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.labels[keys[i]]).ldelim();
             return writer;
         };
 
@@ -6079,7 +6092,7 @@ export const bentoml = $root.bentoml = (() => {
         BentoServiceMetadata.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata(), key;
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 switch (tag >>> 3) {
@@ -6104,6 +6117,14 @@ export const bentoml = $root.bentoml = (() => {
                     if (!(message.apis && message.apis.length))
                         message.apis = [];
                     message.apis.push($root.bentoml.BentoServiceMetadata.BentoServiceApi.decode(reader, reader.uint32()));
+                    break;
+                case 7:
+                    reader.skip().pos++;
+                    if (message.labels === $util.emptyObject)
+                        message.labels = {};
+                    key = reader.string();
+                    reader.pos++;
+                    message.labels[key] = reader.string();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -6174,6 +6195,14 @@ export const bentoml = $root.bentoml = (() => {
                         return "apis." + error;
                 }
             }
+            if (message.labels != null && message.hasOwnProperty("labels")) {
+                if (!$util.isObject(message.labels))
+                    return "labels: object expected";
+                let key = Object.keys(message.labels);
+                for (let i = 0; i < key.length; ++i)
+                    if (!$util.isString(message.labels[key[i]]))
+                        return "labels: string{k:string} expected";
+            }
             return null;
         };
 
@@ -6223,6 +6252,13 @@ export const bentoml = $root.bentoml = (() => {
                     message.apis[i] = $root.bentoml.BentoServiceMetadata.BentoServiceApi.fromObject(object.apis[i]);
                 }
             }
+            if (object.labels) {
+                if (typeof object.labels !== "object")
+                    throw TypeError(".bentoml.BentoServiceMetadata.labels: object expected");
+                message.labels = {};
+                for (let keys = Object.keys(object.labels), i = 0; i < keys.length; ++i)
+                    message.labels[keys[i]] = String(object.labels[keys[i]]);
+            }
             return message;
         };
 
@@ -6243,6 +6279,8 @@ export const bentoml = $root.bentoml = (() => {
                 object.artifacts = [];
                 object.apis = [];
             }
+            if (options.objects || options.defaults)
+                object.labels = {};
             if (options.defaults) {
                 object.name = "";
                 object.version = "";
@@ -6266,6 +6304,12 @@ export const bentoml = $root.bentoml = (() => {
                 object.apis = [];
                 for (let j = 0; j < message.apis.length; ++j)
                     object.apis[j] = $root.bentoml.BentoServiceMetadata.BentoServiceApi.toObject(message.apis[j], options);
+            }
+            let keys2;
+            if (message.labels && (keys2 = Object.keys(message.labels)).length) {
+                object.labels = {};
+                for (let j = 0; j < keys2.length; ++j)
+                    object.labels[keys2[j]] = message.labels[keys2[j]];
             }
             return object;
         };
@@ -7133,7 +7177,6 @@ export const bentoml = $root.bentoml = (() => {
          * @property {bentoml.IBentoUri|null} [uri] Bento uri
          * @property {bentoml.IBentoServiceMetadata|null} [bento_service_metadata] Bento bento_service_metadata
          * @property {bentoml.IUploadStatus|null} [status] Bento status
-         * @property {Object.<string,string>|null} [labels] Bento labels
          */
 
         /**
@@ -7145,7 +7188,6 @@ export const bentoml = $root.bentoml = (() => {
          * @param {bentoml.IBento=} [properties] Properties to set
          */
         function Bento(properties) {
-            this.labels = {};
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -7193,14 +7235,6 @@ export const bentoml = $root.bentoml = (() => {
         Bento.prototype.status = null;
 
         /**
-         * Bento labels.
-         * @member {Object.<string,string>} labels
-         * @memberof bentoml.Bento
-         * @instance
-         */
-        Bento.prototype.labels = $util.emptyObject;
-
-        /**
          * Creates a new Bento instance using the specified properties.
          * @function create
          * @memberof bentoml.Bento
@@ -7234,9 +7268,6 @@ export const bentoml = $root.bentoml = (() => {
                 $root.bentoml.BentoServiceMetadata.encode(message.bento_service_metadata, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             if (message.status != null && Object.hasOwnProperty.call(message, "status"))
                 $root.bentoml.UploadStatus.encode(message.status, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-            if (message.labels != null && Object.hasOwnProperty.call(message, "labels"))
-                for (let keys = Object.keys(message.labels), i = 0; i < keys.length; ++i)
-                    writer.uint32(/* id 6, wireType 2 =*/50).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.labels[keys[i]]).ldelim();
             return writer;
         };
 
@@ -7267,7 +7298,7 @@ export const bentoml = $root.bentoml = (() => {
         Bento.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.Bento(), key;
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.Bento();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 switch (tag >>> 3) {
@@ -7285,14 +7316,6 @@ export const bentoml = $root.bentoml = (() => {
                     break;
                 case 5:
                     message.status = $root.bentoml.UploadStatus.decode(reader, reader.uint32());
-                    break;
-                case 6:
-                    reader.skip().pos++;
-                    if (message.labels === $util.emptyObject)
-                        message.labels = {};
-                    key = reader.string();
-                    reader.pos++;
-                    message.labels[key] = reader.string();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -7350,14 +7373,6 @@ export const bentoml = $root.bentoml = (() => {
                 if (error)
                     return "status." + error;
             }
-            if (message.labels != null && message.hasOwnProperty("labels")) {
-                if (!$util.isObject(message.labels))
-                    return "labels: object expected";
-                let key = Object.keys(message.labels);
-                for (let i = 0; i < key.length; ++i)
-                    if (!$util.isString(message.labels[key[i]]))
-                        return "labels: string{k:string} expected";
-            }
             return null;
         };
 
@@ -7392,13 +7407,6 @@ export const bentoml = $root.bentoml = (() => {
                     throw TypeError(".bentoml.Bento.status: object expected");
                 message.status = $root.bentoml.UploadStatus.fromObject(object.status);
             }
-            if (object.labels) {
-                if (typeof object.labels !== "object")
-                    throw TypeError(".bentoml.Bento.labels: object expected");
-                message.labels = {};
-                for (let keys = Object.keys(object.labels), i = 0; i < keys.length; ++i)
-                    message.labels[keys[i]] = String(object.labels[keys[i]]);
-            }
             return message;
         };
 
@@ -7415,8 +7423,6 @@ export const bentoml = $root.bentoml = (() => {
             if (!options)
                 options = {};
             let object = {};
-            if (options.objects || options.defaults)
-                object.labels = {};
             if (options.defaults) {
                 object.name = "";
                 object.version = "";
@@ -7434,12 +7440,6 @@ export const bentoml = $root.bentoml = (() => {
                 object.bento_service_metadata = $root.bentoml.BentoServiceMetadata.toObject(message.bento_service_metadata, options);
             if (message.status != null && message.hasOwnProperty("status"))
                 object.status = $root.bentoml.UploadStatus.toObject(message.status, options);
-            let keys2;
-            if (message.labels && (keys2 = Object.keys(message.labels)).length) {
-                object.labels = {};
-                for (let j = 0; j < keys2.length; ++j)
-                    object.labels[keys2[j]] = message.labels[keys2[j]];
-            }
             return object;
         };
 

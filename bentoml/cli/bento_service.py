@@ -1,4 +1,5 @@
 import click
+import sys
 import os
 import json
 import re
@@ -173,7 +174,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
 
         api = load_bento_service_api(saved_bundle_path, api_name)
-        api.handle_cli(run_args)
+        exit_code = api.handle_cli(run_args)
+        sys.exit(exit_code)
 
     # Example Usage: bentoml info {BUNDLE_PATH}
     @bentoml_cli.command(

@@ -258,6 +258,7 @@ class InferenceAPI(object):
 
         batch_size = parsed_args.max_batch_size or len(input_args)
 
+        flag = 0
         for i in range(0, len(input_args), batch_size):
             cli_inputs = input_args[i : i + batch_size]
             if is_file:
@@ -266,9 +267,9 @@ class InferenceAPI(object):
                 cli_inputs = [inp.encode() for inp in cli_inputs]
             tasks = self.input_adapter.from_cli(cli_inputs, other_args)
             results = self.infer(tasks)
-            self.output_adapter.to_cli(results)
+            flag = self.output_adapter.to_cli(results) or flag
 
-        return 0
+        return flag
 
     def handle_aws_lambda_event(self, event):
         inf_tasks = self.input_adapter.from_aws_lambda_event([event])

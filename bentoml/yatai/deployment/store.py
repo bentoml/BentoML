@@ -31,7 +31,11 @@ from google.protobuf.json_format import ParseDict
 from bentoml.exceptions import YataiDeploymentException
 from bentoml.yatai.db import Base, create_session
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
-from bentoml.yatai.label_store import filter_label_query
+from bentoml.yatai.label_store import (
+    filter_label_query,
+    delete_labels,
+    add_labels, list_labels, get_labels,
+)
 from bentoml.yatai.proto import deployment_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
 from bentoml.utils import ProtoMessageToDict
@@ -51,7 +55,6 @@ class Deployment(Base):
 
     spec = Column(JSON, nullable=False, default={})
     state = Column(JSON, nullable=False, default={})
-    labels = Column(JSON, nullable=False, default={})
     annotations = Column(JSON, nullable=False, default={})
 
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
@@ -63,20 +66,19 @@ def _deployment_pb_to_orm_obj(deployment_pb, deployment_obj=Deployment()):
     deployment_obj.namespace = deployment_pb.namespace
     deployment_obj.spec = ProtoMessageToDict(deployment_pb.spec)
     deployment_obj.state = ProtoMessageToDict(deployment_pb.state)
-    deployment_obj.labels = dict(deployment_pb.labels)
     deployment_obj.annotations = dict(deployment_pb.annotations)
     deployment_obj.created_at = deployment_pb.created_at.ToDatetime()
     deployment_obj.last_updated_at = deployment_pb.last_updated_at.ToDatetime()
     return deployment_obj
 
 
-def _deployment_orm_obj_to_pb(deployment_obj):
+def _deployment_orm_obj_to_pb(deployment_obj, labels={}):
     deployment_pb = deployment_pb2.Deployment(
         name=deployment_obj.name,
         namespace=deployment_obj.namespace,
         spec=ParseDict(deployment_obj.spec, deployment_pb2.DeploymentSpec()),
         state=ParseDict(deployment_obj.state, deployment_pb2.DeploymentState()),
-        labels=deployment_obj.labels,
+        labels=labels,
         annotations=deployment_obj.annotations,
     )
     deployment_pb.created_at.FromDatetime(deployment_obj.created_at)
@@ -92,7 +94,19 @@ class DeploymentStore(object):
     def insert(self, deployment_pb):
         with create_session(self.sess_maker) as sess:
             deployment_obj = _deployment_pb_to_orm_obj(deployment_pb)
-            return sess.add(deployment_obj)
+            sess.add(deployment_obj)
+            if deployment_pb.labels:
+                deployment_row = (
+                    sess.query(Deployment)
+                    .filter_by(
+                        name=deployment_obj.name, namespace=deployment_obj.namespace
+                    )
+                    .one()
+                )
+                add_labels(
+                    sess, 'deployment', deployment_row.id, deployment_pb.labels,
+                )
+            return
 
     def insert_or_update(self, deployment_pb):
         with create_session(self.sess_maker) as sess:
@@ -133,8 +147,9 @@ class DeploymentStore(object):
                 )
             except NoResultFound:
                 return None
+            labels = get_labels('deployment', deployment_obj.id)
 
-            return _deployment_orm_obj_to_pb(deployment_obj)
+            return _deployment_orm_obj_to_pb(deployment_obj, labels)
 
     def delete(self, name, namespace):
         with create_session(self.sess_maker) as sess:
@@ -143,6 +158,9 @@ class DeploymentStore(object):
                     sess.query(Deployment)
                     .filter_by(name=name, namespace=namespace)
                     .one()
+                )
+                delete_labels(
+                    sess, resource_type='deployment', resource_id=deployment.id
                 )
                 return sess.delete(deployment)
             except NoResultFound:
@@ -186,7 +204,11 @@ class DeploymentStore(object):
             query = query.limit(limit)
             if offset:
                 query = query.offset(offset)
-            print(query)
             query_result = query.all()
+            deployment_ids = [deployment_obj.id for deployment_obj in query_result]
+            labels = list_labels(sess, 'deployment', deployment_ids)
 
-            return list(map(_deployment_orm_obj_to_pb, query_result))
+            return [
+                _deployment_orm_obj_to_pb(deployment_obj, labels[deployment_obj.id])
+                for deployment_obj in query_result
+            ]

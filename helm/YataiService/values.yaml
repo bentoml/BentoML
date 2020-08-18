@@ -17,7 +17,7 @@ yatai:
   replicaCount: 1 # only supports 1 at the moment
   image:
     repo: bentoml/yatai-service
-    version: 0.7.2
+    version: 0.8.5
     pullPolicy: IfNotPresent
 service:
   type: LoadBalancer
@@ -46,10 +46,11 @@ postgres:
     version: 10.4
     pullPolicy: IfNotPresent
   data:
-    POSTGRES_DB: bentomldb
-    POSTGRES_USER: postgresadmin
-    POSTGRES_PASSWORD: admin123
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: supersecurepassword123
   storageCapacity: 5Gi
+  pvReclaimPolicy: Retain
 
 # Ingress Resource
 ingress:

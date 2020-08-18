@@ -45,6 +45,8 @@ def init_db(db_url):
         extra_db_args['echo'] = False
     engine = create_engine(db_url, **extra_db_args)
 
+    print(engine.url)
+    print(db_url)
     if not database_exists(engine.url) and not is_sqlite_db(db_url):
         raise BentoMLException(
             f'Database does not exist or Database name is missing in config '
@@ -81,6 +83,7 @@ def create_all_or_upgrade_db(engine, db_url):
     inspector = inspect(engine)
     tables = inspector.get_table_names()
 
+    print(tables)
     if 'deployments' not in tables and 'bentos' not in tables:
         logger.debug('Creating tables')
         Base.metadata.create_all(engine)

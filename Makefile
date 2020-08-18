@@ -50,10 +50,10 @@ install-web-deps: ## Install dependencies to run web server and frontend
 helm-lint: ## Helm Lint
 	helm lint ./helm/YataiService
 helm-deps: ## Helm installed dependencies
-	helm dependencies build helm/YataiService
+	helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx && helm dependencies build helm/YataiService
 helm-dry: ## Helm Dry Install
 	cd helm && helm install -f YataiService/values/postgres.yaml --dry-run --debug yatai-service YataiService
 helm-install: ## Helm Install
-	@cd helm && helm install -f YataiService/values/postgres.yaml yatai-service YataiService || (echo "Error installing chart... You may need to run 'minikube start'"; make helm-uninstall; exit 1)
+	@cd helm && helm install -f YataiService/values/postgres.yaml yatai-service YataiService
 helm-uninstall: ## Helm Uninstall
 	helm uninstall yatai-service

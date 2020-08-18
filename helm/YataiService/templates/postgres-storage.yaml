@@ -14,6 +14,7 @@ spec:
     - ReadWriteMany
   hostPath:
     path: "/mnt/data"
+  persistentVolumeReclaimPolicy: {{ .Values.postgres.pvReclaimPolicy }}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1

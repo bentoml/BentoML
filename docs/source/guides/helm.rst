@@ -81,7 +81,7 @@ Then, start a local K8s cluster running by doing `minikube start`.
 
 .. note::
 
-    Before installing the chart, make sure to fetch the `ingress-nginx` dependency by doing `helm dependency build helm/YataiService`
+    Before installing the chart, make sure to fetch the `ingress-nginx` dependency by doing `make helm-deps`
 
 =======
 Dry Run

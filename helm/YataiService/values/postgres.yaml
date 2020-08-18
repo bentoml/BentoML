@@ -1,3 +1,3 @@
-db_url: postgresql://postgresadmin:admin123@yatai-postgres:5432/bentomldb
+db_url: postgresql://postgres:supersecurepassword123@yatai-postgres:5432
 postgres:
   enabled: true

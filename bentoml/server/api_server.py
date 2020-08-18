@@ -86,10 +86,10 @@ class BentoAPIServer:
     request data into a Service API function
     """
 
-    _DEFAULT_PORT = config("apiserver").getint("default_port")
+    DEFAULT_PORT = config("apiserver").getint("default_port")
     _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
 
-    def __init__(self, bento_service: BentoService, port=_DEFAULT_PORT, app_name=None):
+    def __init__(self, bento_service: BentoService, port=DEFAULT_PORT, app_name=None):
         app_name = bento_service.name if app_name is None else app_name
 
         self.port = port

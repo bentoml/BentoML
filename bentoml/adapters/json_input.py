@@ -110,4 +110,4 @@ class JsonInput(BaseInputAdapter[ApiFuncArgs]):
             except Exception:  # pylint: disable=broad-except
                 err = traceback.format_exc()
                 task.discard(http_status=500, err_msg=f"Internal Server Error: {err}")
-        return (json_inputs,)
+        return json_inputs,

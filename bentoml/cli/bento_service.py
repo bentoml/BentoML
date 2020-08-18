@@ -216,9 +216,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         "--port",
         type=click.INT,
-        default=BentoAPIServer._DEFAULT_PORT,
+        default=BentoAPIServer.DEFAULT_PORT,
         help=f"The port to listen on for the REST api server, "
-        f"default is {BentoAPIServer._DEFAULT_PORT}",
+        f"default is {BentoAPIServer.DEFAULT_PORT}",
         envvar='BENTOML_PORT',
     )
     @click.option(
@@ -250,9 +250,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         "-p",
         "--port",
         type=click.INT,
-        default=BentoAPIServer._DEFAULT_PORT,
+        default=BentoAPIServer.DEFAULT_PORT,
         help=f"The port to listen on for the REST api server, "
-        f"default is {BentoAPIServer._DEFAULT_PORT}",
+        f"default is {BentoAPIServer.DEFAULT_PORT}",
         envvar='BENTOML_PORT',
     )
     @click.option(
@@ -287,7 +287,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     ):
         if not psutil.POSIX:
             _echo(
-                "The `bentoml serve-gunicon` command is only supported on POSIX. "
+                "The `bentoml serve-gunicorn` command is only supported on POSIX. "
                 "On windows platform, use `bentoml serve` for local API testing and "
                 "docker for running production API endpoint: "
                 "https://docs.docker.com/docker-for-windows/ "

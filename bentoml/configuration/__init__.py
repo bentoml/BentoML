@@ -175,7 +175,7 @@ def get_bentoml_deploy_version():
         if _is_pip_installed_bentoml():
             logger.warning(
                 "Using BentoML not from official PyPI release. In order to find the "
-                "same version of BentoML when deplying your BentoService, you must "
+                "same version of BentoML when deploying your BentoService, you must "
                 "set the 'core/bentoml_deploy_version' config to a http/git location "
                 "of your BentoML fork, e.g.: 'bentoml_deploy_version = "
                 "git+https://github.com/{username}/bentoml.git@{branch}'"

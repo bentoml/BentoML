@@ -127,7 +127,7 @@ class AnnotatedImageInput(BaseInputAdapter):
         >>>
         >>> CLASS_NAMES = ['cat', 'dog']
         >>>
-        >>> @artifacts([TensorflowArtifact('classifer')])
+        >>> @artifacts([TensorflowArtifact('classifier')])
         >>> class PetClassification(BentoService):
         >>>    @api(input=AnnotatedImageInput())
         >>>    def predict(self, image: Numpy.array, annotations: JsonSerializable):

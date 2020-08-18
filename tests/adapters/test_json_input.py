@@ -22,7 +22,7 @@ def raw_jsons(json_files_dir) -> List[bytes]:
 
 
 def test_json_from_cli(input_adapter, raw_jsons):
-    tasks = input_adapter.from_cli(raw_jsons, [])
+    tasks = input_adapter.from_cli(raw_jsons)
     for t, b in zip(tasks, raw_jsons):
         assert t.data == b
 

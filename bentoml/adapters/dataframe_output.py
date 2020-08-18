@@ -27,7 +27,7 @@ def df_to_json(result, pandas_dataframe_orient="records"):
 
     assert (
         pandas_dataframe_orient in PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
-    ), f"unkown pandas dataframe orient '{pandas_dataframe_orient}'"
+    ), f"unknown pandas dataframe orient '{pandas_dataframe_orient}'"
 
     if isinstance(result, pd.DataFrame):
         return result.to_json(orient=pandas_dataframe_orient)

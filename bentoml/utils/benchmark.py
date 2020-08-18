@@ -236,7 +236,7 @@ class BenchmarkClient:
     * request_producer: The test case producer, a function with return value
         (url: str, method: str, headers: dict, data: str)
     * request_interval: intervals in seconds between each requests of the same user,
-      lazy value supoorted.
+      lazy value supported.
         for eg:
             - 1  # for constant 1 sec
             - lambda: random.random()  # for random wait time between 0 and 1

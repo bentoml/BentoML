@@ -13,12 +13,12 @@ import {
 import logo from "../assets/bentoml-logo.png";
 
 const NavigationBar = () => {
-  const [highlight, setHighlignt] = React.useState("");
+  const [highlight, setHighlight] = React.useState("");
   const location = useLocation();
 
   React.useEffect(() => {
     const currentLocation = location.pathname.split("/")[1];
-    setHighlignt(currentLocation);
+    setHighlight(currentLocation);
   }, [location]);
 
   return (
@@ -26,7 +26,7 @@ const NavigationBar = () => {
       <NavbarGroup align={Alignment.LEFT}>
         <NavbarHeading>
           <Link to="/">
-            <img src={`/${logo}`} width={150} />{" "}
+            <img src={`/${logo}`} width={150}  alt={""}/>{" "}
           </Link>
         </NavbarHeading>
         <NavbarDivider />

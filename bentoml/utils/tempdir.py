@@ -58,7 +58,7 @@ class TempDirectory(object):
 
     def create(self):
         if self.path is not None:
-            logger.debug("Skipped temp direcotry creation: %s", self.path)
+            logger.debug("Skipped temp directory creation: %s", self.path)
             return self.path
 
         tempdir = tempfile.mkdtemp(prefix="bentoml-{}-".format(self._prefix))

@@ -59,19 +59,19 @@ def metrics_patch(cls):
             )
             self.metrics_request_in_progress = Gauge(
                 name=service_name + "_mb_request_in_progress",
-                documentation='Totoal number of HTTP requests in progress now',
+                documentation='Total number of HTTP requests in progress now',
                 namespace=namespace,
                 labelnames=['endpoint', 'http_method'],
             )
             self.metrics_request_exception = Counter(
                 name=service_name + "_mb_request_exception",
-                documentation='Totoal number of service exceptions',
+                documentation='Total number of service exceptions',
                 namespace=namespace,
                 labelnames=['endpoint', 'exception_class'],
             )
             self.metrics_request_total = Counter(
                 name=service_name + "_mb_request_total",
-                documentation='Totoal number of service exceptions',
+                documentation='Total number of service exceptions',
                 namespace=namespace,
                 labelnames=['endpoint', 'http_response_code'],
             )

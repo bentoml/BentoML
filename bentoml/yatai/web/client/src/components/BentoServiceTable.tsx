@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 
-import { displayTimeInFromNowFormat } from "../utils/index";
+import { displayTimeInFromNowFormat } from "../utils";
 import Table from "../ui/Table";
 
 const apisToDisplayFormat = (apis) => {

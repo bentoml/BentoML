@@ -24,7 +24,7 @@ class JSONArtifact(BentoServiceArtifact):
 
     Args:
         name (str): Name of the artifact
-        file_extension (:obj:`str`, optional): The file extention used for the saved
+        file_extension (:obj:`str`, optional): The file extension used for the saved
             text file. Defaults to ".txt"
         encoding (:obj:`str`, optional): The encoding will be used for saving/loading
             text. Defaults to "utf8"

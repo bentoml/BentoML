@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class LazyLoader(types.ModuleType):
-    """LazyLoder module borrowed from Tensorflow
+    """LazyLoader module borrowed from Tensorflow
   https://github.com/tensorflow/tensorflow/blob/v2.2.0/tensorflow/python/util/lazy_loader.py
 
   Lazily import a module, mainly to avoid pulling in large dependencies.

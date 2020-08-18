@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, Type, Union
 
 from bentoml.types import (
     ApiFuncReturnValue,
@@ -23,7 +23,7 @@ from bentoml.types import (
 from .base_output import BaseOutputAdapter
 
 
-def detect_suitable_adapter(result) -> BaseOutputAdapter:
+def detect_suitable_adapter(result) -> Type[BaseOutputAdapter]:
     try:
         import pandas as pd
 

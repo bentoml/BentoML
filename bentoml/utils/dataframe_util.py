@@ -121,7 +121,7 @@ def _csv_split(string, delimiter, maxsplit=None) -> Iterator[str]:
             for i, c in enumerate(line):
                 if c == '"':
                     quoted = not quoted
-                if not quoted and string[i : i + dlen] == delimiter:
+                if not quoted and string[i: i + dlen] == delimiter:
                     yield line[last_cur:i]
                     last_cur = i + dlen
                     split += 1
@@ -202,8 +202,8 @@ def _guess_orient(table):
             if any(isinstance(k, str) and not k.isnumeric() for k in table.keys()):
                 return 'columns'
             if any(
-                isinstance(k, str) and not k.isnumeric()
-                for k in next(iter(table.values())).keys()
+                    isinstance(k, str) and not k.isnumeric()
+                    for k in next(iter(table.values())).keys()
             ):
                 return 'index'
             return {'columns', 'index'}
@@ -221,14 +221,13 @@ _ORIENT_MAP = {
     # 'table': _from_json_table,
 }
 
-
 PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS = {k for k in _ORIENT_MAP}
 
 
 def _dataframe_csv_from_input(tables, content_types, orients):
     state = DataFrameState()
     for table_id, (table, content_type, orient) in enumerate(
-        zip(tables, content_types, orients)
+            zip(tables, content_types, orients)
     ):
         content_type = content_type or "application/json"
         if content_type.lower() == "application/json":
@@ -298,10 +297,11 @@ def _gen_slice(ids):
 
 
 def read_dataframes_from_json_n_csv(
-    datas: Iterable["pd.DataFrame"], content_types: Iterable[str], orient: str = None,
+        datas: Iterable["pd.DataFrame"], content_types: Iterable[str],
+        orient: str = None,
 ) -> ("pd.DataFrame", Iterable[slice]):
     '''
-    load detaframes from multiple raw datas in json or csv fromat, efficiently
+    load dataframes from multiple raw datas in json or csv format, efficiently
 
     Background: Each calling of pandas.read_csv or pandas.read_json cost about 100ms,
     no matter how many lines it contains. Concat jsons/csvs before read_json/read_csv

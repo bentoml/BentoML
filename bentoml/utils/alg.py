@@ -33,7 +33,7 @@ class FixedBucket:
     def __getitem__(self, sl):
         if not self._flag_full:
             return self._data[: self._cur][sl]
-        return (self._data[self._cur :] + self._data[: self._cur])[sl]
+        return (self._data[self._cur:] + self._data[: self._cur])[sl]
 
 
 class TokenBucket:

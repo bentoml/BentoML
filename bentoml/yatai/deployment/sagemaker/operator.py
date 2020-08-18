@@ -183,7 +183,7 @@ def _aws_client_error_to_bentoml_exception(e, message_prefix=None):
     """parse botocore.exceptions.ClientError into Bento StatusProto
 
     We handle two most common errors when deploying to Sagemaker.
-        1. Authenication issue/invalid access(InvalidSignatureException)
+        1. Authentication issue/invalid access(InvalidSignatureException)
         2. resources not found (ValidationException)
     It will return correlated StatusProto(NOT_FOUND, UNAUTHENTICATED)
 

@@ -91,7 +91,7 @@ def parse_cli_input(cli_args: Iterable[str]) -> Iterator[bytes]:
     input_g.add_argument('--input', nargs="+", type=str)
     input_g.add_argument('--input-file', nargs="+")
 
-    parsed_args, _ = parser.parse_known_args(cli_args)
+    parsed_args, _ = parser.parse_known_args(list(cli_args))
 
     inputs = tuple(
         parsed_args.input if parsed_args.input_file is None else parsed_args.input_file

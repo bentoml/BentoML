@@ -27,7 +27,6 @@ from bentoml.exceptions import BentoMLException
 from bentoml.utils.usage_stats import track
 from bentoml.configuration import set_debug_mode
 
-
 # Available CLI colors for _echo:
 #
 # _ansi_colors = {
@@ -53,7 +52,6 @@ from bentoml.configuration import set_debug_mode
 CLI_COLOR_SUCCESS = "green"
 CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
-
 
 logger = logging.getLogger(__name__)
 TRACK_CLI_EVENT_NAME = 'bentoml-cli'
@@ -155,8 +153,8 @@ class BentoMLCommandGroup(click.Group):
 
             # move common parameters to end of the parameters list
             func.__click_params__ = (
-                func.__click_params__[-self.NUMBER_OF_COMMON_PARAMS :]
-                + func.__click_params__[: -self.NUMBER_OF_COMMON_PARAMS]
+                    func.__click_params__[-self.NUMBER_OF_COMMON_PARAMS:]
+                    + func.__click_params__[: -self.NUMBER_OF_COMMON_PARAMS]
             )
             return super(BentoMLCommandGroup, self).command(*args, **kwargs)(func)
 
@@ -221,7 +219,7 @@ def parse_labels_callback(ctx, param, value):  # pylint: disable=unused-argument
 
 
 def validate_labels_query_callback(
-    ctx, param, value
+        ctx, param, value
 ):  # pylint: disable=unused-argument
     if not value:
         return value

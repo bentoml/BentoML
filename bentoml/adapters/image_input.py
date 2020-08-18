@@ -26,7 +26,6 @@ from bentoml import config
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.exceptions import BadInput
 from bentoml.adapters.base_input import BaseInputAdapter
-from numpy.core import ndarray
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')
@@ -51,8 +50,8 @@ def get_default_accept_image_formats():
     return [
         extension.strip()
         for extension in config("apiserver")
-        .get("default_image_input_accept_file_extensions")
-        .split(",")
+            .get("default_image_input_accept_file_extensions")
+            .split(",")
     ]
 
 
@@ -88,7 +87,7 @@ class ImageInput(BaseInputAdapter):
         >>>
         >>> CLASS_NAMES = ['cat', 'dog']
         >>>
-        >>> @artifacts([TensorflowArtifact('classifer')])
+        >>> @artifacts([TensorflowArtifact('classifier')])
         >>> class PetClassification(BentoService):
         >>>     @api(input=ImageInput())
         >>>     def predict(self, image_ndarrays):
@@ -100,16 +99,16 @@ class ImageInput(BaseInputAdapter):
     BATCH_MODE_SUPPORTED = True
 
     def __init__(
-        self,
-        accept_image_formats=None,
-        pilmode="RGB",
-        is_batch_input=False,
-        **base_kwargs,
+            self,
+            accept_image_formats=None,
+            pilmode="RGB",
+            is_batch_input=False,
+            **base_kwargs,
     ):
         assert imageio, "`imageio` dependency can be imported"
 
         if is_batch_input:
-            raise ValueError('ImageInput can not accpept batch inputs')
+            raise ValueError('ImageInput can not accept batch inputs')
         super(ImageInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
         if 'input_names' in base_kwargs:
             raise TypeError(
@@ -120,7 +119,7 @@ class ImageInput(BaseInputAdapter):
 
         self.pilmode = pilmode
         self.accept_image_formats = (
-            accept_image_formats or get_default_accept_image_formats()
+                accept_image_formats or get_default_accept_image_formats()
         )
 
     @property
@@ -174,7 +173,7 @@ class ImageInput(BaseInputAdapter):
         return input_data
 
     def handle_batch_request(
-        self, requests: Iterable[HTTPRequest], func: callable
+            self, requests: Iterable[HTTPRequest], func: callable
     ) -> Iterable[HTTPResponse]:
         """
         Batch version of handle_request
@@ -223,7 +222,7 @@ class ImageInput(BaseInputAdapter):
         )
 
         for i in range(0, len(file_paths), batch_size):
-            step_file_paths = file_paths[i : i + batch_size]
+            step_file_paths = file_paths[i: i + batch_size]
             image_arrays = []
             for file_path in step_file_paths:
                 verify_image_format_or_raise(file_path, self.accept_image_formats)

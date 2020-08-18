@@ -13,36 +13,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
+import functools
+import inspect
+import itertools
+import logging
 import os
 import re
 import sys
-import inspect
-import logging
 import uuid
-import argparse
-import functools
-import itertools
 from datetime import datetime
-from typing import Tuple, List, Iterable, Iterator
+from typing import Tuple, List, Iterable
 
 import flask
 from werkzeug.utils import cached_property
 
 from bentoml import config
+from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
+from bentoml.artifact import BentoServiceArtifact, ArtifactCollection
+from bentoml.exceptions import NotFound, InvalidArgument, BentoMLException
+from bentoml.saved_bundle import save_to_dir
+from bentoml.saved_bundle.config import SavedBundleConfig
+from bentoml.server import trace
+from bentoml.service_env import BentoServiceEnv
 from bentoml.types import (
     HTTPRequest,
     InferenceTask,
     InferenceResult,
 )
-from bentoml.saved_bundle import save_to_dir
-from bentoml.saved_bundle.config import SavedBundleConfig
-from bentoml.service_env import BentoServiceEnv
-from bentoml.utils import isidentifier
 from bentoml.utils.hybridmethod import hybridmethod
-from bentoml.exceptions import NotFound, InvalidArgument, BentoMLException
-from bentoml.server import trace
-from bentoml.artifact import BentoServiceArtifact, ArtifactCollection
-from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 
 ARTIFACTS_DIR_NAME = "artifacts"
 DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
@@ -265,8 +264,8 @@ class InferenceAPI(object):
         return next(iter(self.output_adapter.to_aws_lambda_event(results)))
 
 
-def validate_inference_api_name(api_name):
-    if not isidentifier(api_name):
+def validate_inference_api_name(api_name: str):
+    if not api_name.isidentifier():
         raise InvalidArgument(
             "Invalid API name: '{}', a valid identifier may only contain letters,"
             " numbers, underscores and not starting with a number.".format(api_name)
@@ -578,15 +577,15 @@ class BentoService:
     """
 
     # List of inference APIs that this BentoService provides
-    _inference_apis = []
+    _inference_apis: InferenceAPI = []
 
     # Name of this BentoService. It is default the class name of this BentoService class
-    _bento_service_name = None
+    _bento_service_name: str = None
 
     # For BentoService loaded from saved bundle, this will be set to the path of bundle.
     # When user install BentoService bundle as a PyPI package, this will be set to the
     # installed site-package location of current python environment
-    _bento_service_bundle_path = None
+    _bento_service_bundle_path: str = None
 
     # List of artifacts required by this BentoService class, declared via the `@env`
     # decorator. This list is used for initializing an empty ArtifactCollection when
@@ -762,7 +761,7 @@ class BentoService:
         :return: BentoService name
         """
         if cls._bento_service_name is not None:
-            if not isidentifier(cls._bento_service_name):
+            if not cls._bento_service_name.isidentifier():
                 raise InvalidArgument(
                     'BentoService#_bento_service_name must be valid python identifier'
                     'matching regex `(letter|"_")(letter|digit|"_")*`'

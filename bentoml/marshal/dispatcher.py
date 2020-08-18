@@ -18,7 +18,7 @@ class NonBlockSema:
     def __init__(self, count):
         self.sema = count
 
-    def aquire(self):
+    def acquire(self):
         if self.sema < 1:
             return False
         self.sema -= 1
@@ -176,7 +176,7 @@ class CorkDispatcher:
 
                 n_call_out = min(self.max_batch_size, n,)
                 # call
-                self._sema.aquire()
+                self._sema.acquire()
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
                 self._loop.create_task(self.outbound_call(inputs_info))
             except asyncio.CancelledError:

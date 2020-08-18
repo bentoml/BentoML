@@ -71,7 +71,7 @@ def _download_ngrok(ngrok_path):
 
 def _download_file(url):
     """
-    Download ngrok bibary file to local
+    Download ngrok binary file to local
     :param url:
     :return:
     """

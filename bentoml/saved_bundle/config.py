@@ -26,7 +26,7 @@ from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.utils import dump_to_yaml_str
 from bentoml.exceptions import BentoMLConfigException
 
-BENTOML_CONFIG_YAML_TEPMLATE = """\
+BENTOML_CONFIG_YAML_TEMPLATE = """\
 version: {bentoml_version}
 kind: {kind}
 metadata:
@@ -73,7 +73,7 @@ class SavedBundleConfig(object):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
         self.config = self._yaml.load(
-            BENTOML_CONFIG_YAML_TEPMLATE.format(
+            BENTOML_CONFIG_YAML_TEMPLATE.format(
                 kind=self.kind,
                 bentoml_version=get_bentoml_deploy_version(),
                 created_at=str(datetime.utcnow()),

@@ -66,7 +66,7 @@ class DataframeInput(BaseInputAdapter):
         **base_kwargs,
     ):
         if not is_batch_input:
-            raise ValueError('DataframeInput can not accpept none batch inputs')
+            raise ValueError('DataframeInput can not accept none batch inputs')
         super(DataframeInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )

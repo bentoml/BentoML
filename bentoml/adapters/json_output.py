@@ -14,7 +14,7 @@
 
 import json
 import argparse
-from typing import Iterable, List
+from typing import Iterable, Tuple, Iterator
 
 from bentoml.types import (
     HTTPResponse,
@@ -27,7 +27,7 @@ from bentoml.adapters.utils import NumpyJsonEncoder
 from bentoml.adapters.base_output import BaseOutputAdapter
 
 
-ApiFuncReturnValue = List[JsonSerializable]
+ApiFuncReturnValue = Tuple[JsonSerializable]
 
 
 class JsonSerializableOutput(BaseOutputAdapter[ApiFuncReturnValue]):
@@ -41,8 +41,8 @@ class JsonSerializableOutput(BaseOutputAdapter[ApiFuncReturnValue]):
     """
 
     def pack_user_func_return_value(
-        self, return_result: ApiFuncReturnValue, contexts: List[InferenceContext],
-    ) -> List[InferenceResult[str]]:
+        self, return_result: ApiFuncReturnValue, contexts: Tuple[InferenceContext],
+    ) -> Tuple[InferenceResult[str]]:
         results = []
         for json_obj, context in zip(return_result, contexts):
             args = context.cli_args
@@ -81,15 +81,17 @@ class JsonSerializableOutput(BaseOutputAdapter[ApiFuncReturnValue]):
                         context=DefaultErrorContext(err_msg=str(e), http_status=500,),
                     )
                 )
-        return results
+        return tuple(results)
 
-    def to_http_response(self, results,) -> Iterable[HTTPResponse]:
+    def to_http_response(
+        self, results: Iterable[InferenceResult],
+    ) -> Iterator[HTTPResponse]:
         return (
             HTTPResponse(r.context.http_status, r.context.http_headers, r.data)
             for r in results
         )
 
-    def to_cli(self, results):
+    def to_cli(self, results: Iterable[InferenceResult]) -> int:
         """Handles an CLI command call, convert CLI arguments into
         corresponding data format that user API function is expecting, and
         prints the API function result to console output
@@ -105,7 +107,7 @@ class JsonSerializableOutput(BaseOutputAdapter[ApiFuncReturnValue]):
                 print(result.data)
         return flag
 
-    def to_aws_lambda_event(self, results):
+    def to_aws_lambda_event(self, results: Iterable[InferenceResult]):
 
         # Allow disabling CORS by setting it to None
         for result in results:

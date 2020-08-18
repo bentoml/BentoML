@@ -14,7 +14,7 @@
 
 import json
 import traceback
-from typing import Iterable, List, Tuple, Iterator
+from typing import Iterable, Tuple, Iterator
 
 
 from bentoml.types import (
@@ -28,7 +28,9 @@ from bentoml.types import (
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 
 
-ApiFuncArgs = Tuple[List[JsonSerializable]]
+ApiFuncArgs = Tuple[
+    Tuple[JsonSerializable],
+]
 
 
 class JsonInput(BaseInputAdapter[ApiFuncArgs]):
@@ -67,26 +69,26 @@ class JsonInput(BaseInputAdapter[ApiFuncArgs]):
 
     def from_http_request(
         self, reqs: Iterable[HTTPRequest]
-    ) -> List[InferenceTask[bytes]]:
-        return [
+    ) -> Tuple[InferenceTask[bytes]]:
+        return tuple(
             InferenceTask(
                 context=InferenceContext(http_headers=r.parsed_headers), data=r.body,
             )
             for r in reqs
-        ]
+        )
 
     def from_aws_lambda_event(
         self, events: Iterable[AwsLambdaEvent]
-    ) -> List[InferenceTask[bytes]]:
-        return [
+    ) -> Tuple[InferenceTask[bytes]]:
+        return tuple(
             InferenceTask(
                 context=InferenceContext(aws_lambda_event=e),
                 data=e['body'].encode(JSON_CHARSET),
             )
             for e in events
-        ]
+        )
 
-    def from_cli(self, cli_args: List[str]) -> Iterator[InferenceTask[bytes]]:
+    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:
         for i in parse_cli_input(cli_args):
             yield InferenceTask(context=InferenceContext(cli_args=cli_args), data=i)
 

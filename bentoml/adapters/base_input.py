@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import argparse
-from typing import Iterable, Generic, List, Iterator
+from typing import Iterable, Generic, Tuple, Iterator
 
 from bentoml.types import (
     ApiFuncArgs,
@@ -62,14 +62,14 @@ class BaseInputAdapter(Generic[ApiFuncArgs]):
         raise NotImplementedError()
 
     def from_aws_lambda_event(
-        self, events: List[AwsLambdaEvent]
+        self, events: Tuple[AwsLambdaEvent]
     ) -> Iterable[InferenceTask]:
         """
         Handles AWS lambda events, convert it into InferenceTasks
         """
         raise NotImplementedError()
 
-    def from_cli(self, cli_args: List[str]) -> Iterable[InferenceTask]:
+    def from_cli(self, cli_args: Tuple[str]) -> Iterable[InferenceTask]:
         """
         Handles CLI command, generate InferenceTasks
         """

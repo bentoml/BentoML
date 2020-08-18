@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, List, Generic
+from typing import Iterable, Tuple, Generic
 
 from bentoml.types import (
     AwsLambdaEvent,
@@ -45,8 +45,8 @@ class BaseOutputAdapter(Generic[ApiFuncReturnValue]):
         return []
 
     def pack_user_func_return_value(
-        self, return_result: ApiFuncReturnValue, contexts: List[InferenceContext],
-    ) -> List[InferenceResult]:
+        self, return_result: ApiFuncReturnValue, contexts: Tuple[InferenceContext],
+    ) -> Tuple[InferenceResult]:
         """
         Pack the return value of user defined API function into InferenceResults
         """

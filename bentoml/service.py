@@ -187,7 +187,7 @@ class InferenceAPI(object):
             ] = self.input_adapter._http_input_example
         return schema
 
-    def infer(self, inf_tasks: Iterable[InferenceTask]) -> List[InferenceResult]:
+    def infer(self, inf_tasks: Iterable[InferenceTask]) -> Tuple[InferenceResult]:
         # task validation
         def _validation(inf_tasks):
             for task in inf_tasks:
@@ -200,7 +200,7 @@ class InferenceAPI(object):
 
         # extract args
         user_args = self.input_adapter.extract_user_func_args(_validation(inf_tasks))
-        contexts = [t.context for t in inf_tasks if not t.is_discarded]
+        contexts = tuple(t.context for t in inf_tasks if not t.is_discarded)
 
         # call user function
         user_return = self.user_func(*user_args, contexts=contexts)
@@ -242,7 +242,7 @@ class InferenceAPI(object):
 
         return DataLoader.merge_responses(responses)
 
-    def handle_cli(self, cli_args: List[str]) -> int:
+    def handle_cli(self, cli_args: Tuple[str]) -> int:
         parser = argparse.ArgumentParser()
         parser.add_argument("--max-batch-size", default=sys.maxsize, type=int)
         parsed_args, _ = parser.parse_known_args(cli_args)

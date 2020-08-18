@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, List
+from typing import Iterable, Tuple
 
 from bentoml.types import (
     ApiFuncReturnValue,
@@ -68,8 +68,8 @@ class DefaultOutput(BaseOutputAdapter):
         self.actual_adapter = None
 
     def pack_user_func_return_value(
-        self, return_result: ApiFuncReturnValue, contexts: List[InferenceContext],
-    ) -> List[InferenceResult]:
+        self, return_result: ApiFuncReturnValue, contexts: Tuple[InferenceContext],
+    ) -> Tuple[InferenceResult]:
         if self.actual_adapter is None:
             self.actual_adapter = detect_suitable_adapter(return_result)()
         if self.actual_adapter:

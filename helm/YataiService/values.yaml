@@ -43,12 +43,11 @@ postgres:
   port: "5432"
   image:
     repo: postgres
-    version: 10.4
+    version: latest
     pullPolicy: IfNotPresent
   data:
-    POSTGRES_DB: postgres
     POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: supersecurepassword123
+    POSTGRES_PASSWORD: password123
   storageCapacity: 5Gi
   pvReclaimPolicy: Retain
 

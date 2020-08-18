@@ -15,7 +15,7 @@
 from typing import Iterable, List
 
 from bentoml.types import (
-    UserReturnValue,
+    ApiFuncReturnValue,
     HTTPResponse,
     InferenceResult,
     InferenceContext,
@@ -68,7 +68,7 @@ class DefaultOutput(BaseOutputAdapter):
         self.actual_adapter = None
 
     def pack_user_func_return_value(
-        self, return_result: UserReturnValue, contexts: List[InferenceContext],
+        self, return_result: ApiFuncReturnValue, contexts: List[InferenceContext],
     ) -> List[InferenceResult]:
         if self.actual_adapter is None:
             self.actual_adapter = detect_suitable_adapter(return_result)()

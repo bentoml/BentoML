@@ -97,8 +97,8 @@ Input = TypeVar("Input")
 Output = TypeVar("Output")
 
 
-UserArgs = TypeVar("UserArgs")
-UserReturnValue = TypeVar("UserReturnValue")
+ApiFuncArgs = TypeVar("ApiFuncArgs")
+ApiFuncReturnValue = TypeVar("ApiFuncReturnValue")
 
 
 class InferenceContext(NamedTuple):

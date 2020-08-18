@@ -17,13 +17,13 @@ from typing import Iterable, List, Generic
 from bentoml.types import (
     AwsLambdaEvent,
     HTTPResponse,
-    UserReturnValue,
+    ApiFuncReturnValue,
     InferenceResult,
     InferenceContext,
 )
 
 
-class BaseOutputAdapter(Generic[UserReturnValue]):
+class BaseOutputAdapter(Generic[ApiFuncReturnValue]):
     """
     OutputAdapter is an layer between result of user defined API callback function
     and final output in a variety of different forms,
@@ -45,7 +45,7 @@ class BaseOutputAdapter(Generic[UserReturnValue]):
         return []
 
     def pack_user_func_return_value(
-        self, return_result: UserReturnValue, contexts: List[InferenceContext],
+        self, return_result: ApiFuncReturnValue, contexts: List[InferenceContext],
     ) -> List[InferenceResult]:
         """
         Pack the return value of user defined API function into InferenceResults

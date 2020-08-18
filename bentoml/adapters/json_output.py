@@ -27,10 +27,10 @@ from bentoml.adapters.utils import NumpyJsonEncoder
 from bentoml.adapters.base_output import BaseOutputAdapter
 
 
-UserReturnValue = List[JsonSerializable]
+ApiFuncReturnValue = List[JsonSerializable]
 
 
-class JsonSerializableOutput(BaseOutputAdapter[UserReturnValue]):
+class JsonSerializableOutput(BaseOutputAdapter[ApiFuncReturnValue]):
     """
     Converts result of user defined API function into specific output.
 
@@ -41,7 +41,7 @@ class JsonSerializableOutput(BaseOutputAdapter[UserReturnValue]):
     """
 
     def pack_user_func_return_value(
-        self, return_result: UserReturnValue, contexts: List[InferenceContext],
+        self, return_result: ApiFuncReturnValue, contexts: List[InferenceContext],
     ) -> List[InferenceResult[str]]:
         results = []
         for json_obj, context in zip(return_result, contexts):

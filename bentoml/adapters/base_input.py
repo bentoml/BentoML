@@ -15,14 +15,14 @@ import argparse
 from typing import Iterable, Generic, List, Iterator
 
 from bentoml.types import (
-    UserArgs,
+    ApiFuncArgs,
     HTTPRequest,
     InferenceTask,
     AwsLambdaEvent,
 )
 
 
-class BaseInputAdapter(Generic[UserArgs]):
+class BaseInputAdapter(Generic[ApiFuncArgs]):
     """
     InputAdapter is an abstraction layer between user defined API callback function
     and prediction request input in a variety of different forms, such as HTTP request
@@ -78,7 +78,7 @@ class BaseInputAdapter(Generic[UserArgs]):
     def validate_task(self, _: InferenceTask):
         return True
 
-    def extract_user_func_args(self, tasks: Iterable[InferenceTask]) -> UserArgs:
+    def extract_user_func_args(self, tasks: Iterable[InferenceTask]) -> ApiFuncArgs:
         """
         Extract args that user API function is expecting from InferenceTasks
         """

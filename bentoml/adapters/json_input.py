@@ -28,10 +28,10 @@ from bentoml.types import (
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 
 
-UserArgs = Tuple[List[JsonSerializable]]
+ApiFuncArgs = Tuple[List[JsonSerializable]]
 
 
-class JsonInput(BaseInputAdapter[UserArgs]):
+class JsonInput(BaseInputAdapter[ApiFuncArgs]):
     """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
     json serializable object in python) and pass down to user defined API function
 
@@ -76,8 +76,8 @@ class JsonInput(BaseInputAdapter[UserArgs]):
         ]
 
     def from_aws_lambda_event(
-        self, events: List[AwsLambdaEvent]
-    ) -> Iterable[InferenceTask[bytes]]:
+        self, events: Iterable[AwsLambdaEvent]
+    ) -> List[InferenceTask[bytes]]:
         return [
             InferenceTask(
                 context=InferenceContext(aws_lambda_event=e),
@@ -86,11 +86,13 @@ class JsonInput(BaseInputAdapter[UserArgs]):
             for e in events
         ]
 
-    def from_cli(self, cli_args) -> Iterator[InferenceTask[bytes]]:
+    def from_cli(self, cli_args: List[str]) -> Iterator[InferenceTask[bytes]]:
         for i in parse_cli_input(cli_args):
             yield InferenceTask(context=InferenceContext(cli_args=cli_args), data=i)
 
-    def extract_user_func_args(self, tasks: Iterable[InferenceTask[bytes]]) -> UserArgs:
+    def extract_user_func_args(
+        self, tasks: Iterable[InferenceTask[bytes]]
+    ) -> ApiFuncArgs:
         json_inputs = []
         for task in tasks:
             try:

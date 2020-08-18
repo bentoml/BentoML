@@ -14,8 +14,7 @@
 
 import json
 import traceback
-from typing import Iterable, Tuple, Iterator
-
+from typing import Iterable, Tuple, Iterator, Sequence
 
 from bentoml.types import (
     HTTPRequest,
@@ -29,7 +28,7 @@ from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 
 
 ApiFuncArgs = Tuple[
-    Tuple[JsonSerializable],
+    Sequence[JsonSerializable],
 ]
 
 

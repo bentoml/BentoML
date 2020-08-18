@@ -23,7 +23,7 @@ import re
 import sys
 import uuid
 from datetime import datetime
-from typing import Tuple, List, Iterable
+from typing import Tuple, List, Iterable, Sequence, Iterator
 
 import flask
 from werkzeug.utils import cached_property
@@ -188,8 +188,8 @@ class InferenceAPI(object):
 
     def infer(self, inf_tasks: Iterable[InferenceTask]) -> Tuple[InferenceResult]:
         # task validation
-        def _validation(inf_tasks):
-            for task in inf_tasks:
+        def valid_tasks(tasks: Iterable[InferenceTask]) -> Iterator[InferenceTask]:
+            for task in tasks:
                 if task.is_discarded:
                     continue
                 try:
@@ -199,16 +199,16 @@ class InferenceAPI(object):
                     task.discard(http_status=400, err_msg=str(e))
 
         # extract args
-        user_args = self.input_adapter.extract_user_func_args(_validation(inf_tasks))
+        user_args = self.input_adapter.extract_user_func_args(valid_tasks(inf_tasks))
         contexts = tuple(t.context for t in inf_tasks if not t.is_discarded)
 
         # call user function
         user_return = self.user_func(*user_args, contexts=contexts)
 
         if (
-            isinstance(user_return, (tuple, list))
+            isinstance(user_return, (Sequence, Iterable))
             and user_return
-            and isinstance(user_return[0], InferenceResult)
+            and all(map(lambda x: isinstance(x, InferenceResult), user_return))
         ):
             inf_results = user_return
         else:
@@ -217,14 +217,14 @@ class InferenceAPI(object):
                 user_return, contexts=contexts
             )
         full_results = InferenceResult.complete_discarded(inf_tasks, inf_results)
-        return full_results
+        return tuple(full_results)
 
     def handle_request(self, request: flask.Request):
         reqs = [HTTPRequest.from_flask_request(request)]
         inf_tasks = self.input_adapter.from_http_request(reqs)
         results = self.infer(inf_tasks)
-        resps = self.output_adapter.to_http_response(results)
-        response = next(iter(resps))
+        responses = self.output_adapter.to_http_response(results)
+        response = next(iter(responses))
         return response.to_flask_response()
 
     def handle_batch_request(self, request: flask.Request):
@@ -260,7 +260,7 @@ class InferenceAPI(object):
         return exit_code
 
     def handle_aws_lambda_event(self, event):
-        inf_tasks = self.input_adapter.from_aws_lambda_event([event])
+        inf_tasks = self.input_adapter.from_aws_lambda_event((event,))
         results = self.infer(inf_tasks)
         return next(iter(self.output_adapter.to_aws_lambda_event(results)))
 

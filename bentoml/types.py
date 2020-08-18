@@ -6,13 +6,14 @@
 
 # http://www.apache.org/licenses/LICENSE-2.0
 
+import functools
+
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import io
-import functools
 from typing import (
     NamedTuple,
     Tuple,
@@ -27,7 +28,6 @@ from typing import (
 )
 
 from multidict import CIMultiDict
-
 
 # For non latin1 characters: https://tools.ietf.org/html/rfc8187
 # Also https://github.com/benoitc/gunicorn/issues/1778
@@ -92,10 +92,8 @@ JsonSerializable = Union[bool, None, Dict, List, int, float, str]
 # https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html
 AwsLambdaEvent = Union[Dict, List, str, int, float, None]
 
-
 Input = TypeVar("Input")
 Output = TypeVar("Output")
-
 
 ApiFuncArgs = TypeVar("ApiFuncArgs")
 ApiFuncReturnValue = TypeVar("ApiFuncReturnValue")
@@ -123,7 +121,7 @@ class DefaultErrorContext(InferenceContext):
 class InferenceTask(Generic[Input]):
     def __init__(self, data: Input, context: InferenceContext = None):
         self.data = data
-        self.context = context or InferenceContext()
+        self.context: InferenceContext = context or InferenceContext()
         self.is_discarded = False
 
     def discard(self, err_msg="", **context):
@@ -140,13 +138,13 @@ class InferenceResult(Generic[Output]):
     def complete_discarded(
         cls, tasks: Iterable[InferenceTask], results: Iterable['InferenceResult'],
     ) -> Iterator['InferenceResult']:
-        iresults = iter(results)
+        iterable_results = iter(results)
         try:
             for task in tasks:
                 if task.is_discarded:
                     yield cls(None, context=DefaultErrorContext(*task.context))
                 else:
-                    yield next(iresults)
+                    yield next(iterable_results)
         except StopIteration:
             raise StopIteration(
                 'The results does not match the number of tasks'

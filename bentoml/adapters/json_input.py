@@ -14,7 +14,7 @@
 
 import json
 import traceback
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, Iterator
 
 
 from bentoml.types import (
@@ -25,7 +25,7 @@ from bentoml.types import (
     InferenceContext,
     JSON_CHARSET,
 )
-from bentoml.adapters.base_input import BaseInputAdapter
+from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 
 
 UserArgs = Tuple[List[JsonSerializable]]
@@ -86,11 +86,9 @@ class JsonInput(BaseInputAdapter[UserArgs]):
             for e in events
         ]
 
-    def from_cli(self, cli_inputs, other_args) -> Iterable[InferenceTask[bytes]]:
-        return [
-            InferenceTask(context=InferenceContext(cli_args=other_args), data=i)
-            for i in cli_inputs
-        ]
+    def from_cli(self, cli_args) -> Iterator[InferenceTask[bytes]]:
+        for i in parse_cli_input(cli_args):
+            yield InferenceTask(context=InferenceContext(cli_args=cli_args), data=i)
 
     def extract_user_func_args(self, tasks: Iterable[InferenceTask[bytes]]) -> UserArgs:
         json_inputs = []

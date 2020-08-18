@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from typing import Iterable, Generic, List
+import argparse
+from typing import Iterable, Generic, List, Iterator
 
 from bentoml.types import (
     UserArgs,
@@ -69,9 +69,7 @@ class BaseInputAdapter(Generic[UserArgs]):
         """
         raise NotImplementedError()
 
-    def from_cli(
-        self, cli_inputs: Iterable[bytes], other_args: List[str]
-    ) -> Iterable[InferenceTask]:
+    def from_cli(self, cli_args: List[str]) -> Iterable[InferenceTask]:
         """
         Handles CLI command, generate InferenceTasks
         """
@@ -85,3 +83,27 @@ class BaseInputAdapter(Generic[UserArgs]):
         Extract args that user API function is expecting from InferenceTasks
         """
         raise NotImplementedError()
+
+
+def parse_cli_input(cli_args: Iterable[str]) -> Iterator[bytes]:
+    parser = argparse.ArgumentParser()
+    input_g = parser.add_mutually_exclusive_group(required=True)
+    input_g.add_argument('--input', nargs="+", type=str)
+    input_g.add_argument('--input-file', nargs="+")
+
+    parsed_args, _ = parser.parse_known_args(cli_args)
+
+    inputs = tuple(
+        parsed_args.input if parsed_args.input_file is None else parsed_args.input_file
+    )
+    is_file = parsed_args.input_file is not None
+    if is_file:
+        for input_ in inputs:
+            with open(input_, "rb") as f:
+                yield f.read()
+
+    else:
+        for input_ in inputs:
+            yield input_.encode()
+
+    return _

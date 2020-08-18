@@ -15,13 +15,15 @@
 
 import os
 import re
+import sys
 import inspect
 import logging
 import uuid
 import argparse
 import functools
+import itertools
 from datetime import datetime
-from typing import List, Iterable
+from typing import Tuple, List, Iterable, Iterator
 
 import flask
 from werkzeug.utils import cached_property
@@ -240,36 +242,22 @@ class InferenceAPI(object):
 
         return DataLoader.merge_responses(responses)
 
-    def handle_cli(self, args: List[str]) -> int:
+    def handle_cli(self, cli_args: List[str]) -> int:
         parser = argparse.ArgumentParser()
-        input_g = parser.add_mutually_exclusive_group(required=True)
-        input_g.add_argument('--input', nargs="+", type=str)
-        input_g.add_argument('--input-file', nargs="+")
+        parser.add_argument("--max-batch-size", default=sys.maxsize, type=int)
+        parsed_args, _ = parser.parse_known_args(cli_args)
 
-        parser.add_argument("--max-batch-size", default=None, type=int)
-        parsed_args, other_args = parser.parse_known_args(args)
+        exit_code = 0
 
-        input_args = (
-            parsed_args.input
-            if parsed_args.input_file is None
-            else parsed_args.input_file
-        )
-        is_file = parsed_args.input_file is not None
-
-        batch_size = parsed_args.max_batch_size or len(input_args)
-
-        flag = 0
-        for i in range(0, len(input_args), batch_size):
-            cli_inputs = input_args[i : i + batch_size]
-            if is_file:
-                cli_inputs = [open(file_path, 'rb').read() for file_path in cli_inputs]
-            else:
-                cli_inputs = [inp.encode() for inp in cli_inputs]
-            tasks = self.input_adapter.from_cli(cli_inputs, other_args)
+        tasks_iter = self.input_adapter.from_cli(cli_args)
+        while True:
+            tasks = tuple(itertools.islice(tasks_iter, parsed_args.max_batch_size))
+            if not len(tasks):
+                break
             results = self.infer(tasks)
-            flag = self.output_adapter.to_cli(results) or flag
+            exit_code = exit_code or self.output_adapter.to_cli(results)
 
-        return flag
+        return exit_code
 
     def handle_aws_lambda_event(self, event):
         inf_tasks = self.input_adapter.from_aws_lambda_event([event])

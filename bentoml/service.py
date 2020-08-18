@@ -192,10 +192,11 @@ class InferenceAPI(object):
             for task in inf_tasks:
                 if task.is_discarded:
                     continue
-                if self.input_adapter.validate_task(task):
+                try:
+                    self.input_adapter.validate_task(task)
                     yield task
-                else:
-                    task.discard(http_status=400, err_msg="Input validation failed")
+                except AssertionError as e:
+                    task.discard(http_status=400, err_msg=str(e))
 
         # extract args
         user_args = self.input_adapter.extract_user_func_args(_validation(inf_tasks))

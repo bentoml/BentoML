@@ -79,7 +79,7 @@ class FileInput(BaseInputAdapter):
     BATCH_MODE_SUPPORTED = True
 
     def __init__(
-            self, **base_kwargs,
+        self, **base_kwargs,
     ):
         super(FileInput, self).__init__(**base_kwargs)
 
@@ -117,7 +117,7 @@ class FileInput(BaseInputAdapter):
         return input_stream
 
     def handle_batch_request(
-            self, requests: Iterable[HTTPRequest], func: callable
+        self, requests: Iterable[HTTPRequest], func: callable
     ) -> Iterable[HTTPResponse]:
         """
         Batch version of handle_request
@@ -172,7 +172,7 @@ class FileInput(BaseInputAdapter):
         )
 
         for i in range(0, len(file_paths), batch_size):
-            step_file_paths = file_paths[i: i + batch_size]
+            step_file_paths = file_paths[i : i + batch_size]
             input_list = []
             with contextlib.ExitStack() as stack:
                 for file_path in step_file_paths:

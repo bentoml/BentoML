@@ -11,8 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import sys
 import argparse
-from typing import Iterable, Generic, Tuple, Iterator
+import itertools
+import functools
+import contextlib
+from typing import Iterable, Generic, Tuple, Iterator, Sequence, NamedTuple
 
 from bentoml.types import (
     ApiFuncArgs,
@@ -85,25 +89,125 @@ class BaseInputAdapter(Generic[ApiFuncArgs]):
         raise NotImplementedError()
 
 
-def parse_cli_input(cli_args: Iterable[str]) -> Iterator[bytes]:
-    parser = argparse.ArgumentParser()
-    input_g = parser.add_mutually_exclusive_group(required=True)
-    input_g.add_argument('--input', nargs="+", type=str)
-    input_g.add_argument('--input-file', nargs="+")
+COLOR_FAIL = '\033[91m'
 
-    parsed_args, _ = parser.parse_known_args(list(cli_args))
 
-    inputs = tuple(
-        parsed_args.input if parsed_args.input_file is None else parsed_args.input_file
-    )
-    is_file = parsed_args.input_file is not None
-    if is_file:
-        for input_ in inputs:
-            with open(input_, "rb") as f:
-                yield f.read()
+def exit_cli(err_msg: str = "", exit_code: int = None):
 
-    else:
-        for input_ in inputs:
-            yield input_.encode()
+    if exit_code is None:
+        exit_code = 1 if err_msg else 0
+    if err_msg:
+        print(f"{COLOR_FAIL}{err_msg}", file=sys.stderr)
+    sys.exit(exit_code)
 
-    return _
+
+class CliInputParser(NamedTuple):
+    arg_names: Tuple[str]
+    file_arg_names: Tuple[str]
+    arg_strs: Tuple[str]
+    file_arg_strs: Tuple[str]
+    parser: argparse.ArgumentParser
+
+    @classmethod
+    @functools.lru_cache()
+    def get(cls, input_names: Tuple[str] = None):
+        arg_names = (
+            tuple(f"input_{n}" for n in input_names) if input_names else ("input",)
+        )
+        arg_strs = tuple(f'--{n.replace("_", "-")}' for n in arg_names)
+
+        file_arg_names = (
+            tuple(f"input_file_{n}" for n in input_names)
+            if input_names
+            else ("input_file",)
+        )
+        file_arg_strs = tuple(f'--{n.replace("_", "-")}' for n in file_arg_names)
+
+        parser = argparse.ArgumentParser()
+        for name in itertools.chain(arg_strs, file_arg_strs):
+            parser.add_argument(name, nargs="+")
+
+        return cls(arg_names, file_arg_names, arg_strs, file_arg_strs, parser)
+
+    def parse(self, args: Tuple[str]) -> Iterator[Tuple[bytes]]:
+        try:
+            parsed, _ = self.parser.parse_known_args(args)
+        except SystemExit:
+            parsed = None
+
+        inputs = tuple(getattr(parsed, name, None) for name in self.arg_names)
+        file_inputs = tuple(getattr(parsed, name, None) for name in self.file_arg_names)
+
+        if any(inputs) and any(file_inputs):
+            exit_cli(
+                '''
+                Conflict arguments:
+                --input* and --input-file* should not be provided at same time
+                '''
+            )
+        if not all(inputs) and not all(file_inputs):
+            exit_cli(
+                f'''
+                Insufficient arguments:
+                ({' '.join(self.arg_strs)}) or
+                ({' '.join(self.file_arg_strs)})
+                are required
+                '''
+            )
+
+        if all(inputs):
+            if functools.reduce(lambda i, j: len(i) == len(j), inputs):
+                for input_ in zip(*inputs):
+                    yield tuple(i.encode() for i in input_)
+            else:
+                exit_cli(
+                    f'''
+                    Arguments length mismatch:
+                    Each ({' '.join(self.arg_strs)})
+                    should have same amount of inputs
+                    '''
+                )
+
+        if all(file_inputs):
+            if functools.reduce(lambda i, j: len(i) == len(j), file_inputs):
+                for input_ in zip(*file_inputs):
+                    with contextlib.ExitStack() as stack:
+                        yield tuple(
+                            stack.enter_context(open(f, "rb")).read() for f in input_
+                        )
+            else:
+                exit_cli(
+                    f'''
+                    Arguments length mismatch:
+                    Each ({' '.join(self.file_arg_strs)})
+                    should have same amount of inputs
+                    '''
+                )
+
+
+def parse_cli_inputs(
+    args: Sequence[str], input_names: Tuple[str] = None
+) -> Iterator[Tuple[bytes]]:
+    '''
+    Parse CLI args in format bellow and iter each pair of inputs in bytes.
+
+    >>> parse_cli_inputs('--input {"input":1} {"input":2}'.split(' '))
+    iter((
+        (b'{"input":1}',),
+        (b'{"input":2}',),
+        ))
+
+    >>> parse_cli_inputs("--input-x '1' '2' --input-y 'a' 'b'".split(' '), ['x', 'y'])
+    iter((
+        (b'1', b'a'),
+        (b'2', b'b'),
+        ))
+
+    >>> parse_cli_inputs("--input-file 1.jpg 2.jpg 3.jpg".split(' '))
+
+    >>> parse_cli_inputs(
+    >>>     "--input-file-x 1.jpg 2.jpg --input-file-y 1.label 2.label".split(' '),
+    >>>     ['x', 'y'])
+    '''
+    parser = CliInputParser.get(input_names)
+    return parser.parse(args)

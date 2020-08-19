@@ -24,7 +24,7 @@ from bentoml.types import (
     InferenceContext,
     JSON_CHARSET,
 )
-from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
+from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_inputs
 
 
 ApiFuncArgs = Tuple[
@@ -88,8 +88,11 @@ class JsonInput(BaseInputAdapter[ApiFuncArgs]):
         )
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:
-        for i in parse_cli_input(cli_args):
-            yield InferenceTask(context=InferenceContext(cli_args=cli_args), data=i)
+        for inputs in parse_cli_inputs(cli_args):
+            json_input = inputs[0]
+            yield InferenceTask(
+                context=InferenceContext(cli_args=cli_args), data=json_input
+            )
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[bytes]]

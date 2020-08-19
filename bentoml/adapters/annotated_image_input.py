@@ -30,6 +30,7 @@ from bentoml.adapters.base_input import BaseInputAdapter
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')
+numpy = LazyLoader('numpy', globals(), 'numpy')
 
 
 def get_default_accept_image_formats():
@@ -393,3 +394,71 @@ class AnnotatedImageInput(BaseInputAdapter):
                 "AnnotatedImageInput only supports multipart/form-data input, "
                 f"received {content_type}"
             )
+
+
+import json
+import traceback
+from typing import Iterable, Tuple, Iterator
+
+
+from bentoml.types import (
+    HTTPRequest,
+    JsonSerializable,
+    AwsLambdaEvent,
+    InferenceTask,
+    InferenceContext,
+    JSON_CHARSET,
+)
+from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_inputs
+
+
+ApiFuncArgs = Tuple[
+    Tuple[numpy.ndarray], Tuple[JsonSerializable],
+]
+AnnoImgTask = InferenceTask[Tuple[bytes, bytes]]  # image file bytes, json str bytes
+
+
+class AnnotatedImageInput(BaseInputAdapter[ApiFuncArgs]):
+
+    BATCH_MODE_SUPPORTED = True
+
+    def from_http_request(self, reqs: Iterable[HTTPRequest]) -> Tuple[AnnoImgTask]:
+        return tuple(
+            InferenceTask(
+                context=InferenceContext(http_headers=r.parsed_headers), data=r.body,
+            )
+            for r in reqs
+        )
+
+    def from_aws_lambda_event(
+        self, events: Iterable[AwsLambdaEvent]
+    ) -> Tuple[AnnoImgTask]:
+        return tuple(
+            InferenceTask(
+                context=InferenceContext(aws_lambda_event=e),
+                data=e['body'].encode(JSON_CHARSET),
+            )
+            for e in events
+        )
+
+    def from_cli(self, cli_args: Tuple[str]) -> Iterator[AnnoImgTask]:
+        for i in parse_cli_input(cli_args):
+            yield InferenceTask(context=InferenceContext(cli_args=cli_args), data=i)
+
+    def extract_user_func_args(self, tasks: Iterable[AnnoImgTask]) -> ApiFuncArgs:
+        json_inputs = []
+        for task in tasks:
+            try:
+                json_str = task.data.decode(JSON_CHARSET)
+                parsed_json = json.loads(json_str)
+                json_inputs.append(parsed_json)
+            except UnicodeDecodeError:
+                task.discard(
+                    http_status=400, err_msg=f"JSON must be encoded in {JSON_CHARSET}"
+                )
+            except json.JSONDecodeError:
+                task.discard(http_status=400, err_msg="Not a valid JSON format")
+            except Exception:  # pylint: disable=broad-except
+                err = traceback.format_exc()
+                task.discard(http_status=500, err_msg=f"Internal Server Error: {err}")
+        return (json_inputs,)

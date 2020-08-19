@@ -21,17 +21,17 @@ The recommended way to deploy `YataiService` is with a PostgreSQL DB instance wi
 
     # Local Postgres Service
     postgres:
-    enabled: false # just change this to true
-    port: "5432"
-    image:
-        repo: postgres
-        version: 10.4
-        pullPolicy: IfNotPresent
-    data:
-        POSTGRES_DB: bentomldb
-        POSTGRES_USER: postgresadmin
-        POSTGRES_PASSWORD: admin123
-    storageCapacity: 5Gi
+        enabled: false # just change this to true
+        port: "5432"
+        image:
+            repo: postgres
+            version: latest
+            pullPolicy: IfNotPresent
+        data:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: password123
+        storageCapacity: 5Gi
+        pvReclaimPolicy: Retain
 
 1.2 Ingress
 ---------------------------
@@ -165,7 +165,7 @@ To tell Helm to use these custom values,
     REVISION: 1
     TEST SUITE: None
     USER-SUPPLIED VALUES:
-    db_url: postgresql://postgresadmin:admin123@postgres:5432/bentomldb
+    db_url: postgresql://postgres:password123@yatai-postgres:5432/postgres
     postgres:
     enabled: true
     ...
@@ -178,20 +178,20 @@ If the configuration looks correct, apply it by removing the `--dry-run` and `--
 
     kubectl get all
     NAME                                 READY   STATUS    RESTARTS   AGE
-    pod/postgres-5649dd765c-9c4sp        1/1     Running   0          3s
+    pod/yatai-postgres-5649dd765c-9c4sp  1/1     Running   0          3s
     pod/yatai-service-556487fb55-wbjc4   1/1     Running   0          3s
 
     NAME                    TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                          AGE
     service/kubernetes      ClusterIP      10.96.0.1        <none>        443/TCP                          22h
-    service/postgres        NodePort       10.99.249.0      <none>        5432:30007/TCP                   3s
+    service/yatai-postgres  NodePort       10.99.249.0      <none>        5432:30007/TCP                   3s
     service/yatai-service   LoadBalancer   10.107.204.236   <pending>     3000:32422/TCP,50051:30014/TCP   3s
 
     NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
-    deployment.apps/postgres        1/1     1            1           3s
+    deployment.apps/yatai-postgres  1/1     1            1           3s
     deployment.apps/yatai-service   1/1     1            1           3s
 
     NAME                                       DESIRED   CURRENT   READY   AGE
-    replicaset.apps/postgres-5649dd765c        1         1         1       3s
+    replicaset.apps/yatai-postgres-5649dd765c  1         1         1       3s
     replicaset.apps/yatai-service-556487fb55   1         1         1       3s
 
 Everything looks good!

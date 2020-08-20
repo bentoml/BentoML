@@ -10,11 +10,14 @@ cd $SAVED_BUNDLE_PATH
 if [ -f ./setup.sh ]; then chmod +x ./setup.sh && bash -c ./setup.sh; fi
 
 # Install conda dependencies to base env if conda command is available
-# set pip_interop_enabled to improve conda-pip interoperability. Conda can use
-# pip-installed packages to satisfy dependencies.
-command -v conda >/dev/null && conda config --set pip_interop_enabled True \
-  && conda env update -n base -f ./environment.yml \
-  || echo "conda command not found, ignoring environment.yml"
+if [ command -v conda >/dev/null ]; then
+  # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
+  # pip-installed packages to satisfy dependencies.
+  conda config --set pip_interop_enabled True
+  conda env update -n base -f ./environment.yml
+else
+  echo "conda command not found, ignoring environment.yml"
+fi
 
 # Install PyPI packages specified in requirements.txt
 pip install -r ./requirements.txt --no-cache-dir

@@ -7,6 +7,9 @@ RUN apt-get update --fix-missing && \
 ARG BENTOML_VERSION
 ENV BENTOML_VERSION=$BENTOML_VERSION
 
+# Improve conda pip interoperability
+RUN conda config --set pip_interop_enabled True
+
 # pre-install BentoML base dependencies
 RUN pip install bentoml==$BENTOML_VERSION
 

@@ -10,7 +10,7 @@ cd $SAVED_BUNDLE_PATH
 if [ -f ./setup.sh ]; then chmod +x ./setup.sh && bash -c ./setup.sh; fi
 
 # Install conda dependencies to base env if conda command is available
-if [ command -v conda >/dev/null ]; then
+if command -v conda >/dev/null; then
   # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
   # pip-installed packages to satisfy dependencies.
   conda config --set pip_interop_enabled True

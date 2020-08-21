@@ -1,8 +1,8 @@
 from werkzeug import Request
 
 from bentoml.exceptions import BadInput
+from bentoml.types import HTTPRequest
 from bentoml.adapters.multi_image_input import MultiImageInput
-from bentoml.marshal.utils import SimpleRequest
 from urllib3.filepost import encode_multipart_formdata
 
 import pytest
@@ -43,7 +43,7 @@ def test_multi_image_input_request(img_file):
         content_length=headers['Content-Length'],
     )
 
-    response = adapter.handle_request(request, predict)
+    response = adapter.handle_request(request)
     assert response.status_code == 200
     assert response.data == b'[[10, 10, 3], [10, 10, 3]]'
 
@@ -52,7 +52,7 @@ def test_multi_image_batch_input(img_file):
     adapter = MultiImageInput(("imageX", "imageY"), is_batch_input=True)
 
     multipart_data, headers = generate_multipart_body(img_file)
-    request = SimpleRequest.from_flask_request(
+    request = HTTPRequest.from_flask_request(
         Request.from_values(
             data=multipart_data,
             content_type=headers['Content-Type'],
@@ -63,14 +63,14 @@ def test_multi_image_batch_input(img_file):
     responses = adapter.handle_batch_request([request] * 5, predict)
     for response in responses:
         assert response.status == 200
-        assert response.data == '[[10, 10, 3], [10, 10, 3]]'
+        assert response.body == '[[10, 10, 3], [10, 10, 3]]'
 
 
 def test_bad_multi_image_batch_input(img_file):
     adapter = MultiImageInput(("imageX", "imageY"), is_batch_input=True)
 
     multipart_data, headers = generate_multipart_body(img_file)
-    request = SimpleRequest.from_flask_request(
+    request = HTTPRequest.from_flask_request(
         Request.from_values(
             data=multipart_data,
             content_type=headers['Content-Type'],
@@ -81,7 +81,7 @@ def test_bad_multi_image_batch_input(img_file):
     responses = adapter.handle_batch_request(
         [request] * 5
         + [
-            SimpleRequest.from_flask_request(
+            HTTPRequest.from_flask_request(
                 Request.from_values(
                     data=multipart_data,
                     content_type='application/octet-stream',
@@ -92,7 +92,7 @@ def test_bad_multi_image_batch_input(img_file):
         predict,
     )
     print(responses[-1])
-    assert isinstance(responses[-1], SimpleRequest)
+    assert isinstance(responses[-1], HTTPRequest)
 
 
 def test_multi_image_aws_event(img_file):

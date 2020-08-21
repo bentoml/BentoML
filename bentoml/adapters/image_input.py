@@ -21,9 +21,9 @@ from typing import Iterable
 from werkzeug.utils import secure_filename
 from werkzeug.wrappers import Request
 
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml import config
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.marshal.utils import SimpleRequest, SimpleResponse
 from bentoml.exceptions import BadInput
 from bentoml.adapters.base_input import BaseInputAdapter
 
@@ -87,7 +87,7 @@ class ImageInput(BaseInputAdapter):
         >>>
         >>> CLASS_NAMES = ['cat', 'dog']
         >>>
-        >>> @artifacts([TensorflowArtifact('classifer')])
+        >>> @artifacts([TensorflowArtifact('classifier')])
         >>> class PetClassification(BentoService):
         >>>     @api(input=ImageInput())
         >>>     def predict(self, image_ndarrays):
@@ -108,7 +108,7 @@ class ImageInput(BaseInputAdapter):
         assert imageio, "`imageio` dependency can be imported"
 
         if is_batch_input:
-            raise ValueError('ImageInput can not accpept batch inputs')
+            raise ValueError('ImageInput can not accept batch inputs')
         super(ImageInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
         if 'input_names' in base_kwargs:
             raise TypeError(
@@ -173,20 +173,20 @@ class ImageInput(BaseInputAdapter):
         return input_data
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func: callable
-    ) -> Iterable[SimpleResponse]:
+        self, requests: Iterable[HTTPRequest], func: callable
+    ) -> Iterable[HTTPResponse]:
         """
         Batch version of handle_request
         """
         input_datas = []
         ids = []
         for i, req in enumerate(requests):
-            if not req.data:
+            if not req.body:
                 ids.append(None)
                 continue
             request = Request.from_values(
-                input_stream=BytesIO(req.data),
-                content_length=len(req.data),
+                input_stream=BytesIO(req.body),
+                content_length=len(req.body),
                 headers=req.headers,
             )
             try:
@@ -201,20 +201,14 @@ class ImageInput(BaseInputAdapter):
         results = func(input_datas) if input_datas else []
         return self.output_adapter.to_batch_response(results, ids, requests)
 
-    def handle_request(self, request, func):
+    def handle_request(self, headers, body):
         """Handle http request that has one image file. It will convert image into a
         ndarray for the function to consume.
 
-        Args:
-            request: incoming request object.
-            func: function that will take ndarray as its arg.
-            options: configuration for handling request object.
-        Return:
-            response object
+        :param headers: the request's HTTP HEADERS
+        :param body: the request body
         """
-        input_data = self._load_image_data(request)
-        result = func((input_data,))[0]
-        return self.output_adapter.to_response(result, request)
+        return self._load_image_data(Request.from_values(headers=headers, data=body))
 
     def handle_cli(self, args, func):
         parser = argparse.ArgumentParser()

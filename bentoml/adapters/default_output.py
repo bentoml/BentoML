@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable
+from typing import Iterable, Tuple, Type, Union
 
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.types import (
+    ApiFuncReturnValue,
+    HTTPResponse,
+    InferenceResult,
+    InferenceContext,
+)
 from .base_output import BaseOutputAdapter
 
 
-def detect_suitable_adapter(result, slices=None):
+def detect_suitable_adapter(result) -> Type[BaseOutputAdapter]:
     try:
         import pandas as pd
 
@@ -39,12 +44,8 @@ def detect_suitable_adapter(result, slices=None):
     except ImportError:
         pass
 
-    if slices is not None:
-        for s in slices:
-            if s:
-                return detect_suitable_adapter(result[s])
-    if isinstance(result, (list, tuple)):
-        return detect_suitable_adapter(result[0])
+    # if isinstance(result, (list, tuple)):
+    # return detect_suitable_adapter(result[0])
 
     from .json_output import JsonSerializableOutput
 
@@ -66,41 +67,23 @@ class DefaultOutput(BaseOutputAdapter):
         super(DefaultOutput, self).__init__(**kwargs)
         self.actual_adapter = None
 
-    def to_batch_response(
-        self,
-        result_conc,
-        slices=None,
-        fallbacks=None,
-        requests: Iterable[SimpleRequest] = None,
-    ) -> Iterable[SimpleResponse]:
-        """Converts corresponding data merged by batching service into HTTP responses
-
-        :param result_conc: result of user API function
-        :param slices: auto-batching slices
-        :param requests: request objects
-        """
+    def pack_user_func_return_value(
+        self, return_result: ApiFuncReturnValue, contexts: Tuple[InferenceContext],
+    ) -> Tuple[InferenceResult]:
         if self.actual_adapter is None:
-            self.actual_adapter = detect_suitable_adapter(result_conc, slices)()
-        return self.actual_adapter.to_batch_response(
-            result_conc, slices, fallbacks, requests
-        )
+            self.actual_adapter = detect_suitable_adapter(return_result)()
+        if self.actual_adapter:
+            return self.actual_adapter.pack_user_func_return_value(
+                return_result, contexts=contexts
+            )
 
-    def to_cli(self, result, args):
-        """Converts corresponding data into an CLI output.
+        raise NotImplementedError()
 
-        :param result: result of user API function
-        :param args: CLI args
-        """
-        if self.actual_adapter is None:
-            self.actual_adapter = detect_suitable_adapter(result)()
-        return self.actual_adapter.to_cli(result, args)
+    def to_http_response(self, results) -> Iterable[HTTPResponse]:
+        return self.actual_adapter.to_http_response(results)
 
-    def to_aws_lambda_event(self, result, event):
-        """Converts corresponding data into a Lambda event.
+    def to_cli(self, results):
+        return self.actual_adapter.to_cli(results)
 
-        :param result: result of user API function
-        :param event: input event
-        """
-        if self.actual_adapter is None:
-            self.actual_adapter = detect_suitable_adapter(result)()
-        return self.actual_adapter.to_aws_lambda_event(result, event)
+    def to_aws_lambda_event(self, results):
+        return self.actual_adapter.to_aws_lambda_event(results)

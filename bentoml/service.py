@@ -6,34 +6,42 @@
 
 # http://www.apache.org/licenses/LICENSE-2.0
 
+
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
+import functools
+import inspect
+import itertools
+import logging
 import os
 import re
-import inspect
-import logging
+import sys
 import uuid
 from datetime import datetime
-from typing import List
+from typing import Tuple, List, Iterable, Iterator
 
 import flask
-from werkzeug.utils import cached_property
+from bentoml.utils import cached_property
 
 from bentoml import config
+from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
+from bentoml.artifact import BentoServiceArtifact, ArtifactCollection
+from bentoml.exceptions import NotFound, InvalidArgument, BentoMLException
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import SavedBundleConfig
-from bentoml.service_env import BentoServiceEnv
-from bentoml.utils import isidentifier
-from bentoml.utils.hybridmethod import hybridmethod
-from bentoml.exceptions import NotFound, InvalidArgument, BentoMLException
 from bentoml.server import trace
-from bentoml.artifact import BentoServiceArtifact, ArtifactCollection
-from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
-
+from bentoml.service_env import BentoServiceEnv
+from bentoml.types import (
+    HTTPRequest,
+    InferenceTask,
+    InferenceResult,
+)
+from bentoml.utils.hybridmethod import hybridmethod
 
 ARTIFACTS_DIR_NAME = "artifacts"
 DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
@@ -57,17 +65,29 @@ class InferenceAPI(object):
     """
 
     def __init__(
-        self, service, name, doc, handler, func, mb_max_latency, mb_max_batch_size
+        self,
+        service,
+        name,
+        doc,
+        input_adapter: BaseInputAdapter,
+        user_func: callable,
+        output_adapter: BaseOutputAdapter,
+        mb_max_latency=10000,
+        mb_max_batch_size=1000,
     ):
         """
         :param service: ref to service containing this API
         :param name: API name
         :param doc: the user facing document of this inference API, default to the
             docstring of the inference API function
-        :param handler: A InputAdapter that transforms HTTP Request and/or
+        :param input_adapter: A InputAdapter that transforms HTTP Request and/or
             CLI options into parameters for API func
-        :param func: the user-defined API callback function, this is
+        :param user_func: the user-defined API callback function, this is
             typically the 'predict' method on a model
+        :param output_adapter: A OutputAdapter is an layer between result of user
+            defined API callback function
+            and final output in a variety of different forms,
+            such as HTTP response, command line stdout or AWS Lambda event object.
         :param mb_max_latency: The latency goal of this inference API in milliseconds.
             Default: 10000.
         :param mb_max_batch_size: The maximum size of requests batch accepted by this
@@ -78,9 +98,9 @@ class InferenceAPI(object):
         """
         self._service = service
         self._name = name
-        self._handler = handler
-        self._func = func
-        self._wrapped_func = None
+        self._input_adapter = input_adapter
+        self._user_func = user_func
+        self._output_adapter = output_adapter
         self.mb_max_latency = mb_max_latency
         self.mb_max_batch_size = mb_max_batch_size
 
@@ -88,8 +108,8 @@ class InferenceAPI(object):
             # generate a default doc string for this inference API
             doc = (
                 f"BentoService inference API '{self.name}', input: "
-                f"'{type(handler).__name__}', output: "
-                f"'{type(handler.output_adapter).__name__}'"
+                f"'{type(input_adapter).__name__}', output: "
+                f"'{type(output_adapter).__name__}'"
             )
         self._doc = doc
 
@@ -115,73 +135,140 @@ class InferenceAPI(object):
         return self._doc
 
     @property
-    def handler(self):
+    def input_adapter(self) -> BaseInputAdapter:
         """
-        handler is a deprecated concept, we are moving it to the new input/output
-        adapter interface. Currently this `handler` property returns the input adapter
-        of this inference API
+        :return: the input adapter of this inference API
         """
-        return self._handler
+        return self._input_adapter
 
     @property
-    def output_adapter(self):
+    def output_adapter(self) -> BaseOutputAdapter:
         """
         :return: the output adapter of this inference API
         """
-        return self.handler.output_adapter
+        return self._output_adapter
 
     @cached_property
-    def func(self):
+    def user_func(self):
         """
         :return: user-defined inference API callback function
         """
 
-        def func_with_tracing(*args, **kwargs):
+        # allow user to define handlers without 'contexts' kwargs
+        _sig = inspect.signature(self._user_func)
+        try:
+            _sig.bind(contexts=None)
+            append_contexts = False
+        except TypeError:
+            append_contexts = True
+
+        @functools.wraps(self._user_func)
+        def wrapped_func(*args, **kwargs):
             with trace(
                 service_name=self.__class__.__name__,
                 span_name="user defined inference api callback function",
             ):
-                return self._func(*args, **kwargs)
+                if append_contexts:
+                    kwargs.pop('contexts')
+                return self._user_func(*args, **kwargs)
 
-        return func_with_tracing
+        return wrapped_func
 
     @property
     def request_schema(self):
         """
         :return: the HTTP API request schema in OpenAPI/Swagger format
         """
-        schema = self.handler.request_schema
+        schema = self.input_adapter.request_schema
         if schema.get('application/json'):
-            schema.get('application/json')['example'] = self.handler._http_input_example
+            schema.get('application/json')[
+                'example'
+            ] = self.input_adapter._http_input_example
         return schema
 
+    def infer(self, inf_tasks: Iterable[InferenceTask]) -> Tuple[InferenceResult]:
+        # task validation
+        def valid_tasks(inf_tasks: Iterable[InferenceTask]) -> Iterator[InferenceTask]:
+            for task in inf_tasks:
+                if task.is_discarded:
+                    continue
+                try:
+                    self.input_adapter.validate_task(task)
+                    yield task
+                except AssertionError as e:
+                    task.discard(http_status=400, err_msg=str(e))
+
+        # extract args
+        user_args = self.input_adapter.extract_user_func_args(valid_tasks(inf_tasks))
+        contexts = tuple(t.context for t in inf_tasks if not t.is_discarded)
+
+        # call user function
+        user_return = self.user_func(*user_args, contexts=contexts)
+
+        if (
+            isinstance(user_return, (list, tuple))
+            and len(user_return)
+            and isinstance(user_return[0], InferenceResult)
+        ):
+            inf_results = user_return
+        else:
+            # pack return value
+            inf_results = self.output_adapter.pack_user_func_return_value(
+                user_return, contexts=contexts
+            )
+        full_results = InferenceResult.complete_discarded(inf_tasks, inf_results)
+        return tuple(full_results)
+
     def handle_request(self, request: flask.Request):
-        return self.handler.handle_request(request, self.func)
+        reqs = [HTTPRequest.from_flask_request(request)]
+        inf_tasks = self.input_adapter.from_http_request(reqs)
+        results = self.infer(inf_tasks)
+        responses = self.output_adapter.to_http_response(results)
+        response = next(iter(responses))
+        return response.to_flask_response()
 
     def handle_batch_request(self, request: flask.Request):
         from bentoml.marshal.utils import DataLoader
 
-        requests = DataLoader.split_requests(request.get_data())
+        reqs = DataLoader.split_requests(request.get_data())
 
         with trace(
             service_name=self.__class__.__name__,
-            span_name=f"call `{self.handler.__class__.__name__}`",
+            span_name=f"call `{self.input_adapter.__class__.__name__}`",
         ):
-            responses = self.handler.handle_batch_request(requests, self.func)
+            inf_tasks = self.input_adapter.from_http_request(reqs)
+            results = self.infer(inf_tasks)
+            responses = self.output_adapter.to_http_response(results)
 
         return DataLoader.merge_responses(responses)
 
-    def handle_cli(self, args):
-        return self.handler.handle_cli(args, self.func)
+    def handle_cli(self, cli_args: Tuple[str]) -> int:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--max-batch-size", default=sys.maxsize, type=int)
+        parsed_args, _ = parser.parse_known_args(cli_args)
+
+        exit_code = 0
+
+        tasks_iter = self.input_adapter.from_cli(cli_args)
+        while True:
+            tasks = tuple(itertools.islice(tasks_iter, parsed_args.max_batch_size))
+            if not len(tasks):
+                break
+            results = self.infer(tasks)
+            exit_code = exit_code or self.output_adapter.to_cli(results)
+
+        return exit_code
 
     def handle_aws_lambda_event(self, event):
-        return self.handler.handle_aws_lambda_event(event, self.func)
+        inf_tasks = self.input_adapter.from_aws_lambda_event((event,))
+        results = self.infer(inf_tasks)
+        return next(iter(self.output_adapter.to_aws_lambda_event(results)))
 
 
-def validate_inference_api_name(api_name):
-    if not isidentifier(api_name):
+def validate_inference_api_name(api_name: str):
+    if not api_name.isidentifier():
         raise InvalidArgument(
-            "Invalid API name: '{}', a valid identifier must contains only letters,"
+            "Invalid API name: '{}', a valid identifier may only contain letters,"
             " numbers, underscores and not starting with a number.".format(api_name)
         )
 
@@ -195,10 +282,10 @@ def api_decorator(
     *args,
     input: BaseInputAdapter = None,
     output: BaseOutputAdapter = None,
-    api_name=None,
-    api_doc=None,
-    mb_max_batch_size=DEFAULT_MAX_BATCH_SIZE,
-    mb_max_latency=DEFAULT_MAX_LATENCY,
+    api_name: str = None,
+    api_doc: str = None,
+    mb_max_batch_size: int = DEFAULT_MAX_BATCH_SIZE,
+    mb_max_latency: int = DEFAULT_MAX_LATENCY,
     **kwargs,
 ):  # pylint: disable=redefined-builtin
     """
@@ -233,23 +320,6 @@ def api_decorator(
     >>>     @api(input=DataframeInput(input_json_orient='records'))
     >>>     def identity(self, df):
     >>>         # user-defined callback function that process inference requests
-
-
-    Deprecated syntax before version 0.8.0:
-
-    >>> from bentoml import BentoService, api
-    >>> from bentoml.handlers import JsonHandler, DataframeHandler  # deprecated
-    >>>
-    >>> class FraudDetectionAndIdentityService(BentoService):
-    >>>
-    >>>     @api(JsonHandler)  # deprecated
-    >>>     def fraud_detect(self, parsed_json_list):
-    >>>         # do something
-    >>>
-    >>>     @api(DataframeHandler, input_json_orient='records')  # deprecated
-    >>>     def identity(self, df):
-    >>>         # do something
-
     """
 
     def decorator(func):
@@ -257,26 +327,31 @@ def api_decorator(
         validate_inference_api_name(_api_name)
 
         if input is None:
-            # support bentoml<=0.7
+            # Support passing the desired adapter without instantiation
             if not args or not (
                 inspect.isclass(args[0]) and issubclass(args[0], BaseInputAdapter)
             ):
                 raise InvalidArgument(
                     "BentoService @api decorator first parameter must "
-                    "be class derived from bentoml.adapters.BaseInputAdapter"
+                    "be an instance of a class derived from "
+                    "bentoml.adapters.BaseInputAdapter "
                 )
 
-            handler = args[0](*args[1:], output_adapter=output, **kwargs)
+            # noinspection PyPep8Naming
+            InputAdapter = args[0]
+            input_adapter = InputAdapter(*args[1:], **kwargs)
+            output_adapter = DefaultOutput()
         else:
             assert isinstance(input, BaseInputAdapter), (
-                "API input parameter must be an instance of any classes inherited from "
+                "API input parameter must be an instance of a class derived from "
                 "bentoml.adapters.BaseInputAdapter"
             )
-            handler = input
-            handler._output_adapter = output
+            input_adapter = input
+            output_adapter = output or DefaultOutput()
 
         setattr(func, "_is_api", True)
-        setattr(func, "_handler", handler)
+        setattr(func, "_input_adapter", input_adapter)
+        setattr(func, "_output_adapter", output_adapter)
         setattr(func, "_api_name", _api_name)
         setattr(func, "_api_doc", api_doc)
         setattr(func, "_mb_max_batch_size", mb_max_batch_size)
@@ -400,6 +475,9 @@ def ver_decorator(major, minor):
     'Patch' is provided(or auto generated) when calling BentoService#save,
     while 'Major' and 'Minor' can be defined with '@ver' decorator
 
+    >>>  from bentoml import ver, artifacts
+    >>>  from bentoml.artifact import PickleArtifact
+    >>>
     >>>  @ver(major=1, minor=4)
     >>>  @artifacts([PickleArtifact('model')])
     >>>  class MyMLService(BentoService):
@@ -421,7 +499,7 @@ def ver_decorator(major, minor):
     return decorator
 
 
-def _validate_version_str(version_str):
+def validate_version_str(version_str):
     """
     Validate that version str format is either a simple version string that:
         * Consist of only ALPHA / DIGIT / "-" / "." / "_"
@@ -437,7 +515,7 @@ def _validate_version_str(version_str):
         raise InvalidArgument(
             'Invalid BentoService version: "{}", it can only consist'
             ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'
-            "128 characthers".format(version_str)
+            "128 characters".format(version_str)
         )
 
     if version_str.lower() == "latest":
@@ -500,15 +578,15 @@ class BentoService:
     """
 
     # List of inference APIs that this BentoService provides
-    _inference_apis = []
+    _inference_apis: InferenceAPI = []
 
     # Name of this BentoService. It is default the class name of this BentoService class
-    _bento_service_name = None
+    _bento_service_name: str = None
 
     # For BentoService loaded from saved bundle, this will be set to the path of bundle.
     # When user install BentoService bundle as a PyPI package, this will be set to the
     # installed site-package location of current python environment
-    _bento_service_bundle_path = None
+    _bento_service_bundle_path: str = None
 
     # List of artifacts required by this BentoService class, declared via the `@env`
     # decorator. This list is used for initializing an empty ArtifactCollection when
@@ -546,7 +624,9 @@ class BentoService:
         self._env = self.__class__._env or BentoServiceEnv(self.name)
 
         for api in self._inference_apis:
-            self._env.add_pip_dependencies_if_missing(api.handler.pip_dependencies)
+            self._env.add_pip_dependencies_if_missing(
+                api.input_adapter.pip_dependencies
+            )
             self._env.add_pip_dependencies_if_missing(
                 api.output_adapter.pip_dependencies
             )
@@ -564,20 +644,22 @@ class BentoService:
             if hasattr(function, "_is_api"):
                 api_name = getattr(function, "_api_name")
                 api_doc = getattr(function, "_api_doc")
-                handler = getattr(function, "_handler")
+                input_adapter = getattr(function, "_input_adapter")
+                output_adapter = getattr(function, "_output_adapter")
                 mb_max_latency = getattr(function, "_mb_max_latency")
                 mb_max_batch_size = getattr(function, "_mb_max_batch_size")
 
                 # Bind api method call with self(BentoService instance)
-                func = function.__get__(self)
+                user_func = function.__get__(self)
 
                 self._inference_apis.append(
                     InferenceAPI(
                         self,
                         api_name,
                         api_doc,
-                        handler=handler,
-                        func=func,
+                        input_adapter=input_adapter,
+                        user_func=user_func,
+                        output_adapter=output_adapter,
                         mb_max_latency=mb_max_latency,
                         mb_max_batch_size=mb_max_batch_size,
                     )
@@ -680,7 +762,7 @@ class BentoService:
         :return: BentoService name
         """
         if cls._bento_service_name is not None:
-            if not isidentifier(cls._bento_service_name):
+            if not cls._bento_service_name.isidentifier():
                 raise InvalidArgument(
                     'BentoService#_bento_service_name must be valid python identifier'
                     'matching regex `(letter|"_")(letter|digit|"_")*`'
@@ -709,7 +791,7 @@ class BentoService:
                 [str(self._version_major), str(self._version_minor), version_str]
             )
 
-        _validate_version_str(version_str)
+        validate_version_str(version_str)
 
         if self.__class__._bento_service_bundle_version is not None:
             logger.warning(

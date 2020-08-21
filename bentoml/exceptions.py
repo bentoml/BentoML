@@ -54,7 +54,7 @@ class BentoMLException(Exception):
 
 class RemoteException(BentoMLException):
     """
-    Raise when known exceptions happend in remote server(a model server normally)
+    Raise when known exceptions happened in remote server(a model server normally)
     """
 
     def __init__(self, *args, payload, **kwargs):
@@ -142,7 +142,7 @@ class YataiDeploymentException(YataiServiceException):
 
 
 class YataiRepositoryException(YataiServiceException):
-    """Raise when YataiService encounters an issue managing BentoService repoistory"""
+    """Raise when YataiService encounters an issue managing BentoService repository"""
 
 
 class AWSServiceError(YataiDeploymentException):

@@ -99,9 +99,9 @@ def start_yatai_service_grpc_server(
         )
 
         ensure_node_available_or_raise()
-        yatai_grpc_server_addess = f'localhost:{grpc_port}'
+        yatai_grpc_server_address = f'localhost:{grpc_port}'
         async_start_yatai_service_web_ui(
-            yatai_grpc_server_addess, ui_port, web_ui_log_path, debug_mode
+            yatai_grpc_server_address, ui_port, web_ui_log_path, debug_mode
         )
 
     # We don't import _echo function from click_utils because of circular dep

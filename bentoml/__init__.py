@@ -35,7 +35,6 @@ from bentoml.service import (
     save,
 )
 
-
 __all__ = [
     "__version__",
     "api",

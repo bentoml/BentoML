@@ -33,7 +33,7 @@ class FasttextModelArtifact(BentoServiceArtifact):
 
     >>> import fasttext
     >>> # prepare training data and store to file
-    >>> training_data_file = 'trainging-data-file.train'
+    >>> training_data_file = 'training-data-file.train'
     >>> model = fasttext.train_supervised(input=training_data_file)
     >>>
     >>> import bentoml

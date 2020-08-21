@@ -31,14 +31,14 @@ class InstrumentMiddleware:
         )
         self.metrics_request_total = Counter(
             name=service_name + "_request_total",
-            documentation='Totoal number of HTTP requests',
+            documentation='Total number of HTTP requests',
             namespace=namespace,
             labelnames=['endpoint', 'service_version', 'http_response_code'],
             registry=self.collector_registry,
         )
         self.metrics_request_in_progress = Gauge(
             name=service_name + "_request_in_progress",
-            documentation='Totoal number of HTTP requests in progress now',
+            documentation='Total number of HTTP requests in progress now',
             namespace=namespace,
             labelnames=['endpoint', 'service_version'],
             registry=self.collector_registry,

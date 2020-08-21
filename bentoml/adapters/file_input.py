@@ -111,10 +111,12 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
                     )
                 else:
                     input_file = next(iter(files.values()))
-                    input_stream = input_file.stream
+                    input_file.name = (
+                        input_file.filename
+                    )  # The original name is input name
                     task = InferenceTask(
                         context=InferenceContext(http_headers=req.parsed_headers),
-                        data=input_stream,
+                        data=input_file,
                     )
             elif req.body:
                 task = InferenceTask(

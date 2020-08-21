@@ -42,7 +42,7 @@ def setup_routes(app, bento_service, api_name):
     setup_bento_service_api_route(app, api)
 
 
-# AWS Sagemaker requires custom inference docker conatiner to implement a web server
+# AWS Sagemaker requires custom inference docker container to implement a web server
 # that responds to /invocations and /ping on port 8080.
 AWS_SAGEMAKER_SERVE_PORT = 8080
 

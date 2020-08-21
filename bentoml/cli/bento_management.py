@@ -20,7 +20,7 @@ from bentoml.cli.click_utils import (
     _echo,
     parse_bento_tag_list_callback,
 )
-from bentoml.cli.utils import humanfriendly_age_from_datetime, get_default_yatai_client
+from bentoml.cli.utils import human_friendly_age_from_datetime, get_default_yatai_client
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.saved_bundle import safe_retrieve
 from bentoml.exceptions import CLIException
@@ -59,7 +59,7 @@ def _print_bento_table(bentos, wide=False):
                 "%Y-%m-%d %H:%M"
             )
         else:
-            created_at = humanfriendly_age_from_datetime(
+            created_at = human_friendly_age_from_datetime(
                 bento.bento_service_metadata.created_at.ToDatetime()
             )
         row = [

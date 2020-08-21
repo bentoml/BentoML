@@ -138,7 +138,7 @@ class LegacyImageInput(BaseInputAdapter):
     def handle_batch_request(self, requests, func):
         raise NotImplementedError
 
-    def handle_request(self, request, func):
+    def handle_request(self, request):
         """Handle http request that has image file/s. It will convert image into a
         ndarray for the function to consume.
 

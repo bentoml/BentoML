@@ -113,10 +113,10 @@ def _init_azure_functions_project(
 
 
 def _generate_azure_resource_names(namespace, deployment_name):
-    # Genrate resource names base on
+    # Generate resource names base on
     # https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules
 
-    # 1-90, alphannumeric(A-Za-z0-9) underscores, parenthese, hyphens, periods
+    # 1-90, alphanumeric(A-Za-z0-9) underscores, parentheses, hyphens, periods
     # scope subscription
     resource_group_name = f'{namespace}-{deployment_name}'
     if len(resource_group_name) > MAX_RESOURCE_GROUP_NAME_LENGTH:

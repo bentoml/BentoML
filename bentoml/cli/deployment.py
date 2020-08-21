@@ -48,7 +48,7 @@ def get_deployment_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
-        help='Commands for manageing and operating BentoService deployments',
+        help='Commands for managing and operating BentoService deployments',
         cls=BentoMLCommandGroup,
     )
     def deployment():

@@ -71,7 +71,7 @@ class BentoServiceContainer(rpc.ModelContainerBase):
 
 
 if __name__ == "__main__":
-    print("Starting BentoService Clipper Containter")
+    print("Starting BentoService Clipper Container")
     rpc_service = rpc.RPCService()
 
     try:
@@ -110,8 +110,8 @@ CMD ["python", "/container/clipper_entry.py"]
 """  # noqa: E501
 
 
-def get_clipper_compatiable_string(item):
-    """Generate clipper compatiable string. It must be a valid DNS-1123.
+def get_clipper_compatible_string(item):
+    """Generate clipper compatible string. It must be a valid DNS-1123.
     It must consist of lower case alphanumeric characters, '-' or '.',
     and must start and end with an alphanumeric character
 
@@ -150,7 +150,7 @@ def deploy_bentoml(
     if not clipper_conn.connected:
         raise BentoMLException(
             "No connection to Clipper cluster. CallClipperConnection.connect to "
-            "connect to an existing cluster or ClipperConnnection.start_clipper to "
+            "connect to an existing cluster or ClipperConnection.start_clipper to "
             "create a new one"
         )
 
@@ -173,10 +173,10 @@ def deploy_bentoml(
         )
 
     input_type = ADAPTER_TYPE_TO_INPUT_TYPE[api_metadata.input_type]
-    model_name = model_name or get_clipper_compatiable_string(
+    model_name = model_name or get_clipper_compatible_string(
         bento_service_metadata.name + "-" + api_metadata.name
     )
-    model_version = get_clipper_compatiable_string(bento_service_metadata.version)
+    model_version = get_clipper_compatible_string(bento_service_metadata.version)
 
     with TempDirectory() as tempdir:
         entry_py_content = CLIPPER_ENTRY.format(api_name=api_name)

@@ -51,7 +51,7 @@ class KerasModelArtifact(BentoServiceArtifact):
     >>> from tensorflow.keras.preprocessing import sequence, text
     >>>
     >>> model_to_save = Sequential()
-    >>> # traing model
+    >>> # training model
     >>> model_to_save.compile(...)
     >>> model_to_save.fit(...)
     >>>

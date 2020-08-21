@@ -221,7 +221,6 @@ _ORIENT_MAP = {
     # 'table': _from_json_table,
 }
 
-
 PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS = {k for k in _ORIENT_MAP}
 
 
@@ -301,7 +300,7 @@ def read_dataframes_from_json_n_csv(
     datas: Iterable["pd.DataFrame"], content_types: Iterable[str], orient: str = None,
 ) -> ("pd.DataFrame", Iterable[slice]):
     '''
-    load detaframes from multiple raw datas in json or csv fromat, efficiently
+    load dataframes from multiple raw datas in json or csv format, efficiently
 
     Background: Each calling of pandas.read_csv or pandas.read_json cost about 100ms,
     no matter how many lines it contains. Concat jsons/csvs before read_json/read_csv

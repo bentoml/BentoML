@@ -55,7 +55,7 @@ def api_func_result_to_json(result, pandas_dataframe_orient="records"):
 
     assert (
         pandas_dataframe_orient in PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
-    ), f"unkown pandas dataframe orient '{pandas_dataframe_orient}'"
+    ), f"unknown pandas dataframe orient '{pandas_dataframe_orient}'"
 
     if pd and isinstance(result, pd.DataFrame):
         return result.to_json(orient=pandas_dataframe_orient)
@@ -156,7 +156,7 @@ class FastaiImageInput(BaseInputAdapter):
     def handle_batch_request(self, requests, func):
         raise NotImplementedError
 
-    def handle_request(self, request, func):
+    def handle_request(self, request):
         input_streams = []
         for filename in self.input_names:
             file = request.files.get(filename)

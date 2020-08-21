@@ -18,10 +18,10 @@ import json
 
 import argparse
 
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml.adapters.utils import concat_list, TF_B64_KEY
 from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.exceptions import BentoMLException
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 
 
 def b64_hook(o):
@@ -96,22 +96,22 @@ class TfTensorInput(BaseInputAdapter):
         return func(parsed_tensor)
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
+        self, requests: Iterable[HTTPRequest], func
+    ) -> Iterable[HTTPResponse]:
         """
         TODO(bojiang):
         1. specify batch dim
         """
         import tensorflow as tf
 
-        bad_resp = SimpleResponse(400, None, "input format error")
+        bad_resp = HTTPResponse(400, body="input format error")
         instances_list = [None] * len(requests)
         responses = [bad_resp] * len(requests)
         batch_flags = [None] * len(requests)
 
         for i, request in enumerate(requests):
             try:
-                raw_str = request.data
+                raw_str = request.body
                 batch_flags[i] = self.is_batch_request(request)
                 parsed_json = json.loads(raw_str, object_hook=b64_hook)
                 if parsed_json.get("instances") is not None:
@@ -121,8 +121,8 @@ class TfTensorInput(BaseInputAdapter):
                     instances_list[i] = instances
 
                 elif parsed_json.get("inputs"):
-                    responses[i] = SimpleResponse(
-                        501, None, "Column format 'inputs' not implemented"
+                    responses[i] = HTTPResponse(
+                        501, body="Column format 'inputs' not implemented"
                     )
 
             except (json.JSONDecodeError, UnicodeDecodeError):
@@ -131,17 +131,15 @@ class TfTensorInput(BaseInputAdapter):
                 import traceback
 
                 err = traceback.format_exc()
-                responses[i] = SimpleResponse(
-                    500, None, f"Internal Server Error: {err}"
-                )
+                responses[i] = HTTPResponse(500, body=f"Internal Server Error: {err}")
         merged_instances, slices = concat_list(instances_list, batch_flags=batch_flags)
         parsed_tensor = tf.constant(merged_instances)
         merged_result = func(parsed_tensor)
-        return self.output_adapter.to_batch_response(
+        return self.output_adapter.to_http_response(
             merged_result, slices=slices, fallbacks=responses, requests=requests
         )
 
-    def handle_request(self, request, func):
+    def handle_request(self, request):
         """Handle http request that has jsonlized tensorflow tensor. It will convert it
         into a tf tensor for the function to consume.
 
@@ -151,7 +149,7 @@ class TfTensorInput(BaseInputAdapter):
         Return:
             response object
         """
-        req = SimpleRequest.from_flask_request(request)
+        req = HTTPRequest.from_flask_request(request)
         res = self.handle_batch_request([req], func)[0]
         return res.to_flask_response()
 

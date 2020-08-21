@@ -12,21 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import json
-import argparse
-from typing import Iterable
-from json import JSONDecodeError
+import traceback
+from typing import Iterable, Tuple, Iterator, Sequence
 
-import flask
+from bentoml.types import (
+    HTTPRequest,
+    JsonSerializable,
+    AwsLambdaEvent,
+    InferenceTask,
+    InferenceContext,
+    JSON_CHARSET,
+)
+from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 
-from bentoml.exceptions import BadInput
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
-from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.adapters.utils import concat_list
+
+ApiFuncArgs = Tuple[
+    Sequence[JsonSerializable],
+]
 
 
-class JsonInput(BaseInputAdapter):
+class JsonInput(BaseInputAdapter[ApiFuncArgs]):
     """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
     json serializable object in python) and pass down to user defined API function
 
@@ -60,70 +66,49 @@ class JsonInput(BaseInputAdapter):
 
     BATCH_MODE_SUPPORTED = True
 
-    def __init__(self, is_batch_input=False, **base_kwargs):
-        super(JsonInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
-
-    def handle_request(self, request: flask.Request, func):
-        if request.content_type != "application/json":
-            raise BadInput(
-                "Request content-type must be 'application/json' for this "
-                "BentoService API"
+    def from_http_request(
+        self, reqs: Iterable[HTTPRequest]
+    ) -> Tuple[InferenceTask[bytes]]:
+        return tuple(
+            InferenceTask(
+                context=InferenceContext(http_headers=r.parsed_headers), data=r.body,
             )
-        resps = self.handle_batch_request(
-            [SimpleRequest.from_flask_request(request)], func
+            for r in reqs
         )
-        return resps[0].to_flask_response()
 
-    def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
-        bad_resp = SimpleResponse(400, None, "Bad Input")
-        instances_list = [None] * len(requests)
-        fallbacks = [bad_resp] * len(requests)
-        batch_flags = [None] * len(requests)
+    def from_aws_lambda_event(
+        self, events: Iterable[AwsLambdaEvent]
+    ) -> Tuple[InferenceTask[bytes]]:
+        return tuple(
+            InferenceTask(
+                context=InferenceContext(aws_lambda_event=e),
+                data=e['body'].encode(JSON_CHARSET),
+            )
+            for e in events
+        )
 
-        for i, request in enumerate(requests):
-            batch_flags[i] = self.is_batch_request(request)
+    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:
+        for json_input in parse_cli_input(cli_args):
+            yield InferenceTask(
+                context=InferenceContext(cli_args=cli_args), data=json_input
+            )
+
+    def extract_user_func_args(
+        self, tasks: Iterable[InferenceTask[bytes]]
+    ) -> ApiFuncArgs:
+        json_inputs = []
+        for task in tasks:
             try:
-                raw_str = request.data
-                parsed_json = json.loads(raw_str)
-                instances_list[i] = parsed_json
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                fallbacks[i] = SimpleResponse(400, None, "Not a valid json")
-            except Exception:  # pylint: disable=broad-except
-                import traceback
-
-                err = traceback.format_exc()
-                fallbacks[i] = SimpleResponse(
-                    500, None, f"Internal Server Error: {err}"
+                json_str = task.data.decode(JSON_CHARSET)
+                parsed_json = json.loads(json_str)
+                json_inputs.append(parsed_json)
+            except UnicodeDecodeError:
+                task.discard(
+                    http_status=400, err_msg=f"JSON must be encoded in {JSON_CHARSET}"
                 )
-
-        merged_instances, slices = concat_list(instances_list, batch_flags=batch_flags)
-        merged_result = func(merged_instances)
-        return self.output_adapter.to_batch_response(
-            merged_result, slices, fallbacks, requests
-        )
-
-    def handle_cli(self, args, func):
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--input", required=True)
-        parsed_args, unknown_args = parser.parse_known_args(args)
-
-        if os.path.isfile(parsed_args.input):
-            with open(parsed_args.input, "r") as content_file:
-                content = content_file.read()
-        else:
-            content = parsed_args.input
-
-        input_json = json.loads(content)
-        result = func([input_json])[0]
-        return self.output_adapter.to_cli(result, unknown_args)
-
-    def handle_aws_lambda_event(self, event, func):
-        try:
-            parsed_json = json.loads(event["body"])
-        except JSONDecodeError:
-            raise BadInput("Request body must contain valid json")
-
-        result = func([parsed_json])[0]
-        return self.output_adapter.to_aws_lambda_event(result, event)
+            except json.JSONDecodeError:
+                task.discard(http_status=400, err_msg="Not a valid JSON format")
+            except Exception:  # pylint: disable=broad-except
+                err = traceback.format_exc()
+                task.discard(http_status=500, err_msg=f"Internal Server Error: {err}")
+        return (json_inputs,)

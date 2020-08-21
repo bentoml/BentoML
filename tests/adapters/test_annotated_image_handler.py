@@ -8,9 +8,9 @@ import pytest
 from werkzeug import Request
 from urllib3.filepost import encode_multipart_formdata
 
+from bentoml.types import HTTPRequest
 from bentoml.exceptions import BadInput
 from bentoml.adapters import AnnotatedImageInput
-from bentoml.marshal.utils import SimpleRequest
 
 
 def generate_multipart_body(image_file, json_file=None):
@@ -310,7 +310,7 @@ def test_anno_image_input_batch_request(img_file, json_file):
     adapter = AnnotatedImageInput(is_batch_input=True)
 
     multipart_data, headers = generate_multipart_body(img_file, json_file)
-    request = SimpleRequest.from_flask_request(
+    request = HTTPRequest.from_flask_request(
         Request.from_values(
             data=multipart_data,
             content_type=headers['Content-Type'],
@@ -347,9 +347,9 @@ def test_anno_image_input_batch_request_skip_bad(img_file, json_file):
 
     multipart_data, headers = generate_multipart_body(img_file, json_file)
 
-    empty_request = SimpleRequest(headers=headers, data=None)
+    empty_request = HTTPRequest(headers=headers, data=None)
 
-    request = SimpleRequest.from_flask_request(
+    request = HTTPRequest.from_flask_request(
         Request.from_values(
             data=multipart_data,
             content_type=headers['Content-Type'],
@@ -362,7 +362,7 @@ def test_anno_image_input_batch_request_skip_bad(img_file, json_file):
     files = {"image.invalid": image, "annotations.invalid": json}
     bad_data, content_type = encode_multipart_formdata(files)
 
-    bad_request = SimpleRequest.from_flask_request(
+    bad_request = HTTPRequest.from_flask_request(
         Request.from_values(
             data=bad_data, content_type=content_type, content_length=len(bad_data),
         )
@@ -388,7 +388,7 @@ def test_anno_image_input_batch_request_image_only(img_file):
     adapter = AnnotatedImageInput(is_batch_input=True)
 
     multipart_data, headers = generate_multipart_body(img_file)
-    request = SimpleRequest.from_flask_request(
+    request = HTTPRequest.from_flask_request(
         Request.from_values(
             data=multipart_data,
             content_type=headers['Content-Type'],

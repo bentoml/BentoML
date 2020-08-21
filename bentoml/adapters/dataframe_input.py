@@ -30,7 +30,7 @@ from bentoml.utils.dataframe_util import (
     check_dataframe_column_contains,
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
 )
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml.utils.s3 import is_s3_url
 from bentoml.exceptions import BadInput, MissingDependencyException
 
@@ -66,7 +66,7 @@ class DataframeInput(BaseInputAdapter):
         **base_kwargs,
     ):
         if not is_batch_input:
-            raise ValueError('DataframeInput can not accpept none batch inputs')
+            raise ValueError('DataframeInput can not accept none batch inputs')
         super(DataframeInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )
@@ -144,7 +144,7 @@ class DataframeInput(BaseInputAdapter):
 
         return default
 
-    def handle_request(self, request: flask.Request, func):
+    def handle_request(self, request: flask.Request):
         if request.content_type == "text/csv":
             csv_string = StringIO(request.get_data(as_text=True))
             df = pd.read_csv(csv_string)
@@ -167,10 +167,10 @@ class DataframeInput(BaseInputAdapter):
         return self.output_adapter.to_response(result, request)
 
     def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
+        self, requests: Iterable[HTTPRequest], func
+    ) -> Iterable[HTTPResponse]:
 
-        datas = [r.data for r in requests]
+        datas = [r.body for r in requests]
         content_types = [
             r.parsed_headers.get('content-type', 'application/json') for r in requests
         ]

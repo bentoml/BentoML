@@ -134,7 +134,7 @@ class DefaultErrorContext(InferenceContext):
 class InferenceTask(Generic[Input]):
     def __init__(self, data: Input, context: InferenceContext = None):
         self.data = data
-        self.context: InferenceContext = context or InferenceContext()
+        self.context = context if context else InferenceContext()
         self.is_discarded = False
 
     def discard(self, err_msg="", **context):

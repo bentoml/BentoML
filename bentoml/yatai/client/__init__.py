@@ -21,7 +21,7 @@ from bentoml.yatai.yatai_service import get_yatai_service
 from bentoml.yatai.client.bento_repository_api import BentoRepositoryAPIClient
 from bentoml.yatai.client.deployment_api import DeploymentAPIClient
 
-from werkzeug.utils import cached_property
+from bentoml.utils import cached_property
 
 logger = logging.getLogger(__name__)
 

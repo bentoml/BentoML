@@ -26,7 +26,7 @@ from datetime import datetime
 from typing import Tuple, List, Iterable, Sequence, Iterator
 
 import flask
-from werkzeug.utils import cached_property
+from bentoml.utils import cached_property
 
 from bentoml import config
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
@@ -186,7 +186,7 @@ class InferenceAPI(object):
             ] = self.input_adapter._http_input_example
         return schema
 
-    def infer(self, inf_tasks: Iterable[InferenceTask]) -> Tuple[InferenceResult]:
+    def infer(self, tasks: Iterable[InferenceTask]) -> Tuple[InferenceResult]:
         # task validation
         def valid_tasks(tasks: Iterable[InferenceTask]) -> Iterator[InferenceTask]:
             for task in tasks:
@@ -199,8 +199,8 @@ class InferenceAPI(object):
                     task.discard(http_status=400, err_msg=str(e))
 
         # extract args
-        user_args = self.input_adapter.extract_user_func_args(valid_tasks(inf_tasks))
-        contexts = tuple(t.context for t in inf_tasks if not t.is_discarded)
+        user_args = self.input_adapter.extract_user_func_args(valid_tasks(tasks))
+        contexts = tuple(t.context for t in tasks if not t.is_discarded)
 
         # call user function
         user_return = self.user_func(*user_args, contexts=contexts)

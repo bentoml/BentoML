@@ -18,6 +18,7 @@ from functools import wraps
 from io import StringIO
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
+from werkzeug.utils import cached_property
 from google.protobuf.message import Message
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
@@ -76,19 +77,6 @@ def status_pb_to_error_code_and_message(pb_status) -> (int, str):
     error_code = status_pb2.Status.Code.Name(pb_status.status_code)
     error_message = pb_status.error_message
     return error_code, error_message
-
-
-def cached_property(method):
-    @property
-    @wraps(method)
-    def _m(self, *args, **kwargs):
-        if not hasattr(self, '_cached_properties'):
-            setattr(self, '_cached_properties', dict())
-        if method.__name__ not in self._cached_properties:
-            self._cached_properties[method.__name__] = method(self, *args, **kwargs)
-        return self._cached_properties[method.__name__]
-
-    return _m
 
 
 class catch_exceptions(object):

@@ -1,4 +1,5 @@
 import pytest
+import glob
 
 import imageio
 import numpy as np
@@ -74,26 +75,6 @@ def is_batch_request(pytestconfig):
 
 
 @pytest.fixture()
-def img_file(tmpdir):
-    img_file_ = tmpdir.join("test_img.jpg")
-    imageio.imwrite(str(img_file_), np.zeros((10, 10)))
-    return str(img_file_)
-
-
-@pytest.fixture()
-def json_file(tmpdir):
-    json_file_ = tmpdir.join("test_json.json")
-    with open(json_file_, "w") as of:
-        of.write('{"name": "kaith", "game": "morrowind"}')
-    return str(json_file_)
-
-
-@pytest.fixture()
-def non_utf8_bytes():
-    return "â".encode('gb18030')
-
-
-@pytest.fixture()
 def bin_file(tmpdir):
     bin_file_ = tmpdir.join("bin_file")
     with open(bin_file_, "wb") as of:
@@ -111,6 +92,30 @@ def bin_files(tmpdir):
 
 
 @pytest.fixture()
+def unicode_file(tmpdir):
+    bin_file_ = tmpdir.join("bin_file")
+    with open(bin_file_, "wb") as of:
+        of.write("â".encode('utf-8'))
+    return str(bin_file_)
+
+
+@pytest.fixture()
+def unicode_files(tmpdir):
+    for i in range(10):
+        bin_file_ = tmpdir.join(f"{i}")
+        with open(bin_file_, "wb") as of:
+            of.write(f"â{i}".encode('utf-8'))
+    return str(tmpdir.join("*"))
+
+
+@pytest.fixture()
+def img_file(tmpdir):
+    img_file_ = tmpdir.join("test_img.jpg")
+    imageio.imwrite(str(img_file_), np.zeros((10, 10)))
+    return str(img_file_)
+
+
+@pytest.fixture()
 def img_files(tmpdir):
     for i in range(10):
         img_file_ = tmpdir.join(f"img_{i}.jpg")
@@ -119,12 +124,20 @@ def img_files(tmpdir):
 
 
 @pytest.fixture()
-def json_files_dir(tmpdir):
+def json_file(tmpdir):
+    json_file_ = tmpdir.join("test_json.json")
+    with open(json_file_, "w") as of:
+        of.write('{"name": "kaith", "game": "morrowind"}')
+    return str(json_file_)
+
+
+@pytest.fixture()
+def json_files(tmpdir):
     for i in range(10):
         file_ = tmpdir.join(f"json_{i}.json")
         with open(file_, "w") as of:
             of.write('{"i": %d, "name": "kaith", "game": "morrowind"}' % i)
-    return str(tmpdir.join("*.json"))
+    return sorted(glob.glob(str(tmpdir.join("*.json"))))
 
 
 class TestModel(object):

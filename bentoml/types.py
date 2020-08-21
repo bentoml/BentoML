@@ -6,8 +6,6 @@
 
 # http://www.apache.org/licenses/LICENSE-2.0
 
-import functools
-
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,6 +26,8 @@ from typing import (
 )
 
 from multidict import CIMultiDict
+from werkzeug.formparser import parse_form_data
+from werkzeug.http import parse_options_header
 
 # For non latin1 characters: https://tools.ietf.org/html/rfc8187
 # Also https://github.com/benoitc/gunicorn/issues/1778
@@ -38,20 +38,33 @@ JSON_CHARSET = 'utf-8'
 
 class HTTPRequest(NamedTuple):
     '''
-    headers: tuple of key value pairs in bytes
+    headers: tuple of key value pairs in strs
     data: str
     '''
 
-    headers: tuple = tuple()
+    headers: Tuple[Tuple[str, str]] = tuple()
     body: bytes = b""
 
     @property
-    @functools.lru_cache()
     def parsed_headers(self):
-        return CIMultiDict(
-            (k.decode(HEADER_CHARSET), v.decode(HEADER_CHARSET))
-            for k, v in self.headers or tuple()
-        )
+        return CIMultiDict((k.lower(), v.lower()) for k, v in self.headers or tuple())
+
+    @property
+    def content_type(self) -> str:
+        return parse_options_header(self.parsed_headers.get('content-type'))[0]
+
+    @classmethod
+    def parse_form_data(cls, self):
+        if not self.body:
+            return None, None, []
+        environ = {
+            'wsgi.input': io.BytesIO(self.body),
+            'CONTENT_LENGTH': len(self.body),
+            'CONTENT_TYPE': self.parsed_headers.get("content-type", ""),
+            'REQUEST_METHOD': 'POST',
+        }
+        stream, form, files = parse_form_data(environ, silent=False)
+        return stream, form, files
 
     @classmethod
     def from_flask_request(cls, request):

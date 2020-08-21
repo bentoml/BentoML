@@ -221,9 +221,15 @@ class InferenceAPI(object):
 
     def handle_request(self, request: flask.Request):
         reqs = [HTTPRequest.from_flask_request(request)]
-        inf_tasks = self.input_adapter.from_http_request(reqs)
-        results = self.infer(inf_tasks)
-        responses = self.output_adapter.to_http_response(results)
+        try:
+            inf_tasks = self.input_adapter.from_http_request(reqs)
+        except Exception as e:
+            return flask.Response(str(e), 400)
+        try:
+            results = self.infer(inf_tasks)
+            responses = self.output_adapter.to_http_response(results)
+        except Exception as e:
+            return flask.Response(str(e), 500)
         response = next(iter(responses))
         return response.to_flask_response()
 

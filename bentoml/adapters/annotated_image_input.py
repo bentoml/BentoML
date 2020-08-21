@@ -12,21 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-import json
-import os
 import argparse
+import os
+import re
 from io import BytesIO
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from werkzeug.utils import secure_filename
 from werkzeug.wrappers import Request
 
 from bentoml import config
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.types import HTTPRequest, HTTPResponse
-from bentoml.exceptions import BadInput
 from bentoml.adapters.base_input import BaseInputAdapter
+from bentoml.exceptions import BadInput
+from bentoml.types import HTTPRequest, HTTPResponse
+from bentoml.utils.lazy_loader import LazyLoader
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')
@@ -40,8 +39,8 @@ def get_default_accept_image_formats():
     return [
         extension.strip()
         for extension in config("apiserver")
-        .get("default_image_input_accept_file_extensions")
-        .split(",")
+            .get("default_image_input_accept_file_extensions")
+            .split(",")
     ]
 
 
@@ -400,7 +399,6 @@ import json
 import traceback
 from typing import Iterable, Tuple, Iterator
 
-
 from bentoml.types import (
     HTTPRequest,
     JsonSerializable,
@@ -409,8 +407,7 @@ from bentoml.types import (
     InferenceContext,
     JSON_CHARSET,
 )
-from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_inputs
-
+from bentoml.adapters.base_input import BaseInputAdapter
 
 ApiFuncArgs = Tuple[
     Tuple[numpy.ndarray], Tuple[JsonSerializable],
@@ -419,10 +416,9 @@ AnnoImgTask = InferenceTask[Tuple[bytes, bytes]]  # image file bytes, json str b
 
 
 class AnnotatedImageInput(BaseInputAdapter[ApiFuncArgs]):
-
     BATCH_MODE_SUPPORTED = True
 
-    def from_http_request(self, reqs: Iterable[HTTPRequest]) -> Tuple[AnnoImgTask]:
+    def from_http_request(self, reqs: Sequence[HTTPRequest]) -> Tuple[AnnoImgTask]:
         return tuple(
             InferenceTask(
                 context=InferenceContext(http_headers=r.parsed_headers), data=r.body,

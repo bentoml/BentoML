@@ -23,8 +23,10 @@ from typing import (
     Optional,
     Iterable,
     Iterator,
+    Sequence,
 )
 
+import flask
 from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
@@ -37,12 +39,12 @@ JSON_CHARSET = 'utf-8'
 
 
 class HTTPRequest(NamedTuple):
-    '''
-    headers: tuple of key value pairs in strs
+    """
+    headers: tuple of string key value pairs
     data: str
-    '''
+    """
 
-    headers: Tuple[Tuple[str, str]] = tuple()
+    headers: Sequence[Tuple[str, str]] = tuple()
     body: bytes = b""
 
     @property
@@ -67,13 +69,14 @@ class HTTPRequest(NamedTuple):
         return stream, form, files
 
     @classmethod
-    def from_flask_request(cls, request):
+    def from_flask_request(cls, request: flask.Request):
         return cls(
-            tuple(
+            typename="HTTPRequest",
+            headers=tuple(
                 (k.encode(HEADER_CHARSET), v.encode(HEADER_CHARSET))
                 for k, v in request.headers
             ),
-            request.get_data(),
+            body=request.get_data(),
         )
 
     def to_flask_request(self):
@@ -128,7 +131,7 @@ class InferenceContext(NamedTuple):
 
     # CLI
     cli_status: Optional[int] = 0
-    cli_args: Optional[Tuple[str]] = None
+    cli_args: Optional[Sequence[str]] = None
 
 
 class DefaultErrorContext(InferenceContext):

@@ -38,9 +38,6 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
     Handle incoming file data from different sources, transform them into file streams
     and pass down to user defined API functions
 
-    Args:
-        None
-
     Example:
 
         ```python

@@ -14,8 +14,9 @@
 
 import json
 import traceback
-from typing import Iterable, Tuple, Iterator, Sequence
+from typing import Iterable, Iterator, Sequence
 
+from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 from bentoml.types import (
     HTTPRequest,
     JsonSerializable,
@@ -24,12 +25,8 @@ from bentoml.types import (
     InferenceContext,
     JSON_CHARSET,
 )
-from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 
-
-ApiFuncArgs = Tuple[
-    Sequence[JsonSerializable],
-]
+ApiFuncArgs = Sequence[JsonSerializable]
 
 
 class JsonInput(BaseInputAdapter[ApiFuncArgs]):
@@ -67,30 +64,32 @@ class JsonInput(BaseInputAdapter[ApiFuncArgs]):
     BATCH_MODE_SUPPORTED = True
 
     def from_http_request(
-        self, reqs: Iterable[HTTPRequest]
-    ) -> Tuple[InferenceTask[bytes]]:
+        self, reqs: Sequence[HTTPRequest]
+    ) -> Sequence[InferenceTask[ApiFuncArgs]]:
         return tuple(
             InferenceTask(
-                context=InferenceContext(http_headers=r.parsed_headers), data=r.body,
+                context=InferenceContext(http_headers=r.parsed_headers),
+                data=json.loads(r.body),
             )
             for r in reqs
         )
 
     def from_aws_lambda_event(
         self, events: Iterable[AwsLambdaEvent]
-    ) -> Tuple[InferenceTask[bytes]]:
+    ) -> Sequence[InferenceTask[ApiFuncArgs]]:
         return tuple(
             InferenceTask(
                 context=InferenceContext(aws_lambda_event=e),
-                data=e['body'].encode(JSON_CHARSET),
+                data=json.loads(e['body'])
             )
             for e in events
         )
 
-    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:
+    def from_cli(self, cli_args: Sequence[str]) -> Iterator[InferenceTask[bytes]]:
         for json_input in parse_cli_input(cli_args):
             yield InferenceTask(
-                context=InferenceContext(cli_args=cli_args), data=json_input.read()
+                context=InferenceContext(cli_args=cli_args),
+                data=json.loads(json_input.read())
             )
 
     def extract_user_func_args(

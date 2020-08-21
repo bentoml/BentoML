@@ -1,12 +1,12 @@
 # pylint: disable=redefined-outer-name
-import pytest
-import json
 import contextlib
-import itertools
+import json
 from typing import List
 
-from bentoml.types import HTTPRequest
+import pytest
+
 from bentoml.adapters import JsonInput
+from bentoml.types import HTTPRequest
 
 
 @pytest.fixture()
@@ -28,8 +28,8 @@ def tasks(input_adapter, json_files):
 
 
 @pytest.fixture()
-def invalid_tasks(input_adapter, bin_file, unicode_file):
-    cli_args = ["--input-file", bin_file, unicode_file]
+def invalid_tasks(input_adapter: JsonInput, bin_file: str, unicode_file: str):
+    cli_args = ("--input-file", bin_file, unicode_file)
     return tuple(t for t in input_adapter.from_cli(cli_args))
 
 
@@ -54,7 +54,7 @@ def test_json_from_http(input_adapter, raw_jsons):
 
 def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
     events = [
-        {"headers": {"Content-Type": "application/json"}, "body": r.decode(),}
+        {"headers": {"Content-Type": "application/json"}, "body": r.decode(), }
         for r in raw_jsons
     ]
     tasks = input_adapter.from_aws_lambda_event(events)
@@ -62,7 +62,7 @@ def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
         assert t.data == r
 
     events = [
-        {"headers": {"Content-Type": "this_will_also_work"}, "body": r.decode(),}
+        {"headers": {"Content-Type": "this_will_also_work"}, "body": r.decode(), }
         for r in raw_jsons
     ]
     tasks = input_adapter.from_aws_lambda_event(events)
@@ -71,7 +71,7 @@ def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
 
     raw_jsons = [b"not a valid json {}"]
     events = [
-        {"headers": {"Content-Type": "application/json"}, "body": r.decode(),}
+        {"headers": {"Content-Type": "application/json"}, "body": r.decode(), }
         for r in raw_jsons
     ]
     tasks = input_adapter.from_aws_lambda_event(events)

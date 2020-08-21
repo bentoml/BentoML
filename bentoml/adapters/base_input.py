@@ -6,17 +6,17 @@
 
 # http://www.apache.org/licenses/LICENSE-2.0
 
+import argparse
+import contextlib
+import functools
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import io
-import sys
-import argparse
 import itertools
-import functools
-import contextlib
+import sys
 from typing import Iterable, Generic, Tuple, Iterator, Sequence, NamedTuple, BinaryIO
 
 from bentoml.types import (
@@ -60,7 +60,7 @@ class BaseInputAdapter(Generic[ApiFuncArgs]):
         """
         return []
 
-    def from_http_request(self, reqs: Iterable[HTTPRequest]) -> Iterable[InferenceTask]:
+    def from_http_request(self, reqs: Sequence[HTTPRequest]) -> Sequence[InferenceTask]:
         """
         Handles HTTP requests, convert it into InferenceTasks
         """
@@ -74,7 +74,7 @@ class BaseInputAdapter(Generic[ApiFuncArgs]):
         """
         raise NotImplementedError()
 
-    def from_cli(self, cli_args: Tuple[str]) -> Iterable[InferenceTask]:
+    def from_cli(self, cli_args: Tuple[str]) -> Sequence[InferenceTask]:
         """
         Handles CLI command, generate InferenceTasks
         """
@@ -94,7 +94,6 @@ COLOR_FAIL = '\033[91m'
 
 
 def exit_cli(err_msg: str = "", exit_code: int = None):
-
     if exit_code is None:
         exit_code = 1 if err_msg else 0
     if err_msg:
@@ -130,7 +129,7 @@ class CliInputParser(NamedTuple):
 
         return cls(arg_names, file_arg_names, arg_strs, file_arg_strs, parser)
 
-    def parse(self, args: Tuple[str]) -> Iterator[Tuple[bytes]]:
+    def parse(self, args: Sequence[str]) -> Iterator[Sequence[bytes]]:
         try:
             parsed, _ = self.parser.parse_known_args(args)
         except SystemExit:
@@ -187,9 +186,9 @@ class CliInputParser(NamedTuple):
 
 
 def parse_cli_inputs(
-    args: Sequence[str], input_names: Tuple[str] = None
-) -> Iterator[Tuple[bytes]]:
-    '''
+    args: Sequence[str], input_names: Sequence[str] = None
+) -> Iterator[Sequence[bytes]]:
+    """
     Parse CLI args and iter each pair of inputs in bytes.
 
     >>> parse_cli_inputs("--input-x '1' '2' --input-y 'a' 'b'".split(' '), ['x', 'y'])
@@ -201,13 +200,13 @@ def parse_cli_inputs(
     >>> parse_cli_inputs(
     >>>     "--input-file-x 1.jpg 2.jpg --input-file-y 1.label 2.label".split(' '),
     >>>     ['x', 'y'])
-    '''
+    """
     parser = CliInputParser.get(input_names)
     return parser.parse(args)
 
 
 def parse_cli_input(cli_args: Iterable[str]) -> Iterator[BinaryIO]:
-    '''
+    """
     Parse CLI args and iter each input in bytes.
 
     >>> parse_cli_input('--input {"input":1} {"input":2}'.split(' '))
@@ -224,7 +223,7 @@ def parse_cli_input(cli_args: Iterable[str]) -> Iterator[BinaryIO]:
         b'<image_data_3>',
         ))
 
-    '''
+    """
     parser = argparse.ArgumentParser()
     input_g = parser.add_mutually_exclusive_group(required=True)
     input_g.add_argument('--input', nargs="+", type=str)

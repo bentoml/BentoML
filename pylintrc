@@ -148,7 +148,16 @@ disable=print-statement,
         protected-access,
 
         # prevent errors with proto generated Class
-        no-member
+        no-member,
+
+        # Ignore explicitly re-raising using the 'from' keyword. New checker added
+        # in pylint 2.6.
+        # Example:
+        # try:
+        #     1 / 0
+        # except ZeroDivisionError:
+        #     raise KeyError from foo
+        raise-missing-from
 
 
 # Enable the message, report, category or checker with the given id(s). You can

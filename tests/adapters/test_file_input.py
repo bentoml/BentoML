@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name
 import base64
-import glob
 import pytest
 import mock
 
@@ -20,7 +19,7 @@ def test_file_input_cli(input_adapter, bin_file):
 
 
 def test_file_input_cli_list(input_adapter, bin_files):
-    test_args = ["--input-file"] + sorted(glob.glob(bin_files))
+    test_args = ["--input-file"] + bin_files
     tasks = input_adapter.from_cli(test_args)
     for i, task in enumerate(tasks):
         assert b'\x810\x899' + f'{i}'.encode() == task.data.read()
@@ -63,23 +62,6 @@ def test_file_input_http_request_multipart_form(input_adapter, bin_file):
         + b'\n--123456--\n'
     )
     request = HTTPRequest(headers=headers, body=body)
-    for task in input_adapter.from_http_request([request]):
-        assert b'\x810\x899' == task.data.read()
-
-
-def test_file_input_http_request_single_file_different_name(input_adapter, bin_file):
-    file_bytes = open(str(bin_file), 'rb').read()
-
-    headers = (("Content-Type", "multipart/form-data; boundary=123456"),)
-    body = (
-        b'--123456\n'
-        + b'Content-Disposition: form-data; name="different_name"; filename="text.png"\n'
-        + b'Content-Type: application/octet-stream\n\n'
-        + file_bytes
-        + b'\n--123456--\n'
-    )
-    request = HTTPRequest(headers=headers, body=body)
-
     for task in input_adapter.from_http_request([request]):
         assert b'\x810\x899' == task.data.read()
 

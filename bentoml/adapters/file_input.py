@@ -105,16 +105,18 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
                     )
                     task.discard(
                         http_status=400,
-                        err_msg="ImageHandler requires one and at least one file at a "
-                        "time, if you just upgraded from bentoml 0.7, you may need to "
-                        "use MultiImageHandler or LegacyImageHandler instead",
+                        err_msg=f"BentoML#{self.__class__.__name__} requires one and at"
+                        " least one file at a time, if you just upgraded from"
+                        " bentoml 0.7, you may need to use MultiFileAdapter instead",
                     )
                 else:
                     input_file = next(iter(files.values()))
-                    input_stream = input_file.stream
+                    input_file.name = (
+                        input_file.filename
+                    )  # The original name is input name
                     task = InferenceTask(
                         context=InferenceContext(http_headers=req.parsed_headers),
-                        data=input_stream,
+                        data=input_file,
                     )
             elif req.body:
                 task = InferenceTask(
@@ -128,7 +130,8 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
                 )
                 task.discard(
                     http_status=400,
-                    err_msg=f'BentoML#{self.__class__.__name__} unexpected HTTP request format',
+                    err_msg=f'BentoML#{self.__class__.__name__} unexpected HTTP request'
+                    ' format',
                 )
             tasks[i] = task
 
@@ -147,8 +150,10 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[BinaryIO]]:
         for input_ in parse_cli_input(cli_args):
+            bio = io.BytesIO(input_.read())
+            bio.name = input_.name
             yield InferenceTask(
-                context=InferenceContext(cli_args=cli_args), data=io.BytesIO(input_)
+                context=InferenceContext(cli_args=cli_args), data=bio,
             )
 
     def extract_user_func_args(

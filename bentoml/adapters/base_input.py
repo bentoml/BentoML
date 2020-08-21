@@ -11,12 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import io
 import sys
 import argparse
 import itertools
 import functools
 import contextlib
-from typing import Iterable, Generic, Tuple, Iterator, Sequence, NamedTuple
+from typing import Iterable, Generic, Tuple, Iterator, Sequence, NamedTuple, BinaryIO
 
 from bentoml.types import (
     ApiFuncArgs,
@@ -205,7 +206,7 @@ def parse_cli_inputs(
     return parser.parse(args)
 
 
-def parse_cli_input(cli_args: Iterable[str]) -> Iterator[bytes]:
+def parse_cli_input(cli_args: Iterable[str]) -> Iterator[BinaryIO]:
     '''
     Parse CLI args and iter each input in bytes.
 
@@ -238,10 +239,10 @@ def parse_cli_input(cli_args: Iterable[str]) -> Iterator[bytes]:
     if is_file:
         for input_ in inputs:
             with open(input_, "rb") as f:
-                yield f.read()
+                yield f
 
     else:
         for input_ in inputs:
-            yield input_.encode()
+            yield io.BytesIO(input_.encode())
 
     return _

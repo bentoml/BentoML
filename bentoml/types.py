@@ -114,14 +114,19 @@ ApiFuncReturnValue = TypeVar("ApiFuncReturnValue")
 
 class InferenceContext(NamedTuple):
     task_id: Optional[str] = None
+
+    # General
     err_msg: str = ''
 
+    # HTTP
     http_method: Optional[str] = None
     http_status: Optional[int] = None
     http_headers: Optional[CIMultiDict] = None
 
+    # AWS_LAMBDA
     aws_lambda_event: Optional[dict] = None
 
+    # CLI
     cli_status: Optional[int] = 0
     cli_args: Optional[Tuple[str]] = None
 

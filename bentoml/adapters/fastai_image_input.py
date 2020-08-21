@@ -25,10 +25,7 @@ from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.dataframe_util import PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
 from bentoml.exceptions import BadInput
 from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.adapters.image_input import (
-    verify_image_format_or_raise,
-    get_default_accept_image_formats,
-)
+from bentoml.adapters.image_input import get_default_accept_image_formats
 
 np = LazyLoader('np', globals(), 'numpy')
 

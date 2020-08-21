@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yatai-service
+  labels:
+    app: yatai-service
+spec:
+  replicas: {{ .Values.yatai.replicaCount }}
+  selector:
+    matchLabels:
+      app: yatai-service
+  template:
+    metadata:
+      labels:
+        app: yatai-service
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: yatai-service
+          securityContext:
+            {{- toYaml .Values.yatai.securityContext | nindent 12 }}
+          image: "{{ .Values.yatai.image.repo }}:{{ .Values.yatai.image.version }}"
+          imagePullPolicy: {{ .Values.yatai.image.pullPolicy }}
+          ports:
+          - containerPort: {{ .Values.service.ports.grpc }}
+          - containerPort: {{ .Values.service.ports.web }}
+          livenessProbe:
+            {{- toYaml .Values.service.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.service.readinessProbe | nindent 12 }}
+          args:
+            {{ if .Values.db_url -}}
+            - "--db-url={{ .Values.db_url }}"
+            {{- end }}
+            {{ if .Values.repo_base_url -}}
+            - "--repo-base-url={{ .Values.repo_base_url}}"
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}

@@ -134,3 +134,6 @@ __bentoml_tmp_sdist_build
 
 # temp sdist build generated when bundling local dev branch of BentoML
 __bentoml_tmp_sdist_build
+
+# Helm Dependencies
+helm/YataiService/charts

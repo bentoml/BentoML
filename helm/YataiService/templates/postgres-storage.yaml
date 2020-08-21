@@ -1,0 +1,32 @@
+{{- if .Values.postgres.enabled -}}
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: yatai-postgres-pv-volume
+  labels:
+    type: local
+    app: yatai-postgres
+spec:
+  storageClassName: manual
+  capacity:
+    storage: {{ .Values.postgres.storageCapacity }}
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
+  persistentVolumeReclaimPolicy: {{ .Values.postgres.pvReclaimPolicy }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: yatai-postgres-pv-claim
+  labels:
+    app: yatai-postgres
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.postgres.storageCapacity }}
+{{- end -}}

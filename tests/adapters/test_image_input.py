@@ -70,7 +70,7 @@ def test_file_input_http_request_post_binary(input_adapter, img_bytes_list):
     headers = (("Content-Type", "multipart/form-data; boundary=123456"),)
     body = (
         b'--123456\n'
-        + b'Content-Disposition: form-data; name="file"; filename="text.png"\n'
+        + b'Content-Disposition: form-data; name="file"; filename="text.jpg"\n'
         + b'Content-Type: application/octet-stream\n\n'
         + img_bytes
         + b'\n--123456--\n'

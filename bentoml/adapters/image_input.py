@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from typing import Iterable, BinaryIO, Tuple, Sequence
 
 
@@ -41,6 +42,14 @@ def get_default_accept_image_formats():
         .get("default_image_input_accept_file_extensions")
         .split(",")
     ]
+
+
+def verify_extension(file_name, accept_ext_list):
+    """
+    Return False if file's extension is not in the accept_ext_list
+    """
+    _, extension = os.path.splitext(file_name)
+    return extension.lower() in accept_ext_list or {}
 
 
 class ImageInput(FileInput):
@@ -97,7 +106,7 @@ class ImageInput(FileInput):
             )
 
         self.pilmode = pilmode
-        self.accept_image_formats = (
+        self.accept_image_formats = set(
             accept_image_formats or get_default_accept_image_formats()
         )
 
@@ -132,6 +141,15 @@ class ImageInput(FileInput):
     ) -> ApiFuncArgs:
         img_list = []
         for task in tasks:
+            if task.data.name and not verify_extension(
+                task.data.name, self.accept_image_formats
+            ):
+                task.discard(
+                    http_status=400,
+                    err_msg=f"Current service only accepts "
+                    f"{self.accept_image_formats} formats",
+                )
+                continue
             try:
                 img_array = imageio.imread(task.data, pilmode=self.pilmode)
                 img_list.append(img_array)

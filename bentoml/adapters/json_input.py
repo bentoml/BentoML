@@ -90,7 +90,7 @@ class JsonInput(BaseInputAdapter[ApiFuncArgs]):
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:
         for json_input in parse_cli_input(cli_args):
             yield InferenceTask(
-                context=InferenceContext(cli_args=cli_args), data=json_input
+                context=InferenceContext(cli_args=cli_args), data=json_input.read()
             )
 
     def extract_user_func_args(

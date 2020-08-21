@@ -148,8 +148,10 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[BinaryIO]]:
         for input_ in parse_cli_input(cli_args):
+            bio = io.BytesIO(input_.read())
+            bio.name = input_.name
             yield InferenceTask(
-                context=InferenceContext(cli_args=cli_args), data=io.BytesIO(input_)
+                context=InferenceContext(cli_args=cli_args), data=bio,
             )
 
     def extract_user_func_args(

@@ -12,13 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import io
 import base64
-from io import BytesIO
 from typing import Iterable, BinaryIO, Tuple, Iterator, Sequence, List
 
 
@@ -32,7 +27,7 @@ from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 
 
 ApiFuncArgs = Tuple[
-    Sequence[BytesIO],
+    Sequence[BinaryIO],
 ]
 
 
@@ -141,7 +136,7 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
 
     def from_aws_lambda_event(
         self, events: Iterable[AwsLambdaEvent]
-    ) -> Tuple[InferenceTask[bytes]]:
+    ) -> Tuple[InferenceTask[BinaryIO]]:
         return tuple(
             InferenceTask(
                 context=InferenceContext(aws_lambda_event=e),
@@ -150,13 +145,13 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
             for e in events
         )
 
-    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:
+    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[BinaryIO]]:
         for input_ in parse_cli_input(cli_args):
             yield InferenceTask(
                 context=InferenceContext(cli_args=cli_args), data=io.BytesIO(input_)
             )
 
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[bytes]]
+        self, tasks: Iterable[InferenceTask[BinaryIO]]
     ) -> ApiFuncArgs:
-        return (tuple(t.body for t in tasks),)
+        return (tuple(t.data for t in tasks),)

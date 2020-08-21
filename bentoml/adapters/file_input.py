@@ -105,9 +105,9 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
                     )
                     task.discard(
                         http_status=400,
-                        err_msg="ImageHandler requires one and at least one file at a "
-                        "time, if you just upgraded from bentoml 0.7, you may need to "
-                        "use MultiImageHandler or LegacyImageHandler instead",
+                        err_msg=f"BentoML#{self.__class__.__name__} requires one and at"
+                        " least one file at a time, if you just upgraded from"
+                        " bentoml 0.7, you may need to use MultiFileAdapter instead",
                     )
                 else:
                     input_file = next(iter(files.values()))
@@ -128,7 +128,8 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
                 )
                 task.discard(
                     http_status=400,
-                    err_msg=f'BentoML#{self.__class__.__name__} unexpected HTTP request format',
+                    err_msg=f'BentoML#{self.__class__.__name__} unexpected HTTP request'
+                    ' format',
                 )
             tasks[i] = task
 

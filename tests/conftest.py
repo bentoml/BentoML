@@ -76,7 +76,7 @@ def is_batch_request(pytestconfig):
 
 @pytest.fixture()
 def bin_file(tmpdir):
-    bin_file_ = tmpdir.join("bin_file")
+    bin_file_ = tmpdir.join("bin_file.bin")
     with open(bin_file_, "wb") as of:
         of.write("â".encode('gb18030'))
     return str(bin_file_)
@@ -85,15 +85,15 @@ def bin_file(tmpdir):
 @pytest.fixture()
 def bin_files(tmpdir):
     for i in range(10):
-        bin_file_ = tmpdir.join(f"{i}")
+        bin_file_ = tmpdir.join(f"{i}.bin")
         with open(bin_file_, "wb") as of:
             of.write(f"â{i}".encode('gb18030'))
-    return str(tmpdir.join("*"))
+    return sorted(glob.glob(str(tmpdir.join("*.bin"))))
 
 
 @pytest.fixture()
 def unicode_file(tmpdir):
-    bin_file_ = tmpdir.join("bin_file")
+    bin_file_ = tmpdir.join("bin_file.unicode")
     with open(bin_file_, "wb") as of:
         of.write("â".encode('utf-8'))
     return str(bin_file_)
@@ -102,10 +102,10 @@ def unicode_file(tmpdir):
 @pytest.fixture()
 def unicode_files(tmpdir):
     for i in range(10):
-        bin_file_ = tmpdir.join(f"{i}")
+        bin_file_ = tmpdir.join(f"{i}.unicode")
         with open(bin_file_, "wb") as of:
             of.write(f"â{i}".encode('utf-8'))
-    return str(tmpdir.join("*"))
+    return sorted(glob.glob(str(tmpdir.join("*.unicode"))))
 
 
 @pytest.fixture()
@@ -118,9 +118,9 @@ def img_file(tmpdir):
 @pytest.fixture()
 def img_files(tmpdir):
     for i in range(10):
-        img_file_ = tmpdir.join(f"img_{i}.jpg")
+        img_file_ = tmpdir.join(f"{i}.jpg")
         imageio.imwrite(str(img_file_), np.zeros((10, 10)))
-    return str(tmpdir.join("*.jpg"))
+    return sorted(glob.glob(str(tmpdir.join("*.jpg"))))
 
 
 @pytest.fixture()

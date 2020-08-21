@@ -189,13 +189,7 @@ def parse_cli_inputs(
     args: Sequence[str], input_names: Tuple[str] = None
 ) -> Iterator[Tuple[bytes]]:
     '''
-    Parse CLI args in format bellow and iter each pair of inputs in bytes.
-
-    >>> parse_cli_inputs('--input {"input":1} {"input":2}'.split(' '))
-    iter((
-        (b'{"input":1}',),
-        (b'{"input":2}',),
-        ))
+    Parse CLI args and iter each pair of inputs in bytes.
 
     >>> parse_cli_inputs("--input-x '1' '2' --input-y 'a' 'b'".split(' '), ['x', 'y'])
     iter((
@@ -203,11 +197,51 @@ def parse_cli_inputs(
         (b'2', b'b'),
         ))
 
-    >>> parse_cli_inputs("--input-file 1.jpg 2.jpg 3.jpg".split(' '))
-
     >>> parse_cli_inputs(
     >>>     "--input-file-x 1.jpg 2.jpg --input-file-y 1.label 2.label".split(' '),
     >>>     ['x', 'y'])
     '''
     parser = CliInputParser.get(input_names)
     return parser.parse(args)
+
+
+def parse_cli_input(cli_args: Iterable[str]) -> Iterator[bytes]:
+    '''
+    Parse CLI args and iter each input in bytes.
+
+    >>> parse_cli_input('--input {"input":1} {"input":2}'.split(' '))
+    iter((
+        b'{"input":1}',
+        b'{"input":2}',
+        ))
+
+    OR
+    >>> parse_cli_inputs("--input-file 1.jpg 2.jpg 3.jpg".split(' '))
+    iter((
+        b'<image_data_1>',
+        b'<image_data_2>',
+        b'<image_data_3>',
+        ))
+
+    '''
+    parser = argparse.ArgumentParser()
+    input_g = parser.add_mutually_exclusive_group(required=True)
+    input_g.add_argument('--input', nargs="+", type=str)
+    input_g.add_argument('--input-file', nargs="+")
+
+    parsed_args, _ = parser.parse_known_args(list(cli_args))
+
+    inputs = tuple(
+        parsed_args.input if parsed_args.input_file is None else parsed_args.input_file
+    )
+    is_file = parsed_args.input_file is not None
+    if is_file:
+        for input_ in inputs:
+            with open(input_, "rb") as f:
+                yield f.read()
+
+    else:
+        for input_ in inputs:
+            yield input_.encode()
+
+    return _

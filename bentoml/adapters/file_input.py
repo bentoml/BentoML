@@ -28,7 +28,7 @@ from bentoml.types import (
     InferenceTask,
     InferenceContext,
 )
-from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_inputs
+from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 
 
 ApiFuncArgs = Tuple[
@@ -151,10 +151,9 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
         )
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:
-        for inputs in parse_cli_inputs(cli_args):
-            byte_input = inputs[0]
+        for input_ in parse_cli_input(cli_args):
             yield InferenceTask(
-                context=InferenceContext(cli_args=cli_args), data=io.BytesIO(byte_input)
+                context=InferenceContext(cli_args=cli_args), data=io.BytesIO(input_)
             )
 
     def extract_user_func_args(

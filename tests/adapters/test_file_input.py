@@ -66,7 +66,7 @@ def test_file_input_http_request_multipart_form(input_adapter, bin_file):
         assert b'\x810\x899' == task.data.read()
 
 
-def test_file_input_http_request_malformatted_input_missing_file_file(input_adapter):
+def test_file_input_http_request_malformatted_input_missing_file(input_adapter):
     request = mock.MagicMock(spec=HTTPRequest)
 
     request.files = {}

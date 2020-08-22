@@ -39,10 +39,13 @@ PYTHON_VERSION = "{major}.{minor}.{micro}".format(
     major=version_info.major, minor=version_info.minor, micro=version_info.micro
 )
 
+# Including 'conda-forge' channel in the default channels to ensure newest Python
+# versions can be installed properly via conda when building API server docker image
 CONDA_ENV_BASE_YAML = """
 name: {name}
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - python={python_version}
   - pip
@@ -58,7 +61,13 @@ class CondaEnv(object):
     generated from `conda env export` command.
     """
 
-    def __init__(self, name, python_version):
+    def __init__(
+        self,
+        name: str,
+        python_version: str,
+        conda_channels: List[str] = None,
+        conda_dependencies: List[str] = None,
+    ):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
 
@@ -66,17 +75,27 @@ class CondaEnv(object):
             CONDA_ENV_BASE_YAML.format(name=name, python_version=python_version)
         )
 
+        if conda_channels:
+            self.add_channels(conda_channels)
+
+        if conda_dependencies:
+            self.add_conda_dependencies(conda_dependencies)
+
     def set_name(self, name):
         self._conda_env["name"] = name
 
     def get_name(self):
         return self._conda_env["name"]
 
-    def add_conda_dependencies(self, extra_conda_dependencies):
-        self._conda_env["dependencies"] += extra_conda_dependencies
+    def add_conda_dependencies(self, conda_dependencies: List[str]):
+        self._conda_env["dependencies"] += conda_dependencies
 
-    def add_channels(self, channels):
-        self._conda_env["channels"] += channels
+    def add_channels(self, channels: List[str]):
+        for channel_name in channels:
+            if channel_name not in self._conda_env["channels"]:
+                self._conda_env["channels"] += channels
+            else:
+                logger.debug(f"Conda channel {channel_name} already added")
 
     def write_to_yaml_file(self, filepath):
         with open(filepath, 'wb') as output_yaml:
@@ -105,19 +124,22 @@ class BentoServiceEnv(object):
 
     def __init__(
         self,
-        bento_service_name,
-        pip_dependencies=None,
-        auto_pip_dependencies=False,
-        requirements_txt_file=None,
-        conda_channels=None,
-        conda_dependencies=None,
-        setup_sh=None,
-        docker_base_image=None,
+        bento_service_name: str,
+        pip_dependencies: List[str] = None,
+        auto_pip_dependencies: bool = False,
+        requirements_txt_file: str = None,
+        conda_channels: List[str] = None,
+        conda_dependencies: List[str] = None,
+        setup_sh: str = None,
+        docker_base_image: str = None,
     ):
         self._python_version = PYTHON_VERSION
 
         self._conda_env = CondaEnv(
-            "bentoml-" + bento_service_name, self._python_version
+            "bentoml-" + bento_service_name,
+            self._python_version,
+            conda_channels,
+            conda_dependencies,
         )
 
         bentoml_deploy_version = get_bentoml_deploy_version()
@@ -129,8 +151,7 @@ class BentoServiceEnv(object):
                     "specified in `pip_dependencies=%s`",
                     pip_dependencies,
                 )
-            else:
-                self.add_pip_dependencies(pip_dependencies)
+            self.add_pip_dependencies(pip_dependencies)
 
         if requirements_txt_file:
             if auto_pip_dependencies:
@@ -139,21 +160,11 @@ class BentoServiceEnv(object):
                     "specified in `requirements_txt_file=%s`",
                     requirements_txt_file,
                 )
-            else:
-                self._set_requirements_txt(requirements_txt_file)
+            self._set_requirements_txt(requirements_txt_file)
 
         self._auto_pip_dependencies = auto_pip_dependencies
 
         self._set_setup_sh(setup_sh)
-
-        if conda_channels:
-            if not isinstance(conda_channels, list):
-                conda_channels = [conda_channels]
-            self.add_conda_channels(conda_channels)
-        if conda_dependencies:
-            if not isinstance(conda_dependencies, list):
-                conda_dependencies = [conda_dependencies]
-            self.add_conda_dependencies(conda_dependencies)
 
         if docker_base_image:
             self._docker_base_image = docker_base_image

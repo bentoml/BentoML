@@ -36,4 +36,4 @@ ARG BENTOML_VERSION
 ENV BENTOML_VERSION=$BENTOML_VERSION
 
 # pre-install BentoML base dependencies
-RUN pip install bentoml==$BENTOML_VERSION
+RUN pip install bentoml==$BENTOML_VERSION --no-cache-dir

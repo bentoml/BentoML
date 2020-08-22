@@ -19,8 +19,8 @@ import json
 import logging
 
 import uuid
-from ruamel.yaml import YAML
 
+from bentoml.utils.ruamel_yaml import YAML
 from bentoml.utils import ProtoMessageToDict
 from bentoml.configuration import _is_pip_installed_bentoml
 from bentoml import config

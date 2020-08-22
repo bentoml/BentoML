@@ -56,7 +56,7 @@ def isidentifier(s):
 
 
 def dump_to_yaml_str(yaml_dict):
-    from ruamel.yaml import YAML
+    from bentoml.utils.ruamel_yaml import YAML
 
     yaml = YAML()
     string_io = StringIO()

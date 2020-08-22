@@ -21,8 +21,8 @@ from pathlib import Path
 
 import boto3
 from botocore.exceptions import ClientError
-from ruamel.yaml import YAML
 
+from bentoml.utils.ruamel_yaml import YAML
 from bentoml.exceptions import (
     BentoMLException,
     InvalidArgument,

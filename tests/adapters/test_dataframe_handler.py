@@ -270,7 +270,7 @@ def test_benchmark_load_dataframes():
 
     assert_df_equal(result1, result2)
 
-    # 15 is just an estimate on the smaller end, which should be true for most
-    # development machines and Travis CI environment, the actual ratio depends on the
-    # hardware and available computing resource
-    assert time1 / time2 > 15
+    # 5 is just an estimate on the smaller end, which should be true for most
+    # development machines and Github actions CI environment, the actual ratio depends
+    # on the hardware and available computing resource
+    assert time1 / time2 > 5

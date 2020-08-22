@@ -18,8 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from sys import version_info
 
-from ruamel.yaml import YAML
-
+from bentoml.utils.ruamel_yaml import YAML
 from bentoml import __version__ as BENTOML_VERSION
 from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version

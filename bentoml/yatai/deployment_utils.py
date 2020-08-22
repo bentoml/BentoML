@@ -15,8 +15,7 @@
 
 import logging
 
-from ruamel.yaml import YAML
-
+from bentoml.utils.ruamel_yaml import YAML
 from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentSpec
 from bentoml.exceptions import InvalidArgument, YataiDeploymentException
 

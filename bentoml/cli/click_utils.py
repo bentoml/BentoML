@@ -20,8 +20,8 @@ import functools
 import logging
 
 from click import ClickException
-from ruamel.yaml import YAML
 
+from bentoml.utils.ruamel_yaml import YAML
 from bentoml import configure_logging
 from bentoml.exceptions import BentoMLException
 from bentoml.utils.usage_stats import track

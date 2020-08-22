@@ -20,8 +20,8 @@ import stat
 from pathlib import Path
 from typing import List
 
-from ruamel.yaml import YAML
 
+from bentoml.utils.ruamel_yaml import YAML
 from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.saved_bundle.pip_pkg import (

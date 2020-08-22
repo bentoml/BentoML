@@ -29,5 +29,5 @@ pip install -r ./requirements.txt --no-cache-dir
 # install sdist or wheel format archives stored under bundled_pip_dependencies directory
 for filename in ./bundled_pip_dependencies/*.tar.gz; do
   [ -e "$filename" ] || continue
-  pip install -U "$filename"
+  pip install -U "$filename" --no-cache-dir
 done

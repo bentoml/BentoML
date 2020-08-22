@@ -92,6 +92,7 @@ class CondaEnv(object):
         # Adding `conda_dependencies` to beginning of the list to take priority over the
         # existing conda channels
         self._conda_env["dependencies"] = (
+            conda_dependencies + self._conda_env["dependencies"]
         )
 
     def add_channels(self, channels: List[str]):

@@ -130,7 +130,7 @@ class CliInputParser(NamedTuple):
 
         return cls(arg_names, file_arg_names, arg_strs, file_arg_strs, parser)
 
-    def parse(self, args: Tuple[str]) -> Iterator[Tuple[bytes]]:
+    def parse(self, args: Tuple[str]) -> Iterator[Tuple[BinaryIO]]:
         try:
             parsed, _ = self.parser.parse_known_args(args)
         except SystemExit:
@@ -159,7 +159,7 @@ class CliInputParser(NamedTuple):
         if all(inputs):
             if functools.reduce(lambda i, j: len(i) == len(j), inputs):
                 for input_ in zip(*inputs):
-                    yield tuple(i.encode() for i in input_)
+                    yield tuple(io.BytesIO(i.encode()) for i in input_)
             else:
                 exit_cli(
                     f'''
@@ -173,9 +173,7 @@ class CliInputParser(NamedTuple):
             if functools.reduce(lambda i, j: len(i) == len(j), file_inputs):
                 for input_ in zip(*file_inputs):
                     with contextlib.ExitStack() as stack:
-                        yield tuple(
-                            stack.enter_context(open(f, "rb")).read() for f in input_
-                        )
+                        yield tuple(stack.enter_context(open(f, "rb")) for f in input_)
             else:
                 exit_cli(
                     f'''
@@ -188,21 +186,16 @@ class CliInputParser(NamedTuple):
 
 def parse_cli_inputs(
     args: Sequence[str], input_names: Tuple[str] = None
-) -> Iterator[Tuple[bytes]]:
+) -> Iterator[Tuple[BinaryIO]]:
     '''
     Parse CLI args and iter each pair of inputs in bytes.
 
     >>> parse_cli_inputs("--input-x '1' '2' --input-y 'a' 'b'".split(' '), ['x', 'y'])
-    iter((
-        (b'1', b'a'),
-        (b'2', b'b'),
-        ))
-
     >>> parse_cli_inputs(
     >>>     "--input-file-x 1.jpg 2.jpg --input-file-y 1.label 2.label".split(' '),
     >>>     ['x', 'y'])
     '''
-    parser = CliInputParser.get(input_names)
+    parser = CliInputParser.get(tuple(input_names))
     return parser.parse(args)
 
 
@@ -211,19 +204,8 @@ def parse_cli_input(cli_args: Iterable[str]) -> Iterator[BinaryIO]:
     Parse CLI args and iter each input in bytes.
 
     >>> parse_cli_input('--input {"input":1} {"input":2}'.split(' '))
-    iter((
-        b'{"input":1}',
-        b'{"input":2}',
-        ))
-
     OR
     >>> parse_cli_inputs("--input-file 1.jpg 2.jpg 3.jpg".split(' '))
-    iter((
-        b'<image_data_1>',
-        b'<image_data_2>',
-        b'<image_data_3>',
-        ))
-
     '''
     parser = argparse.ArgumentParser()
     input_g = parser.add_mutually_exclusive_group(required=True)

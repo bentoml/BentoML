@@ -44,6 +44,7 @@ Manual Deployment Tutorials:
   kubeflow
   kfserving
   heroku
+  sql_server
 
 
 

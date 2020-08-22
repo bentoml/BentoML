@@ -15,7 +15,6 @@ if command -v conda >/dev/null 2>&1; then
   # this option is only available after conda version 4.6.0
   # "|| true" ignores the error when the option is not found, for older conda version
   conda config --set pip_interop_enabled True || true
-  conda config --set channel_priority strict || true
   conda env update -n base -f ./environment.yml
 else
   echo "conda command not found, ignoring environment.yml"

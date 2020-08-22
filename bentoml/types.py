@@ -56,7 +56,7 @@ class HTTPRequest(NamedTuple):
     @classmethod
     def parse_form_data(cls, self):
         if not self.body:
-            return None, None, []
+            return None, None, {}
         environ = {
             'wsgi.input': io.BytesIO(self.body),
             'CONTENT_LENGTH': len(self.body),

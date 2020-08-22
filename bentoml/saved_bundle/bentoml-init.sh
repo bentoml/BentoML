@@ -10,11 +10,14 @@ cd $SAVED_BUNDLE_PATH
 if [ -f ./setup.sh ]; then chmod +x ./setup.sh && bash -c ./setup.sh; fi
 
 if command -v conda >/dev/null 2>&1; then
-  # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
+  # 1) set pip_interop_enabled to improve conda-pip interoperability. Conda can use
   # pip-installed packages to satisfy dependencies.
-  # pip_interop_enabled option is only available since conda 4.6.0
-  # "|| true" ignores the error when the option is not found
+  # 2) set channel_priority strict to ensure that all conda dependencies will come from
+  # the conda-forge channel unless they exist only on defaults.
+  # Both of the options are only available after conda version 4.6.0
+  # "|| true" ignores the error when the option is not found, for older conda version
   conda config --set pip_interop_enabled True || true
+  conda config --set channel_priority strict || true
   conda env update -n base -f ./environment.yml
 else
   echo "conda command not found, ignoring environment.yml"

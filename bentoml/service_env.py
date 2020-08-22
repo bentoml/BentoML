@@ -44,8 +44,8 @@ PYTHON_VERSION = "{major}.{minor}.{micro}".format(
 CONDA_ENV_BASE_YAML = """
 name: {name}
 channels:
-  - defaults
   - conda-forge
+  - defaults
 dependencies:
   - python={python_version}
   - pip
@@ -88,7 +88,11 @@ class CondaEnv(object):
         return self._conda_env["name"]
 
     def add_conda_dependencies(self, conda_dependencies: List[str]):
-        self._conda_env["dependencies"] += conda_dependencies
+        # BentoML uses conda's channel_priority=strict option by default
+        # Adding `conda_dependencies` to beginning of the list to take priority over the
+        # existing conda channels
+        self._conda_env["dependencies"] = (
+        )
 
     def add_channels(self, channels: List[str]):
         for channel_name in channels:

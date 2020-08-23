@@ -124,7 +124,7 @@ class BentoRepositoryAPIClient:
                 tar.add(saved_bento_path, arcname=bento_service_metadata.name)
             fileobj.seek(0, 0)
 
-            http_response = requests.put(response.uri.s3_presigned_url, data=fileobj)
+            http_response = requests.put(response.uri.cloud_presigned_url, data=fileobj)
 
             if http_response.status_code != 200:
                 self._update_bento_upload_progress(
@@ -139,6 +139,38 @@ class BentoRepositoryAPIClient:
 
             logger.info(
                 "Successfully saved BentoService bundle '%s:%s' to S3: %s",
+                bento_service_metadata.name,
+                bento_service_metadata.version,
+                response.uri.uri,
+            )
+
+            return response.uri.uri
+
+        elif response.uri.type == BentoUri.GCS:
+            self._update_bento_upload_progress(
+                bento_service_metadata, UploadStatus.UPLOADING, 0
+            )
+
+            fileobj = io.BytesIO()
+            with tarfile.open(mode="w:gz", fileobj=fileobj) as tar:
+                tar.add(saved_bento_path, arcname=bento_service_metadata.name)
+            fileobj.seek(0, 0)
+
+            http_response = requests.put(response.uri.cloud_presigned_url, data=fileobj)
+
+            if http_response.status_code != 200:
+                self._update_bento_upload_progress(
+                    bento_service_metadata, UploadStatus.ERROR
+                )
+                raise BentoMLException(
+                    f"Error saving BentoService bundle to GCS. "
+                    f"{http_response.status_code}: {http_response.text}"
+                )
+
+            self._update_bento_upload_progress(bento_service_metadata)
+
+            logger.info(
+                "Successfully saved BentoService bundle '%s:%s' to GCS: %s",
                 bento_service_metadata.name,
                 bento_service_metadata.version,
                 response.uri.uri,

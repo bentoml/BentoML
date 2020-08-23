@@ -1,5 +1,5 @@
-/*eslint-disable block-scoped-var, id-length, no-control-regex, no-magic-numbers, no-prototype-builtins, no-redeclare, no-shadow, no-var, sort-vars*/
-import * as $protobuf from "protobufjs/minimal";
+/*eslint-disable block-scoped-var, no-redeclare, no-control-regex, no-prototype-builtins*/
+import * as $protobuf from "protobufjs";
 
 // Common aliases
 const $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
@@ -20,85 +20,68 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a DeploymentSpec.
-         * @memberof bentoml
-         * @interface IDeploymentSpec
-         * @property {string|null} [bento_name] DeploymentSpec bento_name
-         * @property {string|null} [bento_version] DeploymentSpec bento_version
-         * @property {bentoml.DeploymentSpec.DeploymentOperator|null} [operator] DeploymentSpec operator
-         * @property {bentoml.DeploymentSpec.ICustomOperatorConfig|null} [custom_operator_config] DeploymentSpec custom_operator_config
-         * @property {bentoml.DeploymentSpec.ISageMakerOperatorConfig|null} [sagemaker_operator_config] DeploymentSpec sagemaker_operator_config
-         * @property {bentoml.DeploymentSpec.IAwsLambdaOperatorConfig|null} [aws_lambda_operator_config] DeploymentSpec aws_lambda_operator_config
-         * @property {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig|null} [azure_functions_operator_config] DeploymentSpec azure_functions_operator_config
+         * @typedef bentoml.DeploymentSpec$Properties
+         * @type {Object}
+         * @property {string} [bento_name] DeploymentSpec bento_name.
+         * @property {string} [bento_version] DeploymentSpec bento_version.
+         * @property {bentoml.DeploymentSpec.DeploymentOperator} [operator] DeploymentSpec operator.
+         * @property {bentoml.DeploymentSpec.CustomOperatorConfig$Properties} [custom_operator_config] DeploymentSpec custom_operator_config.
+         * @property {bentoml.DeploymentSpec.SageMakerOperatorConfig$Properties} [sagemaker_operator_config] DeploymentSpec sagemaker_operator_config.
+         * @property {bentoml.DeploymentSpec.AwsLambdaOperatorConfig$Properties} [aws_lambda_operator_config] DeploymentSpec aws_lambda_operator_config.
+         * @property {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig$Properties} [azure_functions_operator_config] DeploymentSpec azure_functions_operator_config.
          */
 
         /**
          * Constructs a new DeploymentSpec.
-         * @memberof bentoml
-         * @classdesc Represents a DeploymentSpec.
-         * @implements IDeploymentSpec
+         * @exports bentoml.DeploymentSpec
          * @constructor
-         * @param {bentoml.IDeploymentSpec=} [properties] Properties to set
+         * @param {bentoml.DeploymentSpec$Properties=} [properties] Properties to set
          */
         function DeploymentSpec(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * DeploymentSpec bento_name.
-         * @member {string} bento_name
-         * @memberof bentoml.DeploymentSpec
-         * @instance
+         * @type {string|undefined}
          */
         DeploymentSpec.prototype.bento_name = "";
 
         /**
          * DeploymentSpec bento_version.
-         * @member {string} bento_version
-         * @memberof bentoml.DeploymentSpec
-         * @instance
+         * @type {string|undefined}
          */
         DeploymentSpec.prototype.bento_version = "";
 
         /**
          * DeploymentSpec operator.
-         * @member {bentoml.DeploymentSpec.DeploymentOperator} operator
-         * @memberof bentoml.DeploymentSpec
-         * @instance
+         * @type {bentoml.DeploymentSpec.DeploymentOperator|undefined}
          */
         DeploymentSpec.prototype.operator = 0;
 
         /**
          * DeploymentSpec custom_operator_config.
-         * @member {bentoml.DeploymentSpec.ICustomOperatorConfig|null|undefined} custom_operator_config
-         * @memberof bentoml.DeploymentSpec
-         * @instance
+         * @type {bentoml.DeploymentSpec.CustomOperatorConfig$Properties|undefined}
          */
         DeploymentSpec.prototype.custom_operator_config = null;
 
         /**
          * DeploymentSpec sagemaker_operator_config.
-         * @member {bentoml.DeploymentSpec.ISageMakerOperatorConfig|null|undefined} sagemaker_operator_config
-         * @memberof bentoml.DeploymentSpec
-         * @instance
+         * @type {bentoml.DeploymentSpec.SageMakerOperatorConfig$Properties|undefined}
          */
         DeploymentSpec.prototype.sagemaker_operator_config = null;
 
         /**
          * DeploymentSpec aws_lambda_operator_config.
-         * @member {bentoml.DeploymentSpec.IAwsLambdaOperatorConfig|null|undefined} aws_lambda_operator_config
-         * @memberof bentoml.DeploymentSpec
-         * @instance
+         * @type {bentoml.DeploymentSpec.AwsLambdaOperatorConfig$Properties|undefined}
          */
         DeploymentSpec.prototype.aws_lambda_operator_config = null;
 
         /**
          * DeploymentSpec azure_functions_operator_config.
-         * @member {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig|null|undefined} azure_functions_operator_config
-         * @memberof bentoml.DeploymentSpec
-         * @instance
+         * @type {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig$Properties|undefined}
          */
         DeploymentSpec.prototype.azure_functions_operator_config = null;
 
@@ -107,9 +90,8 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * DeploymentSpec deployment_operator_config.
-         * @member {"custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"azure_functions_operator_config"|undefined} deployment_operator_config
-         * @memberof bentoml.DeploymentSpec
-         * @instance
+         * @name bentoml.DeploymentSpec#deployment_operator_config
+         * @type {string|undefined}
          */
         Object.defineProperty(DeploymentSpec.prototype, "deployment_operator_config", {
             get: $util.oneOfGetter($oneOfFields = ["custom_operator_config", "sagemaker_operator_config", "aws_lambda_operator_config", "azure_functions_operator_config"]),
@@ -118,10 +100,7 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a new DeploymentSpec instance using the specified properties.
-         * @function create
-         * @memberof bentoml.DeploymentSpec
-         * @static
-         * @param {bentoml.IDeploymentSpec=} [properties] Properties to set
+         * @param {bentoml.DeploymentSpec$Properties=} [properties] Properties to set
          * @returns {bentoml.DeploymentSpec} DeploymentSpec instance
          */
         DeploymentSpec.create = function create(properties) {
@@ -130,39 +109,33 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified DeploymentSpec message. Does not implicitly {@link bentoml.DeploymentSpec.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.DeploymentSpec
-         * @static
-         * @param {bentoml.IDeploymentSpec} message DeploymentSpec message or plain object to encode
+         * @param {bentoml.DeploymentSpec$Properties} message DeploymentSpec message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         DeploymentSpec.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
-            if (message.operator != null && Object.hasOwnProperty.call(message, "operator"))
-                writer.uint32(/* id 3, wireType 0 =*/24).int32(message.operator);
-            if (message.custom_operator_config != null && Object.hasOwnProperty.call(message, "custom_operator_config"))
+            if (message.operator != null && message.hasOwnProperty("operator"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.operator);
+            if (message.custom_operator_config && message.hasOwnProperty("custom_operator_config"))
                 $root.bentoml.DeploymentSpec.CustomOperatorConfig.encode(message.custom_operator_config, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-            if (message.sagemaker_operator_config != null && Object.hasOwnProperty.call(message, "sagemaker_operator_config"))
+            if (message.sagemaker_operator_config && message.hasOwnProperty("sagemaker_operator_config"))
                 $root.bentoml.DeploymentSpec.SageMakerOperatorConfig.encode(message.sagemaker_operator_config, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-            if (message.aws_lambda_operator_config != null && Object.hasOwnProperty.call(message, "aws_lambda_operator_config"))
+            if (message.aws_lambda_operator_config && message.hasOwnProperty("aws_lambda_operator_config"))
                 $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.encode(message.aws_lambda_operator_config, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-            if (message.azure_functions_operator_config != null && Object.hasOwnProperty.call(message, "azure_functions_operator_config"))
+            if (message.azure_functions_operator_config && message.hasOwnProperty("azure_functions_operator_config"))
                 $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.encode(message.azure_functions_operator_config, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified DeploymentSpec message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.DeploymentSpec
-         * @static
-         * @param {bentoml.IDeploymentSpec} message DeploymentSpec message or plain object to encode
+         * @param {bentoml.DeploymentSpec$Properties} message DeploymentSpec message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -172,9 +145,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DeploymentSpec message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.DeploymentSpec
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.DeploymentSpec} DeploymentSpec
@@ -195,7 +165,7 @@ export const bentoml = $root.bentoml = (() => {
                     message.bento_version = reader.string();
                     break;
                 case 3:
-                    message.operator = reader.int32();
+                    message.operator = reader.uint32();
                     break;
                 case 4:
                     message.custom_operator_config = $root.bentoml.DeploymentSpec.CustomOperatorConfig.decode(reader, reader.uint32());
@@ -219,9 +189,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DeploymentSpec message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.DeploymentSpec
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.DeploymentSpec} DeploymentSpec
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -229,29 +196,26 @@ export const bentoml = $root.bentoml = (() => {
          */
         DeploymentSpec.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a DeploymentSpec message.
-         * @function verify
-         * @memberof bentoml.DeploymentSpec
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         DeploymentSpec.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             let properties = {};
-            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+            if (message.bento_name != null)
                 if (!$util.isString(message.bento_name))
                     return "bento_name: string expected";
-            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+            if (message.bento_version != null)
                 if (!$util.isString(message.bento_version))
                     return "bento_version: string expected";
-            if (message.operator != null && message.hasOwnProperty("operator"))
+            if (message.operator != null)
                 switch (message.operator) {
                 default:
                     return "operator: enum value expected";
@@ -262,52 +226,41 @@ export const bentoml = $root.bentoml = (() => {
                 case 4:
                     break;
                 }
-            if (message.custom_operator_config != null && message.hasOwnProperty("custom_operator_config")) {
+            if (message.custom_operator_config != null) {
                 properties.deployment_operator_config = 1;
-                {
-                    let error = $root.bentoml.DeploymentSpec.CustomOperatorConfig.verify(message.custom_operator_config);
-                    if (error)
-                        return "custom_operator_config." + error;
-                }
+                let error = $root.bentoml.DeploymentSpec.CustomOperatorConfig.verify(message.custom_operator_config);
+                if (error)
+                    return "custom_operator_config." + error;
             }
-            if (message.sagemaker_operator_config != null && message.hasOwnProperty("sagemaker_operator_config")) {
+            if (message.sagemaker_operator_config != null) {
                 if (properties.deployment_operator_config === 1)
                     return "deployment_operator_config: multiple values";
                 properties.deployment_operator_config = 1;
-                {
-                    let error = $root.bentoml.DeploymentSpec.SageMakerOperatorConfig.verify(message.sagemaker_operator_config);
-                    if (error)
-                        return "sagemaker_operator_config." + error;
-                }
+                let error = $root.bentoml.DeploymentSpec.SageMakerOperatorConfig.verify(message.sagemaker_operator_config);
+                if (error)
+                    return "sagemaker_operator_config." + error;
             }
-            if (message.aws_lambda_operator_config != null && message.hasOwnProperty("aws_lambda_operator_config")) {
+            if (message.aws_lambda_operator_config != null) {
                 if (properties.deployment_operator_config === 1)
                     return "deployment_operator_config: multiple values";
                 properties.deployment_operator_config = 1;
-                {
-                    let error = $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.verify(message.aws_lambda_operator_config);
-                    if (error)
-                        return "aws_lambda_operator_config." + error;
-                }
+                let error = $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.verify(message.aws_lambda_operator_config);
+                if (error)
+                    return "aws_lambda_operator_config." + error;
             }
-            if (message.azure_functions_operator_config != null && message.hasOwnProperty("azure_functions_operator_config")) {
+            if (message.azure_functions_operator_config != null) {
                 if (properties.deployment_operator_config === 1)
                     return "deployment_operator_config: multiple values";
                 properties.deployment_operator_config = 1;
-                {
-                    let error = $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.verify(message.azure_functions_operator_config);
-                    if (error)
-                        return "azure_functions_operator_config." + error;
-                }
+                let error = $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.verify(message.azure_functions_operator_config);
+                if (error)
+                    return "azure_functions_operator_config." + error;
             }
             return null;
         };
 
         /**
          * Creates a DeploymentSpec message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.DeploymentSpec
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.DeploymentSpec} DeploymentSpec
          */
@@ -365,12 +318,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a DeploymentSpec message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.DeploymentSpec.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DeploymentSpec} DeploymentSpec
+         */
+        DeploymentSpec.from = DeploymentSpec.fromObject;
+
+        /**
          * Creates a plain object from a DeploymentSpec message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.DeploymentSpec
-         * @static
          * @param {bentoml.DeploymentSpec} message DeploymentSpec
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         DeploymentSpec.toObject = function toObject(message, options) {
@@ -412,10 +371,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this DeploymentSpec message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DeploymentSpec.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this DeploymentSpec to JSON.
-         * @function toJSON
-         * @memberof bentoml.DeploymentSpec
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         DeploymentSpec.prototype.toJSON = function toJSON() {
@@ -424,7 +389,8 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * DeploymentOperator enum.
-         * @name bentoml.DeploymentSpec.DeploymentOperator
+         * @name DeploymentOperator
+         * @memberof bentoml.DeploymentSpec
          * @enum {number}
          * @property {number} UNSET=0 UNSET value
          * @property {number} CUSTOM=1 CUSTOM value
@@ -446,49 +412,39 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Properties of a CustomOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @interface ICustomOperatorConfig
-             * @property {string|null} [name] CustomOperatorConfig name
-             * @property {google.protobuf.IStruct|null} [config] CustomOperatorConfig config
+             * @typedef bentoml.DeploymentSpec.CustomOperatorConfig$Properties
+             * @type {Object}
+             * @property {string} [name] CustomOperatorConfig name.
+             * @property {google.protobuf.Struct$Properties} [config] CustomOperatorConfig config.
              */
 
             /**
              * Constructs a new CustomOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @classdesc Represents a CustomOperatorConfig.
-             * @implements ICustomOperatorConfig
+             * @exports bentoml.DeploymentSpec.CustomOperatorConfig
              * @constructor
-             * @param {bentoml.DeploymentSpec.ICustomOperatorConfig=} [properties] Properties to set
+             * @param {bentoml.DeploymentSpec.CustomOperatorConfig$Properties=} [properties] Properties to set
              */
             function CustomOperatorConfig(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * CustomOperatorConfig name.
-             * @member {string} name
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @instance
+             * @type {string|undefined}
              */
             CustomOperatorConfig.prototype.name = "";
 
             /**
              * CustomOperatorConfig config.
-             * @member {google.protobuf.IStruct|null|undefined} config
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @instance
+             * @type {google.protobuf.Struct$Properties|undefined}
              */
             CustomOperatorConfig.prototype.config = null;
 
             /**
              * Creates a new CustomOperatorConfig instance using the specified properties.
-             * @function create
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.ICustomOperatorConfig=} [properties] Properties to set
+             * @param {bentoml.DeploymentSpec.CustomOperatorConfig$Properties=} [properties] Properties to set
              * @returns {bentoml.DeploymentSpec.CustomOperatorConfig} CustomOperatorConfig instance
              */
             CustomOperatorConfig.create = function create(properties) {
@@ -497,29 +453,23 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Encodes the specified CustomOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.CustomOperatorConfig.verify|verify} messages.
-             * @function encode
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.ICustomOperatorConfig} message CustomOperatorConfig message or plain object to encode
+             * @param {bentoml.DeploymentSpec.CustomOperatorConfig$Properties} message CustomOperatorConfig message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             CustomOperatorConfig.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.config != null && Object.hasOwnProperty.call(message, "config"))
+                if (message.config && message.hasOwnProperty("config"))
                     $root.google.protobuf.Struct.encode(message.config, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 return writer;
             };
 
             /**
              * Encodes the specified CustomOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.CustomOperatorConfig.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.ICustomOperatorConfig} message CustomOperatorConfig message or plain object to encode
+             * @param {bentoml.DeploymentSpec.CustomOperatorConfig$Properties} message CustomOperatorConfig message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -529,9 +479,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes a CustomOperatorConfig message from the specified reader or buffer.
-             * @function decode
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {bentoml.DeploymentSpec.CustomOperatorConfig} CustomOperatorConfig
@@ -561,9 +508,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes a CustomOperatorConfig message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {bentoml.DeploymentSpec.CustomOperatorConfig} CustomOperatorConfig
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -571,25 +515,22 @@ export const bentoml = $root.bentoml = (() => {
              */
             CustomOperatorConfig.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies a CustomOperatorConfig message.
-             * @function verify
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             CustomOperatorConfig.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null)
                     if (!$util.isString(message.name))
                         return "name: string expected";
-                if (message.config != null && message.hasOwnProperty("config")) {
+                if (message.config != null) {
                     let error = $root.google.protobuf.Struct.verify(message.config);
                     if (error)
                         return "config." + error;
@@ -599,9 +540,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Creates a CustomOperatorConfig message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {bentoml.DeploymentSpec.CustomOperatorConfig} CustomOperatorConfig
              */
@@ -620,12 +558,18 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a CustomOperatorConfig message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link bentoml.DeploymentSpec.CustomOperatorConfig.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {bentoml.DeploymentSpec.CustomOperatorConfig} CustomOperatorConfig
+             */
+            CustomOperatorConfig.from = CustomOperatorConfig.fromObject;
+
+            /**
              * Creates a plain object from a CustomOperatorConfig message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @static
              * @param {bentoml.DeploymentSpec.CustomOperatorConfig} message CustomOperatorConfig
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             CustomOperatorConfig.toObject = function toObject(message, options) {
@@ -644,10 +588,16 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a plain object from this CustomOperatorConfig message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            CustomOperatorConfig.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this CustomOperatorConfig to JSON.
-             * @function toJSON
-             * @memberof bentoml.DeploymentSpec.CustomOperatorConfig
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             CustomOperatorConfig.prototype.toJSON = function toJSON() {
@@ -661,85 +611,67 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Properties of a SageMakerOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @interface ISageMakerOperatorConfig
-             * @property {string|null} [region] SageMakerOperatorConfig region
-             * @property {string|null} [instance_type] SageMakerOperatorConfig instance_type
-             * @property {number|null} [instance_count] SageMakerOperatorConfig instance_count
-             * @property {string|null} [api_name] SageMakerOperatorConfig api_name
-             * @property {number|null} [num_of_gunicorn_workers_per_instance] SageMakerOperatorConfig num_of_gunicorn_workers_per_instance
-             * @property {number|null} [timeout] SageMakerOperatorConfig timeout
+             * @typedef bentoml.DeploymentSpec.SageMakerOperatorConfig$Properties
+             * @type {Object}
+             * @property {string} [region] SageMakerOperatorConfig region.
+             * @property {string} [instance_type] SageMakerOperatorConfig instance_type.
+             * @property {number} [instance_count] SageMakerOperatorConfig instance_count.
+             * @property {string} [api_name] SageMakerOperatorConfig api_name.
+             * @property {number} [num_of_gunicorn_workers_per_instance] SageMakerOperatorConfig num_of_gunicorn_workers_per_instance.
+             * @property {number} [timeout] SageMakerOperatorConfig timeout.
              */
 
             /**
              * Constructs a new SageMakerOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @classdesc Represents a SageMakerOperatorConfig.
-             * @implements ISageMakerOperatorConfig
+             * @exports bentoml.DeploymentSpec.SageMakerOperatorConfig
              * @constructor
-             * @param {bentoml.DeploymentSpec.ISageMakerOperatorConfig=} [properties] Properties to set
+             * @param {bentoml.DeploymentSpec.SageMakerOperatorConfig$Properties=} [properties] Properties to set
              */
             function SageMakerOperatorConfig(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * SageMakerOperatorConfig region.
-             * @member {string} region
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @instance
+             * @type {string|undefined}
              */
             SageMakerOperatorConfig.prototype.region = "";
 
             /**
              * SageMakerOperatorConfig instance_type.
-             * @member {string} instance_type
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @instance
+             * @type {string|undefined}
              */
             SageMakerOperatorConfig.prototype.instance_type = "";
 
             /**
              * SageMakerOperatorConfig instance_count.
-             * @member {number} instance_count
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @instance
+             * @type {number|undefined}
              */
             SageMakerOperatorConfig.prototype.instance_count = 0;
 
             /**
              * SageMakerOperatorConfig api_name.
-             * @member {string} api_name
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @instance
+             * @type {string|undefined}
              */
             SageMakerOperatorConfig.prototype.api_name = "";
 
             /**
              * SageMakerOperatorConfig num_of_gunicorn_workers_per_instance.
-             * @member {number} num_of_gunicorn_workers_per_instance
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @instance
+             * @type {number|undefined}
              */
             SageMakerOperatorConfig.prototype.num_of_gunicorn_workers_per_instance = 0;
 
             /**
              * SageMakerOperatorConfig timeout.
-             * @member {number} timeout
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @instance
+             * @type {number|undefined}
              */
             SageMakerOperatorConfig.prototype.timeout = 0;
 
             /**
              * Creates a new SageMakerOperatorConfig instance using the specified properties.
-             * @function create
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.ISageMakerOperatorConfig=} [properties] Properties to set
+             * @param {bentoml.DeploymentSpec.SageMakerOperatorConfig$Properties=} [properties] Properties to set
              * @returns {bentoml.DeploymentSpec.SageMakerOperatorConfig} SageMakerOperatorConfig instance
              */
             SageMakerOperatorConfig.create = function create(properties) {
@@ -748,37 +680,31 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Encodes the specified SageMakerOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.SageMakerOperatorConfig.verify|verify} messages.
-             * @function encode
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.ISageMakerOperatorConfig} message SageMakerOperatorConfig message or plain object to encode
+             * @param {bentoml.DeploymentSpec.SageMakerOperatorConfig$Properties} message SageMakerOperatorConfig message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             SageMakerOperatorConfig.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.region != null && Object.hasOwnProperty.call(message, "region"))
+                if (message.region != null && message.hasOwnProperty("region"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.region);
-                if (message.instance_type != null && Object.hasOwnProperty.call(message, "instance_type"))
+                if (message.instance_type != null && message.hasOwnProperty("instance_type"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.instance_type);
-                if (message.instance_count != null && Object.hasOwnProperty.call(message, "instance_count"))
+                if (message.instance_count != null && message.hasOwnProperty("instance_count"))
                     writer.uint32(/* id 3, wireType 0 =*/24).int32(message.instance_count);
-                if (message.api_name != null && Object.hasOwnProperty.call(message, "api_name"))
+                if (message.api_name != null && message.hasOwnProperty("api_name"))
                     writer.uint32(/* id 4, wireType 2 =*/34).string(message.api_name);
-                if (message.num_of_gunicorn_workers_per_instance != null && Object.hasOwnProperty.call(message, "num_of_gunicorn_workers_per_instance"))
+                if (message.num_of_gunicorn_workers_per_instance != null && message.hasOwnProperty("num_of_gunicorn_workers_per_instance"))
                     writer.uint32(/* id 5, wireType 0 =*/40).int32(message.num_of_gunicorn_workers_per_instance);
-                if (message.timeout != null && Object.hasOwnProperty.call(message, "timeout"))
+                if (message.timeout != null && message.hasOwnProperty("timeout"))
                     writer.uint32(/* id 6, wireType 0 =*/48).int32(message.timeout);
                 return writer;
             };
 
             /**
              * Encodes the specified SageMakerOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.SageMakerOperatorConfig.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.ISageMakerOperatorConfig} message SageMakerOperatorConfig message or plain object to encode
+             * @param {bentoml.DeploymentSpec.SageMakerOperatorConfig$Properties} message SageMakerOperatorConfig message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -788,9 +714,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes a SageMakerOperatorConfig message from the specified reader or buffer.
-             * @function decode
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {bentoml.DeploymentSpec.SageMakerOperatorConfig} SageMakerOperatorConfig
@@ -832,9 +755,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes a SageMakerOperatorConfig message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {bentoml.DeploymentSpec.SageMakerOperatorConfig} SageMakerOperatorConfig
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -842,37 +762,34 @@ export const bentoml = $root.bentoml = (() => {
              */
             SageMakerOperatorConfig.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies a SageMakerOperatorConfig message.
-             * @function verify
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             SageMakerOperatorConfig.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.region != null && message.hasOwnProperty("region"))
+                if (message.region != null)
                     if (!$util.isString(message.region))
                         return "region: string expected";
-                if (message.instance_type != null && message.hasOwnProperty("instance_type"))
+                if (message.instance_type != null)
                     if (!$util.isString(message.instance_type))
                         return "instance_type: string expected";
-                if (message.instance_count != null && message.hasOwnProperty("instance_count"))
+                if (message.instance_count != null)
                     if (!$util.isInteger(message.instance_count))
                         return "instance_count: integer expected";
-                if (message.api_name != null && message.hasOwnProperty("api_name"))
+                if (message.api_name != null)
                     if (!$util.isString(message.api_name))
                         return "api_name: string expected";
-                if (message.num_of_gunicorn_workers_per_instance != null && message.hasOwnProperty("num_of_gunicorn_workers_per_instance"))
+                if (message.num_of_gunicorn_workers_per_instance != null)
                     if (!$util.isInteger(message.num_of_gunicorn_workers_per_instance))
                         return "num_of_gunicorn_workers_per_instance: integer expected";
-                if (message.timeout != null && message.hasOwnProperty("timeout"))
+                if (message.timeout != null)
                     if (!$util.isInteger(message.timeout))
                         return "timeout: integer expected";
                 return null;
@@ -880,9 +797,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Creates a SageMakerOperatorConfig message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {bentoml.DeploymentSpec.SageMakerOperatorConfig} SageMakerOperatorConfig
              */
@@ -906,12 +820,18 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a SageMakerOperatorConfig message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link bentoml.DeploymentSpec.SageMakerOperatorConfig.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {bentoml.DeploymentSpec.SageMakerOperatorConfig} SageMakerOperatorConfig
+             */
+            SageMakerOperatorConfig.from = SageMakerOperatorConfig.fromObject;
+
+            /**
              * Creates a plain object from a SageMakerOperatorConfig message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @static
              * @param {bentoml.DeploymentSpec.SageMakerOperatorConfig} message SageMakerOperatorConfig
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             SageMakerOperatorConfig.toObject = function toObject(message, options) {
@@ -942,10 +862,16 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a plain object from this SageMakerOperatorConfig message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            SageMakerOperatorConfig.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this SageMakerOperatorConfig to JSON.
-             * @function toJSON
-             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             SageMakerOperatorConfig.prototype.toJSON = function toJSON() {
@@ -959,67 +885,53 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Properties of an AwsLambdaOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @interface IAwsLambdaOperatorConfig
-             * @property {string|null} [region] AwsLambdaOperatorConfig region
-             * @property {string|null} [api_name] AwsLambdaOperatorConfig api_name
-             * @property {number|null} [memory_size] AwsLambdaOperatorConfig memory_size
-             * @property {number|null} [timeout] AwsLambdaOperatorConfig timeout
+             * @typedef bentoml.DeploymentSpec.AwsLambdaOperatorConfig$Properties
+             * @type {Object}
+             * @property {string} [region] AwsLambdaOperatorConfig region.
+             * @property {string} [api_name] AwsLambdaOperatorConfig api_name.
+             * @property {number} [memory_size] AwsLambdaOperatorConfig memory_size.
+             * @property {number} [timeout] AwsLambdaOperatorConfig timeout.
              */
 
             /**
              * Constructs a new AwsLambdaOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @classdesc Represents an AwsLambdaOperatorConfig.
-             * @implements IAwsLambdaOperatorConfig
+             * @exports bentoml.DeploymentSpec.AwsLambdaOperatorConfig
              * @constructor
-             * @param {bentoml.DeploymentSpec.IAwsLambdaOperatorConfig=} [properties] Properties to set
+             * @param {bentoml.DeploymentSpec.AwsLambdaOperatorConfig$Properties=} [properties] Properties to set
              */
             function AwsLambdaOperatorConfig(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * AwsLambdaOperatorConfig region.
-             * @member {string} region
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @instance
+             * @type {string|undefined}
              */
             AwsLambdaOperatorConfig.prototype.region = "";
 
             /**
              * AwsLambdaOperatorConfig api_name.
-             * @member {string} api_name
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @instance
+             * @type {string|undefined}
              */
             AwsLambdaOperatorConfig.prototype.api_name = "";
 
             /**
              * AwsLambdaOperatorConfig memory_size.
-             * @member {number} memory_size
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @instance
+             * @type {number|undefined}
              */
             AwsLambdaOperatorConfig.prototype.memory_size = 0;
 
             /**
              * AwsLambdaOperatorConfig timeout.
-             * @member {number} timeout
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @instance
+             * @type {number|undefined}
              */
             AwsLambdaOperatorConfig.prototype.timeout = 0;
 
             /**
              * Creates a new AwsLambdaOperatorConfig instance using the specified properties.
-             * @function create
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IAwsLambdaOperatorConfig=} [properties] Properties to set
+             * @param {bentoml.DeploymentSpec.AwsLambdaOperatorConfig$Properties=} [properties] Properties to set
              * @returns {bentoml.DeploymentSpec.AwsLambdaOperatorConfig} AwsLambdaOperatorConfig instance
              */
             AwsLambdaOperatorConfig.create = function create(properties) {
@@ -1028,33 +940,27 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Encodes the specified AwsLambdaOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.AwsLambdaOperatorConfig.verify|verify} messages.
-             * @function encode
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IAwsLambdaOperatorConfig} message AwsLambdaOperatorConfig message or plain object to encode
+             * @param {bentoml.DeploymentSpec.AwsLambdaOperatorConfig$Properties} message AwsLambdaOperatorConfig message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             AwsLambdaOperatorConfig.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.region != null && Object.hasOwnProperty.call(message, "region"))
+                if (message.region != null && message.hasOwnProperty("region"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.region);
-                if (message.api_name != null && Object.hasOwnProperty.call(message, "api_name"))
+                if (message.api_name != null && message.hasOwnProperty("api_name"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.api_name);
-                if (message.memory_size != null && Object.hasOwnProperty.call(message, "memory_size"))
+                if (message.memory_size != null && message.hasOwnProperty("memory_size"))
                     writer.uint32(/* id 3, wireType 0 =*/24).int32(message.memory_size);
-                if (message.timeout != null && Object.hasOwnProperty.call(message, "timeout"))
+                if (message.timeout != null && message.hasOwnProperty("timeout"))
                     writer.uint32(/* id 4, wireType 0 =*/32).int32(message.timeout);
                 return writer;
             };
 
             /**
              * Encodes the specified AwsLambdaOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.AwsLambdaOperatorConfig.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IAwsLambdaOperatorConfig} message AwsLambdaOperatorConfig message or plain object to encode
+             * @param {bentoml.DeploymentSpec.AwsLambdaOperatorConfig$Properties} message AwsLambdaOperatorConfig message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -1064,9 +970,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes an AwsLambdaOperatorConfig message from the specified reader or buffer.
-             * @function decode
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {bentoml.DeploymentSpec.AwsLambdaOperatorConfig} AwsLambdaOperatorConfig
@@ -1102,9 +1005,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes an AwsLambdaOperatorConfig message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {bentoml.DeploymentSpec.AwsLambdaOperatorConfig} AwsLambdaOperatorConfig
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -1112,31 +1012,28 @@ export const bentoml = $root.bentoml = (() => {
              */
             AwsLambdaOperatorConfig.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies an AwsLambdaOperatorConfig message.
-             * @function verify
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             AwsLambdaOperatorConfig.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.region != null && message.hasOwnProperty("region"))
+                if (message.region != null)
                     if (!$util.isString(message.region))
                         return "region: string expected";
-                if (message.api_name != null && message.hasOwnProperty("api_name"))
+                if (message.api_name != null)
                     if (!$util.isString(message.api_name))
                         return "api_name: string expected";
-                if (message.memory_size != null && message.hasOwnProperty("memory_size"))
+                if (message.memory_size != null)
                     if (!$util.isInteger(message.memory_size))
                         return "memory_size: integer expected";
-                if (message.timeout != null && message.hasOwnProperty("timeout"))
+                if (message.timeout != null)
                     if (!$util.isInteger(message.timeout))
                         return "timeout: integer expected";
                 return null;
@@ -1144,9 +1041,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Creates an AwsLambdaOperatorConfig message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {bentoml.DeploymentSpec.AwsLambdaOperatorConfig} AwsLambdaOperatorConfig
              */
@@ -1166,12 +1060,18 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates an AwsLambdaOperatorConfig message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link bentoml.DeploymentSpec.AwsLambdaOperatorConfig.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {bentoml.DeploymentSpec.AwsLambdaOperatorConfig} AwsLambdaOperatorConfig
+             */
+            AwsLambdaOperatorConfig.from = AwsLambdaOperatorConfig.fromObject;
+
+            /**
              * Creates a plain object from an AwsLambdaOperatorConfig message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @static
              * @param {bentoml.DeploymentSpec.AwsLambdaOperatorConfig} message AwsLambdaOperatorConfig
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             AwsLambdaOperatorConfig.toObject = function toObject(message, options) {
@@ -1196,10 +1096,16 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a plain object from this AwsLambdaOperatorConfig message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            AwsLambdaOperatorConfig.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this AwsLambdaOperatorConfig to JSON.
-             * @function toJSON
-             * @memberof bentoml.DeploymentSpec.AwsLambdaOperatorConfig
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             AwsLambdaOperatorConfig.prototype.toJSON = function toJSON() {
@@ -1213,76 +1119,60 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Properties of an AzureFunctionsOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @interface IAzureFunctionsOperatorConfig
-             * @property {string|null} [location] AzureFunctionsOperatorConfig location
-             * @property {string|null} [premium_plan_sku] AzureFunctionsOperatorConfig premium_plan_sku
-             * @property {number|null} [min_instances] AzureFunctionsOperatorConfig min_instances
-             * @property {number|null} [max_burst] AzureFunctionsOperatorConfig max_burst
-             * @property {string|null} [function_auth_level] AzureFunctionsOperatorConfig function_auth_level
+             * @typedef bentoml.DeploymentSpec.AzureFunctionsOperatorConfig$Properties
+             * @type {Object}
+             * @property {string} [location] AzureFunctionsOperatorConfig location.
+             * @property {string} [premium_plan_sku] AzureFunctionsOperatorConfig premium_plan_sku.
+             * @property {number} [min_instances] AzureFunctionsOperatorConfig min_instances.
+             * @property {number} [max_burst] AzureFunctionsOperatorConfig max_burst.
+             * @property {string} [function_auth_level] AzureFunctionsOperatorConfig function_auth_level.
              */
 
             /**
              * Constructs a new AzureFunctionsOperatorConfig.
-             * @memberof bentoml.DeploymentSpec
-             * @classdesc Represents an AzureFunctionsOperatorConfig.
-             * @implements IAzureFunctionsOperatorConfig
+             * @exports bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
              * @constructor
-             * @param {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig=} [properties] Properties to set
+             * @param {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig$Properties=} [properties] Properties to set
              */
             function AzureFunctionsOperatorConfig(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * AzureFunctionsOperatorConfig location.
-             * @member {string} location
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @instance
+             * @type {string|undefined}
              */
             AzureFunctionsOperatorConfig.prototype.location = "";
 
             /**
              * AzureFunctionsOperatorConfig premium_plan_sku.
-             * @member {string} premium_plan_sku
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @instance
+             * @type {string|undefined}
              */
             AzureFunctionsOperatorConfig.prototype.premium_plan_sku = "";
 
             /**
              * AzureFunctionsOperatorConfig min_instances.
-             * @member {number} min_instances
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @instance
+             * @type {number|undefined}
              */
             AzureFunctionsOperatorConfig.prototype.min_instances = 0;
 
             /**
              * AzureFunctionsOperatorConfig max_burst.
-             * @member {number} max_burst
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @instance
+             * @type {number|undefined}
              */
             AzureFunctionsOperatorConfig.prototype.max_burst = 0;
 
             /**
              * AzureFunctionsOperatorConfig function_auth_level.
-             * @member {string} function_auth_level
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @instance
+             * @type {string|undefined}
              */
             AzureFunctionsOperatorConfig.prototype.function_auth_level = "";
 
             /**
              * Creates a new AzureFunctionsOperatorConfig instance using the specified properties.
-             * @function create
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig=} [properties] Properties to set
+             * @param {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig$Properties=} [properties] Properties to set
              * @returns {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} AzureFunctionsOperatorConfig instance
              */
             AzureFunctionsOperatorConfig.create = function create(properties) {
@@ -1291,35 +1181,29 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Encodes the specified AzureFunctionsOperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.verify|verify} messages.
-             * @function encode
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig} message AzureFunctionsOperatorConfig message or plain object to encode
+             * @param {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig$Properties} message AzureFunctionsOperatorConfig message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             AzureFunctionsOperatorConfig.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.location != null && Object.hasOwnProperty.call(message, "location"))
+                if (message.location != null && message.hasOwnProperty("location"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.location);
-                if (message.premium_plan_sku != null && Object.hasOwnProperty.call(message, "premium_plan_sku"))
+                if (message.premium_plan_sku != null && message.hasOwnProperty("premium_plan_sku"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.premium_plan_sku);
-                if (message.min_instances != null && Object.hasOwnProperty.call(message, "min_instances"))
+                if (message.min_instances != null && message.hasOwnProperty("min_instances"))
                     writer.uint32(/* id 3, wireType 0 =*/24).int32(message.min_instances);
-                if (message.max_burst != null && Object.hasOwnProperty.call(message, "max_burst"))
+                if (message.max_burst != null && message.hasOwnProperty("max_burst"))
                     writer.uint32(/* id 4, wireType 0 =*/32).int32(message.max_burst);
-                if (message.function_auth_level != null && Object.hasOwnProperty.call(message, "function_auth_level"))
+                if (message.function_auth_level != null && message.hasOwnProperty("function_auth_level"))
                     writer.uint32(/* id 5, wireType 2 =*/42).string(message.function_auth_level);
                 return writer;
             };
 
             /**
              * Encodes the specified AzureFunctionsOperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @static
-             * @param {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig} message AzureFunctionsOperatorConfig message or plain object to encode
+             * @param {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig$Properties} message AzureFunctionsOperatorConfig message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -1329,9 +1213,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes an AzureFunctionsOperatorConfig message from the specified reader or buffer.
-             * @function decode
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} AzureFunctionsOperatorConfig
@@ -1370,9 +1251,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes an AzureFunctionsOperatorConfig message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} AzureFunctionsOperatorConfig
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -1380,34 +1258,31 @@ export const bentoml = $root.bentoml = (() => {
              */
             AzureFunctionsOperatorConfig.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies an AzureFunctionsOperatorConfig message.
-             * @function verify
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             AzureFunctionsOperatorConfig.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.location != null && message.hasOwnProperty("location"))
+                if (message.location != null)
                     if (!$util.isString(message.location))
                         return "location: string expected";
-                if (message.premium_plan_sku != null && message.hasOwnProperty("premium_plan_sku"))
+                if (message.premium_plan_sku != null)
                     if (!$util.isString(message.premium_plan_sku))
                         return "premium_plan_sku: string expected";
-                if (message.min_instances != null && message.hasOwnProperty("min_instances"))
+                if (message.min_instances != null)
                     if (!$util.isInteger(message.min_instances))
                         return "min_instances: integer expected";
-                if (message.max_burst != null && message.hasOwnProperty("max_burst"))
+                if (message.max_burst != null)
                     if (!$util.isInteger(message.max_burst))
                         return "max_burst: integer expected";
-                if (message.function_auth_level != null && message.hasOwnProperty("function_auth_level"))
+                if (message.function_auth_level != null)
                     if (!$util.isString(message.function_auth_level))
                         return "function_auth_level: string expected";
                 return null;
@@ -1415,9 +1290,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Creates an AzureFunctionsOperatorConfig message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} AzureFunctionsOperatorConfig
              */
@@ -1439,12 +1311,18 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates an AzureFunctionsOperatorConfig message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} AzureFunctionsOperatorConfig
+             */
+            AzureFunctionsOperatorConfig.from = AzureFunctionsOperatorConfig.fromObject;
+
+            /**
              * Creates a plain object from an AzureFunctionsOperatorConfig message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @static
              * @param {bentoml.DeploymentSpec.AzureFunctionsOperatorConfig} message AzureFunctionsOperatorConfig
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             AzureFunctionsOperatorConfig.toObject = function toObject(message, options) {
@@ -1472,10 +1350,16 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a plain object from this AzureFunctionsOperatorConfig message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            AzureFunctionsOperatorConfig.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this AzureFunctionsOperatorConfig to JSON.
-             * @function toJSON
-             * @memberof bentoml.DeploymentSpec.AzureFunctionsOperatorConfig
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             AzureFunctionsOperatorConfig.prototype.toJSON = function toJSON() {
@@ -1492,67 +1376,53 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a DeploymentState.
-         * @memberof bentoml
-         * @interface IDeploymentState
-         * @property {bentoml.DeploymentState.State|null} [state] DeploymentState state
-         * @property {string|null} [error_message] DeploymentState error_message
-         * @property {string|null} [info_json] DeploymentState info_json
-         * @property {google.protobuf.ITimestamp|null} [timestamp] DeploymentState timestamp
+         * @typedef bentoml.DeploymentState$Properties
+         * @type {Object}
+         * @property {bentoml.DeploymentState.State} [state] DeploymentState state.
+         * @property {string} [error_message] DeploymentState error_message.
+         * @property {string} [info_json] DeploymentState info_json.
+         * @property {google.protobuf.Timestamp$Properties} [timestamp] DeploymentState timestamp.
          */
 
         /**
          * Constructs a new DeploymentState.
-         * @memberof bentoml
-         * @classdesc Represents a DeploymentState.
-         * @implements IDeploymentState
+         * @exports bentoml.DeploymentState
          * @constructor
-         * @param {bentoml.IDeploymentState=} [properties] Properties to set
+         * @param {bentoml.DeploymentState$Properties=} [properties] Properties to set
          */
         function DeploymentState(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * DeploymentState state.
-         * @member {bentoml.DeploymentState.State} state
-         * @memberof bentoml.DeploymentState
-         * @instance
+         * @type {bentoml.DeploymentState.State|undefined}
          */
         DeploymentState.prototype.state = 0;
 
         /**
          * DeploymentState error_message.
-         * @member {string} error_message
-         * @memberof bentoml.DeploymentState
-         * @instance
+         * @type {string|undefined}
          */
         DeploymentState.prototype.error_message = "";
 
         /**
          * DeploymentState info_json.
-         * @member {string} info_json
-         * @memberof bentoml.DeploymentState
-         * @instance
+         * @type {string|undefined}
          */
         DeploymentState.prototype.info_json = "";
 
         /**
          * DeploymentState timestamp.
-         * @member {google.protobuf.ITimestamp|null|undefined} timestamp
-         * @memberof bentoml.DeploymentState
-         * @instance
+         * @type {google.protobuf.Timestamp$Properties|undefined}
          */
         DeploymentState.prototype.timestamp = null;
 
         /**
          * Creates a new DeploymentState instance using the specified properties.
-         * @function create
-         * @memberof bentoml.DeploymentState
-         * @static
-         * @param {bentoml.IDeploymentState=} [properties] Properties to set
+         * @param {bentoml.DeploymentState$Properties=} [properties] Properties to set
          * @returns {bentoml.DeploymentState} DeploymentState instance
          */
         DeploymentState.create = function create(properties) {
@@ -1561,33 +1431,27 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified DeploymentState message. Does not implicitly {@link bentoml.DeploymentState.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.DeploymentState
-         * @static
-         * @param {bentoml.IDeploymentState} message DeploymentState message or plain object to encode
+         * @param {bentoml.DeploymentState$Properties} message DeploymentState message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         DeploymentState.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
-                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.state);
-            if (message.error_message != null && Object.hasOwnProperty.call(message, "error_message"))
+            if (message.state != null && message.hasOwnProperty("state"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.state);
+            if (message.error_message != null && message.hasOwnProperty("error_message"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.error_message);
-            if (message.info_json != null && Object.hasOwnProperty.call(message, "info_json"))
+            if (message.info_json != null && message.hasOwnProperty("info_json"))
                 writer.uint32(/* id 3, wireType 2 =*/26).string(message.info_json);
-            if (message.timestamp != null && Object.hasOwnProperty.call(message, "timestamp"))
+            if (message.timestamp && message.hasOwnProperty("timestamp"))
                 $root.google.protobuf.Timestamp.encode(message.timestamp, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified DeploymentState message, length delimited. Does not implicitly {@link bentoml.DeploymentState.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.DeploymentState
-         * @static
-         * @param {bentoml.IDeploymentState} message DeploymentState message or plain object to encode
+         * @param {bentoml.DeploymentState$Properties} message DeploymentState message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -1597,9 +1461,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DeploymentState message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.DeploymentState
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.DeploymentState} DeploymentState
@@ -1614,7 +1475,7 @@ export const bentoml = $root.bentoml = (() => {
                 let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
-                    message.state = reader.int32();
+                    message.state = reader.uint32();
                     break;
                 case 2:
                     message.error_message = reader.string();
@@ -1635,9 +1496,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DeploymentState message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.DeploymentState
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.DeploymentState} DeploymentState
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -1645,22 +1503,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         DeploymentState.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a DeploymentState message.
-         * @function verify
-         * @memberof bentoml.DeploymentState
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         DeploymentState.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.state != null && message.hasOwnProperty("state"))
+            if (message.state != null)
                 switch (message.state) {
                 default:
                     return "state: enum value expected";
@@ -1675,13 +1530,13 @@ export const bentoml = $root.bentoml = (() => {
                 case 8:
                     break;
                 }
-            if (message.error_message != null && message.hasOwnProperty("error_message"))
+            if (message.error_message != null)
                 if (!$util.isString(message.error_message))
                     return "error_message: string expected";
-            if (message.info_json != null && message.hasOwnProperty("info_json"))
+            if (message.info_json != null)
                 if (!$util.isString(message.info_json))
                     return "info_json: string expected";
-            if (message.timestamp != null && message.hasOwnProperty("timestamp")) {
+            if (message.timestamp != null) {
                 let error = $root.google.protobuf.Timestamp.verify(message.timestamp);
                 if (error)
                     return "timestamp." + error;
@@ -1691,9 +1546,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a DeploymentState message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.DeploymentState
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.DeploymentState} DeploymentState
          */
@@ -1752,12 +1604,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a DeploymentState message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.DeploymentState.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DeploymentState} DeploymentState
+         */
+        DeploymentState.from = DeploymentState.fromObject;
+
+        /**
          * Creates a plain object from a DeploymentState message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.DeploymentState
-         * @static
          * @param {bentoml.DeploymentState} message DeploymentState
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         DeploymentState.toObject = function toObject(message, options) {
@@ -1782,10 +1640,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this DeploymentState message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DeploymentState.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this DeploymentState to JSON.
-         * @function toJSON
-         * @memberof bentoml.DeploymentState
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         DeploymentState.prototype.toJSON = function toJSON() {
@@ -1794,7 +1658,8 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * State enum.
-         * @name bentoml.DeploymentState.State
+         * @name State
+         * @memberof bentoml.DeploymentState
          * @enum {number}
          * @property {number} PENDING=0 PENDING value
          * @property {number} RUNNING=1 RUNNING value
@@ -1827,105 +1692,83 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a Deployment.
-         * @memberof bentoml
-         * @interface IDeployment
-         * @property {string|null} [namespace] Deployment namespace
-         * @property {string|null} [name] Deployment name
-         * @property {bentoml.IDeploymentSpec|null} [spec] Deployment spec
-         * @property {bentoml.IDeploymentState|null} [state] Deployment state
-         * @property {Object.<string,string>|null} [annotations] Deployment annotations
-         * @property {Object.<string,string>|null} [labels] Deployment labels
-         * @property {google.protobuf.ITimestamp|null} [created_at] Deployment created_at
-         * @property {google.protobuf.ITimestamp|null} [last_updated_at] Deployment last_updated_at
+         * @typedef bentoml.Deployment$Properties
+         * @type {Object}
+         * @property {string} [namespace] Deployment namespace.
+         * @property {string} [name] Deployment name.
+         * @property {bentoml.DeploymentSpec$Properties} [spec] Deployment spec.
+         * @property {bentoml.DeploymentState$Properties} [state] Deployment state.
+         * @property {Object.<string,string>} [annotations] Deployment annotations.
+         * @property {Object.<string,string>} [labels] Deployment labels.
+         * @property {google.protobuf.Timestamp$Properties} [created_at] Deployment created_at.
+         * @property {google.protobuf.Timestamp$Properties} [last_updated_at] Deployment last_updated_at.
          */
 
         /**
          * Constructs a new Deployment.
-         * @memberof bentoml
-         * @classdesc Represents a Deployment.
-         * @implements IDeployment
+         * @exports bentoml.Deployment
          * @constructor
-         * @param {bentoml.IDeployment=} [properties] Properties to set
+         * @param {bentoml.Deployment$Properties=} [properties] Properties to set
          */
         function Deployment(properties) {
             this.annotations = {};
             this.labels = {};
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * Deployment namespace.
-         * @member {string} namespace
-         * @memberof bentoml.Deployment
-         * @instance
+         * @type {string|undefined}
          */
         Deployment.prototype.namespace = "";
 
         /**
          * Deployment name.
-         * @member {string} name
-         * @memberof bentoml.Deployment
-         * @instance
+         * @type {string|undefined}
          */
         Deployment.prototype.name = "";
 
         /**
          * Deployment spec.
-         * @member {bentoml.IDeploymentSpec|null|undefined} spec
-         * @memberof bentoml.Deployment
-         * @instance
+         * @type {bentoml.DeploymentSpec$Properties|undefined}
          */
         Deployment.prototype.spec = null;
 
         /**
          * Deployment state.
-         * @member {bentoml.IDeploymentState|null|undefined} state
-         * @memberof bentoml.Deployment
-         * @instance
+         * @type {bentoml.DeploymentState$Properties|undefined}
          */
         Deployment.prototype.state = null;
 
         /**
          * Deployment annotations.
-         * @member {Object.<string,string>} annotations
-         * @memberof bentoml.Deployment
-         * @instance
+         * @type {Object.<string,string>|undefined}
          */
         Deployment.prototype.annotations = $util.emptyObject;
 
         /**
          * Deployment labels.
-         * @member {Object.<string,string>} labels
-         * @memberof bentoml.Deployment
-         * @instance
+         * @type {Object.<string,string>|undefined}
          */
         Deployment.prototype.labels = $util.emptyObject;
 
         /**
          * Deployment created_at.
-         * @member {google.protobuf.ITimestamp|null|undefined} created_at
-         * @memberof bentoml.Deployment
-         * @instance
+         * @type {google.protobuf.Timestamp$Properties|undefined}
          */
         Deployment.prototype.created_at = null;
 
         /**
          * Deployment last_updated_at.
-         * @member {google.protobuf.ITimestamp|null|undefined} last_updated_at
-         * @memberof bentoml.Deployment
-         * @instance
+         * @type {google.protobuf.Timestamp$Properties|undefined}
          */
         Deployment.prototype.last_updated_at = null;
 
         /**
          * Creates a new Deployment instance using the specified properties.
-         * @function create
-         * @memberof bentoml.Deployment
-         * @static
-         * @param {bentoml.IDeployment=} [properties] Properties to set
+         * @param {bentoml.Deployment$Properties=} [properties] Properties to set
          * @returns {bentoml.Deployment} Deployment instance
          */
         Deployment.create = function create(properties) {
@@ -1934,43 +1777,37 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified Deployment message. Does not implicitly {@link bentoml.Deployment.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.Deployment
-         * @static
-         * @param {bentoml.IDeployment} message Deployment message or plain object to encode
+         * @param {bentoml.Deployment$Properties} message Deployment message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         Deployment.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.namespace != null && Object.hasOwnProperty.call(message, "namespace"))
+            if (message.namespace != null && message.hasOwnProperty("namespace"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.namespace);
-            if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+            if (message.name != null && message.hasOwnProperty("name"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
-            if (message.spec != null && Object.hasOwnProperty.call(message, "spec"))
+            if (message.spec && message.hasOwnProperty("spec"))
                 $root.bentoml.DeploymentSpec.encode(message.spec, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+            if (message.state && message.hasOwnProperty("state"))
                 $root.bentoml.DeploymentState.encode(message.state, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-            if (message.annotations != null && Object.hasOwnProperty.call(message, "annotations"))
+            if (message.annotations && message.hasOwnProperty("annotations"))
                 for (let keys = Object.keys(message.annotations), i = 0; i < keys.length; ++i)
                     writer.uint32(/* id 5, wireType 2 =*/42).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.annotations[keys[i]]).ldelim();
-            if (message.labels != null && Object.hasOwnProperty.call(message, "labels"))
+            if (message.labels && message.hasOwnProperty("labels"))
                 for (let keys = Object.keys(message.labels), i = 0; i < keys.length; ++i)
                     writer.uint32(/* id 6, wireType 2 =*/50).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.labels[keys[i]]).ldelim();
-            if (message.created_at != null && Object.hasOwnProperty.call(message, "created_at"))
+            if (message.created_at && message.hasOwnProperty("created_at"))
                 $root.google.protobuf.Timestamp.encode(message.created_at, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
-            if (message.last_updated_at != null && Object.hasOwnProperty.call(message, "last_updated_at"))
+            if (message.last_updated_at && message.hasOwnProperty("last_updated_at"))
                 $root.google.protobuf.Timestamp.encode(message.last_updated_at, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified Deployment message, length delimited. Does not implicitly {@link bentoml.Deployment.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.Deployment
-         * @static
-         * @param {bentoml.IDeployment} message Deployment message or plain object to encode
+         * @param {bentoml.Deployment$Properties} message Deployment message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -1980,9 +1817,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a Deployment message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.Deployment
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.Deployment} Deployment
@@ -2040,9 +1874,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a Deployment message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.Deployment
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.Deployment} Deployment
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -2050,38 +1881,35 @@ export const bentoml = $root.bentoml = (() => {
          */
         Deployment.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a Deployment message.
-         * @function verify
-         * @memberof bentoml.Deployment
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         Deployment.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.namespace != null && message.hasOwnProperty("namespace"))
+            if (message.namespace != null)
                 if (!$util.isString(message.namespace))
                     return "namespace: string expected";
-            if (message.name != null && message.hasOwnProperty("name"))
+            if (message.name != null)
                 if (!$util.isString(message.name))
                     return "name: string expected";
-            if (message.spec != null && message.hasOwnProperty("spec")) {
+            if (message.spec != null) {
                 let error = $root.bentoml.DeploymentSpec.verify(message.spec);
                 if (error)
                     return "spec." + error;
             }
-            if (message.state != null && message.hasOwnProperty("state")) {
+            if (message.state != null) {
                 let error = $root.bentoml.DeploymentState.verify(message.state);
                 if (error)
                     return "state." + error;
             }
-            if (message.annotations != null && message.hasOwnProperty("annotations")) {
+            if (message.annotations != null) {
                 if (!$util.isObject(message.annotations))
                     return "annotations: object expected";
                 let key = Object.keys(message.annotations);
@@ -2089,7 +1917,7 @@ export const bentoml = $root.bentoml = (() => {
                     if (!$util.isString(message.annotations[key[i]]))
                         return "annotations: string{k:string} expected";
             }
-            if (message.labels != null && message.hasOwnProperty("labels")) {
+            if (message.labels != null) {
                 if (!$util.isObject(message.labels))
                     return "labels: object expected";
                 let key = Object.keys(message.labels);
@@ -2097,12 +1925,12 @@ export const bentoml = $root.bentoml = (() => {
                     if (!$util.isString(message.labels[key[i]]))
                         return "labels: string{k:string} expected";
             }
-            if (message.created_at != null && message.hasOwnProperty("created_at")) {
+            if (message.created_at != null) {
                 let error = $root.google.protobuf.Timestamp.verify(message.created_at);
                 if (error)
                     return "created_at." + error;
             }
-            if (message.last_updated_at != null && message.hasOwnProperty("last_updated_at")) {
+            if (message.last_updated_at != null) {
                 let error = $root.google.protobuf.Timestamp.verify(message.last_updated_at);
                 if (error)
                     return "last_updated_at." + error;
@@ -2112,9 +1940,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a Deployment message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.Deployment
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.Deployment} Deployment
          */
@@ -2164,12 +1989,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a Deployment message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.Deployment.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.Deployment} Deployment
+         */
+        Deployment.from = Deployment.fromObject;
+
+        /**
          * Creates a plain object from a Deployment message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.Deployment
-         * @static
          * @param {bentoml.Deployment} message Deployment
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         Deployment.toObject = function toObject(message, options) {
@@ -2215,10 +2046,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this Deployment message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Deployment.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this Deployment to JSON.
-         * @function toJSON
-         * @memberof bentoml.Deployment
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         Deployment.prototype.toJSON = function toJSON() {
@@ -2232,40 +2069,32 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a DeploymentStatus.
-         * @memberof bentoml
-         * @interface IDeploymentStatus
-         * @property {bentoml.IDeploymentState|null} [state] DeploymentStatus state
+         * @typedef bentoml.DeploymentStatus$Properties
+         * @type {Object}
+         * @property {bentoml.DeploymentState$Properties} [state] DeploymentStatus state.
          */
 
         /**
          * Constructs a new DeploymentStatus.
-         * @memberof bentoml
-         * @classdesc Represents a DeploymentStatus.
-         * @implements IDeploymentStatus
+         * @exports bentoml.DeploymentStatus
          * @constructor
-         * @param {bentoml.IDeploymentStatus=} [properties] Properties to set
+         * @param {bentoml.DeploymentStatus$Properties=} [properties] Properties to set
          */
         function DeploymentStatus(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * DeploymentStatus state.
-         * @member {bentoml.IDeploymentState|null|undefined} state
-         * @memberof bentoml.DeploymentStatus
-         * @instance
+         * @type {bentoml.DeploymentState$Properties|undefined}
          */
         DeploymentStatus.prototype.state = null;
 
         /**
          * Creates a new DeploymentStatus instance using the specified properties.
-         * @function create
-         * @memberof bentoml.DeploymentStatus
-         * @static
-         * @param {bentoml.IDeploymentStatus=} [properties] Properties to set
+         * @param {bentoml.DeploymentStatus$Properties=} [properties] Properties to set
          * @returns {bentoml.DeploymentStatus} DeploymentStatus instance
          */
         DeploymentStatus.create = function create(properties) {
@@ -2274,27 +2103,21 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified DeploymentStatus message. Does not implicitly {@link bentoml.DeploymentStatus.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.DeploymentStatus
-         * @static
-         * @param {bentoml.IDeploymentStatus} message DeploymentStatus message or plain object to encode
+         * @param {bentoml.DeploymentStatus$Properties} message DeploymentStatus message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         DeploymentStatus.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+            if (message.state && message.hasOwnProperty("state"))
                 $root.bentoml.DeploymentState.encode(message.state, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified DeploymentStatus message, length delimited. Does not implicitly {@link bentoml.DeploymentStatus.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.DeploymentStatus
-         * @static
-         * @param {bentoml.IDeploymentStatus} message DeploymentStatus message or plain object to encode
+         * @param {bentoml.DeploymentStatus$Properties} message DeploymentStatus message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -2304,9 +2127,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DeploymentStatus message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.DeploymentStatus
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.DeploymentStatus} DeploymentStatus
@@ -2333,9 +2153,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DeploymentStatus message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.DeploymentStatus
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.DeploymentStatus} DeploymentStatus
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -2343,22 +2160,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         DeploymentStatus.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a DeploymentStatus message.
-         * @function verify
-         * @memberof bentoml.DeploymentStatus
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         DeploymentStatus.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.state != null && message.hasOwnProperty("state")) {
+            if (message.state != null) {
                 let error = $root.bentoml.DeploymentState.verify(message.state);
                 if (error)
                     return "state." + error;
@@ -2368,9 +2182,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a DeploymentStatus message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.DeploymentStatus
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.DeploymentStatus} DeploymentStatus
          */
@@ -2387,12 +2198,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a DeploymentStatus message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.DeploymentStatus.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DeploymentStatus} DeploymentStatus
+         */
+        DeploymentStatus.from = DeploymentStatus.fromObject;
+
+        /**
          * Creates a plain object from a DeploymentStatus message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.DeploymentStatus
-         * @static
          * @param {bentoml.DeploymentStatus} message DeploymentStatus
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         DeploymentStatus.toObject = function toObject(message, options) {
@@ -2407,10 +2224,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this DeploymentStatus message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DeploymentStatus.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this DeploymentStatus to JSON.
-         * @function toJSON
-         * @memberof bentoml.DeploymentStatus
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         DeploymentStatus.prototype.toJSON = function toJSON() {
@@ -2424,40 +2247,32 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of an ApplyDeploymentRequest.
-         * @memberof bentoml
-         * @interface IApplyDeploymentRequest
-         * @property {bentoml.IDeployment|null} [deployment] ApplyDeploymentRequest deployment
+         * @typedef bentoml.ApplyDeploymentRequest$Properties
+         * @type {Object}
+         * @property {bentoml.Deployment$Properties} [deployment] ApplyDeploymentRequest deployment.
          */
 
         /**
          * Constructs a new ApplyDeploymentRequest.
-         * @memberof bentoml
-         * @classdesc Represents an ApplyDeploymentRequest.
-         * @implements IApplyDeploymentRequest
+         * @exports bentoml.ApplyDeploymentRequest
          * @constructor
-         * @param {bentoml.IApplyDeploymentRequest=} [properties] Properties to set
+         * @param {bentoml.ApplyDeploymentRequest$Properties=} [properties] Properties to set
          */
         function ApplyDeploymentRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * ApplyDeploymentRequest deployment.
-         * @member {bentoml.IDeployment|null|undefined} deployment
-         * @memberof bentoml.ApplyDeploymentRequest
-         * @instance
+         * @type {bentoml.Deployment$Properties|undefined}
          */
         ApplyDeploymentRequest.prototype.deployment = null;
 
         /**
          * Creates a new ApplyDeploymentRequest instance using the specified properties.
-         * @function create
-         * @memberof bentoml.ApplyDeploymentRequest
-         * @static
-         * @param {bentoml.IApplyDeploymentRequest=} [properties] Properties to set
+         * @param {bentoml.ApplyDeploymentRequest$Properties=} [properties] Properties to set
          * @returns {bentoml.ApplyDeploymentRequest} ApplyDeploymentRequest instance
          */
         ApplyDeploymentRequest.create = function create(properties) {
@@ -2466,27 +2281,21 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified ApplyDeploymentRequest message. Does not implicitly {@link bentoml.ApplyDeploymentRequest.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.ApplyDeploymentRequest
-         * @static
-         * @param {bentoml.IApplyDeploymentRequest} message ApplyDeploymentRequest message or plain object to encode
+         * @param {bentoml.ApplyDeploymentRequest$Properties} message ApplyDeploymentRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         ApplyDeploymentRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.deployment != null && Object.hasOwnProperty.call(message, "deployment"))
+            if (message.deployment && message.hasOwnProperty("deployment"))
                 $root.bentoml.Deployment.encode(message.deployment, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified ApplyDeploymentRequest message, length delimited. Does not implicitly {@link bentoml.ApplyDeploymentRequest.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.ApplyDeploymentRequest
-         * @static
-         * @param {bentoml.IApplyDeploymentRequest} message ApplyDeploymentRequest message or plain object to encode
+         * @param {bentoml.ApplyDeploymentRequest$Properties} message ApplyDeploymentRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -2496,9 +2305,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an ApplyDeploymentRequest message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.ApplyDeploymentRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.ApplyDeploymentRequest} ApplyDeploymentRequest
@@ -2525,9 +2331,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an ApplyDeploymentRequest message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.ApplyDeploymentRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.ApplyDeploymentRequest} ApplyDeploymentRequest
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -2535,22 +2338,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         ApplyDeploymentRequest.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies an ApplyDeploymentRequest message.
-         * @function verify
-         * @memberof bentoml.ApplyDeploymentRequest
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         ApplyDeploymentRequest.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.deployment != null && message.hasOwnProperty("deployment")) {
+            if (message.deployment != null) {
                 let error = $root.bentoml.Deployment.verify(message.deployment);
                 if (error)
                     return "deployment." + error;
@@ -2560,9 +2360,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates an ApplyDeploymentRequest message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.ApplyDeploymentRequest
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.ApplyDeploymentRequest} ApplyDeploymentRequest
          */
@@ -2579,12 +2376,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates an ApplyDeploymentRequest message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.ApplyDeploymentRequest.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.ApplyDeploymentRequest} ApplyDeploymentRequest
+         */
+        ApplyDeploymentRequest.from = ApplyDeploymentRequest.fromObject;
+
+        /**
          * Creates a plain object from an ApplyDeploymentRequest message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.ApplyDeploymentRequest
-         * @static
          * @param {bentoml.ApplyDeploymentRequest} message ApplyDeploymentRequest
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         ApplyDeploymentRequest.toObject = function toObject(message, options) {
@@ -2599,10 +2402,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this ApplyDeploymentRequest message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ApplyDeploymentRequest.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this ApplyDeploymentRequest to JSON.
-         * @function toJSON
-         * @memberof bentoml.ApplyDeploymentRequest
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         ApplyDeploymentRequest.prototype.toJSON = function toJSON() {
@@ -2616,49 +2425,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of an ApplyDeploymentResponse.
-         * @memberof bentoml
-         * @interface IApplyDeploymentResponse
-         * @property {bentoml.IStatus|null} [status] ApplyDeploymentResponse status
-         * @property {bentoml.IDeployment|null} [deployment] ApplyDeploymentResponse deployment
+         * @typedef bentoml.ApplyDeploymentResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] ApplyDeploymentResponse status.
+         * @property {bentoml.Deployment$Properties} [deployment] ApplyDeploymentResponse deployment.
          */
 
         /**
          * Constructs a new ApplyDeploymentResponse.
-         * @memberof bentoml
-         * @classdesc Represents an ApplyDeploymentResponse.
-         * @implements IApplyDeploymentResponse
+         * @exports bentoml.ApplyDeploymentResponse
          * @constructor
-         * @param {bentoml.IApplyDeploymentResponse=} [properties] Properties to set
+         * @param {bentoml.ApplyDeploymentResponse$Properties=} [properties] Properties to set
          */
         function ApplyDeploymentResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * ApplyDeploymentResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         ApplyDeploymentResponse.prototype.status = null;
 
         /**
          * ApplyDeploymentResponse deployment.
-         * @member {bentoml.IDeployment|null|undefined} deployment
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @instance
+         * @type {bentoml.Deployment$Properties|undefined}
          */
         ApplyDeploymentResponse.prototype.deployment = null;
 
         /**
          * Creates a new ApplyDeploymentResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @static
-         * @param {bentoml.IApplyDeploymentResponse=} [properties] Properties to set
+         * @param {bentoml.ApplyDeploymentResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.ApplyDeploymentResponse} ApplyDeploymentResponse instance
          */
         ApplyDeploymentResponse.create = function create(properties) {
@@ -2667,29 +2466,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified ApplyDeploymentResponse message. Does not implicitly {@link bentoml.ApplyDeploymentResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @static
-         * @param {bentoml.IApplyDeploymentResponse} message ApplyDeploymentResponse message or plain object to encode
+         * @param {bentoml.ApplyDeploymentResponse$Properties} message ApplyDeploymentResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         ApplyDeploymentResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.deployment != null && Object.hasOwnProperty.call(message, "deployment"))
+            if (message.deployment && message.hasOwnProperty("deployment"))
                 $root.bentoml.Deployment.encode(message.deployment, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified ApplyDeploymentResponse message, length delimited. Does not implicitly {@link bentoml.ApplyDeploymentResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @static
-         * @param {bentoml.IApplyDeploymentResponse} message ApplyDeploymentResponse message or plain object to encode
+         * @param {bentoml.ApplyDeploymentResponse$Properties} message ApplyDeploymentResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -2699,9 +2492,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an ApplyDeploymentResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.ApplyDeploymentResponse} ApplyDeploymentResponse
@@ -2731,9 +2521,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an ApplyDeploymentResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.ApplyDeploymentResponse} ApplyDeploymentResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -2741,27 +2528,24 @@ export const bentoml = $root.bentoml = (() => {
          */
         ApplyDeploymentResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies an ApplyDeploymentResponse message.
-         * @function verify
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         ApplyDeploymentResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
-            if (message.deployment != null && message.hasOwnProperty("deployment")) {
+            if (message.deployment != null) {
                 let error = $root.bentoml.Deployment.verify(message.deployment);
                 if (error)
                     return "deployment." + error;
@@ -2771,9 +2555,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates an ApplyDeploymentResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.ApplyDeploymentResponse} ApplyDeploymentResponse
          */
@@ -2795,12 +2576,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates an ApplyDeploymentResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.ApplyDeploymentResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.ApplyDeploymentResponse} ApplyDeploymentResponse
+         */
+        ApplyDeploymentResponse.from = ApplyDeploymentResponse.fromObject;
+
+        /**
          * Creates a plain object from an ApplyDeploymentResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @static
          * @param {bentoml.ApplyDeploymentResponse} message ApplyDeploymentResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         ApplyDeploymentResponse.toObject = function toObject(message, options) {
@@ -2819,10 +2606,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this ApplyDeploymentResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ApplyDeploymentResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this ApplyDeploymentResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.ApplyDeploymentResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         ApplyDeploymentResponse.prototype.toJSON = function toJSON() {
@@ -2836,58 +2629,46 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a DeleteDeploymentRequest.
-         * @memberof bentoml
-         * @interface IDeleteDeploymentRequest
-         * @property {string|null} [deployment_name] DeleteDeploymentRequest deployment_name
-         * @property {string|null} [namespace] DeleteDeploymentRequest namespace
-         * @property {boolean|null} [force_delete] DeleteDeploymentRequest force_delete
+         * @typedef bentoml.DeleteDeploymentRequest$Properties
+         * @type {Object}
+         * @property {string} [deployment_name] DeleteDeploymentRequest deployment_name.
+         * @property {string} [namespace] DeleteDeploymentRequest namespace.
+         * @property {boolean} [force_delete] DeleteDeploymentRequest force_delete.
          */
 
         /**
          * Constructs a new DeleteDeploymentRequest.
-         * @memberof bentoml
-         * @classdesc Represents a DeleteDeploymentRequest.
-         * @implements IDeleteDeploymentRequest
+         * @exports bentoml.DeleteDeploymentRequest
          * @constructor
-         * @param {bentoml.IDeleteDeploymentRequest=} [properties] Properties to set
+         * @param {bentoml.DeleteDeploymentRequest$Properties=} [properties] Properties to set
          */
         function DeleteDeploymentRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * DeleteDeploymentRequest deployment_name.
-         * @member {string} deployment_name
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @instance
+         * @type {string|undefined}
          */
         DeleteDeploymentRequest.prototype.deployment_name = "";
 
         /**
          * DeleteDeploymentRequest namespace.
-         * @member {string} namespace
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @instance
+         * @type {string|undefined}
          */
         DeleteDeploymentRequest.prototype.namespace = "";
 
         /**
          * DeleteDeploymentRequest force_delete.
-         * @member {boolean} force_delete
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @instance
+         * @type {boolean|undefined}
          */
         DeleteDeploymentRequest.prototype.force_delete = false;
 
         /**
          * Creates a new DeleteDeploymentRequest instance using the specified properties.
-         * @function create
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @static
-         * @param {bentoml.IDeleteDeploymentRequest=} [properties] Properties to set
+         * @param {bentoml.DeleteDeploymentRequest$Properties=} [properties] Properties to set
          * @returns {bentoml.DeleteDeploymentRequest} DeleteDeploymentRequest instance
          */
         DeleteDeploymentRequest.create = function create(properties) {
@@ -2896,31 +2677,25 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified DeleteDeploymentRequest message. Does not implicitly {@link bentoml.DeleteDeploymentRequest.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @static
-         * @param {bentoml.IDeleteDeploymentRequest} message DeleteDeploymentRequest message or plain object to encode
+         * @param {bentoml.DeleteDeploymentRequest$Properties} message DeleteDeploymentRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         DeleteDeploymentRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.deployment_name != null && Object.hasOwnProperty.call(message, "deployment_name"))
+            if (message.deployment_name != null && message.hasOwnProperty("deployment_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.deployment_name);
-            if (message.namespace != null && Object.hasOwnProperty.call(message, "namespace"))
+            if (message.namespace != null && message.hasOwnProperty("namespace"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.namespace);
-            if (message.force_delete != null && Object.hasOwnProperty.call(message, "force_delete"))
+            if (message.force_delete != null && message.hasOwnProperty("force_delete"))
                 writer.uint32(/* id 3, wireType 0 =*/24).bool(message.force_delete);
             return writer;
         };
 
         /**
          * Encodes the specified DeleteDeploymentRequest message, length delimited. Does not implicitly {@link bentoml.DeleteDeploymentRequest.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @static
-         * @param {bentoml.IDeleteDeploymentRequest} message DeleteDeploymentRequest message or plain object to encode
+         * @param {bentoml.DeleteDeploymentRequest$Properties} message DeleteDeploymentRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -2930,9 +2705,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DeleteDeploymentRequest message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.DeleteDeploymentRequest} DeleteDeploymentRequest
@@ -2965,9 +2737,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DeleteDeploymentRequest message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.DeleteDeploymentRequest} DeleteDeploymentRequest
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -2975,28 +2744,25 @@ export const bentoml = $root.bentoml = (() => {
          */
         DeleteDeploymentRequest.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a DeleteDeploymentRequest message.
-         * @function verify
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         DeleteDeploymentRequest.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.deployment_name != null && message.hasOwnProperty("deployment_name"))
+            if (message.deployment_name != null)
                 if (!$util.isString(message.deployment_name))
                     return "deployment_name: string expected";
-            if (message.namespace != null && message.hasOwnProperty("namespace"))
+            if (message.namespace != null)
                 if (!$util.isString(message.namespace))
                     return "namespace: string expected";
-            if (message.force_delete != null && message.hasOwnProperty("force_delete"))
+            if (message.force_delete != null)
                 if (typeof message.force_delete !== "boolean")
                     return "force_delete: boolean expected";
             return null;
@@ -3004,9 +2770,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a DeleteDeploymentRequest message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.DeleteDeploymentRequest} DeleteDeploymentRequest
          */
@@ -3024,12 +2787,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a DeleteDeploymentRequest message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.DeleteDeploymentRequest.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DeleteDeploymentRequest} DeleteDeploymentRequest
+         */
+        DeleteDeploymentRequest.from = DeleteDeploymentRequest.fromObject;
+
+        /**
          * Creates a plain object from a DeleteDeploymentRequest message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @static
          * @param {bentoml.DeleteDeploymentRequest} message DeleteDeploymentRequest
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         DeleteDeploymentRequest.toObject = function toObject(message, options) {
@@ -3051,10 +2820,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this DeleteDeploymentRequest message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DeleteDeploymentRequest.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this DeleteDeploymentRequest to JSON.
-         * @function toJSON
-         * @memberof bentoml.DeleteDeploymentRequest
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         DeleteDeploymentRequest.prototype.toJSON = function toJSON() {
@@ -3068,40 +2843,32 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a DeleteDeploymentResponse.
-         * @memberof bentoml
-         * @interface IDeleteDeploymentResponse
-         * @property {bentoml.IStatus|null} [status] DeleteDeploymentResponse status
+         * @typedef bentoml.DeleteDeploymentResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] DeleteDeploymentResponse status.
          */
 
         /**
          * Constructs a new DeleteDeploymentResponse.
-         * @memberof bentoml
-         * @classdesc Represents a DeleteDeploymentResponse.
-         * @implements IDeleteDeploymentResponse
+         * @exports bentoml.DeleteDeploymentResponse
          * @constructor
-         * @param {bentoml.IDeleteDeploymentResponse=} [properties] Properties to set
+         * @param {bentoml.DeleteDeploymentResponse$Properties=} [properties] Properties to set
          */
         function DeleteDeploymentResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * DeleteDeploymentResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.DeleteDeploymentResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         DeleteDeploymentResponse.prototype.status = null;
 
         /**
          * Creates a new DeleteDeploymentResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.DeleteDeploymentResponse
-         * @static
-         * @param {bentoml.IDeleteDeploymentResponse=} [properties] Properties to set
+         * @param {bentoml.DeleteDeploymentResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.DeleteDeploymentResponse} DeleteDeploymentResponse instance
          */
         DeleteDeploymentResponse.create = function create(properties) {
@@ -3110,27 +2877,21 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified DeleteDeploymentResponse message. Does not implicitly {@link bentoml.DeleteDeploymentResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.DeleteDeploymentResponse
-         * @static
-         * @param {bentoml.IDeleteDeploymentResponse} message DeleteDeploymentResponse message or plain object to encode
+         * @param {bentoml.DeleteDeploymentResponse$Properties} message DeleteDeploymentResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         DeleteDeploymentResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified DeleteDeploymentResponse message, length delimited. Does not implicitly {@link bentoml.DeleteDeploymentResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.DeleteDeploymentResponse
-         * @static
-         * @param {bentoml.IDeleteDeploymentResponse} message DeleteDeploymentResponse message or plain object to encode
+         * @param {bentoml.DeleteDeploymentResponse$Properties} message DeleteDeploymentResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -3140,9 +2901,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DeleteDeploymentResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.DeleteDeploymentResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.DeleteDeploymentResponse} DeleteDeploymentResponse
@@ -3169,9 +2927,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DeleteDeploymentResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.DeleteDeploymentResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.DeleteDeploymentResponse} DeleteDeploymentResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -3179,22 +2934,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         DeleteDeploymentResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a DeleteDeploymentResponse message.
-         * @function verify
-         * @memberof bentoml.DeleteDeploymentResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         DeleteDeploymentResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
@@ -3204,9 +2956,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a DeleteDeploymentResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.DeleteDeploymentResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.DeleteDeploymentResponse} DeleteDeploymentResponse
          */
@@ -3223,12 +2972,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a DeleteDeploymentResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.DeleteDeploymentResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DeleteDeploymentResponse} DeleteDeploymentResponse
+         */
+        DeleteDeploymentResponse.from = DeleteDeploymentResponse.fromObject;
+
+        /**
          * Creates a plain object from a DeleteDeploymentResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.DeleteDeploymentResponse
-         * @static
          * @param {bentoml.DeleteDeploymentResponse} message DeleteDeploymentResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         DeleteDeploymentResponse.toObject = function toObject(message, options) {
@@ -3243,10 +2998,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this DeleteDeploymentResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DeleteDeploymentResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this DeleteDeploymentResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.DeleteDeploymentResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         DeleteDeploymentResponse.prototype.toJSON = function toJSON() {
@@ -3260,49 +3021,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a GetDeploymentRequest.
-         * @memberof bentoml
-         * @interface IGetDeploymentRequest
-         * @property {string|null} [deployment_name] GetDeploymentRequest deployment_name
-         * @property {string|null} [namespace] GetDeploymentRequest namespace
+         * @typedef bentoml.GetDeploymentRequest$Properties
+         * @type {Object}
+         * @property {string} [deployment_name] GetDeploymentRequest deployment_name.
+         * @property {string} [namespace] GetDeploymentRequest namespace.
          */
 
         /**
          * Constructs a new GetDeploymentRequest.
-         * @memberof bentoml
-         * @classdesc Represents a GetDeploymentRequest.
-         * @implements IGetDeploymentRequest
+         * @exports bentoml.GetDeploymentRequest
          * @constructor
-         * @param {bentoml.IGetDeploymentRequest=} [properties] Properties to set
+         * @param {bentoml.GetDeploymentRequest$Properties=} [properties] Properties to set
          */
         function GetDeploymentRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * GetDeploymentRequest deployment_name.
-         * @member {string} deployment_name
-         * @memberof bentoml.GetDeploymentRequest
-         * @instance
+         * @type {string|undefined}
          */
         GetDeploymentRequest.prototype.deployment_name = "";
 
         /**
          * GetDeploymentRequest namespace.
-         * @member {string} namespace
-         * @memberof bentoml.GetDeploymentRequest
-         * @instance
+         * @type {string|undefined}
          */
         GetDeploymentRequest.prototype.namespace = "";
 
         /**
          * Creates a new GetDeploymentRequest instance using the specified properties.
-         * @function create
-         * @memberof bentoml.GetDeploymentRequest
-         * @static
-         * @param {bentoml.IGetDeploymentRequest=} [properties] Properties to set
+         * @param {bentoml.GetDeploymentRequest$Properties=} [properties] Properties to set
          * @returns {bentoml.GetDeploymentRequest} GetDeploymentRequest instance
          */
         GetDeploymentRequest.create = function create(properties) {
@@ -3311,29 +3062,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified GetDeploymentRequest message. Does not implicitly {@link bentoml.GetDeploymentRequest.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.GetDeploymentRequest
-         * @static
-         * @param {bentoml.IGetDeploymentRequest} message GetDeploymentRequest message or plain object to encode
+         * @param {bentoml.GetDeploymentRequest$Properties} message GetDeploymentRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         GetDeploymentRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.deployment_name != null && Object.hasOwnProperty.call(message, "deployment_name"))
+            if (message.deployment_name != null && message.hasOwnProperty("deployment_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.deployment_name);
-            if (message.namespace != null && Object.hasOwnProperty.call(message, "namespace"))
+            if (message.namespace != null && message.hasOwnProperty("namespace"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.namespace);
             return writer;
         };
 
         /**
          * Encodes the specified GetDeploymentRequest message, length delimited. Does not implicitly {@link bentoml.GetDeploymentRequest.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.GetDeploymentRequest
-         * @static
-         * @param {bentoml.IGetDeploymentRequest} message GetDeploymentRequest message or plain object to encode
+         * @param {bentoml.GetDeploymentRequest$Properties} message GetDeploymentRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -3343,9 +3088,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a GetDeploymentRequest message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.GetDeploymentRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.GetDeploymentRequest} GetDeploymentRequest
@@ -3375,9 +3117,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a GetDeploymentRequest message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.GetDeploymentRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.GetDeploymentRequest} GetDeploymentRequest
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -3385,25 +3124,22 @@ export const bentoml = $root.bentoml = (() => {
          */
         GetDeploymentRequest.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a GetDeploymentRequest message.
-         * @function verify
-         * @memberof bentoml.GetDeploymentRequest
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         GetDeploymentRequest.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.deployment_name != null && message.hasOwnProperty("deployment_name"))
+            if (message.deployment_name != null)
                 if (!$util.isString(message.deployment_name))
                     return "deployment_name: string expected";
-            if (message.namespace != null && message.hasOwnProperty("namespace"))
+            if (message.namespace != null)
                 if (!$util.isString(message.namespace))
                     return "namespace: string expected";
             return null;
@@ -3411,9 +3147,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a GetDeploymentRequest message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.GetDeploymentRequest
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.GetDeploymentRequest} GetDeploymentRequest
          */
@@ -3429,12 +3162,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a GetDeploymentRequest message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.GetDeploymentRequest.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.GetDeploymentRequest} GetDeploymentRequest
+         */
+        GetDeploymentRequest.from = GetDeploymentRequest.fromObject;
+
+        /**
          * Creates a plain object from a GetDeploymentRequest message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.GetDeploymentRequest
-         * @static
          * @param {bentoml.GetDeploymentRequest} message GetDeploymentRequest
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         GetDeploymentRequest.toObject = function toObject(message, options) {
@@ -3453,10 +3192,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this GetDeploymentRequest message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        GetDeploymentRequest.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this GetDeploymentRequest to JSON.
-         * @function toJSON
-         * @memberof bentoml.GetDeploymentRequest
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         GetDeploymentRequest.prototype.toJSON = function toJSON() {
@@ -3470,49 +3215,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a GetDeploymentResponse.
-         * @memberof bentoml
-         * @interface IGetDeploymentResponse
-         * @property {bentoml.IStatus|null} [status] GetDeploymentResponse status
-         * @property {bentoml.IDeployment|null} [deployment] GetDeploymentResponse deployment
+         * @typedef bentoml.GetDeploymentResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] GetDeploymentResponse status.
+         * @property {bentoml.Deployment$Properties} [deployment] GetDeploymentResponse deployment.
          */
 
         /**
          * Constructs a new GetDeploymentResponse.
-         * @memberof bentoml
-         * @classdesc Represents a GetDeploymentResponse.
-         * @implements IGetDeploymentResponse
+         * @exports bentoml.GetDeploymentResponse
          * @constructor
-         * @param {bentoml.IGetDeploymentResponse=} [properties] Properties to set
+         * @param {bentoml.GetDeploymentResponse$Properties=} [properties] Properties to set
          */
         function GetDeploymentResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * GetDeploymentResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.GetDeploymentResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         GetDeploymentResponse.prototype.status = null;
 
         /**
          * GetDeploymentResponse deployment.
-         * @member {bentoml.IDeployment|null|undefined} deployment
-         * @memberof bentoml.GetDeploymentResponse
-         * @instance
+         * @type {bentoml.Deployment$Properties|undefined}
          */
         GetDeploymentResponse.prototype.deployment = null;
 
         /**
          * Creates a new GetDeploymentResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.GetDeploymentResponse
-         * @static
-         * @param {bentoml.IGetDeploymentResponse=} [properties] Properties to set
+         * @param {bentoml.GetDeploymentResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.GetDeploymentResponse} GetDeploymentResponse instance
          */
         GetDeploymentResponse.create = function create(properties) {
@@ -3521,29 +3256,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified GetDeploymentResponse message. Does not implicitly {@link bentoml.GetDeploymentResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.GetDeploymentResponse
-         * @static
-         * @param {bentoml.IGetDeploymentResponse} message GetDeploymentResponse message or plain object to encode
+         * @param {bentoml.GetDeploymentResponse$Properties} message GetDeploymentResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         GetDeploymentResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.deployment != null && Object.hasOwnProperty.call(message, "deployment"))
+            if (message.deployment && message.hasOwnProperty("deployment"))
                 $root.bentoml.Deployment.encode(message.deployment, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified GetDeploymentResponse message, length delimited. Does not implicitly {@link bentoml.GetDeploymentResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.GetDeploymentResponse
-         * @static
-         * @param {bentoml.IGetDeploymentResponse} message GetDeploymentResponse message or plain object to encode
+         * @param {bentoml.GetDeploymentResponse$Properties} message GetDeploymentResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -3553,9 +3282,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a GetDeploymentResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.GetDeploymentResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.GetDeploymentResponse} GetDeploymentResponse
@@ -3585,9 +3311,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a GetDeploymentResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.GetDeploymentResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.GetDeploymentResponse} GetDeploymentResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -3595,27 +3318,24 @@ export const bentoml = $root.bentoml = (() => {
          */
         GetDeploymentResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a GetDeploymentResponse message.
-         * @function verify
-         * @memberof bentoml.GetDeploymentResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         GetDeploymentResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
-            if (message.deployment != null && message.hasOwnProperty("deployment")) {
+            if (message.deployment != null) {
                 let error = $root.bentoml.Deployment.verify(message.deployment);
                 if (error)
                     return "deployment." + error;
@@ -3625,9 +3345,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a GetDeploymentResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.GetDeploymentResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.GetDeploymentResponse} GetDeploymentResponse
          */
@@ -3649,12 +3366,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a GetDeploymentResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.GetDeploymentResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.GetDeploymentResponse} GetDeploymentResponse
+         */
+        GetDeploymentResponse.from = GetDeploymentResponse.fromObject;
+
+        /**
          * Creates a plain object from a GetDeploymentResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.GetDeploymentResponse
-         * @static
          * @param {bentoml.GetDeploymentResponse} message GetDeploymentResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         GetDeploymentResponse.toObject = function toObject(message, options) {
@@ -3673,10 +3396,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this GetDeploymentResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        GetDeploymentResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this GetDeploymentResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.GetDeploymentResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         GetDeploymentResponse.prototype.toJSON = function toJSON() {
@@ -3690,49 +3419,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a DescribeDeploymentRequest.
-         * @memberof bentoml
-         * @interface IDescribeDeploymentRequest
-         * @property {string|null} [deployment_name] DescribeDeploymentRequest deployment_name
-         * @property {string|null} [namespace] DescribeDeploymentRequest namespace
+         * @typedef bentoml.DescribeDeploymentRequest$Properties
+         * @type {Object}
+         * @property {string} [deployment_name] DescribeDeploymentRequest deployment_name.
+         * @property {string} [namespace] DescribeDeploymentRequest namespace.
          */
 
         /**
          * Constructs a new DescribeDeploymentRequest.
-         * @memberof bentoml
-         * @classdesc Represents a DescribeDeploymentRequest.
-         * @implements IDescribeDeploymentRequest
+         * @exports bentoml.DescribeDeploymentRequest
          * @constructor
-         * @param {bentoml.IDescribeDeploymentRequest=} [properties] Properties to set
+         * @param {bentoml.DescribeDeploymentRequest$Properties=} [properties] Properties to set
          */
         function DescribeDeploymentRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * DescribeDeploymentRequest deployment_name.
-         * @member {string} deployment_name
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @instance
+         * @type {string|undefined}
          */
         DescribeDeploymentRequest.prototype.deployment_name = "";
 
         /**
          * DescribeDeploymentRequest namespace.
-         * @member {string} namespace
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @instance
+         * @type {string|undefined}
          */
         DescribeDeploymentRequest.prototype.namespace = "";
 
         /**
          * Creates a new DescribeDeploymentRequest instance using the specified properties.
-         * @function create
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @static
-         * @param {bentoml.IDescribeDeploymentRequest=} [properties] Properties to set
+         * @param {bentoml.DescribeDeploymentRequest$Properties=} [properties] Properties to set
          * @returns {bentoml.DescribeDeploymentRequest} DescribeDeploymentRequest instance
          */
         DescribeDeploymentRequest.create = function create(properties) {
@@ -3741,29 +3460,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified DescribeDeploymentRequest message. Does not implicitly {@link bentoml.DescribeDeploymentRequest.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @static
-         * @param {bentoml.IDescribeDeploymentRequest} message DescribeDeploymentRequest message or plain object to encode
+         * @param {bentoml.DescribeDeploymentRequest$Properties} message DescribeDeploymentRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         DescribeDeploymentRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.deployment_name != null && Object.hasOwnProperty.call(message, "deployment_name"))
+            if (message.deployment_name != null && message.hasOwnProperty("deployment_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.deployment_name);
-            if (message.namespace != null && Object.hasOwnProperty.call(message, "namespace"))
+            if (message.namespace != null && message.hasOwnProperty("namespace"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.namespace);
             return writer;
         };
 
         /**
          * Encodes the specified DescribeDeploymentRequest message, length delimited. Does not implicitly {@link bentoml.DescribeDeploymentRequest.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @static
-         * @param {bentoml.IDescribeDeploymentRequest} message DescribeDeploymentRequest message or plain object to encode
+         * @param {bentoml.DescribeDeploymentRequest$Properties} message DescribeDeploymentRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -3773,9 +3486,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DescribeDeploymentRequest message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.DescribeDeploymentRequest} DescribeDeploymentRequest
@@ -3805,9 +3515,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DescribeDeploymentRequest message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.DescribeDeploymentRequest} DescribeDeploymentRequest
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -3815,25 +3522,22 @@ export const bentoml = $root.bentoml = (() => {
          */
         DescribeDeploymentRequest.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a DescribeDeploymentRequest message.
-         * @function verify
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         DescribeDeploymentRequest.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.deployment_name != null && message.hasOwnProperty("deployment_name"))
+            if (message.deployment_name != null)
                 if (!$util.isString(message.deployment_name))
                     return "deployment_name: string expected";
-            if (message.namespace != null && message.hasOwnProperty("namespace"))
+            if (message.namespace != null)
                 if (!$util.isString(message.namespace))
                     return "namespace: string expected";
             return null;
@@ -3841,9 +3545,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a DescribeDeploymentRequest message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.DescribeDeploymentRequest} DescribeDeploymentRequest
          */
@@ -3859,12 +3560,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a DescribeDeploymentRequest message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.DescribeDeploymentRequest.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DescribeDeploymentRequest} DescribeDeploymentRequest
+         */
+        DescribeDeploymentRequest.from = DescribeDeploymentRequest.fromObject;
+
+        /**
          * Creates a plain object from a DescribeDeploymentRequest message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @static
          * @param {bentoml.DescribeDeploymentRequest} message DescribeDeploymentRequest
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         DescribeDeploymentRequest.toObject = function toObject(message, options) {
@@ -3883,10 +3590,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this DescribeDeploymentRequest message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DescribeDeploymentRequest.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this DescribeDeploymentRequest to JSON.
-         * @function toJSON
-         * @memberof bentoml.DescribeDeploymentRequest
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         DescribeDeploymentRequest.prototype.toJSON = function toJSON() {
@@ -3900,49 +3613,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a DescribeDeploymentResponse.
-         * @memberof bentoml
-         * @interface IDescribeDeploymentResponse
-         * @property {bentoml.IStatus|null} [status] DescribeDeploymentResponse status
-         * @property {bentoml.IDeploymentState|null} [state] DescribeDeploymentResponse state
+         * @typedef bentoml.DescribeDeploymentResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] DescribeDeploymentResponse status.
+         * @property {bentoml.DeploymentState$Properties} [state] DescribeDeploymentResponse state.
          */
 
         /**
          * Constructs a new DescribeDeploymentResponse.
-         * @memberof bentoml
-         * @classdesc Represents a DescribeDeploymentResponse.
-         * @implements IDescribeDeploymentResponse
+         * @exports bentoml.DescribeDeploymentResponse
          * @constructor
-         * @param {bentoml.IDescribeDeploymentResponse=} [properties] Properties to set
+         * @param {bentoml.DescribeDeploymentResponse$Properties=} [properties] Properties to set
          */
         function DescribeDeploymentResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * DescribeDeploymentResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         DescribeDeploymentResponse.prototype.status = null;
 
         /**
          * DescribeDeploymentResponse state.
-         * @member {bentoml.IDeploymentState|null|undefined} state
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @instance
+         * @type {bentoml.DeploymentState$Properties|undefined}
          */
         DescribeDeploymentResponse.prototype.state = null;
 
         /**
          * Creates a new DescribeDeploymentResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @static
-         * @param {bentoml.IDescribeDeploymentResponse=} [properties] Properties to set
+         * @param {bentoml.DescribeDeploymentResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.DescribeDeploymentResponse} DescribeDeploymentResponse instance
          */
         DescribeDeploymentResponse.create = function create(properties) {
@@ -3951,29 +3654,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified DescribeDeploymentResponse message. Does not implicitly {@link bentoml.DescribeDeploymentResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @static
-         * @param {bentoml.IDescribeDeploymentResponse} message DescribeDeploymentResponse message or plain object to encode
+         * @param {bentoml.DescribeDeploymentResponse$Properties} message DescribeDeploymentResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         DescribeDeploymentResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+            if (message.state && message.hasOwnProperty("state"))
                 $root.bentoml.DeploymentState.encode(message.state, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified DescribeDeploymentResponse message, length delimited. Does not implicitly {@link bentoml.DescribeDeploymentResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @static
-         * @param {bentoml.IDescribeDeploymentResponse} message DescribeDeploymentResponse message or plain object to encode
+         * @param {bentoml.DescribeDeploymentResponse$Properties} message DescribeDeploymentResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -3983,9 +3680,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DescribeDeploymentResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.DescribeDeploymentResponse} DescribeDeploymentResponse
@@ -4015,9 +3709,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DescribeDeploymentResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.DescribeDeploymentResponse} DescribeDeploymentResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -4025,27 +3716,24 @@ export const bentoml = $root.bentoml = (() => {
          */
         DescribeDeploymentResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a DescribeDeploymentResponse message.
-         * @function verify
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         DescribeDeploymentResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
-            if (message.state != null && message.hasOwnProperty("state")) {
+            if (message.state != null) {
                 let error = $root.bentoml.DeploymentState.verify(message.state);
                 if (error)
                     return "state." + error;
@@ -4055,9 +3743,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a DescribeDeploymentResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.DescribeDeploymentResponse} DescribeDeploymentResponse
          */
@@ -4079,12 +3764,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a DescribeDeploymentResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.DescribeDeploymentResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DescribeDeploymentResponse} DescribeDeploymentResponse
+         */
+        DescribeDeploymentResponse.from = DescribeDeploymentResponse.fromObject;
+
+        /**
          * Creates a plain object from a DescribeDeploymentResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @static
          * @param {bentoml.DescribeDeploymentResponse} message DescribeDeploymentResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         DescribeDeploymentResponse.toObject = function toObject(message, options) {
@@ -4103,10 +3794,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this DescribeDeploymentResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DescribeDeploymentResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this DescribeDeploymentResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.DescribeDeploymentResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         DescribeDeploymentResponse.prototype.toJSON = function toJSON() {
@@ -4120,94 +3817,74 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a ListDeploymentsRequest.
-         * @memberof bentoml
-         * @interface IListDeploymentsRequest
-         * @property {string|null} [namespace] ListDeploymentsRequest namespace
-         * @property {number|null} [offset] ListDeploymentsRequest offset
-         * @property {number|null} [limit] ListDeploymentsRequest limit
-         * @property {bentoml.DeploymentSpec.DeploymentOperator|null} [operator] ListDeploymentsRequest operator
-         * @property {bentoml.ListDeploymentsRequest.SORTABLE_COLUMN|null} [order_by] ListDeploymentsRequest order_by
-         * @property {boolean|null} [ascending_order] ListDeploymentsRequest ascending_order
-         * @property {string|null} [labels_query] ListDeploymentsRequest labels_query
+         * @typedef bentoml.ListDeploymentsRequest$Properties
+         * @type {Object}
+         * @property {string} [namespace] ListDeploymentsRequest namespace.
+         * @property {number} [offset] ListDeploymentsRequest offset.
+         * @property {number} [limit] ListDeploymentsRequest limit.
+         * @property {bentoml.DeploymentSpec.DeploymentOperator} [operator] ListDeploymentsRequest operator.
+         * @property {bentoml.ListDeploymentsRequest.SORTABLE_COLUMN} [order_by] ListDeploymentsRequest order_by.
+         * @property {boolean} [ascending_order] ListDeploymentsRequest ascending_order.
+         * @property {string} [labels_query] ListDeploymentsRequest labels_query.
          */
 
         /**
          * Constructs a new ListDeploymentsRequest.
-         * @memberof bentoml
-         * @classdesc Represents a ListDeploymentsRequest.
-         * @implements IListDeploymentsRequest
+         * @exports bentoml.ListDeploymentsRequest
          * @constructor
-         * @param {bentoml.IListDeploymentsRequest=} [properties] Properties to set
+         * @param {bentoml.ListDeploymentsRequest$Properties=} [properties] Properties to set
          */
         function ListDeploymentsRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * ListDeploymentsRequest namespace.
-         * @member {string} namespace
-         * @memberof bentoml.ListDeploymentsRequest
-         * @instance
+         * @type {string|undefined}
          */
         ListDeploymentsRequest.prototype.namespace = "";
 
         /**
          * ListDeploymentsRequest offset.
-         * @member {number} offset
-         * @memberof bentoml.ListDeploymentsRequest
-         * @instance
+         * @type {number|undefined}
          */
         ListDeploymentsRequest.prototype.offset = 0;
 
         /**
          * ListDeploymentsRequest limit.
-         * @member {number} limit
-         * @memberof bentoml.ListDeploymentsRequest
-         * @instance
+         * @type {number|undefined}
          */
         ListDeploymentsRequest.prototype.limit = 0;
 
         /**
          * ListDeploymentsRequest operator.
-         * @member {bentoml.DeploymentSpec.DeploymentOperator} operator
-         * @memberof bentoml.ListDeploymentsRequest
-         * @instance
+         * @type {bentoml.DeploymentSpec.DeploymentOperator|undefined}
          */
         ListDeploymentsRequest.prototype.operator = 0;
 
         /**
          * ListDeploymentsRequest order_by.
-         * @member {bentoml.ListDeploymentsRequest.SORTABLE_COLUMN} order_by
-         * @memberof bentoml.ListDeploymentsRequest
-         * @instance
+         * @type {bentoml.ListDeploymentsRequest.SORTABLE_COLUMN|undefined}
          */
         ListDeploymentsRequest.prototype.order_by = 0;
 
         /**
          * ListDeploymentsRequest ascending_order.
-         * @member {boolean} ascending_order
-         * @memberof bentoml.ListDeploymentsRequest
-         * @instance
+         * @type {boolean|undefined}
          */
         ListDeploymentsRequest.prototype.ascending_order = false;
 
         /**
          * ListDeploymentsRequest labels_query.
-         * @member {string} labels_query
-         * @memberof bentoml.ListDeploymentsRequest
-         * @instance
+         * @type {string|undefined}
          */
         ListDeploymentsRequest.prototype.labels_query = "";
 
         /**
          * Creates a new ListDeploymentsRequest instance using the specified properties.
-         * @function create
-         * @memberof bentoml.ListDeploymentsRequest
-         * @static
-         * @param {bentoml.IListDeploymentsRequest=} [properties] Properties to set
+         * @param {bentoml.ListDeploymentsRequest$Properties=} [properties] Properties to set
          * @returns {bentoml.ListDeploymentsRequest} ListDeploymentsRequest instance
          */
         ListDeploymentsRequest.create = function create(properties) {
@@ -4216,39 +3893,33 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified ListDeploymentsRequest message. Does not implicitly {@link bentoml.ListDeploymentsRequest.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.ListDeploymentsRequest
-         * @static
-         * @param {bentoml.IListDeploymentsRequest} message ListDeploymentsRequest message or plain object to encode
+         * @param {bentoml.ListDeploymentsRequest$Properties} message ListDeploymentsRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         ListDeploymentsRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.namespace != null && Object.hasOwnProperty.call(message, "namespace"))
+            if (message.namespace != null && message.hasOwnProperty("namespace"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.namespace);
-            if (message.offset != null && Object.hasOwnProperty.call(message, "offset"))
+            if (message.offset != null && message.hasOwnProperty("offset"))
                 writer.uint32(/* id 2, wireType 0 =*/16).int32(message.offset);
-            if (message.limit != null && Object.hasOwnProperty.call(message, "limit"))
+            if (message.limit != null && message.hasOwnProperty("limit"))
                 writer.uint32(/* id 3, wireType 0 =*/24).int32(message.limit);
-            if (message.operator != null && Object.hasOwnProperty.call(message, "operator"))
-                writer.uint32(/* id 4, wireType 0 =*/32).int32(message.operator);
-            if (message.order_by != null && Object.hasOwnProperty.call(message, "order_by"))
-                writer.uint32(/* id 5, wireType 0 =*/40).int32(message.order_by);
-            if (message.ascending_order != null && Object.hasOwnProperty.call(message, "ascending_order"))
+            if (message.operator != null && message.hasOwnProperty("operator"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.operator);
+            if (message.order_by != null && message.hasOwnProperty("order_by"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.order_by);
+            if (message.ascending_order != null && message.hasOwnProperty("ascending_order"))
                 writer.uint32(/* id 6, wireType 0 =*/48).bool(message.ascending_order);
-            if (message.labels_query != null && Object.hasOwnProperty.call(message, "labels_query"))
+            if (message.labels_query != null && message.hasOwnProperty("labels_query"))
                 writer.uint32(/* id 7, wireType 2 =*/58).string(message.labels_query);
             return writer;
         };
 
         /**
          * Encodes the specified ListDeploymentsRequest message, length delimited. Does not implicitly {@link bentoml.ListDeploymentsRequest.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.ListDeploymentsRequest
-         * @static
-         * @param {bentoml.IListDeploymentsRequest} message ListDeploymentsRequest message or plain object to encode
+         * @param {bentoml.ListDeploymentsRequest$Properties} message ListDeploymentsRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -4258,9 +3929,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a ListDeploymentsRequest message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.ListDeploymentsRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.ListDeploymentsRequest} ListDeploymentsRequest
@@ -4284,10 +3952,10 @@ export const bentoml = $root.bentoml = (() => {
                     message.limit = reader.int32();
                     break;
                 case 4:
-                    message.operator = reader.int32();
+                    message.operator = reader.uint32();
                     break;
                 case 5:
-                    message.order_by = reader.int32();
+                    message.order_by = reader.uint32();
                     break;
                 case 6:
                     message.ascending_order = reader.bool();
@@ -4305,9 +3973,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a ListDeploymentsRequest message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.ListDeploymentsRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.ListDeploymentsRequest} ListDeploymentsRequest
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -4315,31 +3980,28 @@ export const bentoml = $root.bentoml = (() => {
          */
         ListDeploymentsRequest.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a ListDeploymentsRequest message.
-         * @function verify
-         * @memberof bentoml.ListDeploymentsRequest
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         ListDeploymentsRequest.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.namespace != null && message.hasOwnProperty("namespace"))
+            if (message.namespace != null)
                 if (!$util.isString(message.namespace))
                     return "namespace: string expected";
-            if (message.offset != null && message.hasOwnProperty("offset"))
+            if (message.offset != null)
                 if (!$util.isInteger(message.offset))
                     return "offset: integer expected";
-            if (message.limit != null && message.hasOwnProperty("limit"))
+            if (message.limit != null)
                 if (!$util.isInteger(message.limit))
                     return "limit: integer expected";
-            if (message.operator != null && message.hasOwnProperty("operator"))
+            if (message.operator != null)
                 switch (message.operator) {
                 default:
                     return "operator: enum value expected";
@@ -4350,7 +4012,7 @@ export const bentoml = $root.bentoml = (() => {
                 case 4:
                     break;
                 }
-            if (message.order_by != null && message.hasOwnProperty("order_by"))
+            if (message.order_by != null)
                 switch (message.order_by) {
                 default:
                     return "order_by: enum value expected";
@@ -4358,10 +4020,10 @@ export const bentoml = $root.bentoml = (() => {
                 case 1:
                     break;
                 }
-            if (message.ascending_order != null && message.hasOwnProperty("ascending_order"))
+            if (message.ascending_order != null)
                 if (typeof message.ascending_order !== "boolean")
                     return "ascending_order: boolean expected";
-            if (message.labels_query != null && message.hasOwnProperty("labels_query"))
+            if (message.labels_query != null)
                 if (!$util.isString(message.labels_query))
                     return "labels_query: string expected";
             return null;
@@ -4369,9 +4031,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a ListDeploymentsRequest message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.ListDeploymentsRequest
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.ListDeploymentsRequest} ListDeploymentsRequest
          */
@@ -4425,12 +4084,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a ListDeploymentsRequest message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.ListDeploymentsRequest.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.ListDeploymentsRequest} ListDeploymentsRequest
+         */
+        ListDeploymentsRequest.from = ListDeploymentsRequest.fromObject;
+
+        /**
          * Creates a plain object from a ListDeploymentsRequest message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.ListDeploymentsRequest
-         * @static
          * @param {bentoml.ListDeploymentsRequest} message ListDeploymentsRequest
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         ListDeploymentsRequest.toObject = function toObject(message, options) {
@@ -4464,10 +4129,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this ListDeploymentsRequest message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ListDeploymentsRequest.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this ListDeploymentsRequest to JSON.
-         * @function toJSON
-         * @memberof bentoml.ListDeploymentsRequest
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         ListDeploymentsRequest.prototype.toJSON = function toJSON() {
@@ -4476,7 +4147,8 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * SORTABLE_COLUMN enum.
-         * @name bentoml.ListDeploymentsRequest.SORTABLE_COLUMN
+         * @name SORTABLE_COLUMN
+         * @memberof bentoml.ListDeploymentsRequest
          * @enum {number}
          * @property {number} created_at=0 created_at value
          * @property {number} name=1 name value
@@ -4495,50 +4167,40 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a ListDeploymentsResponse.
-         * @memberof bentoml
-         * @interface IListDeploymentsResponse
-         * @property {bentoml.IStatus|null} [status] ListDeploymentsResponse status
-         * @property {Array.<bentoml.IDeployment>|null} [deployments] ListDeploymentsResponse deployments
+         * @typedef bentoml.ListDeploymentsResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] ListDeploymentsResponse status.
+         * @property {Array.<bentoml.Deployment$Properties>} [deployments] ListDeploymentsResponse deployments.
          */
 
         /**
          * Constructs a new ListDeploymentsResponse.
-         * @memberof bentoml
-         * @classdesc Represents a ListDeploymentsResponse.
-         * @implements IListDeploymentsResponse
+         * @exports bentoml.ListDeploymentsResponse
          * @constructor
-         * @param {bentoml.IListDeploymentsResponse=} [properties] Properties to set
+         * @param {bentoml.ListDeploymentsResponse$Properties=} [properties] Properties to set
          */
         function ListDeploymentsResponse(properties) {
             this.deployments = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * ListDeploymentsResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.ListDeploymentsResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         ListDeploymentsResponse.prototype.status = null;
 
         /**
          * ListDeploymentsResponse deployments.
-         * @member {Array.<bentoml.IDeployment>} deployments
-         * @memberof bentoml.ListDeploymentsResponse
-         * @instance
+         * @type {Array.<bentoml.Deployment$Properties>|undefined}
          */
         ListDeploymentsResponse.prototype.deployments = $util.emptyArray;
 
         /**
          * Creates a new ListDeploymentsResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.ListDeploymentsResponse
-         * @static
-         * @param {bentoml.IListDeploymentsResponse=} [properties] Properties to set
+         * @param {bentoml.ListDeploymentsResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.ListDeploymentsResponse} ListDeploymentsResponse instance
          */
         ListDeploymentsResponse.create = function create(properties) {
@@ -4547,19 +4209,16 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified ListDeploymentsResponse message. Does not implicitly {@link bentoml.ListDeploymentsResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.ListDeploymentsResponse
-         * @static
-         * @param {bentoml.IListDeploymentsResponse} message ListDeploymentsResponse message or plain object to encode
+         * @param {bentoml.ListDeploymentsResponse$Properties} message ListDeploymentsResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         ListDeploymentsResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.deployments != null && message.deployments.length)
+            if (message.deployments && message.deployments.length)
                 for (let i = 0; i < message.deployments.length; ++i)
                     $root.bentoml.Deployment.encode(message.deployments[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
@@ -4567,10 +4226,7 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified ListDeploymentsResponse message, length delimited. Does not implicitly {@link bentoml.ListDeploymentsResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.ListDeploymentsResponse
-         * @static
-         * @param {bentoml.IListDeploymentsResponse} message ListDeploymentsResponse message or plain object to encode
+         * @param {bentoml.ListDeploymentsResponse$Properties} message ListDeploymentsResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -4580,9 +4236,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a ListDeploymentsResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.ListDeploymentsResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.ListDeploymentsResponse} ListDeploymentsResponse
@@ -4614,9 +4267,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a ListDeploymentsResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.ListDeploymentsResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.ListDeploymentsResponse} ListDeploymentsResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -4624,27 +4274,24 @@ export const bentoml = $root.bentoml = (() => {
          */
         ListDeploymentsResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a ListDeploymentsResponse message.
-         * @function verify
-         * @memberof bentoml.ListDeploymentsResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         ListDeploymentsResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
-            if (message.deployments != null && message.hasOwnProperty("deployments")) {
+            if (message.deployments != null) {
                 if (!Array.isArray(message.deployments))
                     return "deployments: array expected";
                 for (let i = 0; i < message.deployments.length; ++i) {
@@ -4658,9 +4305,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a ListDeploymentsResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.ListDeploymentsResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.ListDeploymentsResponse} ListDeploymentsResponse
          */
@@ -4687,12 +4331,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a ListDeploymentsResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.ListDeploymentsResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.ListDeploymentsResponse} ListDeploymentsResponse
+         */
+        ListDeploymentsResponse.from = ListDeploymentsResponse.fromObject;
+
+        /**
          * Creates a plain object from a ListDeploymentsResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.ListDeploymentsResponse
-         * @static
          * @param {bentoml.ListDeploymentsResponse} message ListDeploymentsResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         ListDeploymentsResponse.toObject = function toObject(message, options) {
@@ -4714,10 +4364,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this ListDeploymentsResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ListDeploymentsResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this ListDeploymentsResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.ListDeploymentsResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         ListDeploymentsResponse.prototype.toJSON = function toJSON() {
@@ -4731,49 +4387,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a Status.
-         * @memberof bentoml
-         * @interface IStatus
-         * @property {bentoml.Status.Code|null} [status_code] Status status_code
-         * @property {string|null} [error_message] Status error_message
+         * @typedef bentoml.Status$Properties
+         * @type {Object}
+         * @property {bentoml.Status.Code} [status_code] Status status_code.
+         * @property {string} [error_message] Status error_message.
          */
 
         /**
          * Constructs a new Status.
-         * @memberof bentoml
-         * @classdesc Represents a Status.
-         * @implements IStatus
+         * @exports bentoml.Status
          * @constructor
-         * @param {bentoml.IStatus=} [properties] Properties to set
+         * @param {bentoml.Status$Properties=} [properties] Properties to set
          */
         function Status(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * Status status_code.
-         * @member {bentoml.Status.Code} status_code
-         * @memberof bentoml.Status
-         * @instance
+         * @type {bentoml.Status.Code|undefined}
          */
         Status.prototype.status_code = 0;
 
         /**
          * Status error_message.
-         * @member {string} error_message
-         * @memberof bentoml.Status
-         * @instance
+         * @type {string|undefined}
          */
         Status.prototype.error_message = "";
 
         /**
          * Creates a new Status instance using the specified properties.
-         * @function create
-         * @memberof bentoml.Status
-         * @static
-         * @param {bentoml.IStatus=} [properties] Properties to set
+         * @param {bentoml.Status$Properties=} [properties] Properties to set
          * @returns {bentoml.Status} Status instance
          */
         Status.create = function create(properties) {
@@ -4782,29 +4428,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified Status message. Does not implicitly {@link bentoml.Status.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.Status
-         * @static
-         * @param {bentoml.IStatus} message Status message or plain object to encode
+         * @param {bentoml.Status$Properties} message Status message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         Status.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status_code != null && Object.hasOwnProperty.call(message, "status_code"))
-                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.status_code);
-            if (message.error_message != null && Object.hasOwnProperty.call(message, "error_message"))
+            if (message.status_code != null && message.hasOwnProperty("status_code"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.status_code);
+            if (message.error_message != null && message.hasOwnProperty("error_message"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.error_message);
             return writer;
         };
 
         /**
          * Encodes the specified Status message, length delimited. Does not implicitly {@link bentoml.Status.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.Status
-         * @static
-         * @param {bentoml.IStatus} message Status message or plain object to encode
+         * @param {bentoml.Status$Properties} message Status message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -4814,9 +4454,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a Status message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.Status
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.Status} Status
@@ -4831,7 +4468,7 @@ export const bentoml = $root.bentoml = (() => {
                 let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
-                    message.status_code = reader.int32();
+                    message.status_code = reader.uint32();
                     break;
                 case 2:
                     message.error_message = reader.string();
@@ -4846,9 +4483,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a Status message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.Status
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.Status} Status
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -4856,22 +4490,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         Status.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a Status message.
-         * @function verify
-         * @memberof bentoml.Status
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         Status.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status_code != null && message.hasOwnProperty("status_code"))
+            if (message.status_code != null)
                 switch (message.status_code) {
                 default:
                     return "status_code: enum value expected";
@@ -4895,7 +4526,7 @@ export const bentoml = $root.bentoml = (() => {
                 case 20:
                     break;
                 }
-            if (message.error_message != null && message.hasOwnProperty("error_message"))
+            if (message.error_message != null)
                 if (!$util.isString(message.error_message))
                     return "error_message: string expected";
             return null;
@@ -4903,9 +4534,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a Status message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.Status
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.Status} Status
          */
@@ -4993,12 +4621,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a Status message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.Status.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.Status} Status
+         */
+        Status.from = Status.fromObject;
+
+        /**
          * Creates a plain object from a Status message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.Status
-         * @static
          * @param {bentoml.Status} message Status
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         Status.toObject = function toObject(message, options) {
@@ -5017,10 +4651,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this Status message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Status.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this Status to JSON.
-         * @function toJSON
-         * @memberof bentoml.Status
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         Status.prototype.toJSON = function toJSON() {
@@ -5029,7 +4669,8 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Code enum.
-         * @name bentoml.Status.Code
+         * @name Code
+         * @memberof bentoml.Status
          * @enum {number}
          * @property {number} OK=0 OK value
          * @property {number} CANCELLED=1 CANCELLED value
@@ -5080,58 +4721,46 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a BentoUri.
-         * @memberof bentoml
-         * @interface IBentoUri
-         * @property {bentoml.BentoUri.StorageType|null} [type] BentoUri type
-         * @property {string|null} [uri] BentoUri uri
-         * @property {string|null} [s3_presigned_url] BentoUri s3_presigned_url
+         * @typedef bentoml.BentoUri$Properties
+         * @type {Object}
+         * @property {bentoml.BentoUri.StorageType} [type] BentoUri type.
+         * @property {string} [uri] BentoUri uri.
+         * @property {string} [cloud_presigned_url] BentoUri cloud_presigned_url.
          */
 
         /**
          * Constructs a new BentoUri.
-         * @memberof bentoml
-         * @classdesc Represents a BentoUri.
-         * @implements IBentoUri
+         * @exports bentoml.BentoUri
          * @constructor
-         * @param {bentoml.IBentoUri=} [properties] Properties to set
+         * @param {bentoml.BentoUri$Properties=} [properties] Properties to set
          */
         function BentoUri(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * BentoUri type.
-         * @member {bentoml.BentoUri.StorageType} type
-         * @memberof bentoml.BentoUri
-         * @instance
+         * @type {bentoml.BentoUri.StorageType|undefined}
          */
         BentoUri.prototype.type = 0;
 
         /**
          * BentoUri uri.
-         * @member {string} uri
-         * @memberof bentoml.BentoUri
-         * @instance
+         * @type {string|undefined}
          */
         BentoUri.prototype.uri = "";
 
         /**
-         * BentoUri s3_presigned_url.
-         * @member {string} s3_presigned_url
-         * @memberof bentoml.BentoUri
-         * @instance
+         * BentoUri cloud_presigned_url.
+         * @type {string|undefined}
          */
-        BentoUri.prototype.s3_presigned_url = "";
+        BentoUri.prototype.cloud_presigned_url = "";
 
         /**
          * Creates a new BentoUri instance using the specified properties.
-         * @function create
-         * @memberof bentoml.BentoUri
-         * @static
-         * @param {bentoml.IBentoUri=} [properties] Properties to set
+         * @param {bentoml.BentoUri$Properties=} [properties] Properties to set
          * @returns {bentoml.BentoUri} BentoUri instance
          */
         BentoUri.create = function create(properties) {
@@ -5140,31 +4769,25 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified BentoUri message. Does not implicitly {@link bentoml.BentoUri.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.BentoUri
-         * @static
-         * @param {bentoml.IBentoUri} message BentoUri message or plain object to encode
+         * @param {bentoml.BentoUri$Properties} message BentoUri message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         BentoUri.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.type != null && Object.hasOwnProperty.call(message, "type"))
-                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.type);
-            if (message.uri != null && Object.hasOwnProperty.call(message, "uri"))
+            if (message.type != null && message.hasOwnProperty("type"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.type);
+            if (message.uri != null && message.hasOwnProperty("uri"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.uri);
-            if (message.s3_presigned_url != null && Object.hasOwnProperty.call(message, "s3_presigned_url"))
-                writer.uint32(/* id 3, wireType 2 =*/26).string(message.s3_presigned_url);
+            if (message.cloud_presigned_url != null && message.hasOwnProperty("cloud_presigned_url"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.cloud_presigned_url);
             return writer;
         };
 
         /**
          * Encodes the specified BentoUri message, length delimited. Does not implicitly {@link bentoml.BentoUri.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.BentoUri
-         * @static
-         * @param {bentoml.IBentoUri} message BentoUri message or plain object to encode
+         * @param {bentoml.BentoUri$Properties} message BentoUri message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -5174,9 +4797,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a BentoUri message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.BentoUri
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.BentoUri} BentoUri
@@ -5191,13 +4811,13 @@ export const bentoml = $root.bentoml = (() => {
                 let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
-                    message.type = reader.int32();
+                    message.type = reader.uint32();
                     break;
                 case 2:
                     message.uri = reader.string();
                     break;
                 case 3:
-                    message.s3_presigned_url = reader.string();
+                    message.cloud_presigned_url = reader.string();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -5209,9 +4829,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a BentoUri message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.BentoUri
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.BentoUri} BentoUri
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -5219,22 +4836,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         BentoUri.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a BentoUri message.
-         * @function verify
-         * @memberof bentoml.BentoUri
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         BentoUri.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.type != null && message.hasOwnProperty("type"))
+            if (message.type != null)
                 switch (message.type) {
                 default:
                     return "type: enum value expected";
@@ -5246,20 +4860,17 @@ export const bentoml = $root.bentoml = (() => {
                 case 5:
                     break;
                 }
-            if (message.uri != null && message.hasOwnProperty("uri"))
+            if (message.uri != null)
                 if (!$util.isString(message.uri))
                     return "uri: string expected";
-            if (message.s3_presigned_url != null && message.hasOwnProperty("s3_presigned_url"))
-                if (!$util.isString(message.s3_presigned_url))
-                    return "s3_presigned_url: string expected";
+            if (message.cloud_presigned_url != null)
+                if (!$util.isString(message.cloud_presigned_url))
+                    return "cloud_presigned_url: string expected";
             return null;
         };
 
         /**
          * Creates a BentoUri message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.BentoUri
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.BentoUri} BentoUri
          */
@@ -5295,18 +4906,24 @@ export const bentoml = $root.bentoml = (() => {
             }
             if (object.uri != null)
                 message.uri = String(object.uri);
-            if (object.s3_presigned_url != null)
-                message.s3_presigned_url = String(object.s3_presigned_url);
+            if (object.cloud_presigned_url != null)
+                message.cloud_presigned_url = String(object.cloud_presigned_url);
             return message;
         };
 
         /**
+         * Creates a BentoUri message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.BentoUri.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.BentoUri} BentoUri
+         */
+        BentoUri.from = BentoUri.fromObject;
+
+        /**
          * Creates a plain object from a BentoUri message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.BentoUri
-         * @static
          * @param {bentoml.BentoUri} message BentoUri
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         BentoUri.toObject = function toObject(message, options) {
@@ -5316,22 +4933,28 @@ export const bentoml = $root.bentoml = (() => {
             if (options.defaults) {
                 object.type = options.enums === String ? "UNSET" : 0;
                 object.uri = "";
-                object.s3_presigned_url = "";
+                object.cloud_presigned_url = "";
             }
             if (message.type != null && message.hasOwnProperty("type"))
                 object.type = options.enums === String ? $root.bentoml.BentoUri.StorageType[message.type] : message.type;
             if (message.uri != null && message.hasOwnProperty("uri"))
                 object.uri = message.uri;
-            if (message.s3_presigned_url != null && message.hasOwnProperty("s3_presigned_url"))
-                object.s3_presigned_url = message.s3_presigned_url;
+            if (message.cloud_presigned_url != null && message.hasOwnProperty("cloud_presigned_url"))
+                object.cloud_presigned_url = message.cloud_presigned_url;
             return object;
         };
 
         /**
+         * Creates a plain object from this BentoUri message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        BentoUri.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this BentoUri to JSON.
-         * @function toJSON
-         * @memberof bentoml.BentoUri
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         BentoUri.prototype.toJSON = function toJSON() {
@@ -5340,7 +4963,8 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * StorageType enum.
-         * @name bentoml.BentoUri.StorageType
+         * @name StorageType
+         * @memberof bentoml.BentoUri
          * @enum {number}
          * @property {number} UNSET=0 UNSET value
          * @property {number} LOCAL=1 LOCAL value
@@ -5367,87 +4991,69 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a BentoServiceMetadata.
-         * @memberof bentoml
-         * @interface IBentoServiceMetadata
-         * @property {string|null} [name] BentoServiceMetadata name
-         * @property {string|null} [version] BentoServiceMetadata version
-         * @property {google.protobuf.ITimestamp|null} [created_at] BentoServiceMetadata created_at
-         * @property {bentoml.BentoServiceMetadata.IBentoServiceEnv|null} [env] BentoServiceMetadata env
-         * @property {Array.<bentoml.BentoServiceMetadata.IBentoArtifact>|null} [artifacts] BentoServiceMetadata artifacts
-         * @property {Array.<bentoml.BentoServiceMetadata.IBentoServiceApi>|null} [apis] BentoServiceMetadata apis
+         * @typedef bentoml.BentoServiceMetadata$Properties
+         * @type {Object}
+         * @property {string} [name] BentoServiceMetadata name.
+         * @property {string} [version] BentoServiceMetadata version.
+         * @property {google.protobuf.Timestamp$Properties} [created_at] BentoServiceMetadata created_at.
+         * @property {bentoml.BentoServiceMetadata.BentoServiceEnv$Properties} [env] BentoServiceMetadata env.
+         * @property {Array.<bentoml.BentoServiceMetadata.BentoArtifact$Properties>} [artifacts] BentoServiceMetadata artifacts.
+         * @property {Array.<bentoml.BentoServiceMetadata.BentoServiceApi$Properties>} [apis] BentoServiceMetadata apis.
          */
 
         /**
          * Constructs a new BentoServiceMetadata.
-         * @memberof bentoml
-         * @classdesc Represents a BentoServiceMetadata.
-         * @implements IBentoServiceMetadata
+         * @exports bentoml.BentoServiceMetadata
          * @constructor
-         * @param {bentoml.IBentoServiceMetadata=} [properties] Properties to set
+         * @param {bentoml.BentoServiceMetadata$Properties=} [properties] Properties to set
          */
         function BentoServiceMetadata(properties) {
             this.artifacts = [];
             this.apis = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * BentoServiceMetadata name.
-         * @member {string} name
-         * @memberof bentoml.BentoServiceMetadata
-         * @instance
+         * @type {string|undefined}
          */
         BentoServiceMetadata.prototype.name = "";
 
         /**
          * BentoServiceMetadata version.
-         * @member {string} version
-         * @memberof bentoml.BentoServiceMetadata
-         * @instance
+         * @type {string|undefined}
          */
         BentoServiceMetadata.prototype.version = "";
 
         /**
          * BentoServiceMetadata created_at.
-         * @member {google.protobuf.ITimestamp|null|undefined} created_at
-         * @memberof bentoml.BentoServiceMetadata
-         * @instance
+         * @type {google.protobuf.Timestamp$Properties|undefined}
          */
         BentoServiceMetadata.prototype.created_at = null;
 
         /**
          * BentoServiceMetadata env.
-         * @member {bentoml.BentoServiceMetadata.IBentoServiceEnv|null|undefined} env
-         * @memberof bentoml.BentoServiceMetadata
-         * @instance
+         * @type {bentoml.BentoServiceMetadata.BentoServiceEnv$Properties|undefined}
          */
         BentoServiceMetadata.prototype.env = null;
 
         /**
          * BentoServiceMetadata artifacts.
-         * @member {Array.<bentoml.BentoServiceMetadata.IBentoArtifact>} artifacts
-         * @memberof bentoml.BentoServiceMetadata
-         * @instance
+         * @type {Array.<bentoml.BentoServiceMetadata.BentoArtifact$Properties>|undefined}
          */
         BentoServiceMetadata.prototype.artifacts = $util.emptyArray;
 
         /**
          * BentoServiceMetadata apis.
-         * @member {Array.<bentoml.BentoServiceMetadata.IBentoServiceApi>} apis
-         * @memberof bentoml.BentoServiceMetadata
-         * @instance
+         * @type {Array.<bentoml.BentoServiceMetadata.BentoServiceApi$Properties>|undefined}
          */
         BentoServiceMetadata.prototype.apis = $util.emptyArray;
 
         /**
          * Creates a new BentoServiceMetadata instance using the specified properties.
-         * @function create
-         * @memberof bentoml.BentoServiceMetadata
-         * @static
-         * @param {bentoml.IBentoServiceMetadata=} [properties] Properties to set
+         * @param {bentoml.BentoServiceMetadata$Properties=} [properties] Properties to set
          * @returns {bentoml.BentoServiceMetadata} BentoServiceMetadata instance
          */
         BentoServiceMetadata.create = function create(properties) {
@@ -5456,28 +5062,25 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified BentoServiceMetadata message. Does not implicitly {@link bentoml.BentoServiceMetadata.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.BentoServiceMetadata
-         * @static
-         * @param {bentoml.IBentoServiceMetadata} message BentoServiceMetadata message or plain object to encode
+         * @param {bentoml.BentoServiceMetadata$Properties} message BentoServiceMetadata message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         BentoServiceMetadata.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+            if (message.name != null && message.hasOwnProperty("name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-            if (message.version != null && Object.hasOwnProperty.call(message, "version"))
+            if (message.version != null && message.hasOwnProperty("version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.version);
-            if (message.created_at != null && Object.hasOwnProperty.call(message, "created_at"))
+            if (message.created_at && message.hasOwnProperty("created_at"))
                 $root.google.protobuf.Timestamp.encode(message.created_at, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.env != null && Object.hasOwnProperty.call(message, "env"))
+            if (message.env && message.hasOwnProperty("env"))
                 $root.bentoml.BentoServiceMetadata.BentoServiceEnv.encode(message.env, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-            if (message.artifacts != null && message.artifacts.length)
+            if (message.artifacts && message.artifacts.length)
                 for (let i = 0; i < message.artifacts.length; ++i)
                     $root.bentoml.BentoServiceMetadata.BentoArtifact.encode(message.artifacts[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-            if (message.apis != null && message.apis.length)
+            if (message.apis && message.apis.length)
                 for (let i = 0; i < message.apis.length; ++i)
                     $root.bentoml.BentoServiceMetadata.BentoServiceApi.encode(message.apis[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
             return writer;
@@ -5485,10 +5088,7 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified BentoServiceMetadata message, length delimited. Does not implicitly {@link bentoml.BentoServiceMetadata.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.BentoServiceMetadata
-         * @static
-         * @param {bentoml.IBentoServiceMetadata} message BentoServiceMetadata message or plain object to encode
+         * @param {bentoml.BentoServiceMetadata$Properties} message BentoServiceMetadata message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -5498,9 +5098,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a BentoServiceMetadata message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.BentoServiceMetadata
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.BentoServiceMetadata} BentoServiceMetadata
@@ -5546,9 +5143,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a BentoServiceMetadata message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.BentoServiceMetadata
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.BentoServiceMetadata} BentoServiceMetadata
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -5556,38 +5150,35 @@ export const bentoml = $root.bentoml = (() => {
          */
         BentoServiceMetadata.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a BentoServiceMetadata message.
-         * @function verify
-         * @memberof bentoml.BentoServiceMetadata
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         BentoServiceMetadata.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.name != null && message.hasOwnProperty("name"))
+            if (message.name != null)
                 if (!$util.isString(message.name))
                     return "name: string expected";
-            if (message.version != null && message.hasOwnProperty("version"))
+            if (message.version != null)
                 if (!$util.isString(message.version))
                     return "version: string expected";
-            if (message.created_at != null && message.hasOwnProperty("created_at")) {
+            if (message.created_at != null) {
                 let error = $root.google.protobuf.Timestamp.verify(message.created_at);
                 if (error)
                     return "created_at." + error;
             }
-            if (message.env != null && message.hasOwnProperty("env")) {
+            if (message.env != null) {
                 let error = $root.bentoml.BentoServiceMetadata.BentoServiceEnv.verify(message.env);
                 if (error)
                     return "env." + error;
             }
-            if (message.artifacts != null && message.hasOwnProperty("artifacts")) {
+            if (message.artifacts != null) {
                 if (!Array.isArray(message.artifacts))
                     return "artifacts: array expected";
                 for (let i = 0; i < message.artifacts.length; ++i) {
@@ -5596,7 +5187,7 @@ export const bentoml = $root.bentoml = (() => {
                         return "artifacts." + error;
                 }
             }
-            if (message.apis != null && message.hasOwnProperty("apis")) {
+            if (message.apis != null) {
                 if (!Array.isArray(message.apis))
                     return "apis: array expected";
                 for (let i = 0; i < message.apis.length; ++i) {
@@ -5610,9 +5201,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a BentoServiceMetadata message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.BentoServiceMetadata
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.BentoServiceMetadata} BentoServiceMetadata
          */
@@ -5658,12 +5246,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a BentoServiceMetadata message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.BentoServiceMetadata.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.BentoServiceMetadata} BentoServiceMetadata
+         */
+        BentoServiceMetadata.from = BentoServiceMetadata.fromObject;
+
+        /**
          * Creates a plain object from a BentoServiceMetadata message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.BentoServiceMetadata
-         * @static
          * @param {bentoml.BentoServiceMetadata} message BentoServiceMetadata
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         BentoServiceMetadata.toObject = function toObject(message, options) {
@@ -5702,10 +5296,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this BentoServiceMetadata message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        BentoServiceMetadata.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this BentoServiceMetadata to JSON.
-         * @function toJSON
-         * @memberof bentoml.BentoServiceMetadata
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         BentoServiceMetadata.prototype.toJSON = function toJSON() {
@@ -5716,76 +5316,60 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Properties of a BentoServiceEnv.
-             * @memberof bentoml.BentoServiceMetadata
-             * @interface IBentoServiceEnv
-             * @property {string|null} [setup_sh] BentoServiceEnv setup_sh
-             * @property {string|null} [conda_env] BentoServiceEnv conda_env
-             * @property {string|null} [pip_dependencies] BentoServiceEnv pip_dependencies
-             * @property {string|null} [python_version] BentoServiceEnv python_version
-             * @property {string|null} [docker_base_image] BentoServiceEnv docker_base_image
+             * @typedef bentoml.BentoServiceMetadata.BentoServiceEnv$Properties
+             * @type {Object}
+             * @property {string} [setup_sh] BentoServiceEnv setup_sh.
+             * @property {string} [conda_env] BentoServiceEnv conda_env.
+             * @property {string} [pip_dependencies] BentoServiceEnv pip_dependencies.
+             * @property {string} [python_version] BentoServiceEnv python_version.
+             * @property {string} [docker_base_image] BentoServiceEnv docker_base_image.
              */
 
             /**
              * Constructs a new BentoServiceEnv.
-             * @memberof bentoml.BentoServiceMetadata
-             * @classdesc Represents a BentoServiceEnv.
-             * @implements IBentoServiceEnv
+             * @exports bentoml.BentoServiceMetadata.BentoServiceEnv
              * @constructor
-             * @param {bentoml.BentoServiceMetadata.IBentoServiceEnv=} [properties] Properties to set
+             * @param {bentoml.BentoServiceMetadata.BentoServiceEnv$Properties=} [properties] Properties to set
              */
             function BentoServiceEnv(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * BentoServiceEnv setup_sh.
-             * @member {string} setup_sh
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @instance
+             * @type {string|undefined}
              */
             BentoServiceEnv.prototype.setup_sh = "";
 
             /**
              * BentoServiceEnv conda_env.
-             * @member {string} conda_env
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @instance
+             * @type {string|undefined}
              */
             BentoServiceEnv.prototype.conda_env = "";
 
             /**
              * BentoServiceEnv pip_dependencies.
-             * @member {string} pip_dependencies
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @instance
+             * @type {string|undefined}
              */
             BentoServiceEnv.prototype.pip_dependencies = "";
 
             /**
              * BentoServiceEnv python_version.
-             * @member {string} python_version
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @instance
+             * @type {string|undefined}
              */
             BentoServiceEnv.prototype.python_version = "";
 
             /**
              * BentoServiceEnv docker_base_image.
-             * @member {string} docker_base_image
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @instance
+             * @type {string|undefined}
              */
             BentoServiceEnv.prototype.docker_base_image = "";
 
             /**
              * Creates a new BentoServiceEnv instance using the specified properties.
-             * @function create
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @static
-             * @param {bentoml.BentoServiceMetadata.IBentoServiceEnv=} [properties] Properties to set
+             * @param {bentoml.BentoServiceMetadata.BentoServiceEnv$Properties=} [properties] Properties to set
              * @returns {bentoml.BentoServiceMetadata.BentoServiceEnv} BentoServiceEnv instance
              */
             BentoServiceEnv.create = function create(properties) {
@@ -5794,35 +5378,29 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Encodes the specified BentoServiceEnv message. Does not implicitly {@link bentoml.BentoServiceMetadata.BentoServiceEnv.verify|verify} messages.
-             * @function encode
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @static
-             * @param {bentoml.BentoServiceMetadata.IBentoServiceEnv} message BentoServiceEnv message or plain object to encode
+             * @param {bentoml.BentoServiceMetadata.BentoServiceEnv$Properties} message BentoServiceEnv message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             BentoServiceEnv.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.setup_sh != null && Object.hasOwnProperty.call(message, "setup_sh"))
+                if (message.setup_sh != null && message.hasOwnProperty("setup_sh"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.setup_sh);
-                if (message.conda_env != null && Object.hasOwnProperty.call(message, "conda_env"))
+                if (message.conda_env != null && message.hasOwnProperty("conda_env"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.conda_env);
-                if (message.pip_dependencies != null && Object.hasOwnProperty.call(message, "pip_dependencies"))
+                if (message.pip_dependencies != null && message.hasOwnProperty("pip_dependencies"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.pip_dependencies);
-                if (message.python_version != null && Object.hasOwnProperty.call(message, "python_version"))
+                if (message.python_version != null && message.hasOwnProperty("python_version"))
                     writer.uint32(/* id 4, wireType 2 =*/34).string(message.python_version);
-                if (message.docker_base_image != null && Object.hasOwnProperty.call(message, "docker_base_image"))
+                if (message.docker_base_image != null && message.hasOwnProperty("docker_base_image"))
                     writer.uint32(/* id 5, wireType 2 =*/42).string(message.docker_base_image);
                 return writer;
             };
 
             /**
              * Encodes the specified BentoServiceEnv message, length delimited. Does not implicitly {@link bentoml.BentoServiceMetadata.BentoServiceEnv.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @static
-             * @param {bentoml.BentoServiceMetadata.IBentoServiceEnv} message BentoServiceEnv message or plain object to encode
+             * @param {bentoml.BentoServiceMetadata.BentoServiceEnv$Properties} message BentoServiceEnv message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -5832,9 +5410,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes a BentoServiceEnv message from the specified reader or buffer.
-             * @function decode
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {bentoml.BentoServiceMetadata.BentoServiceEnv} BentoServiceEnv
@@ -5873,9 +5448,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes a BentoServiceEnv message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {bentoml.BentoServiceMetadata.BentoServiceEnv} BentoServiceEnv
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -5883,34 +5455,31 @@ export const bentoml = $root.bentoml = (() => {
              */
             BentoServiceEnv.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies a BentoServiceEnv message.
-             * @function verify
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             BentoServiceEnv.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.setup_sh != null && message.hasOwnProperty("setup_sh"))
+                if (message.setup_sh != null)
                     if (!$util.isString(message.setup_sh))
                         return "setup_sh: string expected";
-                if (message.conda_env != null && message.hasOwnProperty("conda_env"))
+                if (message.conda_env != null)
                     if (!$util.isString(message.conda_env))
                         return "conda_env: string expected";
-                if (message.pip_dependencies != null && message.hasOwnProperty("pip_dependencies"))
+                if (message.pip_dependencies != null)
                     if (!$util.isString(message.pip_dependencies))
                         return "pip_dependencies: string expected";
-                if (message.python_version != null && message.hasOwnProperty("python_version"))
+                if (message.python_version != null)
                     if (!$util.isString(message.python_version))
                         return "python_version: string expected";
-                if (message.docker_base_image != null && message.hasOwnProperty("docker_base_image"))
+                if (message.docker_base_image != null)
                     if (!$util.isString(message.docker_base_image))
                         return "docker_base_image: string expected";
                 return null;
@@ -5918,9 +5487,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Creates a BentoServiceEnv message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {bentoml.BentoServiceMetadata.BentoServiceEnv} BentoServiceEnv
              */
@@ -5942,12 +5508,18 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a BentoServiceEnv message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link bentoml.BentoServiceMetadata.BentoServiceEnv.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {bentoml.BentoServiceMetadata.BentoServiceEnv} BentoServiceEnv
+             */
+            BentoServiceEnv.from = BentoServiceEnv.fromObject;
+
+            /**
              * Creates a plain object from a BentoServiceEnv message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @static
              * @param {bentoml.BentoServiceMetadata.BentoServiceEnv} message BentoServiceEnv
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             BentoServiceEnv.toObject = function toObject(message, options) {
@@ -5975,10 +5547,16 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a plain object from this BentoServiceEnv message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            BentoServiceEnv.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this BentoServiceEnv to JSON.
-             * @function toJSON
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             BentoServiceEnv.prototype.toJSON = function toJSON() {
@@ -5992,49 +5570,39 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Properties of a BentoArtifact.
-             * @memberof bentoml.BentoServiceMetadata
-             * @interface IBentoArtifact
-             * @property {string|null} [name] BentoArtifact name
-             * @property {string|null} [artifact_type] BentoArtifact artifact_type
+             * @typedef bentoml.BentoServiceMetadata.BentoArtifact$Properties
+             * @type {Object}
+             * @property {string} [name] BentoArtifact name.
+             * @property {string} [artifact_type] BentoArtifact artifact_type.
              */
 
             /**
              * Constructs a new BentoArtifact.
-             * @memberof bentoml.BentoServiceMetadata
-             * @classdesc Represents a BentoArtifact.
-             * @implements IBentoArtifact
+             * @exports bentoml.BentoServiceMetadata.BentoArtifact
              * @constructor
-             * @param {bentoml.BentoServiceMetadata.IBentoArtifact=} [properties] Properties to set
+             * @param {bentoml.BentoServiceMetadata.BentoArtifact$Properties=} [properties] Properties to set
              */
             function BentoArtifact(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * BentoArtifact name.
-             * @member {string} name
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @instance
+             * @type {string|undefined}
              */
             BentoArtifact.prototype.name = "";
 
             /**
              * BentoArtifact artifact_type.
-             * @member {string} artifact_type
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @instance
+             * @type {string|undefined}
              */
             BentoArtifact.prototype.artifact_type = "";
 
             /**
              * Creates a new BentoArtifact instance using the specified properties.
-             * @function create
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @static
-             * @param {bentoml.BentoServiceMetadata.IBentoArtifact=} [properties] Properties to set
+             * @param {bentoml.BentoServiceMetadata.BentoArtifact$Properties=} [properties] Properties to set
              * @returns {bentoml.BentoServiceMetadata.BentoArtifact} BentoArtifact instance
              */
             BentoArtifact.create = function create(properties) {
@@ -6043,29 +5611,23 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Encodes the specified BentoArtifact message. Does not implicitly {@link bentoml.BentoServiceMetadata.BentoArtifact.verify|verify} messages.
-             * @function encode
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @static
-             * @param {bentoml.BentoServiceMetadata.IBentoArtifact} message BentoArtifact message or plain object to encode
+             * @param {bentoml.BentoServiceMetadata.BentoArtifact$Properties} message BentoArtifact message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             BentoArtifact.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.artifact_type != null && Object.hasOwnProperty.call(message, "artifact_type"))
+                if (message.artifact_type != null && message.hasOwnProperty("artifact_type"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.artifact_type);
                 return writer;
             };
 
             /**
              * Encodes the specified BentoArtifact message, length delimited. Does not implicitly {@link bentoml.BentoServiceMetadata.BentoArtifact.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @static
-             * @param {bentoml.BentoServiceMetadata.IBentoArtifact} message BentoArtifact message or plain object to encode
+             * @param {bentoml.BentoServiceMetadata.BentoArtifact$Properties} message BentoArtifact message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -6075,9 +5637,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes a BentoArtifact message from the specified reader or buffer.
-             * @function decode
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {bentoml.BentoServiceMetadata.BentoArtifact} BentoArtifact
@@ -6107,9 +5666,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes a BentoArtifact message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {bentoml.BentoServiceMetadata.BentoArtifact} BentoArtifact
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -6117,25 +5673,22 @@ export const bentoml = $root.bentoml = (() => {
              */
             BentoArtifact.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies a BentoArtifact message.
-             * @function verify
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             BentoArtifact.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null)
                     if (!$util.isString(message.name))
                         return "name: string expected";
-                if (message.artifact_type != null && message.hasOwnProperty("artifact_type"))
+                if (message.artifact_type != null)
                     if (!$util.isString(message.artifact_type))
                         return "artifact_type: string expected";
                 return null;
@@ -6143,9 +5696,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Creates a BentoArtifact message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {bentoml.BentoServiceMetadata.BentoArtifact} BentoArtifact
              */
@@ -6161,12 +5711,18 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a BentoArtifact message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link bentoml.BentoServiceMetadata.BentoArtifact.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {bentoml.BentoServiceMetadata.BentoArtifact} BentoArtifact
+             */
+            BentoArtifact.from = BentoArtifact.fromObject;
+
+            /**
              * Creates a plain object from a BentoArtifact message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @static
              * @param {bentoml.BentoServiceMetadata.BentoArtifact} message BentoArtifact
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             BentoArtifact.toObject = function toObject(message, options) {
@@ -6185,10 +5741,16 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a plain object from this BentoArtifact message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            BentoArtifact.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this BentoArtifact to JSON.
-             * @function toJSON
-             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             BentoArtifact.prototype.toJSON = function toJSON() {
@@ -6202,103 +5764,81 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Properties of a BentoServiceApi.
-             * @memberof bentoml.BentoServiceMetadata
-             * @interface IBentoServiceApi
-             * @property {string|null} [name] BentoServiceApi name
-             * @property {string|null} [input_type] BentoServiceApi input_type
-             * @property {string|null} [docs] BentoServiceApi docs
-             * @property {google.protobuf.IStruct|null} [input_config] BentoServiceApi input_config
-             * @property {google.protobuf.IStruct|null} [output_config] BentoServiceApi output_config
-             * @property {string|null} [output_type] BentoServiceApi output_type
-             * @property {number|null} [mb_max_latency] BentoServiceApi mb_max_latency
-             * @property {number|null} [mb_max_batch_size] BentoServiceApi mb_max_batch_size
+             * @typedef bentoml.BentoServiceMetadata.BentoServiceApi$Properties
+             * @type {Object}
+             * @property {string} [name] BentoServiceApi name.
+             * @property {string} [input_type] BentoServiceApi input_type.
+             * @property {string} [docs] BentoServiceApi docs.
+             * @property {google.protobuf.Struct$Properties} [input_config] BentoServiceApi input_config.
+             * @property {google.protobuf.Struct$Properties} [output_config] BentoServiceApi output_config.
+             * @property {string} [output_type] BentoServiceApi output_type.
+             * @property {number} [mb_max_latency] BentoServiceApi mb_max_latency.
+             * @property {number} [mb_max_batch_size] BentoServiceApi mb_max_batch_size.
              */
 
             /**
              * Constructs a new BentoServiceApi.
-             * @memberof bentoml.BentoServiceMetadata
-             * @classdesc Represents a BentoServiceApi.
-             * @implements IBentoServiceApi
+             * @exports bentoml.BentoServiceMetadata.BentoServiceApi
              * @constructor
-             * @param {bentoml.BentoServiceMetadata.IBentoServiceApi=} [properties] Properties to set
+             * @param {bentoml.BentoServiceMetadata.BentoServiceApi$Properties=} [properties] Properties to set
              */
             function BentoServiceApi(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * BentoServiceApi name.
-             * @member {string} name
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @instance
+             * @type {string|undefined}
              */
             BentoServiceApi.prototype.name = "";
 
             /**
              * BentoServiceApi input_type.
-             * @member {string} input_type
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @instance
+             * @type {string|undefined}
              */
             BentoServiceApi.prototype.input_type = "";
 
             /**
              * BentoServiceApi docs.
-             * @member {string} docs
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @instance
+             * @type {string|undefined}
              */
             BentoServiceApi.prototype.docs = "";
 
             /**
              * BentoServiceApi input_config.
-             * @member {google.protobuf.IStruct|null|undefined} input_config
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @instance
+             * @type {google.protobuf.Struct$Properties|undefined}
              */
             BentoServiceApi.prototype.input_config = null;
 
             /**
              * BentoServiceApi output_config.
-             * @member {google.protobuf.IStruct|null|undefined} output_config
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @instance
+             * @type {google.protobuf.Struct$Properties|undefined}
              */
             BentoServiceApi.prototype.output_config = null;
 
             /**
              * BentoServiceApi output_type.
-             * @member {string} output_type
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @instance
+             * @type {string|undefined}
              */
             BentoServiceApi.prototype.output_type = "";
 
             /**
              * BentoServiceApi mb_max_latency.
-             * @member {number} mb_max_latency
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @instance
+             * @type {number|undefined}
              */
             BentoServiceApi.prototype.mb_max_latency = 0;
 
             /**
              * BentoServiceApi mb_max_batch_size.
-             * @member {number} mb_max_batch_size
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @instance
+             * @type {number|undefined}
              */
             BentoServiceApi.prototype.mb_max_batch_size = 0;
 
             /**
              * Creates a new BentoServiceApi instance using the specified properties.
-             * @function create
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @static
-             * @param {bentoml.BentoServiceMetadata.IBentoServiceApi=} [properties] Properties to set
+             * @param {bentoml.BentoServiceMetadata.BentoServiceApi$Properties=} [properties] Properties to set
              * @returns {bentoml.BentoServiceMetadata.BentoServiceApi} BentoServiceApi instance
              */
             BentoServiceApi.create = function create(properties) {
@@ -6307,41 +5847,35 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Encodes the specified BentoServiceApi message. Does not implicitly {@link bentoml.BentoServiceMetadata.BentoServiceApi.verify|verify} messages.
-             * @function encode
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @static
-             * @param {bentoml.BentoServiceMetadata.IBentoServiceApi} message BentoServiceApi message or plain object to encode
+             * @param {bentoml.BentoServiceMetadata.BentoServiceApi$Properties} message BentoServiceApi message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             BentoServiceApi.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                if (message.name != null && message.hasOwnProperty("name"))
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-                if (message.input_type != null && Object.hasOwnProperty.call(message, "input_type"))
+                if (message.input_type != null && message.hasOwnProperty("input_type"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.input_type);
-                if (message.docs != null && Object.hasOwnProperty.call(message, "docs"))
+                if (message.docs != null && message.hasOwnProperty("docs"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.docs);
-                if (message.input_config != null && Object.hasOwnProperty.call(message, "input_config"))
+                if (message.input_config && message.hasOwnProperty("input_config"))
                     $root.google.protobuf.Struct.encode(message.input_config, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-                if (message.output_config != null && Object.hasOwnProperty.call(message, "output_config"))
+                if (message.output_config && message.hasOwnProperty("output_config"))
                     $root.google.protobuf.Struct.encode(message.output_config, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.output_type != null && Object.hasOwnProperty.call(message, "output_type"))
+                if (message.output_type != null && message.hasOwnProperty("output_type"))
                     writer.uint32(/* id 6, wireType 2 =*/50).string(message.output_type);
-                if (message.mb_max_latency != null && Object.hasOwnProperty.call(message, "mb_max_latency"))
+                if (message.mb_max_latency != null && message.hasOwnProperty("mb_max_latency"))
                     writer.uint32(/* id 7, wireType 0 =*/56).int32(message.mb_max_latency);
-                if (message.mb_max_batch_size != null && Object.hasOwnProperty.call(message, "mb_max_batch_size"))
+                if (message.mb_max_batch_size != null && message.hasOwnProperty("mb_max_batch_size"))
                     writer.uint32(/* id 8, wireType 0 =*/64).int32(message.mb_max_batch_size);
                 return writer;
             };
 
             /**
              * Encodes the specified BentoServiceApi message, length delimited. Does not implicitly {@link bentoml.BentoServiceMetadata.BentoServiceApi.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @static
-             * @param {bentoml.BentoServiceMetadata.IBentoServiceApi} message BentoServiceApi message or plain object to encode
+             * @param {bentoml.BentoServiceMetadata.BentoServiceApi$Properties} message BentoServiceApi message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -6351,9 +5885,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes a BentoServiceApi message from the specified reader or buffer.
-             * @function decode
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {bentoml.BentoServiceMetadata.BentoServiceApi} BentoServiceApi
@@ -6401,9 +5932,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Decodes a BentoServiceApi message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {bentoml.BentoServiceMetadata.BentoServiceApi} BentoServiceApi
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -6411,47 +5939,44 @@ export const bentoml = $root.bentoml = (() => {
              */
             BentoServiceApi.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies a BentoServiceApi message.
-             * @function verify
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             BentoServiceApi.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.name != null && message.hasOwnProperty("name"))
+                if (message.name != null)
                     if (!$util.isString(message.name))
                         return "name: string expected";
-                if (message.input_type != null && message.hasOwnProperty("input_type"))
+                if (message.input_type != null)
                     if (!$util.isString(message.input_type))
                         return "input_type: string expected";
-                if (message.docs != null && message.hasOwnProperty("docs"))
+                if (message.docs != null)
                     if (!$util.isString(message.docs))
                         return "docs: string expected";
-                if (message.input_config != null && message.hasOwnProperty("input_config")) {
+                if (message.input_config != null) {
                     let error = $root.google.protobuf.Struct.verify(message.input_config);
                     if (error)
                         return "input_config." + error;
                 }
-                if (message.output_config != null && message.hasOwnProperty("output_config")) {
+                if (message.output_config != null) {
                     let error = $root.google.protobuf.Struct.verify(message.output_config);
                     if (error)
                         return "output_config." + error;
                 }
-                if (message.output_type != null && message.hasOwnProperty("output_type"))
+                if (message.output_type != null)
                     if (!$util.isString(message.output_type))
                         return "output_type: string expected";
-                if (message.mb_max_latency != null && message.hasOwnProperty("mb_max_latency"))
+                if (message.mb_max_latency != null)
                     if (!$util.isInteger(message.mb_max_latency))
                         return "mb_max_latency: integer expected";
-                if (message.mb_max_batch_size != null && message.hasOwnProperty("mb_max_batch_size"))
+                if (message.mb_max_batch_size != null)
                     if (!$util.isInteger(message.mb_max_batch_size))
                         return "mb_max_batch_size: integer expected";
                 return null;
@@ -6459,9 +5984,6 @@ export const bentoml = $root.bentoml = (() => {
 
             /**
              * Creates a BentoServiceApi message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {bentoml.BentoServiceMetadata.BentoServiceApi} BentoServiceApi
              */
@@ -6495,12 +6017,18 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a BentoServiceApi message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link bentoml.BentoServiceMetadata.BentoServiceApi.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {bentoml.BentoServiceMetadata.BentoServiceApi} BentoServiceApi
+             */
+            BentoServiceApi.from = BentoServiceApi.fromObject;
+
+            /**
              * Creates a plain object from a BentoServiceApi message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @static
              * @param {bentoml.BentoServiceMetadata.BentoServiceApi} message BentoServiceApi
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             BentoServiceApi.toObject = function toObject(message, options) {
@@ -6537,10 +6065,16 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             /**
+             * Creates a plain object from this BentoServiceApi message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            BentoServiceApi.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this BentoServiceApi to JSON.
-             * @function toJSON
-             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             BentoServiceApi.prototype.toJSON = function toJSON() {
@@ -6557,76 +6091,60 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a Bento.
-         * @memberof bentoml
-         * @interface IBento
-         * @property {string|null} [name] Bento name
-         * @property {string|null} [version] Bento version
-         * @property {bentoml.IBentoUri|null} [uri] Bento uri
-         * @property {bentoml.IBentoServiceMetadata|null} [bento_service_metadata] Bento bento_service_metadata
-         * @property {bentoml.IUploadStatus|null} [status] Bento status
+         * @typedef bentoml.Bento$Properties
+         * @type {Object}
+         * @property {string} [name] Bento name.
+         * @property {string} [version] Bento version.
+         * @property {bentoml.BentoUri$Properties} [uri] Bento uri.
+         * @property {bentoml.BentoServiceMetadata$Properties} [bento_service_metadata] Bento bento_service_metadata.
+         * @property {bentoml.UploadStatus$Properties} [status] Bento status.
          */
 
         /**
          * Constructs a new Bento.
-         * @memberof bentoml
-         * @classdesc Represents a Bento.
-         * @implements IBento
+         * @exports bentoml.Bento
          * @constructor
-         * @param {bentoml.IBento=} [properties] Properties to set
+         * @param {bentoml.Bento$Properties=} [properties] Properties to set
          */
         function Bento(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * Bento name.
-         * @member {string} name
-         * @memberof bentoml.Bento
-         * @instance
+         * @type {string|undefined}
          */
         Bento.prototype.name = "";
 
         /**
          * Bento version.
-         * @member {string} version
-         * @memberof bentoml.Bento
-         * @instance
+         * @type {string|undefined}
          */
         Bento.prototype.version = "";
 
         /**
          * Bento uri.
-         * @member {bentoml.IBentoUri|null|undefined} uri
-         * @memberof bentoml.Bento
-         * @instance
+         * @type {bentoml.BentoUri$Properties|undefined}
          */
         Bento.prototype.uri = null;
 
         /**
          * Bento bento_service_metadata.
-         * @member {bentoml.IBentoServiceMetadata|null|undefined} bento_service_metadata
-         * @memberof bentoml.Bento
-         * @instance
+         * @type {bentoml.BentoServiceMetadata$Properties|undefined}
          */
         Bento.prototype.bento_service_metadata = null;
 
         /**
          * Bento status.
-         * @member {bentoml.IUploadStatus|null|undefined} status
-         * @memberof bentoml.Bento
-         * @instance
+         * @type {bentoml.UploadStatus$Properties|undefined}
          */
         Bento.prototype.status = null;
 
         /**
          * Creates a new Bento instance using the specified properties.
-         * @function create
-         * @memberof bentoml.Bento
-         * @static
-         * @param {bentoml.IBento=} [properties] Properties to set
+         * @param {bentoml.Bento$Properties=} [properties] Properties to set
          * @returns {bentoml.Bento} Bento instance
          */
         Bento.create = function create(properties) {
@@ -6635,35 +6153,29 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified Bento message. Does not implicitly {@link bentoml.Bento.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.Bento
-         * @static
-         * @param {bentoml.IBento} message Bento message or plain object to encode
+         * @param {bentoml.Bento$Properties} message Bento message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         Bento.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+            if (message.name != null && message.hasOwnProperty("name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
-            if (message.version != null && Object.hasOwnProperty.call(message, "version"))
+            if (message.version != null && message.hasOwnProperty("version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.version);
-            if (message.uri != null && Object.hasOwnProperty.call(message, "uri"))
+            if (message.uri && message.hasOwnProperty("uri"))
                 $root.bentoml.BentoUri.encode(message.uri, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.bento_service_metadata != null && Object.hasOwnProperty.call(message, "bento_service_metadata"))
+            if (message.bento_service_metadata && message.hasOwnProperty("bento_service_metadata"))
                 $root.bentoml.BentoServiceMetadata.encode(message.bento_service_metadata, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.UploadStatus.encode(message.status, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified Bento message, length delimited. Does not implicitly {@link bentoml.Bento.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.Bento
-         * @static
-         * @param {bentoml.IBento} message Bento message or plain object to encode
+         * @param {bentoml.Bento$Properties} message Bento message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -6673,9 +6185,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a Bento message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.Bento
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.Bento} Bento
@@ -6714,9 +6223,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a Bento message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.Bento
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.Bento} Bento
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -6724,38 +6230,35 @@ export const bentoml = $root.bentoml = (() => {
          */
         Bento.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a Bento message.
-         * @function verify
-         * @memberof bentoml.Bento
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         Bento.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.name != null && message.hasOwnProperty("name"))
+            if (message.name != null)
                 if (!$util.isString(message.name))
                     return "name: string expected";
-            if (message.version != null && message.hasOwnProperty("version"))
+            if (message.version != null)
                 if (!$util.isString(message.version))
                     return "version: string expected";
-            if (message.uri != null && message.hasOwnProperty("uri")) {
+            if (message.uri != null) {
                 let error = $root.bentoml.BentoUri.verify(message.uri);
                 if (error)
                     return "uri." + error;
             }
-            if (message.bento_service_metadata != null && message.hasOwnProperty("bento_service_metadata")) {
+            if (message.bento_service_metadata != null) {
                 let error = $root.bentoml.BentoServiceMetadata.verify(message.bento_service_metadata);
                 if (error)
                     return "bento_service_metadata." + error;
             }
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.UploadStatus.verify(message.status);
                 if (error)
                     return "status." + error;
@@ -6765,9 +6268,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a Bento message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.Bento
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.Bento} Bento
          */
@@ -6798,12 +6298,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a Bento message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.Bento.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.Bento} Bento
+         */
+        Bento.from = Bento.fromObject;
+
+        /**
          * Creates a plain object from a Bento message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.Bento
-         * @static
          * @param {bentoml.Bento} message Bento
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         Bento.toObject = function toObject(message, options) {
@@ -6831,10 +6337,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this Bento message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Bento.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this Bento to JSON.
-         * @function toJSON
-         * @memberof bentoml.Bento
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         Bento.prototype.toJSON = function toJSON() {
@@ -6848,49 +6360,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of an AddBentoRequest.
-         * @memberof bentoml
-         * @interface IAddBentoRequest
-         * @property {string|null} [bento_name] AddBentoRequest bento_name
-         * @property {string|null} [bento_version] AddBentoRequest bento_version
+         * @typedef bentoml.AddBentoRequest$Properties
+         * @type {Object}
+         * @property {string} [bento_name] AddBentoRequest bento_name.
+         * @property {string} [bento_version] AddBentoRequest bento_version.
          */
 
         /**
          * Constructs a new AddBentoRequest.
-         * @memberof bentoml
-         * @classdesc Represents an AddBentoRequest.
-         * @implements IAddBentoRequest
+         * @exports bentoml.AddBentoRequest
          * @constructor
-         * @param {bentoml.IAddBentoRequest=} [properties] Properties to set
+         * @param {bentoml.AddBentoRequest$Properties=} [properties] Properties to set
          */
         function AddBentoRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * AddBentoRequest bento_name.
-         * @member {string} bento_name
-         * @memberof bentoml.AddBentoRequest
-         * @instance
+         * @type {string|undefined}
          */
         AddBentoRequest.prototype.bento_name = "";
 
         /**
          * AddBentoRequest bento_version.
-         * @member {string} bento_version
-         * @memberof bentoml.AddBentoRequest
-         * @instance
+         * @type {string|undefined}
          */
         AddBentoRequest.prototype.bento_version = "";
 
         /**
          * Creates a new AddBentoRequest instance using the specified properties.
-         * @function create
-         * @memberof bentoml.AddBentoRequest
-         * @static
-         * @param {bentoml.IAddBentoRequest=} [properties] Properties to set
+         * @param {bentoml.AddBentoRequest$Properties=} [properties] Properties to set
          * @returns {bentoml.AddBentoRequest} AddBentoRequest instance
          */
         AddBentoRequest.create = function create(properties) {
@@ -6899,29 +6401,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified AddBentoRequest message. Does not implicitly {@link bentoml.AddBentoRequest.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.AddBentoRequest
-         * @static
-         * @param {bentoml.IAddBentoRequest} message AddBentoRequest message or plain object to encode
+         * @param {bentoml.AddBentoRequest$Properties} message AddBentoRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         AddBentoRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
             return writer;
         };
 
         /**
          * Encodes the specified AddBentoRequest message, length delimited. Does not implicitly {@link bentoml.AddBentoRequest.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.AddBentoRequest
-         * @static
-         * @param {bentoml.IAddBentoRequest} message AddBentoRequest message or plain object to encode
+         * @param {bentoml.AddBentoRequest$Properties} message AddBentoRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -6931,9 +6427,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an AddBentoRequest message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.AddBentoRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.AddBentoRequest} AddBentoRequest
@@ -6963,9 +6456,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an AddBentoRequest message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.AddBentoRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.AddBentoRequest} AddBentoRequest
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -6973,25 +6463,22 @@ export const bentoml = $root.bentoml = (() => {
          */
         AddBentoRequest.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies an AddBentoRequest message.
-         * @function verify
-         * @memberof bentoml.AddBentoRequest
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         AddBentoRequest.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+            if (message.bento_name != null)
                 if (!$util.isString(message.bento_name))
                     return "bento_name: string expected";
-            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+            if (message.bento_version != null)
                 if (!$util.isString(message.bento_version))
                     return "bento_version: string expected";
             return null;
@@ -6999,9 +6486,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates an AddBentoRequest message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.AddBentoRequest
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.AddBentoRequest} AddBentoRequest
          */
@@ -7017,12 +6501,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates an AddBentoRequest message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.AddBentoRequest.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.AddBentoRequest} AddBentoRequest
+         */
+        AddBentoRequest.from = AddBentoRequest.fromObject;
+
+        /**
          * Creates a plain object from an AddBentoRequest message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.AddBentoRequest
-         * @static
          * @param {bentoml.AddBentoRequest} message AddBentoRequest
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         AddBentoRequest.toObject = function toObject(message, options) {
@@ -7041,10 +6531,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this AddBentoRequest message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        AddBentoRequest.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this AddBentoRequest to JSON.
-         * @function toJSON
-         * @memberof bentoml.AddBentoRequest
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         AddBentoRequest.prototype.toJSON = function toJSON() {
@@ -7058,49 +6554,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of an AddBentoResponse.
-         * @memberof bentoml
-         * @interface IAddBentoResponse
-         * @property {bentoml.IStatus|null} [status] AddBentoResponse status
-         * @property {bentoml.IBentoUri|null} [uri] AddBentoResponse uri
+         * @typedef bentoml.AddBentoResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] AddBentoResponse status.
+         * @property {bentoml.BentoUri$Properties} [uri] AddBentoResponse uri.
          */
 
         /**
          * Constructs a new AddBentoResponse.
-         * @memberof bentoml
-         * @classdesc Represents an AddBentoResponse.
-         * @implements IAddBentoResponse
+         * @exports bentoml.AddBentoResponse
          * @constructor
-         * @param {bentoml.IAddBentoResponse=} [properties] Properties to set
+         * @param {bentoml.AddBentoResponse$Properties=} [properties] Properties to set
          */
         function AddBentoResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * AddBentoResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.AddBentoResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         AddBentoResponse.prototype.status = null;
 
         /**
          * AddBentoResponse uri.
-         * @member {bentoml.IBentoUri|null|undefined} uri
-         * @memberof bentoml.AddBentoResponse
-         * @instance
+         * @type {bentoml.BentoUri$Properties|undefined}
          */
         AddBentoResponse.prototype.uri = null;
 
         /**
          * Creates a new AddBentoResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.AddBentoResponse
-         * @static
-         * @param {bentoml.IAddBentoResponse=} [properties] Properties to set
+         * @param {bentoml.AddBentoResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.AddBentoResponse} AddBentoResponse instance
          */
         AddBentoResponse.create = function create(properties) {
@@ -7109,29 +6595,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified AddBentoResponse message. Does not implicitly {@link bentoml.AddBentoResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.AddBentoResponse
-         * @static
-         * @param {bentoml.IAddBentoResponse} message AddBentoResponse message or plain object to encode
+         * @param {bentoml.AddBentoResponse$Properties} message AddBentoResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         AddBentoResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.uri != null && Object.hasOwnProperty.call(message, "uri"))
+            if (message.uri && message.hasOwnProperty("uri"))
                 $root.bentoml.BentoUri.encode(message.uri, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified AddBentoResponse message, length delimited. Does not implicitly {@link bentoml.AddBentoResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.AddBentoResponse
-         * @static
-         * @param {bentoml.IAddBentoResponse} message AddBentoResponse message or plain object to encode
+         * @param {bentoml.AddBentoResponse$Properties} message AddBentoResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -7141,9 +6621,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an AddBentoResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.AddBentoResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.AddBentoResponse} AddBentoResponse
@@ -7173,9 +6650,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an AddBentoResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.AddBentoResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.AddBentoResponse} AddBentoResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -7183,27 +6657,24 @@ export const bentoml = $root.bentoml = (() => {
          */
         AddBentoResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies an AddBentoResponse message.
-         * @function verify
-         * @memberof bentoml.AddBentoResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         AddBentoResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
-            if (message.uri != null && message.hasOwnProperty("uri")) {
+            if (message.uri != null) {
                 let error = $root.bentoml.BentoUri.verify(message.uri);
                 if (error)
                     return "uri." + error;
@@ -7213,9 +6684,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates an AddBentoResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.AddBentoResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.AddBentoResponse} AddBentoResponse
          */
@@ -7237,12 +6705,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates an AddBentoResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.AddBentoResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.AddBentoResponse} AddBentoResponse
+         */
+        AddBentoResponse.from = AddBentoResponse.fromObject;
+
+        /**
          * Creates a plain object from an AddBentoResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.AddBentoResponse
-         * @static
          * @param {bentoml.AddBentoResponse} message AddBentoResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         AddBentoResponse.toObject = function toObject(message, options) {
@@ -7261,10 +6735,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this AddBentoResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        AddBentoResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this AddBentoResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.AddBentoResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         AddBentoResponse.prototype.toJSON = function toJSON() {
@@ -7278,67 +6758,53 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of an UploadStatus.
-         * @memberof bentoml
-         * @interface IUploadStatus
-         * @property {bentoml.UploadStatus.Status|null} [status] UploadStatus status
-         * @property {google.protobuf.ITimestamp|null} [updated_at] UploadStatus updated_at
-         * @property {number|null} [percentage] UploadStatus percentage
-         * @property {string|null} [error_message] UploadStatus error_message
+         * @typedef bentoml.UploadStatus$Properties
+         * @type {Object}
+         * @property {bentoml.UploadStatus.Status} [status] UploadStatus status.
+         * @property {google.protobuf.Timestamp$Properties} [updated_at] UploadStatus updated_at.
+         * @property {number} [percentage] UploadStatus percentage.
+         * @property {string} [error_message] UploadStatus error_message.
          */
 
         /**
          * Constructs a new UploadStatus.
-         * @memberof bentoml
-         * @classdesc Represents an UploadStatus.
-         * @implements IUploadStatus
+         * @exports bentoml.UploadStatus
          * @constructor
-         * @param {bentoml.IUploadStatus=} [properties] Properties to set
+         * @param {bentoml.UploadStatus$Properties=} [properties] Properties to set
          */
         function UploadStatus(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * UploadStatus status.
-         * @member {bentoml.UploadStatus.Status} status
-         * @memberof bentoml.UploadStatus
-         * @instance
+         * @type {bentoml.UploadStatus.Status|undefined}
          */
         UploadStatus.prototype.status = 0;
 
         /**
          * UploadStatus updated_at.
-         * @member {google.protobuf.ITimestamp|null|undefined} updated_at
-         * @memberof bentoml.UploadStatus
-         * @instance
+         * @type {google.protobuf.Timestamp$Properties|undefined}
          */
         UploadStatus.prototype.updated_at = null;
 
         /**
          * UploadStatus percentage.
-         * @member {number} percentage
-         * @memberof bentoml.UploadStatus
-         * @instance
+         * @type {number|undefined}
          */
         UploadStatus.prototype.percentage = 0;
 
         /**
          * UploadStatus error_message.
-         * @member {string} error_message
-         * @memberof bentoml.UploadStatus
-         * @instance
+         * @type {string|undefined}
          */
         UploadStatus.prototype.error_message = "";
 
         /**
          * Creates a new UploadStatus instance using the specified properties.
-         * @function create
-         * @memberof bentoml.UploadStatus
-         * @static
-         * @param {bentoml.IUploadStatus=} [properties] Properties to set
+         * @param {bentoml.UploadStatus$Properties=} [properties] Properties to set
          * @returns {bentoml.UploadStatus} UploadStatus instance
          */
         UploadStatus.create = function create(properties) {
@@ -7347,33 +6813,27 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified UploadStatus message. Does not implicitly {@link bentoml.UploadStatus.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.UploadStatus
-         * @static
-         * @param {bentoml.IUploadStatus} message UploadStatus message or plain object to encode
+         * @param {bentoml.UploadStatus$Properties} message UploadStatus message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         UploadStatus.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
-                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.status);
-            if (message.updated_at != null && Object.hasOwnProperty.call(message, "updated_at"))
+            if (message.status != null && message.hasOwnProperty("status"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.status);
+            if (message.updated_at && message.hasOwnProperty("updated_at"))
                 $root.google.protobuf.Timestamp.encode(message.updated_at, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-            if (message.percentage != null && Object.hasOwnProperty.call(message, "percentage"))
+            if (message.percentage != null && message.hasOwnProperty("percentage"))
                 writer.uint32(/* id 3, wireType 0 =*/24).int32(message.percentage);
-            if (message.error_message != null && Object.hasOwnProperty.call(message, "error_message"))
+            if (message.error_message != null && message.hasOwnProperty("error_message"))
                 writer.uint32(/* id 4, wireType 2 =*/34).string(message.error_message);
             return writer;
         };
 
         /**
          * Encodes the specified UploadStatus message, length delimited. Does not implicitly {@link bentoml.UploadStatus.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.UploadStatus
-         * @static
-         * @param {bentoml.IUploadStatus} message UploadStatus message or plain object to encode
+         * @param {bentoml.UploadStatus$Properties} message UploadStatus message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -7383,9 +6843,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an UploadStatus message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.UploadStatus
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.UploadStatus} UploadStatus
@@ -7400,7 +6857,7 @@ export const bentoml = $root.bentoml = (() => {
                 let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
-                    message.status = reader.int32();
+                    message.status = reader.uint32();
                     break;
                 case 2:
                     message.updated_at = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
@@ -7421,9 +6878,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an UploadStatus message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.UploadStatus
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.UploadStatus} UploadStatus
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -7431,22 +6885,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         UploadStatus.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies an UploadStatus message.
-         * @function verify
-         * @memberof bentoml.UploadStatus
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         UploadStatus.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status"))
+            if (message.status != null)
                 switch (message.status) {
                 default:
                     return "status: enum value expected";
@@ -7457,15 +6908,15 @@ export const bentoml = $root.bentoml = (() => {
                 case 4:
                     break;
                 }
-            if (message.updated_at != null && message.hasOwnProperty("updated_at")) {
+            if (message.updated_at != null) {
                 let error = $root.google.protobuf.Timestamp.verify(message.updated_at);
                 if (error)
                     return "updated_at." + error;
             }
-            if (message.percentage != null && message.hasOwnProperty("percentage"))
+            if (message.percentage != null)
                 if (!$util.isInteger(message.percentage))
                     return "percentage: integer expected";
-            if (message.error_message != null && message.hasOwnProperty("error_message"))
+            if (message.error_message != null)
                 if (!$util.isString(message.error_message))
                     return "error_message: string expected";
             return null;
@@ -7473,9 +6924,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates an UploadStatus message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.UploadStatus
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.UploadStatus} UploadStatus
          */
@@ -7518,12 +6966,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates an UploadStatus message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.UploadStatus.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.UploadStatus} UploadStatus
+         */
+        UploadStatus.from = UploadStatus.fromObject;
+
+        /**
          * Creates a plain object from an UploadStatus message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.UploadStatus
-         * @static
          * @param {bentoml.UploadStatus} message UploadStatus
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         UploadStatus.toObject = function toObject(message, options) {
@@ -7548,10 +7002,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this UploadStatus message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        UploadStatus.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this UploadStatus to JSON.
-         * @function toJSON
-         * @memberof bentoml.UploadStatus
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         UploadStatus.prototype.toJSON = function toJSON() {
@@ -7560,7 +7020,8 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Status enum.
-         * @name bentoml.UploadStatus.Status
+         * @name Status
+         * @memberof bentoml.UploadStatus
          * @enum {number}
          * @property {number} UNINITIALIZED=0 UNINITIALIZED value
          * @property {number} UPLOADING=1 UPLOADING value
@@ -7585,67 +7046,53 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of an UpdateBentoRequest.
-         * @memberof bentoml
-         * @interface IUpdateBentoRequest
-         * @property {string|null} [bento_name] UpdateBentoRequest bento_name
-         * @property {string|null} [bento_version] UpdateBentoRequest bento_version
-         * @property {bentoml.IUploadStatus|null} [upload_status] UpdateBentoRequest upload_status
-         * @property {bentoml.IBentoServiceMetadata|null} [service_metadata] UpdateBentoRequest service_metadata
+         * @typedef bentoml.UpdateBentoRequest$Properties
+         * @type {Object}
+         * @property {string} [bento_name] UpdateBentoRequest bento_name.
+         * @property {string} [bento_version] UpdateBentoRequest bento_version.
+         * @property {bentoml.UploadStatus$Properties} [upload_status] UpdateBentoRequest upload_status.
+         * @property {bentoml.BentoServiceMetadata$Properties} [service_metadata] UpdateBentoRequest service_metadata.
          */
 
         /**
          * Constructs a new UpdateBentoRequest.
-         * @memberof bentoml
-         * @classdesc Represents an UpdateBentoRequest.
-         * @implements IUpdateBentoRequest
+         * @exports bentoml.UpdateBentoRequest
          * @constructor
-         * @param {bentoml.IUpdateBentoRequest=} [properties] Properties to set
+         * @param {bentoml.UpdateBentoRequest$Properties=} [properties] Properties to set
          */
         function UpdateBentoRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * UpdateBentoRequest bento_name.
-         * @member {string} bento_name
-         * @memberof bentoml.UpdateBentoRequest
-         * @instance
+         * @type {string|undefined}
          */
         UpdateBentoRequest.prototype.bento_name = "";
 
         /**
          * UpdateBentoRequest bento_version.
-         * @member {string} bento_version
-         * @memberof bentoml.UpdateBentoRequest
-         * @instance
+         * @type {string|undefined}
          */
         UpdateBentoRequest.prototype.bento_version = "";
 
         /**
          * UpdateBentoRequest upload_status.
-         * @member {bentoml.IUploadStatus|null|undefined} upload_status
-         * @memberof bentoml.UpdateBentoRequest
-         * @instance
+         * @type {bentoml.UploadStatus$Properties|undefined}
          */
         UpdateBentoRequest.prototype.upload_status = null;
 
         /**
          * UpdateBentoRequest service_metadata.
-         * @member {bentoml.IBentoServiceMetadata|null|undefined} service_metadata
-         * @memberof bentoml.UpdateBentoRequest
-         * @instance
+         * @type {bentoml.BentoServiceMetadata$Properties|undefined}
          */
         UpdateBentoRequest.prototype.service_metadata = null;
 
         /**
          * Creates a new UpdateBentoRequest instance using the specified properties.
-         * @function create
-         * @memberof bentoml.UpdateBentoRequest
-         * @static
-         * @param {bentoml.IUpdateBentoRequest=} [properties] Properties to set
+         * @param {bentoml.UpdateBentoRequest$Properties=} [properties] Properties to set
          * @returns {bentoml.UpdateBentoRequest} UpdateBentoRequest instance
          */
         UpdateBentoRequest.create = function create(properties) {
@@ -7654,33 +7101,27 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified UpdateBentoRequest message. Does not implicitly {@link bentoml.UpdateBentoRequest.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.UpdateBentoRequest
-         * @static
-         * @param {bentoml.IUpdateBentoRequest} message UpdateBentoRequest message or plain object to encode
+         * @param {bentoml.UpdateBentoRequest$Properties} message UpdateBentoRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         UpdateBentoRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
-            if (message.upload_status != null && Object.hasOwnProperty.call(message, "upload_status"))
+            if (message.upload_status && message.hasOwnProperty("upload_status"))
                 $root.bentoml.UploadStatus.encode(message.upload_status, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.service_metadata != null && Object.hasOwnProperty.call(message, "service_metadata"))
+            if (message.service_metadata && message.hasOwnProperty("service_metadata"))
                 $root.bentoml.BentoServiceMetadata.encode(message.service_metadata, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified UpdateBentoRequest message, length delimited. Does not implicitly {@link bentoml.UpdateBentoRequest.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.UpdateBentoRequest
-         * @static
-         * @param {bentoml.IUpdateBentoRequest} message UpdateBentoRequest message or plain object to encode
+         * @param {bentoml.UpdateBentoRequest$Properties} message UpdateBentoRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -7690,9 +7131,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an UpdateBentoRequest message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.UpdateBentoRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.UpdateBentoRequest} UpdateBentoRequest
@@ -7728,9 +7166,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an UpdateBentoRequest message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.UpdateBentoRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.UpdateBentoRequest} UpdateBentoRequest
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -7738,33 +7173,30 @@ export const bentoml = $root.bentoml = (() => {
          */
         UpdateBentoRequest.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies an UpdateBentoRequest message.
-         * @function verify
-         * @memberof bentoml.UpdateBentoRequest
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         UpdateBentoRequest.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+            if (message.bento_name != null)
                 if (!$util.isString(message.bento_name))
                     return "bento_name: string expected";
-            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+            if (message.bento_version != null)
                 if (!$util.isString(message.bento_version))
                     return "bento_version: string expected";
-            if (message.upload_status != null && message.hasOwnProperty("upload_status")) {
+            if (message.upload_status != null) {
                 let error = $root.bentoml.UploadStatus.verify(message.upload_status);
                 if (error)
                     return "upload_status." + error;
             }
-            if (message.service_metadata != null && message.hasOwnProperty("service_metadata")) {
+            if (message.service_metadata != null) {
                 let error = $root.bentoml.BentoServiceMetadata.verify(message.service_metadata);
                 if (error)
                     return "service_metadata." + error;
@@ -7774,9 +7206,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates an UpdateBentoRequest message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.UpdateBentoRequest
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.UpdateBentoRequest} UpdateBentoRequest
          */
@@ -7802,12 +7231,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates an UpdateBentoRequest message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.UpdateBentoRequest.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.UpdateBentoRequest} UpdateBentoRequest
+         */
+        UpdateBentoRequest.from = UpdateBentoRequest.fromObject;
+
+        /**
          * Creates a plain object from an UpdateBentoRequest message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.UpdateBentoRequest
-         * @static
          * @param {bentoml.UpdateBentoRequest} message UpdateBentoRequest
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         UpdateBentoRequest.toObject = function toObject(message, options) {
@@ -7832,10 +7267,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this UpdateBentoRequest message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        UpdateBentoRequest.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this UpdateBentoRequest to JSON.
-         * @function toJSON
-         * @memberof bentoml.UpdateBentoRequest
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         UpdateBentoRequest.prototype.toJSON = function toJSON() {
@@ -7849,40 +7290,32 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of an UpdateBentoResponse.
-         * @memberof bentoml
-         * @interface IUpdateBentoResponse
-         * @property {bentoml.IStatus|null} [status] UpdateBentoResponse status
+         * @typedef bentoml.UpdateBentoResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] UpdateBentoResponse status.
          */
 
         /**
          * Constructs a new UpdateBentoResponse.
-         * @memberof bentoml
-         * @classdesc Represents an UpdateBentoResponse.
-         * @implements IUpdateBentoResponse
+         * @exports bentoml.UpdateBentoResponse
          * @constructor
-         * @param {bentoml.IUpdateBentoResponse=} [properties] Properties to set
+         * @param {bentoml.UpdateBentoResponse$Properties=} [properties] Properties to set
          */
         function UpdateBentoResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * UpdateBentoResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.UpdateBentoResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         UpdateBentoResponse.prototype.status = null;
 
         /**
          * Creates a new UpdateBentoResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.UpdateBentoResponse
-         * @static
-         * @param {bentoml.IUpdateBentoResponse=} [properties] Properties to set
+         * @param {bentoml.UpdateBentoResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.UpdateBentoResponse} UpdateBentoResponse instance
          */
         UpdateBentoResponse.create = function create(properties) {
@@ -7891,27 +7324,21 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified UpdateBentoResponse message. Does not implicitly {@link bentoml.UpdateBentoResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.UpdateBentoResponse
-         * @static
-         * @param {bentoml.IUpdateBentoResponse} message UpdateBentoResponse message or plain object to encode
+         * @param {bentoml.UpdateBentoResponse$Properties} message UpdateBentoResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         UpdateBentoResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified UpdateBentoResponse message, length delimited. Does not implicitly {@link bentoml.UpdateBentoResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.UpdateBentoResponse
-         * @static
-         * @param {bentoml.IUpdateBentoResponse} message UpdateBentoResponse message or plain object to encode
+         * @param {bentoml.UpdateBentoResponse$Properties} message UpdateBentoResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -7921,9 +7348,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an UpdateBentoResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.UpdateBentoResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.UpdateBentoResponse} UpdateBentoResponse
@@ -7950,9 +7374,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes an UpdateBentoResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.UpdateBentoResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.UpdateBentoResponse} UpdateBentoResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -7960,22 +7381,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         UpdateBentoResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies an UpdateBentoResponse message.
-         * @function verify
-         * @memberof bentoml.UpdateBentoResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         UpdateBentoResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
@@ -7985,9 +7403,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates an UpdateBentoResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.UpdateBentoResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.UpdateBentoResponse} UpdateBentoResponse
          */
@@ -8004,12 +7419,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates an UpdateBentoResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.UpdateBentoResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.UpdateBentoResponse} UpdateBentoResponse
+         */
+        UpdateBentoResponse.from = UpdateBentoResponse.fromObject;
+
+        /**
          * Creates a plain object from an UpdateBentoResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.UpdateBentoResponse
-         * @static
          * @param {bentoml.UpdateBentoResponse} message UpdateBentoResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         UpdateBentoResponse.toObject = function toObject(message, options) {
@@ -8024,10 +7445,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this UpdateBentoResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        UpdateBentoResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this UpdateBentoResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.UpdateBentoResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         UpdateBentoResponse.prototype.toJSON = function toJSON() {
@@ -8041,49 +7468,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a DangerouslyDeleteBentoRequest.
-         * @memberof bentoml
-         * @interface IDangerouslyDeleteBentoRequest
-         * @property {string|null} [bento_name] DangerouslyDeleteBentoRequest bento_name
-         * @property {string|null} [bento_version] DangerouslyDeleteBentoRequest bento_version
+         * @typedef bentoml.DangerouslyDeleteBentoRequest$Properties
+         * @type {Object}
+         * @property {string} [bento_name] DangerouslyDeleteBentoRequest bento_name.
+         * @property {string} [bento_version] DangerouslyDeleteBentoRequest bento_version.
          */
 
         /**
          * Constructs a new DangerouslyDeleteBentoRequest.
-         * @memberof bentoml
-         * @classdesc Represents a DangerouslyDeleteBentoRequest.
-         * @implements IDangerouslyDeleteBentoRequest
+         * @exports bentoml.DangerouslyDeleteBentoRequest
          * @constructor
-         * @param {bentoml.IDangerouslyDeleteBentoRequest=} [properties] Properties to set
+         * @param {bentoml.DangerouslyDeleteBentoRequest$Properties=} [properties] Properties to set
          */
         function DangerouslyDeleteBentoRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * DangerouslyDeleteBentoRequest bento_name.
-         * @member {string} bento_name
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @instance
+         * @type {string|undefined}
          */
         DangerouslyDeleteBentoRequest.prototype.bento_name = "";
 
         /**
          * DangerouslyDeleteBentoRequest bento_version.
-         * @member {string} bento_version
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @instance
+         * @type {string|undefined}
          */
         DangerouslyDeleteBentoRequest.prototype.bento_version = "";
 
         /**
          * Creates a new DangerouslyDeleteBentoRequest instance using the specified properties.
-         * @function create
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @static
-         * @param {bentoml.IDangerouslyDeleteBentoRequest=} [properties] Properties to set
+         * @param {bentoml.DangerouslyDeleteBentoRequest$Properties=} [properties] Properties to set
          * @returns {bentoml.DangerouslyDeleteBentoRequest} DangerouslyDeleteBentoRequest instance
          */
         DangerouslyDeleteBentoRequest.create = function create(properties) {
@@ -8092,29 +7509,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified DangerouslyDeleteBentoRequest message. Does not implicitly {@link bentoml.DangerouslyDeleteBentoRequest.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @static
-         * @param {bentoml.IDangerouslyDeleteBentoRequest} message DangerouslyDeleteBentoRequest message or plain object to encode
+         * @param {bentoml.DangerouslyDeleteBentoRequest$Properties} message DangerouslyDeleteBentoRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         DangerouslyDeleteBentoRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
             return writer;
         };
 
         /**
          * Encodes the specified DangerouslyDeleteBentoRequest message, length delimited. Does not implicitly {@link bentoml.DangerouslyDeleteBentoRequest.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @static
-         * @param {bentoml.IDangerouslyDeleteBentoRequest} message DangerouslyDeleteBentoRequest message or plain object to encode
+         * @param {bentoml.DangerouslyDeleteBentoRequest$Properties} message DangerouslyDeleteBentoRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -8124,9 +7535,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DangerouslyDeleteBentoRequest message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.DangerouslyDeleteBentoRequest} DangerouslyDeleteBentoRequest
@@ -8156,9 +7564,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DangerouslyDeleteBentoRequest message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.DangerouslyDeleteBentoRequest} DangerouslyDeleteBentoRequest
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -8166,25 +7571,22 @@ export const bentoml = $root.bentoml = (() => {
          */
         DangerouslyDeleteBentoRequest.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a DangerouslyDeleteBentoRequest message.
-         * @function verify
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         DangerouslyDeleteBentoRequest.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+            if (message.bento_name != null)
                 if (!$util.isString(message.bento_name))
                     return "bento_name: string expected";
-            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+            if (message.bento_version != null)
                 if (!$util.isString(message.bento_version))
                     return "bento_version: string expected";
             return null;
@@ -8192,9 +7594,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a DangerouslyDeleteBentoRequest message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.DangerouslyDeleteBentoRequest} DangerouslyDeleteBentoRequest
          */
@@ -8210,12 +7609,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a DangerouslyDeleteBentoRequest message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.DangerouslyDeleteBentoRequest.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DangerouslyDeleteBentoRequest} DangerouslyDeleteBentoRequest
+         */
+        DangerouslyDeleteBentoRequest.from = DangerouslyDeleteBentoRequest.fromObject;
+
+        /**
          * Creates a plain object from a DangerouslyDeleteBentoRequest message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @static
          * @param {bentoml.DangerouslyDeleteBentoRequest} message DangerouslyDeleteBentoRequest
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         DangerouslyDeleteBentoRequest.toObject = function toObject(message, options) {
@@ -8234,10 +7639,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this DangerouslyDeleteBentoRequest message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DangerouslyDeleteBentoRequest.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this DangerouslyDeleteBentoRequest to JSON.
-         * @function toJSON
-         * @memberof bentoml.DangerouslyDeleteBentoRequest
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         DangerouslyDeleteBentoRequest.prototype.toJSON = function toJSON() {
@@ -8251,40 +7662,32 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a DangerouslyDeleteBentoResponse.
-         * @memberof bentoml
-         * @interface IDangerouslyDeleteBentoResponse
-         * @property {bentoml.IStatus|null} [status] DangerouslyDeleteBentoResponse status
+         * @typedef bentoml.DangerouslyDeleteBentoResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] DangerouslyDeleteBentoResponse status.
          */
 
         /**
          * Constructs a new DangerouslyDeleteBentoResponse.
-         * @memberof bentoml
-         * @classdesc Represents a DangerouslyDeleteBentoResponse.
-         * @implements IDangerouslyDeleteBentoResponse
+         * @exports bentoml.DangerouslyDeleteBentoResponse
          * @constructor
-         * @param {bentoml.IDangerouslyDeleteBentoResponse=} [properties] Properties to set
+         * @param {bentoml.DangerouslyDeleteBentoResponse$Properties=} [properties] Properties to set
          */
         function DangerouslyDeleteBentoResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * DangerouslyDeleteBentoResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.DangerouslyDeleteBentoResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         DangerouslyDeleteBentoResponse.prototype.status = null;
 
         /**
          * Creates a new DangerouslyDeleteBentoResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.DangerouslyDeleteBentoResponse
-         * @static
-         * @param {bentoml.IDangerouslyDeleteBentoResponse=} [properties] Properties to set
+         * @param {bentoml.DangerouslyDeleteBentoResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.DangerouslyDeleteBentoResponse} DangerouslyDeleteBentoResponse instance
          */
         DangerouslyDeleteBentoResponse.create = function create(properties) {
@@ -8293,27 +7696,21 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified DangerouslyDeleteBentoResponse message. Does not implicitly {@link bentoml.DangerouslyDeleteBentoResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.DangerouslyDeleteBentoResponse
-         * @static
-         * @param {bentoml.IDangerouslyDeleteBentoResponse} message DangerouslyDeleteBentoResponse message or plain object to encode
+         * @param {bentoml.DangerouslyDeleteBentoResponse$Properties} message DangerouslyDeleteBentoResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         DangerouslyDeleteBentoResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified DangerouslyDeleteBentoResponse message, length delimited. Does not implicitly {@link bentoml.DangerouslyDeleteBentoResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.DangerouslyDeleteBentoResponse
-         * @static
-         * @param {bentoml.IDangerouslyDeleteBentoResponse} message DangerouslyDeleteBentoResponse message or plain object to encode
+         * @param {bentoml.DangerouslyDeleteBentoResponse$Properties} message DangerouslyDeleteBentoResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -8323,9 +7720,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DangerouslyDeleteBentoResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.DangerouslyDeleteBentoResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.DangerouslyDeleteBentoResponse} DangerouslyDeleteBentoResponse
@@ -8352,9 +7746,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a DangerouslyDeleteBentoResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.DangerouslyDeleteBentoResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.DangerouslyDeleteBentoResponse} DangerouslyDeleteBentoResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -8362,22 +7753,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         DangerouslyDeleteBentoResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a DangerouslyDeleteBentoResponse message.
-         * @function verify
-         * @memberof bentoml.DangerouslyDeleteBentoResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         DangerouslyDeleteBentoResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
@@ -8387,9 +7775,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a DangerouslyDeleteBentoResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.DangerouslyDeleteBentoResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.DangerouslyDeleteBentoResponse} DangerouslyDeleteBentoResponse
          */
@@ -8406,12 +7791,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a DangerouslyDeleteBentoResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.DangerouslyDeleteBentoResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DangerouslyDeleteBentoResponse} DangerouslyDeleteBentoResponse
+         */
+        DangerouslyDeleteBentoResponse.from = DangerouslyDeleteBentoResponse.fromObject;
+
+        /**
          * Creates a plain object from a DangerouslyDeleteBentoResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.DangerouslyDeleteBentoResponse
-         * @static
          * @param {bentoml.DangerouslyDeleteBentoResponse} message DangerouslyDeleteBentoResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         DangerouslyDeleteBentoResponse.toObject = function toObject(message, options) {
@@ -8426,10 +7817,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this DangerouslyDeleteBentoResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DangerouslyDeleteBentoResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this DangerouslyDeleteBentoResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.DangerouslyDeleteBentoResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         DangerouslyDeleteBentoResponse.prototype.toJSON = function toJSON() {
@@ -8443,49 +7840,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a GetBentoRequest.
-         * @memberof bentoml
-         * @interface IGetBentoRequest
-         * @property {string|null} [bento_name] GetBentoRequest bento_name
-         * @property {string|null} [bento_version] GetBentoRequest bento_version
+         * @typedef bentoml.GetBentoRequest$Properties
+         * @type {Object}
+         * @property {string} [bento_name] GetBentoRequest bento_name.
+         * @property {string} [bento_version] GetBentoRequest bento_version.
          */
 
         /**
          * Constructs a new GetBentoRequest.
-         * @memberof bentoml
-         * @classdesc Represents a GetBentoRequest.
-         * @implements IGetBentoRequest
+         * @exports bentoml.GetBentoRequest
          * @constructor
-         * @param {bentoml.IGetBentoRequest=} [properties] Properties to set
+         * @param {bentoml.GetBentoRequest$Properties=} [properties] Properties to set
          */
         function GetBentoRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * GetBentoRequest bento_name.
-         * @member {string} bento_name
-         * @memberof bentoml.GetBentoRequest
-         * @instance
+         * @type {string|undefined}
          */
         GetBentoRequest.prototype.bento_name = "";
 
         /**
          * GetBentoRequest bento_version.
-         * @member {string} bento_version
-         * @memberof bentoml.GetBentoRequest
-         * @instance
+         * @type {string|undefined}
          */
         GetBentoRequest.prototype.bento_version = "";
 
         /**
          * Creates a new GetBentoRequest instance using the specified properties.
-         * @function create
-         * @memberof bentoml.GetBentoRequest
-         * @static
-         * @param {bentoml.IGetBentoRequest=} [properties] Properties to set
+         * @param {bentoml.GetBentoRequest$Properties=} [properties] Properties to set
          * @returns {bentoml.GetBentoRequest} GetBentoRequest instance
          */
         GetBentoRequest.create = function create(properties) {
@@ -8494,29 +7881,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified GetBentoRequest message. Does not implicitly {@link bentoml.GetBentoRequest.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.GetBentoRequest
-         * @static
-         * @param {bentoml.IGetBentoRequest} message GetBentoRequest message or plain object to encode
+         * @param {bentoml.GetBentoRequest$Properties} message GetBentoRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         GetBentoRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
             return writer;
         };
 
         /**
          * Encodes the specified GetBentoRequest message, length delimited. Does not implicitly {@link bentoml.GetBentoRequest.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.GetBentoRequest
-         * @static
-         * @param {bentoml.IGetBentoRequest} message GetBentoRequest message or plain object to encode
+         * @param {bentoml.GetBentoRequest$Properties} message GetBentoRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -8526,9 +7907,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a GetBentoRequest message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.GetBentoRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.GetBentoRequest} GetBentoRequest
@@ -8558,9 +7936,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a GetBentoRequest message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.GetBentoRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.GetBentoRequest} GetBentoRequest
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -8568,25 +7943,22 @@ export const bentoml = $root.bentoml = (() => {
          */
         GetBentoRequest.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a GetBentoRequest message.
-         * @function verify
-         * @memberof bentoml.GetBentoRequest
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         GetBentoRequest.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+            if (message.bento_name != null)
                 if (!$util.isString(message.bento_name))
                     return "bento_name: string expected";
-            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+            if (message.bento_version != null)
                 if (!$util.isString(message.bento_version))
                     return "bento_version: string expected";
             return null;
@@ -8594,9 +7966,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a GetBentoRequest message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.GetBentoRequest
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.GetBentoRequest} GetBentoRequest
          */
@@ -8612,12 +7981,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a GetBentoRequest message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.GetBentoRequest.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.GetBentoRequest} GetBentoRequest
+         */
+        GetBentoRequest.from = GetBentoRequest.fromObject;
+
+        /**
          * Creates a plain object from a GetBentoRequest message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.GetBentoRequest
-         * @static
          * @param {bentoml.GetBentoRequest} message GetBentoRequest
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         GetBentoRequest.toObject = function toObject(message, options) {
@@ -8636,10 +8011,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this GetBentoRequest message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        GetBentoRequest.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this GetBentoRequest to JSON.
-         * @function toJSON
-         * @memberof bentoml.GetBentoRequest
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         GetBentoRequest.prototype.toJSON = function toJSON() {
@@ -8653,49 +8034,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a GetBentoResponse.
-         * @memberof bentoml
-         * @interface IGetBentoResponse
-         * @property {bentoml.IStatus|null} [status] GetBentoResponse status
-         * @property {bentoml.IBento|null} [bento] GetBentoResponse bento
+         * @typedef bentoml.GetBentoResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] GetBentoResponse status.
+         * @property {bentoml.Bento$Properties} [bento] GetBentoResponse bento.
          */
 
         /**
          * Constructs a new GetBentoResponse.
-         * @memberof bentoml
-         * @classdesc Represents a GetBentoResponse.
-         * @implements IGetBentoResponse
+         * @exports bentoml.GetBentoResponse
          * @constructor
-         * @param {bentoml.IGetBentoResponse=} [properties] Properties to set
+         * @param {bentoml.GetBentoResponse$Properties=} [properties] Properties to set
          */
         function GetBentoResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * GetBentoResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.GetBentoResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         GetBentoResponse.prototype.status = null;
 
         /**
          * GetBentoResponse bento.
-         * @member {bentoml.IBento|null|undefined} bento
-         * @memberof bentoml.GetBentoResponse
-         * @instance
+         * @type {bentoml.Bento$Properties|undefined}
          */
         GetBentoResponse.prototype.bento = null;
 
         /**
          * Creates a new GetBentoResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.GetBentoResponse
-         * @static
-         * @param {bentoml.IGetBentoResponse=} [properties] Properties to set
+         * @param {bentoml.GetBentoResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.GetBentoResponse} GetBentoResponse instance
          */
         GetBentoResponse.create = function create(properties) {
@@ -8704,29 +8075,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified GetBentoResponse message. Does not implicitly {@link bentoml.GetBentoResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.GetBentoResponse
-         * @static
-         * @param {bentoml.IGetBentoResponse} message GetBentoResponse message or plain object to encode
+         * @param {bentoml.GetBentoResponse$Properties} message GetBentoResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         GetBentoResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.bento != null && Object.hasOwnProperty.call(message, "bento"))
+            if (message.bento && message.hasOwnProperty("bento"))
                 $root.bentoml.Bento.encode(message.bento, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified GetBentoResponse message, length delimited. Does not implicitly {@link bentoml.GetBentoResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.GetBentoResponse
-         * @static
-         * @param {bentoml.IGetBentoResponse} message GetBentoResponse message or plain object to encode
+         * @param {bentoml.GetBentoResponse$Properties} message GetBentoResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -8736,9 +8101,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a GetBentoResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.GetBentoResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.GetBentoResponse} GetBentoResponse
@@ -8768,9 +8130,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a GetBentoResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.GetBentoResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.GetBentoResponse} GetBentoResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -8778,27 +8137,24 @@ export const bentoml = $root.bentoml = (() => {
          */
         GetBentoResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a GetBentoResponse message.
-         * @function verify
-         * @memberof bentoml.GetBentoResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         GetBentoResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
-            if (message.bento != null && message.hasOwnProperty("bento")) {
+            if (message.bento != null) {
                 let error = $root.bentoml.Bento.verify(message.bento);
                 if (error)
                     return "bento." + error;
@@ -8808,9 +8164,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a GetBentoResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.GetBentoResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.GetBentoResponse} GetBentoResponse
          */
@@ -8832,12 +8185,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a GetBentoResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.GetBentoResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.GetBentoResponse} GetBentoResponse
+         */
+        GetBentoResponse.from = GetBentoResponse.fromObject;
+
+        /**
          * Creates a plain object from a GetBentoResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.GetBentoResponse
-         * @static
          * @param {bentoml.GetBentoResponse} message GetBentoResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         GetBentoResponse.toObject = function toObject(message, options) {
@@ -8856,10 +8215,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this GetBentoResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        GetBentoResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this GetBentoResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.GetBentoResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         GetBentoResponse.prototype.toJSON = function toJSON() {
@@ -8873,76 +8238,60 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a ListBentoRequest.
-         * @memberof bentoml
-         * @interface IListBentoRequest
-         * @property {string|null} [bento_name] ListBentoRequest bento_name
-         * @property {number|null} [offset] ListBentoRequest offset
-         * @property {number|null} [limit] ListBentoRequest limit
-         * @property {bentoml.ListBentoRequest.SORTABLE_COLUMN|null} [order_by] ListBentoRequest order_by
-         * @property {boolean|null} [ascending_order] ListBentoRequest ascending_order
+         * @typedef bentoml.ListBentoRequest$Properties
+         * @type {Object}
+         * @property {string} [bento_name] ListBentoRequest bento_name.
+         * @property {number} [offset] ListBentoRequest offset.
+         * @property {number} [limit] ListBentoRequest limit.
+         * @property {bentoml.ListBentoRequest.SORTABLE_COLUMN} [order_by] ListBentoRequest order_by.
+         * @property {boolean} [ascending_order] ListBentoRequest ascending_order.
          */
 
         /**
          * Constructs a new ListBentoRequest.
-         * @memberof bentoml
-         * @classdesc Represents a ListBentoRequest.
-         * @implements IListBentoRequest
+         * @exports bentoml.ListBentoRequest
          * @constructor
-         * @param {bentoml.IListBentoRequest=} [properties] Properties to set
+         * @param {bentoml.ListBentoRequest$Properties=} [properties] Properties to set
          */
         function ListBentoRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * ListBentoRequest bento_name.
-         * @member {string} bento_name
-         * @memberof bentoml.ListBentoRequest
-         * @instance
+         * @type {string|undefined}
          */
         ListBentoRequest.prototype.bento_name = "";
 
         /**
          * ListBentoRequest offset.
-         * @member {number} offset
-         * @memberof bentoml.ListBentoRequest
-         * @instance
+         * @type {number|undefined}
          */
         ListBentoRequest.prototype.offset = 0;
 
         /**
          * ListBentoRequest limit.
-         * @member {number} limit
-         * @memberof bentoml.ListBentoRequest
-         * @instance
+         * @type {number|undefined}
          */
         ListBentoRequest.prototype.limit = 0;
 
         /**
          * ListBentoRequest order_by.
-         * @member {bentoml.ListBentoRequest.SORTABLE_COLUMN} order_by
-         * @memberof bentoml.ListBentoRequest
-         * @instance
+         * @type {bentoml.ListBentoRequest.SORTABLE_COLUMN|undefined}
          */
         ListBentoRequest.prototype.order_by = 0;
 
         /**
          * ListBentoRequest ascending_order.
-         * @member {boolean} ascending_order
-         * @memberof bentoml.ListBentoRequest
-         * @instance
+         * @type {boolean|undefined}
          */
         ListBentoRequest.prototype.ascending_order = false;
 
         /**
          * Creates a new ListBentoRequest instance using the specified properties.
-         * @function create
-         * @memberof bentoml.ListBentoRequest
-         * @static
-         * @param {bentoml.IListBentoRequest=} [properties] Properties to set
+         * @param {bentoml.ListBentoRequest$Properties=} [properties] Properties to set
          * @returns {bentoml.ListBentoRequest} ListBentoRequest instance
          */
         ListBentoRequest.create = function create(properties) {
@@ -8951,35 +8300,29 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified ListBentoRequest message. Does not implicitly {@link bentoml.ListBentoRequest.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.ListBentoRequest
-         * @static
-         * @param {bentoml.IListBentoRequest} message ListBentoRequest message or plain object to encode
+         * @param {bentoml.ListBentoRequest$Properties} message ListBentoRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         ListBentoRequest.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
-            if (message.offset != null && Object.hasOwnProperty.call(message, "offset"))
+            if (message.offset != null && message.hasOwnProperty("offset"))
                 writer.uint32(/* id 2, wireType 0 =*/16).int32(message.offset);
-            if (message.limit != null && Object.hasOwnProperty.call(message, "limit"))
+            if (message.limit != null && message.hasOwnProperty("limit"))
                 writer.uint32(/* id 3, wireType 0 =*/24).int32(message.limit);
-            if (message.order_by != null && Object.hasOwnProperty.call(message, "order_by"))
-                writer.uint32(/* id 4, wireType 0 =*/32).int32(message.order_by);
-            if (message.ascending_order != null && Object.hasOwnProperty.call(message, "ascending_order"))
+            if (message.order_by != null && message.hasOwnProperty("order_by"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.order_by);
+            if (message.ascending_order != null && message.hasOwnProperty("ascending_order"))
                 writer.uint32(/* id 5, wireType 0 =*/40).bool(message.ascending_order);
             return writer;
         };
 
         /**
          * Encodes the specified ListBentoRequest message, length delimited. Does not implicitly {@link bentoml.ListBentoRequest.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.ListBentoRequest
-         * @static
-         * @param {bentoml.IListBentoRequest} message ListBentoRequest message or plain object to encode
+         * @param {bentoml.ListBentoRequest$Properties} message ListBentoRequest message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -8989,9 +8332,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a ListBentoRequest message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.ListBentoRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.ListBentoRequest} ListBentoRequest
@@ -9015,7 +8355,7 @@ export const bentoml = $root.bentoml = (() => {
                     message.limit = reader.int32();
                     break;
                 case 4:
-                    message.order_by = reader.int32();
+                    message.order_by = reader.uint32();
                     break;
                 case 5:
                     message.ascending_order = reader.bool();
@@ -9030,9 +8370,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a ListBentoRequest message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.ListBentoRequest
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.ListBentoRequest} ListBentoRequest
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -9040,31 +8377,28 @@ export const bentoml = $root.bentoml = (() => {
          */
         ListBentoRequest.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a ListBentoRequest message.
-         * @function verify
-         * @memberof bentoml.ListBentoRequest
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         ListBentoRequest.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+            if (message.bento_name != null)
                 if (!$util.isString(message.bento_name))
                     return "bento_name: string expected";
-            if (message.offset != null && message.hasOwnProperty("offset"))
+            if (message.offset != null)
                 if (!$util.isInteger(message.offset))
                     return "offset: integer expected";
-            if (message.limit != null && message.hasOwnProperty("limit"))
+            if (message.limit != null)
                 if (!$util.isInteger(message.limit))
                     return "limit: integer expected";
-            if (message.order_by != null && message.hasOwnProperty("order_by"))
+            if (message.order_by != null)
                 switch (message.order_by) {
                 default:
                     return "order_by: enum value expected";
@@ -9072,7 +8406,7 @@ export const bentoml = $root.bentoml = (() => {
                 case 1:
                     break;
                 }
-            if (message.ascending_order != null && message.hasOwnProperty("ascending_order"))
+            if (message.ascending_order != null)
                 if (typeof message.ascending_order !== "boolean")
                     return "ascending_order: boolean expected";
             return null;
@@ -9080,9 +8414,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a ListBentoRequest message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.ListBentoRequest
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.ListBentoRequest} ListBentoRequest
          */
@@ -9112,12 +8443,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a ListBentoRequest message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.ListBentoRequest.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.ListBentoRequest} ListBentoRequest
+         */
+        ListBentoRequest.from = ListBentoRequest.fromObject;
+
+        /**
          * Creates a plain object from a ListBentoRequest message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.ListBentoRequest
-         * @static
          * @param {bentoml.ListBentoRequest} message ListBentoRequest
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         ListBentoRequest.toObject = function toObject(message, options) {
@@ -9145,10 +8482,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this ListBentoRequest message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ListBentoRequest.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this ListBentoRequest to JSON.
-         * @function toJSON
-         * @memberof bentoml.ListBentoRequest
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         ListBentoRequest.prototype.toJSON = function toJSON() {
@@ -9157,7 +8500,8 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * SORTABLE_COLUMN enum.
-         * @name bentoml.ListBentoRequest.SORTABLE_COLUMN
+         * @name SORTABLE_COLUMN
+         * @memberof bentoml.ListBentoRequest
          * @enum {number}
          * @property {number} created_at=0 created_at value
          * @property {number} name=1 name value
@@ -9176,50 +8520,40 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a ListBentoResponse.
-         * @memberof bentoml
-         * @interface IListBentoResponse
-         * @property {bentoml.IStatus|null} [status] ListBentoResponse status
-         * @property {Array.<bentoml.IBento>|null} [bentos] ListBentoResponse bentos
+         * @typedef bentoml.ListBentoResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] ListBentoResponse status.
+         * @property {Array.<bentoml.Bento$Properties>} [bentos] ListBentoResponse bentos.
          */
 
         /**
          * Constructs a new ListBentoResponse.
-         * @memberof bentoml
-         * @classdesc Represents a ListBentoResponse.
-         * @implements IListBentoResponse
+         * @exports bentoml.ListBentoResponse
          * @constructor
-         * @param {bentoml.IListBentoResponse=} [properties] Properties to set
+         * @param {bentoml.ListBentoResponse$Properties=} [properties] Properties to set
          */
         function ListBentoResponse(properties) {
             this.bentos = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * ListBentoResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.ListBentoResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         ListBentoResponse.prototype.status = null;
 
         /**
          * ListBentoResponse bentos.
-         * @member {Array.<bentoml.IBento>} bentos
-         * @memberof bentoml.ListBentoResponse
-         * @instance
+         * @type {Array.<bentoml.Bento$Properties>|undefined}
          */
         ListBentoResponse.prototype.bentos = $util.emptyArray;
 
         /**
          * Creates a new ListBentoResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.ListBentoResponse
-         * @static
-         * @param {bentoml.IListBentoResponse=} [properties] Properties to set
+         * @param {bentoml.ListBentoResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.ListBentoResponse} ListBentoResponse instance
          */
         ListBentoResponse.create = function create(properties) {
@@ -9228,19 +8562,16 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified ListBentoResponse message. Does not implicitly {@link bentoml.ListBentoResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.ListBentoResponse
-         * @static
-         * @param {bentoml.IListBentoResponse} message ListBentoResponse message or plain object to encode
+         * @param {bentoml.ListBentoResponse$Properties} message ListBentoResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         ListBentoResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.bentos != null && message.bentos.length)
+            if (message.bentos && message.bentos.length)
                 for (let i = 0; i < message.bentos.length; ++i)
                     $root.bentoml.Bento.encode(message.bentos[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
@@ -9248,10 +8579,7 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified ListBentoResponse message, length delimited. Does not implicitly {@link bentoml.ListBentoResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.ListBentoResponse
-         * @static
-         * @param {bentoml.IListBentoResponse} message ListBentoResponse message or plain object to encode
+         * @param {bentoml.ListBentoResponse$Properties} message ListBentoResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -9261,9 +8589,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a ListBentoResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.ListBentoResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.ListBentoResponse} ListBentoResponse
@@ -9295,9 +8620,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a ListBentoResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.ListBentoResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.ListBentoResponse} ListBentoResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -9305,27 +8627,24 @@ export const bentoml = $root.bentoml = (() => {
          */
         ListBentoResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a ListBentoResponse message.
-         * @function verify
-         * @memberof bentoml.ListBentoResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         ListBentoResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
-            if (message.bentos != null && message.hasOwnProperty("bentos")) {
+            if (message.bentos != null) {
                 if (!Array.isArray(message.bentos))
                     return "bentos: array expected";
                 for (let i = 0; i < message.bentos.length; ++i) {
@@ -9339,9 +8658,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a ListBentoResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.ListBentoResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.ListBentoResponse} ListBentoResponse
          */
@@ -9368,12 +8684,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a ListBentoResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.ListBentoResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.ListBentoResponse} ListBentoResponse
+         */
+        ListBentoResponse.from = ListBentoResponse.fromObject;
+
+        /**
          * Creates a plain object from a ListBentoResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.ListBentoResponse
-         * @static
          * @param {bentoml.ListBentoResponse} message ListBentoResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         ListBentoResponse.toObject = function toObject(message, options) {
@@ -9395,10 +8717,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this ListBentoResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ListBentoResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this ListBentoResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.ListBentoResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         ListBentoResponse.prototype.toJSON = function toJSON() {
@@ -9412,8 +8740,7 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Constructs a new Yatai service.
-         * @memberof bentoml
-         * @classdesc Represents a Yatai
+         * @exports bentoml.Yatai
          * @extends $protobuf.rpc.Service
          * @constructor
          * @param {$protobuf.RPCImpl} rpcImpl RPC implementation
@@ -9428,9 +8755,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates new Yatai service using the specified rpc implementation.
-         * @function create
-         * @memberof bentoml.Yatai
-         * @static
          * @param {$protobuf.RPCImpl} rpcImpl RPC implementation
          * @param {boolean} [requestDelimited=false] Whether requests are length-delimited
          * @param {boolean} [responseDelimited=false] Whether responses are length-delimited
@@ -9441,397 +8765,325 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
-         * Callback as used by {@link bentoml.Yatai#healthCheck}.
-         * @memberof bentoml.Yatai
-         * @typedef HealthCheckCallback
+         * Callback as used by {@link Yatai#healthCheck}.
+         * @typedef Yatai_healthCheck_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.HealthCheckResponse} [response] HealthCheckResponse
          */
 
         /**
          * Calls HealthCheck.
-         * @function healthCheck
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {google.protobuf.IEmpty} request Empty message or plain object
-         * @param {bentoml.Yatai.HealthCheckCallback} callback Node-style callback called with the error, if any, and HealthCheckResponse
+         * @param {google.protobuf.Empty|Object.<string,*>} request Empty message or plain object
+         * @param {Yatai_healthCheck_Callback} callback Node-style callback called with the error, if any, and HealthCheckResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.healthCheck = function healthCheck(request, callback) {
+        Yatai.prototype.healthCheck = function healthCheck(request, callback) {
             return this.rpcCall(healthCheck, $root.google.protobuf.Empty, $root.bentoml.HealthCheckResponse, request, callback);
-        }, "name", { value: "HealthCheck" });
+        };
 
         /**
          * Calls HealthCheck.
-         * @function healthCheck
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {google.protobuf.IEmpty} request Empty message or plain object
+         * @name Yatai#healthCheck
+         * @function
+         * @param {google.protobuf.Empty|Object.<string,*>} request Empty message or plain object
          * @returns {Promise<bentoml.HealthCheckResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#getYataiServiceVersion}.
-         * @memberof bentoml.Yatai
-         * @typedef GetYataiServiceVersionCallback
+         * Callback as used by {@link Yatai#getYataiServiceVersion}.
+         * @typedef Yatai_getYataiServiceVersion_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.GetYataiServiceVersionResponse} [response] GetYataiServiceVersionResponse
          */
 
         /**
          * Calls GetYataiServiceVersion.
-         * @function getYataiServiceVersion
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {google.protobuf.IEmpty} request Empty message or plain object
-         * @param {bentoml.Yatai.GetYataiServiceVersionCallback} callback Node-style callback called with the error, if any, and GetYataiServiceVersionResponse
+         * @param {google.protobuf.Empty|Object.<string,*>} request Empty message or plain object
+         * @param {Yatai_getYataiServiceVersion_Callback} callback Node-style callback called with the error, if any, and GetYataiServiceVersionResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.getYataiServiceVersion = function getYataiServiceVersion(request, callback) {
+        Yatai.prototype.getYataiServiceVersion = function getYataiServiceVersion(request, callback) {
             return this.rpcCall(getYataiServiceVersion, $root.google.protobuf.Empty, $root.bentoml.GetYataiServiceVersionResponse, request, callback);
-        }, "name", { value: "GetYataiServiceVersion" });
+        };
 
         /**
          * Calls GetYataiServiceVersion.
-         * @function getYataiServiceVersion
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {google.protobuf.IEmpty} request Empty message or plain object
+         * @name Yatai#getYataiServiceVersion
+         * @function
+         * @param {google.protobuf.Empty|Object.<string,*>} request Empty message or plain object
          * @returns {Promise<bentoml.GetYataiServiceVersionResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#applyDeployment}.
-         * @memberof bentoml.Yatai
-         * @typedef ApplyDeploymentCallback
+         * Callback as used by {@link Yatai#applyDeployment}.
+         * @typedef Yatai_applyDeployment_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.ApplyDeploymentResponse} [response] ApplyDeploymentResponse
          */
 
         /**
          * Calls ApplyDeployment.
-         * @function applyDeployment
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IApplyDeploymentRequest} request ApplyDeploymentRequest message or plain object
-         * @param {bentoml.Yatai.ApplyDeploymentCallback} callback Node-style callback called with the error, if any, and ApplyDeploymentResponse
+         * @param {bentoml.ApplyDeploymentRequest|Object.<string,*>} request ApplyDeploymentRequest message or plain object
+         * @param {Yatai_applyDeployment_Callback} callback Node-style callback called with the error, if any, and ApplyDeploymentResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.applyDeployment = function applyDeployment(request, callback) {
+        Yatai.prototype.applyDeployment = function applyDeployment(request, callback) {
             return this.rpcCall(applyDeployment, $root.bentoml.ApplyDeploymentRequest, $root.bentoml.ApplyDeploymentResponse, request, callback);
-        }, "name", { value: "ApplyDeployment" });
+        };
 
         /**
          * Calls ApplyDeployment.
-         * @function applyDeployment
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IApplyDeploymentRequest} request ApplyDeploymentRequest message or plain object
+         * @name Yatai#applyDeployment
+         * @function
+         * @param {bentoml.ApplyDeploymentRequest|Object.<string,*>} request ApplyDeploymentRequest message or plain object
          * @returns {Promise<bentoml.ApplyDeploymentResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#deleteDeployment}.
-         * @memberof bentoml.Yatai
-         * @typedef DeleteDeploymentCallback
+         * Callback as used by {@link Yatai#deleteDeployment}.
+         * @typedef Yatai_deleteDeployment_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.DeleteDeploymentResponse} [response] DeleteDeploymentResponse
          */
 
         /**
          * Calls DeleteDeployment.
-         * @function deleteDeployment
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IDeleteDeploymentRequest} request DeleteDeploymentRequest message or plain object
-         * @param {bentoml.Yatai.DeleteDeploymentCallback} callback Node-style callback called with the error, if any, and DeleteDeploymentResponse
+         * @param {bentoml.DeleteDeploymentRequest|Object.<string,*>} request DeleteDeploymentRequest message or plain object
+         * @param {Yatai_deleteDeployment_Callback} callback Node-style callback called with the error, if any, and DeleteDeploymentResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.deleteDeployment = function deleteDeployment(request, callback) {
+        Yatai.prototype.deleteDeployment = function deleteDeployment(request, callback) {
             return this.rpcCall(deleteDeployment, $root.bentoml.DeleteDeploymentRequest, $root.bentoml.DeleteDeploymentResponse, request, callback);
-        }, "name", { value: "DeleteDeployment" });
+        };
 
         /**
          * Calls DeleteDeployment.
-         * @function deleteDeployment
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IDeleteDeploymentRequest} request DeleteDeploymentRequest message or plain object
+         * @name Yatai#deleteDeployment
+         * @function
+         * @param {bentoml.DeleteDeploymentRequest|Object.<string,*>} request DeleteDeploymentRequest message or plain object
          * @returns {Promise<bentoml.DeleteDeploymentResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#getDeployment}.
-         * @memberof bentoml.Yatai
-         * @typedef GetDeploymentCallback
+         * Callback as used by {@link Yatai#getDeployment}.
+         * @typedef Yatai_getDeployment_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.GetDeploymentResponse} [response] GetDeploymentResponse
          */
 
         /**
          * Calls GetDeployment.
-         * @function getDeployment
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IGetDeploymentRequest} request GetDeploymentRequest message or plain object
-         * @param {bentoml.Yatai.GetDeploymentCallback} callback Node-style callback called with the error, if any, and GetDeploymentResponse
+         * @param {bentoml.GetDeploymentRequest|Object.<string,*>} request GetDeploymentRequest message or plain object
+         * @param {Yatai_getDeployment_Callback} callback Node-style callback called with the error, if any, and GetDeploymentResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.getDeployment = function getDeployment(request, callback) {
+        Yatai.prototype.getDeployment = function getDeployment(request, callback) {
             return this.rpcCall(getDeployment, $root.bentoml.GetDeploymentRequest, $root.bentoml.GetDeploymentResponse, request, callback);
-        }, "name", { value: "GetDeployment" });
+        };
 
         /**
          * Calls GetDeployment.
-         * @function getDeployment
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IGetDeploymentRequest} request GetDeploymentRequest message or plain object
+         * @name Yatai#getDeployment
+         * @function
+         * @param {bentoml.GetDeploymentRequest|Object.<string,*>} request GetDeploymentRequest message or plain object
          * @returns {Promise<bentoml.GetDeploymentResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#describeDeployment}.
-         * @memberof bentoml.Yatai
-         * @typedef DescribeDeploymentCallback
+         * Callback as used by {@link Yatai#describeDeployment}.
+         * @typedef Yatai_describeDeployment_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.DescribeDeploymentResponse} [response] DescribeDeploymentResponse
          */
 
         /**
          * Calls DescribeDeployment.
-         * @function describeDeployment
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IDescribeDeploymentRequest} request DescribeDeploymentRequest message or plain object
-         * @param {bentoml.Yatai.DescribeDeploymentCallback} callback Node-style callback called with the error, if any, and DescribeDeploymentResponse
+         * @param {bentoml.DescribeDeploymentRequest|Object.<string,*>} request DescribeDeploymentRequest message or plain object
+         * @param {Yatai_describeDeployment_Callback} callback Node-style callback called with the error, if any, and DescribeDeploymentResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.describeDeployment = function describeDeployment(request, callback) {
+        Yatai.prototype.describeDeployment = function describeDeployment(request, callback) {
             return this.rpcCall(describeDeployment, $root.bentoml.DescribeDeploymentRequest, $root.bentoml.DescribeDeploymentResponse, request, callback);
-        }, "name", { value: "DescribeDeployment" });
+        };
 
         /**
          * Calls DescribeDeployment.
-         * @function describeDeployment
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IDescribeDeploymentRequest} request DescribeDeploymentRequest message or plain object
+         * @name Yatai#describeDeployment
+         * @function
+         * @param {bentoml.DescribeDeploymentRequest|Object.<string,*>} request DescribeDeploymentRequest message or plain object
          * @returns {Promise<bentoml.DescribeDeploymentResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#listDeployments}.
-         * @memberof bentoml.Yatai
-         * @typedef ListDeploymentsCallback
+         * Callback as used by {@link Yatai#listDeployments}.
+         * @typedef Yatai_listDeployments_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.ListDeploymentsResponse} [response] ListDeploymentsResponse
          */
 
         /**
          * Calls ListDeployments.
-         * @function listDeployments
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IListDeploymentsRequest} request ListDeploymentsRequest message or plain object
-         * @param {bentoml.Yatai.ListDeploymentsCallback} callback Node-style callback called with the error, if any, and ListDeploymentsResponse
+         * @param {bentoml.ListDeploymentsRequest|Object.<string,*>} request ListDeploymentsRequest message or plain object
+         * @param {Yatai_listDeployments_Callback} callback Node-style callback called with the error, if any, and ListDeploymentsResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.listDeployments = function listDeployments(request, callback) {
+        Yatai.prototype.listDeployments = function listDeployments(request, callback) {
             return this.rpcCall(listDeployments, $root.bentoml.ListDeploymentsRequest, $root.bentoml.ListDeploymentsResponse, request, callback);
-        }, "name", { value: "ListDeployments" });
+        };
 
         /**
          * Calls ListDeployments.
-         * @function listDeployments
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IListDeploymentsRequest} request ListDeploymentsRequest message or plain object
+         * @name Yatai#listDeployments
+         * @function
+         * @param {bentoml.ListDeploymentsRequest|Object.<string,*>} request ListDeploymentsRequest message or plain object
          * @returns {Promise<bentoml.ListDeploymentsResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#addBento}.
-         * @memberof bentoml.Yatai
-         * @typedef AddBentoCallback
+         * Callback as used by {@link Yatai#addBento}.
+         * @typedef Yatai_addBento_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.AddBentoResponse} [response] AddBentoResponse
          */
 
         /**
          * Calls AddBento.
-         * @function addBento
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IAddBentoRequest} request AddBentoRequest message or plain object
-         * @param {bentoml.Yatai.AddBentoCallback} callback Node-style callback called with the error, if any, and AddBentoResponse
+         * @param {bentoml.AddBentoRequest|Object.<string,*>} request AddBentoRequest message or plain object
+         * @param {Yatai_addBento_Callback} callback Node-style callback called with the error, if any, and AddBentoResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.addBento = function addBento(request, callback) {
+        Yatai.prototype.addBento = function addBento(request, callback) {
             return this.rpcCall(addBento, $root.bentoml.AddBentoRequest, $root.bentoml.AddBentoResponse, request, callback);
-        }, "name", { value: "AddBento" });
+        };
 
         /**
          * Calls AddBento.
-         * @function addBento
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IAddBentoRequest} request AddBentoRequest message or plain object
+         * @name Yatai#addBento
+         * @function
+         * @param {bentoml.AddBentoRequest|Object.<string,*>} request AddBentoRequest message or plain object
          * @returns {Promise<bentoml.AddBentoResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#updateBento}.
-         * @memberof bentoml.Yatai
-         * @typedef UpdateBentoCallback
+         * Callback as used by {@link Yatai#updateBento}.
+         * @typedef Yatai_updateBento_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.UpdateBentoResponse} [response] UpdateBentoResponse
          */
 
         /**
          * Calls UpdateBento.
-         * @function updateBento
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IUpdateBentoRequest} request UpdateBentoRequest message or plain object
-         * @param {bentoml.Yatai.UpdateBentoCallback} callback Node-style callback called with the error, if any, and UpdateBentoResponse
+         * @param {bentoml.UpdateBentoRequest|Object.<string,*>} request UpdateBentoRequest message or plain object
+         * @param {Yatai_updateBento_Callback} callback Node-style callback called with the error, if any, and UpdateBentoResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.updateBento = function updateBento(request, callback) {
+        Yatai.prototype.updateBento = function updateBento(request, callback) {
             return this.rpcCall(updateBento, $root.bentoml.UpdateBentoRequest, $root.bentoml.UpdateBentoResponse, request, callback);
-        }, "name", { value: "UpdateBento" });
+        };
 
         /**
          * Calls UpdateBento.
-         * @function updateBento
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IUpdateBentoRequest} request UpdateBentoRequest message or plain object
+         * @name Yatai#updateBento
+         * @function
+         * @param {bentoml.UpdateBentoRequest|Object.<string,*>} request UpdateBentoRequest message or plain object
          * @returns {Promise<bentoml.UpdateBentoResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#getBento}.
-         * @memberof bentoml.Yatai
-         * @typedef GetBentoCallback
+         * Callback as used by {@link Yatai#getBento}.
+         * @typedef Yatai_getBento_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.GetBentoResponse} [response] GetBentoResponse
          */
 
         /**
          * Calls GetBento.
-         * @function getBento
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IGetBentoRequest} request GetBentoRequest message or plain object
-         * @param {bentoml.Yatai.GetBentoCallback} callback Node-style callback called with the error, if any, and GetBentoResponse
+         * @param {bentoml.GetBentoRequest|Object.<string,*>} request GetBentoRequest message or plain object
+         * @param {Yatai_getBento_Callback} callback Node-style callback called with the error, if any, and GetBentoResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.getBento = function getBento(request, callback) {
+        Yatai.prototype.getBento = function getBento(request, callback) {
             return this.rpcCall(getBento, $root.bentoml.GetBentoRequest, $root.bentoml.GetBentoResponse, request, callback);
-        }, "name", { value: "GetBento" });
+        };
 
         /**
          * Calls GetBento.
-         * @function getBento
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IGetBentoRequest} request GetBentoRequest message or plain object
+         * @name Yatai#getBento
+         * @function
+         * @param {bentoml.GetBentoRequest|Object.<string,*>} request GetBentoRequest message or plain object
          * @returns {Promise<bentoml.GetBentoResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#dangerouslyDeleteBento}.
-         * @memberof bentoml.Yatai
-         * @typedef DangerouslyDeleteBentoCallback
+         * Callback as used by {@link Yatai#dangerouslyDeleteBento}.
+         * @typedef Yatai_dangerouslyDeleteBento_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.DangerouslyDeleteBentoResponse} [response] DangerouslyDeleteBentoResponse
          */
 
         /**
          * Calls DangerouslyDeleteBento.
-         * @function dangerouslyDeleteBento
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IDangerouslyDeleteBentoRequest} request DangerouslyDeleteBentoRequest message or plain object
-         * @param {bentoml.Yatai.DangerouslyDeleteBentoCallback} callback Node-style callback called with the error, if any, and DangerouslyDeleteBentoResponse
+         * @param {bentoml.DangerouslyDeleteBentoRequest|Object.<string,*>} request DangerouslyDeleteBentoRequest message or plain object
+         * @param {Yatai_dangerouslyDeleteBento_Callback} callback Node-style callback called with the error, if any, and DangerouslyDeleteBentoResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.dangerouslyDeleteBento = function dangerouslyDeleteBento(request, callback) {
+        Yatai.prototype.dangerouslyDeleteBento = function dangerouslyDeleteBento(request, callback) {
             return this.rpcCall(dangerouslyDeleteBento, $root.bentoml.DangerouslyDeleteBentoRequest, $root.bentoml.DangerouslyDeleteBentoResponse, request, callback);
-        }, "name", { value: "DangerouslyDeleteBento" });
+        };
 
         /**
          * Calls DangerouslyDeleteBento.
-         * @function dangerouslyDeleteBento
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IDangerouslyDeleteBentoRequest} request DangerouslyDeleteBentoRequest message or plain object
+         * @name Yatai#dangerouslyDeleteBento
+         * @function
+         * @param {bentoml.DangerouslyDeleteBentoRequest|Object.<string,*>} request DangerouslyDeleteBentoRequest message or plain object
          * @returns {Promise<bentoml.DangerouslyDeleteBentoResponse>} Promise
          * @variation 2
          */
 
         /**
-         * Callback as used by {@link bentoml.Yatai#listBento}.
-         * @memberof bentoml.Yatai
-         * @typedef ListBentoCallback
+         * Callback as used by {@link Yatai#listBento}.
+         * @typedef Yatai_listBento_Callback
          * @type {function}
-         * @param {Error|null} error Error, if any
+         * @param {?Error} error Error, if any
          * @param {bentoml.ListBentoResponse} [response] ListBentoResponse
          */
 
         /**
          * Calls ListBento.
-         * @function listBento
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IListBentoRequest} request ListBentoRequest message or plain object
-         * @param {bentoml.Yatai.ListBentoCallback} callback Node-style callback called with the error, if any, and ListBentoResponse
+         * @param {bentoml.ListBentoRequest|Object.<string,*>} request ListBentoRequest message or plain object
+         * @param {Yatai_listBento_Callback} callback Node-style callback called with the error, if any, and ListBentoResponse
          * @returns {undefined}
-         * @variation 1
          */
-        Object.defineProperty(Yatai.prototype.listBento = function listBento(request, callback) {
+        Yatai.prototype.listBento = function listBento(request, callback) {
             return this.rpcCall(listBento, $root.bentoml.ListBentoRequest, $root.bentoml.ListBentoResponse, request, callback);
-        }, "name", { value: "ListBento" });
+        };
 
         /**
          * Calls ListBento.
-         * @function listBento
-         * @memberof bentoml.Yatai
-         * @instance
-         * @param {bentoml.IListBentoRequest} request ListBentoRequest message or plain object
+         * @name Yatai#listBento
+         * @function
+         * @param {bentoml.ListBentoRequest|Object.<string,*>} request ListBentoRequest message or plain object
          * @returns {Promise<bentoml.ListBentoResponse>} Promise
          * @variation 2
          */
@@ -9843,40 +9095,32 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a HealthCheckResponse.
-         * @memberof bentoml
-         * @interface IHealthCheckResponse
-         * @property {bentoml.IStatus|null} [status] HealthCheckResponse status
+         * @typedef bentoml.HealthCheckResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] HealthCheckResponse status.
          */
 
         /**
          * Constructs a new HealthCheckResponse.
-         * @memberof bentoml
-         * @classdesc Represents a HealthCheckResponse.
-         * @implements IHealthCheckResponse
+         * @exports bentoml.HealthCheckResponse
          * @constructor
-         * @param {bentoml.IHealthCheckResponse=} [properties] Properties to set
+         * @param {bentoml.HealthCheckResponse$Properties=} [properties] Properties to set
          */
         function HealthCheckResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * HealthCheckResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.HealthCheckResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         HealthCheckResponse.prototype.status = null;
 
         /**
          * Creates a new HealthCheckResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.HealthCheckResponse
-         * @static
-         * @param {bentoml.IHealthCheckResponse=} [properties] Properties to set
+         * @param {bentoml.HealthCheckResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.HealthCheckResponse} HealthCheckResponse instance
          */
         HealthCheckResponse.create = function create(properties) {
@@ -9885,27 +9129,21 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified HealthCheckResponse message. Does not implicitly {@link bentoml.HealthCheckResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.HealthCheckResponse
-         * @static
-         * @param {bentoml.IHealthCheckResponse} message HealthCheckResponse message or plain object to encode
+         * @param {bentoml.HealthCheckResponse$Properties} message HealthCheckResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         HealthCheckResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             return writer;
         };
 
         /**
          * Encodes the specified HealthCheckResponse message, length delimited. Does not implicitly {@link bentoml.HealthCheckResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.HealthCheckResponse
-         * @static
-         * @param {bentoml.IHealthCheckResponse} message HealthCheckResponse message or plain object to encode
+         * @param {bentoml.HealthCheckResponse$Properties} message HealthCheckResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -9915,9 +9153,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a HealthCheckResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.HealthCheckResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.HealthCheckResponse} HealthCheckResponse
@@ -9944,9 +9179,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a HealthCheckResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.HealthCheckResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.HealthCheckResponse} HealthCheckResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -9954,22 +9186,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         HealthCheckResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a HealthCheckResponse message.
-         * @function verify
-         * @memberof bentoml.HealthCheckResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         HealthCheckResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
@@ -9979,9 +9208,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a HealthCheckResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.HealthCheckResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.HealthCheckResponse} HealthCheckResponse
          */
@@ -9998,12 +9224,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a HealthCheckResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.HealthCheckResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.HealthCheckResponse} HealthCheckResponse
+         */
+        HealthCheckResponse.from = HealthCheckResponse.fromObject;
+
+        /**
          * Creates a plain object from a HealthCheckResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.HealthCheckResponse
-         * @static
          * @param {bentoml.HealthCheckResponse} message HealthCheckResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         HealthCheckResponse.toObject = function toObject(message, options) {
@@ -10018,10 +9250,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this HealthCheckResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        HealthCheckResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this HealthCheckResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.HealthCheckResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         HealthCheckResponse.prototype.toJSON = function toJSON() {
@@ -10035,49 +9273,39 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a GetYataiServiceVersionResponse.
-         * @memberof bentoml
-         * @interface IGetYataiServiceVersionResponse
-         * @property {bentoml.IStatus|null} [status] GetYataiServiceVersionResponse status
-         * @property {string|null} [version] GetYataiServiceVersionResponse version
+         * @typedef bentoml.GetYataiServiceVersionResponse$Properties
+         * @type {Object}
+         * @property {bentoml.Status$Properties} [status] GetYataiServiceVersionResponse status.
+         * @property {string} [version] GetYataiServiceVersionResponse version.
          */
 
         /**
          * Constructs a new GetYataiServiceVersionResponse.
-         * @memberof bentoml
-         * @classdesc Represents a GetYataiServiceVersionResponse.
-         * @implements IGetYataiServiceVersionResponse
+         * @exports bentoml.GetYataiServiceVersionResponse
          * @constructor
-         * @param {bentoml.IGetYataiServiceVersionResponse=} [properties] Properties to set
+         * @param {bentoml.GetYataiServiceVersionResponse$Properties=} [properties] Properties to set
          */
         function GetYataiServiceVersionResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * GetYataiServiceVersionResponse status.
-         * @member {bentoml.IStatus|null|undefined} status
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @instance
+         * @type {bentoml.Status$Properties|undefined}
          */
         GetYataiServiceVersionResponse.prototype.status = null;
 
         /**
          * GetYataiServiceVersionResponse version.
-         * @member {string} version
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @instance
+         * @type {string|undefined}
          */
         GetYataiServiceVersionResponse.prototype.version = "";
 
         /**
          * Creates a new GetYataiServiceVersionResponse instance using the specified properties.
-         * @function create
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @static
-         * @param {bentoml.IGetYataiServiceVersionResponse=} [properties] Properties to set
+         * @param {bentoml.GetYataiServiceVersionResponse$Properties=} [properties] Properties to set
          * @returns {bentoml.GetYataiServiceVersionResponse} GetYataiServiceVersionResponse instance
          */
         GetYataiServiceVersionResponse.create = function create(properties) {
@@ -10086,29 +9314,23 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified GetYataiServiceVersionResponse message. Does not implicitly {@link bentoml.GetYataiServiceVersionResponse.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @static
-         * @param {bentoml.IGetYataiServiceVersionResponse} message GetYataiServiceVersionResponse message or plain object to encode
+         * @param {bentoml.GetYataiServiceVersionResponse$Properties} message GetYataiServiceVersionResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         GetYataiServiceVersionResponse.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+            if (message.status && message.hasOwnProperty("status"))
                 $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.version != null && Object.hasOwnProperty.call(message, "version"))
+            if (message.version != null && message.hasOwnProperty("version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.version);
             return writer;
         };
 
         /**
          * Encodes the specified GetYataiServiceVersionResponse message, length delimited. Does not implicitly {@link bentoml.GetYataiServiceVersionResponse.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @static
-         * @param {bentoml.IGetYataiServiceVersionResponse} message GetYataiServiceVersionResponse message or plain object to encode
+         * @param {bentoml.GetYataiServiceVersionResponse$Properties} message GetYataiServiceVersionResponse message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -10118,9 +9340,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a GetYataiServiceVersionResponse message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.GetYataiServiceVersionResponse} GetYataiServiceVersionResponse
@@ -10150,9 +9369,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a GetYataiServiceVersionResponse message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.GetYataiServiceVersionResponse} GetYataiServiceVersionResponse
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -10160,27 +9376,24 @@ export const bentoml = $root.bentoml = (() => {
          */
         GetYataiServiceVersionResponse.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a GetYataiServiceVersionResponse message.
-         * @function verify
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         GetYataiServiceVersionResponse.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.status != null && message.hasOwnProperty("status")) {
+            if (message.status != null) {
                 let error = $root.bentoml.Status.verify(message.status);
                 if (error)
                     return "status." + error;
             }
-            if (message.version != null && message.hasOwnProperty("version"))
+            if (message.version != null)
                 if (!$util.isString(message.version))
                     return "version: string expected";
             return null;
@@ -10188,9 +9401,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a GetYataiServiceVersionResponse message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.GetYataiServiceVersionResponse} GetYataiServiceVersionResponse
          */
@@ -10209,12 +9419,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a GetYataiServiceVersionResponse message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.GetYataiServiceVersionResponse.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.GetYataiServiceVersionResponse} GetYataiServiceVersionResponse
+         */
+        GetYataiServiceVersionResponse.from = GetYataiServiceVersionResponse.fromObject;
+
+        /**
          * Creates a plain object from a GetYataiServiceVersionResponse message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @static
          * @param {bentoml.GetYataiServiceVersionResponse} message GetYataiServiceVersionResponse
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         GetYataiServiceVersionResponse.toObject = function toObject(message, options) {
@@ -10233,10 +9449,16 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a plain object from this GetYataiServiceVersionResponse message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        GetYataiServiceVersionResponse.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this GetYataiServiceVersionResponse to JSON.
-         * @function toJSON
-         * @memberof bentoml.GetYataiServiceVersionResponse
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         GetYataiServiceVersionResponse.prototype.toJSON = function toJSON() {
@@ -10250,40 +9472,32 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Properties of a Chunk.
-         * @memberof bentoml
-         * @interface IChunk
-         * @property {Uint8Array|null} [content] Chunk content
+         * @typedef bentoml.Chunk$Properties
+         * @type {Object}
+         * @property {Uint8Array} [content] Chunk content.
          */
 
         /**
          * Constructs a new Chunk.
-         * @memberof bentoml
-         * @classdesc Represents a Chunk.
-         * @implements IChunk
+         * @exports bentoml.Chunk
          * @constructor
-         * @param {bentoml.IChunk=} [properties] Properties to set
+         * @param {bentoml.Chunk$Properties=} [properties] Properties to set
          */
         function Chunk(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
+                    this[keys[i]] = properties[keys[i]];
         }
 
         /**
          * Chunk content.
-         * @member {Uint8Array} content
-         * @memberof bentoml.Chunk
-         * @instance
+         * @type {Uint8Array|undefined}
          */
         Chunk.prototype.content = $util.newBuffer([]);
 
         /**
          * Creates a new Chunk instance using the specified properties.
-         * @function create
-         * @memberof bentoml.Chunk
-         * @static
-         * @param {bentoml.IChunk=} [properties] Properties to set
+         * @param {bentoml.Chunk$Properties=} [properties] Properties to set
          * @returns {bentoml.Chunk} Chunk instance
          */
         Chunk.create = function create(properties) {
@@ -10292,27 +9506,21 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Encodes the specified Chunk message. Does not implicitly {@link bentoml.Chunk.verify|verify} messages.
-         * @function encode
-         * @memberof bentoml.Chunk
-         * @static
-         * @param {bentoml.IChunk} message Chunk message or plain object to encode
+         * @param {bentoml.Chunk$Properties} message Chunk message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
         Chunk.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.content != null && Object.hasOwnProperty.call(message, "content"))
+            if (message.content && message.hasOwnProperty("content"))
                 writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.content);
             return writer;
         };
 
         /**
          * Encodes the specified Chunk message, length delimited. Does not implicitly {@link bentoml.Chunk.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof bentoml.Chunk
-         * @static
-         * @param {bentoml.IChunk} message Chunk message or plain object to encode
+         * @param {bentoml.Chunk$Properties} message Chunk message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -10322,9 +9530,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a Chunk message from the specified reader or buffer.
-         * @function decode
-         * @memberof bentoml.Chunk
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
          * @returns {bentoml.Chunk} Chunk
@@ -10351,9 +9556,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Decodes a Chunk message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof bentoml.Chunk
-         * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @returns {bentoml.Chunk} Chunk
          * @throws {Error} If the payload is not a reader or valid buffer
@@ -10361,22 +9563,19 @@ export const bentoml = $root.bentoml = (() => {
          */
         Chunk.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
+                reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
          * Verifies a Chunk message.
-         * @function verify
-         * @memberof bentoml.Chunk
-         * @static
          * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
         Chunk.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.content != null && message.hasOwnProperty("content"))
+            if (message.content != null)
                 if (!(message.content && typeof message.content.length === "number" || $util.isString(message.content)))
                     return "content: buffer expected";
             return null;
@@ -10384,9 +9583,6 @@ export const bentoml = $root.bentoml = (() => {
 
         /**
          * Creates a Chunk message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof bentoml.Chunk
-         * @static
          * @param {Object.<string,*>} object Plain object
          * @returns {bentoml.Chunk} Chunk
          */
@@ -10403,12 +9599,18 @@ export const bentoml = $root.bentoml = (() => {
         };
 
         /**
+         * Creates a Chunk message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link bentoml.Chunk.fromObject}.
+         * @function
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.Chunk} Chunk
+         */
+        Chunk.from = Chunk.fromObject;
+
+        /**
          * Creates a plain object from a Chunk message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof bentoml.Chunk
-         * @static
          * @param {bentoml.Chunk} message Chunk
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
         Chunk.toObject = function toObject(message, options) {
@@ -10416,23 +9618,23 @@ export const bentoml = $root.bentoml = (() => {
                 options = {};
             let object = {};
             if (options.defaults)
-                if (options.bytes === String)
-                    object.content = "";
-                else {
-                    object.content = [];
-                    if (options.bytes !== Array)
-                        object.content = $util.newBuffer(object.content);
-                }
+                object.content = options.bytes === String ? "" : [];
             if (message.content != null && message.hasOwnProperty("content"))
                 object.content = options.bytes === String ? $util.base64.encode(message.content, 0, message.content.length) : options.bytes === Array ? Array.prototype.slice.call(message.content) : message.content;
             return object;
         };
 
         /**
+         * Creates a plain object from this Chunk message. Also converts values to other types if specified.
+         * @param {$protobuf.ConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Chunk.prototype.toObject = function toObject(options) {
+            return this.constructor.toObject(this, options);
+        };
+
+        /**
          * Converts this Chunk to JSON.
-         * @function toJSON
-         * @memberof bentoml.Chunk
-         * @instance
          * @returns {Object.<string,*>} JSON object
          */
         Chunk.prototype.toJSON = function toJSON() {
@@ -10458,7 +9660,7 @@ export const google = $root.google = (() => {
 
         /**
          * Namespace protobuf.
-         * @memberof google
+         * @exports google.protobuf
          * @namespace
          */
         const protobuf = {};
@@ -10467,41 +9669,33 @@ export const google = $root.google = (() => {
 
             /**
              * Properties of a Struct.
-             * @memberof google.protobuf
-             * @interface IStruct
-             * @property {Object.<string,google.protobuf.IValue>|null} [fields] Struct fields
+             * @typedef google.protobuf.Struct$Properties
+             * @type {Object}
+             * @property {Object.<string,google.protobuf.Value$Properties>} [fields] Struct fields.
              */
 
             /**
              * Constructs a new Struct.
-             * @memberof google.protobuf
-             * @classdesc Represents a Struct.
-             * @implements IStruct
+             * @exports google.protobuf.Struct
              * @constructor
-             * @param {google.protobuf.IStruct=} [properties] Properties to set
+             * @param {google.protobuf.Struct$Properties=} [properties] Properties to set
              */
             function Struct(properties) {
                 this.fields = {};
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * Struct fields.
-             * @member {Object.<string,google.protobuf.IValue>} fields
-             * @memberof google.protobuf.Struct
-             * @instance
+             * @type {Object.<string,google.protobuf.Value$Properties>|undefined}
              */
             Struct.prototype.fields = $util.emptyObject;
 
             /**
              * Creates a new Struct instance using the specified properties.
-             * @function create
-             * @memberof google.protobuf.Struct
-             * @static
-             * @param {google.protobuf.IStruct=} [properties] Properties to set
+             * @param {google.protobuf.Struct$Properties=} [properties] Properties to set
              * @returns {google.protobuf.Struct} Struct instance
              */
             Struct.create = function create(properties) {
@@ -10510,17 +9704,14 @@ export const google = $root.google = (() => {
 
             /**
              * Encodes the specified Struct message. Does not implicitly {@link google.protobuf.Struct.verify|verify} messages.
-             * @function encode
-             * @memberof google.protobuf.Struct
-             * @static
-             * @param {google.protobuf.IStruct} message Struct message or plain object to encode
+             * @param {google.protobuf.Struct$Properties} message Struct message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             Struct.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.fields != null && Object.hasOwnProperty.call(message, "fields"))
+                if (message.fields && message.hasOwnProperty("fields"))
                     for (let keys = Object.keys(message.fields), i = 0; i < keys.length; ++i) {
                         writer.uint32(/* id 1, wireType 2 =*/10).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]);
                         $root.google.protobuf.Value.encode(message.fields[keys[i]], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim().ldelim();
@@ -10530,10 +9721,7 @@ export const google = $root.google = (() => {
 
             /**
              * Encodes the specified Struct message, length delimited. Does not implicitly {@link google.protobuf.Struct.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof google.protobuf.Struct
-             * @static
-             * @param {google.protobuf.IStruct} message Struct message or plain object to encode
+             * @param {google.protobuf.Struct$Properties} message Struct message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -10543,9 +9731,6 @@ export const google = $root.google = (() => {
 
             /**
              * Decodes a Struct message from the specified reader or buffer.
-             * @function decode
-             * @memberof google.protobuf.Struct
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {google.protobuf.Struct} Struct
@@ -10577,9 +9762,6 @@ export const google = $root.google = (() => {
 
             /**
              * Decodes a Struct message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof google.protobuf.Struct
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {google.protobuf.Struct} Struct
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -10587,22 +9769,19 @@ export const google = $root.google = (() => {
              */
             Struct.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies a Struct message.
-             * @function verify
-             * @memberof google.protobuf.Struct
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             Struct.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.fields != null && message.hasOwnProperty("fields")) {
+                if (message.fields != null) {
                     if (!$util.isObject(message.fields))
                         return "fields: object expected";
                     let key = Object.keys(message.fields);
@@ -10617,9 +9796,6 @@ export const google = $root.google = (() => {
 
             /**
              * Creates a Struct message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof google.protobuf.Struct
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {google.protobuf.Struct} Struct
              */
@@ -10641,12 +9817,18 @@ export const google = $root.google = (() => {
             };
 
             /**
+             * Creates a Struct message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link google.protobuf.Struct.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {google.protobuf.Struct} Struct
+             */
+            Struct.from = Struct.fromObject;
+
+            /**
              * Creates a plain object from a Struct message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof google.protobuf.Struct
-             * @static
              * @param {google.protobuf.Struct} message Struct
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             Struct.toObject = function toObject(message, options) {
@@ -10665,10 +9847,16 @@ export const google = $root.google = (() => {
             };
 
             /**
+             * Creates a plain object from this Struct message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Struct.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this Struct to JSON.
-             * @function toJSON
-             * @memberof google.protobuf.Struct
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             Struct.prototype.toJSON = function toJSON() {
@@ -10682,76 +9870,61 @@ export const google = $root.google = (() => {
 
             /**
              * Properties of a Value.
-             * @memberof google.protobuf
-             * @interface IValue
-             * @property {google.protobuf.NullValue|null} [nullValue] Value nullValue
-             * @property {number|null} [numberValue] Value numberValue
-             * @property {string|null} [stringValue] Value stringValue
-             * @property {boolean|null} [boolValue] Value boolValue
-             * @property {google.protobuf.IStruct|null} [structValue] Value structValue
-             * @property {google.protobuf.IListValue|null} [listValue] Value listValue
+             * @typedef google.protobuf.Value$Properties
+             * @type {Object}
+             * @property {google.protobuf.NullValue} [nullValue] Value nullValue.
+             * @property {number} [numberValue] Value numberValue.
+             * @property {string} [stringValue] Value stringValue.
+             * @property {boolean} [boolValue] Value boolValue.
+             * @property {google.protobuf.Struct$Properties} [structValue] Value structValue.
+             * @property {google.protobuf.ListValue$Properties} [listValue] Value listValue.
              */
 
             /**
              * Constructs a new Value.
-             * @memberof google.protobuf
-             * @classdesc Represents a Value.
-             * @implements IValue
+             * @exports google.protobuf.Value
              * @constructor
-             * @param {google.protobuf.IValue=} [properties] Properties to set
+             * @param {google.protobuf.Value$Properties=} [properties] Properties to set
              */
             function Value(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * Value nullValue.
-             * @member {google.protobuf.NullValue} nullValue
-             * @memberof google.protobuf.Value
-             * @instance
+             * @type {google.protobuf.NullValue|undefined}
              */
             Value.prototype.nullValue = 0;
 
             /**
              * Value numberValue.
-             * @member {number} numberValue
-             * @memberof google.protobuf.Value
-             * @instance
+             * @type {number|undefined}
              */
             Value.prototype.numberValue = 0;
 
             /**
              * Value stringValue.
-             * @member {string} stringValue
-             * @memberof google.protobuf.Value
-             * @instance
+             * @type {string|undefined}
              */
             Value.prototype.stringValue = "";
 
             /**
              * Value boolValue.
-             * @member {boolean} boolValue
-             * @memberof google.protobuf.Value
-             * @instance
+             * @type {boolean|undefined}
              */
             Value.prototype.boolValue = false;
 
             /**
              * Value structValue.
-             * @member {google.protobuf.IStruct|null|undefined} structValue
-             * @memberof google.protobuf.Value
-             * @instance
+             * @type {google.protobuf.Struct$Properties|undefined}
              */
             Value.prototype.structValue = null;
 
             /**
              * Value listValue.
-             * @member {google.protobuf.IListValue|null|undefined} listValue
-             * @memberof google.protobuf.Value
-             * @instance
+             * @type {google.protobuf.ListValue$Properties|undefined}
              */
             Value.prototype.listValue = null;
 
@@ -10760,9 +9933,8 @@ export const google = $root.google = (() => {
 
             /**
              * Value kind.
-             * @member {"nullValue"|"numberValue"|"stringValue"|"boolValue"|"structValue"|"listValue"|undefined} kind
-             * @memberof google.protobuf.Value
-             * @instance
+             * @name google.protobuf.Value#kind
+             * @type {string|undefined}
              */
             Object.defineProperty(Value.prototype, "kind", {
                 get: $util.oneOfGetter($oneOfFields = ["nullValue", "numberValue", "stringValue", "boolValue", "structValue", "listValue"]),
@@ -10771,10 +9943,7 @@ export const google = $root.google = (() => {
 
             /**
              * Creates a new Value instance using the specified properties.
-             * @function create
-             * @memberof google.protobuf.Value
-             * @static
-             * @param {google.protobuf.IValue=} [properties] Properties to set
+             * @param {google.protobuf.Value$Properties=} [properties] Properties to set
              * @returns {google.protobuf.Value} Value instance
              */
             Value.create = function create(properties) {
@@ -10783,37 +9952,31 @@ export const google = $root.google = (() => {
 
             /**
              * Encodes the specified Value message. Does not implicitly {@link google.protobuf.Value.verify|verify} messages.
-             * @function encode
-             * @memberof google.protobuf.Value
-             * @static
-             * @param {google.protobuf.IValue} message Value message or plain object to encode
+             * @param {google.protobuf.Value$Properties} message Value message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             Value.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.nullValue != null && Object.hasOwnProperty.call(message, "nullValue"))
-                    writer.uint32(/* id 1, wireType 0 =*/8).int32(message.nullValue);
-                if (message.numberValue != null && Object.hasOwnProperty.call(message, "numberValue"))
+                if (message.nullValue != null && message.hasOwnProperty("nullValue"))
+                    writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.nullValue);
+                if (message.numberValue != null && message.hasOwnProperty("numberValue"))
                     writer.uint32(/* id 2, wireType 1 =*/17).double(message.numberValue);
-                if (message.stringValue != null && Object.hasOwnProperty.call(message, "stringValue"))
+                if (message.stringValue != null && message.hasOwnProperty("stringValue"))
                     writer.uint32(/* id 3, wireType 2 =*/26).string(message.stringValue);
-                if (message.boolValue != null && Object.hasOwnProperty.call(message, "boolValue"))
+                if (message.boolValue != null && message.hasOwnProperty("boolValue"))
                     writer.uint32(/* id 4, wireType 0 =*/32).bool(message.boolValue);
-                if (message.structValue != null && Object.hasOwnProperty.call(message, "structValue"))
+                if (message.structValue && message.hasOwnProperty("structValue"))
                     $root.google.protobuf.Struct.encode(message.structValue, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-                if (message.listValue != null && Object.hasOwnProperty.call(message, "listValue"))
+                if (message.listValue && message.hasOwnProperty("listValue"))
                     $root.google.protobuf.ListValue.encode(message.listValue, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
                 return writer;
             };
 
             /**
              * Encodes the specified Value message, length delimited. Does not implicitly {@link google.protobuf.Value.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof google.protobuf.Value
-             * @static
-             * @param {google.protobuf.IValue} message Value message or plain object to encode
+             * @param {google.protobuf.Value$Properties} message Value message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -10823,9 +9986,6 @@ export const google = $root.google = (() => {
 
             /**
              * Decodes a Value message from the specified reader or buffer.
-             * @function decode
-             * @memberof google.protobuf.Value
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {google.protobuf.Value} Value
@@ -10840,7 +10000,7 @@ export const google = $root.google = (() => {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
                     case 1:
-                        message.nullValue = reader.int32();
+                        message.nullValue = reader.uint32();
                         break;
                     case 2:
                         message.numberValue = reader.double();
@@ -10867,9 +10027,6 @@ export const google = $root.google = (() => {
 
             /**
              * Decodes a Value message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof google.protobuf.Value
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {google.protobuf.Value} Value
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -10877,23 +10034,20 @@ export const google = $root.google = (() => {
              */
             Value.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies a Value message.
-             * @function verify
-             * @memberof google.protobuf.Value
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             Value.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
                 let properties = {};
-                if (message.nullValue != null && message.hasOwnProperty("nullValue")) {
+                if (message.nullValue != null) {
                     properties.kind = 1;
                     switch (message.nullValue) {
                     default:
@@ -10902,55 +10056,48 @@ export const google = $root.google = (() => {
                         break;
                     }
                 }
-                if (message.numberValue != null && message.hasOwnProperty("numberValue")) {
+                if (message.numberValue != null) {
                     if (properties.kind === 1)
                         return "kind: multiple values";
                     properties.kind = 1;
                     if (typeof message.numberValue !== "number")
                         return "numberValue: number expected";
                 }
-                if (message.stringValue != null && message.hasOwnProperty("stringValue")) {
+                if (message.stringValue != null) {
                     if (properties.kind === 1)
                         return "kind: multiple values";
                     properties.kind = 1;
                     if (!$util.isString(message.stringValue))
                         return "stringValue: string expected";
                 }
-                if (message.boolValue != null && message.hasOwnProperty("boolValue")) {
+                if (message.boolValue != null) {
                     if (properties.kind === 1)
                         return "kind: multiple values";
                     properties.kind = 1;
                     if (typeof message.boolValue !== "boolean")
                         return "boolValue: boolean expected";
                 }
-                if (message.structValue != null && message.hasOwnProperty("structValue")) {
+                if (message.structValue != null) {
                     if (properties.kind === 1)
                         return "kind: multiple values";
                     properties.kind = 1;
-                    {
-                        let error = $root.google.protobuf.Struct.verify(message.structValue);
-                        if (error)
-                            return "structValue." + error;
-                    }
+                    let error = $root.google.protobuf.Struct.verify(message.structValue);
+                    if (error)
+                        return "structValue." + error;
                 }
-                if (message.listValue != null && message.hasOwnProperty("listValue")) {
+                if (message.listValue != null) {
                     if (properties.kind === 1)
                         return "kind: multiple values";
                     properties.kind = 1;
-                    {
-                        let error = $root.google.protobuf.ListValue.verify(message.listValue);
-                        if (error)
-                            return "listValue." + error;
-                    }
+                    let error = $root.google.protobuf.ListValue.verify(message.listValue);
+                    if (error)
+                        return "listValue." + error;
                 }
                 return null;
             };
 
             /**
              * Creates a Value message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof google.protobuf.Value
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {google.protobuf.Value} Value
              */
@@ -10984,12 +10131,18 @@ export const google = $root.google = (() => {
             };
 
             /**
+             * Creates a Value message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link google.protobuf.Value.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {google.protobuf.Value} Value
+             */
+            Value.from = Value.fromObject;
+
+            /**
              * Creates a plain object from a Value message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof google.protobuf.Value
-             * @static
              * @param {google.protobuf.Value} message Value
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             Value.toObject = function toObject(message, options) {
@@ -11002,7 +10155,7 @@ export const google = $root.google = (() => {
                         object.kind = "nullValue";
                 }
                 if (message.numberValue != null && message.hasOwnProperty("numberValue")) {
-                    object.numberValue = options.json && !isFinite(message.numberValue) ? String(message.numberValue) : message.numberValue;
+                    object.numberValue = message.numberValue;
                     if (options.oneofs)
                         object.kind = "numberValue";
                 }
@@ -11030,10 +10183,16 @@ export const google = $root.google = (() => {
             };
 
             /**
+             * Creates a plain object from this Value message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Value.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this Value to JSON.
-             * @function toJSON
-             * @memberof google.protobuf.Value
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             Value.prototype.toJSON = function toJSON() {
@@ -11045,7 +10204,8 @@ export const google = $root.google = (() => {
 
         /**
          * NullValue enum.
-         * @name google.protobuf.NullValue
+         * @name NullValue
+         * @memberof google.protobuf
          * @enum {number}
          * @property {number} NULL_VALUE=0 NULL_VALUE value
          */
@@ -11059,41 +10219,33 @@ export const google = $root.google = (() => {
 
             /**
              * Properties of a ListValue.
-             * @memberof google.protobuf
-             * @interface IListValue
-             * @property {Array.<google.protobuf.IValue>|null} [values] ListValue values
+             * @typedef google.protobuf.ListValue$Properties
+             * @type {Object}
+             * @property {Array.<google.protobuf.Value$Properties>} [values] ListValue values.
              */
 
             /**
              * Constructs a new ListValue.
-             * @memberof google.protobuf
-             * @classdesc Represents a ListValue.
-             * @implements IListValue
+             * @exports google.protobuf.ListValue
              * @constructor
-             * @param {google.protobuf.IListValue=} [properties] Properties to set
+             * @param {google.protobuf.ListValue$Properties=} [properties] Properties to set
              */
             function ListValue(properties) {
                 this.values = [];
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * ListValue values.
-             * @member {Array.<google.protobuf.IValue>} values
-             * @memberof google.protobuf.ListValue
-             * @instance
+             * @type {Array.<google.protobuf.Value$Properties>|undefined}
              */
             ListValue.prototype.values = $util.emptyArray;
 
             /**
              * Creates a new ListValue instance using the specified properties.
-             * @function create
-             * @memberof google.protobuf.ListValue
-             * @static
-             * @param {google.protobuf.IListValue=} [properties] Properties to set
+             * @param {google.protobuf.ListValue$Properties=} [properties] Properties to set
              * @returns {google.protobuf.ListValue} ListValue instance
              */
             ListValue.create = function create(properties) {
@@ -11102,17 +10254,14 @@ export const google = $root.google = (() => {
 
             /**
              * Encodes the specified ListValue message. Does not implicitly {@link google.protobuf.ListValue.verify|verify} messages.
-             * @function encode
-             * @memberof google.protobuf.ListValue
-             * @static
-             * @param {google.protobuf.IListValue} message ListValue message or plain object to encode
+             * @param {google.protobuf.ListValue$Properties} message ListValue message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             ListValue.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.values != null && message.values.length)
+                if (message.values && message.values.length)
                     for (let i = 0; i < message.values.length; ++i)
                         $root.google.protobuf.Value.encode(message.values[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 return writer;
@@ -11120,10 +10269,7 @@ export const google = $root.google = (() => {
 
             /**
              * Encodes the specified ListValue message, length delimited. Does not implicitly {@link google.protobuf.ListValue.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof google.protobuf.ListValue
-             * @static
-             * @param {google.protobuf.IListValue} message ListValue message or plain object to encode
+             * @param {google.protobuf.ListValue$Properties} message ListValue message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -11133,9 +10279,6 @@ export const google = $root.google = (() => {
 
             /**
              * Decodes a ListValue message from the specified reader or buffer.
-             * @function decode
-             * @memberof google.protobuf.ListValue
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {google.protobuf.ListValue} ListValue
@@ -11164,9 +10307,6 @@ export const google = $root.google = (() => {
 
             /**
              * Decodes a ListValue message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof google.protobuf.ListValue
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {google.protobuf.ListValue} ListValue
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -11174,22 +10314,19 @@ export const google = $root.google = (() => {
              */
             ListValue.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies a ListValue message.
-             * @function verify
-             * @memberof google.protobuf.ListValue
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             ListValue.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.values != null && message.hasOwnProperty("values")) {
+                if (message.values != null) {
                     if (!Array.isArray(message.values))
                         return "values: array expected";
                     for (let i = 0; i < message.values.length; ++i) {
@@ -11203,9 +10340,6 @@ export const google = $root.google = (() => {
 
             /**
              * Creates a ListValue message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof google.protobuf.ListValue
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {google.protobuf.ListValue} ListValue
              */
@@ -11227,12 +10361,18 @@ export const google = $root.google = (() => {
             };
 
             /**
+             * Creates a ListValue message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link google.protobuf.ListValue.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {google.protobuf.ListValue} ListValue
+             */
+            ListValue.from = ListValue.fromObject;
+
+            /**
              * Creates a plain object from a ListValue message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof google.protobuf.ListValue
-             * @static
              * @param {google.protobuf.ListValue} message ListValue
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             ListValue.toObject = function toObject(message, options) {
@@ -11250,10 +10390,16 @@ export const google = $root.google = (() => {
             };
 
             /**
+             * Creates a plain object from this ListValue message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            ListValue.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this ListValue to JSON.
-             * @function toJSON
-             * @memberof google.protobuf.ListValue
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             ListValue.prototype.toJSON = function toJSON() {
@@ -11267,49 +10413,39 @@ export const google = $root.google = (() => {
 
             /**
              * Properties of a Timestamp.
-             * @memberof google.protobuf
-             * @interface ITimestamp
-             * @property {number|null} [seconds] Timestamp seconds
-             * @property {number|null} [nanos] Timestamp nanos
+             * @typedef google.protobuf.Timestamp$Properties
+             * @type {Object}
+             * @property {number|Long} [seconds] Timestamp seconds.
+             * @property {number} [nanos] Timestamp nanos.
              */
 
             /**
              * Constructs a new Timestamp.
-             * @memberof google.protobuf
-             * @classdesc Represents a Timestamp.
-             * @implements ITimestamp
+             * @exports google.protobuf.Timestamp
              * @constructor
-             * @param {google.protobuf.ITimestamp=} [properties] Properties to set
+             * @param {google.protobuf.Timestamp$Properties=} [properties] Properties to set
              */
             function Timestamp(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * Timestamp seconds.
-             * @member {number} seconds
-             * @memberof google.protobuf.Timestamp
-             * @instance
+             * @type {number|Long|undefined}
              */
             Timestamp.prototype.seconds = $util.Long ? $util.Long.fromBits(0,0,false) : 0;
 
             /**
              * Timestamp nanos.
-             * @member {number} nanos
-             * @memberof google.protobuf.Timestamp
-             * @instance
+             * @type {number|undefined}
              */
             Timestamp.prototype.nanos = 0;
 
             /**
              * Creates a new Timestamp instance using the specified properties.
-             * @function create
-             * @memberof google.protobuf.Timestamp
-             * @static
-             * @param {google.protobuf.ITimestamp=} [properties] Properties to set
+             * @param {google.protobuf.Timestamp$Properties=} [properties] Properties to set
              * @returns {google.protobuf.Timestamp} Timestamp instance
              */
             Timestamp.create = function create(properties) {
@@ -11318,29 +10454,23 @@ export const google = $root.google = (() => {
 
             /**
              * Encodes the specified Timestamp message. Does not implicitly {@link google.protobuf.Timestamp.verify|verify} messages.
-             * @function encode
-             * @memberof google.protobuf.Timestamp
-             * @static
-             * @param {google.protobuf.ITimestamp} message Timestamp message or plain object to encode
+             * @param {google.protobuf.Timestamp$Properties} message Timestamp message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
             Timestamp.encode = function encode(message, writer) {
                 if (!writer)
                     writer = $Writer.create();
-                if (message.seconds != null && Object.hasOwnProperty.call(message, "seconds"))
+                if (message.seconds != null && message.hasOwnProperty("seconds"))
                     writer.uint32(/* id 1, wireType 0 =*/8).int64(message.seconds);
-                if (message.nanos != null && Object.hasOwnProperty.call(message, "nanos"))
+                if (message.nanos != null && message.hasOwnProperty("nanos"))
                     writer.uint32(/* id 2, wireType 0 =*/16).int32(message.nanos);
                 return writer;
             };
 
             /**
              * Encodes the specified Timestamp message, length delimited. Does not implicitly {@link google.protobuf.Timestamp.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof google.protobuf.Timestamp
-             * @static
-             * @param {google.protobuf.ITimestamp} message Timestamp message or plain object to encode
+             * @param {google.protobuf.Timestamp$Properties} message Timestamp message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -11350,9 +10480,6 @@ export const google = $root.google = (() => {
 
             /**
              * Decodes a Timestamp message from the specified reader or buffer.
-             * @function decode
-             * @memberof google.protobuf.Timestamp
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {google.protobuf.Timestamp} Timestamp
@@ -11382,9 +10509,6 @@ export const google = $root.google = (() => {
 
             /**
              * Decodes a Timestamp message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof google.protobuf.Timestamp
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {google.protobuf.Timestamp} Timestamp
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -11392,25 +10516,22 @@ export const google = $root.google = (() => {
              */
             Timestamp.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies a Timestamp message.
-             * @function verify
-             * @memberof google.protobuf.Timestamp
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             Timestamp.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
-                if (message.seconds != null && message.hasOwnProperty("seconds"))
+                if (message.seconds != null)
                     if (!$util.isInteger(message.seconds) && !(message.seconds && $util.isInteger(message.seconds.low) && $util.isInteger(message.seconds.high)))
                         return "seconds: integer|Long expected";
-                if (message.nanos != null && message.hasOwnProperty("nanos"))
+                if (message.nanos != null)
                     if (!$util.isInteger(message.nanos))
                         return "nanos: integer expected";
                 return null;
@@ -11418,9 +10539,6 @@ export const google = $root.google = (() => {
 
             /**
              * Creates a Timestamp message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof google.protobuf.Timestamp
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {google.protobuf.Timestamp} Timestamp
              */
@@ -11443,12 +10561,18 @@ export const google = $root.google = (() => {
             };
 
             /**
+             * Creates a Timestamp message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link google.protobuf.Timestamp.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {google.protobuf.Timestamp} Timestamp
+             */
+            Timestamp.from = Timestamp.fromObject;
+
+            /**
              * Creates a plain object from a Timestamp message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof google.protobuf.Timestamp
-             * @static
              * @param {google.protobuf.Timestamp} message Timestamp
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             Timestamp.toObject = function toObject(message, options) {
@@ -11474,10 +10598,16 @@ export const google = $root.google = (() => {
             };
 
             /**
+             * Creates a plain object from this Timestamp message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Timestamp.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this Timestamp to JSON.
-             * @function toJSON
-             * @memberof google.protobuf.Timestamp
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             Timestamp.prototype.toJSON = function toJSON() {
@@ -11491,31 +10621,25 @@ export const google = $root.google = (() => {
 
             /**
              * Properties of an Empty.
-             * @memberof google.protobuf
-             * @interface IEmpty
+             * @typedef google.protobuf.Empty$Properties
+             * @type {Object}
              */
 
             /**
              * Constructs a new Empty.
-             * @memberof google.protobuf
-             * @classdesc Represents an Empty.
-             * @implements IEmpty
+             * @exports google.protobuf.Empty
              * @constructor
-             * @param {google.protobuf.IEmpty=} [properties] Properties to set
+             * @param {google.protobuf.Empty$Properties=} [properties] Properties to set
              */
             function Empty(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
-                            this[keys[i]] = properties[keys[i]];
+                        this[keys[i]] = properties[keys[i]];
             }
 
             /**
              * Creates a new Empty instance using the specified properties.
-             * @function create
-             * @memberof google.protobuf.Empty
-             * @static
-             * @param {google.protobuf.IEmpty=} [properties] Properties to set
+             * @param {google.protobuf.Empty$Properties=} [properties] Properties to set
              * @returns {google.protobuf.Empty} Empty instance
              */
             Empty.create = function create(properties) {
@@ -11524,10 +10648,7 @@ export const google = $root.google = (() => {
 
             /**
              * Encodes the specified Empty message. Does not implicitly {@link google.protobuf.Empty.verify|verify} messages.
-             * @function encode
-             * @memberof google.protobuf.Empty
-             * @static
-             * @param {google.protobuf.IEmpty} message Empty message or plain object to encode
+             * @param {google.protobuf.Empty$Properties} message Empty message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -11539,10 +10660,7 @@ export const google = $root.google = (() => {
 
             /**
              * Encodes the specified Empty message, length delimited. Does not implicitly {@link google.protobuf.Empty.verify|verify} messages.
-             * @function encodeDelimited
-             * @memberof google.protobuf.Empty
-             * @static
-             * @param {google.protobuf.IEmpty} message Empty message or plain object to encode
+             * @param {google.protobuf.Empty$Properties} message Empty message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -11552,9 +10670,6 @@ export const google = $root.google = (() => {
 
             /**
              * Decodes an Empty message from the specified reader or buffer.
-             * @function decode
-             * @memberof google.protobuf.Empty
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
              * @returns {google.protobuf.Empty} Empty
@@ -11578,9 +10693,6 @@ export const google = $root.google = (() => {
 
             /**
              * Decodes an Empty message from the specified reader or buffer, length delimited.
-             * @function decodeDelimited
-             * @memberof google.protobuf.Empty
-             * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @returns {google.protobuf.Empty} Empty
              * @throws {Error} If the payload is not a reader or valid buffer
@@ -11588,17 +10700,14 @@ export const google = $root.google = (() => {
              */
             Empty.decodeDelimited = function decodeDelimited(reader) {
                 if (!(reader instanceof $Reader))
-                    reader = new $Reader(reader);
+                    reader = $Reader(reader);
                 return this.decode(reader, reader.uint32());
             };
 
             /**
              * Verifies an Empty message.
-             * @function verify
-             * @memberof google.protobuf.Empty
-             * @static
              * @param {Object.<string,*>} message Plain object to verify
-             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             * @returns {?string} `null` if valid, otherwise the reason why it is not
              */
             Empty.verify = function verify(message) {
                 if (typeof message !== "object" || message === null)
@@ -11608,9 +10717,6 @@ export const google = $root.google = (() => {
 
             /**
              * Creates an Empty message from a plain object. Also converts values to their respective internal types.
-             * @function fromObject
-             * @memberof google.protobuf.Empty
-             * @static
              * @param {Object.<string,*>} object Plain object
              * @returns {google.protobuf.Empty} Empty
              */
@@ -11621,12 +10727,18 @@ export const google = $root.google = (() => {
             };
 
             /**
+             * Creates an Empty message from a plain object. Also converts values to their respective internal types.
+             * This is an alias of {@link google.protobuf.Empty.fromObject}.
+             * @function
+             * @param {Object.<string,*>} object Plain object
+             * @returns {google.protobuf.Empty} Empty
+             */
+            Empty.from = Empty.fromObject;
+
+            /**
              * Creates a plain object from an Empty message. Also converts values to other types if specified.
-             * @function toObject
-             * @memberof google.protobuf.Empty
-             * @static
              * @param {google.protobuf.Empty} message Empty
-             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
             Empty.toObject = function toObject() {
@@ -11634,10 +10746,16 @@ export const google = $root.google = (() => {
             };
 
             /**
+             * Creates a plain object from this Empty message. Also converts values to other types if specified.
+             * @param {$protobuf.ConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            Empty.prototype.toObject = function toObject(options) {
+                return this.constructor.toObject(this, options);
+            };
+
+            /**
              * Converts this Empty to JSON.
-             * @function toJSON
-             * @memberof google.protobuf.Empty
-             * @instance
              * @returns {Object.<string,*>} JSON object
              */
             Empty.prototype.toJSON = function toJSON() {

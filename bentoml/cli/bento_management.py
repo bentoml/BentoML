@@ -234,8 +234,8 @@ def add_bento_sub_command(cli):
                 f'{error_code}:{error_message}'
             )
 
-        if get_bento_result.bento.uri.s3_presigned_url:
-            bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
+        if get_bento_result.bento.uri.cloud_presigned_url:
+            bento_service_bundle_path = get_bento_result.bento.uri.cloud_presigned_url
         else:
             bento_service_bundle_path = get_bento_result.bento.uri.uri
 

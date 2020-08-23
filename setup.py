@@ -28,6 +28,7 @@ install_requires = [
     "configparser",
     "docker",
     "flask",
+    "google-cloud-storage",
     "grpcio<=1.27.2",
     "gunicorn",
     "humanfriendly",

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import gzip
 import traceback
 from typing import Iterable, Tuple, Iterator, Sequence
 
@@ -68,13 +69,27 @@ class JsonInput(BaseInputAdapter[ApiFuncArgs]):
 
     def from_http_request(
         self, reqs: Iterable[HTTPRequest]
-    ) -> Tuple[InferenceTask[bytes]]:
-        return tuple(
-            InferenceTask(
-                context=InferenceContext(http_headers=r.parsed_headers), data=r.body,
-            )
-            for r in reqs
-        )
+    ) -> Iterator[InferenceTask[bytes]]:
+        for r in reqs:
+            if r.parsed_headers.content_encoding == "gzip":
+                try:
+                    yield InferenceTask(
+                        context=InferenceContext(http_headers=r.parsed_headers),
+                        data=gzip.decompress(r.body),
+                    )
+                except OSError:
+                    task = InferenceTask(data=None)
+                    task.discard(http_status=400, err_msg="Gzip decomression error")
+                    yield task
+            elif r.parsed_headers.content_encoding in ["", "identity"]:
+                yield InferenceTask(
+                    context=InferenceContext(http_headers=r.parsed_headers),
+                    data=r.body,
+                )
+            else:
+                task = InferenceTask(data=None)
+                task.discard(http_status=415, err_msg="Unsupported Media Type")
+                yield task
 
     def from_aws_lambda_event(
         self, events: Iterable[AwsLambdaEvent]

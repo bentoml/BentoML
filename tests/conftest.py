@@ -102,10 +102,10 @@ def unicode_file(tmpdir):
 @pytest.fixture()
 def unicode_files(tmpdir):
     for i in range(10):
-        bin_file_ = tmpdir.join(f"{i}.unicode")
+        bin_file_ = tmpdir.join(f"{i}.list.unicode")
         with open(bin_file_, "wb") as of:
             of.write(f"â{i}".encode('utf-8'))
-    return sorted(glob.glob(str(tmpdir.join("*.unicode"))))
+    return sorted(glob.glob(str(tmpdir.join("*.list.unicode"))))
 
 
 @pytest.fixture()
@@ -118,14 +118,14 @@ def img_file(tmpdir):
 @pytest.fixture()
 def img_files(tmpdir):
     for i in range(10):
-        img_file_ = tmpdir.join(f"{i}.jpg")
+        img_file_ = tmpdir.join(f"{i}.list.jpg")
         imageio.imwrite(str(img_file_), np.zeros((10, 10)))
-    return sorted(glob.glob(str(tmpdir.join("*.jpg"))))
+    return sorted(glob.glob(str(tmpdir.join("*.list.jpg"))))
 
 
 @pytest.fixture()
 def json_file(tmpdir):
-    json_file_ = tmpdir.join("test_json.json")
+    json_file_ = tmpdir.join("test.json")
     with open(json_file_, "w") as of:
         of.write('{"name": "kaith", "game": "morrowind"}')
     return str(json_file_)
@@ -134,10 +134,10 @@ def json_file(tmpdir):
 @pytest.fixture()
 def json_files(tmpdir):
     for i in range(10):
-        file_ = tmpdir.join(f"json_{i}.json")
+        file_ = tmpdir.join(f"{i}.list.json")
         with open(file_, "w") as of:
             of.write('{"i": %d, "name": "kaith", "game": "morrowind"}' % i)
-    return sorted(glob.glob(str(tmpdir.join("*.json"))))
+    return sorted(glob.glob(str(tmpdir.join("*.list.json"))))
 
 
 class TestModel(object):

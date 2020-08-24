@@ -49,7 +49,7 @@ class ClipperInput(BaseInputAdapter):
             "ClipperInput is not supported to be used with BentoML CLI"
         )
 
-    def from_aws_lambda(self, events):
+    def from_aws_lambda_event(self, events):
         raise NotImplementedError(
             "ClipperInput is not supported in AWS Lambda Deployment"
         )

@@ -26,7 +26,7 @@ from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_inputs
 
 
 ApiFuncArgs = Tuple[Sequence[BinaryIO], ...]
-MultiFileTask = InferenceTask[Tuple[BinaryIO]]
+MultiFileTask = InferenceTask[Tuple[BinaryIO, ...]]
 
 
 class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
@@ -134,7 +134,7 @@ class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
 
     def from_aws_lambda_event(
         self, events: Iterable[AwsLambdaEvent]
-    ) -> Tuple[MultiFileTask]:
+    ) -> Sequence[MultiFileTask]:
         requests = tuple(
             HTTPRequest(
                 headers=tuple((k, v) for k, v in e.get('headers', {}).items()),
@@ -144,16 +144,18 @@ class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
         )
         return self.from_http_request(requests)
 
-    def from_cli(self, cli_args: Tuple[str]) -> Iterator[MultiFileTask]:
+    def from_cli(self, cli_args: Sequence[str]) -> Iterator[MultiFileTask]:
         for inputs in parse_cli_inputs(cli_args, self.input_names):
-            bios = []
-            for input_ in inputs:
-                bio = io.BytesIO(input_.read())
-                bio.name = input_.name
-                bios.append(bio)
             yield InferenceTask(
-                context=InferenceContext(cli_args=cli_args), data=tuple(bios),
+                context=InferenceContext(cli_args=cli_args),
+                data=tuple(_pipe(i) for i in inputs),
             )
 
     def extract_user_func_args(self, tasks: Iterable[MultiFileTask]) -> ApiFuncArgs:
         return tuple(map(tuple(zip(*tasks))))
+
+
+def _pipe(input_: BinaryIO) -> BinaryIO:
+    bio = io.BytesIO(input_.read())
+    bio.name = input_.name
+    return bio

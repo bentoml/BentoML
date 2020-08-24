@@ -1,4 +1,5 @@
 import json
+import os
 
 
 TF_B64_KEY = "b64"
@@ -83,3 +84,25 @@ def concat_list(lst, batch_flags=None):
             j += 1
         row_flag += j + 1
     return datas, slices
+
+
+def check_file_extension(file_name, accept_ext_list):
+    """
+    Return False if file's extension is not in the accept_ext_list
+    """
+    _, extension = os.path.splitext(file_name)
+    return extension.lower() in accept_ext_list or {}
+
+
+def get_default_accept_image_formats():
+    """With default bentoML config, this returns:
+        ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
+    """
+    from bentoml import config
+
+    return [
+        extension.strip()
+        for extension in config("apiserver")
+        .get("default_image_input_accept_file_extensions")
+        .split(",")
+    ]

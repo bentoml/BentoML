@@ -19,8 +19,8 @@ from io import BytesIO
 
 from werkzeug.utils import secure_filename
 
-from bentoml import config
 from bentoml.exceptions import BadInput, MissingDependencyException
+from bentoml.adapters.utils import get_default_accept_image_formats
 from bentoml.adapters.base_input import BaseInputAdapter
 
 
@@ -45,18 +45,6 @@ def verify_image_format_or_raise(file_name, accept_format_list):
             raise BadInput(
                 "Input file not in supported format list: {}".format(accept_format_list)
             )
-
-
-def get_default_accept_image_formats():
-    """With default bentoML config, this returns:
-        ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
-    """
-    return [
-        extension.strip()
-        for extension in config('apiserver')
-        .get('default_image_input_accept_file_extensions')
-        .split(',')
-    ]
 
 
 class LegacyImageInput(BaseInputAdapter):

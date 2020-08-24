@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 from typing import Iterable, BinaryIO, Tuple, Sequence
 
 
 from bentoml.types import InferenceTask
 from bentoml import config
+from bentoml.adapters.utils import (
+    check_file_extension,
+    get_default_accept_image_formats,
+)
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.adapters.file_input import FileInput
 
@@ -30,26 +33,6 @@ numpy = LazyLoader('numpy', globals(), 'numpy')
 ApiFuncArgs = Tuple[
     Sequence['numpy.ndarray'],
 ]
-
-
-def get_default_accept_image_formats():
-    """With default bentoML config, this returns:
-        ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
-    """
-    return [
-        extension.strip()
-        for extension in config("apiserver")
-        .get("default_image_input_accept_file_extensions")
-        .split(",")
-    ]
-
-
-def verify_extension(file_name, accept_ext_list):
-    """
-    Return False if file's extension is not in the accept_ext_list
-    """
-    _, extension = os.path.splitext(file_name)
-    return extension.lower() in accept_ext_list or {}
 
 
 class ImageInput(FileInput):
@@ -141,7 +124,7 @@ class ImageInput(FileInput):
     ) -> ApiFuncArgs:
         img_list = []
         for task in tasks:
-            if task.data.name and not verify_extension(
+            if task.data.name and not check_file_extension(
                 task.data.name, self.accept_image_formats
             ):
                 task.discard(

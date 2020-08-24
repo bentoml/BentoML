@@ -21,7 +21,7 @@ from werkzeug.utils import secure_filename
 
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.adapters.image_input import get_default_accept_image_formats
+from bentoml.adapters.utils import get_default_accept_image_formats
 from bentoml.exceptions import BadInput
 from bentoml.types import HTTPRequest, HTTPResponse
 

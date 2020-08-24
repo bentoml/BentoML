@@ -188,6 +188,8 @@ class InferenceAPI(object):
 
     def infer(self, inf_tasks: Iterable[InferenceTask]) -> Tuple[InferenceResult]:
         # task validation
+        inf_tasks = tuple(inf_tasks)
+
         def valid_tasks(inf_tasks: Iterable[InferenceTask]) -> Iterator[InferenceTask]:
             for task in inf_tasks:
                 if task.is_discarded:

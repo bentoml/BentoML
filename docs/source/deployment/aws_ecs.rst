@@ -119,12 +119,17 @@ container images.
 Docker login with AWS ECR
 
 .. code-block:: bash
-
+    # For AWS cli V1
+    
     $ aws ecr get-login --region us-west-2 --no-include-email
+    
+    # For AWS cli V2
+    
+    $ aws ecr get-login-password --region us-west-2
+    
+    # Sample output (Authentication Token)
 
-    # Sample output
-
-    docker login -u AWS -p eyJ.................OOH https://account_id.dkr.ecr.us-west-2.amazonaws.com
+    eyJ.................OOH
 
 Copy the output from previous step and run it in the terminal
 

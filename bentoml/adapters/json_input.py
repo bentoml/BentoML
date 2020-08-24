@@ -71,7 +71,8 @@ class JsonInput(BaseInputAdapter[ApiFuncArgs]):
         self, reqs: Iterable[HTTPRequest]
     ) -> Iterator[InferenceTask[bytes]]:
         for r in reqs:
-            if r.parsed_headers.content_encoding == "gzip":
+            if r.parsed_headers.content_encoding in {"gzip", "x-gzip"}:
+                # https://tools.ietf.org/html/rfc7230#section-4.2.3
                 try:
                     yield InferenceTask(
                         context=InferenceContext(http_headers=r.parsed_headers),

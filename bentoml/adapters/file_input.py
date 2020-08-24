@@ -96,13 +96,10 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
     ) -> List[InferenceTask[BinaryIO]]:
         tasks = [None] * len(reqs)
         for i, req in enumerate(reqs):
-            if req.content_type == 'multipart/form-data':
+            if req.parse_headers.content_type == 'multipart/form-data':
                 _, _, files = HTTPRequest.parse_form_data(req)
                 if len(files) != 1:
-                    task = InferenceTask(
-                        context=InferenceContext(http_headers=req.parsed_headers),
-                        data=None,
-                    )
+                    task = InferenceTask(data=None)
                     task.discard(
                         http_status=400,
                         err_msg=f"BentoML#{self.__class__.__name__} requires one and at"
@@ -124,10 +121,7 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
                     data=io.BytesIO(req.body),
                 )
             else:
-                task = InferenceTask(
-                    context=InferenceContext(http_headers=req.parsed_headers),
-                    data=None,
-                )
+                task = InferenceTask(data=None)
                 task.discard(
                     http_status=400,
                     err_msg=f'BentoML#{self.__class__.__name__} unexpected HTTP request'

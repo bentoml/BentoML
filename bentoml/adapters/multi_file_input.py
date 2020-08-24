@@ -94,8 +94,8 @@ class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
         }
 
     def from_http_request(self, reqs: Iterable[HTTPRequest]) -> List[MultiFileTask]:
-        tasks = [None] * len(reqs)
-        for i, req in enumerate(reqs):
+        tasks = []
+        for req in reqs:
             if req.content_type == 'multipart/form-data':
                 _, _, files = HTTPRequest.parse_form_data(req)
                 try:
@@ -104,26 +104,20 @@ class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
                         data=tuple(files[k] for k in self.input_names),
                     )
                 except KeyError:
-                    task = InferenceTask(
-                        context=InferenceContext(http_headers=req.parsed_headers),
-                        data=None,
-                    )
+                    task = InferenceTask(data=None)
                     task.discard(
                         http_status=400,
                         err_msg=f"BentoML#{self.__class__.__name__} requires inputs"
                         f"fields {self.input_names}",
                     )
             else:
-                task = InferenceTask(
-                    context=InferenceContext(http_headers=req.parsed_headers),
-                    data=None,
-                )
+                task = InferenceTask(data=None)
                 task.discard(
                     http_status=400,
                     err_msg=f'BentoML#{self.__class__.__name__} unexpected HTTP request'
                     ' format',
                 )
-            tasks[i] = task
+            tasks.append(task)
 
         return tasks
 
@@ -131,7 +125,10 @@ class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
         self, events: Iterable[AwsLambdaEvent]
     ) -> Tuple[MultiFileTask]:
         requests = tuple(
-            HTTPRequest(headers=e.get('headers', {}).items(), body=e['body'])
+            HTTPRequest(
+                headers=tuple((k, v) for k, v in e.get('headers', {}).items()),
+                body=e['body'],
+            )
             for e in events
         )
         return self.from_http_request(requests)

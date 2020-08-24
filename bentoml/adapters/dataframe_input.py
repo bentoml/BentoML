@@ -172,7 +172,7 @@ class DataframeInput(BaseInputAdapter):
 
         datas = [r.body for r in requests]
         content_types = [
-            r.parsed_headers.get('content-type', 'application/json') for r in requests
+            r.parsed_headers.content_type or 'application/json' for r in requests
         ]
 
         df_conc, slices_generator = read_dataframes_from_json_n_csv(

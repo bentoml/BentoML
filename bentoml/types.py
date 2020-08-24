@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import io
+import functools
 from typing import (
     NamedTuple,
     Tuple,
     Union,
     Dict,
     List,
+    Sequence,
     Generic,
     TypeVar,
     Optional,
@@ -36,35 +38,53 @@ HEADER_CHARSET = 'latin1'
 JSON_CHARSET = 'utf-8'
 
 
+class ParsedHeaders(CIMultiDict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.content_type = ""
+        self.content_encoding = ""
+
+
 class HTTPRequest(NamedTuple):
     '''
     headers: tuple of key value pairs in strs
     data: str
     '''
 
-    headers: Tuple[Tuple[str, str]] = tuple()
+    headers: Sequence[Tuple[str, str]] = tuple()
     body: bytes = b""
 
     @property
-    def parsed_headers(self):
-        return CIMultiDict((k.lower(), v.lower()) for k, v in self.headers or tuple())
-
-    @property
-    def content_type(self) -> str:
-        return parse_options_header(self.parsed_headers.get('content-type'))[0]
+    def parsed_headers(self) -> CIMultiDict:
+        return self.parse_raw_headers(self.headers)
 
     @classmethod
+    @functools.lru_cache()
     def parse_form_data(cls, self):
         if not self.body:
             return None, None, {}
         environ = {
             'wsgi.input': io.BytesIO(self.body),
             'CONTENT_LENGTH': len(self.body),
-            'CONTENT_TYPE': self.parsed_headers.get("content-type", ""),
+            'CONTENT_TYPE': self.parsed_headers.content_type,
             'REQUEST_METHOD': 'POST',
         }
         stream, form, files = parse_form_data(environ, silent=False)
         return stream, form, files
+
+    @classmethod
+    @functools.lru_cache()
+    def parse_raw_headers(cls, raw_headers: Sequence[Tuple[str, str]]):
+        headers_dict = ParsedHeaders(
+            (k.lower(), v.lower()) for k, v in raw_headers or tuple()
+        )
+        headers_dict.content_type = parse_options_header(
+            headers_dict.get('content-type')
+        )[0]
+        headers_dict.content_encoding = parse_options_header(
+            headers_dict.get('content-encoding')
+        )[0]
+        return headers_dict
 
     @classmethod
     def from_flask_request(cls, request):

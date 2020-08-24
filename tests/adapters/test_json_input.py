@@ -1,8 +1,8 @@
 # pylint: disable=redefined-outer-name
 import pytest
+import gzip
 import json
 import contextlib
-import itertools
 from typing import List
 
 from bentoml.types import HTTPRequest
@@ -47,9 +47,27 @@ def test_json_from_cli(input_adapter, json_files, raw_jsons):
 
 def test_json_from_http(input_adapter, raw_jsons):
     requests = [HTTPRequest(body=r) for r in raw_jsons]
+    requests += [
+        HTTPRequest(body=gzip.compress(r), headers=(("Content-Encoding", "gzip"),))
+        for r in raw_jsons
+    ]
+    requests += [
+        HTTPRequest(body=r, headers=(("Content-Encoding", "gzip"),)) for r in raw_jsons
+    ]
+    requests += [
+        HTTPRequest(body=r, headers=(("Content-Encoding", "compress"),))
+        for r in raw_jsons
+    ]
     tasks = input_adapter.from_http_request(requests)
-    for t, b in zip(tasks, raw_jsons):
+    iter_tasks = iter(tasks)
+    for b, t in zip(raw_jsons, iter_tasks):
         assert t.data == b
+    for b, t in zip(raw_jsons, iter_tasks):
+        assert t.data == b
+    for b, t in zip(raw_jsons, iter_tasks):
+        assert t.is_discarded
+    for b, t in zip(raw_jsons, iter_tasks):
+        assert t.is_discarded
 
 
 def test_json_from_aws_lambda_event(input_adapter, raw_jsons):

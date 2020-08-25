@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+from urllib3.filepost import encode_multipart_formdata
 import pytest
 
 from bentoml.types import HTTPRequest
@@ -25,25 +26,22 @@ def test_file_input_cli_list(input_adapter, bin_files):
         assert b'\x810\x899' + str(i).encode() == task.data[1].read()
 
 
+def test_file_input_cli_list_missing_file(input_adapter, bin_files):
+    test_args = ["--input-file-x"] + bin_files
+    with pytest.raises(SystemExit):
+        tasks = input_adapter.from_cli(test_args)
+        for task in tasks:
+            assert task.is_discarded
+
+
 def test_file_input_aws_lambda_event(input_adapter, bin_file):
     file_bytes = open(str(bin_file), 'rb').read()
 
-    headers = {"Content-Type": "multipart/form-data; boundary=123456"}
-    body = (
-        b'--123456\n'
-        + b'Content-Disposition: form-data; name="x"; filename="text.jpg"\n'
-        + b'Content-Type: application/octet-stream\n\n'
-        + file_bytes
-        + b'\n--123456\n'
-        + b'Content-Disposition: form-data; name="y"; filename="text.jpg"\n'
-        + b'Content-Type: application/octet-stream\n\n'
-        + file_bytes
-        + b'\n--123456--\n'
+    body, content_type = encode_multipart_formdata(
+        dict(x=("test.bin", file_bytes), y=("test.bin", file_bytes),)
     )
-    aws_lambda_event = {
-        "headers": headers,
-        "body": body,
-    }
+    headers = {"Content-Type": content_type}
+    aws_lambda_event = {"headers": headers, "body": body}
 
     for task in input_adapter.from_aws_lambda_event([aws_lambda_event]):
         assert b'\x810\x899' == task.data[0].read()
@@ -53,18 +51,10 @@ def test_file_input_aws_lambda_event(input_adapter, bin_file):
 def test_file_input_http_request_multipart_form(input_adapter, bin_file):
     file_bytes = open(str(bin_file), 'rb').read()
 
-    headers = (("Content-Type", "multipart/form-data; boundary=123456"),)
-    body = (
-        b'--123456\n'
-        + b'Content-Disposition: form-data; name="x"; filename="text.jpg"\n'
-        + b'Content-Type: application/octet-stream\n\n'
-        + file_bytes
-        + b'\n--123456\n'
-        + b'Content-Disposition: form-data; name="y"; filename="text.jpg"\n'
-        + b'Content-Type: application/octet-stream\n\n'
-        + file_bytes
-        + b'\n--123456--\n'
+    body, content_type = encode_multipart_formdata(
+        dict(x=("test.bin", file_bytes), y=("test.bin", file_bytes),)
     )
+    headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
     for task in input_adapter.from_http_request([request]):
         assert b'\x810\x899' == task.data[0].read()
@@ -75,27 +65,32 @@ def test_file_input_http_request_malformatted_input_missing_file(
     input_adapter, bin_file
 ):
     file_bytes = open(str(bin_file), 'rb').read()
+    requests = []
 
-    headers = (("Content-Type", "multipart/form-data; boundary=123456"),)
     body = b''
-    request = HTTPRequest(headers=headers, body=body)
-    for task in input_adapter.from_http_request([request]):
-        assert task.is_discarded
+    headers = (("Content-Type", "multipart/form-data; boundary=123456"),)
+    requests.append(HTTPRequest(headers=headers, body=body))
 
-    headers = (("Content-Type", "images/jpeg"),)
     body = file_bytes
-    request = HTTPRequest(headers=headers, body=body)
-    for task in input_adapter.from_http_request([request]):
+    headers = (("Content-Type", "images/jpeg"),)
+    requests.append(HTTPRequest(headers=headers, body=body))
+
+    body, content_type = encode_multipart_formdata(dict(x=("test.bin", file_bytes),))
+    headers = (("Content-Type", content_type),)
+    requests.append(HTTPRequest(headers=headers, body=body))
+
+    for task in input_adapter.from_http_request(requests):
         assert task.is_discarded
 
-    headers = (("Content-Type", "images/jpeg"),)
-    body = (
-        b'--123456\n'
-        + b'Content-Disposition: form-data; name="x"; filename="text.jpg"\n'
-        + b'Content-Type: application/octet-stream\n\n'
-        + file_bytes
-        + b'\n--123456--\n'
-    )
+
+def test_file_input_http_request_none_file(bin_file):
+    file_bytes = open(str(bin_file), 'rb').read()
+    allow_none_input_adapter = MultiFileInput(input_names=["x", "y"], allow_none=True)
+
+    body, content_type = encode_multipart_formdata(dict(x=("test.bin", file_bytes),))
+    headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
-    for task in input_adapter.from_http_request([request]):
-        assert task.is_discarded
+    for task in allow_none_input_adapter.from_http_request([request]):
+        assert not task.is_discarded
+        assert b'\x810\x899' == task.data[0].read()
+        assert task.data[1] is None

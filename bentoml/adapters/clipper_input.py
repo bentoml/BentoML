@@ -39,17 +39,17 @@ class ClipperInput(BaseInputAdapter):
         # to a clipper cluster, not required by the API Server itself
         return []
 
-    def handle_request(self, request):
+    def from_http_request(self, reqs):
         raise NotImplementedError(
             "ClipperInput does not support handling REST API prediction request"
         )
 
-    def handle_cli(self, args, func):
+    def from_cli(self, cli_args):
         raise NotImplementedError(
             "ClipperInput is not supported to be used with BentoML CLI"
         )
 
-    def handle_aws_lambda_event(self, event, func):
+    def from_aws_lambda_event(self, events):
         raise NotImplementedError(
             "ClipperInput is not supported in AWS Lambda Deployment"
         )

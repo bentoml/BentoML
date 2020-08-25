@@ -12,88 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 import json
-import os
-import argparse
-from io import BytesIO
-from typing import Iterable
+import traceback
+from typing import Tuple, BinaryIO, Sequence, Iterable
 
-from werkzeug.utils import secure_filename
-from werkzeug.wrappers import Request
-
-from bentoml import config
+from bentoml.types import JsonSerializable, InferenceTask, Optional
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.types import HTTPRequest, HTTPResponse
-from bentoml.exceptions import BadInput
-from bentoml.adapters.base_input import BaseInputAdapter
+from bentoml.adapters.utils import (
+    check_file_extension,
+    get_default_accept_image_formats,
+)
+from bentoml.adapters.multi_file_input import MultiFileInput
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')
 numpy = LazyLoader('numpy', globals(), 'numpy')
 
 
-def get_default_accept_image_formats():
-    """With default bentoML config, this returns:
-        ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
-    """
-    return [
-        extension.strip()
-        for extension in config("apiserver")
-        .get("default_image_input_accept_file_extensions")
-        .split(",")
-    ]
+ApiFuncArgs = Tuple[Sequence[numpy.ndarray], Sequence[Optional[JsonSerializable]]]
+AnnoImgTask = InferenceTask[Tuple[BinaryIO, BinaryIO]]  # image file bytes, json bytes
 
 
-def has_json_extension(file_name: str):
-    """
-    Check if file's extension is an acceptable JSON extension
-    (currently only .json is allowed)
-    """
-    _, extension = os.path.splitext(file_name)
-
-    if extension.lower() in [".json"]:
-        return True
-
-    return False
-
-
-def has_image_extension(file_name: str, accept_format_list: [str]):
-    """
-    Check if file's extension is within the provided accept_format_list
-    """
-    _, extension = os.path.splitext(file_name)
-    if extension.lower() in accept_format_list:
-        return True
-
-    return False
-
-
-def read_json_file(json_file):
-    """
-    Read the provided JSON file and return the parsed Python object
-    json_file can be any text or binary file that supports .read()
-    """
-    try:
-        parsed = json.load(json_file)
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        raise BadInput("BentoML#AnnotatedImageInput received invalid JSON file")
-
-    return parsed
-
-
-def verify_image_format_or_raise(file_name: str, accept_format_list: [str]):
-    """
-    Raise error if file's extension is not in the provided accept_format_list
-    """
-    _, extension = os.path.splitext(file_name)
-    if extension.lower() not in accept_format_list:
-        raise BadInput(
-            "Input file not in supported format list: {}".format(accept_format_list)
-        )
-
-
-class AnnotatedImageInput(BaseInputAdapter):
+class AnnotatedImageInput(MultiFileInput):
     """Transform incoming image data from http request, cli or lambda event into a
     numpy array, while allowing an optional JSON file for image annotations (such
     as object bounding boxes, class labels, etc.)
@@ -131,8 +71,12 @@ class AnnotatedImageInput(BaseInputAdapter):
         >>> @artifacts([TensorflowArtifact('classifier')])
         >>> class PetClassification(BentoService):
         >>>    @api(input=AnnotatedImageInput())
-        >>>    def predict(self, image: Numpy.array, annotations: JsonSerializable):
-        >>>        cropped_pets = some_pet_finder(image, annotations)
+        >>>    def predict(
+        >>>            self,
+        >>>            image_list: 'Sequence[numpy.ndarray]',
+        >>>            annotations_list: 'Sequence[JsonSerializable]',
+        >>>        ):
+        >>>        cropped_pets = some_pet_finder(image_list, annotations_list)
         >>>        results = self.artifacts.classifer.predict(cropped_pets)
         >>>        return [CLASS_NAMES[r] for r in results]
         >>>
@@ -154,30 +98,28 @@ class AnnotatedImageInput(BaseInputAdapter):
         >>>      http://localhost:8000/predict
     """
 
-    HTTP_METHODS = ["POST"]
-    BATCH_MODE_SUPPORTED = True
-
     def __init__(
         self,
-        accept_image_formats=None,
         image_input_name="image",
         annotation_input_name="annotations",
         pilmode="RGB",
-        is_batch_input=False,
+        accept_image_formats=None,
         **base_kwargs,
     ):
         assert imageio, "`imageio` dependency can be imported"
+        input_names = [image_input_name, annotation_input_name]
+        super().__init__(input_names=input_names, allow_none=True, **base_kwargs)
 
-        super(AnnotatedImageInput, self).__init__(
-            is_batch_input=is_batch_input, **base_kwargs
-        )
-
-        self.pilmode = pilmode
         self.image_input_name = image_input_name
         self.annotation_input_name = annotation_input_name
+        self.pilmode = pilmode
         self.accept_image_formats = (
             accept_image_formats or get_default_accept_image_formats()
         )
+
+    @property
+    def pip_dependencies(self):
+        return ["imageio"]
 
     @property
     def config(self):
@@ -204,261 +146,42 @@ class AnnotatedImageInput(BaseInputAdapter):
             },
         }
 
-    @property
-    def pip_dependencies(self):
-        return ["imageio"]
-
-    def _load_image_and_json_data(self, request: Request):
-        if len(request.files) == 0:
-            raise BadInput(
-                "BentoML#AnnotatedImageInput unexpected HTTP request format."
-            )
-        elif len(request.files) > 2:
-            raise BadInput(
-                "Too many input files. AnnotatedImageInput takes one image file and an "
-                "optional JSON annotation file"
-            )
-
-        json_file = None
-        image_file = None
-
-        for f in iter(request.files.values()):
-            if f and hasattr(f, "mimetype") and isinstance(f.mimetype, str):
-                file_name = secure_filename(f.filename)
-                if re.match("image/", f.mimetype) or (
-                    f.mimetype == "application/octet-stream"
-                    and has_image_extension(file_name, self.accept_image_formats)
-                ):
-                    if image_file:
-                        raise BadInput(
-                            "BentoML#AnnotatedImageInput received two images instead "
-                            "of an image file and JSON file"
-                        )
-                    image_file = f
-                elif f.mimetype == "application/json" or (
-                    f.mimetype == "application/octet-stream"
-                    and has_json_extension(file_name)
-                ):
-                    if json_file:
-                        raise BadInput(
-                            "BentoML#AnnotatedImageInput received two JSON files "
-                            "instead of an image file and JSON file"
-                        )
-                    json_file = f
-                else:
-                    raise BadInput(
-                        "BentoML#AnnotatedImageInput received unexpected file of type "
-                        f"{f.mimetype} with filename {f.filename}.\n"
-                        "AnnotatedInputAdapter expects an 'image/*' file and optional "
-                        "'application/json' file.  Alternatively, it can accept two "
-                        "'application/octet-stream' files, one with a valid image "
-                        "extension and one with a '.json' extension respectively"
-                    )
-            else:
-                raise BadInput(
-                    "BentoML#AnnotatedImageInput unexpected HTTP request format"
-                )
-
-        if not image_file:
-            raise BadInput("BentoML#AnnotatedImageInput requires an image file")
-
-        image_file_name = secure_filename(image_file.filename)
-        verify_image_format_or_raise(image_file_name, self.accept_image_formats)
-        input_stream = image_file.stream
-        input_image = imageio.imread(input_stream, pilmode=self.pilmode)
-
-        if json_file:
-            input_json = read_json_file(json_file)
-            return {
-                self.image_input_name: input_image,
-                self.annotation_input_name: input_json,
-            }
-
-        return {self.image_input_name: input_image}
-
-    def handle_batch_request(
-        self, requests: Iterable[HTTPRequest], func: callable
-    ) -> Iterable[HTTPResponse]:
-        """
-        Batch version of handle_request
-        """
-        input_datas = []
-        slices = []
-
-        for i, req in enumerate(requests):
-            if not req.data:
-                slices.append(None)
-                input_datas.append(None)
-                continue
-            request = Request.from_values(
-                input_stream=BytesIO(req.data),
-                content_length=len(req.data),
-                headers=req.headers,
-            )
-            try:
-                input_data = self._load_image_and_json_data(request)
-            except BadInput:
-                slices.append(None)
-                input_datas.append(None)
-                continue
-
-            input_datas.append(input_data)
-            slices.append(i)
-
-        results = [func(**d) if d else {} for d in input_datas]
-
-        return self.output_adapter.to_http_response(
-            result_conc=results,
-            slices=slices,
-            fallbacks=[None] * len(slices),
-            requests=requests,
-        )
-
-    def handle_request(self, request, func):
-        """Handle http request that has one image file. It will convert image into
-        a ndarray for the function to consume
-
-        Args:
-            request: incoming request object.
-            func: function that will take ndarray as its arg.
-            options: configuration for handling request object.
-        Return:
-            response object
-        """
-        input_data = self._load_image_and_json_data(request)
-        result = func(**input_data)
-        return self.output_adapter.to_response(result, request)
-
-    def handle_cli(self, args, func):
-        """Handles an CLI command call, convert CLI arguments into
-        corresponding data format that user API function is expecting, and
-        prints the API function result to console output
-
-        Processes one image file, or one image file with associated JSON
-        annotations
-
-        :param args: CLI arguments
-        :param func: user API function
-        """
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--" + self.image_input_name, required=True)
-        parser.add_argument("--" + self.annotation_input_name, required=False)
-        args, unknown_args = parser.parse_known_args(args)
-
-        image_array = []
-
-        image_path = os.path.expanduser(getattr(args, self.image_input_name))
-
-        verify_image_format_or_raise(image_path, self.accept_image_formats)
-
-        if not os.path.isabs(image_path):
-            image_path = os.path.abspath(image_path)
-
-        image_array = imageio.imread(image_path, pilmode=self.pilmode)
-
-        if getattr(args, self.annotation_input_name):
-            json_data = {}
-            json_path = os.path.expanduser(getattr(args, self.annotation_input_name))
-            if not os.path.isabs(json_path):
-                json_path = os.path.abspath(json_path)
-            with open(json_path, "r") as content_file:
-                json_data = read_json_file(content_file)
-
-            result = func(image_array, json_data)
-        else:
-            result = func(image_array)
-
-        return self.output_adapter.to_cli(result, unknown_args)
-
-    def handle_aws_lambda_event(self, event, func):
-        """Handles a Lambda event, convert event dict into corresponding
-        data format that user API function is expecting, and use API
-        function result as response
-        :param event: AWS lambda event data of the python `dict` type with
-        an event body including an "image" and optional "json" file
-        :param func: user API function
-        """
-        content_type = event['headers']['Content-Type']
-
-        if "multipart/form-data" in content_type:
-            request = Request.from_values(
-                data=event['body'], content_type=content_type, headers=event['headers']
-            )
-
-            input_data = self._load_image_and_json_data(request)
-            result = func(**input_data)
-
-            return self.output_adapter.to_aws_lambda_event(result, event)
-        else:
-            raise BadInput(
-                "AnnotatedImageInput only supports multipart/form-data input, "
-                f"received {content_type}"
-            )
-
-
-import json
-import traceback
-from typing import Iterable, Tuple, Iterator
-
-
-from bentoml.types import (
-    HTTPRequest,
-    JsonSerializable,
-    AwsLambdaEvent,
-    InferenceTask,
-    InferenceContext,
-    JSON_CHARSET,
-)
-from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_inputs
-
-
-ApiFuncArgs = Tuple[
-    Tuple[numpy.ndarray], Tuple[JsonSerializable],
-]
-AnnoImgTask = InferenceTask[Tuple[bytes, bytes]]  # image file bytes, json str bytes
-
-
-class AnnotatedImageInput(BaseInputAdapter[ApiFuncArgs]):
-
-    BATCH_MODE_SUPPORTED = True
-
-    def from_http_request(self, reqs: Iterable[HTTPRequest]) -> Tuple[AnnoImgTask]:
-        return tuple(
-            InferenceTask(
-                context=InferenceContext(http_headers=r.parsed_headers), data=r.body,
-            )
-            for r in reqs
-        )
-
-    def from_aws_lambda_event(
-        self, events: Iterable[AwsLambdaEvent]
-    ) -> Tuple[AnnoImgTask]:
-        return tuple(
-            InferenceTask(
-                context=InferenceContext(aws_lambda_event=e),
-                data=e['body'].encode(JSON_CHARSET),
-            )
-            for e in events
-        )
-
-    def from_cli(self, cli_args: Tuple[str]) -> Iterator[AnnoImgTask]:
-        for i in parse_cli_input(cli_args):
-            yield InferenceTask(context=InferenceContext(cli_args=cli_args), data=i)
-
     def extract_user_func_args(self, tasks: Iterable[AnnoImgTask]) -> ApiFuncArgs:
-        json_inputs = []
+        image_arrays = []
+        json_objs = []
         for task in tasks:
             try:
-                json_str = task.data.decode(JSON_CHARSET)
-                parsed_json = json.loads(json_str)
-                json_inputs.append(parsed_json)
+                image_file, json_file = task.data
+                assert image_file is not None
+                assert check_file_extension(image_file.name, self.accept_image_formats)
+                image_array = imageio.imread(image_file, pilmode=self.pilmode)
+                image_arrays.append(image_array)
+                if json_file is not None:
+                    json_objs.append(json.load(json_file))
+                else:
+                    json_objs.append(None)
+            except AssertionError:
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} "
+                    f"Input image file must be in supported format list: "
+                    f"{self.accept_image_formats}",
+                )
             except UnicodeDecodeError:
                 task.discard(
-                    http_status=400, err_msg=f"JSON must be encoded in {JSON_CHARSET}"
+                    http_status=400, err_msg="JSON must be in unicode",
                 )
             except json.JSONDecodeError:
-                task.discard(http_status=400, err_msg="Not a valid JSON format")
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} "
+                    f"received invalid JSON file",
+                )
             except Exception:  # pylint: disable=broad-except
                 err = traceback.format_exc()
-                task.discard(http_status=500, err_msg=f"Internal Server Error: {err}")
-        return (json_inputs,)
+                task.discard(
+                    http_status=500,
+                    err_msg=f"BentoML#{self.__class__.__name__} "
+                    f"Internal Server Error: {err}",
+                )
+        return tuple(image_arrays), tuple(json_objs)

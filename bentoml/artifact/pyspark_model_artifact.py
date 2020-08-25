@@ -39,6 +39,7 @@ class PysparkModelArtifact(BentoServiceArtifact):
             "and perform inference, so be sure to build them locally before "
             "importing your model."
         )
+        env.add_conda_dependencies(['openjdk'])
         env.add_pip_dependencies_if_missing(['pyspark'])
 
     def pack(self, model):

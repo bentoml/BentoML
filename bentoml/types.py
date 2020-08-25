@@ -66,7 +66,7 @@ class HTTPRequest(NamedTuple):
         environ = {
             'wsgi.input': io.BytesIO(self.body),
             'CONTENT_LENGTH': len(self.body),
-            'CONTENT_TYPE': self.parsed_headers.content_type,
+            'CONTENT_TYPE': self.parsed_headers.get('content-type', ''),
             'REQUEST_METHOD': 'POST',
         }
         stream, form, files = parse_form_data(environ, silent=False)

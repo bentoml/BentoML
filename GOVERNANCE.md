@@ -123,7 +123,7 @@ they will appoint a substitute BDFL for that decision.
 * Bozhao Yu - [@yubozhao](https://github.com/yubozhao), [🔗linkedin](https://www.linkedin.com/in/bozhaoyu/)
 * Chaoyu Yang (BDFL) - [@parano](https://github.com/parano), [🔗linkedin](https://www.linkedin.com/in/parano/)
 * Liang Sun - [@leonsim](https://github.com/leonsim), [🔗linkedin](https://www.linkedin.com/in/1e0ns/)
-* TBD
+* Sungjun Kim - [@withsmilo](https://github.com/withsmilo), [🔗linkedin](https://www.linkedin.com/in/smilo/) 
 * TBD
 * TBD
 

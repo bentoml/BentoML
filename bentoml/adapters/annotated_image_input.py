@@ -157,15 +157,15 @@ class AnnotatedImageInput(MultiFileInput):
                 image_array = imageio.imread(image_file, pilmode=self.pilmode)
                 image_arrays.append(image_array)
                 if json_file is not None:
-                    json_obj = json.load(json_file)
+                    json_objs.append(json.load(json_file))
                 else:
-                    json_objs.append(json_obj)
+                    json_objs.append(None)
             except AssertionError:
                 task.discard(
                     http_status=400,
                     err_msg=f"BentoML#{self.__class__.__name__} "
                     f"Input image file must be in supported format list: "
-                    f"{self.accepted_image_formats}",
+                    f"{self.accept_image_formats}",
                 )
             except UnicodeDecodeError:
                 task.discard(

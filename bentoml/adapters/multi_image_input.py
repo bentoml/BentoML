@@ -35,7 +35,7 @@ class MultiImageInput(BaseInputAdapter):
     Args:
         input_names (string[]): A tuple of acceptable input name for HTTP request.
             Default value is (image,)
-        accepted_image_formats (string[]):  A list of acceptable image formats.
+        accept_image_formats (string[]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
             'apiserver/default_image_input_accept_file_extensions', which is
             set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
@@ -81,7 +81,7 @@ class MultiImageInput(BaseInputAdapter):
     def __init__(
         self,
         input_names=("image",),
-        accepted_image_formats=None,
+        accept_image_formats=None,
         pilmode="RGB",
         is_batch_input=False,
         **base_kwargs,
@@ -91,8 +91,8 @@ class MultiImageInput(BaseInputAdapter):
         )
         self.input_names = input_names
         self.pilmode = pilmode
-        self.accepted_image_formats = (
-            accepted_image_formats or get_default_accept_image_formats()
+        self.accept_image_formats = (
+            accept_image_formats or get_default_accept_image_formats()
         )
 
     def handle_request(self, request: Request):
@@ -105,7 +105,7 @@ class MultiImageInput(BaseInputAdapter):
 
     def read_file(self, name: str, file: BytesIO):
         safe_name = secure_filename(name)
-        verify_image_format_or_raise(safe_name, self.accepted_image_formats)
+        verify_image_format_or_raise(safe_name, self.accept_image_formats)
         return imageio.imread(file, pilmode=self.pilmode)
 
     def handle_batch_request(

@@ -41,10 +41,7 @@ def test_file_input_aws_lambda_event(input_adapter, bin_file):
         dict(x=("test.bin", file_bytes), y=("test.bin", file_bytes),)
     )
     headers = {"Content-Type": content_type}
-    aws_lambda_event = {
-        "headers": headers,
-        "body": body,
-    }
+    aws_lambda_event = {"headers": headers, "body": body}
 
     for task in input_adapter.from_aws_lambda_event([aws_lambda_event]):
         assert b'\x810\x899' == task.data[0].read()
@@ -57,7 +54,6 @@ def test_file_input_http_request_multipart_form(input_adapter, bin_file):
     body, content_type = encode_multipart_formdata(
         dict(x=("test.bin", file_bytes), y=("test.bin", file_bytes),)
     )
-
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
     for task in input_adapter.from_http_request([request]):

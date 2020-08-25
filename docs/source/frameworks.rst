@@ -1,6 +1,8 @@
 Frameworks
 ==========
 
+.. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
+
 Here are the all of the supported ML frameworks for BentoML. You can find the official
 BentoML example projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`_
 repository, group by the ML training frameworks used in the project.

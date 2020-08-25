@@ -1,6 +1,7 @@
 Deployment Guides
 =================
 
+.. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
 
 BentoML provides a set of APIs and CLI commands for automating cloud deployment workflow
 which gets your BentoService API server up and running in the cloud, and allows you to

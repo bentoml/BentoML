@@ -3,6 +3,8 @@
 Core Concepts
 =============
 
+.. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
+
 The main idea of BentoML is that the Data Science team should be able to ship their 
 models in a way that is easy to test, easy to deploy, and easy to integrate with.
 And to do so, Data Scientists need tools that help them build and ship prediction

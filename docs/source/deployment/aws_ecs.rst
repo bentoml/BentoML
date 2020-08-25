@@ -119,6 +119,7 @@ container images.
 Docker login with AWS ECR
 
 .. code-block:: bash
+
     # For AWS cli V1
     
     $ aws ecr get-login --region us-west-2 --no-include-email
@@ -256,11 +257,12 @@ Create IAM role
         }
     }
 
+Adding policy `AmazonECSTaskExecutionRolePolicy` to role `ecsTaskExecutionRole`
 
 .. code-block:: bash
 
     aws iam --region us-west-2 attach-role-policy --role-name ecsTaskExecutionRole \
-      --policy-arn arn:aws:iam:aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 
 
 =================

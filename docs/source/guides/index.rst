@@ -1,6 +1,7 @@
 Advanced Guides
 ===============
 
+.. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
 
 This part of the BentoML documentation is a work in progress. If you have any questions
 related to this, please join

@@ -45,9 +45,9 @@ BentoML works great with Clipper, users can deploy BentoML packaged models to th
 How does BentoML compare to AWS SageMaker?
 ------------------------------------------
 
-When not using the build-in algorithms, model deployment on SageMaker requires users to build their API server with Flask and containerized the flask app by themselves
+When not using the built-in algorithms, model deployment on SageMaker requires users to build their API server with Flask and containerize the flask app by themselves
 
-BentoML provides a high-performance API server for its users without the need to work with lower-level web server development work
+BentoML provides a high-performance API server for users without the need for lower-level web server development work
 
 BentoML packaged model can be easily deployed to SageMaker serving: https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html
 
@@ -86,9 +86,9 @@ How does BentoML compare with Cortex?
 
 Cortex provides CLI tools for creating and managing a Kubernetes cluster on AWS, but does not provide too much help in model packaging and model serving.
 
-BentoML focuses on model serving specific problems. It leaves the cluster management part to the tools that do it really well(such as Kops, Rancher, AWS EKS, Google K8s Engine etc) and focus on managing model serving workloads on an existing K8s cluster.
+BentoML focuses on model serving specific problems. It leaves the cluster management part to the tools that do it really well (such as Kops, Rancher, AWS EKS, Google K8s Engine etc) and focuses instead on managing model serving workloads on an existing K8s cluster.
 
-We are working on an opinionated end-to-end deployment solution on Kubernetes for BentoML. It leaves the cluster management part to the tools that do it well and focus on managing model serving workloads on existing K8s cluster. We plan to provide support for horizontal scaling, blue-green-deployment, auto-scaling, logging and monitoring integration, etc.
+We are working on an opinionated end-to-end deployment solution on Kubernetes for BentoML. We plan to provide support for horizontal scaling, blue-green-deployment, auto-scaling, logging and monitoring integration, etc.
 
 
 How does BentoML compare to Seldon?

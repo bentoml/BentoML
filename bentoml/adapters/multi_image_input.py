@@ -135,4 +135,6 @@ class MultiImageInput(MultiFileInput):
                 )
 
     def extract_user_func_args(self, tasks: Iterable[MultiImgTask]) -> ApiFuncArgs:
-        return tuple(map(tuple, zip(*self._extract(tasks))))
+        return tuple(map(tuple, zip(*self._extract(tasks)))) or (tuple(),) * len(
+            self.input_names
+        )

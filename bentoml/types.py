@@ -14,7 +14,6 @@
 import io
 import functools
 from typing import (
-    NamedTuple,
     Tuple,
     Union,
     Dict,
@@ -26,6 +25,7 @@ from typing import (
     Iterable,
     Iterator,
 )
+from dataclasses import dataclass
 
 from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
@@ -45,7 +45,8 @@ class ParsedHeaders(CIMultiDict):
         self.content_encoding = ""
 
 
-class HTTPRequest(NamedTuple):
+@dataclass(frozen=True)
+class HTTPRequest:
     '''
     headers: tuple of key value pairs in strs
     data: str
@@ -70,6 +71,8 @@ class HTTPRequest(NamedTuple):
             'REQUEST_METHOD': 'POST',
         }
         stream, form, files = parse_form_data(environ, silent=False)
+        for f in files.values():
+            f.name = f.filename
         return stream, form, files
 
     @classmethod
@@ -89,11 +92,7 @@ class HTTPRequest(NamedTuple):
     @classmethod
     def from_flask_request(cls, request):
         return cls(
-            tuple(
-                (k.encode(HEADER_CHARSET), v.encode(HEADER_CHARSET))
-                for k, v in request.headers
-            ),
-            request.get_data(),
+            tuple((k, v) for k, v in request.headers.items()), request.get_data(),
         )
 
     def to_flask_request(self):
@@ -106,7 +105,8 @@ class HTTPRequest(NamedTuple):
         )
 
 
-class HTTPResponse(NamedTuple):
+@dataclass(frozen=True)
+class HTTPResponse:
     status: int = 200
     headers: tuple = tuple()
     body: str = ""  # TODO(bojiang): bytes
@@ -132,7 +132,8 @@ ApiFuncArgs = TypeVar("ApiFuncArgs")
 ApiFuncReturnValue = TypeVar("ApiFuncReturnValue")
 
 
-class InferenceContext(NamedTuple):
+@dataclass(frozen=True)
+class InferenceContext:
     task_id: Optional[str] = None
 
     # General
@@ -148,42 +149,46 @@ class InferenceContext(NamedTuple):
 
     # CLI
     cli_status: Optional[int] = 0
-    cli_args: Optional[Tuple[str]] = None
+    cli_args: Optional[Sequence[str]] = None
 
 
+@dataclass(frozen=True)
 class DefaultErrorContext(InferenceContext):
     http_status: int = 500
     cli_status: int = 1
 
 
-class InferenceTask(Generic[Input]):
-    def __init__(self, data: Input, context: InferenceContext = None):
-        self.data = data
-        self.context = context if context else InferenceContext()
-        self.is_discarded = False
-
-    def discard(self, err_msg="", **context):
-        self.is_discarded = True
-        self.context = DefaultErrorContext(err_msg=err_msg, **context)
-
-
+@dataclass(frozen=True)
 class InferenceResult(Generic[Output]):
-    def __init__(self, data: Output = None, context: InferenceContext = None):
-        self.data = data
-        self.context = context or InferenceContext()
+    data: Output = None
+    context: InferenceContext = InferenceContext()
 
     @classmethod
     def complete_discarded(
-        cls, tasks: Iterable[InferenceTask], results: Iterable['InferenceResult'],
+        cls, tasks: Iterable['InferenceTask'], results: Iterable['InferenceResult'],
     ) -> Iterator['InferenceResult']:
         iterable_results = iter(results)
         try:
             for task in tasks:
                 if task.is_discarded:
-                    yield cls(None, context=DefaultErrorContext(*task.context))
+                    yield task.fallback_result
                 else:
                     yield next(iterable_results)
         except StopIteration:
             raise StopIteration(
                 'The results does not match the number of tasks'
             ) from None
+
+
+@dataclass(frozen=False)
+class InferenceTask(Generic[Input]):
+    data: Input
+    context: InferenceContext = InferenceContext()
+    is_discarded: bool = False
+    fallback_result: Optional[InferenceResult] = None
+
+    def discard(self, err_msg="", **context):
+        self.is_discarded = True
+        self.fallback_result = InferenceResult(
+            context=DefaultErrorContext(err_msg=err_msg, **context)
+        )

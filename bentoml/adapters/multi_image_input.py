@@ -26,6 +26,8 @@ from bentoml.adapters.multi_file_input import MultiFileInput
 imageio = LazyLoader('imageio', globals(), 'imageio')
 numpy = LazyLoader('numpy', globals(), 'numpy')
 
+import imageio
+
 
 MultiImgTask = InferenceTask[Tuple[BinaryIO, ...]]  # image file bytes, json bytes
 ApiFuncArgs = Tuple[Sequence['numpy.ndarray'], ...]
@@ -109,16 +111,29 @@ class MultiImageInput(MultiFileInput):
 
     def _extract(self, tasks):
         for task in tasks:
+            if not all(f is not None for f in task.data):
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} Empty request",
+                )
+                continue
             try:
-                assert all(f is not None for f in task.data)
                 assert all(
-                    check_file_extension(f.name, self.accept_image_formats)
+                    not getattr(f, "name", None)
+                    or check_file_extension(f.name, self.accept_image_formats)
                     for f in task.data
                 )
-                image_array_tuple = (
+                image_array_tuple = tuple(
                     imageio.imread(f, pilmode=self.pilmode) for f in task.data
                 )
                 yield image_array_tuple
+            except ValueError:
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} "
+                    f"Input image decode failed, it must be in supported format list: "
+                    f"{self.accept_image_formats}",
+                )
             except AssertionError:
                 task.discard(
                     http_status=400,
@@ -135,6 +150,7 @@ class MultiImageInput(MultiFileInput):
                 )
 
     def extract_user_func_args(self, tasks: Iterable[MultiImgTask]) -> ApiFuncArgs:
-        return tuple(map(tuple, zip(*self._extract(tasks)))) or (tuple(),) * len(
-            self.input_names
-        )
+        args = tuple(map(tuple, zip(*self._extract(tasks))))
+        if not args:
+            args = (tuple(),) * len(self.input_names)
+        return args

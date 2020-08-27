@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import platform
 import re
 from io import StringIO
 import socket
@@ -117,3 +117,18 @@ class catch_exceptions(object):
                 return self.fallback
 
         return _
+
+
+def interpret_file_path_to_be_compatible_with_current_system(filepath):
+    if platform.system() == 'Windows' and '/' in filepath:
+        # If the platform is Windows, and the path joined with '/',
+        # update path to be joined with '\'
+        filepath = filepath.replace('/', '\\')
+        return filepath
+    elif platform.system() != 'Windows' and r'\\' in filepath:
+        # If the platform is not Windows, and the path joined with '\',
+        # update path to be joined with '/'
+        filepath = filepath.replace('\\', '/')
+        return filepath
+    else:
+        return filepath

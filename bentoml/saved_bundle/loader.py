@@ -22,6 +22,7 @@ from contextlib import contextmanager
 from urllib.parse import urlparse
 import shutil
 
+from bentoml.utils import interpret_file_path_to_be_compatible_with_current_system
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
 from bentoml.exceptions import BentoMLException
@@ -106,8 +107,8 @@ def load_bento_service_class(bundle_path):
     metadata = config["metadata"]
 
     # Load target module containing BentoService class from given path
-    module_file_path = os.path.join(
-        bundle_path, metadata["service_name"], metadata["module_file"]
+    module_file_path = interpret_file_path_to_be_compatible_with_current_system(
+        os.path.join(bundle_path, metadata["service_name"], metadata["module_file"])
     )
     if not os.path.isfile(module_file_path):
         # Try loading without service_name prefix, for loading from a installed PyPi

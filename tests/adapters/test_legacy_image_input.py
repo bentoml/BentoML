@@ -4,35 +4,23 @@ import mock
 import flask
 from urllib3.filepost import encode_multipart_formdata
 
-from bentoml.service import InferenceAPI
-from bentoml.adapters import LegacyImageInput, DefaultOutput
+from bentoml.adapters import LegacyImageInput
 
 
 def predict(image):
     return image.shape
 
 
-def gen_api(input_adapter, user_func):
-    return InferenceAPI(
-        None,
-        "test_api",
-        "",
-        input_adapter=input_adapter,
-        user_func=user_func,
-        output_adapter=DefaultOutput(),
-    )
-
-
-def test_image_input_cli(capsys, img_file):
-    api = gen_api(LegacyImageInput(input_names=("image",)), predict)
+def test_image_input_cli(capsys, make_api, img_file):
+    api = make_api(LegacyImageInput(input_names=("image",)), predict)
     test_args = ["--input-file-image", img_file]
     api.handle_cli(test_args)
     out, _ = capsys.readouterr()
     assert out.strip().endswith("(10, 10, 3)")
 
 
-def test_image_input_aws_lambda_event(img_file):
-    api = gen_api(LegacyImageInput(input_names=("image",)), predict)
+def test_image_input_aws_lambda_event(make_api, img_file):
+    api = make_api(LegacyImageInput(input_names=("image",)), predict)
     with open(str(img_file), "rb") as image_file:
         content = image_file.read()
         try:
@@ -50,8 +38,8 @@ def test_image_input_aws_lambda_event(img_file):
     assert aws_result["body"] == "[10, 10, 3]"
 
 
-def test_image_input_http_request_post_binary(img_file):
-    api = gen_api(LegacyImageInput(input_names=("image",)), predict)
+def test_image_input_http_request_post_binary(make_api, img_file):
+    api = make_api(LegacyImageInput(input_names=("image",)), predict)
     request = mock.MagicMock(spec=flask.Request)
     request.method = "POST"
     request.files = {}
@@ -64,8 +52,8 @@ def test_image_input_http_request_post_binary(img_file):
     assert "[10, 10, 3]" in str(response.response)
 
 
-def test_image_input_http_request_multipart_form(img_file):
-    api = gen_api(LegacyImageInput(input_names=("image",)), predict)
+def test_image_input_http_request_multipart_form(make_api, img_file):
+    api = make_api(LegacyImageInput(input_names=("image",)), predict)
 
     with open(img_file, "rb") as f:
         img_bytes = f.read()
@@ -81,8 +69,8 @@ def test_image_input_http_request_multipart_form(img_file):
     assert "[10, 10, 3]" in str(response.response)
 
 
-def test_image_input_http_request_single_image_different_name(img_file):
-    api = gen_api(LegacyImageInput(input_names=("image",)), predict)
+def test_image_input_http_request_single_image_different_name(make_api, img_file):
+    api = make_api(LegacyImageInput(input_names=("image",)), predict)
 
     with open(img_file, "rb") as f:
         img_bytes = f.read()
@@ -100,8 +88,8 @@ def test_image_input_http_request_single_image_different_name(img_file):
     assert "[10, 10, 3]" in str(response.response)
 
 
-def test_image_input_http_request_malformatted_input_missing_image_file():
-    api = gen_api(LegacyImageInput(input_names=("image",)), predict)
+def test_image_input_http_request_malformatted_input_missing_image_file(make_api,):
+    api = make_api(LegacyImageInput(input_names=("image",)), predict)
 
     request = mock.MagicMock(spec=flask.Request)
     request.method = "POST"
@@ -115,8 +103,10 @@ def test_image_input_http_request_malformatted_input_missing_image_file():
     assert response.data
 
 
-def test_image_input_http_request_malformatted_input_wrong_input_name(img_file):
-    api = gen_api(LegacyImageInput(input_names=("myimage", "myimage2")), predict)
+def test_image_input_http_request_malformatted_input_wrong_input_name(
+    make_api, img_file
+):
+    api = make_api(LegacyImageInput(input_names=("myimage", "myimage2")), predict)
     with open(img_file, "rb") as f:
         img_bytes = f.read()
 

@@ -122,4 +122,7 @@ class JsonSerializableOutput(BaseOutputAdapter[ApiFuncReturnValue]):
                     "headers": {"Access-Control-Allow-Origin": self.cors},
                 }
             else:
-                yield {"statusCode": result.context.http_status, "body": result.data}
+                yield {
+                    "statusCode": result.context.http_status,
+                    "body": result.context.err_msg or result.data,
+                }

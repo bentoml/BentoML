@@ -97,8 +97,9 @@ BentoML provides a convenient way to containerize the model API server with Dock
 
 .. code-block:: bash
 
-    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
-    saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    # Find the local path of the latest version IrisClassifier saved bundle
+    saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
+
 
     # Replace {docker_username} with your Docker Hub username
     docker build -t {docker_username}/iris-classifier $saved_path

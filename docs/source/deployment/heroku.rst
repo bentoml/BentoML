@@ -130,8 +130,9 @@ Find the IrisClassifier SavedBundle directory:
 
 .. code-block:: bash
 
-    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
-    cd $(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    cd $(bentoml get IrisClassifier:latest --print-location --quiet)
+
+
 
 
 Build and push API server container with the SavedBundle, and push to the Heroku app

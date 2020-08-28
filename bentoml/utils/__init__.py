@@ -125,7 +125,7 @@ def interpret_file_path_to_be_compatible_with_current_system(filepath):
         # update path to be joined with '\'
         filepath = filepath.replace('/', '\\')
         return filepath
-    elif platform.system() != 'Windows' and r'\\' in filepath:
+    elif platform.system() != 'Windows' and '\\' in filepath:
         # If the platform is not Windows, and the path joined with '\',
         # update path to be joined with '/'
         filepath = filepath.replace('\\', '/')

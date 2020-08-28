@@ -145,10 +145,9 @@ def test_anno_image_input_http_request_multipart_form(
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
 
-    tasks = input_adapter.from_http_request([request])
-    for task in tasks:
-        assert task.data[0].read() == read_bin(img_file)
-        assert task.data[1].read() == read_bin(json_file)
+    task = input_adapter.from_http_request(request)
+    assert task.data[0].read() == read_bin(img_file)
+    assert task.data[1].read() == read_bin(json_file)
 
 
 def test_anno_image_input_http_request_multipart_form_image_only(
@@ -160,10 +159,9 @@ def test_anno_image_input_http_request_multipart_form_image_only(
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
 
-    tasks = input_adapter.from_http_request([request])
-    for task in tasks:
-        assert task.data[0].read() == read_bin(img_file)
-        assert task.data[1] is None
+    task = input_adapter.from_http_request(request)
+    assert task.data[0].read() == read_bin(img_file)
+    assert task.data[1] is None
 
 
 def test_anno_image_input_http_request_too_many_files(
@@ -179,10 +177,9 @@ def test_anno_image_input_http_request_too_many_files(
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
 
-    tasks = input_adapter.from_http_request([request])
-    for task in tasks:
-        assert task.data[0].read() == read_bin(img_file)
-        assert task.data[1].read() == read_bin(json_file)
+    task = input_adapter.from_http_request(request)
+    assert task.data[0].read() == read_bin(img_file)
+    assert task.data[1].read() == read_bin(json_file)
 
 
 def test_anno_image_input_http_request_two_image_files(input_adapter, img_file):
@@ -195,10 +192,9 @@ def test_anno_image_input_http_request_two_image_files(input_adapter, img_file):
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
 
-    tasks = input_adapter.from_http_request([request])
-    for task in tasks:
-        assert task.data[0].read() == read_bin(img_file)
-        assert task.data[1] is None
+    task = input_adapter.from_http_request(request)
+    assert task.data[0].read() == read_bin(img_file)
+    assert task.data[1] is None
 
 
 def test_anno_image_input_check_config(input_adapter):
@@ -228,6 +224,5 @@ def test_anno_image_input_http_request_malformatted_input_wrong_input_name(
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
 
-    tasks = input_adapter.from_http_request([request])
-    for task in tasks:
-        assert task.is_discarded
+    task = input_adapter.from_http_request(request)
+    assert task.is_discarded

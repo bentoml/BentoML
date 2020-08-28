@@ -17,7 +17,7 @@ import argparse
 import itertools
 import functools
 import contextlib
-from typing import Iterable, Generic, Tuple, Iterator, Sequence, NamedTuple, BinaryIO
+from typing import Iterable, Tuple, Iterator, Sequence, NamedTuple, BinaryIO
 
 from bentoml.types import (
     ApiFuncArgs,
@@ -60,7 +60,7 @@ class BaseInputAdapter:
         """
         return []
 
-    def from_http_request(self, reqs: Iterable[HTTPRequest]) -> Iterable[InferenceTask]:
+    def from_http_request(self, req: HTTPRequest) -> InferenceTask:
         """
         Handles HTTP requests, convert it into InferenceTask
         """

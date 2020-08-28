@@ -228,9 +228,9 @@ class InferenceAPI(object):
         return tuple(full_results)
 
     def handle_request(self, request: flask.Request):
-        reqs = [HTTPRequest.from_flask_request(request)]
-        inf_tasks = self.input_adapter.from_http_request(reqs)
-        results = self.infer(inf_tasks)
+        req = HTTPRequest.from_flask_request(request)
+        inf_task = self.input_adapter.from_http_request(req)
+        results = self.infer((inf_task,))
         responses = self.output_adapter.to_http_response(results)
         response = next(iter(responses))
         return response.to_flask_response()
@@ -244,7 +244,7 @@ class InferenceAPI(object):
             service_name=self.__class__.__name__,
             span_name=f"call `{self.input_adapter.__class__.__name__}`",
         ):
-            inf_tasks = self.input_adapter.from_http_request(reqs)
+            inf_tasks = map(self.input_adapter.from_http_request, reqs)
             results = self.infer(inf_tasks)
             responses = self.output_adapter.to_http_response(results)
 

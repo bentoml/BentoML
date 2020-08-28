@@ -62,9 +62,9 @@ def test_file_input_http_request_multipart_form(input_adapter, bin_file):
     )
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
-    for task in input_adapter.from_http_request([request]):
-        assert b'\x810\x899' == task.data[0].read()
-        assert b'\x810\x899' == task.data[1].read()
+    task = input_adapter.from_http_request(request)
+    assert b'\x810\x899' == task.data[0].read()
+    assert b'\x810\x899' == task.data[1].read()
 
 
 def test_file_input_http_request_malformatted_input_missing_file(
@@ -85,7 +85,7 @@ def test_file_input_http_request_malformatted_input_missing_file(
     headers = (("Content-Type", content_type),)
     requests.append(HTTPRequest(headers=headers, body=body))
 
-    for task in input_adapter.from_http_request(requests):
+    for task in map(input_adapter.from_http_request, requests):
         assert task.is_discarded
 
 
@@ -96,10 +96,10 @@ def test_file_input_http_request_none_file(bin_file):
     body, content_type = encode_multipart_formdata(dict(x=("test.bin", file_bytes),))
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
-    for task in allow_none_input_adapter.from_http_request([request]):
-        assert not task.is_discarded
-        assert b'\x810\x899' == task.data[0].read()
-        assert task.data[1] is None
+    task = allow_none_input_adapter.from_http_request(request)
+    assert not task.is_discarded
+    assert b'\x810\x899' == task.data[0].read()
+    assert task.data[1] is None
 
 
 def test_file_input_extract(input_adapter, bin_file):

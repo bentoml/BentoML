@@ -67,30 +67,27 @@ class JsonInput(BaseInputAdapter):
 
     BATCH_MODE_SUPPORTED = True
 
-    def from_http_request(
-        self, reqs: Iterable[HTTPRequest]
-    ) -> Iterator[InferenceTask[bytes]]:
-        for r in reqs:
-            if r.parsed_headers.content_encoding in {"gzip", "x-gzip"}:
-                # https://tools.ietf.org/html/rfc7230#section-4.2.3
-                try:
-                    yield InferenceTask(
-                        context=InferenceContext(http_headers=r.parsed_headers),
-                        data=gzip.decompress(r.body),
-                    )
-                except OSError:
-                    task = InferenceTask(data=None)
-                    task.discard(http_status=400, err_msg="Gzip decomression error")
-                    yield task
-            elif r.parsed_headers.content_encoding in ["", "identity"]:
-                yield InferenceTask(
-                    context=InferenceContext(http_headers=r.parsed_headers),
-                    data=r.body,
+    def from_http_request(self, req: HTTPRequest) -> InferenceTask[bytes]:
+        if req.parsed_headers.content_encoding in {"gzip", "x-gzip"}:
+            # https://tools.ietf.org/html/rfc7230#section-4.2.3
+            try:
+                return InferenceTask(
+                    context=InferenceContext(http_headers=req.parsed_headers),
+                    data=gzip.decompress(req.body),
                 )
-            else:
+            except OSError:
                 task = InferenceTask(data=None)
-                task.discard(http_status=415, err_msg="Unsupported Media Type")
-                yield task
+                task.discard(http_status=400, err_msg="Gzip decomression error")
+                return task
+        elif req.parsed_headers.content_encoding in ["", "identity"]:
+            return InferenceTask(
+                context=InferenceContext(http_headers=req.parsed_headers),
+                data=req.body,
+            )
+        else:
+            task = InferenceTask(data=None)
+            task.discard(http_status=415, err_msg="Unsupported Media Type")
+            return task
 
     def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[bytes]:
         return InferenceTask(

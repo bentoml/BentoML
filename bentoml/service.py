@@ -23,7 +23,7 @@ import re
 import sys
 import uuid
 from datetime import datetime
-from typing import Tuple, List, Iterable, Iterator
+from typing import List, Iterable, Iterator, Sequence
 
 import flask
 from bentoml.utils import cached_property
@@ -168,7 +168,7 @@ class InferenceAPI(object):
                 service_name=self.__class__.__name__,
                 span_name="user defined inference api callback function",
             ):
-                if append_contexts:
+                if append_contexts and "contexts" in kwargs:
                     kwargs.pop('contexts')
                 return self._user_func(*args, **kwargs)
 
@@ -186,12 +186,12 @@ class InferenceAPI(object):
             ] = self.input_adapter._http_input_example
         return schema
 
-    def infer(self, inf_tasks: Iterable[InferenceTask]) -> Tuple[InferenceResult]:
+    def infer(self, inf_tasks: Iterable[InferenceTask]) -> Sequence[InferenceResult]:
         # task validation
         inf_tasks = tuple(inf_tasks)
 
-        def valid_tasks(inf_tasks: Iterable[InferenceTask]) -> Iterator[InferenceTask]:
-            for task in inf_tasks:
+        def valid_tasks(_inf_tasks: Iterable[InferenceTask]) -> Iterator[InferenceTask]:
+            for task in _inf_tasks:
                 if task.is_discarded:
                     continue
                 try:
@@ -205,7 +205,13 @@ class InferenceAPI(object):
         contexts = tuple(t.context for t in inf_tasks if not t.is_discarded)
 
         # call user function
-        user_return = self.user_func(*user_args, contexts=contexts)
+        if not self.input_adapter.BATCH_MODE_SUPPORTED:  # For legacy input adapters
+            user_return = tuple(
+                self.user_func(*legacy_user_args)
+                for legacy_user_args in zip(*user_args)
+            )
+        else:
+            user_return = self.user_func(*user_args, contexts=contexts)
 
         if (
             isinstance(user_return, (list, tuple))
@@ -244,7 +250,7 @@ class InferenceAPI(object):
 
         return DataLoader.merge_responses(responses)
 
-    def handle_cli(self, cli_args: Tuple[str]) -> int:
+    def handle_cli(self, cli_args: Sequence[str]) -> int:
         parser = argparse.ArgumentParser()
         parser.add_argument("--max-batch-size", default=sys.maxsize, type=int)
         parsed_args, _ = parser.parse_known_args(cli_args)

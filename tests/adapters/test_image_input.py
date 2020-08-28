@@ -86,11 +86,12 @@ def test_image_input_extract(input_adapter, tasks, invalid_tasks):
     obj_list = api_args[0]
     assert len(obj_list) == len(tasks)
 
-    for out, task in zip(obj_list, tasks):
-        assert out.shape == (10, 10)
+    for out, task in zip(obj_list, tasks + invalid_tasks):
+        if not task.is_discarded:
+            assert out.shape == (10, 10)
 
     for task in invalid_tasks:
         assert task.is_discarded
-        assert task.context.err_msg
-        assert task.context.http_status != 200
-        assert task.context.cli_status != 0
+        assert task.fallback_result.context.http_status == 400
+        assert task.fallback_result.context.cli_status != 0
+        assert task.fallback_result.context.err_msg

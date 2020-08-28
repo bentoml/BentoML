@@ -11,11 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import platform
 import re
 from io import StringIO
 import socket
 from contextlib import contextmanager
 from functools import wraps
+from pathlib import PureWindowsPath, Path
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
@@ -116,3 +118,21 @@ class catch_exceptions(object):
                 return self.fallback
 
         return _
+
+
+def interpret_file_path_base_on_current_platform(filepath):
+    if platform.system() == 'Windows':
+        filepath = PureWindowsPath(filepath)
+        return str(filepath)
+    else:
+        temp_path = Path(filepath)
+        # If the path doesn't exist, will assume the path is in windows format and
+        # instantiate as Windows path and
+        if temp_path.exists():
+            return str(temp_path)
+        else:
+            # Instantiate as PureWindowsPath, can't instantiate
+            # WindowsPath on Unix.
+            # PurePath provides purely computational operations without I/O.
+            temp_path = PureWindowsPath(filepath)
+            return temp_path.as_posix()

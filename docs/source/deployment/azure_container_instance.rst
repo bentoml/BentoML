@@ -39,6 +39,7 @@ BentoML saved bundle for deployment:
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
+    pip install -r ./bentoml/guides/quick-start/requirements.txt
     python ./bentoml/guides/quick-start/main.py
 
 Verify the saved bundle created:

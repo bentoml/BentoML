@@ -128,6 +128,23 @@ jobs:
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
+  window_bento_service_in_linux_container_tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Install test dependencies
+        run: ./ci/install-test-deps.sh
+      - name: Run tests
+        run: ./ci/integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
   tensorflow_v2_integration_tests:
     runs-on: ubuntu-latest
     steps:
@@ -159,21 +176,5 @@ jobs:
         run: ./ci/install-test-deps.sh
       - name: Run tests
         run: ./ci/h2o_integration_tests.sh
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
-  window_bento_service_in_linux_container_tests:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0  # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.6
-      - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
-      - name: Run tests
-        run: ./ci/integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12

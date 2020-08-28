@@ -18,6 +18,7 @@ import socket
 from contextlib import contextmanager
 from functools import wraps
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
+from pathlib import Path, PureWindowsPath
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -117,18 +118,3 @@ class catch_exceptions(object):
                 return self.fallback
 
         return _
-
-
-def interpret_file_path_to_be_compatible_with_current_system(filepath):
-    if platform.system() == 'Windows' and '/' in filepath:
-        # If the platform is Windows, and the path joined with '/',
-        # update path to be joined with '\'
-        filepath = filepath.replace('/', '\\')
-        return filepath
-    elif platform.system() != 'Windows' and '\\' in filepath:
-        # If the platform is not Windows, and the path joined with '\',
-        # update path to be joined with '/'
-        filepath = filepath.replace('\\', '/')
-        return filepath
-    else:
-        return filepath

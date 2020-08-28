@@ -19,6 +19,7 @@ import tarfile
 import logging
 import tempfile
 from contextlib import contextmanager
+from pathlib import Path
 from urllib.parse import urlparse
 import shutil
 
@@ -107,12 +108,14 @@ def load_bento_service_class(bundle_path):
     metadata = config["metadata"]
 
     # Load target module containing BentoService class from given path
-    module_file_path = interpret_file_path_to_be_compatible_with_current_system(
+    # Using Path to ensure file_path is properly handled. Path will automatically
+    # convert to work with the current OS.
+    module_file_path = Path(
         os.path.join(bundle_path, metadata["service_name"], metadata["module_file"])
     )
     if not os.path.isfile(module_file_path):
         # Try loading without service_name prefix, for loading from a installed PyPi
-        module_file_path = os.path.join(bundle_path, metadata["module_file"])
+        module_file_path = Path(os.path.join(bundle_path, metadata["module_file"]))
 
     if not os.path.isfile(module_file_path):
         raise BentoMLException(
@@ -122,8 +125,8 @@ def load_bento_service_class(bundle_path):
         )
 
     # Prepend bundle_path to sys.path for loading extra python dependencies
-    sys.path.insert(0, bundle_path)
-    sys.path.insert(0, os.path.join(bundle_path, metadata["service_name"]))
+    sys.path.insert(0, Path(bundle_path)._str)
+    sys.path.insert(0, Path(os.path.join(bundle_path, metadata["service_name"]))._str)
 
     module_name = metadata["module_name"]
     if module_name in sys.modules:

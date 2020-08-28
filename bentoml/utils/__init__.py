@@ -11,14 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import platform
 import re
 from io import StringIO
 import socket
 from contextlib import contextmanager
 from functools import wraps
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
-from pathlib import Path, PureWindowsPath
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")

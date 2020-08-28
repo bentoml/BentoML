@@ -23,7 +23,6 @@ from pathlib import Path
 from urllib.parse import urlparse
 import shutil
 
-from bentoml.utils import interpret_file_path_to_be_compatible_with_current_system
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
 from bentoml.exceptions import BentoMLException

@@ -395,11 +395,7 @@ class YataiService(YataiServicer):
                 )
 
             if bento_pb:
-                if bento_pb.uri.type == BentoUri.S3:
-                    bento_pb.uri.cloud_presigned_url = self.repo.get(
-                        bento_pb.name, bento_pb.version
-                    )
-                if bento_pb.uri.type == BentoUri.GCS:
+                if bento_pb.uri.type == BentoUri.S3 or bento_pb.uri.type == BentoUri.GCS:
                     bento_pb.uri.cloud_presigned_url = self.repo.get(
                         bento_pb.name, bento_pb.version
                     )

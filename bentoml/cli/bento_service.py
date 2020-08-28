@@ -122,7 +122,7 @@ def resolve_bundle_path(bento, pip_installed_bundle_path):
         return pip_installed_bundle_path
 
     if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
-        # saved_bundle already support loading local and s3 path
+        # saved_bundle already support loading local, s3 path and gcs path
         return bento
 
     elif ":" in bento:

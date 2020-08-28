@@ -31,7 +31,7 @@ ApiFuncArgs = Tuple[
 ]
 
 
-class FileInput(BaseInputAdapter[ApiFuncArgs]):
+class FileInput(BaseInputAdapter):
     """Transform incoming file data from http request, cli or lambda event into file
     stream object.
 
@@ -128,15 +128,10 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
 
         return tasks
 
-    def from_aws_lambda_event(
-        self, events: Iterable[AwsLambdaEvent]
-    ) -> Tuple[InferenceTask[BinaryIO]]:
-        return tuple(
-            InferenceTask(
-                context=InferenceContext(aws_lambda_event=e),
-                data=io.BytesIO(base64.decodebytes(e['body'])),
-            )
-            for e in events
+    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[BinaryIO]:
+        return InferenceTask(
+            context=InferenceContext(aws_lambda_event=event),
+            data=io.BytesIO(base64.decodebytes(event.get('body', ""))),
         )
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[BinaryIO]]:

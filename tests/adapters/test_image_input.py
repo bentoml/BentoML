@@ -56,8 +56,8 @@ def test_file_input_aws_lambda_event(input_adapter, img_files, img_bytes_list):
         "headers": {"Content-Type": "images/png"},
     }
 
-    for task in input_adapter.from_aws_lambda_event([aws_lambda_event]):
-        assert task.data.read() == img_bytes_list[0]
+    task = input_adapter.from_aws_lambda_event(aws_lambda_event)
+    assert task.data.read() == img_bytes_list[0]
 
 
 def test_file_input_http_request_post_binary(input_adapter, img_bytes_list):

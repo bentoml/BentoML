@@ -49,9 +49,9 @@ def test_file_input_aws_lambda_event(input_adapter, bin_file):
     headers = {"Content-Type": content_type}
     aws_lambda_event = {"headers": headers, "body": body}
 
-    for task in input_adapter.from_aws_lambda_event([aws_lambda_event]):
-        assert b'\x810\x899' == task.data[0].read()
-        assert b'\x810\x899' == task.data[1].read()
+    task = input_adapter.from_aws_lambda_event(aws_lambda_event)
+    assert b'\x810\x899' == task.data[0].read()
+    assert b'\x810\x899' == task.data[1].read()
 
 
 def test_file_input_http_request_multipart_form(input_adapter, bin_file):

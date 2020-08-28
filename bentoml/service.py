@@ -268,8 +268,8 @@ class InferenceAPI(object):
         return exit_code
 
     def handle_aws_lambda_event(self, event):
-        inf_tasks = self.input_adapter.from_aws_lambda_event((event,))
-        results = self.infer(inf_tasks)
+        inf_task = self.input_adapter.from_aws_lambda_event(event)
+        results = self.infer((inf_task,))
         return next(iter(self.output_adapter.to_aws_lambda_event(results)))
 
 

@@ -111,11 +111,10 @@ def test_anno_image_input_aws_lambda_event(input_adapter, img_file, json_file):
     )
     headers = {"Content-Type": content_type}
     aws_lambda_event = {"headers": headers, "body": body}
-    tasks = input_adapter.from_aws_lambda_event([aws_lambda_event])
+    task = input_adapter.from_aws_lambda_event(aws_lambda_event)
 
-    for task in tasks:
-        assert task.data[0].read() == read_bin(img_file)
-        assert task.data[1].read() == read_bin(json_file)
+    assert task.data[0].read() == read_bin(img_file)
+    assert task.data[1].read() == read_bin(json_file)
 
 
 def test_anno_image_input_aws_lambda_event_bad_content_type(
@@ -129,10 +128,9 @@ def test_anno_image_input_aws_lambda_event_bad_content_type(
     )
     headers = {"Content-Type": 'image/jpeg'}
     aws_lambda_event = {"body": body, "headers": headers}
-    tasks = input_adapter.from_aws_lambda_event([aws_lambda_event])
+    task = input_adapter.from_aws_lambda_event(aws_lambda_event)
 
-    for task in tasks:
-        assert task.is_discarded
+    assert task.is_discarded
 
 
 def test_anno_image_input_http_request_multipart_form(

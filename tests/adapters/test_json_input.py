@@ -75,7 +75,7 @@ def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
         {"headers": {"Content-Type": "application/json"}, "body": r.decode(),}
         for r in raw_jsons
     ]
-    tasks = input_adapter.from_aws_lambda_event(events)
+    tasks = map(input_adapter.from_aws_lambda_event, events)
     for t, r in zip(tasks, raw_jsons):
         assert t.data == r
 
@@ -83,7 +83,7 @@ def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
         {"headers": {"Content-Type": "this_will_also_work"}, "body": r.decode(),}
         for r in raw_jsons
     ]
-    tasks = input_adapter.from_aws_lambda_event(events)
+    tasks = map(input_adapter.from_aws_lambda_event, events)
     for t, r in zip(tasks, raw_jsons):
         assert t.data == r
 
@@ -92,7 +92,7 @@ def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
         {"headers": {"Content-Type": "application/json"}, "body": r.decode(),}
         for r in raw_jsons
     ]
-    tasks = input_adapter.from_aws_lambda_event(events)
+    tasks = map(input_adapter.from_aws_lambda_event, events)
     for t, r in zip(tasks, raw_jsons):
         assert t.data == r
 

@@ -33,7 +33,7 @@ ApiFuncArgs = Tuple[
 ]
 
 
-class JsonInput(BaseInputAdapter[ApiFuncArgs]):
+class JsonInput(BaseInputAdapter):
     """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
     json serializable object in python) and pass down to user defined API function
 
@@ -92,15 +92,10 @@ class JsonInput(BaseInputAdapter[ApiFuncArgs]):
                 task.discard(http_status=415, err_msg="Unsupported Media Type")
                 yield task
 
-    def from_aws_lambda_event(
-        self, events: Iterable[AwsLambdaEvent]
-    ) -> Tuple[InferenceTask[bytes]]:
-        return tuple(
-            InferenceTask(
-                context=InferenceContext(aws_lambda_event=e),
-                data=e['body'].encode(JSON_CHARSET),
-            )
-            for e in events
+    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[bytes]:
+        return InferenceTask(
+            context=InferenceContext(aws_lambda_event=event),
+            data=event.get('body', "").encode(JSON_CHARSET),
         )
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:

@@ -56,34 +56,6 @@ class LegacyImageInput(MultiImageInput):
 
     Raises:
         ImportError: imageio package is required to use LegacyImageInput
-
-    Example usage:
-
-    >>> from bentoml import BentoService
-    >>> import bentoml
-    >>>
-    >>> class MyService(BentoService):
-    >>>     @bentoml.api(input=LegacyImageInput(input_names=('imageX', 'imageY')))
-    >>>     def predict(self, imageX, imageY):
-    >>>         pass
-    >>>
-
-    The endpoint could then be used with an HTML form that sends multipart data, like
-    the example below
-
-
-    >>> <form action="http://localhost:8000" method="POST"
-    >>>       enctype="multipart/form-data">
-    >>>     <input name="imageX" type="file">
-    >>>     <input name="imageY" type="file">
-    >>>     <input type="submit">
-    >>> </form>
-
-    Or the following cURL command
-
-    >>> curl -F imageX=@image_file_x.png
-    >>>      -F imageY=@image_file_y.jpg
-    >>>      http://localhost:8000
     """
 
     BATCH_MODE_SUPPORTED = False
@@ -147,23 +119,20 @@ class LegacyImageInput(MultiImageInput):
 
         return tasks
 
-    def from_aws_lambda_event(self, events):
-        tasks = []
-        for event in events:
-            if event["headers"].get("Content-Type", "").startswith("images/"):
-                img_bytes = base64.b64decode(event["body"])
-                img_io = io.BytesIO(img_bytes)
-                _, ext = event["headers"]["Content-Type"].split('/')
-                img_io.name = f"img.{ext}"
-                task = InferenceTask(data=(img_io,))
-            else:
-                task = InferenceTask(data=None)
-                task.discard(
-                    http_status=400,
-                    err_msg="BentoML currently doesn't support Content-Type: "
-                    "{content_type} for AWS Lambda".format(
-                        content_type=event["headers"]["Content-Type"]
-                    ),
-                )
-            tasks.append(task)
-        return tuple(tasks)
+    def from_aws_lambda_event(self, event):
+        if event["headers"].get("Content-Type", "").startswith("images/"):
+            img_bytes = base64.b64decode(event["body"])
+            img_io = io.BytesIO(img_bytes)
+            _, ext = event["headers"]["Content-Type"].split('/')
+            img_io.name = f"img.{ext}"
+            task = InferenceTask(data=(img_io,))
+        else:
+            task = InferenceTask(data=None)
+            task.discard(
+                http_status=400,
+                err_msg="BentoML currently doesn't support Content-Type: "
+                "{content_type} for AWS Lambda".format(
+                    content_type=event["headers"]["Content-Type"]
+                ),
+            )
+        return task

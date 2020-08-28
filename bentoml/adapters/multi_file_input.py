@@ -29,7 +29,7 @@ ApiFuncArgs = Tuple[Sequence[BinaryIO], ...]
 MultiFileTask = InferenceTask[Tuple[BinaryIO, ...]]
 
 
-class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
+class MultiFileInput(BaseInputAdapter):
     """ Low level input adapters that transform incoming files data from http request,
     CLI or AWS lambda event into binary stream objects, then pass down to user defined 
     API functions.
@@ -132,17 +132,14 @@ class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
 
         return tasks
 
-    def from_aws_lambda_event(
-        self, events: Iterable[AwsLambdaEvent]
-    ) -> Sequence[MultiFileTask]:
-        requests = tuple(
+    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> MultiFileTask:
+        requests = (
             HTTPRequest(
-                headers=tuple((k, v) for k, v in e.get('headers', {}).items()),
-                body=e['body'],
-            )
-            for e in events
+                headers=tuple((k, v) for k, v in event.get('headers', {}).items()),
+                body=event['body'],
+            ),
         )
-        return self.from_http_request(requests)
+        return self.from_http_request(requests)[0]
 
     def from_cli(self, cli_args: Sequence[str]) -> Iterator[MultiFileTask]:
         for inputs in parse_cli_inputs(cli_args, self.input_names):
@@ -152,7 +149,10 @@ class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
             )
 
     def extract_user_func_args(self, tasks: Sequence[MultiFileTask]) -> ApiFuncArgs:
-        return tuple(map(tuple, zip(*map(lambda t: t.data, tasks))))
+        args = tuple(map(tuple, zip(*map(lambda t: t.data, tasks))))
+        if not args:
+            args = (tuple(),) * len(self.input_names)
+        return args
 
 
 def _pipe(input_: BinaryIO) -> BinaryIO:

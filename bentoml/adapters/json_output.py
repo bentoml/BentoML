@@ -87,7 +87,11 @@ class JsonSerializableOutput(BaseOutputAdapter[ApiFuncReturnValue]):
         self, results: Iterable[InferenceResult],
     ) -> Iterator[HTTPResponse]:
         return (
-            HTTPResponse(r.context.http_status, r.context.http_headers, r.data)
+            HTTPResponse(
+                r.context.http_status,
+                r.context.http_headers,
+                r.context.err_msg or r.data,
+            )
             for r in results
         )
 
@@ -114,8 +118,11 @@ class JsonSerializableOutput(BaseOutputAdapter[ApiFuncReturnValue]):
             if self.cors:
                 yield {
                     "statusCode": result.context.http_status,
-                    "body": result.data,
+                    "body": result.context.err_msg or result.data,
                     "headers": {"Access-Control-Allow-Origin": self.cors},
                 }
-
-            yield {"statusCode": result.context.http_status, "body": result.data}
+            else:
+                yield {
+                    "statusCode": result.context.http_status,
+                    "body": result.context.err_msg or result.data,
+                }

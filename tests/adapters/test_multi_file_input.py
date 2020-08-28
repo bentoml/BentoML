@@ -1,14 +1,20 @@
 # pylint: disable=redefined-outer-name
+import io
 from urllib3.filepost import encode_multipart_formdata
 import pytest
 
-from bentoml.types import HTTPRequest
+from bentoml.types import HTTPRequest, InferenceTask
 from bentoml.adapters import MultiFileInput
 
 
 @pytest.fixture()
 def input_adapter():
     return MultiFileInput(input_names=['x', 'y'])
+
+
+def read_bin(path):
+    with open(path, 'rb') as f:
+        return f.read()
 
 
 def test_file_input_cli(input_adapter, bin_file):
@@ -94,3 +100,18 @@ def test_file_input_http_request_none_file(bin_file):
         assert not task.is_discarded
         assert b'\x810\x899' == task.data[0].read()
         assert task.data[1] is None
+
+
+def test_file_input_extract(input_adapter, bin_file):
+    bin_bytes = read_bin(bin_file)
+    bin_ios = [tuple(io.BytesIO(bin_bytes) for _ in range(2)) for _ in range(5)]
+
+    tasks = [InferenceTask(data=bin_io_pair) for bin_io_pair in bin_ios]
+    args = input_adapter.extract_user_func_args(tasks)
+
+    assert args[0]
+    assert args[1]
+
+    for file1, file2 in zip(*args):
+        assert b'\x810\x899' == file1.read()
+        assert b'\x810\x899' == file2.read()

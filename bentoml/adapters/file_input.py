@@ -96,7 +96,7 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
     ) -> List[InferenceTask[BinaryIO]]:
         tasks = [None] * len(reqs)
         for i, req in enumerate(reqs):
-            if req.parse_headers.content_type == 'multipart/form-data':
+            if req.parsed_headers.content_type == 'multipart/form-data':
                 _, _, files = HTTPRequest.parse_form_data(req)
                 if len(files) != 1:
                     task = InferenceTask(data=None)
@@ -108,9 +108,6 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
                     )
                 else:
                     input_file = next(iter(files.values()))
-                    input_file.name = (
-                        input_file.filename
-                    )  # The original name is input name
                     task = InferenceTask(
                         context=InferenceContext(http_headers=req.parsed_headers),
                         data=input_file,

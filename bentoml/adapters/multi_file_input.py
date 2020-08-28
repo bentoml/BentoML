@@ -151,8 +151,8 @@ class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
                 data=tuple(_pipe(i) for i in inputs),
             )
 
-    def extract_user_func_args(self, tasks: Iterable[MultiFileTask]) -> ApiFuncArgs:
-        return tuple(map(tuple(zip(*tasks))))
+    def extract_user_func_args(self, tasks: Sequence[MultiFileTask]) -> ApiFuncArgs:
+        return tuple(map(tuple, zip(*map(lambda t: t.data, tasks))))
 
 
 def _pipe(input_: BinaryIO) -> BinaryIO:

@@ -56,9 +56,7 @@ def test_anno_image_input_extract_args_custom_extension(
         assert json_obj['name'] == "kaith"
 
 
-def test_anno_image_input_extract_args_missing_image(
-    input_adapter, img_file, json_file
-):
+def test_anno_image_input_extract_args_missing_image(input_adapter, json_file):
     json_io = io.BytesIO(read_bin(json_file))
 
     task = InferenceTask(data=(None, json_io))
@@ -123,7 +121,7 @@ def test_anno_image_input_aws_lambda_event(input_adapter, img_file, json_file):
 def test_anno_image_input_aws_lambda_event_bad_content_type(
     input_adapter, img_file, json_file
 ):
-    body, content_type = encode_multipart_formdata(
+    body, _ = encode_multipart_formdata(
         dict(
             image=("test.jpg", read_bin(img_file)),
             annotations=("test.json", read_bin(json_file)),

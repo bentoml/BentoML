@@ -28,6 +28,7 @@ This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
+    pip install -r ./bentoml/guides/quick-start/requirements.txt
     python ./bentoml/guides/quick-start/main.py
 
 

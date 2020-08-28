@@ -144,12 +144,12 @@ which provides advanced model management features including a dashboard web UI:
     :code:`bentoml list -o wide`, :code:`bentoml get IrisClassifier -o wide` and
     :code:`bentoml get IrisClassifier:latest` command.
 
-    A quick way of getting the :code:`saved_path` from the command line is piping the
-    output of :code:`bentoml get` to `jq command <https://stedolan.github.io/jq/>`_:
+    A quick way of getting the :code:`saved_path` from the command line is via the
+    `--print-location` option:
 
     .. code-block:: bash
 
-        saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+        saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
 
 
 
@@ -165,9 +165,8 @@ provide the file path to the saved bundle:
 
 .. code-block:: bash
 
-    # Assuming JQ(https://stedolan.github.io/jq/) was installed, you can also manually
-    # copy the uri field in `bentoml get` command's JSON output
-    saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    # Find the local path of the latest version IrisClassifier saved bundle
+    saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
 
     bentoml serve $saved_path
 
@@ -230,11 +229,11 @@ BentoML provides a convenient way to containerize the model API server with Dock
 
 .. code-block:: bash
 
-  saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+  saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
 
   docker build -t {docker_username}/iris-classifier $saved_path
 
-  docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True {docker_username}/iris-classifier
+  docker run -p 5000:5000 {docker_username}/iris-classifier --enable-microbatch --workers=1
 
 
 This made it possible to deploy BentoML bundled ML models with platforms such as
@@ -300,7 +299,7 @@ it as as a system-wide python package with :code:`pip`:
 
 .. code-block:: bash
 
-  saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+  saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
 
   pip install $saved_path
 

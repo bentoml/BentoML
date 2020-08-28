@@ -39,6 +39,7 @@ BentoML saved bundle for deployment:
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
+    pip install -r ./bentoml/guides/quick-start/requirements.txt
     python ./bentoml/guides/quick-start/main.py
 
 Verify the saved bundle created:
@@ -221,8 +222,9 @@ Build and push docker image to ACR
 
 .. code-block:: bash
 
-    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
-    $ saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    # Find the local path of the latest version IrisClassifier saved bundle
+    $ saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
+
     $ docker build -t bentomlirisclassifier.azurecr.io/iris-classifier $saved_path
 
     # Sample output

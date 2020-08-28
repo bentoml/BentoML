@@ -38,6 +38,7 @@ BentoML saved bundle for deployment:
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
+    pip install -r ./bentoml/guides/quick-start/requirements.txt
     python ./bentoml/guides/quick-start/main.py
 
 Verify the saved bundle created:
@@ -130,8 +131,9 @@ Find the IrisClassifier SavedBundle directory:
 
 .. code-block:: bash
 
-    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
-    cd $(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    cd $(bentoml get IrisClassifier:latest --print-location --quiet)
+
+
 
 
 Build and push API server container with the SavedBundle, and push to the Heroku app

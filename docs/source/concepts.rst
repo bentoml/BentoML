@@ -592,8 +592,9 @@ text document that contains all the commands required for creating a docker imag
 
 .. code-block:: bash
 
-    # Find the saved path of the latest version of IrisClassifier Bento
-    saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    # Find the local path of the latest version IrisClassifier saved bundle
+    saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
+
 
     # Build docker image using saved_path directory as the build context, replace the
     # {username} below to your docker hub account name

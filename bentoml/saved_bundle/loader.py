@@ -149,7 +149,7 @@ def load_bento_service_class(bundle_path):
 
     # Find and load target module containing BentoService class from given path
     module_file_path = _find_module_file(
-        bundle_path, metadata["service_name"], metadata["module_path"]
+        bundle_path, metadata["service_name"], metadata["module_file"]
     )
 
     # Prepend bundle_path to sys.path for loading extra python dependencies

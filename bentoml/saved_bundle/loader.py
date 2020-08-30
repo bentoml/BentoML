@@ -18,9 +18,10 @@ import sys
 import tarfile
 import logging
 import tempfile
+import shutil
 from contextlib import contextmanager
 from urllib.parse import urlparse
-import shutil
+from pathlib import PureWindowsPath, PurePosixPath
 
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
@@ -90,6 +91,47 @@ def load_bento_service_metadata(bundle_path):
     return load_saved_bundle_config(bundle_path).get_bento_service_metadata_pb()
 
 
+def _find_module_file(bundle_path, service_name, module_file):
+    # Simply join full path when module_file is just a file name,
+    # e.g. module_file=="iris_classifier.py"
+    module_file_path = os.path.join(bundle_path, service_name, module_file)
+    if not os.path.isfile(module_file_path):
+        # Try loading without service_name prefix, for loading from a installed PyPi
+        module_file_path = os.path.join(bundle_path, module_file)
+
+    # When module_file is located in sub directory
+    # e.g. module_file=="foo/bar/iris_classifier.py"
+    # This needs to handle the path differences between posix and windows platform:
+    if not os.path.isfile(module_file_path):
+        if sys.platform == "win32":
+            # Try load a saved bundle created from posix platform on windows
+            module_file_path = os.path.join(
+                bundle_path, service_name, str(PurePosixPath(module_file))
+            )
+            if not os.path.isfile(module_file_path):
+                module_file_path = os.path.join(
+                    bundle_path, str(PurePosixPath(module_file))
+                )
+        else:
+            # Try load a saved bundle created from windows platform on posix
+            module_file_path = os.path.join(
+                bundle_path, service_name, PureWindowsPath(module_file).as_posix()
+            )
+            if not os.path.isfile(module_file_path):
+                module_file_path = os.path.join(
+                    bundle_path, PureWindowsPath(module_file).as_posix()
+                )
+
+    if not os.path.isfile(module_file_path):
+        raise BentoMLException(
+            "Can not locate module_file {} in saved bundle {}".format(
+                module_file, bundle_path
+            )
+        )
+
+    return module_file_path
+
+
 def load_bento_service_class(bundle_path):
     """
     Load a BentoService class from saved bundle in given path
@@ -105,20 +147,8 @@ def load_bento_service_class(bundle_path):
     config = load_saved_bundle_config(bundle_path)
     metadata = config["metadata"]
 
-    # Load target module containing BentoService class from given path
-    module_file_path = os.path.join(
-        bundle_path, metadata["service_name"], metadata["module_file"]
-    )
-    if not os.path.isfile(module_file_path):
-        # Try loading without service_name prefix, for loading from a installed PyPi
-        module_file_path = os.path.join(bundle_path, metadata["module_file"])
-
-    if not os.path.isfile(module_file_path):
-        raise BentoMLException(
-            "Can not locate module_file {} in saved bundle {}".format(
-                metadata["module_file"], bundle_path
-            )
-        )
+    # Find and load target module containing BentoService class from given path
+    module_file_path = _find_module_file()
 
     # Prepend bundle_path to sys.path for loading extra python dependencies
     sys.path.insert(0, bundle_path)

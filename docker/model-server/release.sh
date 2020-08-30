@@ -17,6 +17,10 @@ docker build --pull \
     -t bentoml/model-server:"$BENTOML_VERSION" \
     .
 docker push bentoml/model-server:"$BENTOML_VERSION"
+echo "Tag and push 'latest'.."
+docker tag bentoml/model-server:"$BENTOML_VERSION" bentoml/model-server:latest
+docker push bentoml/model-server:latest
+
 
 PYTHON_MAJOR_VERSIONS=(3.6 3.7 3.8)
 echo "Building slim docker base images for ${PYTHON_MAJOR_VERSIONS[*]}"
@@ -32,6 +36,10 @@ do
     .
 
     docker push bentoml/model-server:$BENTOML_VERSION-slim-py${version//.}
+    echo "Tag and push 'latest'.."
+    docker tag bentoml/model-server:$BENTOML_VERSION-slim-py${version//.} bentoml/model-server:latest-slim-py${version//.}
+    docker push bentoml/model-server:latest-slim-py${version//.}
+
 
 done
 echo "Done"

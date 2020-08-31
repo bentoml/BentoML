@@ -13,6 +13,7 @@
 # limitations under the License.
 import io
 import functools
+import itertools
 from typing import (
     Tuple,
     Union,
@@ -43,6 +44,7 @@ class ParsedHeaders(CIMultiDict):
         super().__init__(*args, **kwargs)
         self.content_type = ""
         self.content_encoding = ""
+        self.is_batch_input = False
 
 
 @dataclass(frozen=True)
@@ -78,6 +80,10 @@ class HTTPRequest:
     @classmethod
     @functools.lru_cache()
     def parse_raw_headers(cls, raw_headers: Sequence[Tuple[str, str]]):
+        from bentoml import config
+
+        BATCH_REQUEST_HEADER = config("apiserver").get("batch_request_header")
+
         headers_dict = ParsedHeaders(
             (k.lower(), v.lower()) for k, v in raw_headers or tuple()
         )
@@ -87,6 +93,10 @@ class HTTPRequest:
         headers_dict.content_encoding = parse_options_header(
             headers_dict.get('content-encoding')
         )[0]
+        headers_dict.is_batch_input = (
+            parse_options_header(headers_dict.get(BATCH_REQUEST_HEADER))[0].lower()
+            == "true"
+        )
         return headers_dict
 
     @classmethod
@@ -186,6 +196,7 @@ class InferenceTask(Generic[Input]):
     context: InferenceContext = InferenceContext()
     is_discarded: bool = False
     fallback_result: Optional[InferenceResult] = None
+    batch: Optional[int] = None
 
     def discard(self, err_msg="", **context):
         self.is_discarded = True

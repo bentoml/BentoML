@@ -37,6 +37,7 @@ from bentoml.yatai.label_store import (
     add_labels,
     list_labels,
     get_labels,
+    add_or_update_labels,
 )
 from bentoml.yatai.proto import deployment_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
@@ -74,18 +75,19 @@ def _deployment_pb_to_orm_obj(deployment_pb, deployment_obj=Deployment()):
     return deployment_obj
 
 
-def _deployment_orm_obj_to_pb(deployment_obj, labels={}):
+def _deployment_orm_obj_to_pb(deployment_obj, labels=None):
     deployment_pb = deployment_pb2.Deployment(
         name=deployment_obj.name,
         namespace=deployment_obj.namespace,
         spec=ParseDict(deployment_obj.spec, deployment_pb2.DeploymentSpec()),
         state=ParseDict(deployment_obj.state, deployment_pb2.DeploymentState()),
-        labels=labels,
         annotations=deployment_obj.annotations,
     )
     deployment_pb.created_at.FromDatetime(deployment_obj.created_at)
     if deployment_obj.last_updated_at:
         deployment_pb.last_updated_at.FromDatetime(deployment_obj.last_updated_at)
+    if labels is not None:
+        deployment_pb.labels.update(labels)
     return deployment_pb
 
 
@@ -123,8 +125,20 @@ class DeploymentStore(object):
                 if deployment_obj:
                     # updating deployment record in db
                     _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
+                    if deployment_pb.labels:
+                        add_or_update_labels(
+                            sess,
+                            'deployment',
+                            deployment_obj.id,
+                            deployment_pb['labels'],
+                        )
             except NoResultFound:
-                sess.add(_deployment_pb_to_orm_obj(deployment_pb))
+                deployment_orm_obj = _deployment_pb_to_orm_obj(deployment_pb)
+                sess.add(deployment_orm_obj)
+                if deployment_pb.labels:
+                    add_or_update_labels(
+                        sess, 'deployment', deployment_orm_obj.id, deployment_pb.labels,
+                    )
 
     @contextmanager
     def update_deployment(self, name, namespace):

@@ -215,7 +215,7 @@ def get_deployment_sub_command():
         yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list(
             limit=limit,
-            label_selectors=labels,
+            labels=labels,
             namespace=namespace,
             operator=platform,
             order_by=order_by,

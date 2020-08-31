@@ -53,7 +53,7 @@ class DeploymentAPIClient:
         self,
         limit=None,
         offset=None,
-        label_selectors=None,
+        labels=None,
         namespace=None,
         is_all_namespaces=False,
         operator=None,
@@ -81,11 +81,14 @@ class DeploymentAPIClient:
             limit=limit,
             offset=offset,
             namespace=namespace,
-            label_selectors=generate_gprc_labels_selector(label_selectors),
             operator=operator,
             order_by=order_by,
             ascending_order=ascending_order,
         )
+        if labels is not None:
+            generate_gprc_labels_selector(
+                list_deployment_request.label_selectors, labels
+            )
         return self.yatai_service.ListDeployments(list_deployment_request)
 
     def get(self, namespace, name):

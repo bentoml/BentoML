@@ -539,6 +539,22 @@ def validate_version_str(version_str):
         raise InvalidArgument('BentoService version can not be set to "latest"')
 
 
+def _validate_labels(labels):
+    pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
+    for key in labels:
+        if (
+            len(key) > 63
+            or len(labels[key]) > 63
+            or not pattern.match(key)
+            or not pattern.match(labels[key])
+        ):
+            return InvalidArgument(
+                'Valid label key and value must be 63 characters or less and must be '
+                'begin and end with an alphanumeric character ([a-z0-9A-Z]) '
+                'with dashes (-), underscores (_), and dots (.).'
+            )
+
+
 def save(bento_service, base_path=None, version=None):
     """
     Save and register the given BentoService via BentoML's built-in model management
@@ -925,10 +941,12 @@ class BentoService:
         return SavedBundleConfig(self).get_bento_service_metadata_pb()
 
     def set_labels(self, labels=None):
-        if labels is None or not isinstance(labels, dict):
+        if not labels or not isinstance(labels, dict):
             raise BentoMLException('BentoService labels must be a dictionary')
+
+        _validate_labels(labels)
+
         self._labels = labels
-        return self._labels
 
     @property
     def labels(self):

@@ -14,23 +14,24 @@
 
 import json
 import argparse
-from typing import Iterable, Tuple, Iterator
+from typing import Iterable, Sequence, Iterator
 
 from bentoml.types import (
     HTTPResponse,
     InferenceContext,
+    InferenceTask,
     DefaultErrorContext,
     InferenceResult,
     JsonSerializable,
 )
 from bentoml.adapters.utils import NumpyJsonEncoder
-from bentoml.adapters.base_output import BaseOutputAdapter
+from bentoml.adapters.base_output import BaseOutputAdapter, regroup_return_value
 
 
-ApiFuncReturnValue = Tuple[JsonSerializable]
+ApiFuncReturnValue = Sequence[JsonSerializable]
 
 
-class JsonSerializableOutput(BaseOutputAdapter[ApiFuncReturnValue]):
+class JsonSerializableOutput(BaseOutputAdapter):
     """
     Converts result of user defined API function into specific output.
 
@@ -41,11 +42,11 @@ class JsonSerializableOutput(BaseOutputAdapter[ApiFuncReturnValue]):
     """
 
     def pack_user_func_return_value(
-        self, return_result: ApiFuncReturnValue, contexts: Tuple[InferenceContext],
-    ) -> Tuple[InferenceResult[str]]:
+        self, return_result: ApiFuncReturnValue, tasks: Sequence[InferenceTask],
+    ) -> Sequence[InferenceResult[str]]:
         results = []
-        for json_obj, context in zip(return_result, contexts):
-            args = context.cli_args
+        for json_obj, task in regroup_return_value(return_result, tasks):
+            args = task.context.cli_args
             if args:
                 parser = argparse.ArgumentParser()
                 parser.add_argument(

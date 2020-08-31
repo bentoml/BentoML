@@ -1,8 +1,6 @@
 import pickle
 from functools import lru_cache
-from typing import NamedTuple, Iterable
-
-from multidict import CIMultiDict
+from typing import Iterable
 
 from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml import config as bentoml_config

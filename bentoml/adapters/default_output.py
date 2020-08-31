@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Tuple, Type, Union
+from typing import Iterable, Tuple, Type
 
 from bentoml.types import (
     ApiFuncReturnValue,
     HTTPResponse,
     InferenceResult,
-    InferenceContext,
+    InferenceTask,
 )
 from .base_output import BaseOutputAdapter
 
@@ -68,13 +68,13 @@ class DefaultOutput(BaseOutputAdapter):
         self.actual_adapter = None
 
     def pack_user_func_return_value(
-        self, return_result: ApiFuncReturnValue, contexts: Tuple[InferenceContext],
+        self, return_result: ApiFuncReturnValue, tasks: Tuple[InferenceTask],
     ) -> Tuple[InferenceResult]:
         if self.actual_adapter is None:
             self.actual_adapter = detect_suitable_adapter(return_result)()
         if self.actual_adapter:
             return self.actual_adapter.pack_user_func_return_value(
-                return_result, contexts=contexts
+                return_result, tasks=tasks
             )
 
         raise NotImplementedError()

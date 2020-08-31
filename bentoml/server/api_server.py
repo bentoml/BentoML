@@ -30,6 +30,7 @@ from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.server import trace
 from bentoml.service import InferenceAPI
+from bentoml.marshal.utils import DataLoader
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
@@ -278,7 +279,9 @@ class BentoAPIServer:
             # handle_request may raise 4xx or 5xx exception.
             try:
                 if request.headers.get(self._MARSHAL_FLAG):
-                    response_body = api.handle_batch_request(request)
+                    reqs = DataLoader.split_requests(request.get_data())
+                    responses = api.handle_batch_request(reqs)
+                    response_body = DataLoader.merge_responses(responses)
                     response = make_response(response_body)
                 else:
                     response = api.handle_request(request)

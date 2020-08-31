@@ -186,23 +186,28 @@ class InferenceAPI(object):
             ] = self.input_adapter._http_input_example
         return schema
 
+    def _filter_tasks(
+        self, inf_tasks: Iterable[InferenceTask]
+    ) -> Iterator[InferenceTask]:
+        for task in inf_tasks:
+            if task.is_discarded:
+                continue
+            try:
+                self.input_adapter.validate_task(task)
+                yield task
+            except AssertionError as e:
+                task.discard(http_status=400, err_msg=str(e))
+
     def infer(self, inf_tasks: Iterable[InferenceTask]) -> Sequence[InferenceResult]:
         # task validation
         inf_tasks = tuple(inf_tasks)
 
-        def valid_tasks(_inf_tasks: Iterable[InferenceTask]) -> Iterator[InferenceTask]:
-            for task in _inf_tasks:
-                if task.is_discarded:
-                    continue
-                try:
-                    self.input_adapter.validate_task(task)
-                    yield task
-                except AssertionError as e:
-                    task.discard(http_status=400, err_msg=str(e))
-
         # extract args
-        user_args = self.input_adapter.extract_user_func_args(valid_tasks(inf_tasks))
+        user_args = self.input_adapter.extract_user_func_args(
+            self._filter_tasks(inf_tasks)
+        )
         contexts = tuple(t.context for t in inf_tasks if not t.is_discarded)
+        filtered_tasks = tuple(t for t in inf_tasks if not t.is_discarded)
 
         # call user function
         if not self.input_adapter.BATCH_MODE_SUPPORTED:  # For legacy input adapters
@@ -212,7 +217,6 @@ class InferenceAPI(object):
             )
         else:
             user_return = self.user_func(*user_args, contexts=contexts)
-
         if (
             isinstance(user_return, (list, tuple))
             and len(user_return)
@@ -222,8 +226,9 @@ class InferenceAPI(object):
         else:
             # pack return value
             inf_results = self.output_adapter.pack_user_func_return_value(
-                user_return, contexts=contexts
+                user_return, tasks=filtered_tasks
             )
+
         full_results = InferenceResult.complete_discarded(inf_tasks, inf_results)
         return tuple(full_results)
 
@@ -235,20 +240,14 @@ class InferenceAPI(object):
         response = next(iter(responses))
         return response.to_flask_response()
 
-    def handle_batch_request(self, request: flask.Request):
-        from bentoml.marshal.utils import DataLoader
-
-        reqs = DataLoader.split_requests(request.get_data())
-
+    def handle_batch_request(self, requests: Sequence[HTTPRequest]):
         with trace(
             service_name=self.__class__.__name__,
             span_name=f"call `{self.input_adapter.__class__.__name__}`",
         ):
-            inf_tasks = map(self.input_adapter.from_http_request, reqs)
+            inf_tasks = map(self.input_adapter.from_http_request, requests)
             results = self.infer(inf_tasks)
-            responses = self.output_adapter.to_http_response(results)
-
-        return DataLoader.merge_responses(responses)
+            return self.output_adapter.to_http_response(results)
 
     def handle_cli(self, cli_args: Sequence[str]) -> int:
         parser = argparse.ArgumentParser()

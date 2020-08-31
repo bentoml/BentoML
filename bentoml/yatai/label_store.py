@@ -35,8 +35,17 @@ def add_labels(sess, resource_type, resource_id, labels):
 
 
 def add_or_update_labels(sess, resource_type, resource_id, labels):
-    query = sess.query(Label)
-    pass
+    label_rows = (
+        sess.query(Label)
+        .filter(Label.resource_type == resource_type, Label.resource_id == resource_id)
+        .all()
+    )
+    if len(label_rows) == 0:
+        return add_labels(sess, resource_type, resource_id, labels)
+    else:
+        for row in label_rows:
+            if labels.get(row.key, None) is not None:
+                row.value = labels[row.key]
 
 
 def get_labels(sess, resource_type, resource_id):
@@ -49,9 +58,16 @@ def get_labels(sess, resource_type, resource_id):
 
 
 def list_labels(sess, resource_type, resource_ids):
-    label_rows = sess.query(Label).filter(
-        and_(Label.resource_type == resource_type, Label.resource_id.in_(resource_ids))
-    ).all()
+    label_rows = (
+        sess.query(Label)
+        .filter(
+            and_(
+                Label.resource_type == resource_type,
+                Label.resource_id.in_(resource_ids),
+            )
+        )
+        .all()
+    )
     labels = {}
     for label in label_rows:
         if labels.get(str(label.resource_id), None) is None:

@@ -89,6 +89,8 @@ class SavedBundleConfig(object):
             self.config["env"] = bento_service.env.to_dict()
             self.config['apis'] = _get_apis_list(bento_service)
             self.config['artifacts'] = _get_artifacts_list(bento_service)
+            if bento_service._labels is not None:
+                self.config['metadata']['labels'] = bento_service._labels
 
     def write_to_path(self, path, filename="bentoml.yml"):
         return self._yaml.dump(self.config, Path(os.path.join(path, filename)))
@@ -137,6 +139,8 @@ class SavedBundleConfig(object):
         bento_service_metadata.created_at.FromDatetime(
             self.config["metadata"]["created_at"]
         )
+        if self.config["metadata"].get('labels', None) is not None:
+            bento_service_metadata.labels.update(self.config['metadata']['labels'])
 
         if "env" in self.config:
             if "setup_sh" in self.config["env"]:

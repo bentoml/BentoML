@@ -628,6 +628,11 @@ class BentoService:
     # See `web_static_content` function above for more
     _web_static_content = None
 
+    # Labels of this BentoService. Labels intended for identifying attributes of
+    # BentoService that are meaningful and relevant to users. Each label is a key-value
+    # pair. Each label's key must be unique for the given BentoService.
+    _labels = None
+
     def __init__(self):
         # When creating BentoService instance from a saved bundle, set version to the
         # version specified in the saved bundle
@@ -918,3 +923,13 @@ class BentoService:
 
     def get_bento_service_metadata_pb(self):
         return SavedBundleConfig(self).get_bento_service_metadata_pb()
+
+    def set_labels(self, labels=None):
+        if labels is None or not isinstance(labels, dict):
+            raise BentoMLException('BentoService labels must be a dictionary')
+        self._labels = labels
+        return self._labels
+
+    @property
+    def labels(self):
+        return self._labels

@@ -208,6 +208,8 @@ def load_bento_service_class(bundle_path):
     model_service_class._bento_service_bundle_path = bundle_path
     # Set cls._version, service instance can access it via svc.version
     model_service_class._bento_service_bundle_version = metadata["service_version"]
+    # Set cls._labels, service instance can access it via svc.labels
+    model_service_class._labels = metadata['labels']
 
     return model_service_class
 

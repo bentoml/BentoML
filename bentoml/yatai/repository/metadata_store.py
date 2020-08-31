@@ -35,8 +35,8 @@ from bentoml.yatai.db import Base, create_session
 from bentoml.yatai.label_store import (
     filter_label_query,
     get_labels,
-    add_labels,
     list_labels,
+    add_or_update_labels,
 )
 from bentoml.yatai.proto.repository_pb2 import (
     UploadStatus,
@@ -86,7 +86,7 @@ class Bento(Base):
     deleted = Column(Boolean, default=False)
 
 
-def _bento_orm_obj_to_pb(bento_obj, labels={}):
+def _bento_orm_obj_to_pb(bento_obj, labels=None):
     # Backwards compatible support loading saved bundle created before 0.8.0
     if (
         'apis' in bento_obj.bento_service_metadata
@@ -108,12 +108,13 @@ def _bento_orm_obj_to_pb(bento_obj, labels={}):
     bento_uri = BentoUri(
         uri=bento_obj.uri, type=BentoUri.StorageType.Value(bento_obj.uri_type)
     )
+    if labels is not None:
+        bento_service_metadata_pb.labels.update(labels)
     return BentoPB(
         name=bento_obj.name,
         version=bento_obj.version,
         uri=bento_uri,
         bento_service_metadata=bento_service_metadata_pb,
-        labels=labels,
     )
 
 
@@ -121,21 +122,14 @@ class BentoMetadataStore(object):
     def __init__(self, sess_maker):
         self.sess_maker = sess_maker
 
-    def add(self, bento_name, bento_version, uri, uri_type, labels):
+    def add(self, bento_name, bento_version, uri, uri_type):
         with create_session(self.sess_maker) as sess:
             bento_obj = Bento()
             bento_obj.name = bento_name
             bento_obj.version = bento_version
             bento_obj.uri = uri
             bento_obj.uri_type = BentoUri.StorageType.Name(uri_type)
-            sess.add(bento_obj)
-            if labels:
-                bento = (
-                    sess.query(Bento)
-                    .filter_by(name=bento_name, version=bento_version)
-                    .one()
-                )
-                add_labels(sess, 'bento', bento.id, labels)
+            return sess.add(bento_obj)
 
     def _get_latest(self, bento_name):
         with create_session(self.sess_maker) as sess:
@@ -148,7 +142,7 @@ class BentoMetadataStore(object):
 
             query_result = query.all()
             if len(query_result) == 1:
-                labels = get_labels('bento', query_result[0].id)
+                labels = get_labels(sess, 'bento', query_result[0].id)
                 return _bento_orm_obj_to_pb(query_result[0], labels)
             else:
                 return None
@@ -167,7 +161,7 @@ class BentoMetadataStore(object):
                 if bento_obj.deleted:
                     # bento has been marked as deleted
                     return None
-                labels = get_labels('bento', bento_obj.id)
+                labels = get_labels(sess, 'bento', bento_obj.id)
                 return _bento_orm_obj_to_pb(bento_obj, labels)
             except NoResultFound:
                 return None
@@ -182,9 +176,17 @@ class BentoMetadataStore(object):
                     .filter_by(name=bento_name, version=bento_version, deleted=False)
                     .one()
                 )
-                bento_obj.bento_service_metadata = ProtoMessageToDict(
-                    bento_service_metadata_pb
-                )
+                service_metadata = ProtoMessageToDict(bento_service_metadata_pb)
+                bento_obj.bento_service_metadata = service_metadata
+                if service_metadata['labels']:
+                    bento = (
+                        sess.query(Bento)
+                        .filter_by(name=bento_name, version=bento_version)
+                        .one()
+                    )
+                    add_or_update_labels(
+                        sess, 'bento', bento.id, service_metadata['labels']
+                    )
             except NoResultFound:
                 raise YataiRepositoryException(
                     "Bento %s:%s is not found in repository" % bento_name, bento_version

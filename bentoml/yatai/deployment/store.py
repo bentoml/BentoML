@@ -34,7 +34,9 @@ from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.label_store import (
     filter_label_query,
     delete_labels,
-    add_labels, list_labels, get_labels,
+    add_labels,
+    list_labels,
+    get_labels,
 )
 from bentoml.yatai.proto import deployment_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest

@@ -17,7 +17,7 @@ import argparse
 import itertools
 import functools
 import contextlib
-from typing import Iterable, Generic, Tuple, Iterator, Sequence, NamedTuple, BinaryIO
+from typing import Iterable, Tuple, Iterator, Sequence, NamedTuple, BinaryIO
 
 from bentoml.types import (
     ApiFuncArgs,
@@ -27,7 +27,7 @@ from bentoml.types import (
 )
 
 
-class BaseInputAdapter(Generic[ApiFuncArgs]):
+class BaseInputAdapter:
     """
     InputAdapter is an abstraction layer between user defined API callback function
     and prediction request input in a variety of different forms, such as HTTP request
@@ -35,7 +35,7 @@ class BaseInputAdapter(Generic[ApiFuncArgs]):
     """
 
     HTTP_METHODS = ["POST", "GET"]
-    BATCH_MODE_SUPPORTED = False
+    BATCH_MODE_SUPPORTED = True
 
     def __init__(self, http_input_example=None, **base_config):
         self._config = base_config
@@ -60,23 +60,21 @@ class BaseInputAdapter(Generic[ApiFuncArgs]):
         """
         return []
 
-    def from_http_request(self, reqs: Iterable[HTTPRequest]) -> Iterable[InferenceTask]:
+    def from_http_request(self, req: HTTPRequest) -> InferenceTask:
         """
-        Handles HTTP requests, convert it into InferenceTasks
-        """
-        raise NotImplementedError()
-
-    def from_aws_lambda_event(
-        self, events: Tuple[AwsLambdaEvent]
-    ) -> Iterable[InferenceTask]:
-        """
-        Handles AWS lambda events, convert it into InferenceTasks
+        Handles HTTP requests, convert it into InferenceTask
         """
         raise NotImplementedError()
 
-    def from_cli(self, cli_args: Tuple[str]) -> Iterable[InferenceTask]:
+    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask:
         """
-        Handles CLI command, generate InferenceTasks
+        Handles AWS lambda events, convert it into InferenceTask
+        """
+        raise NotImplementedError()
+
+    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask]:
+        """
+        Handles CLI command, generate InferenceTask
         """
         raise NotImplementedError()
 
@@ -85,7 +83,7 @@ class BaseInputAdapter(Generic[ApiFuncArgs]):
 
     def extract_user_func_args(self, tasks: Iterable[InferenceTask]) -> ApiFuncArgs:
         """
-        Extract args that user API function is expecting from InferenceTasks
+        Extract args that user API function is expecting from InferenceTask
         """
         raise NotImplementedError()
 

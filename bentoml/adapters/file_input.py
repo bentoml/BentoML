@@ -31,7 +31,7 @@ ApiFuncArgs = Tuple[
 ]
 
 
-class FileInput(BaseInputAdapter[ApiFuncArgs]):
+class FileInput(BaseInputAdapter):
     """Transform incoming file data from http request, cli or lambda event into file
     stream object.
 
@@ -91,52 +91,41 @@ class FileInput(BaseInputAdapter[ApiFuncArgs]):
             "*/*": {"schema": {"type": "string", "format": "binary"}},
         }
 
-    def from_http_request(
-        self, reqs: Iterable[HTTPRequest]
-    ) -> List[InferenceTask[BinaryIO]]:
-        tasks = [None] * len(reqs)
-        for i, req in enumerate(reqs):
-            if req.parsed_headers.content_type == 'multipart/form-data':
-                _, _, files = HTTPRequest.parse_form_data(req)
-                if len(files) != 1:
-                    task = InferenceTask(data=None)
-                    task.discard(
-                        http_status=400,
-                        err_msg=f"BentoML#{self.__class__.__name__} requires one and at"
-                        " least one file at a time, if you just upgraded from"
-                        " bentoml 0.7, you may need to use MultiFileAdapter instead",
-                    )
-                else:
-                    input_file = next(iter(files.values()))
-                    task = InferenceTask(
-                        context=InferenceContext(http_headers=req.parsed_headers),
-                        data=input_file,
-                    )
-            elif req.body:
-                task = InferenceTask(
-                    context=InferenceContext(http_headers=req.parsed_headers),
-                    data=io.BytesIO(req.body),
-                )
-            else:
+    def from_http_request(self, req: HTTPRequest) -> InferenceTask[BinaryIO]:
+        if req.parsed_headers.content_type == 'multipart/form-data':
+            _, _, files = HTTPRequest.parse_form_data(req)
+            if len(files) != 1:
                 task = InferenceTask(data=None)
                 task.discard(
                     http_status=400,
-                    err_msg=f'BentoML#{self.__class__.__name__} unexpected HTTP request'
-                    ' format',
+                    err_msg=f"BentoML#{self.__class__.__name__} requires one and at"
+                    " least one file at a time, if you just upgraded from"
+                    " bentoml 0.7, you may need to use MultiFileAdapter instead",
                 )
-            tasks[i] = task
-
-        return tasks
-
-    def from_aws_lambda_event(
-        self, events: Iterable[AwsLambdaEvent]
-    ) -> Tuple[InferenceTask[BinaryIO]]:
-        return tuple(
-            InferenceTask(
-                context=InferenceContext(aws_lambda_event=e),
-                data=io.BytesIO(base64.decodebytes(e['body'])),
+            else:
+                input_file = next(iter(files.values()))
+                task = InferenceTask(
+                    context=InferenceContext(http_headers=req.parsed_headers),
+                    data=input_file,
+                )
+        elif req.body:
+            task = InferenceTask(
+                context=InferenceContext(http_headers=req.parsed_headers),
+                data=io.BytesIO(req.body),
             )
-            for e in events
+        else:
+            task = InferenceTask(data=None)
+            task.discard(
+                http_status=400,
+                err_msg=f'BentoML#{self.__class__.__name__} unexpected HTTP request'
+                ' format',
+            )
+        return task
+
+    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[BinaryIO]:
+        return InferenceTask(
+            context=InferenceContext(aws_lambda_event=event),
+            data=io.BytesIO(base64.decodebytes(event.get('body', ""))),
         )
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[BinaryIO]]:

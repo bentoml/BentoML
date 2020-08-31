@@ -56,15 +56,17 @@ def test_file_input_aws_lambda_event(input_adapter, img_files, img_bytes_list):
         "headers": {"Content-Type": "images/png"},
     }
 
-    for task in input_adapter.from_aws_lambda_event([aws_lambda_event]):
-        assert task.data.read() == img_bytes_list[0]
+    task = input_adapter.from_aws_lambda_event(aws_lambda_event)
+    assert task.data.read() == img_bytes_list[0]
 
 
 def test_file_input_http_request_post_binary(input_adapter, img_bytes_list):
     img_bytes = img_bytes_list[0]
 
     # post binary
-    request1 = HTTPRequest(body=img_bytes)
+    request = HTTPRequest(body=img_bytes)
+    task = input_adapter.from_http_request(request)
+    assert img_bytes == task.data.read()
 
     # post as multipart/form-data
     headers = (("Content-Type", "multipart/form-data; boundary=123456"),)
@@ -75,10 +77,9 @@ def test_file_input_http_request_post_binary(input_adapter, img_bytes_list):
         + img_bytes
         + b'\n--123456--\n'
     )
-    request2 = HTTPRequest(headers=headers, body=body)
-
-    for task in input_adapter.from_http_request([request1, request2]):
-        assert img_bytes == task.data.read()
+    request = HTTPRequest(headers=headers, body=body)
+    task = input_adapter.from_http_request(request)
+    assert img_bytes == task.data.read()
 
 
 def test_image_input_extract(input_adapter, tasks, invalid_tasks):

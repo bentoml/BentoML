@@ -29,7 +29,7 @@ ApiFuncArgs = Tuple[Sequence[BinaryIO], ...]
 MultiFileTask = InferenceTask[Tuple[BinaryIO, ...]]
 
 
-class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
+class MultiFileInput(BaseInputAdapter):
     """ Low level input adapters that transform incoming files data from http request,
     CLI or AWS lambda event into binary stream objects, then pass down to user defined 
     API functions.
@@ -96,53 +96,44 @@ class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
             },
         }
 
-    def from_http_request(self, reqs: Iterable[HTTPRequest]) -> List[MultiFileTask]:
-        tasks = []
-        for req in reqs:
-            if req.parsed_headers.content_type != 'multipart/form-data':
+    def from_http_request(self, req: HTTPRequest) -> MultiFileTask:
+        if req.parsed_headers.content_type != 'multipart/form-data':
+            task = InferenceTask(data=None)
+            task.discard(
+                http_status=400,
+                err_msg=f"BentoML#{self.__class__.__name__} only accepts requests "
+                "with Content-Type: multipart/form-data",
+            )
+        else:
+            _, _, files = HTTPRequest.parse_form_data(req)
+            files = tuple(files.get(k) for k in self.input_names)
+            if not any(files):
                 task = InferenceTask(data=None)
                 task.discard(
                     http_status=400,
-                    err_msg=f"BentoML#{self.__class__.__name__} only accepts requests "
-                    "with Content-Type: multipart/form-data",
+                    err_msg=f"BentoML#{self.__class__.__name__} requires inputs "
+                    f"fields {self.input_names}",
+                )
+            elif not all(files) and not self.allow_none:
+                task = InferenceTask(data=None)
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} requires inputs "
+                    f"fields {self.input_names}",
                 )
             else:
-                _, _, files = HTTPRequest.parse_form_data(req)
-                files = tuple(files.get(k) for k in self.input_names)
-                if not any(files):
-                    task = InferenceTask(data=None)
-                    task.discard(
-                        http_status=400,
-                        err_msg=f"BentoML#{self.__class__.__name__} requires inputs "
-                        f"fields {self.input_names}",
-                    )
-                elif not all(files) and not self.allow_none:
-                    task = InferenceTask(data=None)
-                    task.discard(
-                        http_status=400,
-                        err_msg=f"BentoML#{self.__class__.__name__} requires inputs "
-                        f"fields {self.input_names}",
-                    )
-                else:
-                    task = InferenceTask(
-                        context=InferenceContext(http_headers=req.parsed_headers),
-                        data=files,
-                    )
-            tasks.append(task)
+                task = InferenceTask(
+                    context=InferenceContext(http_headers=req.parsed_headers),
+                    data=files,
+                )
+        return task
 
-        return tasks
-
-    def from_aws_lambda_event(
-        self, events: Iterable[AwsLambdaEvent]
-    ) -> Sequence[MultiFileTask]:
-        requests = tuple(
-            HTTPRequest(
-                headers=tuple((k, v) for k, v in e.get('headers', {}).items()),
-                body=e['body'],
-            )
-            for e in events
+    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> MultiFileTask:
+        request = HTTPRequest(
+            headers=tuple((k, v) for k, v in event.get('headers', {}).items()),
+            body=event['body'],
         )
-        return self.from_http_request(requests)
+        return self.from_http_request(request)
 
     def from_cli(self, cli_args: Sequence[str]) -> Iterator[MultiFileTask]:
         for inputs in parse_cli_inputs(cli_args, self.input_names):
@@ -152,7 +143,10 @@ class MultiFileInput(BaseInputAdapter[ApiFuncArgs]):
             )
 
     def extract_user_func_args(self, tasks: Sequence[MultiFileTask]) -> ApiFuncArgs:
-        return tuple(map(tuple, zip(*map(lambda t: t.data, tasks))))
+        args = tuple(map(tuple, zip(*map(lambda t: t.data, tasks))))
+        if not args:
+            args = (tuple(),) * len(self.input_names)
+        return args
 
 
 def _pipe(input_: BinaryIO) -> BinaryIO:

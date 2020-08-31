@@ -37,8 +37,8 @@ def test_file_input_aws_lambda_event(input_adapter, bin_file):
         "body": file_bytes_encoded,
     }
 
-    for task in input_adapter.from_aws_lambda_event([aws_lambda_event]):
-        assert b'\x810\x899' == task.data.read()
+    task = input_adapter.from_aws_lambda_event(aws_lambda_event)
+    assert b'\x810\x899' == task.data.read()
 
 
 def test_file_input_http_request_post_binary(input_adapter, bin_file):
@@ -46,8 +46,8 @@ def test_file_input_http_request_post_binary(input_adapter, bin_file):
     request.headers = tuple()
     request.body = open(str(bin_file), 'rb').read()
 
-    for task in input_adapter.from_http_request([request]):
-        assert b'\x810\x899' == task.data.read()
+    task = input_adapter.from_http_request(request)
+    assert b'\x810\x899' == task.data.read()
 
 
 def test_file_input_http_request_multipart_form(input_adapter, bin_file):
@@ -62,8 +62,8 @@ def test_file_input_http_request_multipart_form(input_adapter, bin_file):
         + b'\n--123456--\n'
     )
     request = HTTPRequest(headers=headers, body=body)
-    for task in input_adapter.from_http_request([request]):
-        assert b'\x810\x899' == task.data.read()
+    task = input_adapter.from_http_request(request)
+    assert b'\x810\x899' == task.data.read()
 
 
 def test_file_input_http_request_malformatted_input_missing_file(input_adapter):
@@ -73,5 +73,5 @@ def test_file_input_http_request_malformatted_input_missing_file(input_adapter):
     request.headers = {}
     request.body = None
 
-    for task in input_adapter.from_http_request([request]):
-        assert task.is_discarded
+    task = input_adapter.from_http_request(request)
+    assert task.is_discarded

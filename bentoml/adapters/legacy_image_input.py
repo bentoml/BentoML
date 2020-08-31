@@ -56,114 +56,79 @@ class LegacyImageInput(MultiImageInput):
 
     Raises:
         ImportError: imageio package is required to use LegacyImageInput
-
-    Example usage:
-
-    >>> from bentoml import BentoService
-    >>> import bentoml
-    >>>
-    >>> class MyService(BentoService):
-    >>>     @bentoml.api(input=LegacyImageInput(input_names=('imageX', 'imageY')))
-    >>>     def predict(self, imageX, imageY):
-    >>>         pass
-    >>>
-
-    The endpoint could then be used with an HTML form that sends multipart data, like
-    the example below
-
-
-    >>> <form action="http://localhost:8000" method="POST"
-    >>>       enctype="multipart/form-data">
-    >>>     <input name="imageX" type="file">
-    >>>     <input name="imageY" type="file">
-    >>>     <input type="submit">
-    >>> </form>
-
-    Or the following cURL command
-
-    >>> curl -F imageX=@image_file_x.png
-    >>>      -F imageY=@image_file_y.jpg
-    >>>      http://localhost:8000
     """
 
     BATCH_MODE_SUPPORTED = False
 
-    def from_http_request(self, reqs: Iterable[HTTPRequest]) -> List[MultiImgTask]:
-        tasks = []
-        for req in reqs:
-            if len(self.input_names) == 1:
-                # broad parsing while single input
-                if req.parsed_headers.content_type == 'multipart/form-data':
-                    _, _, files = HTTPRequest.parse_form_data(req)
-                    if not any(files):
-                        task = InferenceTask(data=None)
-                        task.discard(
-                            http_status=400,
-                            err_msg=f"BentoML#{self.__class__.__name__} requires inputs"
-                            f"fields {self.input_names}",
-                        )
-                    else:
-                        f = next(iter(files.values()))
-                        task = InferenceTask(
-                            context=InferenceContext(http_headers=req.parsed_headers),
-                            data=(f,),
-                        )
-                else:
-                    # for images/*
-                    task = InferenceTask(
-                        context=InferenceContext(http_headers=req.parsed_headers),
-                        data=(io.BytesIO(req.body),),
-                    )
-            elif req.parsed_headers.content_type == 'multipart/form-data':
+    def from_http_request(self, req: HTTPRequest) -> MultiImgTask:
+        if len(self.input_names) == 1:
+            # broad parsing while single input
+            if req.parsed_headers.content_type == 'multipart/form-data':
                 _, _, files = HTTPRequest.parse_form_data(req)
-                files = tuple(files.get(k) for k in self.input_names)
                 if not any(files):
                     task = InferenceTask(data=None)
                     task.discard(
                         http_status=400,
-                        err_msg=f"BentoML#{self.__class__.__name__} requires inputs "
-                        f"fields {self.input_names}",
-                    )
-                elif not all(files) and not self.allow_none:
-                    task = InferenceTask(data=None)
-                    task.discard(
-                        http_status=400,
-                        err_msg=f"BentoML#{self.__class__.__name__} requires inputs "
+                        err_msg=f"BentoML#{self.__class__.__name__} requires inputs"
                         f"fields {self.input_names}",
                     )
                 else:
+                    f = next(iter(files.values()))
                     task = InferenceTask(
                         context=InferenceContext(http_headers=req.parsed_headers),
-                        data=files,
+                        data=(f,),
                     )
             else:
+                # for images/*
+                task = InferenceTask(
+                    context=InferenceContext(http_headers=req.parsed_headers),
+                    data=(io.BytesIO(req.body),),
+                )
+        elif req.parsed_headers.content_type == 'multipart/form-data':
+            _, _, files = HTTPRequest.parse_form_data(req)
+            files = tuple(files.get(k) for k in self.input_names)
+            if not any(files):
                 task = InferenceTask(data=None)
                 task.discard(
                     http_status=400,
-                    err_msg=f"BentoML#{self.__class__.__name__} with multiple inputs "
-                    "accepts requests with Content-Type: multipart/form-data only",
+                    err_msg=f"BentoML#{self.__class__.__name__} requires inputs "
+                    f"fields {self.input_names}",
                 )
-            tasks.append(task)
-
-        return tasks
-
-    def from_aws_lambda_event(self, events):
-        tasks = []
-        for event in events:
-            if event["headers"].get("Content-Type", "").startswith("images/"):
-                img_bytes = base64.b64decode(event["body"])
-                img_io = io.BytesIO(img_bytes)
-                _, ext = event["headers"]["Content-Type"].split('/')
-                img_io.name = f"img.{ext}"
-                task = InferenceTask(data=(img_io,))
+            elif not all(files) and not self.allow_none:
+                task = InferenceTask(data=None)
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} requires inputs "
+                    f"fields {self.input_names}",
+                )
             else:
-                task = InferenceTask(data=None)
-                task.discard(
-                    http_status=400,
-                    err_msg="BentoML currently doesn't support Content-Type: "
-                    "{content_type} for AWS Lambda".format(
-                        content_type=event["headers"]["Content-Type"]
-                    ),
+                task = InferenceTask(
+                    context=InferenceContext(http_headers=req.parsed_headers),
+                    data=files,
                 )
-            tasks.append(task)
-        return tuple(tasks)
+        else:
+            task = InferenceTask(data=None)
+            task.discard(
+                http_status=400,
+                err_msg=f"BentoML#{self.__class__.__name__} with multiple inputs "
+                "accepts requests with Content-Type: multipart/form-data only",
+            )
+        return task
+
+    def from_aws_lambda_event(self, event):
+        if event["headers"].get("Content-Type", "").startswith("images/"):
+            img_bytes = base64.b64decode(event["body"])
+            img_io = io.BytesIO(img_bytes)
+            _, ext = event["headers"]["Content-Type"].split('/')
+            img_io.name = f"img.{ext}"
+            task = InferenceTask(data=(img_io,))
+        else:
+            task = InferenceTask(data=None)
+            task.discard(
+                http_status=400,
+                err_msg="BentoML currently doesn't support Content-Type: "
+                "{content_type} for AWS Lambda".format(
+                    content_type=event["headers"]["Content-Type"]
+                ),
+            )
+        return task

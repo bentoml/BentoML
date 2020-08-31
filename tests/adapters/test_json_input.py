@@ -58,7 +58,7 @@ def test_json_from_http(input_adapter, raw_jsons):
         HTTPRequest(body=r, headers=(("Content-Encoding", "compress"),))
         for r in raw_jsons
     ]
-    tasks = input_adapter.from_http_request(requests)
+    tasks = map(input_adapter.from_http_request, requests)
     iter_tasks = iter(tasks)
     for b, t in zip(raw_jsons, iter_tasks):
         assert t.data == b
@@ -75,7 +75,7 @@ def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
         {"headers": {"Content-Type": "application/json"}, "body": r.decode(),}
         for r in raw_jsons
     ]
-    tasks = input_adapter.from_aws_lambda_event(events)
+    tasks = map(input_adapter.from_aws_lambda_event, events)
     for t, r in zip(tasks, raw_jsons):
         assert t.data == r
 
@@ -83,7 +83,7 @@ def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
         {"headers": {"Content-Type": "this_will_also_work"}, "body": r.decode(),}
         for r in raw_jsons
     ]
-    tasks = input_adapter.from_aws_lambda_event(events)
+    tasks = map(input_adapter.from_aws_lambda_event, events)
     for t, r in zip(tasks, raw_jsons):
         assert t.data == r
 
@@ -92,7 +92,7 @@ def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
         {"headers": {"Content-Type": "application/json"}, "body": r.decode(),}
         for r in raw_jsons
     ]
-    tasks = input_adapter.from_aws_lambda_event(events)
+    tasks = map(input_adapter.from_aws_lambda_event, events)
     for t, r in zip(tasks, raw_jsons):
         assert t.data == r
 

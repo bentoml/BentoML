@@ -6,17 +6,17 @@
 
 # http://www.apache.org/licenses/LICENSE-2.0
 
+import argparse
+import contextlib
+import functools
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import io
-import sys
-import argparse
 import itertools
-import functools
-import contextlib
+import sys
 from typing import Iterable, Tuple, Iterator, Sequence, NamedTuple, BinaryIO
 
 from bentoml.types import (
@@ -72,7 +72,7 @@ class BaseInputAdapter:
         """
         raise NotImplementedError()
 
-    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask]:
+    def from_cli(self, cli_args: Tuple[str, ...]) -> Iterator[InferenceTask]:
         """
         Handles CLI command, generate InferenceTask
         """
@@ -128,7 +128,7 @@ class CliInputParser(NamedTuple):
 
         return cls(arg_names, file_arg_names, arg_strs, file_arg_strs, parser)
 
-    def parse(self, args: Tuple[str]) -> Iterator[Tuple[BinaryIO]]:
+    def parse(self, args: Sequence[str]) -> Iterator[Tuple[BinaryIO]]:
         try:
             parsed, _ = self.parser.parse_known_args(args)
         except SystemExit:
@@ -183,15 +183,15 @@ class CliInputParser(NamedTuple):
 
 
 def parse_cli_inputs(
-    args: Sequence[str], input_names: Tuple[str] = None
+    args: Sequence[str], input_names: Tuple[str, ...] = None
 ) -> Iterator[Tuple[BinaryIO]]:
     '''
     Parse CLI args and iter each pair of inputs in bytes.
 
-    >>> parse_cli_inputs("--input-x '1' '2' --input-y 'a' 'b'".split(' '), ['x', 'y'])
+    >>> parse_cli_inputs("--input-x '1' '2' --input-y 'a' 'b'".split(' '), ('x', 'y'))
     >>> parse_cli_inputs(
     >>>     "--input-file-x 1.jpg 2.jpg --input-file-y 1.label 2.label".split(' '),
-    >>>     ['x', 'y'])
+    >>>     ('x', 'y'))
     '''
     parser = CliInputParser.get(tuple(input_names))
     return parser.parse(args)

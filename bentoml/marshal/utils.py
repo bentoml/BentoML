@@ -1,9 +1,9 @@
 import pickle
 from functools import lru_cache
-from typing import Iterable
+from typing import Sequence
 
-from bentoml.types import HTTPRequest, HTTPResponse
 from bentoml import config as bentoml_config
+from bentoml.types import HTTPRequest, HTTPResponse
 
 BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")
 
@@ -59,19 +59,19 @@ class PlasmaDataLoader:
 
 class PickleDataLoader:
     @classmethod
-    def merge_requests(cls, reqs: Iterable[HTTPRequest]) -> bytes:
+    def merge_requests(cls, reqs: Sequence[HTTPRequest]) -> bytes:
         return pickle.dumps(reqs)
 
     @classmethod
-    def split_requests(cls, raw: bytes) -> Iterable[HTTPRequest]:
+    def split_requests(cls, raw: bytes) -> Sequence[HTTPRequest]:
         return pickle.loads(raw)
 
     @classmethod
-    def merge_responses(cls, resps: Iterable[HTTPResponse]) -> bytes:
+    def merge_responses(cls, resps: Sequence[HTTPResponse]) -> bytes:
         return pickle.dumps(list(resps))
 
     @classmethod
-    def split_responses(cls, raw: bytes) -> Iterable[HTTPResponse]:
+    def split_responses(cls, raw: bytes) -> Sequence[HTTPResponse]:
         try:
             return pickle.loads(raw)
         except pickle.UnpicklingError:

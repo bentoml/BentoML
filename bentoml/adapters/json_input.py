@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import gzip
+import json
 import traceback
 from typing import Iterable, Tuple, Iterator, Sequence
 
+from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 from bentoml.types import (
     HTTPRequest,
     JsonSerializable,
@@ -25,8 +26,6 @@ from bentoml.types import (
     InferenceContext,
     JSON_CHARSET,
 )
-from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
-
 
 ApiFuncArgs = Tuple[
     Sequence[JsonSerializable],
@@ -77,7 +76,7 @@ class JsonInput(BaseInputAdapter):
                 )
             except OSError:
                 task = InferenceTask(data=None)
-                task.discard(http_status=400, err_msg="Gzip decomression error")
+                task.discard(http_status=400, err_msg="Gzip decompression error")
                 return task
         elif req.parsed_headers.content_encoding in ["", "identity"]:
             return InferenceTask(

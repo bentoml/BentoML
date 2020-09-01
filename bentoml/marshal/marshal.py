@@ -12,23 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
 import asyncio
 import logging
 import multiprocessing
+import time
 import traceback
 from functools import partial
 
-import psutil
 import aiohttp
+import psutil
 
 from bentoml import config
 from bentoml.exceptions import RemoteException
-from bentoml.types import HTTPRequest, HTTPResponse
-from bentoml.server.trace import async_trace, make_http_headers
+from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
 from bentoml.marshal.utils import DataLoader
 from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
+from bentoml.server.trace import async_trace, make_http_headers
+from bentoml.types import HTTPRequest, HTTPResponse
 
 logger = logging.getLogger(__name__)
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
@@ -274,7 +274,8 @@ class MarshalService:
             if resp.status != 200:
                 raise RemoteException(
                     f"Bad response status from model server:\n{resp.status}\n{raw}",
-                    payload=HTTPResponse(resp.status, resp.headers, raw),
+                    payload=HTTPResponse(status=resp.status,
+                                         headers=tuple(resp.headers.items()), body=raw),
                 )
             merged = DataLoader.split_responses(raw)
             return tuple(

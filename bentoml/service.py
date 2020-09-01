@@ -26,7 +26,6 @@ from datetime import datetime
 from typing import List, Iterable, Iterator, Sequence
 
 import flask
-from bentoml.utils import cached_property
 
 from bentoml import config
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
@@ -41,6 +40,7 @@ from bentoml.types import (
     InferenceTask,
     InferenceResult,
 )
+from bentoml.utils import cached_property
 from bentoml.utils.hybridmethod import hybridmethod
 
 ARTIFACTS_DIR_NAME = "artifacts"
@@ -256,7 +256,7 @@ class InferenceAPI(object):
 
         exit_code = 0
 
-        tasks_iter = self.input_adapter.from_cli(cli_args)
+        tasks_iter = self.input_adapter.from_cli(tuple(cli_args))
         while True:
             tasks = tuple(itertools.islice(tasks_iter, parsed_args.max_batch_size))
             if not len(tasks):
@@ -585,7 +585,7 @@ class BentoService:
     """
 
     # List of inference APIs that this BentoService provides
-    _inference_apis: InferenceAPI = []
+    _inference_apis: List[InferenceAPI] = []
 
     # Name of this BentoService. It is default the class name of this BentoService class
     _bento_service_name: str = None

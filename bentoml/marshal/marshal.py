@@ -274,8 +274,11 @@ class MarshalService:
             if resp.status != 200:
                 raise RemoteException(
                     f"Bad response status from model server:\n{resp.status}\n{raw}",
-                    payload=HTTPResponse(status=resp.status,
-                                         headers=tuple(resp.headers.items()), body=raw),
+                    payload=HTTPResponse(
+                        status=resp.status,
+                        headers=tuple(resp.headers.items()),
+                        body=raw,
+                    ),
                 )
             merged = DataLoader.split_responses(raw)
             return tuple(

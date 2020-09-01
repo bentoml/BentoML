@@ -11,9 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import io
+
 import functools
-import itertools
+import io
+from dataclasses import dataclass
 from typing import (
     Tuple,
     Union,
@@ -26,7 +27,6 @@ from typing import (
     Iterable,
     Iterator,
 )
-from dataclasses import dataclass
 
 from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
@@ -119,7 +119,7 @@ class HTTPRequest:
 class HTTPResponse:
     status: int = 200
     headers: tuple = tuple()
-    body: str = ""  # TODO(bojiang): bytes
+    body: bytes = b""
 
     def to_flask_response(self):
         import flask

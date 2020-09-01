@@ -13,29 +13,26 @@
 # limitations under the License.
 
 import argparse
-from typing import Iterable, Tuple, Iterator
-
-from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.exceptions import MissingDependencyException
-from bentoml.types import (
-    HTTPRequest,
-    InferenceTask,
-    InferenceContext,
-    AwsLambdaEvent,
-    ApiFuncArgs,
-)
-from bentoml.utils.dataframe_util import (
-    check_dataframe_column_contains,
-    PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
-)
+import os
+from io import StringIO
+from typing import Iterable
 
 try:
     import pandas as pd
 except ImportError:
-    raise MissingDependencyException(
-        "Missing required dependency 'pandas' for DataframeInput, install "
-        "with `pip install pandas`"
-    )
+    pd = None
+import flask
+
+from bentoml.adapters.base_input import BaseInputAdapter
+from bentoml.utils import is_url
+from bentoml.utils.dataframe_util import (
+    read_dataframes_from_json_n_csv,
+    check_dataframe_column_contains,
+    PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
+)
+from bentoml.types import HTTPRequest, HTTPResponse
+from bentoml.utils.s3 import is_s3_url
+from bentoml.exceptions import BadInput, MissingDependencyException
 
 
 class DataframeInput(BaseInputAdapter):
@@ -58,92 +55,6 @@ class DataframeInput(BaseInputAdapter):
         ValueError: Incoming data format can not be handled. Only json and csv
     """
 
-    def from_cli(self, cli_args: Tuple[str, ...]) -> Iterator[InferenceTask]:
-        parser = argparse.ArgumentParser()
-        input_g = parser.add_mutually_exclusive_group(required=True)
-
-        strinput = input_g.add_argument_group()
-        strinput.add_argument("--input", nargs="+", type=str, required=True)
-        typeinput = strinput.add_mutually_exclusive_group(required=True)
-        typeinput.add_argument("--csv")
-        typeinput.add_argument("--json")
-
-        input_g.add_argument("--input-file", nargs="+")
-
-        parsed_args, _ = parser.parse_known_args(list(cli_args))
-
-        inputs = tuple(
-            parsed_args.input
-            if parsed_args.input_file is None
-            else parsed_args.input_file
-        )
-        is_file = parsed_args.input_file is not None
-        if is_file:
-            for input_ in inputs:  # type: str
-                with open(input_, "rb") as f:
-                    if input_.endswith(".csv"):
-                        content_type = "csv"
-                    else:
-                        content_type = "json"
-                    yield InferenceTask(
-                        context=InferenceContext(cli_args=cli_args),
-                        data=(f.read(), content_type),
-                    )
-
-        else:
-            for input_ in inputs:
-                yield InferenceTask(
-                    context=InferenceContext(cli_args=cli_args),
-                    data=(input_, "csv" if parsed_args.csv else "json"),
-                )
-
-    def from_http_request(self, req: HTTPRequest) -> InferenceTask:
-        content_type = (
-            "csv" if req.parsed_headers.content_type == "text/csv" else "json"
-        )
-
-        return InferenceTask(
-            data=(req.body, content_type),
-            context=InferenceContext(http_headers=req.parsed_headers),
-        )
-
-    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask:
-        content_type = (
-            "csv"
-            if event.get("headers", {}).get("Content-Type", "application/json")
-            == "text/csv"
-            else "json"
-        )
-
-        return InferenceTask(
-            context=InferenceContext(aws_lambda_event=event),
-            data=(event.get("body"), content_type),
-        )
-
-    def extract_user_func_args(self, tasks: Iterable[InferenceTask]) -> ApiFuncArgs:
-        dataframes = list()
-
-        for task in tasks:
-            task_bytes, content_type = task.data
-            if content_type == "csv":
-                df = pd.read_csv(task_bytes)
-            else:
-                try:
-                    df = pd.read_json(task_bytes, orient=self.orient, typ=self.typ)
-                except ValueError:
-                    df = None
-                    task.discard(
-                        "Only the text/csv and application/json content types are "
-                        "permitted at this endpoint",
-                        http_status=400,
-                    )
-            if self.typ == "frame" and self.input_dtypes is not None:
-                check_dataframe_column_contains(self.input_dtypes, df)
-
-            dataframes.append(df)
-
-        return dataframes
-
     BATCH_MODE_SUPPORTED = True
 
     def __init__(
@@ -159,6 +70,17 @@ class DataframeInput(BaseInputAdapter):
         super(DataframeInput, self).__init__(
             is_batch_input=is_batch_input, **base_kwargs
         )
+
+        # Verify pandas imported properly and retry import if it has failed initially
+        global pd  # pylint: disable=global-statement
+        if pd is None:
+            try:
+                import pandas as pd  # pylint: disable=redefined-outer-name
+            except ImportError:
+                raise MissingDependencyException(
+                    "Missing required dependency 'pandas' for DataframeInput, install "
+                    "with `pip install pandas`"
+                )
 
         self.orient = orient
 
@@ -221,3 +143,103 @@ class DataframeInput(BaseInputAdapter):
             }
 
         return default
+
+    def handle_request(self, request: flask.Request):
+        if request.content_type == "text/csv":
+            csv_string = StringIO(request.get_data(as_text=True))
+            df = pd.read_csv(csv_string)
+        else:
+            # Optimistically assuming Content-Type to be "application/json"
+            try:
+                df = pd.read_json(
+                    request.get_data(as_text=True), orient=self.orient, typ=self.typ,
+                )
+            except ValueError:
+                raise BadInput(
+                    "Failed parsing request data, only Content-Type application/json "
+                    "and text/csv are supported in BentoML DataframeInput"
+                )
+
+        if self.typ == "frame" and self.input_dtypes is not None:
+            check_dataframe_column_contains(self.input_dtypes, df)
+
+        result = func(df)
+        return self.output_adapter.to_response(result, request)
+
+    def handle_batch_request(
+        self, requests: Iterable[HTTPRequest], func
+    ) -> Iterable[HTTPResponse]:
+
+        datas = [r.body for r in requests]
+        content_types = [
+            r.parsed_headers.content_type or 'application/json' for r in requests
+        ]
+
+        df_conc, slices_generator = read_dataframes_from_json_n_csv(
+            datas, content_types, self.orient
+        )
+        slices = list(slices_generator)
+
+        result_conc = func(df_conc)
+
+        return self.output_adapter.to_batch_response(
+            result_conc, slices=slices, requests=requests,
+        )
+
+    def handle_cli(self, args, func):
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--input", required=True)
+        parser.add_argument(
+            "--orient",
+            default=self.orient,
+            choices=PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
+        )
+        parsed_args, unknown_args = parser.parse_known_args(args)
+
+        orient = parsed_args.orient
+        cli_input = parsed_args.input
+
+        if os.path.isfile(cli_input) or is_s3_url(cli_input) or is_url(cli_input):
+            if cli_input.endswith(".csv"):
+                df = pd.read_csv(cli_input)
+            elif cli_input.endswith(".json"):
+                df = pd.read_json(cli_input, orient=orient, typ=self.typ)
+            else:
+                raise BadInput(
+                    "Input file format not supported, BentoML cli only accepts .json "
+                    "and .csv file"
+                )
+        else:
+            # Assuming input string is JSON format
+            try:
+                df = pd.read_json(cli_input, orient=orient, typ=self.typ)
+            except ValueError as e:
+                raise BadInput(
+                    "Unexpected input format, BentoML DataframeInput expects json "
+                    "string as input: {}".format(e)
+                )
+
+        if self.typ == "frame" and self.input_dtypes is not None:
+            check_dataframe_column_contains(self.input_dtypes, df)
+
+        result = func(df)
+        self.output_adapter.to_cli(result, unknown_args)
+
+    def handle_aws_lambda_event(self, event, func):
+        if event["headers"].get("Content-Type", None) == "text/csv":
+            df = pd.read_csv(event["body"])
+        else:
+            # Optimistically assuming Content-Type to be "application/json"
+            try:
+                df = pd.read_json(event["body"], orient=self.orient, typ=self.typ)
+            except ValueError:
+                raise BadInput(
+                    "Failed parsing request data, only Content-Type application/json "
+                    "and text/csv are supported in BentoML DataframeInput"
+                )
+
+        if self.typ == "frame" and self.input_dtypes is not None:
+            check_dataframe_column_contains(self.input_dtypes, df)
+
+        result = func(df)
+        return self.output_adapter.to_aws_lambda_event(result, event)

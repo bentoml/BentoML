@@ -12,25 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import sys
 import uuid
-import time
-import logging
 from functools import partial
 
 from flask import Flask, jsonify, Response, request, make_response, send_from_directory
-from werkzeug.utils import secure_filename
 from werkzeug.exceptions import BadRequest, NotFound
 
 from bentoml import config, BentoService
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
+from bentoml.marshal.utils import DataLoader
+from bentoml.server import trace
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
-from bentoml.server import trace
 from bentoml.service import InferenceAPI
-from bentoml.marshal.utils import DataLoader
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
@@ -272,8 +270,6 @@ class BentoAPIServer:
         callback and adapter class, and adds request logging and instrument metrics
         """
         request_id = str(uuid.uuid4())
-        service_name = self.bento_service.name
-        service_version = self.bento_service.version
 
         def api_func():
             # handle_request may raise 4xx or 5xx exception.

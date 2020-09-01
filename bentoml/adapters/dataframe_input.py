@@ -111,7 +111,7 @@ class DataframeInput(BaseInputAdapter):
         content_type = (
             "csv"
             if event.get("headers", {}).get("Content-Type", "application/json")
-               == "text/csv"
+            == "text/csv"
             else "json"
         )
 

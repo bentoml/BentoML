@@ -20,7 +20,11 @@ from bentoml.cli.click_utils import (
     _echo,
     parse_bento_tag_list_callback,
 )
-from bentoml.cli.utils import human_friendly_age_from_datetime, get_default_yatai_client
+from bentoml.cli.utils import (
+    human_friendly_age_from_datetime,
+    get_default_yatai_client,
+    _format_labels_for_print,
+)
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.saved_bundle import safe_retrieve
 from bentoml.exceptions import CLIException
@@ -41,7 +45,7 @@ def _print_bento_info(bento, output_type):
 def _print_bento_table(bentos, wide=False):
     table = []
     if wide:
-        headers = ['BENTO_SERVICE', 'CREATED_AT', 'APIS', 'ARTIFACTS', 'URI']
+        headers = ['BENTO_SERVICE', 'CREATED_AT', 'APIS', 'ARTIFACTS', 'URI', 'LABELS']
     else:
         headers = ['BENTO_SERVICE', 'AGE', 'APIS', 'ARTIFACTS']
 
@@ -70,6 +74,7 @@ def _print_bento_table(bentos, wide=False):
         ]
         if wide:
             row.append(bento.uri.uri)
+            row.append(_format_labels_for_print(bento.bento_service_metadata.labels))
         table.append(row)
 
     table_display = tabulate(table, headers, tablefmt='plain')
@@ -249,8 +254,8 @@ def add_bento_sub_command(cli):
             )
             raise CLIException(
                 f'Failed to access BentoService {name}:{version} - '
-                f'{error_code}:{error_message}'
-            )
+                        f'{error_code}:{error_message}'
+                )
 
         if get_bento_result.bento.uri.s3_presigned_url:
             bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url

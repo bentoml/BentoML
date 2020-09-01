@@ -95,23 +95,6 @@ class DeploymentStore(object):
     def __init__(self, sess_maker):
         self.sess_maker = sess_maker
 
-    def insert(self, deployment_pb):
-        with create_session(self.sess_maker) as sess:
-            deployment_obj = _deployment_pb_to_orm_obj(deployment_pb)
-            sess.add(deployment_obj)
-            if deployment_pb.labels:
-                deployment_row = (
-                    sess.query(Deployment)
-                    .filter_by(
-                        name=deployment_obj.name, namespace=deployment_obj.namespace
-                    )
-                    .one()
-                )
-                add_labels(
-                    sess, 'deployment', deployment_row.id, deployment_pb.labels,
-                )
-            return
-
     def insert_or_update(self, deployment_pb):
         with create_session(self.sess_maker) as sess:
             try:
@@ -130,14 +113,22 @@ class DeploymentStore(object):
                             sess,
                             'deployment',
                             deployment_obj.id,
-                            deployment_pb['labels'],
+                            deployment_pb.labels,
                         )
             except NoResultFound:
                 deployment_orm_obj = _deployment_pb_to_orm_obj(deployment_pb)
                 sess.add(deployment_orm_obj)
                 if deployment_pb.labels:
-                    add_or_update_labels(
-                        sess, 'deployment', deployment_orm_obj.id, deployment_pb.labels,
+                    deployment_row = (
+                        sess.query(Deployment)
+                        .filter_by(
+                            name=deployment_orm_obj.name,
+                            namespace=deployment_orm_obj.namespace,
+                        )
+                        .one()
+                    )
+                    add_labels(
+                        sess, 'deployment', deployment_row.id, deployment_pb.labels,
                     )
 
     @contextmanager
@@ -161,9 +152,9 @@ class DeploymentStore(object):
                     .filter_by(name=name, namespace=namespace)
                     .one()
                 )
+                labels = get_labels(sess, 'deployment', deployment_obj.id)
             except NoResultFound:
                 return None
-            labels = get_labels('deployment', deployment_obj.id)
 
             return _deployment_orm_obj_to_pb(deployment_obj, labels)
 

@@ -209,7 +209,10 @@ def get_deployment_sub_command():
         help='Ascending or descending order for list deployments',
     )
     @click.option(
-        '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
+        '-o',
+        '--output',
+        type=click.Choice(['json', 'yaml', 'table', 'wide']),
+        default='table',
     )
     def list_deployments(namespace, platform, limit, labels, order_by, asc, output):
         yatai_client = get_default_yatai_client()

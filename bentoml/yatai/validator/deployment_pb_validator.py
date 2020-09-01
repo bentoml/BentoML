@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import re
 
 from cerberus import Validator
 
@@ -26,7 +27,7 @@ deployment_schema = {
     # namespace is optional - YataiService will fill-in the default namespace configured
     # when it is missing in the apply deployment request
     'namespace': {'type': 'string', 'required': False, 'minlength': 3},
-    'labels': {'type': 'dict', 'allow_unknown': True},
+    'labels': {'type': 'dict', 'deployment_labels': True},
     'annotations': {'type': 'dict', 'allow_unknown': True},
     'created_at': {'type': 'string'},
     'last_updated_at': {'type': 'string'},
@@ -166,6 +167,29 @@ class YataiDeploymentValidator(Validator):
                     field,
                     'Azure Functions min instances must be smaller than max burst',
                 )
+
+    def _validate_deployment_labels(self, deployment_labels, field, value):
+        """ Test label key value schema
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        if deployment_labels:
+            print(field, value)
+            pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
+            for key in value:
+                if (
+                    len(key) > 63
+                    or len(value[key]) > 63
+                    or not pattern.match(key)
+                    or not pattern.match(value[key])
+                ):
+                    self._error(
+                        field,
+                        'Valid label key and value must be 63 characters or less and '
+                        'must be being and end with an alphanumeric character '
+                        '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
+                    )
 
 
 def validate_deployment_pb(pb):

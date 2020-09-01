@@ -6,14 +6,15 @@
 
 # http://www.apache.org/licenses/LICENSE-2.0
 
-import argparse
-import contextlib
-import functools
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import argparse
+import contextlib
+import functools
 import io
 import itertools
 import sys
@@ -92,7 +93,6 @@ COLOR_FAIL = '\033[91m'
 
 
 def exit_cli(err_msg: str = "", exit_code: int = None):
-
     if exit_code is None:
         exit_code = 1 if err_msg else 0
     if err_msg:

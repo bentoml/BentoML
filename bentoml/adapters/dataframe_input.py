@@ -11,88 +11,142 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
-from typing import Tuple, Sequence, Iterator
+import io
+from typing import BinaryIO, Iterable, Tuple
 
-from bentoml.types import (
-    InferenceTask,
-    JsonSerializable,
-    AwsLambdaEvent,
-    InferenceContext,
-    JSON_CHARSET,
+from bentoml.adapters.file_input import FileInput
+from bentoml.adapters.utils import check_file_extension
+from bentoml.exceptions import MissingDependencyException
+from bentoml.types import InferenceTask
+from bentoml.utils.dataframe_util import (
+    PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
+    read_dataframes_from_json_n_csv,
 )
-from bentoml.adapters import BaseInputAdapter
+from bentoml.utils.lazy_loader import LazyLoader
+
+pandas = LazyLoader('pandas', globals(), 'pandas')
+
+DataFrameTask = InferenceTask[BinaryIO]
+ApiFuncArgs = Tuple['pandas.DataFrame']
 
 
-'''
-DataFrameTask = InferenceTask[Tuple[bytes, str]]
-ApiFuncArgs = Tuple[Sequence[JsonSerializable]]
+class DataframeInput(FileInput):
+    def __init__(
+        self, orient=None, typ="frame", columns=None, input_dtypes=None, **base_kwargs,
+    ):
+        super().__init__(**base_kwargs)
 
-
-class DataframeInput(BaseInputAdapter):
-
-    BATCH_MODE_SUPPORTED = True
-
-    def from_http_request(
-        self, reqs: Iterable[HTTPRequest]
-    ) -> Iterator[InferenceTask[str]]:
-        for r in reqs:
-            if r.parsed_headers.content_encoding in {"gzip", "x-gzip"}:
-                # https://tools.ietf.org/html/rfc7230#section-4.2.3
-                try:
-                    yield InferenceTask(
-                        context=InferenceContext(http_headers=r.parsed_headers),
-                        data=gzip.decompress(r.body),
-                    )
-                except OSError:
-                    task = InferenceTask(data=None)
-                    task.discard(http_status=400, err_msg="Gzip decomression error")
-                    yield task
-            elif r.parsed_headers.content_encoding in ["", "identity"]:
-                yield InferenceTask(
-                    context=InferenceContext(http_headers=r.parsed_headers),
-                    data=r.body,
-                )
-            else:
-                task = InferenceTask(data=None)
-                task.discard(http_status=415, err_msg="Unsupported Media Type")
-                yield task
-
-    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[bytes]:
-        return InferenceTask(
-            context=InferenceContext(aws_lambda_event=event),
-            data=event.get('body', '').encode(JSON_CHARSET),
+        # Verify pandas imported properly and retry import if it has failed initially
+        if pandas is None:
+            raise MissingDependencyException(
+                "Missing required dependency 'pandas' for DataframeInput, install "
+                "with `pip install pandas`"
+            )
+        if typ != "frame":
+            raise NotImplementedError()
+        assert not orient or orient in PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS, (
+            f"Invalid option 'orient'='{orient}', valid options are "
+            f"{PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS}"
         )
 
-    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:
-        for json_input in parse_cli_input(cli_args):
-            yield InferenceTask(
-                context=InferenceContext(cli_args=cli_args), data=json_input.read()
+        assert (
+            columns is None or input_dtypes is None or set(input_dtypes) == set(columns)
+        ), "input_dtypes must match columns"
+
+        self.typ = typ
+        self.orient = orient
+        self.columns = columns
+        if isinstance(input_dtypes, (list, tuple)):
+            self.input_dtypes = dict(
+                (index, dtype) for index, dtype in enumerate(input_dtypes)
             )
+        else:
+            self.input_dtypes = input_dtypes
+
+    @property
+    def pip_dependencies(self):
+        return ['pandas']
+
+    @property
+    def config(self):
+        base_config = super(DataframeInput, self).config
+        return dict(
+            base_config,
+            orient=self.orient,
+            typ=self.typ,
+            input_dtypes=self.input_dtypes,
+        )
+
+    def _get_type(self, item):
+        if item.startswith('int'):
+            return 'integer'
+        if item.startswith('float') or item.startswith('double'):
+            return 'number'
+        if item.startswith('str') or item.startswith('date'):
+            return 'string'
+        if item.startswith('bool'):
+            return 'boolean'
+        return 'object'
+
+    @property
+    def request_schema(self):
+        default = {"application/json": {"schema": {"type": "object"}}}
+        if self.input_dtypes is None:
+            return default
+
+        if isinstance(self.input_dtypes, dict):
+            return {
+                "application/json": {  # For now, only declare JSON on docs.
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            k: {"type": "array", "items": {"type": self._get_type(v)}}
+                            for k, v in self.input_dtypes.items()
+                        },
+                    }
+                }
+            }
+
+        return default
+
+    @classmethod
+    def _detect_format(cls, task: InferenceTask) -> str:
+        if task.context.http_headers.content_type == "application/json":
+            return "json"
+        if task.context.http_headers.content_type == "text/csv":
+            return "csv"
+        file_name = getattr(task.data, "name", "")
+        if check_file_extension(file_name, (".csv",)):
+            return "csv"
+        return "json"
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[bytes]]
     ) -> ApiFuncArgs:
-        json_inputs = []
-        for task in tasks:
-            try:
-                json_str = task.data.decode(JSON_CHARSET)
-                parsed_json = json.loads(json_str)
-                json_inputs.append(parsed_json)
-            except UnicodeDecodeError:
-                task.discard(
-                    http_status=400, err_msg=f"JSON must be encoded in {JSON_CHARSET}"
-                )
-            except json.JSONDecodeError:
-                task.discard(http_status=400, err_msg="Not a valid JSON format")
-            except Exception:  # pylint: disable=broad-except
-                err = traceback.format_exc()
-                task.discard(http_status=500, err_msg=f"Internal Server Error: {err}")
-        return (json_inputs,)
-'''
+        fmts = (self._detect_format(task) for task in tasks)
+        datas = (task.data.read() for task in tasks)
 
-import argparse
+        df_csv, batchs = read_dataframes_from_json_n_csv(
+            datas, fmts, orient=self.orient, columns=self.columns
+        )
+        for task, batch in zip(tasks, batchs):
+            if batch:
+                task.batch = batch
+            else:
+                task.discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__}Wrong input format.",
+                )
+        df = pandas.read_csv(
+            io.StringIO(df_csv, index_col=None, dtype=self.input_dtypes)
+        )
+        return (df,)
+
+
+'''
+from typing import Iterable
 import os
+import argparse
 from io import StringIO
 from typing import Iterable
 
@@ -322,3 +376,4 @@ class DataframeInput(BaseInputAdapter):
 
         result = func(df)
         return self.output_adapter.to_aws_lambda_event(result, event)
+'''

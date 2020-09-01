@@ -13,7 +13,7 @@
 # limitations under the License.
 import base64
 import io
-from typing import Tuple, BinaryIO, Sequence, Iterable, List
+from typing import Tuple, BinaryIO, Sequence
 
 from bentoml.types import InferenceTask, HTTPRequest, InferenceContext
 from bentoml.utils.lazy_loader import LazyLoader

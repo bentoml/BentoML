@@ -14,8 +14,7 @@
 
 import io
 import base64
-from typing import Iterable, BinaryIO, Tuple, Iterator, Sequence, List
-
+from typing import Iterable, BinaryIO, Tuple, Iterator, Sequence
 
 from bentoml.types import (
     HTTPRequest,

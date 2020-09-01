@@ -1,22 +1,19 @@
 # pylint: disable=redefined-outer-name
 import itertools
-import time
-import pytest
+import json
 import math
+import time
 
 import flask
-import pandas as pd
 import numpy as np
-import json
+import pandas as pd
 import psutil  # noqa # pylint: disable=unused-import
+import pytest
 
-from bentoml.utils.dataframe_util import _csv_split, _guess_orient
 from bentoml.adapters import DataframeInput
-from bentoml.adapters.dataframe_input import (
-    check_dataframe_column_contains,
-    read_dataframes_from_json_n_csv,
-)
+from bentoml.adapters.dataframe_input import read_dataframes_from_json_n_csv
 from bentoml.exceptions import BadInput
+from bentoml.utils.dataframe_util import guess_orient
 
 try:
     from unittest.mock import MagicMock
@@ -38,45 +35,44 @@ def test_dataframe_request_schema():
     assert "string" == schema["properties"]["col3"]["items"]["type"]
 
 
-def test_dataframe_handle_cli(capsys, tmpdir):
+def test_dataframe_handle_cli(capsys, make_api, tmpdir):
     def test_func(df):
         return df["name"][0]
 
     input_adapter = DataframeInput()
+    api = make_api(input_adapter, test_func)
 
     json_file = tmpdir.join("test.json")
     with open(str(json_file), "w") as f:
         f.write('[{"name": "john","game": "mario","city": "sf"}]')
 
-    test_args = ["--input={}".format(json_file)]
-    input_adapter.handle_cli(test_args, test_func)
+    test_args = ["--input-file", str(json_file)]
+    api.handle_cli(test_args)
     out, _ = capsys.readouterr()
     assert out.strip().endswith("john")
 
 
-def test_dataframe_handle_aws_lambda_event():
+def test_dataframe_handle_aws_lambda_event(make_api):
     test_content = '[{"name": "john","game": "mario","city": "sf"}]'
 
     def test_func(df):
         return df["name"][0]
 
     input_adapter = DataframeInput()
+    api = make_api(input_adapter, test_func)
     event = {
         "headers": {"Content-Type": "application/json"},
         "body": test_content,
     }
-    response = input_adapter.handle_aws_lambda_event(event, test_func)
+    response = api.handle_aws_lambda_event(event)
     assert response["statusCode"] == 200
     assert response["body"] == '"john"'
 
-    input_adapter = DataframeInput()
     event_without_content_type_header = {
         "headers": {},
         "body": test_content,
     }
-    response = input_adapter.handle_aws_lambda_event(
-        event_without_content_type_header, test_func
-    )
+    response = api.handle_aws_lambda_event(event_without_content_type_header)
     assert response["statusCode"] == 200
     assert response["body"] == '"john"'
 
@@ -85,30 +81,7 @@ def test_dataframe_handle_aws_lambda_event():
             "headers": {},
             "body": "bad_input_content",
         }
-        input_adapter.handle_aws_lambda_event(event_with_bad_input, test_func)
-
-
-def test_check_dataframe_column_contains():
-    df = pd.DataFrame(
-        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), columns=["a", "b", "c"]
-    )
-
-    # this should pass
-    check_dataframe_column_contains({"a": "int", "b": "int", "c": "int"}, df)
-    check_dataframe_column_contains({"a": "int"}, df)
-    check_dataframe_column_contains({"a": "int", "c": "int"}, df)
-
-    # this should raise exception
-    with pytest.raises(BadInput) as e:
-        check_dataframe_column_contains({"required_column_x": "int"}, df)
-    assert "Missing columns: required_column_x" in str(e.value)
-
-    with pytest.raises(BadInput) as e:
-        check_dataframe_column_contains(
-            {"a": "int", "b": "int", "d": "int", "e": "int"}, df
-        )
-    assert "Missing columns:" in str(e.value)
-    assert "required_column:" in str(e.value)
+        api.handle_aws_lambda_event(event_with_bad_input)
 
 
 def test_dataframe_handle_request_csv():
@@ -196,9 +169,9 @@ def test_batch_read_dataframes_from_mixed_json_n_csv(df):
 def test_batch_read_dataframes_from_csv_other_CRLF(df):
     csv_str = df.to_csv(index=False)
     if '\r\n' in csv_str:
-        csv_str = '\n'.join(_csv_split(csv_str, '\r\n')).encode()
+        csv_str = '\n'.join(csv_split(csv_str, '\r\n')).encode()
     else:
-        csv_str = '\r\n'.join(_csv_split(csv_str, '\n')).encode()
+        csv_str = '\r\n'.join(csv_split(csv_str, '\n')).encode()
     df_merged, _ = read_dataframes_from_json_n_csv([csv_str], ['text/csv'])
     assert_df_equal(df_merged, df)
 
@@ -243,7 +216,7 @@ def test_batch_read_dataframes_from_json_in_mixed_order():
 
 def test_guess_orient(df, orient):
     json_str = df.to_json(orient=orient)
-    guessed_orient = _guess_orient(json.loads(json_str))
+    guessed_orient = guess_orient(json.loads(json_str))
     assert orient == guessed_orient or orient in guessed_orient
 
 
@@ -263,14 +236,16 @@ def test_benchmark_load_dataframes():
     time1 = time.time() - time_st
 
     time_st = time.time()
-    result2, _ = read_dataframes_from_json_n_csv(
-        inputs, itertools.repeat('application/json'), 'columns'
+    table, _ = read_dataframes_from_json_n_csv(
+        inputs, itertools.repeat('json'), 'columns'
     )
-    time2 = time.time() - time_st
+    print(table)
+    result2 = pd.read_csv(io.StringIO(table), index_col=None)
 
+    time2 = time.time() - time_st
     assert_df_equal(result1, result2)
 
     # 15 is just an estimate on the smaller end, which should be true for most
     # development machines and Travis CI environment, the actual ratio depends on the
     # hardware and available computing resource
-    assert time1 / time2 > 15
+    assert time1 / time2 > 20

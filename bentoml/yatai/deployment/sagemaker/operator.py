@@ -554,7 +554,9 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 )
         updated_deployment_spec = deployment_pb.spec
         updated_sagemaker_config = updated_deployment_spec.sagemaker_operator_config
-        sagemaker_client = boto3.client('sagemaker', updated_sagemaker_config.region)
+        sagemaker_client = boto3.client(
+            'sagemaker', updated_sagemaker_config.region or get_default_aws_region()
+        )
 
         try:
             raise_if_api_names_not_found_in_bento_service_metadata(

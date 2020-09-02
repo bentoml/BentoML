@@ -23,23 +23,19 @@ import re
 import sys
 import uuid
 from datetime import datetime
-from typing import List, Iterable, Iterator, Sequence
+from typing import Iterable, Iterator, List, Sequence
 
 import flask
 
 from bentoml import config
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
-from bentoml.artifact import BentoServiceArtifact, ArtifactCollection
-from bentoml.exceptions import NotFound, InvalidArgument, BentoMLException
+from bentoml.artifact import ArtifactCollection, BentoServiceArtifact
+from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.server import trace
 from bentoml.service_env import BentoServiceEnv
-from bentoml.types import (
-    HTTPRequest,
-    InferenceTask,
-    InferenceResult,
-)
+from bentoml.types import HTTPRequest, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
 from bentoml.utils.hybridmethod import hybridmethod
 
@@ -154,13 +150,13 @@ class InferenceAPI(object):
         :return: user-defined inference API callback function
         """
 
-        # allow user to define handlers without 'contexts' kwargs
+        # allow user to define handlers without 'tasks' kwargs
         _sig = inspect.signature(self._user_func)
         try:
-            _sig.bind(contexts=None)
-            append_contexts = False
+            _sig.bind(tasks=None)
+            append_tasks = False
         except TypeError:
-            append_contexts = True
+            append_tasks = True
 
         @functools.wraps(self._user_func)
         def wrapped_func(*args, **kwargs):
@@ -168,9 +164,22 @@ class InferenceAPI(object):
                 service_name=self.__class__.__name__,
                 span_name="user defined inference api callback function",
             ):
-                if append_contexts and "contexts" in kwargs:
-                    kwargs.pop('contexts')
-                return self._user_func(*args, **kwargs)
+                if append_tasks and "tasks" in kwargs:
+                    tasks = kwargs.pop('tasks')
+                else:
+                    tasks = kwargs['tasks']
+                try:
+                    return self._user_func(*args, **kwargs)
+                except Exception as e:  # pylint: disable=broad-except
+                    for task in tasks:
+                        if not task.is_discarded:
+                            task.discard(
+                                http_status=500,
+                                err_msg=f"Exception happened in API function: {e}",
+                            )
+                    return [None] * sum(
+                        1 if t.batch is None else t.batch for t in tasks
+                    )
 
         return wrapped_func
 
@@ -204,19 +213,18 @@ class InferenceAPI(object):
 
         # extract args
         user_args = self.input_adapter.extract_user_func_args(
-            self._filter_tasks(inf_tasks)
+            tuple(self._filter_tasks(inf_tasks))
         )
-        contexts = tuple(t.context for t in inf_tasks if not t.is_discarded)
         filtered_tasks = tuple(t for t in inf_tasks if not t.is_discarded)
 
         # call user function
         if not self.input_adapter.BATCH_MODE_SUPPORTED:  # For legacy input adapters
             user_return = tuple(
-                self.user_func(*legacy_user_args)
-                for legacy_user_args in zip(*user_args)
+                self.user_func(*legacy_user_args, tasks=(task,))
+                for task, *legacy_user_args in zip(filtered_tasks, *user_args)
             )
         else:
-            user_return = self.user_func(*user_args, contexts=contexts)
+            user_return = self.user_func(*user_args, tasks=filtered_tasks)
         if (
             isinstance(user_return, (list, tuple))
             and len(user_return)

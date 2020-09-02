@@ -14,10 +14,10 @@
 
 
 # CSV utils following https://tools.ietf.org/html/rfc4180
-from typing import Iterator, Iterable
+from typing import Iterable, Iterator
 
 
-def csv_splitline(string) -> Iterator[str]:
+def csv_splitlines(string) -> Iterator[str]:
     if '"' in string:
 
         def _iter_line(line):
@@ -37,7 +37,7 @@ def csv_splitline(string) -> Iterator[str]:
 
         return _iter_line(string)
 
-    return iter(string.splitline())
+    return iter(string.splitlines())
 
 
 def csv_split(string, delimiter) -> Iterator[str]:

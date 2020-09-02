@@ -1,7 +1,6 @@
 import json
 import os
 
-
 TF_B64_KEY = "b64"
 
 

@@ -12,15 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Iterator, Mapping
-import sys
-import json
-import collections
+import io
 import itertools
+import json
+from typing import Iterable, Iterator, Mapping
 
+from bentoml.exceptions import BadInput
 from bentoml.utils import catch_exceptions
-from bentoml.utils.csv import csv_split, csv_splitline, csv_quote, csv_unquote, csv_row
-from bentoml.exceptions import BadInput, MissingDependencyException
+from bentoml.utils.csv import (
+    csv_quote,
+    csv_row,
+    csv_split,
+    csv_splitlines,
+    csv_unquote,
+)
 
 
 def check_dataframe_column_contains(required_column_names, df):
@@ -48,29 +53,26 @@ def detect_orient(table):
 
 
 @catch_exceptions(Exception, fallback=None)
-def guess_orient(table):
+def guess_orient(table, strict=False):
     if isinstance(table, list):
+        if not table:
+            if strict:
+                return {"records", "values"}
+            else:
+                return "records"
         if isinstance(table[0], dict):
             return 'records'
         else:
             return 'values'
     elif isinstance(table, dict):
-        if all(isinstance(v, list) for v in iter(table.values())):
-            if 'columns' in table and 'index' in table:
-                return 'split'
-            return None
-        if all(isinstance(v, dict) for v in iter(table.values())):
-            if any(isinstance(k, str) and not k.isnumeric() for k in table.keys()):
-                return 'columns'
-            if any(
-                isinstance(k, str) and not k.isnumeric()
-                for k in next(iter(table.values())).keys()
-            ):
-                return 'index'
-            return {'columns', 'index'}
-        if 'schema' in table and 'data' in table and 'primaryKey' in table['schema']:
+        if set(table) == {"columns", "index", "data"}:
+            return 'split'
+        if set(table) == {"schema", "data"} and "primaryKey" in table["schema"]:
             return 'table'
-        return None
+        if strict:
+            return {'columns', "index"}
+        else:
+            return "columns"
 
 
 class DataFrameState(object):
@@ -81,11 +83,8 @@ class DataFrameState(object):
 def _from_json_records(state: DataFrameState, table: list):
     if state.columns is None:  # make header
         state.columns = {k: i for i, k in enumerate(table[0].keys())}
-        for tr in table:
-            yield csv_row(tr.values())
-    else:
-        for tr in table:
-            yield csv_row(tr[c] for c in state.columns)
+    for tr in table:
+        yield csv_row(tr[c] for c in state.columns)
 
 
 def _from_json_values(_: DataFrameState, table: list):
@@ -170,52 +169,39 @@ _ORIENT_MAP = {
 PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS = {k for k in _ORIENT_MAP}
 
 
-def _dataframe_csv_from_input(table, fmt, orient, state):
-    fmt = fmt or "json"
-    if fmt == "json":
-        # Keep order when loading data
-        if sys.version_info >= (3, 6):
-            table = json.loads(table.decode('utf-8'))
-        else:
-            table = json.loads(
-                table.decode('utf-8'), object_pairs_hook=collections.OrderedDict
-            )
-    elif fmt == "csv":
-        table = csv_splitline(table.decode('utf-8'))
-        if not table:
-            return tuple()
-    else:
-        raise BadInput(f'Invalid format for DataframeInput: {fmt}')
-
-    if fmt == "json":
-        if not orient:
-            orient = detect_orient(table)
-        if not orient:
-            raise BadInput(
-                'Unable to detect Json orient, please specify the format orient.'
-            )
-        if orient not in _ORIENT_MAP:
-            raise NotImplementedError(f'Json orient "{orient}" is not supported now')
-        _from_json = _ORIENT_MAP[orient]
-        try:
-            return tuple(_from_json(state, table))
-        except Exception as e:  # pylint:disable=broad-except
-            guessed_orient = guess_orient(table)
-            if guessed_orient:
-                raise BadInput(
-                    f'Not a valid "{orient}" oriented Json. '
-                    f'The orient seems to be "{guessed_orient}". '
-                    f'Try DataframeInput(orient="{guessed_orient}") instead.'
-                ) from e
+def _dataframe_csv_from_input(table: str, fmt, orient, state):
+    try:
+        if not fmt or fmt == "json":
+            table = json.loads(table)
+            if not orient:
+                orient = guess_orient(table, strict=False)
             else:
-                raise BadInput(f'Not a valid "{orient}" oriented Json. ') from e
-            return tuple()
-    elif fmt == "csv":
-        return tuple(_from_csv_without_index(state, table))
+                guessed_orient = guess_orient(table, strict=True)
+                if orient != guessed_orient and orient not in guessed_orient:
+                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", orient)
+                    return None
+            if orient not in _ORIENT_MAP:
+                return None
+            _from_json = _ORIENT_MAP[orient]
+            try:
+                return tuple(_from_json(state, table))
+            except (TypeError, AttributeError, KeyError, IndexError):
+                return None
+        elif fmt == "csv":
+            table = csv_splitlines(table)
+            return tuple(_from_csv_without_index(state, table))
+        else:
+            return None
+    except (json.JSONDecodeError):
+        return None
 
 
 def read_dataframes_from_json_n_csv(
-    datas: Iterable[bytes], formats: Iterable[str], orient: str = None, columns=None
+    datas: Iterable[bytes],
+    formats: Iterable[str],
+    orient: str = None,
+    columns=None,
+    dtype=None,
 ) -> ("pandas.DataFrame", Iterable[slice]):
     '''
     load dataframes from multiple raw datas in json or csv format, efficiently
@@ -224,14 +210,27 @@ def read_dataframes_from_json_n_csv(
     no matter how many lines it contains. Concat jsons/csvs before read_json/read_csv
     to improve performance.
     '''
+    import pandas
+
     state = DataFrameState(
         columns={k: i for i, k in enumerate(columns)} if columns else None
     )
     trs_list = tuple(
-        _dataframe_csv_from_input(t, fmt, orient, state)
+        _dataframe_csv_from_input(t.decode(), fmt, orient, state)
         for t, fmt in zip(datas, formats)
     )
-    lens = tuple(len(trs) for trs in trs_list)
-    header = ",".join(csv_quote(td) for td in state.columns)
-    table = header + "\n" + "\n".join((tr) for trs in trs_list for tr in trs)
-    return table, lens
+    header = ",".join(csv_quote(td) for td in state.columns) if state.columns else None
+    lens = tuple(len(trs) if trs else 0 for trs in trs_list)
+    table = "\n".join(tr for trs in trs_list if trs is not None for tr in trs)
+    try:
+        if not header:
+            df = pandas.read_csv(
+                io.StringIO(table), index_col=None, dtype=dtype, header=None,
+            )
+        else:
+            df = pandas.read_csv(
+                io.StringIO("\n".join((header, table))), index_col=None, dtype=dtype,
+            )
+        return df, lens
+    except pandas.errors.EmptyDataError:
+        return None, lens

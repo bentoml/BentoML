@@ -5,19 +5,24 @@
 # You may obtain a copy of the License at
 
 # http://www.apache.org/licenses/LICENSE-2.0
-
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import io
 from typing import BinaryIO, Iterable, Tuple
 
 from bentoml.adapters.file_input import FileInput
 from bentoml.adapters.utils import check_file_extension
 from bentoml.exceptions import MissingDependencyException
-from bentoml.types import InferenceTask
+from bentoml.types import (
+    AwsLambdaEvent,
+    InferenceContext,
+    InferenceTask,
+    ParsedHeaders,
+)
 from bentoml.utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
     read_dataframes_from_json_n_csv,
@@ -90,24 +95,41 @@ class DataframeInput(FileInput):
 
     @property
     def request_schema(self):
-        default = {"application/json": {"schema": {"type": "object"}}}
-        if self.input_dtypes is None:
-            return default
-
         if isinstance(self.input_dtypes, dict):
-            return {
-                "application/json": {  # For now, only declare JSON on docs.
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            k: {"type": "array", "items": {"type": self._get_type(v)}}
-                            for k, v in self.input_dtypes.items()
-                        },
-                    }
+            json_schema = {  # For now, only declare JSON on docs.
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        k: {"type": "array", "items": {"type": self._get_type(v)}}
+                        for k, v in self.input_dtypes.items()
+                    },
                 }
             }
+        else:
+            json_schema = {"schema": {"type": "object"}}
+        return {
+            "multipart/form-data": {
+                "schema": {
+                    "type": "object",
+                    "properties": {"file": {"type": "string", "format": "binary"}},
+                }
+            },
+            "application/json": json_schema,
+            "text/csv": {"schema": {"type": "string", "format": "binary"}},
+        }
 
-        return default
+    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[BinaryIO]:
+        parsed_headers = ParsedHeaders.parse(tuple(event.get('headers', {}).items()))
+        if parsed_headers.content_type == "text/csv":
+            bio = io.BytesIO(event["body"].encode())
+            bio.name = "input.csv"
+        else:
+            # Optimistically assuming Content-Type to be "application/json"
+            bio = io.BytesIO(event["body"].encode())
+            bio.name = "input.json"
+        return InferenceTask(
+            context=InferenceContext(aws_lambda_event=event), data=bio,
+        )
 
     @classmethod
     def _detect_format(cls, task: InferenceTask) -> str:
@@ -123,23 +145,34 @@ class DataframeInput(FileInput):
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[bytes]]
     ) -> ApiFuncArgs:
-        fmts = (self._detect_format(task) for task in tasks)
-        datas = (task.data.read() for task in tasks)
-
-        df_csv, batchs = read_dataframes_from_json_n_csv(
-            datas, fmts, orient=self.orient, columns=self.columns
+        fmts, datas = tuple(
+            zip(*((self._detect_format(task), task.data.read()) for task in tasks))
         )
-        for task, batch in zip(tasks, batchs):
-            if batch:
-                task.batch = batch
-            else:
+
+        df, batchs = read_dataframes_from_json_n_csv(
+            datas,
+            fmts,
+            orient=self.orient,
+            columns=self.columns,
+            dtype=self.input_dtypes,
+        )
+
+        if df is None:
+            for task in tasks:
                 task.discard(
                     http_status=400,
-                    err_msg=f"{self.__class__.__name__}Wrong input format.",
+                    err_msg=f"{self.__class__.__name__} Wrong input format.",
                 )
-        df = pandas.read_csv(
-            io.StringIO(df_csv, index_col=None, dtype=self.input_dtypes)
-        )
+            return (df,)
+
+        for task, batch, data in zip(tasks, batchs, datas):
+            if batch == 0:
+                task.discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__} Wrong input format: {data}.",
+                )
+            else:
+                task.batch = batch
         return (df,)
 
 
@@ -308,7 +341,7 @@ class DataframeInput(BaseInputAdapter):
             r.parsed_headers.content_type or 'application/json' for r in requests
         ]
 
-        df_conc, slices_generator = read_dataframes_from_json_n_csv(
+        headers, df_conc, slices_generator = read_dataframes_from_json_n_csv(
             datas, content_types, self.orient
         )
         slices = list(slices_generator)

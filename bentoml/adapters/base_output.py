@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import itertools
-from typing import Iterable, Sequence, Tuple, Iterator
+from typing import Iterable, Iterator, Sequence, Tuple
 
 from bentoml.types import (
+    ApiFuncReturnValue,
     AwsLambdaEvent,
     HTTPResponse,
-    ApiFuncReturnValue,
-    InferenceTask,
     InferenceResult,
+    InferenceTask,
     Output,
 )
 
@@ -29,11 +29,18 @@ def regroup_return_value(
     return_values: Iterable, tasks: Sequence[InferenceTask]
 ) -> Iterator[Tuple[Output, InferenceTask]]:
     iter_rv = iter(return_values)
-    for task in tasks:
-        if task.batch is None:
-            yield next(iter_rv), task
-        else:
-            yield tuple(itertools.islice(iter_rv, task.batch)), task
+    try:
+        for task in tasks:
+            if task.batch is None:
+                yield next(iter_rv), task
+            else:
+                yield tuple(itertools.islice(iter_rv, task.batch)), task
+    except StopIteration:
+        for task in tasks:
+            task.discard(
+                http_status=500,
+                err_msg="The return values of Api Function doesn't match tasks",
+            )
 
 
 class BaseOutputAdapter:

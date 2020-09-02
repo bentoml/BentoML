@@ -15,8 +15,11 @@ echo "Releasing debian based docker base image.."
 docker build --pull \
     --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
     -t bentoml/model-server:"$BENTOML_VERSION" \
+    -t bentoml/model-server:latest \
     .
 docker push bentoml/model-server:"$BENTOML_VERSION"
+docker push bentoml/model-server:latest
+
 
 PYTHON_MAJOR_VERSIONS=(3.6 3.7 3.8)
 echo "Building slim docker base images for ${PYTHON_MAJOR_VERSIONS[*]}"
@@ -27,11 +30,13 @@ do
     --build-arg BENTOML_VERSION=$BENTOML_VERSION \
     --build-arg PYTHON_VERSION=$version \
     -t bentoml/model-server:$BENTOML_VERSION-slim-py${version//.} \
+    -t bentoml/model-server:latest-slim-py${version//.} \
     -f Dockerfile-slim \
     --network=host \
     .
 
     docker push bentoml/model-server:$BENTOML_VERSION-slim-py${version//.}
+    docker push bentoml/model-server:latest-slim-py${version//.}
 
 done
 echo "Done"

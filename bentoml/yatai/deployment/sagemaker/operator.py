@@ -433,8 +433,6 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             sagemaker_config.region = (
                 sagemaker_config.region or get_default_aws_region()
             )
-            if not sagemaker_config.region:
-                raise InvalidArgument('AWS region is missing')
 
             ensure_docker_available_or_raise()
             if sagemaker_config is None:

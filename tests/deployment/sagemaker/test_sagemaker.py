@@ -1,5 +1,3 @@
-import sys
-
 import pytest
 import boto3
 import botocore
@@ -22,11 +20,6 @@ from bentoml.yatai.proto.repository_pb2 import (
 from bentoml.yatai.proto.status_pb2 import Status
 from bentoml.exceptions import AWSServiceError, YataiDeploymentException
 from tests.deployment.sagemaker.sagemaker_moto import moto_mock_sagemaker
-
-
-if sys.platform == "darwin":
-    # TODO: Undo the skipping and understand why this test is failling on Mac OS
-    pytest.skip("skipping SageMaker tests on MacOS", allow_module_level=True)
 
 
 def test_sagemaker_handle_client_errors():

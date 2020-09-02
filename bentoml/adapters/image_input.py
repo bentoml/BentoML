@@ -12,18 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, BinaryIO, Tuple, Sequence
+from typing import BinaryIO, Iterable, Sequence, Tuple
 
-
-from bentoml.types import InferenceTask
-from bentoml import config
+from bentoml.adapters.file_input import FileInput
 from bentoml.adapters.utils import (
     check_file_extension,
     get_default_accept_image_formats,
 )
+from bentoml.types import InferenceTask
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.adapters.file_input import FileInput
-
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')

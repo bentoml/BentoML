@@ -1,5 +1,5 @@
 # pylint: disable=redefined-outer-name
-import io
+
 import itertools
 import json
 import math
@@ -13,7 +13,6 @@ import pytest
 
 from bentoml.adapters import DataframeInput
 from bentoml.adapters.dataframe_input import read_dataframes_from_json_n_csv
-from bentoml.exceptions import BadInput
 from bentoml.utils.csv import csv_splitlines
 from bentoml.utils.dataframe_util import guess_orient
 

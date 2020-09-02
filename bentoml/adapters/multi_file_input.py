@@ -13,17 +13,15 @@
 # limitations under the License.
 
 import io
-from typing import Iterable, BinaryIO, Tuple, Iterator, Sequence, List
+from typing import BinaryIO, Iterator, Sequence, Tuple
 
-
-from bentoml.types import (
-    HTTPRequest,
-    AwsLambdaEvent,
-    InferenceTask,
-    InferenceContext,
-)
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_inputs
-
+from bentoml.types import (
+    AwsLambdaEvent,
+    HTTPRequest,
+    InferenceContext,
+    InferenceTask,
+)
 
 ApiFuncArgs = Tuple[Sequence[BinaryIO], ...]
 MultiFileTask = InferenceTask[Tuple[BinaryIO, ...]]
@@ -31,14 +29,14 @@ MultiFileTask = InferenceTask[Tuple[BinaryIO, ...]]
 
 class MultiFileInput(BaseInputAdapter):
     """ Low level input adapters that transform incoming files data from http request,
-    CLI or AWS lambda event into binary stream objects, then pass down to user defined 
+    CLI or AWS lambda event into binary stream objects, then pass down to user defined
     API functions.
 
     Args:
-        input_names: list of input names. For HTTP they are form input names. For CLI 
+        input_names: list of input names. For HTTP they are form input names. For CLI
             they are CLI args --input-<name1> or --input-file-<name1>
-        allow_none: accept HTTP requests or AWS Lambda events without all files provided.
-            Does not take effect on CLI.
+        allow_none: accept HTTP requests or AWS Lambda events without all files
+            provided. Does not take effect on CLI.
 
     Example:
 
@@ -49,7 +47,6 @@ class MultiFileInput(BaseInputAdapter):
 
         from bentoml.artifact import PytorchModelArtifact
         from bentoml.adapters import MultiFileInput
-
 
         @bentoml.env(pip_dependencies=['torch', 'pillow', 'numpy'])
         @bentoml.artifacts([PytorchModelArtifact('classifier')])

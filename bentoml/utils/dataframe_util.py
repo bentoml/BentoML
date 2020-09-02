@@ -26,6 +26,9 @@ from bentoml.utils.csv import (
     csv_splitlines,
     csv_unquote,
 )
+from bentoml.utils.lazy_loader import LazyLoader
+
+pandas = LazyLoader('pandas', globals(), 'pandas')
 
 
 def check_dataframe_column_contains(required_column_names, df):
@@ -37,19 +40,6 @@ def check_dataframe_column_contains(required_column_names, df):
                     ",".join(set(required_column_names) - df_columns), df_columns
                 )
             )
-
-
-def detect_orient(table):
-    if isinstance(table, list):
-        if isinstance(table[0], dict):
-            return 'records'
-        else:
-            return 'values'
-    elif isinstance(table, dict):
-        if isinstance(next(iter(table.values())), dict):
-            return 'columns'
-    # Do not need more auto orients supports than official pandas
-    return None
 
 
 @catch_exceptions(Exception, fallback=None)
@@ -210,8 +200,6 @@ def read_dataframes_from_json_n_csv(
     no matter how many lines it contains. Concat jsons/csvs before read_json/read_csv
     to improve performance.
     '''
-    import pandas
-
     state = DataFrameState(
         columns={k: i for i, k in enumerate(columns)} if columns else None
     )

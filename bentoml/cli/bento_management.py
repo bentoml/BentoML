@@ -45,9 +45,9 @@ def _print_bento_info(bento, output_type):
 def _print_bento_table(bentos, wide=False):
     table = []
     if wide:
-        headers = ['BENTO_SERVICE', 'CREATED_AT', 'APIS', 'ARTIFACTS', 'URI', 'LABELS']
+        headers = ['BENTO_SERVICE', 'CREATED_AT', 'APIS', 'ARTIFACTS', 'LABELS', 'URI']
     else:
-        headers = ['BENTO_SERVICE', 'AGE', 'APIS', 'ARTIFACTS']
+        headers = ['BENTO_SERVICE', 'AGE', 'APIS', 'ARTIFACTS', 'LABELS']
 
     for bento in bentos:
         artifacts = [
@@ -71,10 +71,10 @@ def _print_bento_table(bentos, wide=False):
             created_at,
             ', '.join(apis),
             ', '.join(artifacts),
+            _format_labels_for_print(bento.bento_service_metadata.labels),
         ]
         if wide:
             row.append(bento.uri.uri)
-            row.append(_format_labels_for_print(bento.bento_service_metadata.labels))
         table.append(row)
 
     table_display = tabulate(table, headers, tablefmt='plain')

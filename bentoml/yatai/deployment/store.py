@@ -110,10 +110,7 @@ class DeploymentStore(object):
                     _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
                     if deployment_pb.labels:
                         add_or_update_labels(
-                            sess,
-                            'deployment',
-                            deployment_obj.id,
-                            deployment_pb.labels,
+                            sess, 'deployment', deployment_obj.id, deployment_pb.labels,
                         )
             except NoResultFound:
                 deployment_orm_obj = _deployment_pb_to_orm_obj(deployment_pb)

@@ -15,10 +15,8 @@ cd "$GIT_ROOT"/docker/yatai-service
 docker build --pull \
     --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
     -t bentoml/yatai-service:"$BENTOML_VERSION" \
+    -t bentoml/yatai-service:latest \
     .
 
 docker push bentoml/yatai-service:"$BENTOML_VERSION"
-
-echo "Tag and push 'latest'.."
-docker tag bentoml/yatai-service:"$BENTOML_VERSION" bentoml/yatai-service:latest
 docker push bentoml/yatai-service:latest

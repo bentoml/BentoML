@@ -866,9 +866,9 @@ that runs :code:`YataiService`, from BentoML cli command `yatai-service-start`:
 
 
 BentoML provides a pre-built docker image for running YataiService. For each BentoML 
-release, a new image will be pushed to docker hub under :code:`bentoml/yatai-service` 
+release, a new image will be pushed to [docker hub](https://hub.docker.com/r/bentoml/yatai-service/tags) under :code:`bentoml/yatai-service` 
 with the same image tag as the PyPI package version. For example, use the following 
-command to start a YataiService of BentoML version 0.7.2, loading data from your local
+command to start a YataiService of BentoML version 0.8.6, loading data from your local
 BentoML repository under the local ``~/bentoml`` directory:
 
 .. code-block:: bash
@@ -876,7 +876,7 @@ BentoML repository under the local ``~/bentoml`` directory:
     > docker run -v ~/bentoml:/bentoml \
         -p 3000:3000 \
         -p 50051:50051 \
-        bentoml/yatai-service:0.7.2 \
+        bentoml/yatai-service:0.8.6 \
         --db-url=sqlite:///bentoml/storage.db \
         --repo-base-url=/bentoml/repository
 
@@ -890,7 +890,7 @@ as AWS credentials for managing deployments created on AWS:
 
     > docker run -p 3000:3000 -p 50051:50051 \
         -e AWS_SECRET_ACCESS_KEY=... -e AWS_ACCESS_KEY_ID=...  \
-        bentoml/yatai-service:0.7.2 \
+        bentoml/yatai-service \
         --db-url postgresql://scott:tiger@localhost:5432/bentomldb \
         --repo-base-url s3://my-bentoml-repo/
 

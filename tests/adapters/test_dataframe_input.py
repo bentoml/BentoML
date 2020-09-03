@@ -67,7 +67,7 @@ def test_dataframe_handle_aws_lambda_event(make_api):
     }
     response = api.handle_aws_lambda_event(event)
     assert response["statusCode"] == 200
-    assert response["body"] == '["john"]'
+    assert response["body"] == '[{"name":"john"}]'
 
     event_without_content_type_header = {
         "headers": {},
@@ -75,7 +75,7 @@ def test_dataframe_handle_aws_lambda_event(make_api):
     }
     response = api.handle_aws_lambda_event(event_without_content_type_header)
     assert response["statusCode"] == 200
-    assert response["body"] == '["john"]'
+    assert response["body"] == '[{"name":"john"}]'
 
     event_with_bad_input = {
         "headers": {},
@@ -97,7 +97,7 @@ def test_dataframe_handle_request_csv(make_api):
     request.get_data.return_value = csv_data
 
     result = api.handle_request(request)
-    assert result.get_data().decode('utf-8') == '["john"]'
+    assert result.get_data().decode('utf-8') == '[{"name":"john"}]'
 
 
 def assert_df_equal(left: pd.DataFrame, right: pd.DataFrame):

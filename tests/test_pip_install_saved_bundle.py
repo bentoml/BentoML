@@ -1,10 +1,10 @@
+import json
 import os
 import sys
-import json
-import pytest
 
 import pandas as pd
 import psutil
+import pytest
 
 
 def format_path(path_str):
@@ -42,10 +42,10 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
 
     svc = ExampleBentoService.load()
     res = svc.predict_dataframe(pd.DataFrame(pd.DataFrame([1], columns=["col1"])))
-    assert res == 1
+    assert (res == 2).all()
 
     res = svc.predict_dataframe_v1(pd.DataFrame(pd.DataFrame([1], columns=["col1"])))
-    assert res == 1
+    assert (res == 2).all()
 
     # pip install should place cli entry script under target/bin directory
     if psutil.WINDOWS:

@@ -1,5 +1,5 @@
-import mock
 import flask
+import mock
 
 from bentoml.adapters import LegacyJsonInput
 
@@ -14,7 +14,7 @@ def test_json_handle_cli(capsys, make_api, json_file):
     test_args = ["--input-file", json_file]
     api.handle_cli(test_args)
     out, _ = capsys.readouterr()
-    assert out.strip().endswith("kaith")
+    assert out.strip() == '"kaith"'
 
 
 def test_json_handle_aws_lambda_event(make_api, json_file):

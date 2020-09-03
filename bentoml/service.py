@@ -166,8 +166,10 @@ class InferenceAPI(object):
             ):
                 if append_tasks and "tasks" in kwargs:
                     tasks = kwargs.pop('tasks')
-                else:
+                elif "tasks" in kwargs:
                     tasks = kwargs['tasks']
+                else:
+                    tasks = []
                 try:
                     return self._user_func(*args, **kwargs)
                 except Exception as e:  # pylint: disable=broad-except

@@ -44,25 +44,17 @@ class ParsedHeaders:
     headers_dict: Optional[CIMultiDict] = None
     content_type: str = ""
     content_encoding: str = ""
-    is_batch_input: bool = False
+    is_batch_input: Optional[bool] = None
 
-    def get(self, key, default=None):
-        if self.headers_dict is None:
-            return default
-        return self.headers_dict.get(key, default)
-
-    def __getitem__(self, key):
-        if self.headers_dict:
-            return self.header_dict[key]
-        raise KeyError(key)
-
-    def __len__(self):
-        if self.headers_dict is None:
-            return 0
-        return len(self.headers_dict)
-
-    def __bool__(self):
-        return bool(self.headers_dict)
+    def __getattr__(self, key):
+        if key in {
+            "headers_dict",
+            "content_type",
+            "content_encoding",
+            "is_batch_input",
+        }:
+            raise AttributeError(key)
+        return getattr(self.headers_dict or {}, key)
 
     @classmethod
     @functools.lru_cache()
@@ -73,15 +65,14 @@ class ParsedHeaders:
         if isinstance(raw_headers, dict):
             raw_headers = raw_headers.items()
 
-        headers_dict = CIMultiDict(
-            (k.lower(), v.lower()) for k, v in raw_headers or tuple()
-        )
+        headers_dict = CIMultiDict((k.lower(), v) for k, v in raw_headers or tuple())
         content_type = parse_options_header(headers_dict.get('content-type'))[0]
         content_encoding = parse_options_header(headers_dict.get('content-encoding'))[0]
-        is_batch_input = (
-            parse_options_header(headers_dict.get(BATCH_REQUEST_HEADER))[0].lower()
-            == "true"
-        )
+        hv = parse_options_header(headers_dict.get(BATCH_REQUEST_HEADER))[0].lower()
+        if hv:
+            is_batch_input = hv == "true"
+        else:
+            is_batch_input = None
         header = cls(
             headers_dict,
             content_type=content_type,

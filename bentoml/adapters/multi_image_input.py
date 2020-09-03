@@ -12,21 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import traceback
-from typing import Tuple, BinaryIO, Sequence, Iterable
+from typing import BinaryIO, Iterable, Sequence, Tuple
 
-from bentoml.types import InferenceTask
-from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.adapters.multi_file_input import MultiFileInput
 from bentoml.adapters.utils import (
     check_file_extension,
     get_default_accept_image_formats,
 )
-from bentoml.adapters.multi_file_input import MultiFileInput
+from bentoml.types import InferenceTask
+from bentoml.utils.lazy_loader import LazyLoader
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')
 numpy = LazyLoader('numpy', globals(), 'numpy')
-
-import imageio
 
 
 MultiImgTask = InferenceTask[Tuple[BinaryIO, ...]]  # image file bytes, json bytes
@@ -105,7 +103,7 @@ class MultiImageInput(MultiFileInput):
     def config(self):
         return dict(
             super().config,
-            accept_image_formats=self.accept_image_formats,
+            accept_image_formats=list(self.accept_image_formats),
             pilmode=self.pilmode,
         )
 

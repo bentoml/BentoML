@@ -1,7 +1,7 @@
 import base64
-import mock
 
 import flask
+import mock
 from urllib3.filepost import encode_multipart_formdata
 
 from bentoml.adapters import LegacyImageInput
@@ -16,7 +16,7 @@ def test_image_input_cli(capsys, make_api, img_file):
     test_args = ["--input-file-image", img_file]
     api.handle_cli(test_args)
     out, _ = capsys.readouterr()
-    assert out.strip().endswith("(10, 10, 3)")
+    assert out.strip().endswith("[10, 10, 3]")
 
 
 def test_image_input_aws_lambda_event(make_api, img_file):

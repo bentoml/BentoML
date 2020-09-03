@@ -12,18 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 import base64
-from typing import Iterable, BinaryIO, Tuple, Iterator, Sequence
+import io
+from typing import BinaryIO, Iterable, Iterator, Sequence, Tuple
 
-from bentoml.types import (
-    HTTPRequest,
-    AwsLambdaEvent,
-    InferenceTask,
-    InferenceContext,
-)
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
-
+from bentoml.types import (
+    AwsLambdaEvent,
+    HTTPRequest,
+    InferenceContext,
+    InferenceTask,
+)
 
 ApiFuncArgs = Tuple[
     Sequence[BinaryIO],

@@ -18,13 +18,13 @@ import functools
 import io
 import itertools
 import sys
-from typing import Iterable, Tuple, Iterator, Sequence, NamedTuple, BinaryIO
+from typing import BinaryIO, Iterable, Iterator, NamedTuple, Sequence, Tuple
 
 from bentoml.types import (
     ApiFuncArgs,
+    AwsLambdaEvent,
     HTTPRequest,
     InferenceTask,
-    AwsLambdaEvent,
 )
 
 
@@ -223,6 +223,8 @@ def parse_cli_input(cli_args: Iterable[str]) -> Iterator[BinaryIO]:
 
     else:
         for input_ in inputs:
-            yield io.BytesIO(input_.encode())
+            rv = io.BytesIO(input_.encode())
+            rv.name = None
+            yield rv
 
     return _

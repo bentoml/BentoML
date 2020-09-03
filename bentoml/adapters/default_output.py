@@ -20,6 +20,7 @@ from bentoml.types import (
     InferenceResult,
     InferenceTask,
 )
+
 from .base_output import BaseOutputAdapter
 
 
@@ -43,9 +44,6 @@ def detect_suitable_adapter(result) -> Type[BaseOutputAdapter]:
             return TfTensorOutput
     except ImportError:
         pass
-
-    # if isinstance(result, (list, tuple)):
-    # return detect_suitable_adapter(result[0])
 
     from .json_output import JsonSerializableOutput
 

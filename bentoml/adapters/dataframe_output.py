@@ -1,7 +1,6 @@
 import json
 from typing import Sequence
 
-from bentoml.adapters.base_output import regroup_return_value
 from bentoml.adapters.json_output import JsonSerializableOutput
 from bentoml.types import (
     DefaultErrorContext,
@@ -64,7 +63,14 @@ class DataframeOutput(JsonSerializableOutput):
         self, return_result, tasks: Sequence[InferenceTask],
     ) -> Sequence[InferenceResult[str]]:
         rv = []
-        for result, _ in regroup_return_value(return_result, tasks):
+        i = 0
+        for task in tasks:
+            if task.batch is None:
+                result = return_result[i : i + 1]
+                i += 1
+            else:
+                result = return_result[i : i + task.batch]
+                i += task.batch
             try:
                 result = df_to_json(result, self.output_orient)
                 rv.append(

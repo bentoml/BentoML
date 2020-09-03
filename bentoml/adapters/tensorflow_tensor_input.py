@@ -12,18 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
 import json
 import traceback
-from typing import Iterable, Tuple, Sequence
+from typing import Iterable, Sequence, Tuple
 
-import base64
-from bentoml.adapters.utils import TF_B64_KEY
-from bentoml.types import (
-    JsonSerializable,
-    InferenceTask,
-    JSON_CHARSET,
-)
 from bentoml.adapters.json_input import JsonInput
+from bentoml.adapters.utils import TF_B64_KEY
+from bentoml.types import JSON_CHARSET, InferenceTask, JsonSerializable
 
 
 def b64_hook(o):
@@ -103,7 +99,10 @@ class TfTensorInput(JsonInput):
                     )
                 else:
                     instances = parsed_json.get("instances")
-                    if task.context.http_headers.is_batch_input:
+                    if (
+                        task.context.http_headers.is_batch_input
+                        or task.context.http_headers.is_batch_input is None
+                    ):
                         task.batch = len(instances)
                         instances_list.extend(instances)
                     else:

@@ -94,7 +94,7 @@ class ImageInput(FileInput):
     def config(self):
         return {
             # Converting to list, google.protobuf.Struct does not work with tuple type
-            "accept_image_formats": self.accept_image_formats,
+            "accept_image_formats": list(self.accept_image_formats),
             "pilmode": self.pilmode,
         }
 
@@ -121,7 +121,7 @@ class ImageInput(FileInput):
     ) -> ApiFuncArgs:
         img_list = []
         for task in tasks:
-            if task.data.name and not check_file_extension(
+            if getattr(task.data, "name", None) and not check_file_extension(
                 task.data.name, self.accept_image_formats
             ):
                 task.discard(

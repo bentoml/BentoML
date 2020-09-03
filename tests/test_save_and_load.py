@@ -1,15 +1,14 @@
 import logging
 import uuid
+
 import mock
 import pytest
-
 from mock import patch
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.exceptions import BentoMLException
-
+from bentoml.saved_bundle import load_bento_service_metadata
 from tests.conftest import delete_saved_bento_service
 
 
@@ -41,7 +40,7 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
     assert api.mb_max_latency == 1000
     assert api.mb_max_batch_size == 2000
     assert isinstance(api.input_adapter, DataframeInput)
-    assert api.func(1) == 2
+    assert api.user_func(1, tasks=[]) == 2
 
     # Check api methods are available
     assert model_service.predict(1) == 2
@@ -83,7 +82,7 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
     api = model_service.get_inference_api('predict')
     assert api.name == "predict"
     assert isinstance(api.input_adapter, DataframeInput)
-    assert api.func(1) == 2
+    assert api.user_func(1) == 2
     # Check api methods are available
     assert model_service.predict(1) == 2
 

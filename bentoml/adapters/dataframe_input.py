@@ -93,7 +93,7 @@ class DataframeInput(FileInput):
 
     @property
     def config(self):
-        base_config = super(DataframeInput, self).config
+        base_config = super().config
         return dict(
             base_config,
             orient=self.orient,

@@ -89,8 +89,10 @@ def check_file_extension(file_name, accept_ext_list):
     """
     Return False if file's extension is not in the accept_ext_list
     """
+    if not file_name:
+        return False
     _, extension = os.path.splitext(file_name)
-    return extension.lower() in accept_ext_list or {}
+    return extension.lower() in (accept_ext_list or [])
 
 
 def get_default_accept_image_formats():

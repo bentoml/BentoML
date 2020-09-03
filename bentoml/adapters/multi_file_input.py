@@ -76,7 +76,7 @@ class MultiFileInput(BaseInputAdapter):
     def config(self):
         return {
             # Converting to list, google.protobuf.Struct does not work with tuple type
-            "input_names": self.input_names
+            "input_names": list(self.input_names)
         }
 
     @property
@@ -148,5 +148,5 @@ class MultiFileInput(BaseInputAdapter):
 
 def _pipe(input_: BinaryIO) -> BinaryIO:
     bio = io.BytesIO(input_.read())
-    bio.name = input_.name
+    bio.name = getattr(input_, "name", None)
     return bio

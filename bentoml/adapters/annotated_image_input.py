@@ -14,15 +14,15 @@
 
 import json
 import traceback
-from typing import Tuple, BinaryIO, Sequence, Iterable
+from typing import BinaryIO, Iterable, Sequence, Tuple
 
-from bentoml.types import JsonSerializable, InferenceTask, Optional
-from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.adapters.multi_file_input import MultiFileInput
 from bentoml.adapters.utils import (
     check_file_extension,
     get_default_accept_image_formats,
 )
-from bentoml.adapters.multi_file_input import MultiFileInput
+from bentoml.types import InferenceTask, JsonSerializable, Optional
+from bentoml.utils.lazy_loader import LazyLoader
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')
@@ -125,7 +125,7 @@ class AnnotatedImageInput(MultiFileInput):
     def config(self):
         return {
             # Converting to list, google.protobuf.Struct does not work with tuple type
-            "accept_image_formats": self.accept_image_formats,
+            "accept_image_formats": list(self.accept_image_formats),
             "pilmode": self.pilmode,
         }
 
@@ -153,6 +153,7 @@ class AnnotatedImageInput(MultiFileInput):
             try:
                 image_file, json_file = task.data
                 assert image_file is not None
+                assert getattr(image_file, "name", None)
                 assert check_file_extension(image_file.name, self.accept_image_formats)
                 image_array = imageio.imread(image_file, pilmode=self.pilmode)
                 image_arrays.append(image_array)

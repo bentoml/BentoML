@@ -203,7 +203,10 @@ class MarshalService:
         ):
             api_name = request.match_info.get("name")
             if api_name in self.batch_handlers:
-                req = HTTPRequest(request.raw_headers, await request.read())
+                req = HTTPRequest(
+                    tuple((k.decode(), v.decode()) for k, v in request.raw_headers),
+                    await request.read(),
+                )
                 try:
                     resp = await self.batch_handlers[api_name](req)
                 except RemoteException as e:
@@ -212,7 +215,7 @@ class MarshalService:
                     resp = aiohttp.web.Response(
                         status=e.payload.status,
                         headers=e.payload.headers,
-                        body=e.payload.data,
+                        body=e.payload.body,
                     )
                 except Exception:  # pylint: disable=broad-except
                     logger.error(traceback.format_exc())

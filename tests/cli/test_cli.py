@@ -1,12 +1,12 @@
 import os
 import tempfile
 
-import pytest
-import mock
 import click
-from humanfriendly import format_size
-from click.testing import CliRunner
+import mock
 import psutil  # noqa # pylint: disable=unused-import
+import pytest
+from click.testing import CliRunner
+from humanfriendly import format_size
 
 from bentoml.cli.bento_service import (
     create_bento_service_cli,
@@ -89,7 +89,7 @@ def test_run_command_with_input_file(bento_bundle_path):
         [
             bento_bundle_path,
             "predict_dataframe",
-            "--input",
+            "--input-file",
             input_path,
             "-o",
             "json",
@@ -98,14 +98,14 @@ def test_run_command_with_input_file(bento_bundle_path):
     )
 
     assert result.exit_code == 0
-    assert result.output.strip() == '3'
+    assert result.output.strip() == '[{"col1":2},{"col1":4}]'
 
     result = runner.invoke(
         run_cmd,
         [
             bento_bundle_path,
             "predict_dataframe_v1",
-            "--input",
+            "--input-file",
             input_path,
             "-o",
             "json",
@@ -114,7 +114,7 @@ def test_run_command_with_input_file(bento_bundle_path):
     )
 
     assert result.exit_code == 0
-    assert result.output.strip() == '3'
+    assert result.output.strip() == '[{"col1":2},{"col1":4}]'
 
 
 def test_echo_docker_api_result_build():

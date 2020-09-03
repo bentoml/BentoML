@@ -12,62 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import argparse
-import base64
-from io import BytesIO
-import json
+import traceback
+from typing import BinaryIO, Sequence, Tuple
 
-from werkzeug.utils import secure_filename
-from flask import Response
-
+from bentoml.adapters.legacy_image_input import LegacyImageInput
+from bentoml.adapters.utils import (
+    check_file_extension,
+    get_default_accept_image_formats,
+)
+from bentoml.types import InferenceTask
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.utils.dataframe_util import PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
-from bentoml.exceptions import BadInput
-from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.adapters.utils import get_default_accept_image_formats
-
-np = LazyLoader('np', globals(), 'numpy')
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
-pd = LazyLoader('pd', globals(), 'pandas')
 fastai = LazyLoader('fastai', globals(), 'fastai')
 imageio = LazyLoader('imageio', globals(), 'imageio')
+numpy = LazyLoader('numpy', globals(), 'numpy')
+
+MultiImgTask = InferenceTask[Tuple[BinaryIO, ...]]  # image file bytes, json bytes
+ApiFuncArgs = Tuple[Sequence['numpy.ndarray'], ...]
 
 
-class NumpyJsonEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
-
-    def default(self, o):  # pylint: disable=method-hidden
-        if isinstance(o, np.generic):
-            return o.item()
-
-        if isinstance(o, np.ndarray):
-            return o.tolist()
-
-        return json.JSONEncoder.default(self, o)
-
-
-def api_func_result_to_json(result, pandas_dataframe_orient="records"):
-
-    assert (
-        pandas_dataframe_orient in PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
-    ), f"unknown pandas dataframe orient '{pandas_dataframe_orient}'"
-
-    if pd and isinstance(result, pd.DataFrame):
-        return result.to_json(orient=pandas_dataframe_orient)
-
-    if pd and isinstance(result, pd.Series):
-        return pd.DataFrame(result).to_json(orient=pandas_dataframe_orient)
-
-    try:
-        return json.dumps(result, cls=NumpyJsonEncoder)
-    except (TypeError, OverflowError):
-        # when result is not JSON serializable
-        return json.dumps({"result": str(result)})
-
-
-class FastaiImageInput(BaseInputAdapter):
+class FastaiImageInput(LegacyImageInput):
     """InputAdapter specified for handling image input following fastai conventions
     by passing type fastai.vision.Image to user API function and providing options
     such as div, cls, and after_open
@@ -96,6 +61,8 @@ class FastaiImageInput(BaseInputAdapter):
         ImportError: fastai package is required to use FastaiImageInput
     """
 
+    BATCH_MODE_SUPPORTED = False
+
     HTTP_METHODS = ["POST"]
 
     def __init__(
@@ -108,7 +75,11 @@ class FastaiImageInput(BaseInputAdapter):
         after_open=None,
         **base_kwargs,
     ):
-        super(FastaiImageInput, self).__init__(**base_kwargs)
+        super().__init__(
+            input_names=input_names,
+            accept_image_formats=accept_image_formats,
+            **base_kwargs,
+        )
 
         self.input_names = input_names
         self.convert_mode = convert_mode
@@ -124,7 +95,7 @@ class FastaiImageInput(BaseInputAdapter):
         return {
             # Converting to list, google.protobuf.Struct does not work with tuple type
             "input_names": list(self.input_names),
-            "accept_image_formats": self.accept_image_formats,
+            "accept_image_formats": list(self.accept_image_formats),
             "convert_mode": self.convert_mode,
             "div": self.div,
             "cls": self.cls.__name__ if self.cls else None,
@@ -150,97 +121,55 @@ class FastaiImageInput(BaseInputAdapter):
     def pip_dependencies(self):
         return ['imageio', 'fastai', 'pandas']
 
-    def handle_batch_request(self, requests, func):
-        raise NotImplementedError
-
-    def handle_request(self, request):
-        input_streams = []
-        for filename in self.input_names:
-            file = request.files.get(filename)
-            if file is not None:
-                file_name = secure_filename(file.filename)
-                verify_image_format_or_raise(file_name, self.accept_image_formats)
-                input_streams.append(BytesIO(file.read()))
-
-        if len(input_streams) == 0:
-            data = request.get_data()
-            if data:
-                input_streams = (data,)
-            else:
-                raise BadInput(
-                    "BentoML#FastaiImageInput unexpected HTTP request: %s" % request
+    def _extract(self, tasks):
+        for task in tasks:
+            if not all(f is not None for f in task.data):
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} Empty request",
+                )
+                continue
+            try:
+                assert all(
+                    not getattr(f, "name", None)
+                    or check_file_extension(f.name, self.accept_image_formats)
+                    for f in task.data
+                )
+                image_array_tuple = tuple(
+                    fastai.vision.open_image(
+                        fn=f,
+                        convert_mode=self.convert_mode,
+                        div=self.div,
+                        after_open=self.after_open,
+                        cls=self.cls or fastai.vision.Image,
+                    )
+                    for f in task.data
+                )
+                yield image_array_tuple
+            except ValueError:
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} "
+                    f"Input image decode failed, it must be in supported format list: "
+                    f"{self.accept_image_formats}",
+                )
+            except AssertionError:
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} "
+                    f"Input image file must be in supported format list: "
+                    f"{self.accept_image_formats}",
+                )
+            except Exception:  # pylint: disable=broad-except
+                err = traceback.format_exc()
+                task.discard(
+                    http_status=500,
+                    err_msg=f"BentoML#{self.__class__.__name__} "
+                    f"Internal Server Error: {err}",
                 )
 
-        input_data = []
-        for input_stream in input_streams:
-            data = imageio.imread(input_stream, pilmode=self.convert_mode)
-
-            if self.after_open:
-                data = self.after_open(data)
-
-            data = fastai.vision.pil2tensor(data, np.float32)
-
-            if self.div:
-                data = data.div_(255)
-
-            if self.cls:
-                data = self.cls(data)
-            else:
-                data = fastai.vision.Image(data)
-            input_data.append(data)
-
-        result = func(*input_data)
-        json_output = api_func_result_to_json(result)
-        return Response(response=json_output, status=200, mimetype="application/json")
-
-    def handle_cli(self, args, func):
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--input", required=True)
-        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
-        parsed_args = parser.parse_args(args)
-        file_path = parsed_args.input
-
-        verify_image_format_or_raise(file_path, self.accept_image_formats)
-        if not os.path.isabs(file_path):
-            file_path = os.path.abspath(file_path)
-
-        image_array = fastai.vision.open_image(
-            fn=file_path,
-            convert_mode=self.convert_mode,
-            div=self.div,
-            after_open=self.after_open,
-            cls=self.cls or fastai.vision.Image,
-        )
-
-        result = func(image_array)
-        if parsed_args.output == "json":
-            result = api_func_result_to_json(result)
-        else:
-            result = str(result)
-        print(result)
-
-    def handle_aws_lambda_event(self, event, func):
-        if event["headers"].get("Content-Type", "").startswith("images/"):
-            image_data = imageio.imread(
-                base64.decodebytes(event["body"]), pilmode=self.pilmode
-            )
-        else:
-            raise BadInput(
-                "BentoML currently doesn't support Content-Type: {content_type} for "
-                "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
-            )
-
-        if self.after_open:
-            image_data = self.after_open(image_data)
-
-        image_data = fastai.vision.pil2tensor(image_data, np.float32)
-        if self.div:
-            image_data = image_data.div_(255)
-        if self.cls:
-            image_data = self.cls(image_data)
-        else:
-            image_data = fastai.vision.Image(image_data)
-
-        result = func(image_data)
-        json_output = api_func_result_to_json(result)
-        return {"statusCode": 200, "body": json_output}
+    def extract_user_func_args(self, tasks: Sequence[MultiImgTask]) -> ApiFuncArgs:
+        args = tuple(map(tuple, zip(*self._extract(tasks))))
+        if not args:
+            args = (tuple(),) * len(self.input_names)
+        return args

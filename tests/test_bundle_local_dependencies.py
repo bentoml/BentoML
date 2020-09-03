@@ -1,8 +1,6 @@
 import subprocess
 
-from sklearn import svm
-from sklearn import datasets
-
+from sklearn import datasets, svm
 
 from tests.conftest import delete_saved_bento_service
 
@@ -39,6 +37,8 @@ def run_test_with_bento_service_class(bento_service_class):
         run_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
         output = proc.stdout.read().decode('utf-8')
+        err_msg = proc.stderr.read().decode('utf-8')
+        assert not err_msg
         assert output.strip() == '[0]'
 
     delete_saved_bento_service(bento_service.name, bento_service.version)

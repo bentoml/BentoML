@@ -1,8 +1,8 @@
-import pytest
 import glob
 
 import imageio
 import numpy as np
+import pytest
 
 from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
@@ -142,7 +142,7 @@ def json_files(tmpdir):
 
 class TestModel(object):
     def predict_dataframe(self, df):
-        return df["col1"].sum()
+        return df["col1"] * 2
 
     def predict_image(self, input_datas):
         for input_data in input_datas:

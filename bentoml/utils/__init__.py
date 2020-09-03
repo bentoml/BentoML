@@ -19,10 +19,22 @@ from io import StringIO
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
-from werkzeug.utils import cached_property  # pylint: disable=unused-import
+from werkzeug.utils import cached_property
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+
+
+__all__ = [
+    "cached_property",
+    "reserve_free_port",
+    "is_url",
+    "dump_to_yaml_str",
+    "pb_to_yaml",
+    "ProtoMessageToDict",
+    "status_pb_to_error_code_and_message",
+    "catch_exceptions",
+]
 
 
 @contextmanager

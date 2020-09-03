@@ -52,7 +52,7 @@ class JsonSerializableOutput(BaseOutputAdapter):
             if args:
                 parser = argparse.ArgumentParser()
                 parser.add_argument(
-                    "-o", "--output", default="str", choices=["str", "json"]
+                    "-o", "--output", default="json", choices=["str", "json"]
                 )
                 parsed_args, _ = parser.parse_known_args(args)
                 output = parsed_args.output
@@ -68,7 +68,7 @@ class JsonSerializableOutput(BaseOutputAdapter):
                         data=json_str,
                         context=InferenceContext(
                             http_status=200,
-                            http_headers=(("Content-Type", "application/json"),),
+                            http_headers={"Content-Type": "application/json"},
                         ),
                     )
                 )
@@ -92,7 +92,7 @@ class JsonSerializableOutput(BaseOutputAdapter):
         return (
             HTTPResponse(
                 r.context.http_status,
-                r.context.http_headers,
+                tuple(r.context.http_headers.items()),
                 r.context.err_msg or r.data,
             )
             for r in results

@@ -19,7 +19,7 @@ from io import StringIO
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
-from werkzeug.utils import cached_property
+from werkzeug.utils import cached_property  # pylint: disable=unused-import
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")

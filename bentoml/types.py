@@ -16,16 +16,16 @@ import functools
 import io
 from dataclasses import dataclass
 from typing import (
-    Tuple,
-    Union,
     Dict,
-    List,
-    Sequence,
     Generic,
-    TypeVar,
-    Optional,
     Iterable,
     Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
 )
 
 from multidict import CIMultiDict
@@ -39,12 +39,56 @@ HEADER_CHARSET = 'latin1'
 JSON_CHARSET = 'utf-8'
 
 
-class ParsedHeaders(CIMultiDict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.content_type = ""
-        self.content_encoding = ""
-        self.is_batch_input = False
+@dataclass(frozen=True)
+class ParsedHeaders:
+    headers_dict: Optional[CIMultiDict] = None
+    content_type: str = ""
+    content_encoding: str = ""
+    is_batch_input: bool = False
+
+    def get(self, key, default=None):
+        if self.headers_dict is None:
+            return default
+        return self.headers_dict.get(key, default)
+
+    def __getitem__(self, key):
+        if self.headers_dict:
+            return self.header_dict[key]
+        raise KeyError(key)
+
+    def __len__(self):
+        if self.headers_dict is None:
+            return 0
+        return len(self.headers_dict)
+
+    def __bool__(self):
+        return bool(self.headers_dict)
+
+    @classmethod
+    @functools.lru_cache()
+    def parse(cls, raw_headers: Sequence[Tuple[str, str]]):
+        from bentoml import config
+
+        BATCH_REQUEST_HEADER = config("apiserver").get("batch_request_header")
+        if isinstance(raw_headers, dict):
+            raw_headers = raw_headers.items()
+
+        headers_dict = CIMultiDict(
+            (k.lower(), v.lower()) for k, v in raw_headers or tuple()
+        )
+        content_type = parse_options_header(headers_dict.get('content-type'))[0]
+        content_encoding = parse_options_header(headers_dict.get('content-encoding'))[0]
+        is_batch_input = (
+            parse_options_header(headers_dict.get(BATCH_REQUEST_HEADER))[0].lower()
+            == "true"
+        )
+        header = cls(
+            headers_dict,
+            content_type=content_type,
+            content_encoding=content_encoding,
+            is_batch_input=is_batch_input,
+        )
+        return header
 
 
 @dataclass(frozen=True)
@@ -59,7 +103,7 @@ class HTTPRequest:
 
     @property
     def parsed_headers(self) -> CIMultiDict:
-        return self.parse_raw_headers(self.headers)
+        return ParsedHeaders.parse(self.headers)
 
     @classmethod
     @functools.lru_cache()
@@ -76,28 +120,6 @@ class HTTPRequest:
         for f in files.values():
             f.name = f.filename
         return stream, form, files
-
-    @classmethod
-    @functools.lru_cache()
-    def parse_raw_headers(cls, raw_headers: Sequence[Tuple[str, str]]):
-        from bentoml import config
-
-        BATCH_REQUEST_HEADER = config("apiserver").get("batch_request_header")
-
-        headers_dict = ParsedHeaders(
-            (k.lower(), v.lower()) for k, v in raw_headers or tuple()
-        )
-        headers_dict.content_type = parse_options_header(
-            headers_dict.get('content-type')
-        )[0]
-        headers_dict.content_encoding = parse_options_header(
-            headers_dict.get('content-encoding')
-        )[0]
-        headers_dict.is_batch_input = (
-            parse_options_header(headers_dict.get(BATCH_REQUEST_HEADER))[0].lower()
-            == "true"
-        )
-        return headers_dict
 
     @classmethod
     def from_flask_request(cls, request):
@@ -152,7 +174,7 @@ class InferenceContext:
     # HTTP
     http_method: Optional[str] = None
     http_status: Optional[int] = None
-    http_headers: Optional[CIMultiDict] = None
+    http_headers: ParsedHeaders = ParsedHeaders()
 
     # AWS_LAMBDA
     aws_lambda_event: Optional[dict] = None

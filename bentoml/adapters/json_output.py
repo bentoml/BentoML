@@ -12,21 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import argparse
-from typing import Iterable, Sequence, Iterator
+import json
+from typing import Iterable, Iterator, Sequence
 
-from bentoml.types import (
-    HTTPResponse,
-    InferenceContext,
-    InferenceTask,
-    DefaultErrorContext,
-    InferenceResult,
-    JsonSerializable,
+from bentoml.adapters.base_output import (
+    BaseOutputAdapter,
+    regroup_return_value,
 )
 from bentoml.adapters.utils import NumpyJsonEncoder
-from bentoml.adapters.base_output import BaseOutputAdapter, regroup_return_value
-
+from bentoml.types import (
+    DefaultErrorContext,
+    HTTPResponse,
+    InferenceContext,
+    InferenceResult,
+    InferenceTask,
+    JsonSerializable,
+)
 
 ApiFuncReturnValue = Sequence[JsonSerializable]
 

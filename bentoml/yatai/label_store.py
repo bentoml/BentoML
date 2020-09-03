@@ -70,7 +70,7 @@ def list_labels(sess, resource_type, resource_ids):
     )
     labels = {}
     for label in label_rows:
-        if labels.get(str(label.resource_id), None) is None:
+        if not labels.get(str(label.resource_id)):
             labels[str(label.resource_id)] = {}
         labels[str(label.resource_id)][label.key] = label.value
     return labels

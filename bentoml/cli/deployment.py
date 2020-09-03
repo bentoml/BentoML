@@ -194,11 +194,11 @@ def get_deployment_sub_command():
         help='The maximum amount of deployments to be listed at once',
     )
     @click.option(
-        '-l',
         '--labels',
         type=click.STRING,
-        # callback=validate_labels_query_callback,
-        help='List deployments matching the giving labels',
+        help="Label query to filter deployments, supports '=', '!=', 'IN', 'NotIn', "
+        "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
+        "In (value3, value3a), key4 DoesNotExist)",
     )
     @click.option(
         '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',

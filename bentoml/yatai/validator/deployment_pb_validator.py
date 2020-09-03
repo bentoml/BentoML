@@ -175,12 +175,11 @@ class YataiDeploymentValidator(Validator):
         {'type': 'boolean'}
         """
         if deployment_labels:
-            print(field, value)
             pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
-            for key in value:
+            for key in value.keys():
                 if (
-                    len(key) > 63
-                    or len(value[key]) > 63
+                    not (63 >= len(key) >= 3)
+                    or not (63 >= len(value[key]) >= 3)
                     or not pattern.match(key)
                     or not pattern.match(value[key])
                 ):

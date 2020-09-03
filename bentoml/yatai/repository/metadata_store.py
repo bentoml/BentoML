@@ -267,7 +267,7 @@ class BentoMetadataStore(object):
             bento_ids = [bento_obj.id for bento_obj in query_result]
             labels = list_labels(sess, 'bento', bento_ids)
             result = [
-                _bento_orm_obj_to_pb(bento_obj, labels[str(bento_obj.id)])
+                _bento_orm_obj_to_pb(bento_obj, labels.get(str(bento_obj.id)))
                 for bento_obj in query_result
             ]
             return result

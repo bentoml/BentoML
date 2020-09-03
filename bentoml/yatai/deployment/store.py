@@ -213,6 +213,8 @@ class DeploymentStore(object):
             labels = list_labels(sess, 'deployment', deployment_ids)
 
             return [
-                _deployment_orm_obj_to_pb(deployment_obj, labels[deployment_obj.id])
+                _deployment_orm_obj_to_pb(
+                    deployment_obj, labels.get(str(deployment_obj.id))
+                )
                 for deployment_obj in query_result
             ]

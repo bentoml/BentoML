@@ -314,8 +314,9 @@ def get_azure_functions_sub_command():
         '-l',
         '--labels',
         type=click.STRING,
-        callback=validate_labels_query_callback,
-        help='List deployments matching the giving labels',
+        help="Label query to filter Azure Functions deployments, supports '=', '!=', "
+        "'IN', 'NotIn', 'Exists', and 'DoesNotExist'. (e.g. key1=value1, "
+        "key2!=value2, key3 In (value3, value3a), key4 DoesNotExist)",
     )
     @click.option(
         '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
@@ -332,7 +333,7 @@ def get_azure_functions_sub_command():
         yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list_azure_functions_deployments(
             limit=limit,
-            labels_query=labels,
+            labels=labels,
             namespace=namespace,
             order_by=order_by,
             ascending_order=asc,

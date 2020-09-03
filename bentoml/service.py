@@ -543,19 +543,20 @@ def _validate_labels(labels):
     pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
     for key in labels:
         if (
-            len(key) > 63
-            or len(labels[key]) > 63
+            not (63 >= len(key) >= 3)
+            or not (63 >= len(labels[key]) >= 3)
             or not pattern.match(key)
             or not pattern.match(labels[key])
         ):
-            return InvalidArgument(
-                'Valid label key and value must be 63 characters or less and must be '
-                'begin and end with an alphanumeric character ([a-z0-9A-Z]) '
-                'with dashes (-), underscores (_), and dots (.).'
+            raise InvalidArgument(
+                f'Invalide label {key}:{labels[key]}. Valid label key and value must '
+                f'be between 3 to 63 characters and must be begin and end with '
+                f'an alphanumeric character ([a-z0-9A-Z]) with dashes (-), '
+                f'underscores (_), and dots (.).'
             )
 
 
-def save(bento_service, base_path=None, version=None):
+def save(bento_service, base_path=None, version=None, labels=None):
     """
     Save and register the given BentoService via BentoML's built-in model management
     system. BentoML by default keeps track of all the SavedBundle's files and metadata
@@ -577,6 +578,12 @@ def save(bento_service, base_path=None, version=None):
         yatai_client = YataiClient(yatai_service)
     else:
         yatai_client = YataiClient()
+
+    if labels:
+        if not isinstance(labels, dict):
+            raise InvalidArgument('BentoService labels must be a dictionary')
+        _validate_labels(labels)
+        bento_service._labels = labels
 
     return yatai_client.repository.upload(bento_service, version)
 
@@ -887,7 +894,7 @@ class BentoService:
 
         return self._bento_service_version
 
-    def save(self, base_path=None, version=None):
+    def save(self, base_path=None, version=None, labels=None):
         """
         Save and register this BentoService via BentoML's built-in model management
         system. BentoML by default keeps track of all the SavedBundle's files and
@@ -897,9 +904,10 @@ class BentoService:
 
         :param base_path: optional - override repository base path
         :param version: optional - save with version override
+        :param labels: optional - labels dictory
         :return: saved_path: file path to where the BentoService is saved
         """
-        return save(self, base_path, version)
+        return save(self, base_path, version, labels)
 
     def save_to_dir(self, path, version=None):
         """Save this BentoService along with all its artifacts, source code and
@@ -939,14 +947,6 @@ class BentoService:
 
     def get_bento_service_metadata_pb(self):
         return SavedBundleConfig(self).get_bento_service_metadata_pb()
-
-    def set_labels(self, labels=None):
-        if not labels or not isinstance(labels, dict):
-            raise BentoMLException('BentoService labels must be a dictionary')
-
-        _validate_labels(labels)
-
-        self._labels = labels
 
     @property
     def labels(self):

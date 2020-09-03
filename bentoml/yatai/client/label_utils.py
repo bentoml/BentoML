@@ -34,7 +34,8 @@ def expressions_extractor(query):
 def value_string_to_list(value_string):
     if not value_string.startswith('(') or not value_string.endswith(')'):
         raise BentoMLException(
-            "Query values need to be inside (). e.g. (value1, value2, ..)"
+            f"Query values {value_string} need to be inside (). "
+            f"e.g. (value1, value2, ..)"
         )
     if len(value_string) == 2:
         raise BentoMLException("Query values can't be empty")

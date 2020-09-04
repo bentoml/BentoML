@@ -46,7 +46,7 @@ class BentoRepositoryAPIClient:
     def __init__(self, yatai_service):
         self.yatai_service = yatai_service
 
-    def upload(self, bento_service, version=None):
+    def upload(self, bento_service, version=None, labels=None):
         """Save and upload given bento_service to yatai_service, which manages all your
         saved BentoService bundles and model serving deployments.
 
@@ -58,10 +58,13 @@ class BentoRepositoryAPIClient:
         """
         with TempDirectory() as tmpdir:
             save_to_dir(bento_service, tmpdir, version, silent=True)
-            return self._upload_bento_service(bento_service, tmpdir)
+            return self._upload_bento_service(bento_service, tmpdir, labels)
 
-    def _upload_bento_service(self, bento_service, saved_bento_path):
+    def _upload_bento_service(self, bento_service, saved_bento_path, labels):
         bento_service_metadata = bento_service.get_bento_service_metadata_pb()
+
+        if labels:
+            bento_service_metadata.labels.update(labels)
 
         get_bento_response = self.yatai_service.GetBento(
             GetBentoRequest(

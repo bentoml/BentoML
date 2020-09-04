@@ -22,7 +22,7 @@ label_expression_operators = {
 }
 
 
-def expressions_extractor(query):
+def _extract_expressions(query):
     # Using regex to split query base on ",".  negative lookahead (?!...) / don't match
     # anything inside the ().
     # e.g.
@@ -42,7 +42,7 @@ def value_string_to_list(value_string):
     return [value.strip() for value in value_string[1:-1].split(',')]
 
 
-def expression_element_extractor(expression):
+def _extract_expression_elements(expression):
     # Using regex to split query base on " ".  negative lookahead (?!...) / don't match
     # anything inside the ().
     # e.g.
@@ -55,10 +55,10 @@ def generate_gprc_labels_selector(label_selectors, label_query):
     """Parse label query string and update to the label selector request"""
     if not label_query:
         return
-    expressions = expressions_extractor(label_query)
+    expressions = _extract_expressions(label_query)
     for expression in expressions:
         expression = expression.strip()
-        elements = expression_element_extractor(expression.strip())
+        elements = _extract_expression_elements(expression.strip())
         if len(elements) == 1:
             # Possible queries: key=value, key!=value, key
             query = elements[0].strip()

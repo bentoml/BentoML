@@ -2,8 +2,8 @@ import pytest
 
 from bentoml.exceptions import BentoMLException
 from bentoml.yatai.client.label_utils import (
-    expressions_extractor,
-    expression_element_extractor,
+    _extract_expressions,
+    _extract_expression_elements,
     generate_gprc_labels_selector,
 )
 from bentoml.yatai.proto.label_selectors_pb2 import LabelSelectors
@@ -11,26 +11,26 @@ from bentoml.yatai.proto.label_selectors_pb2 import LabelSelectors
 
 def test_expressions_extractor_func():
     one_expression_query = 'test!=true'
-    assert len(expressions_extractor(one_expression_query)) == 1, 'something'
+    assert len(_extract_expressions(one_expression_query)) == 1, 'something'
 
     one_expression_with_parentheses = '(a,b,c,,)'
-    assert len(expressions_extractor(one_expression_with_parentheses)) == 1, 'something'
+    assert len(_extract_expressions(one_expression_with_parentheses)) == 1, 'something'
 
     multiple_expressions_with_parentheses = 'abc, foo,(bar, value), value2'
     assert (
-        len(expressions_extractor(multiple_expressions_with_parentheses)) == 4
+        len(_extract_expressions(multiple_expressions_with_parentheses)) == 4
     ), 'something'
 
 
 def test_expression_element_extractor():
     one_element_query = 'abdas,'
-    assert len(expression_element_extractor(one_element_query)) == 1, ''
+    assert len(_extract_expression_elements(one_element_query)) == 1, ''
 
     one_element_with_parentheses = '(abb, bbb, cbb)'
-    assert len(expression_element_extractor(one_element_with_parentheses)) == 1, ''
+    assert len(_extract_expression_elements(one_element_with_parentheses)) == 1, ''
 
     multiple_element_with_parentheses = 'foo bar (abc, efg g),f fourth'
-    assert len(expression_element_extractor(multiple_element_with_parentheses)) == 4, ''
+    assert len(_extract_expression_elements(multiple_element_with_parentheses)) == 4, ''
 
 
 def test_generate_grpc_labels_selector():

@@ -15,32 +15,6 @@ from bentoml.yatai.proto.deployment_pb2 import (
 from bentoml.yatai.status import Status
 
 
-def test_service_labels_on_save_and_load(bento_service):
-    with pytest.raises(InvalidArgument):
-        bento_service.save(labels='test_string:abc')
-    with pytest.raises(InvalidArgument):
-        bento_service.save(labels={'key_containers_&': 'value'})
-
-    saved_dir = bento_service.save(
-        labels={'example_key': 'values_can_contains_and-and.s'}
-    )
-
-    loaded_service = load(saved_dir)
-    assert loaded_service.labels['example_key'] == 'values_can_contains_and-and.s'
-
-
-def test_service_labels_on_cli_info(bento_service):
-    saved_path = bento_service.save(labels={'key': 'value1', 'key2': 'value2'})
-
-    runner = CliRunner()
-    cli = create_bento_service_cli()
-    result = runner.invoke(cli.commands['info'], [saved_path])
-    assert result.exit_code == 0
-    output = result.output.strip()
-    assert '"labels"' in output
-    assert '"key2": "value2"' in output
-
-
 def test_label_selectors_on_cli_list(bento_service):
     runner = CliRunner()
     cli = create_bentoml_cli()
@@ -52,7 +26,12 @@ def test_label_selectors_on_cli_list(bento_service):
     assert str(failed_result.exception) == 'Operator "label" is invalid'
 
     unique_label_value = uuid.uuid4().hex
-    bento_service.save(labels={'test_id': unique_label_value})
+    bento_service.save(
+        labels={
+            'test_id': unique_label_value,
+            'example_key': 'values_can_contains_and-and.s',
+        }
+    )
 
     success_result = runner.invoke(
         cli.commands['list'], ['--labels', f'test_id in ({unique_label_value})']
@@ -140,7 +119,6 @@ def test_deployment_labels():
                 'wide',
             ],
         )
-        print(list_result.output)
         assert list_result.exit_code == 0
         assert deployment_name in list_result.output.strip()
         assert 'created_by:admin' in list_result.output.strip()

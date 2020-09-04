@@ -76,7 +76,7 @@ def test_label_selectors_on_cli_get(bento_service):
     assert f'{bento_service.name}:{bento_service.version}' in success_result.output
 
 
-def test_deployment_labels(bento_service):
+def test_deployment_labels():
     runner = CliRunner()
     cli = create_bentoml_cli()
 

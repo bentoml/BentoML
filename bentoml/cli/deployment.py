@@ -21,7 +21,6 @@ from bentoml.cli.click_utils import (
     _echo,
     CLI_COLOR_SUCCESS,
     parse_yaml_file_callback,
-    validate_labels_query_callback,
 )
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.utils import status_pb_to_error_code_and_message

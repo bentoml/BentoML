@@ -10,7 +10,6 @@ import sqlalchemy as sa
 from sqlalchemy import orm
 
 from bentoml.yatai.label_store import Label
-from bentoml.yatai.deployment.store import Deployment
 
 # revision identifiers, used by Alembic.
 revision = '719dd2aacc9a'

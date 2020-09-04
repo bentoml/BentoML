@@ -21,7 +21,6 @@ from bentoml.cli.click_utils import (
     CLI_COLOR_SUCCESS,
     _echo,
     parse_labels_callback,
-    validate_labels_query_callback,
 )
 from bentoml.cli.deployment import _print_deployment_info, _print_deployments_info
 from bentoml.cli.utils import Spinner, get_default_yatai_client

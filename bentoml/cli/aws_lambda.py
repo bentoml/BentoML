@@ -23,7 +23,6 @@ from bentoml.cli.click_utils import (
     _echo,
     CLI_COLOR_SUCCESS,
     parse_labels_callback,
-    validate_labels_query_callback,
 )
 from bentoml.cli.deployment import (
     _print_deployment_info,

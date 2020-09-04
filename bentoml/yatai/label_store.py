@@ -1,4 +1,4 @@
-from sqlalchemy import UniqueConstraint, Column, Integer, String, and_, or_
+from sqlalchemy import UniqueConstraint, Column, Integer, String, and_
 
 from bentoml.exceptions import YataiLabelException
 from bentoml.yatai.db import Base
@@ -118,6 +118,6 @@ def filter_label_query(sess, resource_type, label_selectors):
             filters.append(Label.key != expression.key)
         else:
             raise YataiLabelException(f'Unrecognized operator: "{expression.operator}"')
-    query = query.filter(or_(*filters))
+    query = query.filter(and_(*filters))
     result = query.all()
     return [row[0] for row in result]

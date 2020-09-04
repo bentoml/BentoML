@@ -75,7 +75,7 @@ def generate_gprc_labels_selector(label_selectors, label_query):
                 label_selectors.match_expressions.append(
                     LabelSelectors.LabelSelectorExpression(
                         key=key,
-                        operator=label_expression_operators['DoesNotExist'],
+                        operator=label_expression_operators['NotIn'],
                         values=[value],
                     )
                 )

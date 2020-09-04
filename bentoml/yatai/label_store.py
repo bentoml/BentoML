@@ -89,7 +89,9 @@ def filter_label_query(sess, resource_type, label_selectors):
     filters = []
     for key in label_selectors.match_labels:
         filters.append(
-            and_(Label.key == key, Label.value == label_selectors.match_labels[key])
+            sess.query(Label.resource_id).filter(
+                and_(Label.key == key, Label.value == label_selectors.match_labels[key])
+            )
         )
     for expression in label_selectors.match_expressions:
         if (
@@ -97,27 +99,39 @@ def filter_label_query(sess, resource_type, label_selectors):
             == LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE.In
         ):
             filters.append(
-                and_(Label.key == expression.key, Label.value.in_(expression.values))
+                sess.query(Label.resource_id).filter(
+                    and_(
+                        Label.key == expression.key, Label.value.in_(expression.values)
+                    )
+                )
             )
         elif (
             expression.operator
             == LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE.NotIn
         ):
             filters.append(
-                and_(Label.key == expression.key, ~Label.value.in_(expression.values))
+                sess.query(Label.resource_id).filter(
+                    and_(
+                        Label.key == expression.key, ~Label.value.in_(expression.values)
+                    )
+                )
             )
         elif (
             expression.operator
             == LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE.Exists
         ):
-            filters.append(Label.key == expression.key)
+            filters.append(
+                sess.query(Label.resource_id).filter(Label.key == expression.key)
+            )
         elif (
             expression.operator
             == LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE.DoesNotExist
         ):
-            filters.append(Label.key != expression.key)
+            filters.append(
+                sess.query(Label.resource_id).filter(Label.key != expression.key)
+            )
         else:
             raise YataiLabelException(f'Unrecognized operator: "{expression.operator}"')
-    query = query.filter(and_(*filters))
+    query = query.intersect(*filters)
     result = query.all()
     return [row[0] for row in result]

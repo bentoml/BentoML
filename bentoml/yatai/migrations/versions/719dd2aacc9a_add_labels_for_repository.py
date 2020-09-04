@@ -7,7 +7,10 @@ Create Date: 2020-08-05 22:41:30.611193
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import orm
 
+from bentoml.yatai.label_store import Label
+from bentoml.yatai.deployment.store import Deployment
 
 # revision identifiers, used by Alembic.
 revision = '719dd2aacc9a'
@@ -17,45 +20,35 @@ depends_on = None
 
 
 def upgrade():
-    pass
-    # deployments = sa.Table(
-    #     'deployments',
-    #     sa.MetaData(),
-    #     sa.Column('id', sa.Integer),
-    #     sa.Column('labels', sa.JSON),
-    # )
-    # labels = sa.Table(
-    #     'labels',
-    #     sa.MetaData(),
-    #     sa.Column('resource_type', sa.String),
-    #     sa.Column('resource_id', sa.String),
-    #     sa.Column('key', sa.String),
-    #     sa.Column('value', sa.String),
-    # )
-    # connection = op.get_bind()
-    # results = connection.execute(sa.select([deployments.c.id, deployments.c.labels]))
-    # for row in results:
-    #     connection.execute(labels.create())
-    #
-    # op.drop_column('deployments', 'labels')
+    bind = op.get_bind()
+    session = orm.Session(bind=bind)
+    Label.__table__.create(bind)
+
+    deployments = sa.Table(
+        'deployments',
+        sa.MetaData(),
+        sa.Column('id', sa.Integer),
+        sa.Column('labels', sa.JSON),
+    )
+    result = bind.execute(sa.select([deployments.c.id, deployments.c.labels]))
+    labels_need_to_add = []
+    for row in result:
+        for key in row.labels:
+            labels_need_to_add.append(
+                Label(
+                    resource_type='deployment',
+                    resource_id=row.id,
+                    key=key,
+                    value=row.labels[key],
+                )
+            )
+    session.add_all(labels_need_to_add)
+
+    session.commit()
+    with op.batch_alter_table('deployments') as batch_op:
+        batch_op.drop_column('labels')
 
 
 def downgrade():
-    pass
-    # op.add_column(
-    #     'deployments', sa.Column('labels', sa.JSON, nullable=True, default={})
-    # )
-    # deployments = sa.Table(
-    #     'deployments',
-    #     sa.MetaData(),
-    #     sa.Column('id', sa.Integer),
-    #     sa.Column('labels', sa.JSON),
-    # )
-    # connection = op.get_bind()
-    # results = connection.execute(
-    #     sa.select([deployments.c.id, deployments.c.labels])
-    # ).fetchall()
-    # for id in results:
-    #     connection.execute(
-    #         deployments.update().where(deployments.c.id == id[0]).values(labels={})
-    #     )
+    op.add_column('deployments', sa.Column('labels', sa.JSON, default={}))
+    op.drop_table('labels')

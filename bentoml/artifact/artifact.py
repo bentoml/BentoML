@@ -30,7 +30,7 @@ class BentoServiceArtifact:
     serialization and deserialization process.
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         if not name.isidentifier():
             raise ValueError(
                 "Artifact name must be a valid python identifier, a string \
@@ -207,7 +207,7 @@ class ArtifactCollection(dict):
         artifact in its native form. E.g. for a BentoService class with an artifact
         `SklearnModelArtifact('model')`, when user code accesses `self.artifacts.model`
         in the BentoService API callback function, instead of returning an instance of
-        BentoServcieArtifact, it returns a Sklearn model object
+        BentoServiceArtifact, it returns a Sklearn model object
         """
         return self[item].get()
 

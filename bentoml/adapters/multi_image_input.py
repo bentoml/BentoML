@@ -11,34 +11,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import argparse
-import pathlib
-from io import BytesIO
-from typing import Iterable
+import traceback
+from typing import BinaryIO, Iterable, Sequence, Tuple
 
-from werkzeug import Request
-from werkzeug.utils import secure_filename
-
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.adapters.image_input import (
+from bentoml.adapters.multi_file_input import MultiFileInput
+from bentoml.adapters.utils import (
+    check_file_extension,
     get_default_accept_image_formats,
-    verify_image_format_or_raise,
 )
-from bentoml.exceptions import BadInput
-from bentoml.marshal.utils import SimpleRequest, SimpleResponse
-
+from bentoml.types import InferenceTask
+from bentoml.utils.lazy_loader import LazyLoader
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')
+numpy = LazyLoader('numpy', globals(), 'numpy')
 
 
-class MultiImageInput(BaseInputAdapter):
+MultiImgTask = InferenceTask[Tuple[BinaryIO, ...]]  # image file bytes, json bytes
+ApiFuncArgs = Tuple[Sequence['numpy.ndarray'], ...]
+
+
+class MultiImageInput(MultiFileInput):
     """
     Args:
         input_names (string[]): A tuple of acceptable input name for HTTP request.
             Default value is (image,)
-        accepted_image_formats (string[]):  A list of acceptable image formats.
+        accept_image_formats (string[]):  A list of acceptable image formats.
             Default value is loaded from bentoml config
             'apiserver/default_image_input_accept_file_extensions', which is
             set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
@@ -84,101 +82,73 @@ class MultiImageInput(BaseInputAdapter):
     def __init__(
         self,
         input_names=("image",),
-        accepted_image_formats=None,
         pilmode="RGB",
-        is_batch_input=False,
+        accept_image_formats=None,
         **base_kwargs,
     ):
-        super(MultiImageInput, self).__init__(
-            is_batch_input=is_batch_input, **base_kwargs
-        )
-        self.input_names = input_names
+        assert imageio, "`imageio` dependency can be imported"
+
+        super().__init__(input_names=input_names, allow_none=True, **base_kwargs)
+
         self.pilmode = pilmode
-        self.accepted_image_formats = (
-            accepted_image_formats or get_default_accept_image_formats()
+        self.accept_image_formats = (
+            accept_image_formats or get_default_accept_image_formats()
         )
 
-    def handle_request(self, request: Request, func):
-        files = {
-            name: self.read_file(file.filename, file.stream)
-            for (name, file) in request.files.items()
-        }
-        result = func((files,))[0]
-        return self.output_adapter.to_response(result, request)
+    @property
+    def pip_dependencies(self):
+        return ["imageio"]
 
-    def read_file(self, name: str, file: BytesIO):
-        safe_name = secure_filename(name)
-        verify_image_format_or_raise(safe_name, self.accepted_image_formats)
-        return imageio.imread(file, pilmode=self.pilmode)
+    @property
+    def config(self):
+        return dict(
+            super().config,
+            accept_image_formats=list(self.accept_image_formats),
+            pilmode=self.pilmode,
+        )
 
-    def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
-        inputs = []
-        slices = []
-        for i, req in enumerate(requests):
-            content_type = next(
-                header[1] for header in req.headers if header[0] == b"Content-Type"
-            )
-
-            if b"multipart/form-data" not in content_type:
-                slices.append(None)
-            else:
-                files = {}
-                request = Request.from_values(
-                    data=req.data, content_type=content_type, headers=req.headers,
+    def _extract(self, tasks):
+        for task in tasks:
+            if not all(f is not None for f in task.data):
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} Empty request",
                 )
-                for name in request.files:
-                    file = request.files[name]
-                    files[name] = self.read_file(file.filename, file.stream)
-                inputs.append(files)
-                slices.append(i)
-        results = func(inputs) if inputs else []
-        return self.output_adapter.to_batch_response(results, slices, requests)
-
-    def handle_cli(self, args, func):
-        """Handles an CLI command call, convert CLI arguments into
-        corresponding data format that user API function is expecting, and
-        prints the API function result to console output
-        :param args: CLI arguments
-        :param func: user API function
-        """
-        parser = argparse.ArgumentParser()
-        for input_name in self.input_names:
-            parser.add_argument('--' + input_name, required=True)
-        args, unknown_args = parser.parse_known_args(args)
-        args = vars(args)
-        files = {
-            input_name: self.read_file(
-                pathlib.Path(args[input_name]).name, args[input_name]
-            )
-            for input_name in self.input_names
-        }
-        result = func((files,))[0]
-        return self.output_adapter.to_cli(result, unknown_args)
-
-    def handle_aws_lambda_event(self, event, func):
-        """Handles a Lambda event, convert event dict into corresponding
-        data format that user API function is expecting, and use API
-        function result as response
-        :param event: AWS lambda event data of the python `dict` type
-        :param func: user API function
-        """
-        content_type = event['headers']['Content-Type']
-        if "multipart/form-data" in content_type:
-            files = {}
-
-            request = Request.from_values(
-                data=event['body'], content_type=content_type, headers=event['headers']
-            )
-            for name in request.files:
-                file = request.files[name]
-                files[name] = self.read_file(file.filename, file.stream)
-            result = func((files,))[0]
-            return self.output_adapter.to_aws_lambda_event(result, event)
-        else:
-            raise BadInput(
-                "Multi-image requests don't support the {} content type".format(
-                    content_type
+                continue
+            try:
+                assert all(
+                    not getattr(f, "name", None)
+                    or check_file_extension(f.name, self.accept_image_formats)
+                    for f in task.data
                 )
-            )
+                image_array_tuple = tuple(
+                    imageio.imread(f, pilmode=self.pilmode) for f in task.data
+                )
+                yield image_array_tuple
+            except ValueError:
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} "
+                    f"Input image decode failed, it must be in supported format list: "
+                    f"{self.accept_image_formats}",
+                )
+            except AssertionError:
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} "
+                    f"Input image file must be in supported format list: "
+                    f"{self.accept_image_formats}",
+                )
+            except Exception:  # pylint: disable=broad-except
+                err = traceback.format_exc()
+                task.discard(
+                    http_status=500,
+                    err_msg=f"BentoML#{self.__class__.__name__} "
+                    f"Internal Server Error: {err}",
+                )
+
+    def extract_user_func_args(self, tasks: Iterable[MultiImgTask]) -> ApiFuncArgs:
+        args = tuple(map(tuple, zip(*self._extract(tasks))))
+        if not args:
+            args = (tuple(),) * len(self.input_names)
+        return args

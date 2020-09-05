@@ -17,7 +17,7 @@ def test_auto_adapter_dependencies(bento_bundle_path):
     assert 'imageio' in dependencies
     assert 'bentoml' in dependencies
 
-    # Test that dependencies also wrote to BentoServiceMetadat config file
+    # Test that dependencies also wrote to BentoServiceMetadata config file
 
 
 def test_auto_artifact_dependencies():

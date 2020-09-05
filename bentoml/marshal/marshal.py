@@ -12,23 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
 import asyncio
 import logging
 import multiprocessing
+import time
 import traceback
 from functools import partial
 
-import psutil
 import aiohttp
+import psutil
 
 from bentoml import config
 from bentoml.exceptions import RemoteException
-from bentoml.server.trace import async_trace, make_http_headers
-from bentoml.marshal.utils import DataLoader, SimpleRequest
-from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
-from bentoml.marshal.utils import SimpleResponse
+from bentoml.marshal.utils import DataLoader
+from bentoml.saved_bundle import load_bento_service_metadata
+from bentoml.server.trace import async_trace, make_http_headers
+from bentoml.types import HTTPRequest, HTTPResponse
 
 logger = logging.getLogger(__name__)
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
@@ -59,19 +59,19 @@ def metrics_patch(cls):
             )
             self.metrics_request_in_progress = Gauge(
                 name=service_name + "_mb_request_in_progress",
-                documentation='Totoal number of HTTP requests in progress now',
+                documentation='Total number of HTTP requests in progress now',
                 namespace=namespace,
                 labelnames=['endpoint', 'http_method'],
             )
             self.metrics_request_exception = Counter(
                 name=service_name + "_mb_request_exception",
-                documentation='Totoal number of service exceptions',
+                documentation='Total number of service exceptions',
                 namespace=namespace,
                 labelnames=['endpoint', 'exception_class'],
             )
             self.metrics_request_total = Counter(
                 name=service_name + "_mb_request_total",
-                documentation='Totoal number of service exceptions',
+                documentation='Total number of service exceptions',
                 namespace=namespace,
                 labelnames=['endpoint', 'http_response_code'],
             )
@@ -203,7 +203,10 @@ class MarshalService:
         ):
             api_name = request.match_info.get("name")
             if api_name in self.batch_handlers:
-                req = SimpleRequest(request.raw_headers, await request.read())
+                req = HTTPRequest(
+                    tuple((k.decode(), v.decode()) for k, v in request.raw_headers),
+                    await request.read(),
+                )
                 try:
                     resp = await self.batch_handlers[api_name](req)
                 except RemoteException as e:
@@ -212,7 +215,7 @@ class MarshalService:
                     resp = aiohttp.web.Response(
                         status=e.payload.status,
                         headers=e.payload.headers,
-                        body=e.payload.data,
+                        body=e.payload.body,
                     )
                 except Exception:  # pylint: disable=broad-except
                     logger.error(traceback.format_exc())
@@ -269,16 +272,20 @@ class MarshalService:
                         raw = await resp.read()
             except aiohttp.client_exceptions.ClientConnectionError as e:
                 raise RemoteException(
-                    e, payload=SimpleResponse(503, None, b"Service Unavailable")
+                    e, payload=HTTPResponse(status=503, body=b"Service Unavailable")
                 )
             if resp.status != 200:
                 raise RemoteException(
                     f"Bad response status from model server:\n{resp.status}\n{raw}",
-                    payload=SimpleResponse(resp.status, resp.headers, raw),
+                    payload=HTTPResponse(
+                        status=resp.status,
+                        headers=tuple(resp.headers.items()),
+                        body=raw,
+                    ),
                 )
             merged = DataLoader.split_responses(raw)
             return tuple(
-                aiohttp.web.Response(body=i.data, headers=i.headers, status=i.status)
+                aiohttp.web.Response(body=i.body, headers=i.headers, status=i.status)
                 for i in merged
             )
 

@@ -7,13 +7,13 @@ import numbers
 
 import pytest
 import numpy as np
-import flask
 
 try:
     from unittest.mock import MagicMock
 except ImportError:
     from mock import MagicMock
 
+from bentoml.types import HTTPRequest
 from bentoml.marshal.utils import BATCH_REQUEST_HEADER
 
 
@@ -97,45 +97,37 @@ def assert_eq_or_both_nan(x, y):
         assert x == y
 
 
-def test_tf_tensor_handle_request(test_cases):
+def test_tf_tensor_handle_request(make_api, test_cases):
     '''
     ref: https://www.tensorflow.org/tfx/serving/api_rest#request_format_2
     '''
     from bentoml.adapters import TfTensorInput
 
-    request = MagicMock(spec=flask.Request)
-
-    request.headers = {}
-    request.content_type = 'application/json'
-
-    input_adapter = TfTensorInput()
+    api = make_api(input_adapter=TfTensorInput(), user_func=lambda i: i)
 
     input_data, headers, except_result = test_cases
-    request.get_data.return_value = json.dumps(input_data).encode('utf-8')
-    request.headers = headers
-    response = input_adapter.handle_request(request, lambda i: i)
+    body = json.dumps(input_data).encode('utf-8')
+    request = HTTPRequest(headers=headers, body=body)
 
-    prediction = json.loads(response.get_data())
+    response = tuple(api.handle_batch_request([request]))[0]
+
+    prediction = json.loads(response.body)
     assert_eq_or_both_nan(except_result, prediction)
 
 
-def test_tf_tensor_handle_batch_request(test_cases):
+def test_tf_tensor_handle_batch_request(make_api, test_cases):
     '''
     ref: https://www.tensorflow.org/tfx/serving/api_rest#request_format_2
     '''
     from bentoml.adapters import TfTensorInput
-    from bentoml.marshal.utils import SimpleRequest
 
-    input_adapter = TfTensorInput()
-    request = MagicMock(spec=flask.Request)
+    api = make_api(input_adapter=TfTensorInput(), user_func=lambda i: i)
 
     input_data, headers, except_result = test_cases
-    request.get_data.return_value = json.dumps(input_data).encode('utf-8')
-    request.headers = headers
-    responses = input_adapter.handle_batch_request(
-        [SimpleRequest.from_flask_request(request)] * 3, lambda i: i
-    )
+    body = json.dumps(input_data).encode('utf-8')
+    request = HTTPRequest(headers=headers, body=body)
+    responses = api.handle_batch_request([request] * 3)
 
     for response in responses:
-        prediction = json.loads(response.data)
+        prediction = json.loads(response.body)
         assert_eq_or_both_nan(except_result, prediction)

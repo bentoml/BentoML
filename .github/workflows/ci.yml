@@ -29,16 +29,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [ '3.6', '3.7', '3.8' ]
+        python-version: [ '3.6.10', '3.7', '3.8' ]
         exclude:
           - os: macos-latest
             python-version: 3.8
           - os: macos-latest
-            python-version: 3.6
+            python-version: 3.6.10
           - os: windows-latest
             python-version: 3.8
           - os: windows-latest
-            python-version: 3.6
+            python-version: 3.6.10
     steps:
       - uses: actions/checkout@v2
         with:
@@ -159,7 +159,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.6.10
       - name: Install test dependencies
         run: ./ci/install-test-deps.sh
       - name: Run tests

@@ -1,22 +1,20 @@
 # pylint: disable=redefined-outer-name
+
 import itertools
-import time
-import pytest
+import json
 import math
+import time
 
 import flask
-import pandas as pd
 import numpy as np
-import json
+import pandas as pd
 import psutil  # noqa # pylint: disable=unused-import
+import pytest
 
-from bentoml.utils.dataframe_util import _csv_split, _guess_orient
 from bentoml.adapters import DataframeInput
-from bentoml.adapters.dataframe_input import (
-    check_dataframe_column_contains,
-    read_dataframes_from_json_n_csv,
-)
-from bentoml.exceptions import BadInput
+from bentoml.adapters.dataframe_input import read_dataframes_from_json_n_csv
+from bentoml.utils.csv import csv_splitlines
+from bentoml.utils.dataframe_util import guess_orient
 
 try:
     from unittest.mock import MagicMock
@@ -38,92 +36,68 @@ def test_dataframe_request_schema():
     assert "string" == schema["properties"]["col3"]["items"]["type"]
 
 
-def test_dataframe_handle_cli(capsys, tmpdir):
+def test_dataframe_handle_cli(capsys, make_api, tmpdir):
     def test_func(df):
-        return df["name"][0]
+        return df["name"]
 
     input_adapter = DataframeInput()
+    api = make_api(input_adapter, test_func)
 
     json_file = tmpdir.join("test.json")
     with open(str(json_file), "w") as f:
         f.write('[{"name": "john","game": "mario","city": "sf"}]')
 
-    test_args = ["--input={}".format(json_file)]
-    input_adapter.handle_cli(test_args, test_func)
+    test_args = ["--input-file", str(json_file)]
+    api.handle_cli(test_args)
     out, _ = capsys.readouterr()
-    assert out.strip().endswith("john")
+    assert "john" in out
 
 
-def test_dataframe_handle_aws_lambda_event():
+def test_dataframe_handle_aws_lambda_event(make_api):
     test_content = '[{"name": "john","game": "mario","city": "sf"}]'
 
     def test_func(df):
-        return df["name"][0]
+        return df["name"]
 
     input_adapter = DataframeInput()
+    api = make_api(input_adapter, test_func)
     event = {
         "headers": {"Content-Type": "application/json"},
         "body": test_content,
     }
-    response = input_adapter.handle_aws_lambda_event(event, test_func)
+    response = api.handle_aws_lambda_event(event)
     assert response["statusCode"] == 200
-    assert response["body"] == '"john"'
+    assert response["body"] == '[{"name":"john"}]'
 
-    input_adapter = DataframeInput()
     event_without_content_type_header = {
         "headers": {},
         "body": test_content,
     }
-    response = input_adapter.handle_aws_lambda_event(
-        event_without_content_type_header, test_func
-    )
+    response = api.handle_aws_lambda_event(event_without_content_type_header)
     assert response["statusCode"] == 200
-    assert response["body"] == '"john"'
+    assert response["body"] == '[{"name":"john"}]'
 
-    with pytest.raises(BadInput):
-        event_with_bad_input = {
-            "headers": {},
-            "body": "bad_input_content",
-        }
-        input_adapter.handle_aws_lambda_event(event_with_bad_input, test_func)
-
-
-def test_check_dataframe_column_contains():
-    df = pd.DataFrame(
-        np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), columns=["a", "b", "c"]
-    )
-
-    # this should pass
-    check_dataframe_column_contains({"a": "int", "b": "int", "c": "int"}, df)
-    check_dataframe_column_contains({"a": "int"}, df)
-    check_dataframe_column_contains({"a": "int", "c": "int"}, df)
-
-    # this should raise exception
-    with pytest.raises(BadInput) as e:
-        check_dataframe_column_contains({"required_column_x": "int"}, df)
-    assert "Missing columns: required_column_x" in str(e.value)
-
-    with pytest.raises(BadInput) as e:
-        check_dataframe_column_contains(
-            {"a": "int", "b": "int", "d": "int", "e": "int"}, df
-        )
-    assert "Missing columns:" in str(e.value)
-    assert "required_column:" in str(e.value)
+    event_with_bad_input = {
+        "headers": {},
+        "body": "bad_input_content",
+    }
+    response = api.handle_aws_lambda_event(event_with_bad_input)
+    assert response["statusCode"] == 400
 
 
-def test_dataframe_handle_request_csv():
-    def test_function(df):
-        return df["name"][0]
+def test_dataframe_handle_request_csv(make_api):
+    def test_func(df):
+        return df["name"]
 
     input_adapter = DataframeInput()
-    csv_data = 'name,game,city\njohn,mario,sf'
+    api = make_api(input_adapter, test_func)
+    csv_data = b'name,game,city\njohn,mario,sf'
     request = MagicMock(spec=flask.Request)
-    request.headers = (('orient', 'records'),)
-    request.content_type = 'text/csv'
+    request.headers = {'Content-Type': 'text/csv'}
     request.get_data.return_value = csv_data
 
-    result = input_adapter.handle_request(request, test_function)
-    assert result.get_data().decode('utf-8') == '"john"'
+    result = api.handle_request(request)
+    assert result.get_data().decode('utf-8') == '[{"name":"john"}]'
 
 
 def assert_df_equal(left: pd.DataFrame, right: pd.DataFrame):
@@ -180,70 +154,77 @@ def test_batch_read_dataframes_from_mixed_json_n_csv(df):
             continue
 
         test_datas.extend([df.to_json(orient=orient).encode()] * 3)
-        test_types.extend(['application/json'] * 3)
-        df_merged, slices = read_dataframes_from_json_n_csv(
-            test_datas, test_types, orient=None
-        )  # auto detect orient
+        test_types.extend(['json'] * 3)
 
     test_datas.extend([df.to_csv(index=False).encode()] * 3)
-    test_types.extend(['text/csv'] * 3)
+    test_types.extend(['csv'] * 3)
 
-    df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types)
-    for s in slices:
-        assert_df_equal(df_merged[s], df)
+    df_merged, counts = read_dataframes_from_json_n_csv(test_datas, test_types)
+    i = 0
+    for count in counts:
+        assert_df_equal(df_merged[i : i + count], df)
+        i += count
 
 
 def test_batch_read_dataframes_from_csv_other_CRLF(df):
     csv_str = df.to_csv(index=False)
+
     if '\r\n' in csv_str:
-        csv_str = '\n'.join(_csv_split(csv_str, '\r\n')).encode()
+        csv_str = '\n'.join(csv_splitlines(csv_str)).encode()
     else:
-        csv_str = '\r\n'.join(_csv_split(csv_str, '\n')).encode()
-    df_merged, _ = read_dataframes_from_json_n_csv([csv_str], ['text/csv'])
+        csv_str = '\r\n'.join(csv_splitlines(csv_str)).encode()
+    df_merged, _ = read_dataframes_from_json_n_csv([csv_str], ['csv'])
     assert_df_equal(df_merged, df)
 
 
 def test_batch_read_dataframes_from_json_of_orients(df, orient):
     test_datas = [df.to_json(orient=orient).encode()] * 3
-    test_types = ['application/json'] * 3
-    df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
-
-    df_merged, slices = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
-    for s in slices:
-        assert_df_equal(df_merged[s], df)
+    test_types = ['json'] * 3
+    df_merged, counts = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
+    i = 0
+    for count in counts:
+        assert_df_equal(df_merged[i : i + count], df)
+        i += count
 
 
 def test_batch_read_dataframes_from_json_with_wrong_orients(df, orient):
     test_datas = [df.to_json(orient='table').encode()] * 3
-    test_types = ['application/json'] * 3
+    test_types = ['json'] * 3
 
-    with pytest.raises(BadInput):
-        read_dataframes_from_json_n_csv(test_datas, test_types, orient)
+    df_merged, counts = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
+    assert not df_merged
+    for count in counts:
+        assert not count
 
 
 def test_batch_read_dataframes_from_json_in_mixed_order():
     # different column order when orient=records
     df_json = b'[{"A": 1, "B": 2, "C": 3}, {"C": 6, "A": 2, "B": 4}]'
-    df_merged, slices = read_dataframes_from_json_n_csv([df_json], ['application/json'])
-    for s in slices:
-        assert_df_equal(df_merged[s], pd.read_json(df_json))
+    df_merged, counts = read_dataframes_from_json_n_csv([df_json], ['json'])
+    i = 0
+    for count in counts:
+        assert_df_equal(df_merged[i : i + count], pd.read_json(df_json))
+        i += count
 
     # different row/column order when orient=columns
     df_json1 = b'{"A": {"1": 1, "2": 2}, "B": {"1": 2, "2": 4}, "C": {"1": 3, "2": 6}}'
     df_json2 = b'{"B": {"1": 2, "2": 4}, "A": {"1": 1, "2": 2}, "C": {"1": 3, "2": 6}}'
     df_json3 = b'{"A": {"1": 1, "2": 2}, "B": {"2": 4, "1": 2}, "C": {"1": 3, "2": 6}}'
-    df_merged, slices = read_dataframes_from_json_n_csv(
-        [df_json1, df_json2, df_json3], ['application/json'] * 3
+    df_merged, counts = read_dataframes_from_json_n_csv(
+        [df_json1, df_json2, df_json3], ['json'] * 3
     )
-    for s in slices:
+    i = 0
+    for count in counts:
         assert_df_equal(
-            df_merged[s][["A", "B", "C"]], pd.read_json(df_json1)[["A", "B", "C"]]
+            df_merged[i : i + count][["A", "B", "C"]],
+            pd.read_json(df_json1)[["A", "B", "C"]],
         )
+        i += count
 
 
 def test_guess_orient(df, orient):
     json_str = df.to_json(orient=orient)
-    guessed_orient = _guess_orient(json.loads(json_str))
+    guessed_orient = guess_orient(json.loads(json_str), strict=True)
     assert orient == guessed_orient or orient in guessed_orient
 
 
@@ -264,10 +245,10 @@ def test_benchmark_load_dataframes():
 
     time_st = time.time()
     result2, _ = read_dataframes_from_json_n_csv(
-        inputs, itertools.repeat('application/json'), 'columns'
+        inputs, itertools.repeat('json'), 'columns'
     )
-    time2 = time.time() - time_st
 
+    time2 = time.time() - time_st
     assert_df_equal(result1, result2)
 
     # 5 is just an estimate on the smaller end, which should be true for most

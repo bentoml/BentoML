@@ -12,50 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import argparse
-import base64
-from io import BytesIO
-from typing import Iterable
+from typing import BinaryIO, Iterable, Sequence, Tuple
 
-from werkzeug.utils import secure_filename
-from werkzeug.wrappers import Request
-
-from bentoml import config
+from bentoml.adapters.file_input import FileInput
+from bentoml.adapters.utils import (
+    check_file_extension,
+    get_default_accept_image_formats,
+)
+from bentoml.types import InferenceTask
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.marshal.utils import SimpleRequest, SimpleResponse
-from bentoml.exceptions import BadInput
-from bentoml.adapters.base_input import BaseInputAdapter
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')
+numpy = LazyLoader('numpy', globals(), 'numpy')
 
 
-def verify_image_format_or_raise(file_name, accept_format_list):
-    """
-    Raise error if file's extension is not in the accept_format_list
-    """
-    if accept_format_list:
-        _, extension = os.path.splitext(file_name)
-        if extension.lower() not in accept_format_list:
-            raise BadInput(
-                "Input file not in supported format list: {}".format(accept_format_list)
-            )
+ApiFuncArgs = Tuple[
+    Sequence['numpy.ndarray'],
+]
 
 
-def get_default_accept_image_formats():
-    """With default bentoML config, this returns:
-        ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
-    """
-    return [
-        extension.strip()
-        for extension in config("apiserver")
-        .get("default_image_input_accept_file_extensions")
-        .split(",")
-    ]
-
-
-class ImageInput(BaseInputAdapter):
+class ImageInput(FileInput):
     """Transform incoming image data from http request, cli or lambda event into numpy
     array.
 
@@ -87,7 +64,7 @@ class ImageInput(BaseInputAdapter):
         >>>
         >>> CLASS_NAMES = ['cat', 'dog']
         >>>
-        >>> @artifacts([TensorflowArtifact('classifer')])
+        >>> @artifacts([TensorflowArtifact('classifier')])
         >>> class PetClassification(BentoService):
         >>>     @api(input=ImageInput())
         >>>     def predict(self, image_ndarrays):
@@ -95,21 +72,12 @@ class ImageInput(BaseInputAdapter):
         >>>         return [CLASS_NAMES[r] for r in results]
     """
 
-    HTTP_METHODS = ["POST"]
-    BATCH_MODE_SUPPORTED = True
-
     def __init__(
-        self,
-        accept_image_formats=None,
-        pilmode="RGB",
-        is_batch_input=False,
-        **base_kwargs,
+        self, accept_image_formats=None, pilmode="RGB", **base_kwargs,
     ):
         assert imageio, "`imageio` dependency can be imported"
 
-        if is_batch_input:
-            raise ValueError('ImageInput can not accpept batch inputs')
-        super(ImageInput, self).__init__(is_batch_input=is_batch_input, **base_kwargs)
+        super().__init__(**base_kwargs)
         if 'input_names' in base_kwargs:
             raise TypeError(
                 "ImageInput doesn't take input_names as parameters since bentoml 0.8."
@@ -118,7 +86,7 @@ class ImageInput(BaseInputAdapter):
             )
 
         self.pilmode = pilmode
-        self.accept_image_formats = (
+        self.accept_image_formats = set(
             accept_image_formats or get_default_accept_image_formats()
         )
 
@@ -126,7 +94,7 @@ class ImageInput(BaseInputAdapter):
     def config(self):
         return {
             # Converting to list, google.protobuf.Struct does not work with tuple type
-            "accept_image_formats": self.accept_image_formats,
+            "accept_image_formats": list(self.accept_image_formats),
             "pilmode": self.pilmode,
         }
 
@@ -148,109 +116,24 @@ class ImageInput(BaseInputAdapter):
     def pip_dependencies(self):
         return ["imageio"]
 
-    def _load_image_data(self, request: Request):
-        if len(request.files):
-            if len(request.files) != 1:
-                raise BadInput(
-                    "ImageInput requires one and at least one image file at a time, "
-                    "if you just upgraded from bentoml 0.7, you may need to use "
-                    "FileInput or LegacyImageInput instead"
+    def extract_user_func_args(
+        self, tasks: Iterable[InferenceTask[BinaryIO]]
+    ) -> ApiFuncArgs:
+        img_list = []
+        for task in tasks:
+            if getattr(task.data, "name", None) and not check_file_extension(
+                task.data.name, self.accept_image_formats
+            ):
+                task.discard(
+                    http_status=400,
+                    err_msg=f"Current service only accepts "
+                    f"{self.accept_image_formats} formats",
                 )
-            input_file = next(iter(request.files.values()))
-            if not input_file:
-                raise BadInput("BentoML#ImageInput unexpected HTTP request format")
-            file_name = secure_filename(input_file.filename)
-            verify_image_format_or_raise(file_name, self.accept_image_formats)
-            input_stream = input_file.stream
-        else:
-            data = request.get_data()
-            if not data:
-                raise BadInput("BentoML#ImageInput unexpected HTTP request format")
-            else:
-                input_stream = data
-
-        input_data = imageio.imread(input_stream, pilmode=self.pilmode)
-        return input_data
-
-    def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func: callable
-    ) -> Iterable[SimpleResponse]:
-        """
-        Batch version of handle_request
-        """
-        input_datas = []
-        ids = []
-        for i, req in enumerate(requests):
-            if not req.data:
-                ids.append(None)
                 continue
-            request = Request.from_values(
-                input_stream=BytesIO(req.data),
-                content_length=len(req.data),
-                headers=req.headers,
-            )
             try:
-                input_data = self._load_image_data(request)
-            except BadInput:
-                ids.append(None)
-                continue
+                img_array = imageio.imread(task.data, pilmode=self.pilmode)
+                img_list.append(img_array)
+            except ValueError as e:
+                task.discard(http_status=400, err_msg=str(e))
 
-            input_datas.append(input_data)
-            ids.append(i)
-
-        results = func(input_datas) if input_datas else []
-        return self.output_adapter.to_batch_response(results, ids, requests)
-
-    def handle_request(self, request, func):
-        """Handle http request that has one image file. It will convert image into a
-        ndarray for the function to consume.
-
-        Args:
-            request: incoming request object.
-            func: function that will take ndarray as its arg.
-            options: configuration for handling request object.
-        Return:
-            response object
-        """
-        input_data = self._load_image_data(request)
-        result = func((input_data,))[0]
-        return self.output_adapter.to_response(result, request)
-
-    def handle_cli(self, args, func):
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--input", required=True, nargs='+')
-        parser.add_argument("--batch-size", default=None, type=int)
-        parsed_args, unknown_args = parser.parse_known_args(args)
-        file_paths = parsed_args.input
-
-        batch_size = (
-            parsed_args.batch_size if parsed_args.batch_size else len(file_paths)
-        )
-
-        for i in range(0, len(file_paths), batch_size):
-            step_file_paths = file_paths[i : i + batch_size]
-            image_arrays = []
-            for file_path in step_file_paths:
-                verify_image_format_or_raise(file_path, self.accept_image_formats)
-                if not os.path.isabs(file_path):
-                    file_path = os.path.abspath(file_path)
-
-                image_arrays.append(imageio.imread(file_path, pilmode=self.pilmode))
-
-            results = func(image_arrays)
-            for result in results:
-                return self.output_adapter.to_cli(result, unknown_args)
-
-    def handle_aws_lambda_event(self, event, func):
-        if event["headers"].get("Content-Type", "").startswith("images/"):
-            image = imageio.imread(
-                base64.decodebytes(event["body"]), pilmode=self.pilmode
-            )
-        else:
-            raise BadInput(
-                "BentoML currently doesn't support Content-Type: {content_type} for "
-                "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
-            )
-
-        result = func((image,))[0]
-        return self.output_adapter.to_aws_lambda_event(result, event)
+        return (img_list,)

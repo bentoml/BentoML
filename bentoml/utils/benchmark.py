@@ -50,9 +50,9 @@ class DynamicBucketMerge:
     def __init__(self, sample_range=1, bucket_num=10):
         self.bucket_num = bucket_num
         self.sample_range = sample_range
-        self.bucket = [0] * (bucket_num)
-        self.bucket_sample = [0] * (bucket_num)
-        self.bucket_ver = [0] * (bucket_num)
+        self.bucket = [0] * bucket_num
+        self.bucket_sample = [0] * bucket_num
+        self.bucket_ver = [0] * bucket_num
 
     def put(self, timestamp, num):
         timestamp = timestamp / self.sample_range
@@ -198,7 +198,7 @@ class Stat:
         if health < 90:
             print(
                 """
-                *** WARNNING ***
+                *** WARNING ***
                 The client health rate is low. The benchmark result is not reliable.
                 Possible solutions:
                 * check the failure_rate and avoid request failures
@@ -229,14 +229,14 @@ class BenchmarkClient:
     """
     A locust-like benchmark tool with asyncio.
     Features:
-    * Very effcient, low CPU cost
-    * Could be embeded into other asyncio APPs, like jupyter notebook
+    * Very efficient, low CPU cost
+    * Could be embedded into other asyncio apps, like jupyter notebook
 
     Paras:
     * request_producer: The test case producer, a function with return value
         (url: str, method: str, headers: dict, data: str)
     * request_interval: intervals in seconds between each requests of the same user,
-      lazy value supoorted.
+      lazy value supported.
         for eg:
             - 1  # for constant 1 sec
             - lambda: random.random()  # for random wait time between 0 and 1
@@ -298,6 +298,7 @@ class BenchmarkClient:
                 req_url = self.url_override or url
                 err = ''
                 group = ''
+                # noinspection PyUnresolvedReferences
                 try:
                     async with sess.request(
                         method,
@@ -310,7 +311,7 @@ class BenchmarkClient:
                         if not self.verify_response(r.status, msg):
                             group = f"{r.status}"
                             err = f"<status: {r.status}>\n{msg}"
-                except asyncio.CancelledError:
+                except asyncio.CancelledError:  # pylint: disable=try-except-raise
                     raise
                 except (
                     aiohttp.client_exceptions.ServerDisconnectedError,
@@ -417,7 +418,7 @@ class BenchmarkClient:
         Paras:
         * session_time: session time in sec
         * total_user: user count need to be spawned
-        * spawn_speed: user spawnning speed, in user/sec
+        * spawn_speed: user spawning speed, in user/sec
         """
         if spawn_speed is None:
             spawn_speed = total_user

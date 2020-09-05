@@ -4,17 +4,16 @@ import time
 from sklearn.ensemble import RandomForestRegressor
 
 import bentoml
-from bentoml.saved_bundle import save_to_dir
-from bentoml.adapters import (
+from bentoml.adapters import (  # FastaiImageInput,
     DataframeInput,
-    ImageInput,
-    LegacyImageInput,
-    JsonInput,
     FileInput,
-    # FastaiImageInput,
+    ImageInput,
+    JsonInput,
+    LegacyImageInput,
 )
-from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.artifact import PickleArtifact, SklearnModelArtifact
+from bentoml.handlers import DataframeHandler  # deprecated
+from bentoml.saved_bundle import save_to_dir
 
 
 @bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact('sk_model')])
@@ -73,7 +72,7 @@ class ExampleBentoService(bentoml.BentoService):
 
 class PickleModel(object):
     def predict_dataframe(self, df):
-        return df["col1"] * 2
+        return df['col1'] * 2
 
     def predict_image(self, input_datas):
         for input_data in input_datas:

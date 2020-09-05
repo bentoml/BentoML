@@ -1,13 +1,14 @@
+# pylint: disable=redefined-outer-name
 import json
+
 import pytest
 
-import tensorflow as tf
-
 import bentoml
+import tensorflow as tf
 from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
 from tests.integration.api_server.conftest import (
-    run_api_server_docker_container,
     build_api_server_docker_image,
+    run_api_server_docker_container,
 )
 
 test_data = [[1, 2, 3, 4, 5]]

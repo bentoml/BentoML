@@ -13,15 +13,20 @@
 # limitations under the License.
 
 import json
-import itertools
-from typing import Iterable
-
-import argparse
+from typing import Sequence
 
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
 from bentoml.adapters.utils import TfTensorJsonEncoder
-from bentoml.adapters.base_output import BaseOutputAdapter
+
+
+from bentoml.types import (
+    InferenceTask,
+    InferenceResult,
+    DefaultErrorContext,
+)
+from bentoml.adapters.base_output import regroup_return_value
+from bentoml.adapters.json_output import JsonSerializableOutput
+
 
 np = LazyLoader('np', globals(), 'numpy')
 
@@ -43,9 +48,9 @@ def tf_to_numpy(tensor):
         return tensor.numpy()
 
 
-class TfTensorOutput(BaseOutputAdapter):
+class TfTensorOutput(JsonSerializableOutput):
     """
-    Converts result of use defined API function into specific output.
+    Converts result of user defined API function into specific output.
 
     Args:
         cors (str): The value of the Access-Control-Allow-Origin header set in the
@@ -53,61 +58,7 @@ class TfTensorOutput(BaseOutputAdapter):
             the header will not be set.
     """
 
-    def __init__(self, **kwargs):
-        super(TfTensorOutput, self).__init__(**kwargs)
-
-    def to_batch_response(
-        self,
-        result_conc,
-        slices=None,
-        fallbacks=None,
-        requests: Iterable[SimpleRequest] = None,
-    ) -> Iterable[SimpleResponse]:
-        # TODO(bojiang): header content_type
-        results = tf_to_numpy(result_conc)
-        assert isinstance(results, np.ndarray)
-        if slices is None:
-            slices = [i for i in range(results.shape[0])]
-        if fallbacks is None:
-            fallbacks = itertools.repeat(None)
-        responses = [None] * len(slices)
-
-        for i, (s, f) in enumerate(zip(slices, fallbacks)):
-            if s is None:
-                responses[i] = f
-                continue
-            result = results[s]
-            result_str = json.dumps(result, cls=TfTensorJsonEncoder)
-            responses[i] = SimpleResponse(200, dict(), result_str)
-        return responses
-
-    def to_cli(self, result, args):
-        """
-        Handles an CLI command call, convert CLI arguments into
-        corresponding data format that user API function is expecting, and
-        prints the API function result to console output
-
-        :param args: CLI arguments
-        """
-        parser = argparse.ArgumentParser()
-        parser.add_argument("-o", "--output", default="json", choices=["str", "json"])
-        parsed_args = parser.parse_args(args)
-        if parsed_args.output == 'json':
-            result = json.dumps(result, cls=TfTensorJsonEncoder, indent='  ')
-        else:
-            result = str(result)
-        print(result)
-
-    def to_aws_lambda_event(self, result, event):
-        result = json.dumps(result, cls=TfTensorJsonEncoder)
-        # Allow disabling CORS by setting it to None
-        if self.cors:
-            return {
-                "statusCode": 200,
-                "body": result,
-                "headers": {"Access-Control-Allow-Origin": self.cors},
-            }
-        return {"statusCode": 200, "body": result}
+    BATCH_MODE_SUPPORTED = True
 
     @property
     def pip_dependencies(self):
@@ -115,3 +66,21 @@ class TfTensorOutput(BaseOutputAdapter):
         :return: List of PyPI package names required by this OutputAdapter
         """
         return ['tensorflow']
+
+    def pack_user_func_return_value(
+        self, return_result, tasks: Sequence[InferenceTask],
+    ) -> Sequence[InferenceResult[str]]:
+        rv = []
+        results = tf_to_numpy(return_result)
+        assert isinstance(results, np.ndarray)
+        for result, _ in regroup_return_value(results, tasks):
+            try:
+                result_str = json.dumps(result, cls=TfTensorJsonEncoder)
+                rv.append(InferenceResult(data=result_str))
+            except Exception as e:  # pylint: disable=broad-except
+                rv.append(
+                    InferenceResult(
+                        context=DefaultErrorContext(err_msg=str(e), http_status=500,),
+                    )
+                )
+        return rv

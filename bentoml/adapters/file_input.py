@@ -12,22 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import os
-import argparse
 import base64
-import contextlib
-from io import BytesIO
-from typing import Iterable
+import io
+from typing import BinaryIO, Iterable, Iterator, Sequence, Tuple
 
-from werkzeug.wrappers import Request
+from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
+from bentoml.types import (
+    AwsLambdaEvent,
+    HTTPRequest,
+    InferenceContext,
+    InferenceTask,
+)
 
-from bentoml.exceptions import BadInput
-from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+ApiFuncArgs = Tuple[
+    Sequence[BinaryIO],
+]
 
 
 class FileInput(BaseInputAdapter):
@@ -78,11 +77,6 @@ class FileInput(BaseInputAdapter):
     HTTP_METHODS = ["POST"]
     BATCH_MODE_SUPPORTED = True
 
-    def __init__(
-        self, **base_kwargs,
-    ):
-        super(FileInput, self).__init__(**base_kwargs)
-
     @property
     def request_schema(self):
         return {
@@ -95,97 +89,52 @@ class FileInput(BaseInputAdapter):
             "*/*": {"schema": {"type": "string", "format": "binary"}},
         }
 
-    def _load_file(self, request: Request):
-        if len(request.files):
-            if len(request.files) != 1:
-                raise BadInput(
-                    "ImageHandler requires one and at least one file at a time, "
-                    "if you just upgraded from bentoml 0.7, you may need to use "
-                    "MultiImageHandler or LegacyImageHandler instead"
+    def from_http_request(self, req: HTTPRequest) -> InferenceTask[BinaryIO]:
+        if req.parsed_headers.content_type == 'multipart/form-data':
+            _, _, files = HTTPRequest.parse_form_data(req)
+            if len(files) != 1:
+                task = InferenceTask(data=None)
+                task.discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} requires one and at"
+                    " least one file at a time, if you just upgraded from"
+                    " bentoml 0.7, you may need to use MultiFileAdapter instead",
                 )
-            input_file = next(iter(request.files.values()))
-            if not input_file:
-                raise BadInput("BentoML#ImageHandler unexpected HTTP request format")
-            input_stream = input_file.stream
-        else:
-            data = request.get_data()
-            if not data:
-                raise BadInput("BentoML#ImageHandler unexpected HTTP request format")
             else:
-                input_stream = BytesIO(data)
-
-        return input_stream
-
-    def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func: callable
-    ) -> Iterable[SimpleResponse]:
-        """
-        Batch version of handle_request
-        """
-        input_datas = []
-        ids = []
-
-        for i, req in enumerate(requests):
-            if not req.data:
-                ids.append(None)
-                continue
-            request = Request.from_values(
-                input_stream=BytesIO(req.data),
-                content_length=len(req.data),
-                headers=req.headers,
+                input_file = next(iter(files.values()))
+                task = InferenceTask(
+                    context=InferenceContext(http_headers=req.parsed_headers),
+                    data=input_file,
+                )
+        elif req.body:
+            task = InferenceTask(
+                context=InferenceContext(http_headers=req.parsed_headers),
+                data=io.BytesIO(req.body),
             )
-            try:
-                input_data = self._load_file(request)
-            except BadInput:
-                ids.append(None)
-                continue
+        else:
+            task = InferenceTask(data=None)
+            task.discard(
+                http_status=400,
+                err_msg=f'BentoML#{self.__class__.__name__} unexpected HTTP request'
+                ' format',
+            )
+        return task
 
-            input_datas.append(input_data)
-            ids.append(i)
-
-        results = func(input_datas) if input_datas else []
-        return self.output_adapter.to_batch_response(results, ids, requests)
-
-    def handle_request(self, request, func):
-        """Handle http request that has one file. It will convert file into a
-        BytesIO object for the function to consume.
-
-        Args:
-            request: incoming request object.
-            func: function that will take ndarray as its arg.
-        Return:
-            response object
-        """
-        input_data = self._load_file(request)
-        result = func((input_data,))[0]
-        return self.output_adapter.to_response(result, request)
-
-    def handle_cli(self, args, func):
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--input", required=True, nargs='+')
-        parser.add_argument("--batch-size", default=None, type=int)
-        parsed_args, unknown_args = parser.parse_known_args(args)
-        file_paths = parsed_args.input
-
-        batch_size = (
-            parsed_args.batch_size if parsed_args.batch_size else len(file_paths)
+    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[BinaryIO]:
+        return InferenceTask(
+            context=InferenceContext(aws_lambda_event=event),
+            data=io.BytesIO(base64.decodebytes(event.get('body', ""))),
         )
 
-        for i in range(0, len(file_paths), batch_size):
-            step_file_paths = file_paths[i : i + batch_size]
-            input_list = []
-            with contextlib.ExitStack() as stack:
-                for file_path in step_file_paths:
-                    if not os.path.isabs(file_path):
-                        file_path = os.path.abspath(file_path)
-                    input_list.append(stack.enter_context(open(file_path, 'rb')))
+    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[BinaryIO]]:
+        for input_ in parse_cli_input(cli_args):
+            bio = io.BytesIO(input_.read())
+            bio.name = input_.name
+            yield InferenceTask(
+                context=InferenceContext(cli_args=cli_args), data=bio,
+            )
 
-                results = func(input_list)
-
-            for result in results:
-                self.output_adapter.to_cli(result, unknown_args)
-
-    def handle_aws_lambda_event(self, event, func):
-        f = base64.decodebytes(event["body"])
-        result = func((BytesIO(f),))[0]
-        return self.output_adapter.to_aws_lambda_event(result, event)
+    def extract_user_func_args(
+        self, tasks: Iterable[InferenceTask[BinaryIO]]
+    ) -> ApiFuncArgs:
+        return (tuple(t.data for t in tasks),)

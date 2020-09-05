@@ -1,7 +1,8 @@
-import pytest
+import glob
 
 import imageio
 import numpy as np
+import pytest
 
 from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
@@ -74,23 +75,8 @@ def is_batch_request(pytestconfig):
 
 
 @pytest.fixture()
-def img_file(tmpdir):
-    img_file_ = tmpdir.join("test_img.jpg")
-    imageio.imwrite(str(img_file_), np.zeros((10, 10)))
-    return str(img_file_)
-
-
-@pytest.fixture()
-def json_file(tmpdir):
-    json_file_ = tmpdir.join("test_json.json")
-    with open(json_file_, "w") as of:
-        of.write('{"name": "kaith", "game": "morrowind"}')
-    return str(json_file_)
-
-
-@pytest.fixture()
 def bin_file(tmpdir):
-    bin_file_ = tmpdir.join("bin_file")
+    bin_file_ = tmpdir.join("bin_file.bin")
     with open(bin_file_, "wb") as of:
         of.write("â".encode('gb18030'))
     return str(bin_file_)
@@ -99,23 +85,64 @@ def bin_file(tmpdir):
 @pytest.fixture()
 def bin_files(tmpdir):
     for i in range(10):
-        bin_file_ = tmpdir.join(f"{i}")
+        bin_file_ = tmpdir.join(f"{i}.bin")
         with open(bin_file_, "wb") as of:
             of.write(f"â{i}".encode('gb18030'))
-    return str(tmpdir.join("*"))
+    return sorted(glob.glob(str(tmpdir.join("*.bin"))))
+
+
+@pytest.fixture()
+def unicode_file(tmpdir):
+    bin_file_ = tmpdir.join("bin_file.unicode")
+    with open(bin_file_, "wb") as of:
+        of.write("â".encode('utf-8'))
+    return str(bin_file_)
+
+
+@pytest.fixture()
+def unicode_files(tmpdir):
+    for i in range(10):
+        bin_file_ = tmpdir.join(f"{i}.list.unicode")
+        with open(bin_file_, "wb") as of:
+            of.write(f"â{i}".encode('utf-8'))
+    return sorted(glob.glob(str(tmpdir.join("*.list.unicode"))))
+
+
+@pytest.fixture()
+def img_file(tmpdir):
+    img_file_ = tmpdir.join("test_img.jpg")
+    imageio.imwrite(str(img_file_), np.zeros((10, 10)))
+    return str(img_file_)
 
 
 @pytest.fixture()
 def img_files(tmpdir):
     for i in range(10):
-        img_file_ = tmpdir.join(f"test_img_{i}.jpg")
+        img_file_ = tmpdir.join(f"{i}.list.jpg")
         imageio.imwrite(str(img_file_), np.zeros((10, 10)))
-    return str(tmpdir.join("*.jpg"))
+    return sorted(glob.glob(str(tmpdir.join("*.list.jpg"))))
+
+
+@pytest.fixture()
+def json_file(tmpdir):
+    json_file_ = tmpdir.join("test.json")
+    with open(json_file_, "w") as of:
+        of.write('{"name": "kaith", "game": "morrowind"}')
+    return str(json_file_)
+
+
+@pytest.fixture()
+def json_files(tmpdir):
+    for i in range(10):
+        file_ = tmpdir.join(f"{i}.list.json")
+        with open(file_, "w") as of:
+            of.write('{"i": %d, "name": "kaith", "game": "morrowind"}' % i)
+    return sorted(glob.glob(str(tmpdir.join("*.list.json"))))
 
 
 class TestModel(object):
     def predict_dataframe(self, df):
-        return df["col1"].sum()
+        return df["col1"] * 2
 
     def predict_image(self, input_datas):
         for input_data in input_datas:

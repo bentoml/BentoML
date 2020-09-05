@@ -140,7 +140,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
                 )
 
         assert self._onnx_model_path or self._model_proto, (
-            "Either self._onnx_model_path or self._model_proto has to be initilaized "
+            "Either self._onnx_model_path or self._model_proto has to be initialized "
             "after initializing _OnnxModelArtifactWrapper"
         )
 
@@ -159,7 +159,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
                 import onnxruntime
             except ImportError:
                 raise MissingDependencyException(
-                    '"onnxruntime" package is required for inferencing with onnx '
+                    '"onnxruntime" package is required for inference with onnx '
                     'runtime as backend'
                 )
 

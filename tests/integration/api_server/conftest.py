@@ -1,14 +1,14 @@
 # pylint: disable=redefined-outer-name
+import logging
 import time
 import urllib
-import logging
 from contextlib import contextmanager
 
 import pytest
+
 import bentoml
 
 from .example_service import gen_test_bundle
-
 
 logger = logging.getLogger("bentoml.tests")
 
@@ -90,6 +90,7 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
         _wait_until_api_server_ready(host_url, timeout, container)
         yield host_url
     finally:
+        print(container.logs())
         container.stop()
         time.sleep(1)  # make sure container stopped & deleted
 
@@ -99,11 +100,15 @@ def build_api_server_docker_image(saved_bundle_path, image_tag):
     import docker
 
     client = docker.from_env()
+    logger.info(
+        f"Building API server docker image from build context: {saved_bundle_path}"
+    )
     try:
-        logger.info(
-            f"Building API server docker image from build context: {saved_bundle_path}"
-        )
-        image = client.images.build(path=saved_bundle_path, tag=image_tag, rm=True)[0]
+        image, _ = client.images.build(path=saved_bundle_path, tag=image_tag, rm=True)
         yield image
-    finally:
         client.images.remove(image.id)
+    except docker.errors.BuildError as e:
+        for line in e.build_log:
+            if 'stream' in line:
+                print(line['stream'].strip())
+        raise

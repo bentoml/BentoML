@@ -106,7 +106,7 @@ def echo_docker_api_result(docker_generator):
                 humanfriendly.format_size(sum(cur)),
                 humanfriendly.format_size(sum(total)),
             )
-            yield (f"Pushed {cur} / {total}")
+            yield f"Pushed {cur} / {total}"
         if "errorDetail" in line:
             error = line["errorDetail"]
             raise BentoMLException(error["message"])
@@ -145,10 +145,10 @@ def _format_deployment_age_for_print(deployment_pb):
         # we will not show the age for those deployments
         return None
     else:
-        return humanfriendly_age_from_datetime(deployment_pb.created_at.ToDatetime())
+        return human_friendly_age_from_datetime(deployment_pb.created_at.ToDatetime())
 
 
-def humanfriendly_age_from_datetime(dt, detailed=False, max_unit=2):
+def human_friendly_age_from_datetime(dt, detailed=False, max_unit=2):
     return humanfriendly.format_timespan(datetime.utcnow() - dt, detailed, max_unit)
 
 

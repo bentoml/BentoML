@@ -12,14 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable
-import json
-
 import argparse
+import json
+from typing import Iterable, Iterator, Sequence
 
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.adapters.base_output import (
+    BaseOutputAdapter,
+    regroup_return_value,
+)
 from bentoml.adapters.utils import NumpyJsonEncoder
-from bentoml.adapters.base_output import BaseOutputAdapter
+from bentoml.types import (
+    DefaultErrorContext,
+    HTTPResponse,
+    InferenceContext,
+    InferenceResult,
+    InferenceTask,
+    JsonSerializable,
+)
+
+ApiFuncReturnValue = Sequence[JsonSerializable]
 
 
 class JsonSerializableOutput(BaseOutputAdapter):
@@ -32,66 +43,89 @@ class JsonSerializableOutput(BaseOutputAdapter):
             the header will not be set.
     """
 
-    def to_batch_response(
-        self,
-        result_conc,
-        slices=None,
-        fallbacks=None,
-        requests: Iterable[SimpleRequest] = None,
-    ) -> Iterable[SimpleResponse]:
-        # TODO(bojiang): header content_type
-
-        if slices is None:
-            slices = [i for i, _ in enumerate(result_conc)]
-        if fallbacks is None:
-            fallbacks = [None] * len(slices)
-
-        responses = [None] * len(slices)
-
-        for i, (s, f) in enumerate(zip(slices, fallbacks)):
-            if s is None:
-                responses[i] = f
-                continue
-
-            result = result_conc[s]
+    def pack_user_func_return_value(
+        self, return_result: ApiFuncReturnValue, tasks: Sequence[InferenceTask],
+    ) -> Sequence[InferenceResult[str]]:
+        results = []
+        for json_obj, task in regroup_return_value(return_result, tasks):
+            args = task.context.cli_args
+            if args:
+                parser = argparse.ArgumentParser()
+                parser.add_argument(
+                    "-o", "--output", default="json", choices=["str", "json"]
+                )
+                parsed_args, _ = parser.parse_known_args(args)
+                output = parsed_args.output
+            else:
+                output = "json"
             try:
-                json_output = json.dumps(result, cls=NumpyJsonEncoder)
-                responses[i] = SimpleResponse(
-                    200, (("Content-Type", "application/json"),), json_output
+                if output == "json":
+                    json_str = json.dumps(json_obj, cls=NumpyJsonEncoder)
+                else:
+                    json_str = str(json_obj)
+                results.append(
+                    InferenceResult(
+                        data=json_str,
+                        context=InferenceContext(
+                            http_status=200,
+                            http_headers={"Content-Type": "application/json"},
+                        ),
+                    )
                 )
             except AssertionError as e:
-                responses[i] = SimpleResponse(400, None, str(e))
+                results.append(
+                    InferenceResult(
+                        context=DefaultErrorContext(err_msg=str(e), http_status=400,),
+                    )
+                )
             except Exception as e:  # pylint: disable=broad-except
-                responses[i] = SimpleResponse(500, None, str(e))
-        return responses
+                results.append(
+                    InferenceResult(
+                        context=DefaultErrorContext(err_msg=str(e), http_status=500,),
+                    )
+                )
+        return tuple(results)
 
-    def to_cli(self, result, args):
+    def to_http_response(
+        self, results: Iterable[InferenceResult],
+    ) -> Iterator[HTTPResponse]:
+        return (
+            HTTPResponse(
+                r.context.http_status,
+                tuple(r.context.http_headers.items()),
+                r.context.err_msg or r.data,
+            )
+            for r in results
+        )
+
+    def to_cli(self, results: Iterable[InferenceResult]) -> int:
         """Handles an CLI command call, convert CLI arguments into
         corresponding data format that user API function is expecting, and
         prints the API function result to console output
 
         :param args: CLI arguments
         """
-        parser = argparse.ArgumentParser()
-        parser.add_argument("-o", "--output", default="str", choices=["str", "json"])
-        parsed_args = parser.parse_args(args)
+        flag = 0
+        for result in results:
+            if result.context.err_msg:
+                print(result.context.err_msg)
+                flag = 1
+            else:
+                print(result.data)
+        return flag
 
-        if parsed_args.output == 'json':
-            result = json.dumps(result, cls=NumpyJsonEncoder)
-        else:
-            result = str(result)
-        print(result)
-
-    def to_aws_lambda_event(self, result, event):
-
-        result = json.dumps(result, cls=NumpyJsonEncoder)
+    def to_aws_lambda_event(self, results: Iterable[InferenceResult]):
 
         # Allow disabling CORS by setting it to None
-        if self.cors:
-            return {
-                "statusCode": 200,
-                "body": result,
-                "headers": {"Access-Control-Allow-Origin": self.cors},
-            }
-
-        return {"statusCode": 200, "body": result}
+        for result in results:
+            if self.cors:
+                yield {
+                    "statusCode": result.context.http_status,
+                    "body": result.context.err_msg or result.data,
+                    "headers": {"Access-Control-Allow-Origin": self.cors},
+                }
+            else:
+                yield {
+                    "statusCode": result.context.http_status,
+                    "body": result.context.err_msg or result.data,
+                }

@@ -56,7 +56,7 @@ def _serve():
         signal.SIGTERM, lambda a, b: sigterm_handler(nginx.pid, gunicorn_app.pid)
     )
 
-    pids = set([nginx.pid, gunicorn_app.pid])
+    pids = {nginx.pid, gunicorn_app.pid}
     while True:
         pid, _ = os.wait()
         if pid in pids:

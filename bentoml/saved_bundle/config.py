@@ -25,7 +25,7 @@ from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.utils import dump_to_yaml_str
 from bentoml.exceptions import BentoMLConfigException
 
-BENTOML_CONFIG_YAML_TEPMLATE = """\
+BENTOML_CONFIG_YAML_TEMPLATE = """\
 version: {bentoml_version}
 kind: {kind}
 metadata:
@@ -44,13 +44,13 @@ def _get_apis_list(bento_service):
         api_obj = {
             "name": api.name,
             "docs": api.doc,
-            "input_type": api.handler.__class__.__name__,
-            "output_type": api.handler.output_adapter.__class__.__name__,
+            "input_type": api.input_adapter.__class__.__name__,
+            "output_type": api.output_adapter.__class__.__name__,
             "mb_max_batch_size": api.mb_max_batch_size,
             "mb_max_latency": api.mb_max_latency,
         }
-        if api.handler.config:
-            api_obj["input_config"] = api.handler.config
+        if api.input_adapter.config:
+            api_obj["input_config"] = api.input_adapter.config
         if api.output_adapter.config:
             api_obj["output_config"] = api.output_adapter.config
         result.append(api_obj)
@@ -72,7 +72,7 @@ class SavedBundleConfig(object):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
         self.config = self._yaml.load(
-            BENTOML_CONFIG_YAML_TEPMLATE.format(
+            BENTOML_CONFIG_YAML_TEMPLATE.format(
                 kind=self.kind,
                 bentoml_version=get_bentoml_deploy_version(),
                 created_at=str(datetime.utcnow()),

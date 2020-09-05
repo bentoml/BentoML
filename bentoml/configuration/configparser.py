@@ -40,7 +40,7 @@ class BentoMLConfigParser(ConfigParser):
         return "BENTOML__{}__{}".format(section.upper(), key.upper())
 
     def get(self, section, key=None, **kwargs):  # pylint:disable=arguments-differ
-        """ A simple hierachical config access, priority order:
+        """ A simple hierarchical config access, priority order:
             1. environment var
             2. user config file
             3. bentoml default config file

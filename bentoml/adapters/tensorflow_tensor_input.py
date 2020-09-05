@@ -13,15 +13,13 @@
 # limitations under the License.
 
 import base64
-from typing import Iterable
 import json
+import traceback
+from typing import Iterable, Sequence, Tuple
 
-import argparse
-
-from bentoml.adapters.utils import concat_list, TF_B64_KEY
-from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.exceptions import BentoMLException
-from bentoml.marshal.utils import SimpleResponse, SimpleRequest
+from bentoml.adapters.json_input import JsonInput
+from bentoml.adapters.utils import TF_B64_KEY
+from bentoml.types import JSON_CHARSET, InferenceTask, JsonSerializable
 
 
 def b64_hook(o):
@@ -30,7 +28,12 @@ def b64_hook(o):
     return o
 
 
-class TfTensorInput(BaseInputAdapter):
+ApiFuncArgs = Tuple[
+    Sequence[JsonSerializable],
+]
+
+
+class TfTensorInput(JsonInput):
     """
     Tensor input adapter for Tensorflow models.
     Transform incoming tf tensor data from http request, cli or lambda event into
@@ -49,15 +52,13 @@ class TfTensorInput(BaseInputAdapter):
     BATCH_MODE_SUPPORTED = True
     METHODS = (PREDICT, CLASSIFY, REGRESS) = ("predict", "classify", "regress")
 
-    def __init__(self, method=PREDICT, is_batch_input=True, **base_kwargs):
-        super(TfTensorInput, self).__init__(
-            is_batch_input=is_batch_input, **base_kwargs
-        )
+    def __init__(self, method=PREDICT, **base_kwargs):
+        super().__init__(**base_kwargs)
         self.method = method
 
     @property
     def config(self):
-        base_config = super(TfTensorInput, self).config
+        base_config = super().config
         return dict(base_config, method=self.method,)
 
     @property
@@ -82,93 +83,39 @@ class TfTensorInput(BaseInputAdapter):
         else:
             raise NotImplementedError(f"method {self.method} is not implemented")
 
-    def _handle_raw_str(self, raw_str, func):
+    def extract_user_func_args(
+        self, tasks: Iterable[InferenceTask[bytes]]
+    ) -> ApiFuncArgs:
         import tensorflow as tf
 
-        parsed_json = json.loads(raw_str, object_hook=b64_hook)
-        if parsed_json.get("instances") is not None:
-            instances = parsed_json.get("instances")
-            parsed_tensor = tf.constant(instances)
-
-        elif parsed_json.get("inputs"):
-            raise NotImplementedError("column format 'inputs' is not implemented")
-
-        return func(parsed_tensor)
-
-    def handle_batch_request(
-        self, requests: Iterable[SimpleRequest], func
-    ) -> Iterable[SimpleResponse]:
-        """
-        TODO(bojiang):
-        1. specify batch dim
-        """
-        import tensorflow as tf
-
-        bad_resp = SimpleResponse(400, None, "input format error")
-        instances_list = [None] * len(requests)
-        responses = [bad_resp] * len(requests)
-        batch_flags = [None] * len(requests)
-
-        for i, request in enumerate(requests):
+        instances_list = []
+        for task in tasks:
             try:
-                raw_str = request.data
-                batch_flags[i] = self.is_batch_request(request)
-                parsed_json = json.loads(raw_str, object_hook=b64_hook)
-                if parsed_json.get("instances") is not None:
-                    instances = parsed_json.get("instances")
-                    if instances is None:
-                        continue
-                    instances_list[i] = instances
-
-                elif parsed_json.get("inputs"):
-                    responses[i] = SimpleResponse(
-                        501, None, "Column format 'inputs' not implemented"
+                json_str = task.data.decode(JSON_CHARSET)
+                parsed_json = json.loads(json_str, object_hook=b64_hook)
+                if parsed_json.get("instances") is None:
+                    task.discard(
+                        http_status=400, err_msg="input format is not implemented",
                     )
-
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                pass
-            except Exception:  # pylint: disable=broad-except
-                import traceback
-
-                err = traceback.format_exc()
-                responses[i] = SimpleResponse(
-                    500, None, f"Internal Server Error: {err}"
+                else:
+                    instances = parsed_json.get("instances")
+                    if (
+                        task.context.http_headers.is_batch_input
+                        or task.context.http_headers.is_batch_input is None
+                    ):
+                        task.batch = len(instances)
+                        instances_list.extend(instances)
+                    else:
+                        instances_list.append(instances)
+            except UnicodeDecodeError:
+                task.discard(
+                    http_status=400, err_msg=f"JSON must be encoded in {JSON_CHARSET}"
                 )
-        merged_instances, slices = concat_list(instances_list, batch_flags=batch_flags)
-        parsed_tensor = tf.constant(merged_instances)
-        merged_result = func(parsed_tensor)
-        return self.output_adapter.to_batch_response(
-            merged_result, slices=slices, fallbacks=responses, requests=requests
-        )
+            except json.JSONDecodeError:
+                task.discard(http_status=400, err_msg="Not a valid JSON format")
+            except Exception:  # pylint: disable=broad-except
+                err = traceback.format_exc()
+                task.discard(http_status=500, err_msg=f"Internal Server Error: {err}")
 
-    def handle_request(self, request, func):
-        """Handle http request that has jsonlized tensorflow tensor. It will convert it
-        into a tf tensor for the function to consume.
-
-        Args:
-            request: incoming request object.
-            func: function that will take ndarray as its arg.
-        Return:
-            response object
-        """
-        req = SimpleRequest.from_flask_request(request)
-        res = self.handle_batch_request([req], func)[0]
-        return res.to_flask_response()
-
-    def handle_cli(self, args, func):
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--input", required=True)
-        parsed_args, unknown_args = parser.parse_known_args(args)
-
-        result = self._handle_raw_str(parsed_args.input, func)
-        return self.output_adapter.to_cli(result, unknown_args)
-
-    def handle_aws_lambda_event(self, event, func):
-        if event["headers"].get("Content-Type", "") == "application/json":
-            result = self._handle_raw_str(event["body"], func)
-            return self.output_adapter.to_aws_lambda_event(result, event)
-        else:
-            raise BentoMLException(
-                "BentoML currently doesn't support Content-Type: {content_type} for "
-                "AWS Lambda".format(content_type=event["headers"]["Content-Type"])
-            )
+        parsed_tensor = tf.constant(instances_list)
+        return (parsed_tensor,)

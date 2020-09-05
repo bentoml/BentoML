@@ -14,7 +14,7 @@ logger = logging.getLogger('bentoml.test')
 
 def test_yatai_server_with_postgres_and_gcs(postgres_db_container_url):
 
-    gcs_bucket_name = 'gs://bentomlh/'
+    gcs_bucket_name = 'gs://bentoml-e2e-tests/'
 
     with local_yatai_server(
         db_url=postgres_db_container_url, repo_base_url=gcs_bucket_name

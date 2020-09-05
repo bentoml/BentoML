@@ -15,8 +15,6 @@
 import logging
 from urllib.parse import urlparse
 
-from google.cloud import storage
-
 from bentoml import config
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.yatai.proto.repository_pb2 import BentoUri
@@ -27,6 +25,13 @@ logger = logging.getLogger(__name__)
 
 class GCSRepository(BaseRepository):
     def __init__(self, base_url):
+        try:
+            from google.cloud import storage
+        except ImportError:
+            raise YataiRepositoryException(
+                '"google-cloud-storage" package is required for Google Cloud '
+                'Storage Repository.'
+            )
         self.uri_type = BentoUri.GCS
 
         parse_result = urlparse(base_url)

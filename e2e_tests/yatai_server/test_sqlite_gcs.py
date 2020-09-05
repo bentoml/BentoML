@@ -13,7 +13,7 @@ logger = logging.getLogger('bentoml.test')
 
 
 def test_yatai_server_with_sqlite_and_gcs():
-    gcs_bucket_name = 'gs://bentomlh/'
+    gcs_bucket_name = 'gs://bentoml-e2e-tests/'
 
     with local_yatai_server(repo_base_url=gcs_bucket_name):
         logger.info('Saving bento service')

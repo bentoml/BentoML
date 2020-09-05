@@ -28,7 +28,6 @@ install_requires = [
     "configparser",
     "docker",
     "flask",
-    "google-cloud-storage",
     "grpcio<=1.27.2",
     "gunicorn",
     "humanfriendly",
@@ -52,8 +51,6 @@ install_requires = [
 ]
 
 aws_sam_cli = ["aws-sam-cli==0.33.1"]
-azure_cli = ["azure-cli"]
-postgres = ['psycopg2', 'psycopg2-binary']
 
 test_requires = [
     "black==19.10b0",
@@ -96,7 +93,11 @@ docs_requires = [
 
 dev_all = install_requires + dev_requires + docs_requires
 
-yatai_service = install_requires + aws_sam_cli + postgres + azure_cli
+yatai_service = (
+    ["google-cloud-storage", "azure-cli", "psycopg2", "psycopg2-binary"]
+    + install_requires
+    + aws_sam_cli
+)
 
 extras_require = {
     "dev": dev_all,

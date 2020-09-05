@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import io
-from typing import BinaryIO, Iterable, Tuple
+from typing import BinaryIO, Iterable, Mapping, Sequence, Tuple
 
 from bentoml.adapters.file_input import FileInput
 from bentoml.adapters.utils import check_file_extension
@@ -36,27 +36,69 @@ ApiFuncArgs = Tuple['pandas.DataFrame']
 
 
 class DataframeInput(FileInput):
-    """DataframeInput expects inputs from HTTP request or cli arguments that
-        can be converted into a pandas Dataframe. It passes down the dataframe
-        to user defined API function and returns response for REST API call
-        or print result for CLI call
+    """
+    Convert various inputs(from HTTP, Aws Lambda or CLI) to pandas dataframe.
 
-    Args:
-        orient (str or None): Incoming json orient format for reading json data.
-            Default is None which means automatically detect.
-        typ (str): Type of object to recover for read json with pandas. Default is
-            frame
-        input_dtypes ({str:str}): describing expected input data types of the input
-            dataframe, it must be either a dict of column name and data type, or a list
-            of data types listed by column index in the dataframe
+    Parameters
+    ----------
+    orient : str
+	Indication of expected JSON string format.
+	Compatible JSON strings can be produced by ``to_json()`` with a
+	corresponding orient value.
+	The set of possible orients is:
 
-    Raises:
-        ValueError: Incoming data is missing required columns in input_dtypes
+	- ``'split'`` : dict like
+	  ``{index -> [index], columns -> [columns], data -> [values]}``
+	- ``'records'`` : list like
+	  ``[{column -> value}, ... , {column -> value}]``
+	- ``'index'`` : dict like ``{index -> {column -> value}}``
+	- ``'columns'`` : dict like ``{column -> {index -> value}}``
+	- ``'values'`` : just the values array
+
+	The allowed and default values depend on the value
+	of the `typ` parameter.
+
+	* when ``typ == 'series'``,
+
+	  - allowed orients are ``{'split','records','index'}``
+	  - default is ``'index'``
+	  - The Series index must be unique for orient ``'index'``.
+
+	* when ``typ == 'frame'``,
+
+	  - allowed orients are ``{'split','records','index',
+	    'columns','values'}``
+	  - default is ``'columns'``
+	  - The DataFrame index must be unique for orients ``'index'`` and
+	    ``'columns'``.
+	  - The DataFrame columns must be unique for orients ``'index'``,
+	    ``'columns'``, and ``'records'``.
+
+    typ : {'frame', 'series'}, default 'frame'
+	The type of object to recover. Please note that 'series' is not supported now.
+
+    dtype : dict, default None
+	If is None, infer dtypes; if a dict of column to dtype, then use those.
+        Not applicable for ``orient='table'``.
+
+    Returns
+    -------
+    DataFrame
+
+    Raises
+    -------
+        ValueError: Incoming data is missing required columns in dtype
         ValueError: Incoming data format can not be handled. Only json and csv
+
     """
 
     def __init__(
-        self, orient=None, typ="frame", columns=None, input_dtypes=None, **base_kwargs,
+        self,
+        typ: str = "frame",
+        orient: str = "records",
+        columns: Sequence[str] = None,
+        dtype: Mapping[str, object] = None,
+        **base_kwargs,
     ):
         super().__init__(**base_kwargs)
 
@@ -74,18 +116,16 @@ class DataframeInput(FileInput):
         )
 
         assert (
-            columns is None or input_dtypes is None or set(input_dtypes) == set(columns)
-        ), "input_dtypes must match columns"
+            columns is None or dtype is None or set(dtype) == set(columns)
+        ), "dtype must match columns"
 
         self.typ = typ
         self.orient = orient
         self.columns = columns
-        if isinstance(input_dtypes, (list, tuple)):
-            self.input_dtypes = dict(
-                (index, dtype) for index, dtype in enumerate(input_dtypes)
-            )
+        if isinstance(dtype, (list, tuple)):
+            self.dtype = dict((index, dtype) for index, dtype in enumerate(dtype))
         else:
-            self.input_dtypes = input_dtypes
+            self.dtype = dtype
 
     @property
     def pip_dependencies(self):
@@ -94,12 +134,7 @@ class DataframeInput(FileInput):
     @property
     def config(self):
         base_config = super().config
-        return dict(
-            base_config,
-            orient=self.orient,
-            typ=self.typ,
-            input_dtypes=self.input_dtypes,
-        )
+        return dict(base_config, orient=self.orient, typ=self.typ, dtype=self.dtype,)
 
     def _get_type(self, item):
         if item.startswith('int'):
@@ -114,13 +149,13 @@ class DataframeInput(FileInput):
 
     @property
     def request_schema(self):
-        if isinstance(self.input_dtypes, dict):
+        if isinstance(self.dtype, dict):
             json_schema = {  # For now, only declare JSON on docs.
                 "schema": {
                     "type": "object",
                     "properties": {
                         k: {"type": "array", "items": {"type": self._get_type(v)}}
-                        for k, v in self.input_dtypes.items()
+                        for k, v in self.dtype.items()
                     },
                 }
             }
@@ -169,11 +204,7 @@ class DataframeInput(FileInput):
         )
 
         df, batchs = read_dataframes_from_json_n_csv(
-            datas,
-            fmts,
-            orient=self.orient,
-            columns=self.columns,
-            dtype=self.input_dtypes,
+            datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
         )
 
         if df is None:

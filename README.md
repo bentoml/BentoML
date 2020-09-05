@@ -20,9 +20,9 @@ What does BentoML do?
 * High-Performance API model server with adaptive micro-batching support
 * Central hub for teams to manage and access packaged models via Web UI and API
 
-👉 To connect with the community and ask questions, take a look at 
-[BentoML Discussions](https://github.com/bentoml/BentoML/discussions) on Github and
-the [BentoML Slack Community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+👉 To connect with the community and ask questions, check out
+[BentoML Discussions on Github](https://github.com/bentoml/BentoML/discussions) and the
+[BentoML Slack Community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
 
 
 ---
@@ -38,18 +38,18 @@ the [BentoML Slack Community](https://join.slack.com/t/bentoml/shared_invite/enQ
 
 ## Why BentoML
 
-Getting Machine Learning models into production is hard. Data Scientists are not experts
-in building production services and DevOps best practices. The trained models produced
-by a Data Science team are hard to test and hard to deploy. This often leads us to a
-time consuming and error-prone workflow, where a jupyter notebook along with pickled or
-weights file is handed over to ML engineers, in order to rebuild a model server that
-can be deployed and managed by DevOps.
+Moving trained Machine Learning models to serving applications in production is hard. 
+Data Scientists are not experts in building production services. The trained models they
+produced are loosely specified and hard to deploy. This often leads ML teams to a
+time-consuming and error-prone process, where a jupyter notebook along with pickle and
+protobuf file being handed over to ML engineers, for turning the trained model into
+services that can be properly deployed and managed by DevOps.
 
-BentoML is framework for ML model serving, making it possible for Data Scientists to
-create production-ready prediction services with a set of high-level APIs, without them
-worrying about the infrastructure integrations and performance optimizations. BentoML
-does all those under the hood, which allows DevOps to seamlessly work with Data Science
-team, helping to deploy and operate their models, packaged in the BentoML format.
+BentoML is framework for ML model serving. It provides high-level APIs for Data
+Scientists to create production-ready prediction services, without them worrying about 
+the infrastructure needs and performance optimizations. BentoML does all those under the
+hood, which allows DevOps to seamlessly work with Data Science team, helping to deploy
+and operate their models, packaged in the BentoML format.
 
 Check out [Frequently Asked Questions](https://docs.bentoml.org/en/latest/faq.html) page
 on how does BentoML compares to Tensorflow-serving, Clipper, AWS SageMaker, MLFlow, etc.
@@ -87,7 +87,7 @@ clf = svm.SVC(gamma='scale')
 clf.fit(X, y)
 ```
 
-A minimal prediction service in BentoML looks something like this:
+Here's what a minimal prediction service in BentoML looks like:
 
 ```python
 from bentoml import env, artifacts, api, BentoService
@@ -116,6 +116,7 @@ The following code packages the trained model with the prediction service class
 in the BentoML format:
 
 ```python
+# import the BentoService class defined above
 from iris_classifier import IrisClassifier
 
 # Create a iris classifier service instance
@@ -151,6 +152,13 @@ $ curl -i \
   http://localhost:5000/predict
 ```
 
+Or with `python` and [request library](https://requests.readthedocs.io/):
+```python
+import requests
+response = requests.post("http://127.0.0.1:5000/predict", json=[[5.1, 3.5, 1.4, 0.2]])
+print(response.text)
+```
+
 Note that BentoML API server automatically converts the Dataframe JSON format into a
 `pandas.DataFrame` object before sending it to the user-defined inference API function.
 
@@ -170,7 +178,7 @@ docker container serving the `IrisClassifier` prediction service created above:
 $ bentoml containerize IrisClassifier:latest -t iris-classifier
 ```
 
-Start the docker container to test out its functionalities:
+Start a container with the docker image built in the previous step:
 ```bash
 $ docker run -p 5000:5000 iris-classifier --enable-microbatch --workers=1
 ```

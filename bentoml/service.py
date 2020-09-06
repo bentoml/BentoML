@@ -539,23 +539,6 @@ def validate_version_str(version_str):
         raise InvalidArgument('BentoService version can not be set to "latest"')
 
 
-def _validate_labels(labels):
-    pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
-    for key in labels:
-        if (
-            not (63 >= len(key) >= 3)
-            or not (63 >= len(labels[key]) >= 3)
-            or not pattern.match(key)
-            or not pattern.match(labels[key])
-        ):
-            raise InvalidArgument(
-                f'Invalide label {key}:{labels[key]}. Valid label key and value must '
-                f'be between 3 to 63 characters and must be begin and end with '
-                f'an alphanumeric character ([a-z0-9A-Z]) with dashes (-), '
-                f'underscores (_), and dots (.).'
-            )
-
-
 def save(bento_service, base_path=None, version=None, labels=None):
     """
     Save and register the given BentoService via BentoML's built-in model management
@@ -578,11 +561,6 @@ def save(bento_service, base_path=None, version=None, labels=None):
         yatai_client = YataiClient(yatai_service)
     else:
         yatai_client = YataiClient()
-
-    if labels:
-        if not isinstance(labels, dict):
-            raise InvalidArgument('BentoService labels must be a dictionary')
-        _validate_labels(labels)
 
     return yatai_client.repository.upload(bento_service, version, labels)
 

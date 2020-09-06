@@ -1,8 +1,14 @@
-from sqlalchemy import UniqueConstraint, Column, Integer, String, and_
+import enum
+from sqlalchemy import UniqueConstraint, Column, Integer, String, and_, Enum
 
 from bentoml.exceptions import YataiLabelException
 from bentoml.yatai.db import Base
 from bentoml.yatai.proto.label_selectors_pb2 import LabelSelectors
+
+
+class RESOURCE_TYPE(enum.Enum):
+    deployment = 1
+    bento = 2
 
 
 class Label(Base):
@@ -16,7 +22,7 @@ class Label(Base):
         )
     )
     id = Column(Integer, primary_key=True)
-    resource_type = Column(String, nullable=False)
+    resource_type = Column(Enum(RESOURCE_TYPE))
     resource_id = Column(Integer, nullable=False)
     key = Column(String, nullable=False)
     value = Column(String, nullable=False)

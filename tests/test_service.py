@@ -4,10 +4,14 @@ import bentoml
 from bentoml.artifact import PickleArtifact
 from bentoml.adapters import DataframeInput, FastaiImageInput, ImageInput
 <<<<<<< HEAD
+<<<<<<< HEAD
 from bentoml.service import validate_version_str
 =======
 from bentoml.service import _validate_version_str, _validate_labels
 >>>>>>> add testing for label selector
+=======
+from bentoml.service import _validate_version_str
+>>>>>>> use enum and other updates
 from bentoml.exceptions import InvalidArgument
 
 
@@ -116,27 +120,3 @@ def test_validate_version_str_pass():
     _validate_version_str("_AValidVersion")
     _validate_version_str("1.3.4")
     _validate_version_str("1.3.4-g375a71b")
-
-
-def test_validate_labels_fails():
-    with pytest.raises(InvalidArgument):
-        _validate_labels(
-            {'this_is_a_super_long_key_name_it_will_be_more_than_the_max_allowed': 'v'}
-        )
-    with pytest.raises(InvalidArgument):
-        _validate_labels({'key_contains!': 'value'})
-    with pytest.raises(InvalidArgument):
-        _validate_labels({'key': 'value-contains?'})
-    with pytest.raises(InvalidArgument):
-        _validate_labels({'key nop': 'value'})
-    with pytest.raises(InvalidArgument):
-        _validate_labels({'key': '1', 'key3@#!$': 'value'})
-    with pytest.raises(InvalidArgument):
-        _validate_labels({'key': 'cant_end_with_symbol_'})
-
-
-def test_validate_labels_pass():
-    _validate_labels({'long_key_title': 'some_value', 'another_key': "value"})
-    _validate_labels({'long_key-title': 'some_value-inside.this'})
-    _validate_labels({'create_by': 'admin', 'py.version': '3.6.8'})
->>>>>>> add testing for label selector

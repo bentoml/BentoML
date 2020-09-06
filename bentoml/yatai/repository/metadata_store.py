@@ -37,6 +37,7 @@ from bentoml.yatai.label_store import (
     get_labels,
     list_labels,
     add_or_update_labels,
+    RESOURCE_TYPE,
 )
 from bentoml.yatai.proto.repository_pb2 import (
     UploadStatus,
@@ -142,7 +143,7 @@ class BentoMetadataStore(object):
 
             query_result = query.all()
             if len(query_result) == 1:
-                labels = get_labels(sess, 'bento', query_result[0].id)
+                labels = get_labels(sess, RESOURCE_TYPE.bento, query_result[0].id)
                 return _bento_orm_obj_to_pb(query_result[0], labels)
             else:
                 return None
@@ -161,7 +162,7 @@ class BentoMetadataStore(object):
                 if bento_obj.deleted:
                     # bento has been marked as deleted
                     return None
-                labels = get_labels(sess, 'bento', bento_obj.id)
+                labels = get_labels(sess, RESOURCE_TYPE.bento, bento_obj.id)
                 return _bento_orm_obj_to_pb(bento_obj, labels)
             except NoResultFound:
                 return None
@@ -185,7 +186,7 @@ class BentoMetadataStore(object):
                         .one()
                     )
                     add_or_update_labels(
-                        sess, 'bento', bento.id, service_metadata['labels']
+                        sess, RESOURCE_TYPE.bento, bento.id, service_metadata['labels']
                     )
             except NoResultFound:
                 raise YataiRepositoryException(
@@ -251,7 +252,9 @@ class BentoMetadataStore(object):
                 query = query.filter_by(name=bento_name)
             query = query.filter_by(deleted=False)
             if label_selectors.match_labels or label_selectors.match_expressions:
-                bento_ids = filter_label_query(sess, 'bento', label_selectors)
+                bento_ids = filter_label_query(
+                    sess, RESOURCE_TYPE.bento, label_selectors
+                )
                 query = query.filter(Bento.id.in_(bento_ids))
 
             # We are not defaulting limit to 200 in the signature,
@@ -265,7 +268,7 @@ class BentoMetadataStore(object):
 
             query_result = query.all()
             bento_ids = [bento_obj.id for bento_obj in query_result]
-            labels = list_labels(sess, 'bento', bento_ids)
+            labels = list_labels(sess, RESOURCE_TYPE.bento, bento_ids)
             result = [
                 _bento_orm_obj_to_pb(bento_obj, labels.get(str(bento_obj.id)))
                 for bento_obj in query_result

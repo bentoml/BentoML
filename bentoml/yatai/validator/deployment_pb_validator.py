@@ -15,7 +15,9 @@ import re
 
 from cerberus import Validator
 
+from bentoml.exceptions import InvalidArgument
 from bentoml.utils import ProtoMessageToDict
+from bentoml.yatai.client.bento_repository_api import _validate_labels
 from bentoml.yatai.deployment.azure_functions.constants import (
     AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
     AZURE_FUNCTIONS_AUTH_LEVELS,
@@ -175,20 +177,17 @@ class YataiDeploymentValidator(Validator):
         {'type': 'boolean'}
         """
         if deployment_labels:
-            pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
-            for key in value.keys():
-                if (
-                    not (63 >= len(key) >= 3)
-                    or not (63 >= len(value[key]) >= 3)
-                    or not pattern.match(key)
-                    or not pattern.match(value[key])
-                ):
-                    self._error(
-                        field,
-                        'Valid label key and value must be 63 characters or less and '
-                        'must be being and end with an alphanumeric character '
-                        '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
-                    )
+            try:
+                _validate_labels(value)
+            except InvalidArgument as e:
+                self._error(
+                    field,
+                    'Valid label key and value must be 63 characters or less and '
+                    'must be being and end with an alphanumeric character '
+                    '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
+                )
+            except Exception as e:
+                self._error(field, str(e))
 
 
 def validate_deployment_pb(pb):

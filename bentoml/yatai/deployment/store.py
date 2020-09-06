@@ -38,6 +38,7 @@ from bentoml.yatai.label_store import (
     list_labels,
     get_labels,
     add_or_update_labels,
+    RESOURCE_TYPE,
 )
 from bentoml.yatai.proto import deployment_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
@@ -110,7 +111,10 @@ class DeploymentStore(object):
                     _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
                     if deployment_pb.labels:
                         add_or_update_labels(
-                            sess, 'deployment', deployment_obj.id, deployment_pb.labels,
+                            sess,
+                            RESOURCE_TYPE.deployment,
+                            deployment_obj.id,
+                            deployment_pb.labels,
                         )
             except NoResultFound:
                 deployment_orm_obj = _deployment_pb_to_orm_obj(deployment_pb)
@@ -125,7 +129,10 @@ class DeploymentStore(object):
                         .one()
                     )
                     add_labels(
-                        sess, 'deployment', deployment_row.id, deployment_pb.labels,
+                        sess,
+                        RESOURCE_TYPE.deployment,
+                        deployment_row.id,
+                        deployment_pb.labels,
                     )
 
     @contextmanager
@@ -149,7 +156,7 @@ class DeploymentStore(object):
                     .filter_by(name=name, namespace=namespace)
                     .one()
                 )
-                labels = get_labels(sess, 'deployment', deployment_obj.id)
+                labels = get_labels(sess, RESOURCE_TYPE.deployment, deployment_obj.id)
             except NoResultFound:
                 return None
 
@@ -164,7 +171,9 @@ class DeploymentStore(object):
                     .one()
                 )
                 delete_labels(
-                    sess, resource_type='deployment', resource_id=deployment.id
+                    sess,
+                    resource_type=RESOURCE_TYPE.deployment,
+                    resource_id=deployment.id,
                 )
                 return sess.delete(deployment)
             except NoResultFound:
@@ -191,7 +200,9 @@ class DeploymentStore(object):
             )
             query = query.order_by(order_by_action)
             if label_selectors.match_labels or label_selectors.match_expressions:
-                deployment_ids = filter_label_query(sess, 'deployment', label_selectors)
+                deployment_ids = filter_label_query(
+                    sess, RESOURCE_TYPE.deployment, label_selectors
+                )
                 query.filter(Deployment.id.in_(deployment_ids))
             if namespace != ALL_NAMESPACE_TAG:  # else query all namespaces
                 query = query.filter_by(namespace=namespace)
@@ -210,7 +221,7 @@ class DeploymentStore(object):
                 query = query.offset(offset)
             query_result = query.all()
             deployment_ids = [deployment_obj.id for deployment_obj in query_result]
-            labels = list_labels(sess, 'deployment', deployment_ids)
+            labels = list_labels(sess, RESOURCE_TYPE.deployment, deployment_ids)
 
             return [
                 _deployment_orm_obj_to_pb(

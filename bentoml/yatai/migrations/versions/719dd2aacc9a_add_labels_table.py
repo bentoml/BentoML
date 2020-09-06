@@ -1,4 +1,4 @@
-"""add labels for repository
+"""add labels table
 
 Revision ID: 719dd2aacc9a
 Revises: a6b00ae45279

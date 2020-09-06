@@ -17,12 +17,13 @@
 import io
 import os
 import logging
+import re
 import tarfile
 import requests
 import shutil
 
 
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, InvalidArgument
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoRequest,
@@ -40,6 +41,38 @@ from bentoml.yatai.status import Status
 
 
 logger = logging.getLogger(__name__)
+
+
+def _validate_labels(labels):
+    """
+    Validate labels key value format is:
+        * Between 3 and 63 characters
+        * Consist of alphanumeric, dash (-), period (.), and underscore (_)
+        * Start and end with alphanumeric
+    Args:
+        labels: Dictionary
+
+    Returns:
+    Raise:
+        InvalidArgument
+    """
+    if not isinstance(labels, dict):
+        raise InvalidArgument('BentoService labels must be a dictionary')
+
+    pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
+    for key in labels:
+        if (
+            not (63 >= len(key) >= 3)
+            or not (63 >= len(labels[key]) >= 3)
+            or not pattern.match(key)
+            or not pattern.match(labels[key])
+        ):
+            raise InvalidArgument(
+                f'Invalide label {key}:{labels[key]}. Valid label key and value must '
+                f'be between 3 to 63 characters and must be begin and end with '
+                f'an alphanumeric character ([a-z0-9A-Z]) with dashes (-), '
+                f'underscores (_), and dots (.).'
+            )
 
 
 class BentoRepositoryAPIClient:
@@ -64,6 +97,7 @@ class BentoRepositoryAPIClient:
         bento_service_metadata = bento_service.get_bento_service_metadata_pb()
 
         if labels:
+            _validate_labels(labels)
             bento_service_metadata.labels.update(labels)
 
         get_bento_response = self.yatai_service.GetBento(

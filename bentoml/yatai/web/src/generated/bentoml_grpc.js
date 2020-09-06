@@ -5085,6 +5085,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {bentoml.BentoUri.StorageType|null} [type] BentoUri type
          * @property {string|null} [uri] BentoUri uri
          * @property {string|null} [s3_presigned_url] BentoUri s3_presigned_url
+         * @property {string|null} [gcs_presigned_url] BentoUri gcs_presigned_url
          */
 
         /**
@@ -5127,6 +5128,14 @@ export const bentoml = $root.bentoml = (() => {
         BentoUri.prototype.s3_presigned_url = "";
 
         /**
+         * BentoUri gcs_presigned_url.
+         * @member {string} gcs_presigned_url
+         * @memberof bentoml.BentoUri
+         * @instance
+         */
+        BentoUri.prototype.gcs_presigned_url = "";
+
+        /**
          * Creates a new BentoUri instance using the specified properties.
          * @function create
          * @memberof bentoml.BentoUri
@@ -5156,6 +5165,8 @@ export const bentoml = $root.bentoml = (() => {
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.uri);
             if (message.s3_presigned_url != null && Object.hasOwnProperty.call(message, "s3_presigned_url"))
                 writer.uint32(/* id 3, wireType 2 =*/26).string(message.s3_presigned_url);
+            if (message.gcs_presigned_url != null && Object.hasOwnProperty.call(message, "gcs_presigned_url"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.gcs_presigned_url);
             return writer;
         };
 
@@ -5198,6 +5209,9 @@ export const bentoml = $root.bentoml = (() => {
                     break;
                 case 3:
                     message.s3_presigned_url = reader.string();
+                    break;
+                case 4:
+                    message.gcs_presigned_url = reader.string();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -5252,6 +5266,9 @@ export const bentoml = $root.bentoml = (() => {
             if (message.s3_presigned_url != null && message.hasOwnProperty("s3_presigned_url"))
                 if (!$util.isString(message.s3_presigned_url))
                     return "s3_presigned_url: string expected";
+            if (message.gcs_presigned_url != null && message.hasOwnProperty("gcs_presigned_url"))
+                if (!$util.isString(message.gcs_presigned_url))
+                    return "gcs_presigned_url: string expected";
             return null;
         };
 
@@ -5297,6 +5314,8 @@ export const bentoml = $root.bentoml = (() => {
                 message.uri = String(object.uri);
             if (object.s3_presigned_url != null)
                 message.s3_presigned_url = String(object.s3_presigned_url);
+            if (object.gcs_presigned_url != null)
+                message.gcs_presigned_url = String(object.gcs_presigned_url);
             return message;
         };
 
@@ -5317,6 +5336,7 @@ export const bentoml = $root.bentoml = (() => {
                 object.type = options.enums === String ? "UNSET" : 0;
                 object.uri = "";
                 object.s3_presigned_url = "";
+                object.gcs_presigned_url = "";
             }
             if (message.type != null && message.hasOwnProperty("type"))
                 object.type = options.enums === String ? $root.bentoml.BentoUri.StorageType[message.type] : message.type;
@@ -5324,6 +5344,8 @@ export const bentoml = $root.bentoml = (() => {
                 object.uri = message.uri;
             if (message.s3_presigned_url != null && message.hasOwnProperty("s3_presigned_url"))
                 object.s3_presigned_url = message.s3_presigned_url;
+            if (message.gcs_presigned_url != null && message.hasOwnProperty("gcs_presigned_url"))
+                object.gcs_presigned_url = message.gcs_presigned_url;
             return object;
         };
 

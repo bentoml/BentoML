@@ -319,7 +319,6 @@ class YataiService(YataiServicer):
                 )
                 logger.error(error_message)
                 return AddBentoResponse(status=Status.ABORTED(error_message))
-
             new_bento_uri = self.repo.add(request.bento_name, request.bento_version)
             self.bento_metadata_store.add(
                 bento_name=request.bento_name,
@@ -327,7 +326,6 @@ class YataiService(YataiServicer):
                 uri=new_bento_uri.uri,
                 uri_type=new_bento_uri.type,
             )
-
             return AddBentoResponse(status=Status.OK(), uri=new_bento_uri)
         except BentoMLException as e:
             logger.error("RPC ERROR AddBento: %s", e)
@@ -399,6 +397,10 @@ class YataiService(YataiServicer):
             if bento_pb:
                 if bento_pb.uri.type == BentoUri.S3:
                     bento_pb.uri.s3_presigned_url = self.repo.get(
+                        bento_pb.name, bento_pb.version
+                    )
+                elif bento_pb.uri.type == BentoUri.GCS:
+                    bento_pb.uri.gcs_presigned_url = self.repo.get(
                         bento_pb.name, bento_pb.version
                     )
                 return GetBentoResponse(status=Status.OK(), bento=bento_pb)

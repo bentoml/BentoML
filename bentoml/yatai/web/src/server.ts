@@ -89,7 +89,7 @@ const createRoutes = (app, yataiClient) => {
   });
 
   app.get("/api/ListDeployments", async (req: Request, res: Response) => {
-    const requestQuery :any = Object.assign({}, req.query);
+    const requestQuery: any = Object.assign({}, req.query);
     if (req.query.limit && typeof req.query.limit == "string") {
       requestQuery.limit = Number(req.query.limit);
     }

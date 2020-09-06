@@ -8,6 +8,7 @@ import psutil
 from bentoml import __version__
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.s3 import is_s3_url
+from bentoml.utils.gcs import is_gcs_url
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.exceptions import BentoMLException, CLIException
 from bentoml.server import start_dev_server, start_prod_server
@@ -121,8 +122,8 @@ def resolve_bundle_path(bento, pip_installed_bundle_path):
         ), "pip installed BentoService commands should not have Bento argument"
         return pip_installed_bundle_path
 
-    if os.path.isdir(bento) or is_s3_url(bento):
-        # saved_bundle already support loading local and s3 path
+    if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
+        # saved_bundle already support loading local, s3 path and gcs path
         return bento
 
     elif ":" in bento:
@@ -141,6 +142,8 @@ def resolve_bundle_path(bento, pip_installed_bundle_path):
         if get_bento_result.bento.uri.s3_presigned_url:
             # Use s3 presigned URL for downloading the repository if it is presented
             return get_bento_result.bento.uri.s3_presigned_url
+        if get_bento_result.bento.uri.gcs_presigned_url:
+            return get_bento_result.bento.uri.gcs_presigned_url
         else:
             return get_bento_result.bento.uri.uri
     else:

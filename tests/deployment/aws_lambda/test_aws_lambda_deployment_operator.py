@@ -210,6 +210,10 @@ def mock_lambda_related_operations(func):
     MagicMock(return_value=250),
 )
 @patch('os.remove', MagicMock())
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    MagicMock(),
+)
 def test_aws_lambda_apply_under_bundle_size_limit_success():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
@@ -243,6 +247,10 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 @patch(
     'bentoml.yatai.deployment.aws_lambda.operator.'
     'reduce_bundle_size_and_upload_extra_resources_to_s3',
+    MagicMock(),
+)
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
     MagicMock(),
 )
 def test_aws_lambda_apply_over_bundle_size_limit_success():

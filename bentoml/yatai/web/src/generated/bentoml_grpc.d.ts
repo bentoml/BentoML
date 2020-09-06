@@ -2052,6 +2052,9 @@ export namespace bentoml {
 
         /** BentoUri s3_presigned_url */
         s3_presigned_url?: (string|null);
+
+        /** BentoUri gcs_presigned_url */
+        gcs_presigned_url?: (string|null);
     }
 
     /** Represents a BentoUri. */
@@ -2071,6 +2074,9 @@ export namespace bentoml {
 
         /** BentoUri s3_presigned_url. */
         public s3_presigned_url: string;
+
+        /** BentoUri gcs_presigned_url. */
+        public gcs_presigned_url: string;
 
         /**
          * Creates a new BentoUri instance using the specified properties.

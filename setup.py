@@ -51,10 +51,6 @@ install_requires = [
     "multidict",
 ]
 
-aws_sam_cli = ["aws-sam-cli==0.33.1"]
-azure_cli = ["azure-cli"]
-postgres = ['psycopg2', 'psycopg2-binary']
-
 test_requires = [
     "black==19.10b0",
     "codecov",
@@ -70,7 +66,7 @@ test_requires = [
     "pytest-asyncio",
     "scikit-learn",
     "protobuf==3.6.0",
-] + aws_sam_cli
+]
 
 dev_requires = [
     "flake8>=3.8.2",
@@ -96,13 +92,19 @@ docs_requires = [
 
 dev_all = install_requires + dev_requires + docs_requires
 
-yatai_service = install_requires + aws_sam_cli + postgres + azure_cli
+yatai_service = [
+    "google-cloud-storage",
+    "azure-cli",
+    "aws-sam-cli==0.33.1",
+    "psycopg2",
+    "psycopg2-binary",
+]
 
 extras_require = {
     "dev": dev_all,
     "doc_builder": docs_requires + install_requires,  # required by readthedocs.io
     "test": test_requires,
-    "yatai_service": yatai_service,
+    "yatai_service": yatai_service + install_requires,
 }
 
 setuptools.setup(

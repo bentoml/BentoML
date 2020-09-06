@@ -24,6 +24,7 @@ from urllib.parse import urlparse
 from pathlib import PureWindowsPath, PurePosixPath
 
 from bentoml.utils.s3 import is_s3_url
+from bentoml.utils.gcs import is_gcs_url
 from bentoml.utils.usage_stats import track_load_finish, track_load_start
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.config import SavedBundleConfig
@@ -40,7 +41,9 @@ def _is_http_url(bundle_path):
 
 
 def _is_remote_path(bundle_path):
-    return is_s3_url(bundle_path) or _is_http_url(bundle_path)
+    return (
+        is_s3_url(bundle_path) or is_gcs_url(bundle_path) or _is_http_url(bundle_path)
+    )
 
 
 @contextmanager
@@ -56,10 +59,28 @@ def _resolve_remote_bundle_path(bundle_path):
         fileobj = io.BytesIO()
         s3.download_fileobj(bucket_name, object_name, fileobj)
         fileobj.seek(0, 0)
+    elif is_gcs_url(bundle_path):
+        try:
+            from google.cloud import storage
+        except ImportError:
+            raise BentoMLException(
+                '"google-cloud-storage" package is required. You can install it with '
+                'pip: "pip install google-cloud-storage"'
+            )
+
+        gcs = storage.Client()
+        fileobj = io.BytesIO()
+        gcs.download_blob_to_file(bundle_path, fileobj)
+        fileobj.seek(0, 0)
     elif _is_http_url(bundle_path):
         import requests
 
         response = requests.get(bundle_path)
+        if response.status_code != 200:
+            raise BentoMLException(
+                f"Error retrieving BentoService bundle. "
+                f"{response.status_code}: {response.text}"
+            )
         fileobj = io.BytesIO()
         fileobj.write(response.content)
         fileobj.seek(0, 0)
@@ -225,7 +246,6 @@ def load(bundle_path):
     if _is_remote_path(bundle_path):
         with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
             return load(local_bundle_path)
-
     track_load_start()
 
     svc_cls = load_bento_service_class(bundle_path)

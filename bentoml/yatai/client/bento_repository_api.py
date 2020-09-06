@@ -114,7 +114,8 @@ class BentoRepositoryAPIClient:
             )
             # Return URI to saved bento in repository storage
             return response.uri.uri
-        elif response.uri.type == BentoUri.S3:
+        elif response.uri.type == BentoUri.S3 or response.uri.type == BentoUri.GCS:
+            uri_type = 'S3' if response.uri.type == BentoUri.S3 else 'GCS'
             self._update_bento_upload_progress(
                 bento_service_metadata, UploadStatus.UPLOADING, 0
             )
@@ -124,28 +125,34 @@ class BentoRepositoryAPIClient:
                 tar.add(saved_bento_path, arcname=bento_service_metadata.name)
             fileobj.seek(0, 0)
 
-            http_response = requests.put(response.uri.s3_presigned_url, data=fileobj)
+            if response.uri.type == BentoUri.S3:
+                http_response = requests.put(
+                    response.uri.s3_presigned_url, data=fileobj
+                )
+            else:
+                http_response = requests.put(
+                    response.uri.gcs_presigned_url, data=fileobj
+                )
 
             if http_response.status_code != 200:
                 self._update_bento_upload_progress(
                     bento_service_metadata, UploadStatus.ERROR
                 )
                 raise BentoMLException(
-                    f"Error saving BentoService bundle to S3. "
+                    f"Error saving BentoService bundle to {uri_type}."
                     f"{http_response.status_code}: {http_response.text}"
                 )
 
             self._update_bento_upload_progress(bento_service_metadata)
 
             logger.info(
-                "Successfully saved BentoService bundle '%s:%s' to S3: %s",
+                "Successfully saved BentoService bundle '%s:%s' to {uri_type}: %s",
                 bento_service_metadata.name,
                 bento_service_metadata.version,
                 response.uri.uri,
             )
 
             return response.uri.uri
-
         else:
             raise BentoMLException(
                 f"Error saving Bento to target repository, URI type {response.uri.type}"

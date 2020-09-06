@@ -107,18 +107,27 @@ class IrisClassifier(BentoService):
 ```
 
 This code defines a prediction service that packages a scikit-learn model and provides
-an inference API that expects input data of `pandas.Dataframe` type. The user-defined
-API function `predict` defines how the input dataframe data will be processed and feeded
-to the scikit-learn model being packaged. BentoML also supports other API input 
-types such as `JsonInput`, `ImageInput`, `FileInput` and 
+an inference API that expects a `pandas.Dataframe` object as its input. BentoML also 
+supports other API input data types including `JsonInput`, `ImageInput`, `FileInput` and 
 [more](https://docs.bentoml.org/en/latest/api/adapters.html).
+
+
+In BentoML, **all inference APIs are suppose to accept a list of inputs and return a 
+list of results**. In the case of `DataframeInput`, each row of the dataframe is mapping
+to one prediction request received from the client. BentoML will convert HTTP JSON 
+requests into :code:`pandas.DataFrame` object before passing it to the user-defined 
+inference API function.
+ 
+This design allows BentoML to group API requests into small batches while serving online
+traffic. Comparing to a regular flask or FastAPI based model server, this can increases
+the overall throughput of the API server by 10-100x depending on the workload.
 
 The following code packages the trained model with the prediction service class
 `IrisClassifier` defined above, and then saves the IrisClassifier instance to disk 
 in the BentoML format for distribution and deployment:
 
 ```python
-# import the BentoService class defined above
+# import the IrisClassifier class defined above
 from iris_classifier import IrisClassifier
 
 # Create a iris classifier service instance

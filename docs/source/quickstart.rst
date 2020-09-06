@@ -103,9 +103,9 @@ prediction request received from the client. BentoML will convert HTTP JSON requ
 into :code:`pandas.DataFrame` object before passing it to the user-defined inference API
 function.
 
-This design allows BentoML to batch API requests into small batches while serving online
+This design allows BentoML to group API requests into small batches while serving online
 traffic. Comparing to a regular flask or FastAPI based model server, this can increases
-the overall throughput of your API server by 10-100x depending on the workload.
+the overall throughput of the API server by 10-100x depending on the workload.
 
 Besides `DataframeInput`, BentoML also supports API input types such as `JsonInput`,
 `ImageInput`, `FileInput` and
@@ -135,7 +135,7 @@ in the BentoML format for distribution and deployment:
 
 .. code-block:: python
 
-    # import the BentoService class defined above
+    # import the IrisClassifier class defined above
     from iris_classifier import IrisClassifier
 
     # Create a iris classifier service instance

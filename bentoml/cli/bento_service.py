@@ -138,9 +138,11 @@ def resolve_bundle_path(bento, pip_installed_bundle_path):
                 f'BentoService {name}:{version} not found - '
                 f'{error_code}:{error_message}'
             )
-        if get_bento_result.bento.uri.cloud_presigned_url:
+        if get_bento_result.bento.uri.s3_presigned_url:
             # Use s3 presigned URL for downloading the repository if it is presented
-            return get_bento_result.bento.uri.cloud_presigned_url
+            return get_bento_result.bento.uri.s3_presigned_url
+        if get_bento_result.bento.uri.gcs_presigned_url:
+            return get_bento_result.bento.uri.gcs_presigned_url
         else:
             return get_bento_result.bento.uri.uri
     else:

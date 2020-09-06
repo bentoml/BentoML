@@ -19,7 +19,8 @@ message BentoUri {
 
   StorageType type = 1;
   string uri = 2;
-  string cloud_presigned_url = 3;
+  string s3_presigned_url = 3;
+  string gcs_presigned_url = 4;
 }
 
 message BentoServiceMetadata {

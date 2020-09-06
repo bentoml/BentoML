@@ -71,7 +71,7 @@ class S3Repository(BaseRepository):
         return BentoUri(
             type=self.uri_type,
             uri='s3://{}/{}'.format(self.bucket, object_name),
-            cloud_presigned_url=response,
+            s3_presigned_url=response,
         )
 
     def get(self, bento_name, bento_version):

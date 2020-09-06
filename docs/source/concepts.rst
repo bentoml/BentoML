@@ -804,8 +804,7 @@ list all the BentoService created:
             "inputConfig": {
               "orient": "records",
               "typ": "frame",
-              "is_batch_input": true,
-              "input_dtypes": null
+              "dtypes": null
             }
           }
         ]

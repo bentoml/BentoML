@@ -82,6 +82,10 @@ class DataframeInput(FileInput):
 	If is None, infer dtypes; if a dict of column to dtype, then use those.
         Not applicable for ``orient='table'``.
 
+    input_dtypes : dict, default None
+        * Deprecated
+        The same as the `dtype`
+
     Returns
     -------
     DataFrame
@@ -99,9 +103,11 @@ class DataframeInput(FileInput):
         orient: str = "records",
         columns: Sequence[str] = None,
         dtype: Mapping[str, object] = None,
+        input_dtypes: Mapping[str, object] = None,
         **base_kwargs,
     ):
         super().__init__(**base_kwargs)
+        dtype = dtype if dtype is not None else input_dtypes
 
         # Verify pandas imported properly and retry import if it has failed initially
         if pandas is None:

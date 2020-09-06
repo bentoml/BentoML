@@ -82,7 +82,6 @@ above
             "inputConfig": {
               "orient": "records",
               "typ": "frame",
-              "is_batch_input": true,
               "dtype": null
             },
             "outputConfig": {

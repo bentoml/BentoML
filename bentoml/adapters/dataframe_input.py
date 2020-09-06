@@ -37,7 +37,8 @@ ApiFuncArgs = Tuple['pandas.DataFrame']
 
 class DataframeInput(FileInput):
     """
-    Convert various inputs(from HTTP, Aws Lambda or CLI) to pandas dataframe.
+    Convert various inputs(HTTP, Aws Lambda or CLI) to pandas dataframe, passing it to
+    API functions.
 
     Parameters
     ----------

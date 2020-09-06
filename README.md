@@ -90,6 +90,8 @@ clf.fit(X, y)
 Here's what a minimal prediction service in BentoML looks like:
 
 ```python
+import pandas as pd
+
 from bentoml import env, artifacts, api, BentoService
 from bentoml.adapters import DataframeInput
 from bentoml.artifact import SklearnModelArtifact
@@ -99,7 +101,7 @@ from bentoml.artifact import SklearnModelArtifact
 class IrisClassifier(BentoService):
 
     @api(input=DataframeInput())
-    def predict(self, df):
+    def predict(self, df: pd.DataFrame):
         # Optional pre-processing, post-processing code goes here
         return self.artifacts.model.predict(df)
 ```
@@ -113,7 +115,7 @@ types such as `JsonInput`, `ImageInput`, `FileInput` and
 
 The following code packages the trained model with the prediction service class
 `IrisClassifier` defined above, and then saves the IrisClassifier instance to disk 
-in the BentoML format:
+in the BentoML format for distribution and deployment:
 
 ```python
 # import the BentoService class defined above

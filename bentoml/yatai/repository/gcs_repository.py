@@ -30,7 +30,8 @@ class GCSRepository(BaseRepository):
         except ImportError:
             raise YataiRepositoryException(
                 '"google-cloud-storage" package is required for Google Cloud '
-                'Storage Repository.'
+                'Storage Repository. You can install it with pip: '
+                '"pip install google-cloud-storage"'
             )
         self.uri_type = BentoUri.GCS
 

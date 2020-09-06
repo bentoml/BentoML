@@ -59,7 +59,13 @@ def _resolve_remote_bundle_path(bundle_path):
         s3.download_fileobj(bucket_name, object_name, fileobj)
         fileobj.seek(0, 0)
     elif is_gcs_url(bundle_path):
-        from google.cloud import storage
+        try:
+            from google.cloud import storage
+        except ImportError:
+            raise BentoMLException(
+                '"google-cloud-storage" package is required. You can install it with '
+                'pip: "pip install google-cloud-storage"'
+            )
 
         gcs = storage.Client()
         fileobj = io.BytesIO()

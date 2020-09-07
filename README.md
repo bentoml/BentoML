@@ -62,15 +62,14 @@ on how does BentoML compares to Tensorflow-serving, Clipper, AWS SageMaker, MLFl
 Online serving with API model server:
 * **Containerized model server** for production deployment with Docker, Kubernetes, OpenShift, AWS ECS, Azure, GCP GKE, etc
 * **Adaptive micro-batching** for optimal online serving performance
-* Automatically find and package all dependencies, including PyPI, conda and local python modules
-* Support multiple ML frameworks including PyTorch, Tensorflow, Scikit-Learn, XGBoost, and [many more](https://github.com/bentoml/BentoML#frameworks)
-* Serving compositions of **multiple models**
-* Serving **multiple endpoints** in one model server
-* Serving any Python code along with trained models
+* Discover and package all dependencies automatically, including PyPI, conda packages and local python modules
+* Support **multiple ML frameworks** including PyTorch, Tensorflow, Scikit-Learn, XGBoost, and [many more](https://github.com/bentoml/BentoML#frameworks)
+* Serve compositions of **multiple models**
+* Serve **multiple endpoints** in one model server
+* Serve any Python code along with trained models
 * Automatically generate HTTP API spec in **Swagger/OpenAPI** format
-* Pre-built **prediction logging** and feedback logging endpoint
-* Pre-built prometheus endpoint for monitoring
-* Pre-built health check endpoint
+* **Prediction logging** and feedback logging endpoint
+* Health check endpoint and **Prometheus** `/metrics` endpoint for monitoring
 * Model serving via gRPC endpoint (roadmap)
 
 Advanced workflow for model serving and deployment:

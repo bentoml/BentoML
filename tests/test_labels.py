@@ -1,12 +1,9 @@
 import uuid
 
 import mock
-import pytest
 from click.testing import CliRunner
 
-from bentoml import load
-from bentoml.cli import create_bento_service_cli, create_bentoml_cli
-from bentoml.exceptions import InvalidArgument
+from bentoml.cli import create_bentoml_cli
 from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     Deployment,
@@ -107,7 +104,6 @@ def test_deployment_labels():
                 'us-west-2',
             ],
         )
-        print(success_result.output)
         assert success_result.exit_code == 0
 
         list_result = runner.invoke(

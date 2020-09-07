@@ -3,15 +3,7 @@ import pytest
 import bentoml
 from bentoml.artifact import PickleArtifact
 from bentoml.adapters import DataframeInput, FastaiImageInput, ImageInput
-<<<<<<< HEAD
-<<<<<<< HEAD
 from bentoml.service import validate_version_str
-=======
-from bentoml.service import _validate_version_str, _validate_labels
->>>>>>> add testing for label selector
-=======
-from bentoml.service import _validate_version_str
->>>>>>> use enum and other updates
 from bentoml.exceptions import InvalidArgument
 
 
@@ -113,10 +105,10 @@ def test_validate_version_str_fails():
 
 
 def test_validate_version_str_pass():
-    _validate_version_str("abc_123")
-    _validate_version_str("1")
-    _validate_version_str("a_valid_version")
-    _validate_version_str("AValidVersion")
-    _validate_version_str("_AValidVersion")
-    _validate_version_str("1.3.4")
-    _validate_version_str("1.3.4-g375a71b")
+    validate_version_str("abc_123")
+    validate_version_str("1")
+    validate_version_str("a_valid_version")
+    validate_version_str("AValidVersion")
+    validate_version_str("_AValidVersion")
+    validate_version_str("1.3.4")
+    validate_version_str("1.3.4-g375a71b")

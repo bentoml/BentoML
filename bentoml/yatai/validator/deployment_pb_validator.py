@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import re
 
 from cerberus import Validator
 
@@ -186,8 +185,6 @@ class YataiDeploymentValidator(Validator):
                     'must be being and end with an alphanumeric character '
                     '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
                 )
-            except Exception as e:
-                self._error(field, str(e))
 
 
 def validate_deployment_pb(pb):

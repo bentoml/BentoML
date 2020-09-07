@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import io
-from typing import BinaryIO, Iterable, Mapping, Sequence, Tuple
+from typing import BinaryIO, Iterable, Mapping, Optional, Sequence, Tuple
 
 from bentoml.adapters.file_input import FileInput
 from bentoml.adapters.utils import check_file_extension
@@ -59,7 +59,7 @@ class DataframeInput(FileInput):
 	The allowed and default values depend on the value
 	of the `typ` parameter.
 
-	* when ``typ == 'series'``,
+	* when ``typ == 'series'``(not available now),
 
 	  - allowed orients are ``{'split','records','index'}``
 	  - default is ``'index'``
@@ -76,7 +76,8 @@ class DataframeInput(FileInput):
 	    ``'columns'``, and ``'records'``.
 
     typ : {'frame', 'series'}, default 'frame'
-	The type of object to recover. Please note that 'series' is not supported now.
+	The type of object to recover. 
+        ** Please note that 'series' is not supported now.
 
     dtype : dict, default None
 	If is None, infer dtypes; if a dict of column to dtype, then use those.
@@ -100,7 +101,7 @@ class DataframeInput(FileInput):
     def __init__(
         self,
         typ: str = "frame",
-        orient: str = "records",
+        orient: Optional[str] = None,
         columns: Sequence[str] = None,
         dtype: Mapping[str, object] = None,
         input_dtypes: Mapping[str, object] = None,

@@ -156,35 +156,19 @@ ApiFuncReturnValue = TypeVar("ApiFuncReturnValue")
 
 
 @dataclass(frozen=True)
-class InferenceContext:
-    task_id: Optional[str] = None
-
-    # General
+class InferenceResult(Generic[Output]):
+    # payload
+    data: Output = None
     err_msg: str = ''
 
-    # HTTP
-    http_method: Optional[str] = None
+    # meta
+    task_id: Optional[str] = None
+
+    # context
     http_status: Optional[int] = None
     http_headers: ParsedHeaders = ParsedHeaders()
-
-    # AWS_LAMBDA
     aws_lambda_event: Optional[dict] = None
-
-    # CLI
     cli_status: Optional[int] = 0
-    cli_args: Optional[Sequence[str]] = None
-
-
-@dataclass(frozen=True)
-class DefaultErrorContext(InferenceContext):
-    http_status: int = 500
-    cli_status: int = 1
-
-
-@dataclass(frozen=True)
-class InferenceResult(Generic[Output]):
-    data: Output = None
-    context: InferenceContext = InferenceContext()
 
     @classmethod
     def complete_discarded(
@@ -194,7 +178,7 @@ class InferenceResult(Generic[Output]):
         try:
             for task in tasks:
                 if task.is_discarded:
-                    yield task.fallback_result
+                    yield task.error
                 else:
                     yield next(iterable_results)
         except StopIteration:
@@ -203,16 +187,30 @@ class InferenceResult(Generic[Output]):
             ) from None
 
 
+@dataclass(frozen=True)
+class InferenceError(InferenceResult):
+    # context
+    http_status: int = 500
+    cli_status: int = 1
+
+
 @dataclass(frozen=False)
 class InferenceTask(Generic[Input]):
+    # payload
     data: Input
-    context: InferenceContext = InferenceContext()
+    error: Optional[InferenceResult] = None
+
+    # meta
+    task_id: Optional[str] = None
     is_discarded: bool = False
-    fallback_result: Optional[InferenceResult] = None
     batch: Optional[int] = None
+
+    # context
+    http_method: Optional[str] = None
+    http_headers: ParsedHeaders = ParsedHeaders()
+    aws_lambda_event: Optional[dict] = None
+    cli_args: Optional[Sequence[str]] = None
 
     def discard(self, err_msg="", **context):
         self.is_discarded = True
-        self.fallback_result = InferenceResult(
-            context=DefaultErrorContext(err_msg=err_msg, **context)
-        )
+        self.error = InferenceError(err_msg=err_msg, **context)

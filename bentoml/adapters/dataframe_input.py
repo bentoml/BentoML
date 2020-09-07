@@ -17,12 +17,7 @@ from typing import BinaryIO, Iterable, Mapping, Optional, Sequence, Tuple
 from bentoml.adapters.file_input import FileInput
 from bentoml.adapters.utils import check_file_extension
 from bentoml.exceptions import MissingDependencyException
-from bentoml.types import (
-    AwsLambdaEvent,
-    InferenceContext,
-    InferenceTask,
-    ParsedHeaders,
-)
+from bentoml.types import AwsLambdaEvent, InferenceTask, ParsedHeaders
 from bentoml.utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
     read_dataframes_from_json_n_csv,
@@ -59,7 +54,7 @@ class DataframeInput(FileInput):
         The allowed and default values depend on the value
         of the `typ` parameter.
 
-        * when ``typ == 'series'``(not available now),
+        * when ``typ == 'series'`` (not available now),
 
           - allowed orients are ``{'split','records','index'}``
           - default is ``'index'``
@@ -76,20 +71,16 @@ class DataframeInput(FileInput):
             ``'columns'``, and ``'records'``.
 
     typ : {'frame', 'series'}, default 'frame'
+        ** Note: 'series' is not supported now. **
         The type of object to recover.
-        * Please note that 'series' is not supported now.
 
     dtype : dict, default None
         If is None, infer dtypes; if a dict of column to dtype, then use those.
         Not applicable for ``orient='table'``.
 
     input_dtypes : dict, default None
-        * Deprecated
+        ** Deprecated **
         The same as the `dtype`
-
-    Returns
-    -------
-    DataFrame
 
     Raises
     -------
@@ -189,15 +180,13 @@ class DataframeInput(FileInput):
             # Optimistically assuming Content-Type to be "application/json"
             bio = io.BytesIO(event["body"].encode())
             bio.name = "input.json"
-        return InferenceTask(
-            context=InferenceContext(aws_lambda_event=event), data=bio,
-        )
+        return InferenceTask(aws_lambda_event=event, data=bio,)
 
     @classmethod
     def _detect_format(cls, task: InferenceTask) -> str:
-        if task.context.http_headers.content_type == "application/json":
+        if task.http_headers.content_type == "application/json":
             return "json"
-        if task.context.http_headers.content_type == "text/csv":
+        if task.http_headers.content_type == "text/csv":
             return "csv"
         file_name = getattr(task.data, "name", "")
         if check_file_extension(file_name, (".csv",)):

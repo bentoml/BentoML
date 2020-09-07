@@ -246,8 +246,8 @@ class InferenceAPI(object):
         req = HTTPRequest.from_flask_request(request)
         inf_task = self.input_adapter.from_http_request(req)
         results = self.infer((inf_task,))
-        responses = self.output_adapter.to_http_response(results)
-        response = next(iter(responses))
+        result = next(iter(results))
+        response = self.output_adapter.to_http_response(result)
         return response.to_flask_response()
 
     def handle_batch_request(self, requests: Sequence[HTTPRequest]):
@@ -257,7 +257,7 @@ class InferenceAPI(object):
         ):
             inf_tasks = map(self.input_adapter.from_http_request, requests)
             results = self.infer(inf_tasks)
-            return self.output_adapter.to_http_response(results)
+            return map(self.output_adapter.to_http_response, results)
 
     def handle_cli(self, cli_args: Sequence[str]) -> int:
         parser = argparse.ArgumentParser()
@@ -278,8 +278,8 @@ class InferenceAPI(object):
 
     def handle_aws_lambda_event(self, event):
         inf_task = self.input_adapter.from_aws_lambda_event(event)
-        results = self.infer((inf_task,))
-        return next(iter(self.output_adapter.to_aws_lambda_event(results)))
+        result = next(iter(self.infer((inf_task,))))
+        return self.output_adapter.to_aws_lambda_event(result)
 
 
 def validate_inference_api_name(api_name: str):

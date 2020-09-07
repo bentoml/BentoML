@@ -15,18 +15,11 @@
 import json
 from typing import Sequence
 
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.adapters.utils import TfTensorJsonEncoder
-
-
-from bentoml.types import (
-    InferenceTask,
-    InferenceResult,
-    DefaultErrorContext,
-)
 from bentoml.adapters.base_output import regroup_return_value
 from bentoml.adapters.json_output import JsonSerializableOutput
-
+from bentoml.adapters.utils import TfTensorJsonEncoder
+from bentoml.types import InferenceError, InferenceResult, InferenceTask
+from bentoml.utils.lazy_loader import LazyLoader
 
 np = LazyLoader('np', globals(), 'numpy')
 
@@ -78,9 +71,5 @@ class TfTensorOutput(JsonSerializableOutput):
                 result_str = json.dumps(result, cls=TfTensorJsonEncoder)
                 rv.append(InferenceResult(data=result_str))
             except Exception as e:  # pylint: disable=broad-except
-                rv.append(
-                    InferenceResult(
-                        context=DefaultErrorContext(err_msg=str(e), http_status=500,),
-                    )
-                )
+                rv.append(InferenceError(err_msg=str(e), http_status=500))
         return rv

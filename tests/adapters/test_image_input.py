@@ -3,8 +3,8 @@ import base64
 
 import pytest
 
-from bentoml.types import HTTPRequest
 from bentoml.adapters import ImageInput
+from bentoml.types import HTTPRequest
 
 
 @pytest.fixture()
@@ -93,6 +93,6 @@ def test_image_input_extract(input_adapter, tasks, invalid_tasks):
 
     for task in invalid_tasks:
         assert task.is_discarded
-        assert task.fallback_result.context.http_status == 400
-        assert task.fallback_result.context.cli_status != 0
-        assert task.fallback_result.context.err_msg
+        assert task.error.http_status == 400
+        assert task.error.cli_status != 0
+        assert task.error.err_msg

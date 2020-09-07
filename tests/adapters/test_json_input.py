@@ -109,6 +109,6 @@ def test_json_extract(input_adapter, tasks, invalid_tasks):
 
     for task in invalid_tasks:
         assert task.is_discarded
-        assert task.fallback_result.context.err_msg
-        assert task.fallback_result.context.http_status != 200
-        assert task.fallback_result.context.cli_status != 0
+        assert task.error.err_msg
+        assert task.error.http_status != 200
+        assert task.error.cli_status != 0

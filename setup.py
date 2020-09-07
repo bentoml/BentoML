@@ -58,7 +58,7 @@ test_requires = [
     "flake8>=3.8.2",
     "imageio>=2.5.0",
     "mock>=2.0.0",
-    "moto",
+    "moto==1.3.14",
     "pandas",
     "pylint>=2.5.2",
     "pytest-cov>=2.7.1",

@@ -59,7 +59,7 @@ class DataframeInput(FileInput):
         The allowed and default values depend on the value
         of the `typ` parameter.
 
-        * when ``typ == 'series'``(not available now),
+        * when ``typ == 'series'`` (not available now),
 
           - allowed orients are ``{'split','records','index'}``
           - default is ``'index'``
@@ -76,20 +76,16 @@ class DataframeInput(FileInput):
             ``'columns'``, and ``'records'``.
 
     typ : {'frame', 'series'}, default 'frame'
+        ** Note: 'series' is not supported now. **
         The type of object to recover.
-        * Please note that 'series' is not supported now.
 
     dtype : dict, default None
         If is None, infer dtypes; if a dict of column to dtype, then use those.
         Not applicable for ``orient='table'``.
 
     input_dtypes : dict, default None
-        * Deprecated
+        ** Deprecated **
         The same as the `dtype`
-
-    Returns
-    -------
-    DataFrame
 
     Raises
     -------

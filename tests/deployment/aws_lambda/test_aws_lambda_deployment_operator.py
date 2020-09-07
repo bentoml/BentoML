@@ -1,24 +1,24 @@
 import os
 
-import pytest
 import boto3
-from mock import MagicMock, patch, Mock
+import pytest
+from mock import MagicMock, Mock, patch
 from moto import mock_s3
 from ruamel.yaml import YAML
 
-from bentoml.yatai.deployment.aws_lambda.utils import init_sam_project
 from bentoml.yatai.deployment.aws_lambda.operator import (
-    _create_aws_lambda_cloudformation_template_file,
     AwsLambdaDeploymentOperator,
+    _create_aws_lambda_cloudformation_template_file,
 )
+from bentoml.yatai.deployment.aws_lambda.utils import init_sam_project
+from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentState
 from bentoml.yatai.proto.repository_pb2 import (
     Bento,
-    BentoUri,
     BentoServiceMetadata,
+    BentoUri,
     GetBentoResponse,
 )
-from bentoml.yatai.proto import status_pb2
 
 mock_s3_bucket_name = 'test_deployment_bucket'
 mock_s3_prefix = 'prefix'
@@ -62,7 +62,7 @@ def test_aws_lambda_app_py(monkeypatch):
         name = "mock_bento_service"
         version = "mock_bento_service_version"
 
-        def _load_artifacts(self, path):
+        def _load_artifacts(self, _):
             return
 
         def get_inference_api(self, name):
@@ -96,10 +96,10 @@ def test_aws_lambda_app_py(monkeypatch):
 
     @mock_lambda_app
     @patch('bentoml.load', return_value=mock_bento_service)
-    def return_predict_func(mock_load_service):
-        from bentoml.yatai.deployment.aws_lambda.lambda_app import predict
+    def return_predict_func():
+        from bentoml.yatai.deployment.aws_lambda.lambda_app import api_func
 
-        return predict
+        return api_func
 
     predict = return_predict_func()
 
@@ -265,7 +265,7 @@ def test_aws_lambda_apply_over_bundle_size_limit_success():
 
 
 def test_aws_lambda_describe_still_in_progress():
-    def mock_cf_response(self, op_name, kwarg):
+    def mock_cf_response(_self, op_name, _kwarg):
         if op_name == 'DescribeStacks':
             return {'Stacks': [{'StackStatus': 'CREATE_IN_PROGRESS'}]}
         else:
@@ -285,7 +285,7 @@ def test_aws_lambda_describe_still_in_progress():
 
 
 def test_aws_lambda_describe_success():
-    def mock_cf_response(self, op_name, kwarg):
+    def mock_cf_response(_self, op_name, _kwarg):
         if op_name == 'DescribeStacks':
             return {
                 'Stacks': [

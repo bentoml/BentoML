@@ -43,44 +43,44 @@ class DataframeInput(FileInput):
     Parameters
     ----------
     orient : str
-	Indication of expected JSON string format.
-	Compatible JSON strings can be produced by ``to_json()`` with a
-	corresponding orient value.
-	The set of possible orients is:
+        Indication of expected JSON string format.
+        Compatible JSON strings can be produced by ``to_json()`` with a
+        corresponding orient value.
+        The set of possible orients is:
 
-	- ``'split'`` : dict like
-	  ``{index -> [index], columns -> [columns], data -> [values]}``
-	- ``'records'`` : list like
-	  ``[{column -> value}, ... , {column -> value}]``
-	- ``'index'`` : dict like ``{index -> {column -> value}}``
-	- ``'columns'`` : dict like ``{column -> {index -> value}}``
-	- ``'values'`` : just the values array
+        - ``'split'`` : dict like
+          ``{index -> [index], columns -> [columns], data -> [values]}``
+        - ``'records'`` : list like
+          ``[{column -> value}, ... , {column -> value}]``
+        - ``'index'`` : dict like ``{index -> {column -> value}}``
+        - ``'columns'`` : dict like ``{column -> {index -> value}}``
+        - ``'values'`` : just the values array
 
-	The allowed and default values depend on the value
-	of the `typ` parameter.
+        The allowed and default values depend on the value
+        of the `typ` parameter.
 
-	* when ``typ == 'series'``(not available now),
+        * when ``typ == 'series'``(not available now),
 
-	  - allowed orients are ``{'split','records','index'}``
-	  - default is ``'index'``
-	  - The Series index must be unique for orient ``'index'``.
+          - allowed orients are ``{'split','records','index'}``
+          - default is ``'index'``
+          - The Series index must be unique for orient ``'index'``.
 
-	* when ``typ == 'frame'``,
+        * when ``typ == 'frame'``,
 
-	  - allowed orients are ``{'split','records','index',
-	    'columns','values'}``
-	  - default is ``'columns'``
-	  - The DataFrame index must be unique for orients ``'index'`` and
-	    ``'columns'``.
-	  - The DataFrame columns must be unique for orients ``'index'``,
-	    ``'columns'``, and ``'records'``.
+          - allowed orients are ``{'split','records','index',
+            'columns','values'}``
+          - default is ``'columns'``
+          - The DataFrame index must be unique for orients ``'index'`` and
+            ``'columns'``.
+          - The DataFrame columns must be unique for orients ``'index'``,
+            ``'columns'``, and ``'records'``.
 
     typ : {'frame', 'series'}, default 'frame'
-	The type of object to recover. 
-        ** Please note that 'series' is not supported now.
+        The type of object to recover. 
+        * Please note that 'series' is not supported now.
 
     dtype : dict, default None
-	If is None, infer dtypes; if a dict of column to dtype, then use those.
+        If is None, infer dtypes; if a dict of column to dtype, then use those.
         Not applicable for ``orient='table'``.
 
     input_dtypes : dict, default None

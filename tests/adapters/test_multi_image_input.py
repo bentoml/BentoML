@@ -59,7 +59,6 @@ def test_multi_image_input_extract_args_custom_extension(gen_img_io, verify_args
     input_adapter = MultiImageInput(accept_image_formats=[".custom", ".jpg"])
     task = InferenceTask(data=(gen_img_io("test.custom"), gen_img_io("test.jpg")))
     args = input_adapter.extract_user_func_args([task])
-    assert not task.err_msg
     assert not task.is_discarded
     verify_args(args)
 

@@ -39,7 +39,7 @@ install_requires = [
     "py_zipkin",
     # python-dateutil required by pandas and boto3, this makes sure the version
     # works for both
-    "python-dateutil>=2.1,<2.8.1",
+    "python-dateutil>=2.7.3,<3.0.0",
     "python-json-logger",
     "requests",
     "ruamel.yaml>=0.15.0",
@@ -113,7 +113,7 @@ setuptools.setup(
     cmdclass=versioneer.get_cmdclass(),
     author="bentoml.org",
     author_email="contact@bentoml.ai",
-    description="An open-source ML model serving and model management framework",
+    description="A framework for machine learning model serving",
     long_description=long_description,
     license="Apache License 2.0",
     long_description_content_type="text/markdown",

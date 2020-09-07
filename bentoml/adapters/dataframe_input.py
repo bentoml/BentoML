@@ -76,7 +76,7 @@ class DataframeInput(FileInput):
             ``'columns'``, and ``'records'``.
 
     typ : {'frame', 'series'}, default 'frame'
-        The type of object to recover. 
+        The type of object to recover.
         * Please note that 'series' is not supported now.
 
     dtype : dict, default None

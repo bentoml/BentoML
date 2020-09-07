@@ -344,7 +344,7 @@ def api_decorator(
         validate_inference_api_name(_api_name)
 
         if input is None:
-            # Support passing the desired adapter without instantiation
+            # Raise error when input adapter class passed without instantiation
             if not args or not (
                 inspect.isclass(args[0]) and issubclass(args[0], BaseInputAdapter)
             ):

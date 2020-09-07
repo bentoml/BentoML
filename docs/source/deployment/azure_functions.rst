@@ -82,8 +82,7 @@ above
             "inputConfig": {
               "orient": "records",
               "typ": "frame",
-              "is_batch_input": true,
-              "input_dtypes": null
+              "dtype": null
             },
             "outputConfig": {
               "cors": "*"

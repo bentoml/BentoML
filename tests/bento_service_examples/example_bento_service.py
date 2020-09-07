@@ -1,14 +1,13 @@
 import bentoml
-from bentoml.adapters import (
+from bentoml.adapters import (  # FastaiImageInput,
     DataframeInput,
     ImageInput,
-    LegacyImageInput,
     JsonInput,
+    LegacyImageInput,
     LegacyJsonInput,
-    # FastaiImageInput,
 )
-from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.artifact import PickleArtifact
+from bentoml.handlers import DataframeHandler  # deprecated
 
 
 @bentoml.artifacts([PickleArtifact("model")])
@@ -24,13 +23,13 @@ class ExampleBentoService(bentoml.BentoService):
         """
         return self.artifacts.model.predict(df)
 
-    @bentoml.api(input=DataframeInput(input_dtypes={"col1": "int"}))
+    @bentoml.api(input=DataframeInput(dtype={"col1": "int"}))
     def predict_dataframe(self, df):
         """predict_dataframe expects dataframe as input
         """
         return self.artifacts.model.predict_dataframe(df)
 
-    @bentoml.api(DataframeHandler, input_dtypes={"col1": "int"})  # deprecated
+    @bentoml.api(DataframeHandler, dtype={"col1": "int"})  # deprecated
     def predict_dataframe_v1(self, df):
         """predict_dataframe expects dataframe as input
         """

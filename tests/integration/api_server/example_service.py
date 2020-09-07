@@ -32,7 +32,7 @@ class ExampleBentoService(bentoml.BentoService):
         return self.artifacts.sk_model.predict(jsons)
 
     @bentoml.api(
-        input=DataframeInput(input_dtypes={"col1": "int"}),
+        input=DataframeInput(dtype={"col1": "int"}),
         mb_max_latency=1000,
         mb_max_batch_size=2000,
     )
@@ -41,7 +41,7 @@ class ExampleBentoService(bentoml.BentoService):
         """
         return self.artifacts.model.predict_dataframe(df)
 
-    @bentoml.api(DataframeHandler, input_dtypes={"col1": "int"})  # deprecated
+    @bentoml.api(DataframeHandler, dtype={"col1": "int"})  # deprecated
     def predict_dataframe_v1(self, df):
         """predict_dataframe expects dataframe as input
         """

@@ -24,7 +24,7 @@ except ImportError:
 
 def test_dataframe_request_schema():
     input_adapter = DataframeInput(
-        input_dtypes={"col1": "int", "col2": "float", "col3": "string"}
+        dtype={"col1": "int", "col2": "float", "col3": "string"}
     )
 
     schema = input_adapter.request_schema["application/json"]["schema"]

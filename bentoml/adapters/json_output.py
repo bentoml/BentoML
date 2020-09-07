@@ -22,9 +22,8 @@ from bentoml.adapters.base_output import (
 )
 from bentoml.adapters.utils import NumpyJsonEncoder
 from bentoml.types import (
-    DefaultErrorContext,
     HTTPResponse,
-    InferenceContext,
+    InferenceError,
     InferenceResult,
     InferenceTask,
     JsonSerializable,
@@ -48,7 +47,7 @@ class JsonSerializableOutput(BaseOutputAdapter):
     ) -> Sequence[InferenceResult[str]]:
         results = []
         for json_obj, task in regroup_return_value(return_result, tasks):
-            args = task.context.cli_args
+            args = task.cli_args
             if args:
                 parser = argparse.ArgumentParser()
                 parser.add_argument(
@@ -66,24 +65,14 @@ class JsonSerializableOutput(BaseOutputAdapter):
                 results.append(
                     InferenceResult(
                         data=json_str,
-                        context=InferenceContext(
-                            http_status=200,
-                            http_headers={"Content-Type": "application/json"},
-                        ),
+                        http_status=200,
+                        http_headers={"Content-Type": "application/json"},
                     )
                 )
             except AssertionError as e:
-                results.append(
-                    InferenceResult(
-                        context=DefaultErrorContext(err_msg=str(e), http_status=400,),
-                    )
-                )
+                results.append(InferenceError(err_msg=str(e), http_status=400,))
             except Exception as e:  # pylint: disable=broad-except
-                results.append(
-                    InferenceResult(
-                        context=DefaultErrorContext(err_msg=str(e), http_status=500,),
-                    )
-                )
+                results.append(InferenceError(err_msg=str(e), http_status=500,))
         return tuple(results)
 
     def to_http_response(
@@ -91,9 +80,7 @@ class JsonSerializableOutput(BaseOutputAdapter):
     ) -> Iterator[HTTPResponse]:
         return (
             HTTPResponse(
-                r.context.http_status,
-                tuple(r.context.http_headers.items()),
-                r.context.err_msg or r.data,
+                r.http_status, tuple(r.http_headers.items()), r.err_msg or r.data,
             )
             for r in results
         )
@@ -107,8 +94,8 @@ class JsonSerializableOutput(BaseOutputAdapter):
         """
         flag = 0
         for result in results:
-            if result.context.err_msg:
-                print(result.context.err_msg)
+            if result.err_msg:
+                print(result.err_msg)
                 flag = 1
             else:
                 print(result.data)
@@ -120,12 +107,12 @@ class JsonSerializableOutput(BaseOutputAdapter):
         for result in results:
             if self.cors:
                 yield {
-                    "statusCode": result.context.http_status,
-                    "body": result.context.err_msg or result.data,
+                    "statusCode": result.http_status,
+                    "body": result.err_msg or result.data,
                     "headers": {"Access-Control-Allow-Origin": self.cors},
                 }
             else:
                 yield {
-                    "statusCode": result.context.http_status,
-                    "body": result.context.err_msg or result.data,
+                    "statusCode": result.http_status,
+                    "body": result.err_msg or result.data,
                 }

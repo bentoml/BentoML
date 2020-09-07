@@ -17,12 +17,7 @@ from typing import BinaryIO, Iterable, Mapping, Optional, Sequence, Tuple
 from bentoml.adapters.file_input import FileInput
 from bentoml.adapters.utils import check_file_extension
 from bentoml.exceptions import MissingDependencyException
-from bentoml.types import (
-    AwsLambdaEvent,
-    InferenceContext,
-    InferenceTask,
-    ParsedHeaders,
-)
+from bentoml.types import AwsLambdaEvent, InferenceTask, ParsedHeaders
 from bentoml.utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
     read_dataframes_from_json_n_csv,
@@ -185,15 +180,13 @@ class DataframeInput(FileInput):
             # Optimistically assuming Content-Type to be "application/json"
             bio = io.BytesIO(event["body"].encode())
             bio.name = "input.json"
-        return InferenceTask(
-            context=InferenceContext(aws_lambda_event=event), data=bio,
-        )
+        return InferenceTask(aws_lambda_event=event, data=bio,)
 
     @classmethod
     def _detect_format(cls, task: InferenceTask) -> str:
-        if task.context.http_headers.content_type == "application/json":
+        if task.http_headers.content_type == "application/json":
             return "json"
-        if task.context.http_headers.content_type == "text/csv":
+        if task.http_headers.content_type == "text/csv":
             return "csv"
         file_name = getattr(task.data, "name", "")
         if check_file_extension(file_name, (".csv",)):

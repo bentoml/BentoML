@@ -15,16 +15,15 @@
 import gzip
 import json
 import traceback
-from typing import Iterable, Tuple, Iterator, Sequence
+from typing import Iterable, Iterator, Sequence, Tuple
 
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 from bentoml.types import (
-    HTTPRequest,
-    JsonSerializable,
-    AwsLambdaEvent,
-    InferenceTask,
-    InferenceContext,
     JSON_CHARSET,
+    AwsLambdaEvent,
+    HTTPRequest,
+    InferenceTask,
+    JsonSerializable,
 )
 
 ApiFuncArgs = Tuple[
@@ -71,18 +70,14 @@ class JsonInput(BaseInputAdapter):
             # https://tools.ietf.org/html/rfc7230#section-4.2.3
             try:
                 return InferenceTask(
-                    context=InferenceContext(http_headers=req.parsed_headers),
-                    data=gzip.decompress(req.body),
+                    http_headers=req.parsed_headers, data=gzip.decompress(req.body),
                 )
             except OSError:
                 task = InferenceTask(data=None)
                 task.discard(http_status=400, err_msg="Gzip decompression error")
                 return task
         elif req.parsed_headers.content_encoding in ["", "identity"]:
-            return InferenceTask(
-                context=InferenceContext(http_headers=req.parsed_headers),
-                data=req.body,
-            )
+            return InferenceTask(http_headers=req.parsed_headers, data=req.body,)
         else:
             task = InferenceTask(data=None)
             task.discard(http_status=415, err_msg="Unsupported Media Type")
@@ -90,15 +85,12 @@ class JsonInput(BaseInputAdapter):
 
     def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[bytes]:
         return InferenceTask(
-            context=InferenceContext(aws_lambda_event=event),
-            data=event.get('body', "").encode(JSON_CHARSET),
+            aws_lambda_event=event, data=event.get('body', "").encode(JSON_CHARSET),
         )
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:
         for json_input in parse_cli_input(cli_args):
-            yield InferenceTask(
-                context=InferenceContext(cli_args=cli_args), data=json_input.read()
-            )
+            yield InferenceTask(cli_args=cli_args, data=json_input.read())
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[bytes]]

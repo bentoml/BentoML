@@ -13,11 +13,11 @@
 # limitations under the License.
 import base64
 import io
-from typing import Tuple, BinaryIO, Sequence
+from typing import BinaryIO, Sequence, Tuple
 
-from bentoml.types import InferenceTask, HTTPRequest, InferenceContext
-from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.adapters.multi_image_input import MultiImageInput
+from bentoml.types import HTTPRequest, InferenceTask
+from bentoml.utils.lazy_loader import LazyLoader
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader('imageio', globals(), 'imageio')
@@ -74,15 +74,11 @@ class LegacyImageInput(MultiImageInput):
                     )
                 else:
                     f = next(iter(files.values()))
-                    task = InferenceTask(
-                        context=InferenceContext(http_headers=req.parsed_headers),
-                        data=(f,),
-                    )
+                    task = InferenceTask(http_headers=req.parsed_headers, data=(f,),)
             else:
                 # for images/*
                 task = InferenceTask(
-                    context=InferenceContext(http_headers=req.parsed_headers),
-                    data=(io.BytesIO(req.body),),
+                    http_headers=req.parsed_headers, data=(io.BytesIO(req.body),),
                 )
         elif req.parsed_headers.content_type == 'multipart/form-data':
             _, _, files = HTTPRequest.parse_form_data(req)
@@ -102,10 +98,7 @@ class LegacyImageInput(MultiImageInput):
                     f"fields {self.input_names}",
                 )
             else:
-                task = InferenceTask(
-                    context=InferenceContext(http_headers=req.parsed_headers),
-                    data=files,
-                )
+                task = InferenceTask(http_headers=req.parsed_headers, data=files,)
         else:
             task = InferenceTask(data=None)
             task.discard(

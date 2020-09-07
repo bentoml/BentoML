@@ -100,8 +100,8 @@ class TfTensorInput(JsonInput):
                 else:
                     instances = parsed_json.get("instances")
                     if (
-                        task.context.http_headers.is_batch_input
-                        or task.context.http_headers.is_batch_input is None
+                        task.http_headers.is_batch_input
+                        or task.http_headers.is_batch_input is None
                     ):
                         task.batch = len(instances)
                         instances_list.extend(instances)

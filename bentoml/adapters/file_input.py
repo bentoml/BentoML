@@ -17,12 +17,7 @@ import io
 from typing import BinaryIO, Iterable, Iterator, Sequence, Tuple
 
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
-from bentoml.types import (
-    AwsLambdaEvent,
-    HTTPRequest,
-    InferenceContext,
-    InferenceTask,
-)
+from bentoml.types import AwsLambdaEvent, HTTPRequest, InferenceTask
 
 ApiFuncArgs = Tuple[
     Sequence[BinaryIO],
@@ -102,14 +97,10 @@ class FileInput(BaseInputAdapter):
                 )
             else:
                 input_file = next(iter(files.values()))
-                task = InferenceTask(
-                    context=InferenceContext(http_headers=req.parsed_headers),
-                    data=input_file,
-                )
+                task = InferenceTask(http_headers=req.parsed_headers, data=input_file,)
         elif req.body:
             task = InferenceTask(
-                context=InferenceContext(http_headers=req.parsed_headers),
-                data=io.BytesIO(req.body),
+                http_headers=req.parsed_headers, data=io.BytesIO(req.body),
             )
         else:
             task = InferenceTask(data=None)
@@ -122,7 +113,7 @@ class FileInput(BaseInputAdapter):
 
     def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[BinaryIO]:
         return InferenceTask(
-            context=InferenceContext(aws_lambda_event=event),
+            aws_lambda_event=event,
             data=io.BytesIO(base64.decodebytes(event.get('body', ""))),
         )
 
@@ -130,9 +121,7 @@ class FileInput(BaseInputAdapter):
         for input_ in parse_cli_input(cli_args):
             bio = io.BytesIO(input_.read())
             bio.name = input_.name
-            yield InferenceTask(
-                context=InferenceContext(cli_args=cli_args), data=bio,
-            )
+            yield InferenceTask(cli_args=cli_args, data=bio)
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[BinaryIO]]

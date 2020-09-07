@@ -266,14 +266,15 @@ Containerize Model API Server
 One common way of distributing this model API server for production deployment, is via
 Docker containers. And BentoML provides a convenient way to do that.
 
-If you already have docker configured, simply run the follow command to product a
-docker container serving the `IrisClassifier` prediction service created above:
+If you already have docker configured, run the following command to build a docker
+container image for serving the `IrisClassifier` prediction service created above:
+
 
 .. code-block:: bash
 
     bentoml containerize IrisClassifier:latest -t iris-classifier
 
-Start a container with the docker image built in the previous step:
+Start a container with the docker image built from the previous step:
 
 .. code-block:: bash
 

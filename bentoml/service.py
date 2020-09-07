@@ -278,8 +278,8 @@ class InferenceAPI(object):
 
     def handle_aws_lambda_event(self, event):
         inf_task = self.input_adapter.from_aws_lambda_event(event)
-        results = self.infer((inf_task,))
-        return next(iter(self.output_adapter.to_aws_lambda_event(results)))
+        result = next(iter(self.infer((inf_task,))))
+        return self.output_adapter.to_aws_lambda_event(result)
 
 
 def validate_inference_api_name(api_name: str):

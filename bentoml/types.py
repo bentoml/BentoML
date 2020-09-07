@@ -157,6 +157,10 @@ ApiFuncReturnValue = TypeVar("ApiFuncReturnValue")
 
 @dataclass(frozen=True)
 class InferenceResult(Generic[Output]):
+    # payload
+    data: Output = None
+    err_msg: str = ''
+
     # meta
     task_id: Optional[str] = None
 
@@ -165,10 +169,6 @@ class InferenceResult(Generic[Output]):
     http_headers: ParsedHeaders = ParsedHeaders()
     aws_lambda_event: Optional[dict] = None
     cli_status: Optional[int] = 0
-
-    # payload
-    data: Output = None
-    err_msg: str = ''
 
     @classmethod
     def complete_discarded(
@@ -196,6 +196,10 @@ class InferenceError(InferenceResult):
 
 @dataclass(frozen=False)
 class InferenceTask(Generic[Input]):
+    # payload
+    data: Input
+    error: Optional[InferenceResult] = None
+
     # meta
     task_id: Optional[str] = None
     is_discarded: bool = False
@@ -206,10 +210,6 @@ class InferenceTask(Generic[Input]):
     http_headers: ParsedHeaders = ParsedHeaders()
     aws_lambda_event: Optional[dict] = None
     cli_args: Optional[Sequence[str]] = None
-
-    # payload
-    data: Input
-    error: Optional[InferenceResult] = None
 
     def discard(self, err_msg="", **context):
         self.is_discarded = True

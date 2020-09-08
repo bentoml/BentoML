@@ -36,7 +36,7 @@ def is_sqlite_db(db_url):
 
 
 def init_db(db_url):
-    from sqlalchemy_utils import database_exists, create_database
+    from sqlalchemy_utils import database_exists
 
     extra_db_args = {'echo': True}
 
@@ -46,9 +46,11 @@ def init_db(db_url):
     engine = create_engine(db_url, **extra_db_args)
 
     if not database_exists(engine.url) and not is_sqlite_db(db_url):
-        logger.debug(f'Creating BentoML database at {engine.url}')
-        create_database(engine.url)
-    create_all_or_upgrade_db_tables(engine, db_url)
+        raise BentoMLException(
+            f'Database does not exist or Database name is missing in config '
+            f'db.url: {db_url}'
+        )
+    create_all_or_upgrade_db(engine, db_url)
 
     return sessionmaker(bind=engine)
 
@@ -66,7 +68,7 @@ def create_session(session_maker):
         session.close()
 
 
-def create_all_or_upgrade_db_tables(engine, db_url):
+def create_all_or_upgrade_db(engine, db_url):
     # alembic add a lot of import time, so we lazy import
     from alembic import command
     from alembic.config import Config

@@ -178,7 +178,7 @@ class YataiDeploymentValidator(Validator):
         if deployment_labels:
             try:
                 _validate_labels(value)
-            except InvalidArgument as e:
+            except InvalidArgument:
                 self._error(
                     field,
                     'Valid label key and value must be 63 characters or less and '

@@ -12,5 +12,5 @@ class XgboostModelClassifier(bentoml.BentoService):
     def predict(self, df):
         dmatrix = xgb.DMatrix(df)
         result = self.artifacts.model.predict(dmatrix)
-        preds = np.asarray([np.argmax(line) for line in result ])
+        preds = np.asarray([np.argmax(line) for line in result])
         return preds

@@ -32,15 +32,16 @@ def upgrade():
     result = bind.execute(sa.select([deployments.c.id, deployments.c.labels]))
     labels_need_to_add = []
     for row in result:
-        for key in row.labels:
-            labels_need_to_add.append(
-                Label(
-                    resource_type='deployment',
-                    resource_id=row.id,
-                    key=key,
-                    value=row.labels[key],
+        if row.labels:
+            for key in row.labels:
+                labels_need_to_add.append(
+                    Label(
+                        resource_type='deployment',
+                        resource_id=row.id,
+                        key=key,
+                        value=row.labels[key],
+                    )
                 )
-            )
     session.add_all(labels_need_to_add)
 
     session.commit()

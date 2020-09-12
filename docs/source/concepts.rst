@@ -19,7 +19,7 @@ the :doc:`Getting Started Guide <quickstart>`:
 
   import bentoml
   from bentoml.adapters import DataframeInput
-  from bentoml.artifact import SklearnModelArtifact
+  from bentoml.frameworks.sklearn import SklearnModelArtifact
 
   @bentoml.env(auto_pip_dependencies=True)
   @bentoml.artifacts([SklearnModelArtifact('model')])
@@ -321,7 +321,8 @@ prediction service that packs two trained models:
 
     import bentoml
     from bentoml.adapters import DataframeInput
-    from bentoml.artifact import SklearnModelArtifact, XgboostModelArtifact
+    from bentoml.frameworks.sklearn import SklearnModelArtifact
+    from bentoml.frameworks.xgboost import XgboostModelArtifact
 
     @bentoml.env(auto_pip_dependencies=True)
     @artifacts([

@@ -1,6 +1,6 @@
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.artifact import XgboostModelArtifact
+from bentoml.frameworks.xgboost import XgboostModelArtifact
 import xgboost as xgb  # pylint: disable=import-error
 import numpy as np
 

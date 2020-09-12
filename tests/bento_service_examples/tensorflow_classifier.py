@@ -1,6 +1,6 @@
 import bentoml
 from bentoml.adapters import TfTensorInput
-from bentoml.artifact import TensorflowSavedModelArtifact
+from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
 
 
 @bentoml.env(auto_pip_dependencies=True)

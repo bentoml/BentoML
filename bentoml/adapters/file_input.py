@@ -41,7 +41,7 @@ class FileInput(BaseInputAdapter):
         from PIL import Image
         import numpy as np
 
-        from bentoml.artifact import PytorchModelArtifact
+        from bentoml.frameworks.pytorch import PytorchModelArtifact
         from bentoml.adapters import FileInput
 
 

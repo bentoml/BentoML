@@ -29,12 +29,12 @@ import flask
 
 from bentoml import config
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
-from bentoml.artifact import ArtifactCollection, BentoServiceArtifact
+from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.server import trace
-from bentoml.service_env import BentoServiceEnv
+from bentoml.service.env import BentoServiceEnv
 from bentoml.types import HTTPRequest, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
 from bentoml.utils.hybridmethod import hybridmethod
@@ -492,7 +492,7 @@ def ver_decorator(major, minor):
     while 'Major' and 'Minor' can be defined with '@ver' decorator
 
     >>>  from bentoml import ver, artifacts
-    >>>  from bentoml.artifact import PickleArtifact
+    >>>  from bentoml.artifact.common import PickleArtifact
     >>>
     >>>  @ver(major=1, minor=4)
     >>>  @artifacts([PickleArtifact('model')])
@@ -577,7 +577,7 @@ class BentoService:
 
     >>>  from bentoml import BentoService, env, api, artifacts
     >>>  from bentoml.adapters import DataframeInput
-    >>>  from bentoml.artifact import SklearnModelArtifact
+    >>>  from bentoml.frameworks.sklearn import SklearnModelArtifact
     >>>
     >>>  @artifacts([SklearnModelArtifact('clf')])
     >>>  @env(pip_dependencies=["scikit-learn"])

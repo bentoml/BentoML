@@ -4,10 +4,10 @@ logger = logging.getLogger(__name__)
 logger.warning(
     """\
 Importing from "bentoml.artifact.*" has been deprecated. Instead, use\
-`bentoml.frameworks.*` and `bentoml.artifact.common.*`. e.g.:, \
+`bentoml.frameworks.*` and `bentoml.service.*`. e.g.:, \
 `from bentoml.frameworks.sklearn import SklearnModelArtifact`, \
 `from bentoml.service.artifacts import BentoServiceArtifact`, \
-`from bentoml.artifact.common import PickleArtifact`"""
+`from bentoml.service.common_artifacts import PickleArtifact`"""
 )
 
 from bentoml.service.artifacts import (

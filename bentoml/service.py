@@ -459,7 +459,6 @@ def env_decorator(
 
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv(
-            bento_service_name=bento_service_cls.name(),
             pip_dependencies=pip_dependencies,
             auto_pip_dependencies=auto_pip_dependencies,
             requirements_txt_file=requirements_txt_file,
@@ -638,7 +637,7 @@ class BentoService:
         self._config_environments()
 
     def _config_environments(self):
-        self._env = self.__class__._env or BentoServiceEnv(self.name)
+        self._env = self.__class__._env or BentoServiceEnv()
 
         for api in self._inference_apis:
             self._env.add_pip_dependencies_if_missing(

@@ -71,21 +71,27 @@ graft {service_name}/artifacts
 MODEL_SERVER_DOCKERFILE_CPU = """\
 FROM {docker_base_image}
 
-# copy over model files
-COPY . /bento
-WORKDIR /bento
-
 # Configuring PyPI index
 ARG PIP_INDEX_URL=https://pypi.python.org/simple/
 ARG PIP_TRUSTED_HOST=pypi.python.org
 ENV PIP_INDEX_URL $PIP_INDEX_URL
 ENV PIP_TRUSTED_HOST $PIP_TRUSTED_HOST
 
+# copy over files needed for init script
+COPY environment.yml requirements.txt setup.sh* bentoml-init.sh /bento/
+WORKDIR /bento
+
 # Execute permission for bentoml-init.sh
 RUN chmod +x /bento/bentoml-init.sh
 
 # Install conda, pip dependencies and run user defined setup script
 RUN if [ -f /bento/bentoml-init.sh ]; then bash -c /bento/bentoml-init.sh; fi
+
+# copy over model files
+COPY . /bento
+
+# Install bundled bentoml if it exists (used for development)
+RUN if [ -d /bento/bundled_pip_dependencies ]; then pip install -U bundled_pip_dependencies/* ;fi
 
 # the env var $PORT is required by heroku container runtime
 ENV PORT 5000

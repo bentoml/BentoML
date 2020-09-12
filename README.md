@@ -57,6 +57,30 @@ on how does BentoML compares to Tensorflow-serving, Clipper, AWS SageMaker, MLFl
 <img src="https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-overview.png" width="600">
 
 
+#### BentoML Feature Highlights
+
+Online serving with API model server:
+* **Containerized model server** for production deployment with Docker, Kubernetes, OpenShift, AWS ECS, Azure, GCP GKE, etc
+* **Adaptive micro-batching** for optimal online serving performance
+* Discover and package all dependencies automatically, including PyPI, conda packages and local python modules
+* Support **multiple ML frameworks** including PyTorch, Tensorflow, Scikit-Learn, XGBoost, and [many more](https://github.com/bentoml/BentoML#frameworks)
+* Serve compositions of **multiple models**
+* Serve **multiple endpoints** in one model server
+* Serve any Python code along with trained models
+* Automatically generate HTTP API spec in **Swagger/OpenAPI** format
+* **Prediction logging** and feedback logging endpoint
+* Health check endpoint and **Prometheus** `/metrics` endpoint for monitoring
+* Model serving via gRPC endpoint (roadmap)
+
+Advanced workflow for model serving and deployment:
+* **Central repository** for managing all your team's packaged models via Web UI and API
+* Launch inference run from CLI or Python, which enables **CI/CD** testing, programmatic 
+    access and **batch offline inference job**
+* Distributed batch job or streaming job with **Apache Spark** (requires manual setup, better support for this is on roadmap)
+* Automated deployment with cloud platforms including AWS Lambda, AWS SageMaker, and Azure Functions
+* **Advanced model deployment workflow** on Kubernetes cluster, including auto-scaling, scale-to-zero, A/B testing, canary deployment, and multi-armed-bandit (roadmap)
+* Deep integration with ML experimentation platforms including MLFlow, Kubeflow (roadmap)
+
 ## Getting Started
 
 Run this Getting Started guide on Google Colab: [![Google Colab Badge](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb) 
@@ -94,7 +118,7 @@ import pandas as pd
 
 from bentoml import env, artifacts, api, BentoService
 from bentoml.adapters import DataframeInput
-from bentoml.artifact import SklearnModelArtifact
+from bentoml.frameworks.sklearn import SklearnModelArtifact
 
 @env(auto_pip_dependencies=True)
 @artifacts([SklearnModelArtifact('model')])
@@ -115,7 +139,7 @@ supports other API input data types including `JsonInput`, `ImageInput`, `FileIn
 In BentoML, **all inference APIs are suppose to accept a list of inputs and return a 
 list of results**. In the case of `DataframeInput`, each row of the dataframe is mapping
 to one prediction request received from the client. BentoML will convert HTTP JSON 
-requests into :code:`pandas.DataFrame` object before passing it to the user-defined 
+requests into `pandas.DataFrame` object before passing it to the user-defined 
 inference API function.
  
 This design allows BentoML to group API requests into small batches while serving online
@@ -182,17 +206,19 @@ prediction request:
 One common way of distributing this model API server for production deployment, is via
 Docker containers. And BentoML provides a convenient way to do that.
 
-If you already have docker configured, simply run the follow command to product a 
-docker container serving the `IrisClassifier` prediction service created above:
+If you already have docker configured, run the following command to build a
+docker container image for serving the `IrisClassifier` prediction service created above:
 
 ```bash
 $ bentoml containerize IrisClassifier:latest -t iris-classifier
 ```
 
-Start a container with the docker image built in the previous step:
+Start a container with the docker image built from the previous step:
 ```bash
 $ docker run -p 5000:5000 iris-classifier --enable-microbatch --workers=1
 ```
+
+Continue reading the getting started guide [here](https://docs.bentoml.org/en/latest/quickstart.html).
 
 
 ## Documentation

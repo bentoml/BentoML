@@ -72,9 +72,7 @@ class BaseOutputAdapter:
         """
         raise NotImplementedError()
 
-    def to_http_response(
-        self, results: Iterable[InferenceResult]
-    ) -> Iterable[HTTPResponse]:
+    def to_http_response(self, result: InferenceResult) -> HTTPResponse:
         """
         Converts InferenceResults into HTTP responses.
         """
@@ -86,9 +84,7 @@ class BaseOutputAdapter:
         """
         raise NotImplementedError()
 
-    def to_aws_lambda_event(
-        self, results: Iterable[InferenceResult]
-    ) -> Iterable[AwsLambdaEvent]:
+    def to_aws_lambda_event(self, result: InferenceResult) -> AwsLambdaEvent:
         """
         Converts InferenceResults into AWS lambda events.
         """

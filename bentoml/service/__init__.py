@@ -29,12 +29,12 @@ import flask
 
 from bentoml import config
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
-from bentoml.artifact import ArtifactCollection, BentoServiceArtifact
+from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.server import trace
-from bentoml.service_env import BentoServiceEnv
+from bentoml.service.env import BentoServiceEnv
 from bentoml.types import HTTPRequest, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
 from bentoml.utils.hybridmethod import hybridmethod
@@ -246,8 +246,8 @@ class InferenceAPI(object):
         req = HTTPRequest.from_flask_request(request)
         inf_task = self.input_adapter.from_http_request(req)
         results = self.infer((inf_task,))
-        responses = self.output_adapter.to_http_response(results)
-        response = next(iter(responses))
+        result = next(iter(results))
+        response = self.output_adapter.to_http_response(result)
         return response.to_flask_response()
 
     def handle_batch_request(self, requests: Sequence[HTTPRequest]):
@@ -257,7 +257,7 @@ class InferenceAPI(object):
         ):
             inf_tasks = map(self.input_adapter.from_http_request, requests)
             results = self.infer(inf_tasks)
-            return self.output_adapter.to_http_response(results)
+            return map(self.output_adapter.to_http_response, results)
 
     def handle_cli(self, cli_args: Sequence[str]) -> int:
         parser = argparse.ArgumentParser()
@@ -278,8 +278,8 @@ class InferenceAPI(object):
 
     def handle_aws_lambda_event(self, event):
         inf_task = self.input_adapter.from_aws_lambda_event(event)
-        results = self.infer((inf_task,))
-        return next(iter(self.output_adapter.to_aws_lambda_event(results)))
+        result = next(iter(self.infer((inf_task,))))
+        return self.output_adapter.to_aws_lambda_event(result)
 
 
 def validate_inference_api_name(api_name: str):
@@ -459,7 +459,6 @@ def env_decorator(
 
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv(
-            bento_service_name=bento_service_cls.name(),
             pip_dependencies=pip_dependencies,
             auto_pip_dependencies=auto_pip_dependencies,
             requirements_txt_file=requirements_txt_file,
@@ -493,7 +492,7 @@ def ver_decorator(major, minor):
     while 'Major' and 'Minor' can be defined with '@ver' decorator
 
     >>>  from bentoml import ver, artifacts
-    >>>  from bentoml.artifact import PickleArtifact
+    >>>  from bentoml.artifact.common import PickleArtifact
     >>>
     >>>  @ver(major=1, minor=4)
     >>>  @artifacts([PickleArtifact('model')])
@@ -578,7 +577,7 @@ class BentoService:
 
     >>>  from bentoml import BentoService, env, api, artifacts
     >>>  from bentoml.adapters import DataframeInput
-    >>>  from bentoml.artifact import SklearnModelArtifact
+    >>>  from bentoml.frameworks.sklearn import SklearnModelArtifact
     >>>
     >>>  @artifacts([SklearnModelArtifact('clf')])
     >>>  @env(pip_dependencies=["scikit-learn"])
@@ -638,7 +637,7 @@ class BentoService:
         self._config_environments()
 
     def _config_environments(self):
-        self._env = self.__class__._env or BentoServiceEnv(self.name)
+        self._env = self.__class__._env or BentoServiceEnv()
 
         for api in self._inference_apis:
             self._env.add_pip_dependencies_if_missing(

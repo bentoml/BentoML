@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Tuple, Type
+from typing import Tuple, Type
 
 from bentoml.types import (
     ApiFuncReturnValue,
+    AwsLambdaEvent,
     HTTPResponse,
     InferenceResult,
     InferenceTask,
@@ -77,11 +78,11 @@ class DefaultOutput(BaseOutputAdapter):
 
         raise NotImplementedError()
 
-    def to_http_response(self, results) -> Iterable[HTTPResponse]:
-        return self.actual_adapter.to_http_response(results)
+    def to_http_response(self, result) -> HTTPResponse:
+        return self.actual_adapter.to_http_response(result)
 
-    def to_cli(self, results):
+    def to_cli(self, results) -> int:
         return self.actual_adapter.to_cli(results)
 
-    def to_aws_lambda_event(self, results):
-        return self.actual_adapter.to_aws_lambda_event(results)
+    def to_aws_lambda_event(self, result) -> AwsLambdaEvent:
+        return self.actual_adapter.to_aws_lambda_event(result)

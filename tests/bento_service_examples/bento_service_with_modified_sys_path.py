@@ -3,7 +3,7 @@ from os import path
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.artifact import SklearnModelArtifact
+from bentoml.frameworks.sklearn import SklearnModelArtifact
 
 sys.path.append(path.dirname(path.abspath(__file__)))
 

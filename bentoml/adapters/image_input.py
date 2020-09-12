@@ -59,12 +59,12 @@ class ImageInput(FileInput):
     Example:
 
         >>> from bentoml import BentoService, api, artifacts
-        >>> from bentoml.artifact import TensorflowArtifact
+        >>> from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
         >>> from bentoml.adapters import ImageInput
         >>>
         >>> CLASS_NAMES = ['cat', 'dog']
         >>>
-        >>> @artifacts([TensorflowArtifact('classifier')])
+        >>> @artifacts([TensorflowSavedModelArtifact('classifier')])
         >>> class PetClassification(BentoService):
         >>>     @api(input=ImageInput())
         >>>     def predict(self, image_ndarrays):

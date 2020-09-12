@@ -113,7 +113,6 @@ class BentoServiceEnv(object):
 
 
     Args:
-        bento_service_name: name of the BentoService name bundled with this Env
         pip_dependencies: list of pip_dependencies required, specified by package name
             or with specified version `{package_name}=={package_version}`
         auto_pip_dependencies: (Beta) whether to automatically find all the required
@@ -129,7 +128,6 @@ class BentoServiceEnv(object):
 
     def __init__(
         self,
-        bento_service_name: str,
         pip_dependencies: List[str] = None,
         auto_pip_dependencies: bool = False,
         requirements_txt_file: str = None,
@@ -141,7 +139,7 @@ class BentoServiceEnv(object):
         self._python_version = PYTHON_VERSION
 
         self._conda_env = CondaEnv(
-            "bentoml-" + bento_service_name,
+            CONDA_ENV_DEFAULT_NAME,
             self._python_version,
             conda_channels,
             conda_dependencies,

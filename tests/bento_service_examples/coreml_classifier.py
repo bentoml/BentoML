@@ -5,7 +5,7 @@ from coremltools.models import MLModel  # pylint: disable=import-error
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.artifact import CoreMLModelArtifact
+from bentoml.frameworks.coreml import CoreMLModelArtifact
 
 
 @bentoml.env(auto_pip_dependencies=True)

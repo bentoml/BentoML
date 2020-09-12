@@ -16,12 +16,7 @@ import io
 from typing import BinaryIO, Iterator, Sequence, Tuple
 
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_inputs
-from bentoml.types import (
-    AwsLambdaEvent,
-    HTTPRequest,
-    InferenceContext,
-    InferenceTask,
-)
+from bentoml.types import AwsLambdaEvent, HTTPRequest, InferenceTask
 
 ApiFuncArgs = Tuple[Sequence[BinaryIO], ...]
 MultiFileTask = InferenceTask[Tuple[BinaryIO, ...]]
@@ -45,7 +40,7 @@ class MultiFileInput(BaseInputAdapter):
         from PIL import Image
         import numpy as np
 
-        from bentoml.artifact import PytorchModelArtifact
+        from bentoml.framework.pytroch import PytorchModelArtifact
         from bentoml.adapters import MultiFileInput
 
         @bentoml.env(pip_dependencies=['torch', 'pillow', 'numpy'])
@@ -119,10 +114,7 @@ class MultiFileInput(BaseInputAdapter):
                     f"fields {self.input_names}",
                 )
             else:
-                task = InferenceTask(
-                    context=InferenceContext(http_headers=req.parsed_headers),
-                    data=files,
-                )
+                task = InferenceTask(http_headers=req.parsed_headers, data=files,)
         return task
 
     def from_aws_lambda_event(self, event: AwsLambdaEvent) -> MultiFileTask:
@@ -135,8 +127,7 @@ class MultiFileInput(BaseInputAdapter):
     def from_cli(self, cli_args: Sequence[str]) -> Iterator[MultiFileTask]:
         for inputs in parse_cli_inputs(cli_args, self.input_names):
             yield InferenceTask(
-                context=InferenceContext(cli_args=cli_args),
-                data=tuple(_pipe(i) for i in inputs),
+                cli_args=cli_args, data=tuple(_pipe(i) for i in inputs),
             )
 
     def extract_user_func_args(self, tasks: Sequence[MultiFileTask]) -> ApiFuncArgs:

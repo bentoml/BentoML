@@ -2,12 +2,7 @@ import json
 from typing import Sequence
 
 from bentoml.adapters.json_output import JsonSerializableOutput
-from bentoml.types import (
-    DefaultErrorContext,
-    InferenceContext,
-    InferenceResult,
-    InferenceTask,
-)
+from bentoml.types import InferenceError, InferenceResult, InferenceTask
 from bentoml.utils.dataframe_util import PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
 
 
@@ -73,15 +68,7 @@ class DataframeOutput(JsonSerializableOutput):
                 i += task.batch
             try:
                 result = df_to_json(result, self.output_orient)
-                rv.append(
-                    InferenceResult(
-                        context=InferenceContext(http_status=200,), data=result
-                    )
-                )
+                rv.append(InferenceResult(http_status=200, data=result))
             except Exception as e:  # pylint: disable=broad-except
-                rv.append(
-                    InferenceResult(
-                        context=DefaultErrorContext(err_msg=str(e), http_status=500,),
-                    )
-                )
+                rv.append(InferenceError(err_msg=str(e), http_status=500))
         return rv

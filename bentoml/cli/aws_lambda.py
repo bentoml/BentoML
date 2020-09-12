@@ -23,7 +23,6 @@ from bentoml.cli.click_utils import (
     _echo,
     CLI_COLOR_SUCCESS,
     parse_labels_callback,
-    validate_labels_query_callback,
 )
 from bentoml.cli.deployment import (
     _print_deployment_info,
@@ -286,8 +285,9 @@ def get_aws_lambda_sub_command():
         '-l',
         '--labels',
         type=click.STRING,
-        callback=validate_labels_query_callback,
-        help='List deployments matching the giving labels',
+        help="Label query to filter Lambda deployments, supports '=', '!=', 'IN', "
+        "'NotIn', 'Exists', and 'DoesNotExist'. (e.g. key1=value1, "
+        "key2!=value2, key3 In (value3, value3a), key4 DoesNotExist)",
     )
     @click.option(
         '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
@@ -298,13 +298,16 @@ def get_aws_lambda_sub_command():
         help='Ascending or descending order for list deployments',
     )
     @click.option(
-        '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
+        '-o',
+        '--output',
+        type=click.Choice(['json', 'yaml', 'table', 'wide']),
+        default='table',
     )
     def list_deployments(namespace, limit, labels, order_by, asc, output):
         yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list_lambda_deployments(
             limit=limit,
-            labels_query=labels,
+            labels=labels,
             namespace=namespace,
             order_by=order_by,
             ascending_order=asc,

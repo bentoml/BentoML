@@ -4129,6 +4129,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {bentoml.ListDeploymentsRequest.SORTABLE_COLUMN|null} [order_by] ListDeploymentsRequest order_by
          * @property {boolean|null} [ascending_order] ListDeploymentsRequest ascending_order
          * @property {string|null} [labels_query] ListDeploymentsRequest labels_query
+         * @property {bentoml.ILabelSelectors|null} [label_selectors] ListDeploymentsRequest label_selectors
          */
 
         /**
@@ -4203,6 +4204,14 @@ export const bentoml = $root.bentoml = (() => {
         ListDeploymentsRequest.prototype.labels_query = "";
 
         /**
+         * ListDeploymentsRequest label_selectors.
+         * @member {bentoml.ILabelSelectors|null|undefined} label_selectors
+         * @memberof bentoml.ListDeploymentsRequest
+         * @instance
+         */
+        ListDeploymentsRequest.prototype.label_selectors = null;
+
+        /**
          * Creates a new ListDeploymentsRequest instance using the specified properties.
          * @function create
          * @memberof bentoml.ListDeploymentsRequest
@@ -4240,6 +4249,8 @@ export const bentoml = $root.bentoml = (() => {
                 writer.uint32(/* id 6, wireType 0 =*/48).bool(message.ascending_order);
             if (message.labels_query != null && Object.hasOwnProperty.call(message, "labels_query"))
                 writer.uint32(/* id 7, wireType 2 =*/58).string(message.labels_query);
+            if (message.label_selectors != null && Object.hasOwnProperty.call(message, "label_selectors"))
+                $root.bentoml.LabelSelectors.encode(message.label_selectors, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
             return writer;
         };
 
@@ -4294,6 +4305,9 @@ export const bentoml = $root.bentoml = (() => {
                     break;
                 case 7:
                     message.labels_query = reader.string();
+                    break;
+                case 8:
+                    message.label_selectors = $root.bentoml.LabelSelectors.decode(reader, reader.uint32());
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -4364,6 +4378,11 @@ export const bentoml = $root.bentoml = (() => {
             if (message.labels_query != null && message.hasOwnProperty("labels_query"))
                 if (!$util.isString(message.labels_query))
                     return "labels_query: string expected";
+            if (message.label_selectors != null && message.hasOwnProperty("label_selectors")) {
+                let error = $root.bentoml.LabelSelectors.verify(message.label_selectors);
+                if (error)
+                    return "label_selectors." + error;
+            }
             return null;
         };
 
@@ -4421,6 +4440,11 @@ export const bentoml = $root.bentoml = (() => {
                 message.ascending_order = Boolean(object.ascending_order);
             if (object.labels_query != null)
                 message.labels_query = String(object.labels_query);
+            if (object.label_selectors != null) {
+                if (typeof object.label_selectors !== "object")
+                    throw TypeError(".bentoml.ListDeploymentsRequest.label_selectors: object expected");
+                message.label_selectors = $root.bentoml.LabelSelectors.fromObject(object.label_selectors);
+            }
             return message;
         };
 
@@ -4445,6 +4469,7 @@ export const bentoml = $root.bentoml = (() => {
                 object.order_by = options.enums === String ? "created_at" : 0;
                 object.ascending_order = false;
                 object.labels_query = "";
+                object.label_selectors = null;
             }
             if (message.namespace != null && message.hasOwnProperty("namespace"))
                 object.namespace = message.namespace;
@@ -4460,6 +4485,8 @@ export const bentoml = $root.bentoml = (() => {
                 object.ascending_order = message.ascending_order;
             if (message.labels_query != null && message.hasOwnProperty("labels_query"))
                 object.labels_query = message.labels_query;
+            if (message.label_selectors != null && message.hasOwnProperty("label_selectors"))
+                object.label_selectors = $root.bentoml.LabelSelectors.toObject(message.label_selectors, options);
             return object;
         };
 
@@ -5076,6 +5103,548 @@ export const bentoml = $root.bentoml = (() => {
         return Status;
     })();
 
+    bentoml.LabelSelectors = (function() {
+
+        /**
+         * Properties of a LabelSelectors.
+         * @memberof bentoml
+         * @interface ILabelSelectors
+         * @property {Object.<string,string>|null} [match_labels] LabelSelectors match_labels
+         * @property {Array.<bentoml.LabelSelectors.ILabelSelectorExpression>|null} [match_expressions] LabelSelectors match_expressions
+         */
+
+        /**
+         * Constructs a new LabelSelectors.
+         * @memberof bentoml
+         * @classdesc Represents a LabelSelectors.
+         * @implements ILabelSelectors
+         * @constructor
+         * @param {bentoml.ILabelSelectors=} [properties] Properties to set
+         */
+        function LabelSelectors(properties) {
+            this.match_labels = {};
+            this.match_expressions = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * LabelSelectors match_labels.
+         * @member {Object.<string,string>} match_labels
+         * @memberof bentoml.LabelSelectors
+         * @instance
+         */
+        LabelSelectors.prototype.match_labels = $util.emptyObject;
+
+        /**
+         * LabelSelectors match_expressions.
+         * @member {Array.<bentoml.LabelSelectors.ILabelSelectorExpression>} match_expressions
+         * @memberof bentoml.LabelSelectors
+         * @instance
+         */
+        LabelSelectors.prototype.match_expressions = $util.emptyArray;
+
+        /**
+         * Creates a new LabelSelectors instance using the specified properties.
+         * @function create
+         * @memberof bentoml.LabelSelectors
+         * @static
+         * @param {bentoml.ILabelSelectors=} [properties] Properties to set
+         * @returns {bentoml.LabelSelectors} LabelSelectors instance
+         */
+        LabelSelectors.create = function create(properties) {
+            return new LabelSelectors(properties);
+        };
+
+        /**
+         * Encodes the specified LabelSelectors message. Does not implicitly {@link bentoml.LabelSelectors.verify|verify} messages.
+         * @function encode
+         * @memberof bentoml.LabelSelectors
+         * @static
+         * @param {bentoml.ILabelSelectors} message LabelSelectors message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        LabelSelectors.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.match_labels != null && Object.hasOwnProperty.call(message, "match_labels"))
+                for (let keys = Object.keys(message.match_labels), i = 0; i < keys.length; ++i)
+                    writer.uint32(/* id 1, wireType 2 =*/10).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.match_labels[keys[i]]).ldelim();
+            if (message.match_expressions != null && message.match_expressions.length)
+                for (let i = 0; i < message.match_expressions.length; ++i)
+                    $root.bentoml.LabelSelectors.LabelSelectorExpression.encode(message.match_expressions[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified LabelSelectors message, length delimited. Does not implicitly {@link bentoml.LabelSelectors.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof bentoml.LabelSelectors
+         * @static
+         * @param {bentoml.ILabelSelectors} message LabelSelectors message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        LabelSelectors.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a LabelSelectors message from the specified reader or buffer.
+         * @function decode
+         * @memberof bentoml.LabelSelectors
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {bentoml.LabelSelectors} LabelSelectors
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        LabelSelectors.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.LabelSelectors(), key;
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    reader.skip().pos++;
+                    if (message.match_labels === $util.emptyObject)
+                        message.match_labels = {};
+                    key = reader.string();
+                    reader.pos++;
+                    message.match_labels[key] = reader.string();
+                    break;
+                case 2:
+                    if (!(message.match_expressions && message.match_expressions.length))
+                        message.match_expressions = [];
+                    message.match_expressions.push($root.bentoml.LabelSelectors.LabelSelectorExpression.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a LabelSelectors message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof bentoml.LabelSelectors
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {bentoml.LabelSelectors} LabelSelectors
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        LabelSelectors.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a LabelSelectors message.
+         * @function verify
+         * @memberof bentoml.LabelSelectors
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        LabelSelectors.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.match_labels != null && message.hasOwnProperty("match_labels")) {
+                if (!$util.isObject(message.match_labels))
+                    return "match_labels: object expected";
+                let key = Object.keys(message.match_labels);
+                for (let i = 0; i < key.length; ++i)
+                    if (!$util.isString(message.match_labels[key[i]]))
+                        return "match_labels: string{k:string} expected";
+            }
+            if (message.match_expressions != null && message.hasOwnProperty("match_expressions")) {
+                if (!Array.isArray(message.match_expressions))
+                    return "match_expressions: array expected";
+                for (let i = 0; i < message.match_expressions.length; ++i) {
+                    let error = $root.bentoml.LabelSelectors.LabelSelectorExpression.verify(message.match_expressions[i]);
+                    if (error)
+                        return "match_expressions." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a LabelSelectors message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof bentoml.LabelSelectors
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.LabelSelectors} LabelSelectors
+         */
+        LabelSelectors.fromObject = function fromObject(object) {
+            if (object instanceof $root.bentoml.LabelSelectors)
+                return object;
+            let message = new $root.bentoml.LabelSelectors();
+            if (object.match_labels) {
+                if (typeof object.match_labels !== "object")
+                    throw TypeError(".bentoml.LabelSelectors.match_labels: object expected");
+                message.match_labels = {};
+                for (let keys = Object.keys(object.match_labels), i = 0; i < keys.length; ++i)
+                    message.match_labels[keys[i]] = String(object.match_labels[keys[i]]);
+            }
+            if (object.match_expressions) {
+                if (!Array.isArray(object.match_expressions))
+                    throw TypeError(".bentoml.LabelSelectors.match_expressions: array expected");
+                message.match_expressions = [];
+                for (let i = 0; i < object.match_expressions.length; ++i) {
+                    if (typeof object.match_expressions[i] !== "object")
+                        throw TypeError(".bentoml.LabelSelectors.match_expressions: object expected");
+                    message.match_expressions[i] = $root.bentoml.LabelSelectors.LabelSelectorExpression.fromObject(object.match_expressions[i]);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a LabelSelectors message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof bentoml.LabelSelectors
+         * @static
+         * @param {bentoml.LabelSelectors} message LabelSelectors
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        LabelSelectors.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.match_expressions = [];
+            if (options.objects || options.defaults)
+                object.match_labels = {};
+            let keys2;
+            if (message.match_labels && (keys2 = Object.keys(message.match_labels)).length) {
+                object.match_labels = {};
+                for (let j = 0; j < keys2.length; ++j)
+                    object.match_labels[keys2[j]] = message.match_labels[keys2[j]];
+            }
+            if (message.match_expressions && message.match_expressions.length) {
+                object.match_expressions = [];
+                for (let j = 0; j < message.match_expressions.length; ++j)
+                    object.match_expressions[j] = $root.bentoml.LabelSelectors.LabelSelectorExpression.toObject(message.match_expressions[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this LabelSelectors to JSON.
+         * @function toJSON
+         * @memberof bentoml.LabelSelectors
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        LabelSelectors.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        LabelSelectors.LabelSelectorExpression = (function() {
+
+            /**
+             * Properties of a LabelSelectorExpression.
+             * @memberof bentoml.LabelSelectors
+             * @interface ILabelSelectorExpression
+             * @property {bentoml.LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE|null} [operator] LabelSelectorExpression operator
+             * @property {string|null} [key] LabelSelectorExpression key
+             * @property {Array.<string>|null} [values] LabelSelectorExpression values
+             */
+
+            /**
+             * Constructs a new LabelSelectorExpression.
+             * @memberof bentoml.LabelSelectors
+             * @classdesc Represents a LabelSelectorExpression.
+             * @implements ILabelSelectorExpression
+             * @constructor
+             * @param {bentoml.LabelSelectors.ILabelSelectorExpression=} [properties] Properties to set
+             */
+            function LabelSelectorExpression(properties) {
+                this.values = [];
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * LabelSelectorExpression operator.
+             * @member {bentoml.LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE} operator
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @instance
+             */
+            LabelSelectorExpression.prototype.operator = 0;
+
+            /**
+             * LabelSelectorExpression key.
+             * @member {string} key
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @instance
+             */
+            LabelSelectorExpression.prototype.key = "";
+
+            /**
+             * LabelSelectorExpression values.
+             * @member {Array.<string>} values
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @instance
+             */
+            LabelSelectorExpression.prototype.values = $util.emptyArray;
+
+            /**
+             * Creates a new LabelSelectorExpression instance using the specified properties.
+             * @function create
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @static
+             * @param {bentoml.LabelSelectors.ILabelSelectorExpression=} [properties] Properties to set
+             * @returns {bentoml.LabelSelectors.LabelSelectorExpression} LabelSelectorExpression instance
+             */
+            LabelSelectorExpression.create = function create(properties) {
+                return new LabelSelectorExpression(properties);
+            };
+
+            /**
+             * Encodes the specified LabelSelectorExpression message. Does not implicitly {@link bentoml.LabelSelectors.LabelSelectorExpression.verify|verify} messages.
+             * @function encode
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @static
+             * @param {bentoml.LabelSelectors.ILabelSelectorExpression} message LabelSelectorExpression message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            LabelSelectorExpression.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.operator != null && Object.hasOwnProperty.call(message, "operator"))
+                    writer.uint32(/* id 1, wireType 0 =*/8).int32(message.operator);
+                if (message.key != null && Object.hasOwnProperty.call(message, "key"))
+                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.key);
+                if (message.values != null && message.values.length)
+                    for (let i = 0; i < message.values.length; ++i)
+                        writer.uint32(/* id 3, wireType 2 =*/26).string(message.values[i]);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified LabelSelectorExpression message, length delimited. Does not implicitly {@link bentoml.LabelSelectors.LabelSelectorExpression.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @static
+             * @param {bentoml.LabelSelectors.ILabelSelectorExpression} message LabelSelectorExpression message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            LabelSelectorExpression.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a LabelSelectorExpression message from the specified reader or buffer.
+             * @function decode
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {bentoml.LabelSelectors.LabelSelectorExpression} LabelSelectorExpression
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            LabelSelectorExpression.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.LabelSelectors.LabelSelectorExpression();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.operator = reader.int32();
+                        break;
+                    case 2:
+                        message.key = reader.string();
+                        break;
+                    case 3:
+                        if (!(message.values && message.values.length))
+                            message.values = [];
+                        message.values.push(reader.string());
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a LabelSelectorExpression message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {bentoml.LabelSelectors.LabelSelectorExpression} LabelSelectorExpression
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            LabelSelectorExpression.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a LabelSelectorExpression message.
+             * @function verify
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            LabelSelectorExpression.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.operator != null && message.hasOwnProperty("operator"))
+                    switch (message.operator) {
+                    default:
+                        return "operator: enum value expected";
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                        break;
+                    }
+                if (message.key != null && message.hasOwnProperty("key"))
+                    if (!$util.isString(message.key))
+                        return "key: string expected";
+                if (message.values != null && message.hasOwnProperty("values")) {
+                    if (!Array.isArray(message.values))
+                        return "values: array expected";
+                    for (let i = 0; i < message.values.length; ++i)
+                        if (!$util.isString(message.values[i]))
+                            return "values: string[] expected";
+                }
+                return null;
+            };
+
+            /**
+             * Creates a LabelSelectorExpression message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {bentoml.LabelSelectors.LabelSelectorExpression} LabelSelectorExpression
+             */
+            LabelSelectorExpression.fromObject = function fromObject(object) {
+                if (object instanceof $root.bentoml.LabelSelectors.LabelSelectorExpression)
+                    return object;
+                let message = new $root.bentoml.LabelSelectors.LabelSelectorExpression();
+                switch (object.operator) {
+                case "In":
+                case 0:
+                    message.operator = 0;
+                    break;
+                case "NotIn":
+                case 1:
+                    message.operator = 1;
+                    break;
+                case "Exists":
+                case 2:
+                    message.operator = 2;
+                    break;
+                case "DoesNotExist":
+                case 3:
+                    message.operator = 3;
+                    break;
+                }
+                if (object.key != null)
+                    message.key = String(object.key);
+                if (object.values) {
+                    if (!Array.isArray(object.values))
+                        throw TypeError(".bentoml.LabelSelectors.LabelSelectorExpression.values: array expected");
+                    message.values = [];
+                    for (let i = 0; i < object.values.length; ++i)
+                        message.values[i] = String(object.values[i]);
+                }
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a LabelSelectorExpression message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @static
+             * @param {bentoml.LabelSelectors.LabelSelectorExpression} message LabelSelectorExpression
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            LabelSelectorExpression.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.arrays || options.defaults)
+                    object.values = [];
+                if (options.defaults) {
+                    object.operator = options.enums === String ? "In" : 0;
+                    object.key = "";
+                }
+                if (message.operator != null && message.hasOwnProperty("operator"))
+                    object.operator = options.enums === String ? $root.bentoml.LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE[message.operator] : message.operator;
+                if (message.key != null && message.hasOwnProperty("key"))
+                    object.key = message.key;
+                if (message.values && message.values.length) {
+                    object.values = [];
+                    for (let j = 0; j < message.values.length; ++j)
+                        object.values[j] = message.values[j];
+                }
+                return object;
+            };
+
+            /**
+             * Converts this LabelSelectorExpression to JSON.
+             * @function toJSON
+             * @memberof bentoml.LabelSelectors.LabelSelectorExpression
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            LabelSelectorExpression.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            /**
+             * OPERATOR_TYPE enum.
+             * @name bentoml.LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE
+             * @enum {number}
+             * @property {number} In=0 In value
+             * @property {number} NotIn=1 NotIn value
+             * @property {number} Exists=2 Exists value
+             * @property {number} DoesNotExist=3 DoesNotExist value
+             */
+            LabelSelectorExpression.OPERATOR_TYPE = (function() {
+                const valuesById = {}, values = Object.create(valuesById);
+                values[valuesById[0] = "In"] = 0;
+                values[valuesById[1] = "NotIn"] = 1;
+                values[valuesById[2] = "Exists"] = 2;
+                values[valuesById[3] = "DoesNotExist"] = 3;
+                return values;
+            })();
+
+            return LabelSelectorExpression;
+        })();
+
+        return LabelSelectors;
+    })();
+
     bentoml.BentoUri = (function() {
 
         /**
@@ -5397,6 +5966,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {bentoml.BentoServiceMetadata.IBentoServiceEnv|null} [env] BentoServiceMetadata env
          * @property {Array.<bentoml.BentoServiceMetadata.IBentoArtifact>|null} [artifacts] BentoServiceMetadata artifacts
          * @property {Array.<bentoml.BentoServiceMetadata.IBentoServiceApi>|null} [apis] BentoServiceMetadata apis
+         * @property {Object.<string,string>|null} [labels] BentoServiceMetadata labels
          */
 
         /**
@@ -5410,6 +5980,7 @@ export const bentoml = $root.bentoml = (() => {
         function BentoServiceMetadata(properties) {
             this.artifacts = [];
             this.apis = [];
+            this.labels = {};
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -5465,6 +6036,14 @@ export const bentoml = $root.bentoml = (() => {
         BentoServiceMetadata.prototype.apis = $util.emptyArray;
 
         /**
+         * BentoServiceMetadata labels.
+         * @member {Object.<string,string>} labels
+         * @memberof bentoml.BentoServiceMetadata
+         * @instance
+         */
+        BentoServiceMetadata.prototype.labels = $util.emptyObject;
+
+        /**
          * Creates a new BentoServiceMetadata instance using the specified properties.
          * @function create
          * @memberof bentoml.BentoServiceMetadata
@@ -5502,6 +6081,9 @@ export const bentoml = $root.bentoml = (() => {
             if (message.apis != null && message.apis.length)
                 for (let i = 0; i < message.apis.length; ++i)
                     $root.bentoml.BentoServiceMetadata.BentoServiceApi.encode(message.apis[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+            if (message.labels != null && Object.hasOwnProperty.call(message, "labels"))
+                for (let keys = Object.keys(message.labels), i = 0; i < keys.length; ++i)
+                    writer.uint32(/* id 7, wireType 2 =*/58).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.labels[keys[i]]).ldelim();
             return writer;
         };
 
@@ -5532,7 +6114,7 @@ export const bentoml = $root.bentoml = (() => {
         BentoServiceMetadata.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.BentoServiceMetadata(), key;
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 switch (tag >>> 3) {
@@ -5557,6 +6139,14 @@ export const bentoml = $root.bentoml = (() => {
                     if (!(message.apis && message.apis.length))
                         message.apis = [];
                     message.apis.push($root.bentoml.BentoServiceMetadata.BentoServiceApi.decode(reader, reader.uint32()));
+                    break;
+                case 7:
+                    reader.skip().pos++;
+                    if (message.labels === $util.emptyObject)
+                        message.labels = {};
+                    key = reader.string();
+                    reader.pos++;
+                    message.labels[key] = reader.string();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -5627,6 +6217,14 @@ export const bentoml = $root.bentoml = (() => {
                         return "apis." + error;
                 }
             }
+            if (message.labels != null && message.hasOwnProperty("labels")) {
+                if (!$util.isObject(message.labels))
+                    return "labels: object expected";
+                let key = Object.keys(message.labels);
+                for (let i = 0; i < key.length; ++i)
+                    if (!$util.isString(message.labels[key[i]]))
+                        return "labels: string{k:string} expected";
+            }
             return null;
         };
 
@@ -5676,6 +6274,13 @@ export const bentoml = $root.bentoml = (() => {
                     message.apis[i] = $root.bentoml.BentoServiceMetadata.BentoServiceApi.fromObject(object.apis[i]);
                 }
             }
+            if (object.labels) {
+                if (typeof object.labels !== "object")
+                    throw TypeError(".bentoml.BentoServiceMetadata.labels: object expected");
+                message.labels = {};
+                for (let keys = Object.keys(object.labels), i = 0; i < keys.length; ++i)
+                    message.labels[keys[i]] = String(object.labels[keys[i]]);
+            }
             return message;
         };
 
@@ -5696,6 +6301,8 @@ export const bentoml = $root.bentoml = (() => {
                 object.artifacts = [];
                 object.apis = [];
             }
+            if (options.objects || options.defaults)
+                object.labels = {};
             if (options.defaults) {
                 object.name = "";
                 object.version = "";
@@ -5719,6 +6326,12 @@ export const bentoml = $root.bentoml = (() => {
                 object.apis = [];
                 for (let j = 0; j < message.apis.length; ++j)
                     object.apis[j] = $root.bentoml.BentoServiceMetadata.BentoServiceApi.toObject(message.apis[j], options);
+            }
+            let keys2;
+            if (message.labels && (keys2 = Object.keys(message.labels)).length) {
+                object.labels = {};
+                for (let j = 0; j < keys2.length; ++j)
+                    object.labels[keys2[j]] = message.labels[keys2[j]];
             }
             return object;
         };
@@ -8902,6 +9515,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {number|null} [limit] ListBentoRequest limit
          * @property {bentoml.ListBentoRequest.SORTABLE_COLUMN|null} [order_by] ListBentoRequest order_by
          * @property {boolean|null} [ascending_order] ListBentoRequest ascending_order
+         * @property {bentoml.ILabelSelectors|null} [label_selectors] ListBentoRequest label_selectors
          */
 
         /**
@@ -8960,6 +9574,14 @@ export const bentoml = $root.bentoml = (() => {
         ListBentoRequest.prototype.ascending_order = false;
 
         /**
+         * ListBentoRequest label_selectors.
+         * @member {bentoml.ILabelSelectors|null|undefined} label_selectors
+         * @memberof bentoml.ListBentoRequest
+         * @instance
+         */
+        ListBentoRequest.prototype.label_selectors = null;
+
+        /**
          * Creates a new ListBentoRequest instance using the specified properties.
          * @function create
          * @memberof bentoml.ListBentoRequest
@@ -8993,6 +9615,8 @@ export const bentoml = $root.bentoml = (() => {
                 writer.uint32(/* id 4, wireType 0 =*/32).int32(message.order_by);
             if (message.ascending_order != null && Object.hasOwnProperty.call(message, "ascending_order"))
                 writer.uint32(/* id 5, wireType 0 =*/40).bool(message.ascending_order);
+            if (message.label_selectors != null && Object.hasOwnProperty.call(message, "label_selectors"))
+                $root.bentoml.LabelSelectors.encode(message.label_selectors, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
             return writer;
         };
 
@@ -9041,6 +9665,9 @@ export const bentoml = $root.bentoml = (() => {
                     break;
                 case 5:
                     message.ascending_order = reader.bool();
+                    break;
+                case 6:
+                    message.label_selectors = $root.bentoml.LabelSelectors.decode(reader, reader.uint32());
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -9097,6 +9724,11 @@ export const bentoml = $root.bentoml = (() => {
             if (message.ascending_order != null && message.hasOwnProperty("ascending_order"))
                 if (typeof message.ascending_order !== "boolean")
                     return "ascending_order: boolean expected";
+            if (message.label_selectors != null && message.hasOwnProperty("label_selectors")) {
+                let error = $root.bentoml.LabelSelectors.verify(message.label_selectors);
+                if (error)
+                    return "label_selectors." + error;
+            }
             return null;
         };
 
@@ -9130,6 +9762,11 @@ export const bentoml = $root.bentoml = (() => {
             }
             if (object.ascending_order != null)
                 message.ascending_order = Boolean(object.ascending_order);
+            if (object.label_selectors != null) {
+                if (typeof object.label_selectors !== "object")
+                    throw TypeError(".bentoml.ListBentoRequest.label_selectors: object expected");
+                message.label_selectors = $root.bentoml.LabelSelectors.fromObject(object.label_selectors);
+            }
             return message;
         };
 
@@ -9152,6 +9789,7 @@ export const bentoml = $root.bentoml = (() => {
                 object.limit = 0;
                 object.order_by = options.enums === String ? "created_at" : 0;
                 object.ascending_order = false;
+                object.label_selectors = null;
             }
             if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 object.bento_name = message.bento_name;
@@ -9163,6 +9801,8 @@ export const bentoml = $root.bentoml = (() => {
                 object.order_by = options.enums === String ? $root.bentoml.ListBentoRequest.SORTABLE_COLUMN[message.order_by] : message.order_by;
             if (message.ascending_order != null && message.hasOwnProperty("ascending_order"))
                 object.ascending_order = message.ascending_order;
+            if (message.label_selectors != null && message.hasOwnProperty("label_selectors"))
+                object.label_selectors = $root.bentoml.LabelSelectors.toObject(message.label_selectors, options);
             return object;
         };
 

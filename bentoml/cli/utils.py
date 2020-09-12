@@ -129,13 +129,7 @@ def _print_deployment_info(deployment, output_type):
 def _format_labels_for_print(labels):
     if not labels:
         return None
-    result = []
-    for label_key in labels:
-        result.append(
-            '{label_key}:{label_value}'.format(
-                label_key=label_key, label_value=labels[label_key]
-            )
-        )
+    result = [f'{label_key}:{labels[label_key]}' for label_key in labels]
     return '\n'.join(result)
 
 
@@ -152,18 +146,29 @@ def human_friendly_age_from_datetime(dt, detailed=False, max_unit=2):
     return humanfriendly.format_timespan(datetime.utcnow() - dt, detailed, max_unit)
 
 
-def _print_deployments_table(deployments):
+def _print_deployments_table(deployments, wide=False):
     from bentoml.yatai.proto.deployment_pb2 import DeploymentState, DeploymentSpec
 
     table = []
-    headers = [
-        'NAME',
-        'NAMESPACE',
-        'PLATFORM',
-        'BENTO_SERVICE',
-        'STATUS',
-        'AGE',
-    ]
+    if wide:
+        headers = [
+            'NAME',
+            'NAMESPACE',
+            'PLATFORM',
+            'BENTO_SERVICE',
+            'STATUS',
+            'AGE',
+            'LABELS',
+        ]
+    else:
+        headers = [
+            'NAME',
+            'NAMESPACE',
+            'PLATFORM',
+            'BENTO_SERVICE',
+            'STATUS',
+            'AGE',
+        ]
     for deployment in deployments:
         row = [
             deployment.name,
@@ -177,6 +182,8 @@ def _print_deployments_table(deployments):
             .replace('_', ' '),
             _format_deployment_age_for_print(deployment),
         ]
+        if wide:
+            row.append(_format_labels_for_print(deployment.labels))
         table.append(row)
     table_display = tabulate(table, headers, tablefmt='plain')
     _echo(table_display)
@@ -185,6 +192,8 @@ def _print_deployments_table(deployments):
 def _print_deployments_info(deployments, output_type):
     if output_type == 'table':
         _print_deployments_table(deployments)
+    elif output_type == 'wide':
+        _print_deployments_table(deployments, wide=True)
     else:
         for deployment in deployments:
             _print_deployment_info(deployment, output_type)

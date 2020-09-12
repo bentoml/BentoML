@@ -1712,6 +1712,9 @@ export namespace bentoml {
 
         /** ListDeploymentsRequest labels_query */
         labels_query?: (string|null);
+
+        /** ListDeploymentsRequest label_selectors */
+        label_selectors?: (bentoml.ILabelSelectors|null);
     }
 
     /** Represents a ListDeploymentsRequest. */
@@ -1743,6 +1746,9 @@ export namespace bentoml {
 
         /** ListDeploymentsRequest labels_query. */
         public labels_query: string;
+
+        /** ListDeploymentsRequest label_selectors. */
+        public label_selectors?: (bentoml.ILabelSelectors|null);
 
         /**
          * Creates a new ListDeploymentsRequest instance using the specified properties.
@@ -2041,6 +2047,218 @@ export namespace bentoml {
         }
     }
 
+    /** Properties of a LabelSelectors. */
+    interface ILabelSelectors {
+
+        /** LabelSelectors match_labels */
+        match_labels?: ({ [k: string]: string }|null);
+
+        /** LabelSelectors match_expressions */
+        match_expressions?: (bentoml.LabelSelectors.ILabelSelectorExpression[]|null);
+    }
+
+    /** Represents a LabelSelectors. */
+    class LabelSelectors implements ILabelSelectors {
+
+        /**
+         * Constructs a new LabelSelectors.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: bentoml.ILabelSelectors);
+
+        /** LabelSelectors match_labels. */
+        public match_labels: { [k: string]: string };
+
+        /** LabelSelectors match_expressions. */
+        public match_expressions: bentoml.LabelSelectors.ILabelSelectorExpression[];
+
+        /**
+         * Creates a new LabelSelectors instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns LabelSelectors instance
+         */
+        public static create(properties?: bentoml.ILabelSelectors): bentoml.LabelSelectors;
+
+        /**
+         * Encodes the specified LabelSelectors message. Does not implicitly {@link bentoml.LabelSelectors.verify|verify} messages.
+         * @param message LabelSelectors message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: bentoml.ILabelSelectors, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified LabelSelectors message, length delimited. Does not implicitly {@link bentoml.LabelSelectors.verify|verify} messages.
+         * @param message LabelSelectors message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: bentoml.ILabelSelectors, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a LabelSelectors message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns LabelSelectors
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.LabelSelectors;
+
+        /**
+         * Decodes a LabelSelectors message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns LabelSelectors
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.LabelSelectors;
+
+        /**
+         * Verifies a LabelSelectors message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a LabelSelectors message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns LabelSelectors
+         */
+        public static fromObject(object: { [k: string]: any }): bentoml.LabelSelectors;
+
+        /**
+         * Creates a plain object from a LabelSelectors message. Also converts values to other types if specified.
+         * @param message LabelSelectors
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: bentoml.LabelSelectors, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this LabelSelectors to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+    }
+
+    namespace LabelSelectors {
+
+        /** Properties of a LabelSelectorExpression. */
+        interface ILabelSelectorExpression {
+
+            /** LabelSelectorExpression operator */
+            operator?: (bentoml.LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE|null);
+
+            /** LabelSelectorExpression key */
+            key?: (string|null);
+
+            /** LabelSelectorExpression values */
+            values?: (string[]|null);
+        }
+
+        /** Represents a LabelSelectorExpression. */
+        class LabelSelectorExpression implements ILabelSelectorExpression {
+
+            /**
+             * Constructs a new LabelSelectorExpression.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: bentoml.LabelSelectors.ILabelSelectorExpression);
+
+            /** LabelSelectorExpression operator. */
+            public operator: bentoml.LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE;
+
+            /** LabelSelectorExpression key. */
+            public key: string;
+
+            /** LabelSelectorExpression values. */
+            public values: string[];
+
+            /**
+             * Creates a new LabelSelectorExpression instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns LabelSelectorExpression instance
+             */
+            public static create(properties?: bentoml.LabelSelectors.ILabelSelectorExpression): bentoml.LabelSelectors.LabelSelectorExpression;
+
+            /**
+             * Encodes the specified LabelSelectorExpression message. Does not implicitly {@link bentoml.LabelSelectors.LabelSelectorExpression.verify|verify} messages.
+             * @param message LabelSelectorExpression message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: bentoml.LabelSelectors.ILabelSelectorExpression, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified LabelSelectorExpression message, length delimited. Does not implicitly {@link bentoml.LabelSelectors.LabelSelectorExpression.verify|verify} messages.
+             * @param message LabelSelectorExpression message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: bentoml.LabelSelectors.ILabelSelectorExpression, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a LabelSelectorExpression message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns LabelSelectorExpression
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.LabelSelectors.LabelSelectorExpression;
+
+            /**
+             * Decodes a LabelSelectorExpression message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns LabelSelectorExpression
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.LabelSelectors.LabelSelectorExpression;
+
+            /**
+             * Verifies a LabelSelectorExpression message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a LabelSelectorExpression message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns LabelSelectorExpression
+             */
+            public static fromObject(object: { [k: string]: any }): bentoml.LabelSelectors.LabelSelectorExpression;
+
+            /**
+             * Creates a plain object from a LabelSelectorExpression message. Also converts values to other types if specified.
+             * @param message LabelSelectorExpression
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: bentoml.LabelSelectors.LabelSelectorExpression, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this LabelSelectorExpression to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        namespace LabelSelectorExpression {
+
+            /** OPERATOR_TYPE enum. */
+            enum OPERATOR_TYPE {
+                In = 0,
+                NotIn = 1,
+                Exists = 2,
+                DoesNotExist = 3
+            }
+        }
+    }
+
     /** Properties of a BentoUri. */
     interface IBentoUri {
 
@@ -2182,6 +2400,9 @@ export namespace bentoml {
 
         /** BentoServiceMetadata apis */
         apis?: (bentoml.BentoServiceMetadata.IBentoServiceApi[]|null);
+
+        /** BentoServiceMetadata labels */
+        labels?: ({ [k: string]: string }|null);
     }
 
     /** Represents a BentoServiceMetadata. */
@@ -2210,6 +2431,9 @@ export namespace bentoml {
 
         /** BentoServiceMetadata apis. */
         public apis: bentoml.BentoServiceMetadata.IBentoServiceApi[];
+
+        /** BentoServiceMetadata labels. */
+        public labels: { [k: string]: string };
 
         /**
          * Creates a new BentoServiceMetadata instance using the specified properties.
@@ -3646,6 +3870,9 @@ export namespace bentoml {
 
         /** ListBentoRequest ascending_order */
         ascending_order?: (boolean|null);
+
+        /** ListBentoRequest label_selectors */
+        label_selectors?: (bentoml.ILabelSelectors|null);
     }
 
     /** Represents a ListBentoRequest. */
@@ -3671,6 +3898,9 @@ export namespace bentoml {
 
         /** ListBentoRequest ascending_order. */
         public ascending_order: boolean;
+
+        /** ListBentoRequest label_selectors. */
+        public label_selectors?: (bentoml.ILabelSelectors|null);
 
         /**
          * Creates a new ListBentoRequest instance using the specified properties.

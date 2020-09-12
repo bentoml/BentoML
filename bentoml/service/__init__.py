@@ -538,7 +538,7 @@ def validate_version_str(version_str):
         raise InvalidArgument('BentoService version can not be set to "latest"')
 
 
-def save(bento_service, base_path=None, version=None):
+def save(bento_service, base_path=None, version=None, labels=None):
     """
     Save and register the given BentoService via BentoML's built-in model management
     system. BentoML by default keeps track of all the SavedBundle's files and metadata
@@ -561,7 +561,7 @@ def save(bento_service, base_path=None, version=None):
     else:
         yatai_client = YataiClient()
 
-    return yatai_client.repository.upload(bento_service, version)
+    return yatai_client.repository.upload(bento_service, version, labels)
 
 
 class BentoService:
@@ -865,7 +865,7 @@ class BentoService:
 
         return self._bento_service_version
 
-    def save(self, base_path=None, version=None):
+    def save(self, base_path=None, version=None, labels=None):
         """
         Save and register this BentoService via BentoML's built-in model management
         system. BentoML by default keeps track of all the SavedBundle's files and
@@ -875,9 +875,10 @@ class BentoService:
 
         :param base_path: optional - override repository base path
         :param version: optional - save with version override
+        :param labels: optional - labels dictory
         :return: saved_path: file path to where the BentoService is saved
         """
-        return save(self, base_path, version)
+        return save(self, base_path, version, labels)
 
     def save_to_dir(self, path, version=None):
         """Save this BentoService along with all its artifacts, source code and

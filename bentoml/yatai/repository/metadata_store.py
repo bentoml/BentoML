@@ -32,6 +32,13 @@ from google.protobuf.json_format import ParseDict
 from bentoml.utils import ProtoMessageToDict
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.yatai.db import Base, create_session
+from bentoml.yatai.label_store import (
+    filter_label_query,
+    get_labels,
+    list_labels,
+    add_or_update_labels,
+    RESOURCE_TYPE,
+)
 from bentoml.yatai.proto.repository_pb2 import (
     UploadStatus,
     BentoUri,
@@ -58,7 +65,7 @@ class Bento(Base):
     # Storage URI for this Bento
     uri = Column(String, nullable=False)
 
-    # Name is is required for PostgreSQL and any future supported database which
+    # Name is required for PostgreSQL and any future supported database which
     # requires an explicitly named type, or an explicitly named constraint in order to
     # generate the type and/or a table that uses it.
     uri_type = Column(
@@ -80,7 +87,7 @@ class Bento(Base):
     deleted = Column(Boolean, default=False)
 
 
-def _bento_orm_obj_to_pb(bento_obj):
+def _bento_orm_obj_to_pb(bento_obj, labels=None):
     # Backwards compatible support loading saved bundle created before 0.8.0
     if (
         'apis' in bento_obj.bento_service_metadata
@@ -102,6 +109,8 @@ def _bento_orm_obj_to_pb(bento_obj):
     bento_uri = BentoUri(
         uri=bento_obj.uri, type=BentoUri.StorageType.Value(bento_obj.uri_type)
     )
+    if labels is not None:
+        bento_service_metadata_pb.labels.update(labels)
     return BentoPB(
         name=bento_obj.name,
         version=bento_obj.version,
@@ -134,7 +143,8 @@ class BentoMetadataStore(object):
 
             query_result = query.all()
             if len(query_result) == 1:
-                return _bento_orm_obj_to_pb(query_result[0])
+                labels = get_labels(sess, RESOURCE_TYPE.bento, query_result[0].id)
+                return _bento_orm_obj_to_pb(query_result[0], labels)
             else:
                 return None
 
@@ -152,7 +162,8 @@ class BentoMetadataStore(object):
                 if bento_obj.deleted:
                     # bento has been marked as deleted
                     return None
-                return _bento_orm_obj_to_pb(bento_obj)
+                labels = get_labels(sess, RESOURCE_TYPE.bento, bento_obj.id)
+                return _bento_orm_obj_to_pb(bento_obj, labels)
             except NoResultFound:
                 return None
 
@@ -166,9 +177,17 @@ class BentoMetadataStore(object):
                     .filter_by(name=bento_name, version=bento_version, deleted=False)
                     .one()
                 )
-                bento_obj.bento_service_metadata = ProtoMessageToDict(
-                    bento_service_metadata_pb
-                )
+                service_metadata = ProtoMessageToDict(bento_service_metadata_pb)
+                bento_obj.bento_service_metadata = service_metadata
+                if service_metadata['labels']:
+                    bento = (
+                        sess.query(Bento)
+                        .filter_by(name=bento_name, version=bento_version)
+                        .one()
+                    )
+                    add_or_update_labels(
+                        sess, RESOURCE_TYPE.bento, bento.id, service_metadata['labels']
+                    )
             except NoResultFound:
                 raise YataiRepositoryException(
                     "Bento %s:%s is not found in repository" % bento_name, bento_version
@@ -216,6 +235,7 @@ class BentoMetadataStore(object):
         bento_name=None,
         offset=None,
         limit=None,
+        label_selectors=None,
         order_by=ListBentoRequest.created_at,
         ascending_order=False,
     ):
@@ -231,6 +251,11 @@ class BentoMetadataStore(object):
                 # filter_by apply filtering criterion to a copy of the query
                 query = query.filter_by(name=bento_name)
             query = query.filter_by(deleted=False)
+            if label_selectors.match_labels or label_selectors.match_expressions:
+                bento_ids = filter_label_query(
+                    sess, RESOURCE_TYPE.bento, label_selectors
+                )
+                query = query.filter(Bento.id.in_(bento_ids))
 
             # We are not defaulting limit to 200 in the signature,
             # because protobuf will pass 0 as value
@@ -242,5 +267,10 @@ class BentoMetadataStore(object):
                 query = query.offset(offset)
 
             query_result = query.all()
-            result = [_bento_orm_obj_to_pb(bento_obj) for bento_obj in query_result]
+            bento_ids = [bento_obj.id for bento_obj in query_result]
+            labels = list_labels(sess, RESOURCE_TYPE.bento, bento_ids)
+            result = [
+                _bento_orm_obj_to_pb(bento_obj, labels.get(str(bento_obj.id)))
+                for bento_obj in query_result
+            ]
             return result

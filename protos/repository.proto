@@ -5,6 +5,7 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 import "status.proto";
+import "label_selectors.proto";
 
 
 message BentoUri {
@@ -54,6 +55,8 @@ message BentoServiceMetadata {
   BentoServiceEnv env = 4;
   repeated BentoArtifact artifacts = 5;
   repeated BentoServiceApi apis = 6;
+  // Optional, used for managing BentoService
+  map<string, string> labels = 7;
 }
 
 message Bento {
@@ -128,6 +131,7 @@ message ListBentoRequest {
   int32 limit = 3;
   SORTABLE_COLUMN order_by = 4;
   bool ascending_order = 5;
+  LabelSelectors label_selectors = 6;
 }
 
 message ListBentoResponse {

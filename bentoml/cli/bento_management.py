@@ -20,7 +20,11 @@ from bentoml.cli.click_utils import (
     _echo,
     parse_bento_tag_list_callback,
 )
-from bentoml.cli.utils import human_friendly_age_from_datetime, get_default_yatai_client
+from bentoml.cli.utils import (
+    human_friendly_age_from_datetime,
+    get_default_yatai_client,
+    _format_labels_for_print,
+)
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.saved_bundle import safe_retrieve
 from bentoml.exceptions import CLIException
@@ -41,9 +45,9 @@ def _print_bento_info(bento, output_type):
 def _print_bento_table(bentos, wide=False):
     table = []
     if wide:
-        headers = ['BENTO_SERVICE', 'CREATED_AT', 'APIS', 'ARTIFACTS', 'URI']
+        headers = ['BENTO_SERVICE', 'CREATED_AT', 'APIS', 'ARTIFACTS', 'LABELS', 'URI']
     else:
-        headers = ['BENTO_SERVICE', 'AGE', 'APIS', 'ARTIFACTS']
+        headers = ['BENTO_SERVICE', 'AGE', 'APIS', 'ARTIFACTS', 'LABELS']
 
     for bento in bentos:
         artifacts = [
@@ -67,6 +71,7 @@ def _print_bento_table(bentos, wide=False):
             created_at,
             ', '.join(apis),
             ', '.join(artifacts),
+            _format_labels_for_print(bento.bento_service_metadata.labels),
         ]
         if wide:
             row.append(bento.uri.uri)
@@ -96,9 +101,16 @@ def add_bento_sub_command(cli):
     @click.option('--ascending-order', is_flag=True)
     @click.option('--print-location', is_flag=True)
     @click.option(
+        '--labels',
+        type=click.STRING,
+        help="Label query to filter BentoServices, supports '=', '!=', 'IN', 'NotIn', "
+        "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
+        "In (value3, value3a), key4 DoesNotExist)",
+    )
+    @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table', 'wide'])
     )
-    def get(bento, limit, ascending_order, print_location, output):
+    def get(bento, limit, ascending_order, print_location, labels, output):
         if ':' in bento:
             name, version = bento.split(':')
         else:
@@ -121,7 +133,10 @@ def add_bento_sub_command(cli):
         elif name:
             output = output or 'table'
             list_bento_versions_result = yatai_client.repository.list(
-                bento_name=name, limit=limit, ascending_order=ascending_order
+                bento_name=name,
+                limit=limit,
+                labels=labels,
+                ascending_order=ascending_order,
             )
             if (
                 list_bento_versions_result.status.status_code
@@ -142,6 +157,13 @@ def add_bento_sub_command(cli):
         '--offset', type=click.INT, help='How many BentoServices will be skipped'
     )
     @click.option(
+        '--labels',
+        type=click.STRING,
+        help="Label query to filter BentoServices, supports '=', '!=', 'IN', 'NotIn', "
+        "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
+        "In (value3, value3a), key4 DoesNotExist)",
+    )
+    @click.option(
         '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
     )
     @click.option('--ascending-order', is_flag=True)
@@ -151,11 +173,12 @@ def add_bento_sub_command(cli):
         type=click.Choice(['json', 'yaml', 'table', 'wide']),
         default='table',
     )
-    def list_bentos(limit, offset, order_by, ascending_order, output):
+    def list_bentos(limit, offset, labels, order_by, ascending_order, output):
         yatai_client = get_default_yatai_client()
         list_bentos_result = yatai_client.repository.list(
             limit=limit,
             offset=offset,
+            labels=labels,
             order_by=order_by,
             ascending_order=ascending_order,
         )

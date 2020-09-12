@@ -19,6 +19,7 @@ import logging
 import time
 
 from bentoml.utils import status_pb_to_error_code_and_message
+from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentRequest,
@@ -52,7 +53,7 @@ class DeploymentAPIClient:
         self,
         limit=None,
         offset=None,
-        labels_query=None,
+        labels=None,
         namespace=None,
         is_all_namespaces=False,
         operator=None,
@@ -76,17 +77,19 @@ class DeploymentAPIClient:
             else:
                 raise BentoMLException(f'Unrecognized operator {operator}')
 
-        return self.yatai_service.ListDeployments(
-            ListDeploymentsRequest(
-                limit=limit,
-                offset=offset,
-                labels_query=labels_query,
-                namespace=namespace,
-                operator=operator,
-                order_by=order_by,
-                ascending_order=ascending_order,
-            )
+        list_deployment_request = ListDeploymentsRequest(
+            limit=limit,
+            offset=offset,
+            namespace=namespace,
+            operator=operator,
+            order_by=order_by,
+            ascending_order=ascending_order,
         )
+        if labels is not None:
+            generate_gprc_labels_selector(
+                list_deployment_request.label_selectors, labels
+            )
+        return self.yatai_service.ListDeployments(list_deployment_request)
 
     def get(self, namespace, name):
         return self.yatai_service.GetDeployment(
@@ -335,7 +338,7 @@ class DeploymentAPIClient:
         self,
         limit=None,
         offset=None,
-        labels_query=None,
+        labels=None,
         namespace=None,
         is_all_namespaces=False,
         order_by=None,
@@ -344,7 +347,7 @@ class DeploymentAPIClient:
         list_result = self.list(
             limit=limit,
             offset=offset,
-            labels_query=labels_query,
+            labels=labels,
             namespace=namespace,
             is_all_namespaces=is_all_namespaces,
             operator=DeploymentSpec.AWS_SAGEMAKER,
@@ -450,7 +453,7 @@ class DeploymentAPIClient:
         self,
         limit=None,
         offset=None,
-        labels_query=None,
+        labels=None,
         namespace=None,
         is_all_namespaces=False,
         order_by=None,
@@ -459,7 +462,7 @@ class DeploymentAPIClient:
         return self.list(
             limit=limit,
             offset=offset,
-            labels_query=labels_query,
+            labels=labels,
             namespace=namespace,
             is_all_namespaces=is_all_namespaces,
             operator=DeploymentSpec.AWS_LAMBDA,
@@ -543,7 +546,7 @@ class DeploymentAPIClient:
         self,
         limit=None,
         offset=None,
-        labels_query=None,
+        labels=None,
         namespace=None,
         is_all_namespaces=False,
         order_by=None,
@@ -552,7 +555,7 @@ class DeploymentAPIClient:
         return self.list(
             limit=limit,
             offset=offset,
-            labels_query=labels_query,
+            labels=labels,
             namespace=namespace,
             is_all_namespaces=is_all_namespaces,
             operator=DeploymentSpec.AZURE_FUNCTIONS,

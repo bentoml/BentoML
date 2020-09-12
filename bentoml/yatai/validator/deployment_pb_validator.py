@@ -14,7 +14,9 @@
 
 from cerberus import Validator
 
+from bentoml.exceptions import InvalidArgument
 from bentoml.utils import ProtoMessageToDict
+from bentoml.yatai.client.bento_repository_api import _validate_labels
 from bentoml.yatai.deployment.azure_functions.constants import (
     AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
     AZURE_FUNCTIONS_AUTH_LEVELS,
@@ -26,7 +28,7 @@ deployment_schema = {
     # namespace is optional - YataiService will fill-in the default namespace configured
     # when it is missing in the apply deployment request
     'namespace': {'type': 'string', 'required': False, 'minlength': 3},
-    'labels': {'type': 'dict', 'allow_unknown': True},
+    'labels': {'type': 'dict', 'deployment_labels': True},
     'annotations': {'type': 'dict', 'allow_unknown': True},
     'created_at': {'type': 'string'},
     'last_updated_at': {'type': 'string'},
@@ -165,6 +167,23 @@ class YataiDeploymentValidator(Validator):
                 self._error(
                     field,
                     'Azure Functions min instances must be smaller than max burst',
+                )
+
+    def _validate_deployment_labels(self, deployment_labels, field, value):
+        """ Test label key value schema
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        if deployment_labels:
+            try:
+                _validate_labels(value)
+            except InvalidArgument:
+                self._error(
+                    field,
+                    'Valid label key and value must be 63 characters or less and '
+                    'must be being and end with an alphanumeric character '
+                    '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
                 )
 
 

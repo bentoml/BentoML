@@ -21,7 +21,6 @@ from bentoml.cli.click_utils import (
     _echo,
     CLI_COLOR_SUCCESS,
     parse_yaml_file_callback,
-    validate_labels_query_callback,
 )
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.utils import status_pb_to_error_code_and_message
@@ -194,11 +193,11 @@ def get_deployment_sub_command():
         help='The maximum amount of deployments to be listed at once',
     )
     @click.option(
-        '-l',
         '--labels',
         type=click.STRING,
-        callback=validate_labels_query_callback,
-        help='List deployments matching the giving labels',
+        help="Label query to filter deployments, supports '=', '!=', 'IN', 'NotIn', "
+        "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
+        "In (value3, value3a), key4 DoesNotExist)",
     )
     @click.option(
         '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
@@ -209,13 +208,16 @@ def get_deployment_sub_command():
         help='Ascending or descending order for list deployments',
     )
     @click.option(
-        '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
+        '-o',
+        '--output',
+        type=click.Choice(['json', 'yaml', 'table', 'wide']),
+        default='table',
     )
     def list_deployments(namespace, platform, limit, labels, order_by, asc, output):
         yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list(
             limit=limit,
-            labels_query=labels,
+            labels=labels,
             namespace=namespace,
             operator=platform,
             order_by=order_by,

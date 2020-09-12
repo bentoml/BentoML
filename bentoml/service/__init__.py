@@ -435,6 +435,7 @@ def env_decorator(
     requirements_txt_file: str = None,
     conda_channels: List[str] = None,
     conda_dependencies: List[str] = None,
+    conda_environment_yml_file: str = None,
     setup_sh: str = None,
     docker_base_image: str = None,
 ):
@@ -464,6 +465,7 @@ def env_decorator(
             requirements_txt_file=requirements_txt_file,
             conda_channels=conda_channels,
             conda_dependencies=conda_dependencies,
+            conda_environment_yml_file=conda_environment_yml_file,
             setup_sh=setup_sh,
             docker_base_image=docker_base_image,
         )
@@ -640,12 +642,8 @@ class BentoService:
         self._env = self.__class__._env or BentoServiceEnv()
 
         for api in self._inference_apis:
-            self._env.add_pip_dependencies_if_missing(
-                api.input_adapter.pip_dependencies
-            )
-            self._env.add_pip_dependencies_if_missing(
-                api.output_adapter.pip_dependencies
-            )
+            self._env.add_python_packages(api.input_adapter.pip_dependencies)
+            self._env.add_python_packages(api.output_adapter.pip_dependencies)
 
         for artifact in self.artifacts.get_artifact_list():
             artifact.set_dependencies(self.env)

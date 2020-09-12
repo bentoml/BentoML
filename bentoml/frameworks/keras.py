@@ -94,7 +94,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         pip_deps = ['tensorflow']
         if self._keras_module_name == 'keras':
             pip_deps.append('keras')
-        env.add_pip_dependencies_if_missing(pip_deps)
+        env.add_python_packages(pip_deps)
 
     def _keras_module_name_path(self, base_path):
         # The name of the keras module used, can be 'keras' or 'tensorflow.keras'

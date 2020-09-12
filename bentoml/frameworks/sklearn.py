@@ -90,4 +90,4 @@ class SklearnModelArtifact(BentoServiceArtifact):
         joblib.dump(self._model, self._model_file_path(dst))
 
     def set_dependencies(self, env):
-        env.add_pip_dependencies_if_missing(['scikit-learn'])
+        env.add_python_packages(['scikit-learn'])

@@ -97,7 +97,7 @@ class SpacyModelArtifact(BentoServiceArtifact):
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_dependencies_if_missing(['spacy'])
+        env.add_python_packages(['spacy'])
 
     def get(self):
         return self._model

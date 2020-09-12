@@ -4128,6 +4128,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {bentoml.DeploymentSpec.DeploymentOperator|null} [operator] ListDeploymentsRequest operator
          * @property {bentoml.ListDeploymentsRequest.SORTABLE_COLUMN|null} [order_by] ListDeploymentsRequest order_by
          * @property {boolean|null} [ascending_order] ListDeploymentsRequest ascending_order
+         * @property {string|null} [labels_query] ListDeploymentsRequest labels_query
          * @property {bentoml.ILabelSelectors|null} [label_selectors] ListDeploymentsRequest label_selectors
          */
 
@@ -4195,6 +4196,14 @@ export const bentoml = $root.bentoml = (() => {
         ListDeploymentsRequest.prototype.ascending_order = false;
 
         /**
+         * ListDeploymentsRequest labels_query.
+         * @member {string} labels_query
+         * @memberof bentoml.ListDeploymentsRequest
+         * @instance
+         */
+        ListDeploymentsRequest.prototype.labels_query = "";
+
+        /**
          * ListDeploymentsRequest label_selectors.
          * @member {bentoml.ILabelSelectors|null|undefined} label_selectors
          * @memberof bentoml.ListDeploymentsRequest
@@ -4238,8 +4247,10 @@ export const bentoml = $root.bentoml = (() => {
                 writer.uint32(/* id 5, wireType 0 =*/40).int32(message.order_by);
             if (message.ascending_order != null && Object.hasOwnProperty.call(message, "ascending_order"))
                 writer.uint32(/* id 6, wireType 0 =*/48).bool(message.ascending_order);
+            if (message.labels_query != null && Object.hasOwnProperty.call(message, "labels_query"))
+                writer.uint32(/* id 7, wireType 2 =*/58).string(message.labels_query);
             if (message.label_selectors != null && Object.hasOwnProperty.call(message, "label_selectors"))
-                $root.bentoml.LabelSelectors.encode(message.label_selectors, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+                $root.bentoml.LabelSelectors.encode(message.label_selectors, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
             return writer;
         };
 
@@ -4293,6 +4304,9 @@ export const bentoml = $root.bentoml = (() => {
                     message.ascending_order = reader.bool();
                     break;
                 case 7:
+                    message.labels_query = reader.string();
+                    break;
+                case 8:
                     message.label_selectors = $root.bentoml.LabelSelectors.decode(reader, reader.uint32());
                     break;
                 default:
@@ -4361,6 +4375,9 @@ export const bentoml = $root.bentoml = (() => {
             if (message.ascending_order != null && message.hasOwnProperty("ascending_order"))
                 if (typeof message.ascending_order !== "boolean")
                     return "ascending_order: boolean expected";
+            if (message.labels_query != null && message.hasOwnProperty("labels_query"))
+                if (!$util.isString(message.labels_query))
+                    return "labels_query: string expected";
             if (message.label_selectors != null && message.hasOwnProperty("label_selectors")) {
                 let error = $root.bentoml.LabelSelectors.verify(message.label_selectors);
                 if (error)
@@ -4421,6 +4438,8 @@ export const bentoml = $root.bentoml = (() => {
             }
             if (object.ascending_order != null)
                 message.ascending_order = Boolean(object.ascending_order);
+            if (object.labels_query != null)
+                message.labels_query = String(object.labels_query);
             if (object.label_selectors != null) {
                 if (typeof object.label_selectors !== "object")
                     throw TypeError(".bentoml.ListDeploymentsRequest.label_selectors: object expected");
@@ -4449,6 +4468,7 @@ export const bentoml = $root.bentoml = (() => {
                 object.operator = options.enums === String ? "UNSET" : 0;
                 object.order_by = options.enums === String ? "created_at" : 0;
                 object.ascending_order = false;
+                object.labels_query = "";
                 object.label_selectors = null;
             }
             if (message.namespace != null && message.hasOwnProperty("namespace"))
@@ -4463,6 +4483,8 @@ export const bentoml = $root.bentoml = (() => {
                 object.order_by = options.enums === String ? $root.bentoml.ListDeploymentsRequest.SORTABLE_COLUMN[message.order_by] : message.order_by;
             if (message.ascending_order != null && message.hasOwnProperty("ascending_order"))
                 object.ascending_order = message.ascending_order;
+            if (message.labels_query != null && message.hasOwnProperty("labels_query"))
+                object.labels_query = message.labels_query;
             if (message.label_selectors != null && message.hasOwnProperty("label_selectors"))
                 object.label_selectors = $root.bentoml.LabelSelectors.toObject(message.label_selectors, options);
             return object;

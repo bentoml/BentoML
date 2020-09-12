@@ -1710,6 +1710,9 @@ export namespace bentoml {
         /** ListDeploymentsRequest ascending_order */
         ascending_order?: (boolean|null);
 
+        /** ListDeploymentsRequest labels_query */
+        labels_query?: (string|null);
+
         /** ListDeploymentsRequest label_selectors */
         label_selectors?: (bentoml.ILabelSelectors|null);
     }
@@ -1740,6 +1743,9 @@ export namespace bentoml {
 
         /** ListDeploymentsRequest ascending_order. */
         public ascending_order: boolean;
+
+        /** ListDeploymentsRequest labels_query. */
+        public labels_query: string;
 
         /** ListDeploymentsRequest label_selectors. */
         public label_selectors?: (bentoml.ILabelSelectors|null);

@@ -182,7 +182,9 @@ message ListDeploymentsRequest {
   DeploymentSpec.DeploymentOperator operator = 4;
   SORTABLE_COLUMN order_by = 5;
   bool ascending_order = 6;
-  LabelSelectors label_selectors =7;
+
+  string labels_query =7; // Deprecated in favor of label_selectors
+  LabelSelectors label_selectors =8;
 }
 
 message ListDeploymentsResponse {

@@ -137,8 +137,6 @@ class SavedBundleConfig(object):
         bento_service_metadata.created_at.FromDatetime(
             self.config["metadata"]["created_at"]
         )
-        if self.config["metadata"].get('labels', None) is not None:
-            bento_service_metadata.labels.update(self.config['metadata']['labels'])
 
         if "env" in self.config:
             if "setup_sh" in self.config["env"]:

@@ -63,12 +63,12 @@ class AnnotatedImageInput(MultiFileInput):
     Example:
 
         >>> from bentoml import BentoService, api, artifacts
-        >>> from bentoml.artifact import TensorflowArtifact
+        >>> from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
         >>> from bentoml.adapters import AnnotatedImageInput
         >>>
         >>> CLASS_NAMES = ['cat', 'dog']
         >>>
-        >>> @artifacts([TensorflowArtifact('classifier')])
+        >>> @artifacts([TensorflowSavedModelArtifact('classifier')])
         >>> class PetClassification(BentoService):
         >>>    @api(input=AnnotatedImageInput())
         >>>    def predict(

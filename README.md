@@ -118,7 +118,7 @@ import pandas as pd
 
 from bentoml import env, artifacts, api, BentoService
 from bentoml.adapters import DataframeInput
-from bentoml.artifact import SklearnModelArtifact
+from bentoml.frameworks.sklearn import SklearnModelArtifact
 
 @env(auto_pip_dependencies=True)
 @artifacts([SklearnModelArtifact('model')])

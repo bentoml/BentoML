@@ -21,7 +21,7 @@ Example Projects:
 
 * Sentiment Analysis - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`_
 
-.. autoclass:: bentoml.artifact.SklearnModelArtifact
+.. autoclass:: bentoml.frameworks.sklearn.SklearnModelArtifact
 
 =======
 PyTorch
@@ -32,7 +32,7 @@ Example Projects:
 * Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`_
 * CIFAR-10 Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`_
 
-.. autoclass:: bentoml.artifact.PytorchModelArtifact
+.. autoclass:: bentoml.frameworks.pytorch.PytorchModelArtifact
 
 
 ==============
@@ -45,7 +45,7 @@ Example Projects:
 * Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb>`_
 * Movie Review Sentiment with BERT - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb>`_
 
-.. autoclass:: bentoml.artifact.TensorflowSavedModelArtifact
+.. autoclass:: bentoml.frameworks.tensorflow.TensorflowSavedModelArtifact
 
 ================
 Tensorflow Keras
@@ -57,7 +57,7 @@ Example Projects:
 * Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`_
 * Toxic Comment Classifier - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`_
 
-.. autoclass:: bentoml.artifact.KerasModelArtifact
+.. autoclass:: bentoml.frameworks.keras.KerasModelArtifact
 
 ======
 FastAI
@@ -68,7 +68,7 @@ Example Projects:
 * Pet Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`_
 * Salary Range Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb>`_
 
-.. autoclass:: bentoml.artifact.FastaiModelArtifact
+.. autoclass:: bentoml.frameworks.FastaiModelArtifact
 
 .. autoclass:: bentoml.adapters.FastaiImageInput
 
@@ -81,7 +81,7 @@ Example Projects:
 * Titanic Survival Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb>`_
 * League of Legend win Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb>`_
 
-.. autoclass:: bentoml.artifact.XgboostModelArtifact
+.. autoclass:: bentoml.frameworks.xgboost.XgboostModelArtifact
 
 ========
 LightGBM
@@ -91,7 +91,7 @@ Example Projects:
 
 * Titanic Survival Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`_
 
-.. autoclass:: bentoml.artifact.LightGBMModelArtifact
+.. autoclass:: bentoml.frameworks.lightgbm.LightGBMModelArtifact
 
 
 ========
@@ -102,7 +102,7 @@ Example Projects:
 
 * Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/fast-text/text-classification/text-classification.ipynb>`_
 
-.. autoclass:: bentoml.artifact.FasttextModelArtifact
+.. autoclass:: bentoml.frameworks.fasttext.FasttextModelArtifact
 
 
 ===
@@ -114,14 +114,14 @@ Example Projects:
 * Loan Default Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb>`_
 * Prostate Cancer Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`_
 
-.. autoclass:: bentoml.artifact.H2oModelArtifact
+.. autoclass:: bentoml.frameworks.h2o.H2oModelArtifact
 
 
 ======
 CoreML
 ======
 
-.. autoclass:: bentoml.artifact.CoreMLModelArtifact
+.. autoclass:: bentoml.frameworks.coreml.CoreMLModelArtifact
 
 
 ====
@@ -132,11 +132,11 @@ Example Projects:
 
 * Image Classification with ResNet50 - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`_
 
-.. autoclass:: bentoml.artifact.OnnxModelArtifact
+.. autoclass:: bentoml.frameworks.onnx.OnnxModelArtifact
 
 
 =====
 Spacy
 =====
 
-.. autoclass:: bentoml.artifact.SpacyModelArtifact
+.. autoclass:: bentoml.frameworks.spacy.SpacyModelArtifact

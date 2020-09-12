@@ -1,7 +1,7 @@
 import numpy
 
 import bentoml
-from bentoml.artifact import OnnxModelArtifact
+from bentoml.frameworks.onnx import OnnxModelArtifact
 from bentoml.adapters import DataframeInput
 
 

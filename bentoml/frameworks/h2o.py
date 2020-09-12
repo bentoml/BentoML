@@ -1,23 +1,9 @@
-# Copyright 2019 Atalaya Tech, Inc.
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-# http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import os
 import shutil
 
-from bentoml.artifact import BentoServiceArtifact
+from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
-from bentoml.service_env import BentoServiceEnv
+from bentoml.service.env import BentoServiceEnv
 
 
 class H2oModelArtifact(BentoServiceArtifact):
@@ -41,7 +27,7 @@ class H2oModelArtifact(BentoServiceArtifact):
     >>> model_to_save.train(...)
     >>>
     >>> import bentoml
-    >>> from bentoml.artifact import H2oModelArtifact
+    >>> from bentoml.frameworks.h2o import H2oModelArtifact
     >>> from bentoml.adapters import DataframeInput
     >>>
     >>> @bentoml.artifacts([H2oModelArtifact('model')])

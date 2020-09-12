@@ -40,7 +40,7 @@ class MultiFileInput(BaseInputAdapter):
         from PIL import Image
         import numpy as np
 
-        from bentoml.artifact import PytorchModelArtifact
+        from bentoml.framework.pytroch import PytorchModelArtifact
         from bentoml.adapters import MultiFileInput
 
         @bentoml.env(pip_dependencies=['torch', 'pillow', 'numpy'])

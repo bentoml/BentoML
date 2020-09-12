@@ -2,7 +2,7 @@ import numpy
 import torch  # pylint: disable=import-error
 
 import bentoml
-from bentoml.artifact import PytorchModelArtifact
+from bentoml.frameworks.pytorch import PytorchModelArtifact
 from bentoml.adapters import DataframeInput
 
 

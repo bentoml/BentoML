@@ -154,3 +154,68 @@ def test_docker_base_image_env():
 
     service_with_setup = ServiceWithSetup()
     assert 'continuumio/miniconda3:4.8.0' in service_with_setup.env._docker_base_image
+
+
+def test_conda_channels_n_dependencies(tmpdir):
+    @bentoml.env(
+        conda_channels=["bentoml-test-channel"], conda_dependencies=["bentoml-test-lib"]
+    )
+    class ServiceWithCondaDeps(bentoml.BentoService):
+        @bentoml.api(input=DataframeInput())
+        def predict(self, df):
+            return df
+
+    service_with_string = ServiceWithCondaDeps()
+    service_with_string.save_to_dir(str(tmpdir))
+
+    from pathlib import Path
+    from bentoml.utils.ruamel_yaml import YAML
+
+    yaml = YAML()
+    env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
+    assert 'conda-forge' in env_yml['channels']
+    assert 'defaults' in env_yml['channels']
+    assert 'bentoml-test-channel' in env_yml['channels']
+
+    assert 'pip' in env_yml['dependencies']
+    assert 'bentoml-test-lib' in env_yml['dependencies']
+
+
+def test_conda_env_yml_file_option(tmpdir):
+    conda_env_yml_file = os.path.join(tmpdir, 'environment.yml')
+    with open(conda_env_yml_file, 'wb') as f:
+        f.write(
+            """
+name: bentoml-test-conda-env
+channels:
+  - test-ch-1
+  - test-ch-2
+dependencies:
+  - test-dep-1
+""".encode()
+        )
+
+    @bentoml.env(
+        conda_env_yml_file=conda_env_yml_file,
+        conda_channels=["bentoml-test-channel"],
+        conda_dependencies=["bentoml-test-lib"],
+    )
+    class ServiceWithCondaDeps(bentoml.BentoService):
+        @bentoml.api(input=DataframeInput())
+        def predict(self, df):
+            return df
+
+    service_with_string = ServiceWithCondaDeps()
+    service_with_string.save_to_dir(str(tmpdir))
+
+    from pathlib import Path
+    from bentoml.utils.ruamel_yaml import YAML
+
+    yaml = YAML()
+    env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
+    assert 'test-ch-1' in env_yml['channels']
+    assert 'test-ch-2' in env_yml['channels']
+    assert 'bentoml-test-channel' in env_yml['channels']
+
+    assert 'test-dep-1' in env_yml['dependencies']
+    assert 'bentoml-test-lib' in env_yml['dependencies']

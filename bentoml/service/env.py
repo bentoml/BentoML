@@ -129,7 +129,7 @@ class BentoServiceEnv(object):
             of the file
         conda_channels: list of extra conda channels to be used
         conda_dependencies: list of conda dependencies required
-        environment_yml_file: use a pre-defined conda environment yml filej
+        conda_env_yml_file: use a pre-defined conda environment yml filej
         setup_sh: user defined setup bash script, it is executed in docker build time
         docker_base_image: used when generating Dockerfile in saved bundle
     """
@@ -144,7 +144,7 @@ class BentoServiceEnv(object):
         requirements_txt_file: str = None,
         conda_channels: List[str] = None,
         conda_dependencies: List[str] = None,
-        conda_environment_yml_file: str = None,
+        conda_env_yml_file: str = None,
         setup_sh: str = None,
         docker_base_image: str = None,
     ):
@@ -154,7 +154,9 @@ class BentoServiceEnv(object):
         self._pip_extra_index_url = pip_extra_index_url
 
         self._conda_env = CondaEnv(
-            conda_channels, conda_dependencies, conda_environment_yml_file
+            channels=conda_channels,
+            dependencies=conda_dependencies,
+            default_env_yaml_file=conda_env_yml_file,
         )
 
         bentoml_deploy_version = get_bentoml_deploy_version()

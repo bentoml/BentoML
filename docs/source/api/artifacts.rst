@@ -55,13 +55,13 @@ H2oModelArtifact
 
 PickleArtifact
 ++++++++++++++
-.. autoclass:: bentoml.service.common_artifacts.PickleArtifact
+.. autoclass:: bentoml.service.artifacts.common.PickleArtifact
 
 JSONArtifact
 ++++++++++++
-.. autoclass:: bentoml.service.common_artifacts.JSONArtifact
+.. autoclass:: bentoml.service.artifacts.common.JSONArtifact
 
 TextFileArtifact
 ++++++++++++++++
-.. autoclass:: bentoml.service.common_artifacts.TextFileArtifact
+.. autoclass:: bentoml.service.artifacts.common.TextFileArtifact
 

@@ -1,5 +1,5 @@
 import bentoml
-from bentoml.artifact import JSONArtifact
+from bentoml.service.artifacts.json_file import JSONArtifact
 
 
 @bentoml.artifacts([JSONArtifact("hparams")])

@@ -179,7 +179,7 @@ class BentoMetadataStore(object):
                 )
                 service_metadata = ProtoMessageToDict(bento_service_metadata_pb)
                 bento_obj.bento_service_metadata = service_metadata
-                if service_metadata['labels']:
+                if service_metadata.get('labels', None) is not None:
                     bento = (
                         sess.query(Bento)
                         .filter_by(name=bento_name, version=bento_version)

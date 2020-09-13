@@ -2,7 +2,7 @@
 
 The `bentoml.artifact` module is now deprecated.
 
-Use`bentoml.frameworks.*` and `bentoml.service.artifact` instead.
+Use`bentoml.frameworks.*` and `bentoml.service.artifacts.*` instead.
 
 e.g.:
 ```

@@ -76,7 +76,7 @@ ARG EXTRA_PIP_INSTALL_ARGS=
 ENV EXTRA_PIP_INSTALL_ARGS $EXTRA_PIP_INSTALL_ARGS
 
 # copy over files needed for init script
-COPY environment.yml requirements.txt setup.sh* bentoml-init.sh /bento/
+COPY environment.yml requirements.txt setup.sh* bentoml-init.sh python_version* /bento/
 WORKDIR /bento
 
 # Execute permission for bentoml-init.sh

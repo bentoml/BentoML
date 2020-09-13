@@ -230,8 +230,10 @@ class BentoServiceEnv(object):
         conda_yml_file = os.path.join(path, "environment.yml")
         self._conda_env.write_to_yaml_file(conda_yml_file)
 
-        requirements_txt_file = os.path.join(path, "requirements.txt")
+        with open(os.path.join(path, "python_version"), "wb") as f:
+            f.write(self._python_version.encode("utf-8"))
 
+        requirements_txt_file = os.path.join(path, "requirements.txt")
         with open(requirements_txt_file, "wb") as f:
             dependencies_map = {}
             for dep in self._pip_dependencies:

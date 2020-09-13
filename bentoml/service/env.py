@@ -15,12 +15,12 @@
 import os
 import sys
 import logging
-from sys import version_info
 import stat
+from sys import version_info
 from pathlib import Path
 from typing import List
 
-
+from bentoml.exceptions import BentoMLException
 from bentoml.utils.ruamel_yaml import YAML
 from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version
@@ -41,17 +41,14 @@ PYTHON_VERSION = "{major}.{minor}.{micro}".format(
 
 # Including 'conda-forge' channel in the default channels to ensure newest Python
 # versions can be installed properly via conda when building API server docker image
-CONDA_ENV_BASE_YAML = """
-name: {name}
+DEFAULT_CONDA_ENV_BASE_YAML = """
+name: bentoml-default-conda-env
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - python={python_version}
   - pip
 """
-
-CONDA_ENV_DEFAULT_NAME = "bentoml-custom-conda-env"
 
 
 class CondaEnv(object):
@@ -63,33 +60,40 @@ class CondaEnv(object):
 
     def __init__(
         self,
-        name: str,
-        python_version: str,
-        conda_channels: List[str] = None,
-        conda_dependencies: List[str] = None,
+        name: str = None,
+        channels: List[str] = None,
+        dependencies: List[str] = None,
+        default_env_yaml_file: str = None,
     ):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
 
-        self._conda_env = self._yaml.load(
-            CONDA_ENV_BASE_YAML.format(name=name, python_version=python_version)
-        )
+        if default_env_yaml_file:
+            env_yml_file = Path(default_env_yaml_file)
+            if not env_yml_file.is_file():
+                raise BentoMLException(
+                    f"Can not find conda environment config yaml file at: "
+                    f"`{default_env_yaml_file}`"
+                )
+            self._conda_env = self._yaml.load(env_yml_file)
+        else:
+            self._conda_env = self._yaml.load(DEFAULT_CONDA_ENV_BASE_YAML)
 
-        if conda_channels:
-            self.add_channels(conda_channels)
+        if name:
+            self.set_name(name)
 
-        if conda_dependencies:
-            self.add_conda_dependencies(conda_dependencies)
+        if channels:
+            self.add_channels(channels)
+
+        if dependencies:
+            self.add_conda_dependencies(dependencies)
 
     def set_name(self, name):
         self._conda_env["name"] = name
 
-    def get_name(self):
-        return self._conda_env["name"]
-
     def add_conda_dependencies(self, conda_dependencies: List[str]):
         # BentoML uses conda's channel_priority=strict option by default
-        # Adding `conda_dependencies` to beginning of the list to take priority over the
+        # Adding `dependencies` to beginning of the list to take priority over the
         # existing conda channels
         self._conda_env["dependencies"] = (
             conda_dependencies + self._conda_env["dependencies"]
@@ -115,13 +119,17 @@ class BentoServiceEnv(object):
     Args:
         pip_dependencies: list of pip_dependencies required, specified by package name
             or with specified version `{package_name}=={package_version}`
-        auto_pip_dependencies: (Beta) whether to automatically find all the required
+        pip_index_url: passing down to pip install --index-url option
+        pip_trusted_host: passing down to pip install --trusted-host option
+        pip_extra_index_url: passing down to pip install --extra-index-url option
+        auto_pip_dependencies: Turn on to automatically find all the required
             pip dependencies and pin their version
         requirements_txt_file: pip dependencies in the form of a requirements.txt file,
             this can be a relative path to the requirements.txt file or the content
             of the file
         conda_channels: list of extra conda channels to be used
         conda_dependencies: list of conda dependencies required
+        conda_env_yml_file: use a pre-defined conda environment yml filej
         setup_sh: user defined setup bash script, it is executed in docker build time
         docker_base_image: used when generating Dockerfile in saved bundle
     """
@@ -129,20 +137,26 @@ class BentoServiceEnv(object):
     def __init__(
         self,
         pip_dependencies: List[str] = None,
+        pip_index_url: str = None,
+        pip_trusted_host: str = None,
+        pip_extra_index_url: str = None,
         auto_pip_dependencies: bool = False,
         requirements_txt_file: str = None,
         conda_channels: List[str] = None,
         conda_dependencies: List[str] = None,
+        conda_env_yml_file: str = None,
         setup_sh: str = None,
         docker_base_image: str = None,
     ):
         self._python_version = PYTHON_VERSION
+        self._pip_index_url = pip_index_url
+        self._pip_trusted_host = pip_trusted_host
+        self._pip_extra_index_url = pip_extra_index_url
 
         self._conda_env = CondaEnv(
-            CONDA_ENV_DEFAULT_NAME,
-            self._python_version,
-            conda_channels,
-            conda_dependencies,
+            channels=conda_channels,
+            dependencies=conda_dependencies,
+            default_env_yaml_file=conda_env_yml_file,
         )
 
         bentoml_deploy_version = get_bentoml_deploy_version()
@@ -154,7 +168,7 @@ class BentoServiceEnv(object):
                     "specified in `pip_dependencies=%s`",
                     pip_dependencies,
                 )
-            self.add_pip_dependencies(pip_dependencies)
+            self.add_python_packages(pip_dependencies)
 
         if requirements_txt_file:
             if auto_pip_dependencies:
@@ -163,11 +177,11 @@ class BentoServiceEnv(object):
                     "specified in `requirements_txt_file=%s`",
                     requirements_txt_file,
                 )
-            self._set_requirements_txt(requirements_txt_file)
+            self.add_packages_from_requirements_txt_file(requirements_txt_file)
 
         self._auto_pip_dependencies = auto_pip_dependencies
 
-        self._set_setup_sh(setup_sh)
+        self.set_setup_sh(setup_sh)
 
         if docker_base_image:
             self._docker_base_image = docker_base_image
@@ -195,18 +209,13 @@ class BentoServiceEnv(object):
     def add_conda_dependencies(self, conda_dependencies: List[str]):
         self._conda_env.add_conda_dependencies(conda_dependencies)
 
-    def add_pip_dependencies(self, pip_dependencies: List[str]):
-        for dependency in pip_dependencies:
-            self.check_dependency(dependency)
-        self._pip_dependencies += pip_dependencies
-
-    def add_pip_dependencies_if_missing(self, pip_dependencies: List[str]):
+    def add_python_packages(self, pip_dependencies: List[str]):
         # Insert dependencies to the beginning of self.dependencies, so that user
         # specified dependency version could overwrite this. This is used by BentoML
         # to inject ModelArtifact or Adapter's optional pip dependencies
         self._pip_dependencies = pip_dependencies + self._pip_dependencies
 
-    def _set_setup_sh(self, setup_sh_path_or_content):
+    def set_setup_sh(self, setup_sh_path_or_content):
         self._setup_sh = None
 
         if setup_sh_path_or_content:
@@ -220,21 +229,32 @@ class BentoServiceEnv(object):
         else:
             self._setup_sh = setup_sh_path_or_content.encode("utf-8")
 
-    def _set_requirements_txt(self, requirements_txt_path):
+    def add_packages_from_requirements_txt_file(self, requirements_txt_path):
         requirements_txt_file = Path(requirements_txt_path)
 
         with requirements_txt_file.open("rb") as f:
             content = f.read()
             module_list = content.decode("utf-8").split("\n")
-            self.add_pip_dependencies(module_list)
+            self.add_python_packages(module_list)
 
     def save(self, path, bento_service):
         conda_yml_file = os.path.join(path, "environment.yml")
         self._conda_env.write_to_yaml_file(conda_yml_file)
 
-        requirements_txt_file = os.path.join(path, "requirements.txt")
+        with open(os.path.join(path, "python_version"), "wb") as f:
+            f.write(self._python_version.encode("utf-8"))
 
+        requirements_txt_file = os.path.join(path, "requirements.txt")
         with open(requirements_txt_file, "wb") as f:
+            if self._pip_index_url:
+                f.write(f"--index-url={self._pip_index_url}\n".encode("utf-8"))
+            if self._pip_trusted_host:
+                f.write(f"--trusted-host={self._pip_trusted_host}\n".encode("utf-8"))
+            if self._pip_extra_index_url:
+                f.write(
+                    f"--extra-index-url={self._pip_extra_index_url}\n".encode("utf-8")
+                )
+
             dependencies_map = {}
             for dep in self._pip_dependencies:
                 name, version = parse_requirement_string(dep)

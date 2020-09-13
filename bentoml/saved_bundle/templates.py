@@ -71,14 +71,12 @@ graft {service_name}/artifacts
 MODEL_SERVER_DOCKERFILE_CPU = """\
 FROM {docker_base_image}
 
-# Configuring PyPI index
-ARG PIP_INDEX_URL=https://pypi.python.org/simple/
-ARG PIP_TRUSTED_HOST=pypi.python.org
-ENV PIP_INDEX_URL $PIP_INDEX_URL
-ENV PIP_TRUSTED_HOST $PIP_TRUSTED_HOST
+# Configure PIP install arguments, e.g. --index-url, --trusted-url, --extra-index-url
+ARG EXTRA_PIP_INSTALL_ARGS=
+ENV EXTRA_PIP_INSTALL_ARGS $EXTRA_PIP_INSTALL_ARGS
 
 # copy over files needed for init script
-COPY environment.yml requirements.txt setup.sh* bentoml-init.sh /bento/
+COPY environment.yml requirements.txt setup.sh* bentoml-init.sh python_version* /bento/
 WORKDIR /bento
 
 # Execute permission for bentoml-init.sh

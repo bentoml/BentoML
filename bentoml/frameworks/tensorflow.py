@@ -189,7 +189,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         self._wrapper = None
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_dependencies_if_missing(['tensorflow'])
+        env.add_python_packages(['tensorflow'])
 
     def _saved_model_path(self, base_path):
         return os.path.join(base_path, self.name + '_saved_model')

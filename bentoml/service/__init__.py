@@ -431,10 +431,14 @@ def artifacts_decorator(artifacts: List[BentoServiceArtifact]):
 
 def env_decorator(
     pip_dependencies: List[str] = None,
+    pip_index_url: str = None,
+    pip_trusted_host: str = None,
+    pip_extra_index_url: str = None,
     auto_pip_dependencies: bool = False,
     requirements_txt_file: str = None,
     conda_channels: List[str] = None,
     conda_dependencies: List[str] = None,
+    conda_env_yml_file: str = None,
     setup_sh: str = None,
     docker_base_image: str = None,
 ):
@@ -443,6 +447,9 @@ def env_decorator(
     Args:
         pip_dependencies: list of pip_dependencies required, specified by package name
             or with specified version `{package_name}=={package_version}`
+        pip_index_url: passing down to pip install --index-url option
+        pip_trusted_host: passing down to pip install --trusted-host option
+        pip_extra_index_url: passing down to pip install --extra-index-url option
         auto_pip_dependencies: (Beta) whether to automatically find all the required
             pip dependencies and pin their version
         requirements_txt_file: pip dependencies in the form of a requirements.txt file,
@@ -450,6 +457,7 @@ def env_decorator(
             of the file
         conda_channels: list of extra conda channels to be used
         conda_dependencies: list of conda dependencies required
+        conda_env_yml_file: use a pre-defined conda environment yml filej
         setup_sh: user defined setup bash script, it is executed in docker build time
         docker_base_image: used for customizing the docker container image built with
             BentoML saved bundle. Base image must either have both `bash` and `conda`
@@ -460,10 +468,14 @@ def env_decorator(
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv(
             pip_dependencies=pip_dependencies,
+            pip_index_url=pip_index_url,
+            pip_trusted_host=pip_trusted_host,
+            pip_extra_index_url=pip_extra_index_url,
             auto_pip_dependencies=auto_pip_dependencies,
             requirements_txt_file=requirements_txt_file,
             conda_channels=conda_channels,
             conda_dependencies=conda_dependencies,
+            conda_env_yml_file=conda_env_yml_file,
             setup_sh=setup_sh,
             docker_base_image=docker_base_image,
         )
@@ -640,12 +652,8 @@ class BentoService:
         self._env = self.__class__._env or BentoServiceEnv()
 
         for api in self._inference_apis:
-            self._env.add_pip_dependencies_if_missing(
-                api.input_adapter.pip_dependencies
-            )
-            self._env.add_pip_dependencies_if_missing(
-                api.output_adapter.pip_dependencies
-            )
+            self._env.add_python_packages(api.input_adapter.pip_dependencies)
+            self._env.add_python_packages(api.output_adapter.pip_dependencies)
 
         for artifact in self.artifacts.get_artifact_list():
             artifact.set_dependencies(self.env)

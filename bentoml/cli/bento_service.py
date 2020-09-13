@@ -345,12 +345,15 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         callback=validate_tag,
     )
     @click.option(
+        '--build-arg', multiple=True, help="pass through docker image build arguments"
+    )
+    @click.option(
         '-u', '--username', type=click.STRING, required=False,
     )
     @click.option(
         '-p', '--password', type=click.STRING, required=False,
     )
-    def containerize(bento, push, tag, username, password):
+    def containerize(bento, push, tag, build_arg, username, password):
         """Containerize specified BentoService.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -395,13 +398,24 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             )
             tag = f"{tag}:{version}"
 
+        docker_build_args = {}
+        if build_arg:
+            for arg in build_arg:
+                key, value = arg.split("=")
+                docker_build_args[key] = value
+
         import docker
 
         docker_api = docker.APIClient()
         try:
             with Spinner(f"Building Docker image {tag} from {bento} \n"):
                 for line in echo_docker_api_result(
-                    docker_api.build(path=saved_bundle_path, tag=tag, decode=True,)
+                    docker_api.build(
+                        path=saved_bundle_path,
+                        tag=tag,
+                        decode=True,
+                        buildargs=docker_build_args,
+                    )
                 ):
                     _echo(line)
         except docker.errors.APIError as error:

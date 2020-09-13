@@ -137,7 +137,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
     def set_dependencies(self, env: BentoServiceEnv):
         if self.backend == 'onnxruntime':
-            env.add_pip_dependencies_if_missing(['onnxruntime'])
+            env.add_python_packages(['onnxruntime'])
 
     def _get_onnx_inference_session(self):
         if self.backend == "onnxruntime":

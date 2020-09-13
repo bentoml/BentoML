@@ -17,8 +17,8 @@ from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.saved_bundle import save_to_dir
 
 
+@bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact('sk_model')])
-@bentoml.env(auto_pip_dependencies=True)
 class ExampleBentoService(bentoml.BentoService):
     """
     Example BentoService class made for testing purpose

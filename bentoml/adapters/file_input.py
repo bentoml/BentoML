@@ -49,7 +49,7 @@ class FileInput(BaseInputAdapter):
                                  'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
 
-        @bentoml.env(pip_dependencies=['torch', 'pillow', 'numpy'])
+        @bentoml.env(pip_packages=['torch', 'pillow', 'numpy'])
         @bentoml.artifacts([PytorchModelArtifact('classifier')])
         class PyTorchFashionClassifier(bentoml.BentoService):
 

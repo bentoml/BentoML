@@ -14,7 +14,7 @@ from local_dependencies.local_module import dependency_in_local_module_directory
 from local_dependencies.nested_dependency import nested_dependency_func
 
 
-@bentoml.env(pip_dependencies=["scikit-learn"])
+@bentoml.env(pip_packages=["scikit-learn"])
 @bentoml.artifacts([SklearnModelArtifact('model')])
 class IrisClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput())

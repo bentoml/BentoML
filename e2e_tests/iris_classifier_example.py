@@ -3,7 +3,7 @@ from bentoml.artifact import SklearnModelArtifact
 from bentoml.adapters import DataframeInput
 
 
-@env(auto_pip_dependencies=True)
+@env(infer_pip_packages=True)
 @artifacts([SklearnModelArtifact('clf')])
 class IrisClassifier(BentoService):
     @api(input=DataframeInput())

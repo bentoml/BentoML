@@ -5,7 +5,7 @@ from bentoml.frameworks.h2o import H2oModelArtifact
 from bentoml.adapters import DataframeInput
 
 
-@bentoml.env(auto_pip_dependencies=True)
+@bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([H2oModelArtifact('model')])
 class H2oExampleBentoService(bentoml.BentoService):
     @bentoml.api(input=DataframeInput())

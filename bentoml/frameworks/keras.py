@@ -44,7 +44,7 @@ class KerasModelArtifact(BentoServiceArtifact):
     >>> import bentoml
     >>> from bentoml.frameworks.keras import KerasModelArtifact
     >>>
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> @bentoml.artifacts([KerasModelArtifact('model')])
     >>> class KerasModelService(bentoml.BentoService):
     >>>     @bentoml.api(input=JsonInput())
@@ -94,7 +94,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         pip_deps = ['tensorflow']
         if self._keras_module_name == 'keras':
             pip_deps.append('keras')
-        env.add_python_packages(pip_deps)
+        env.add_pip_packages(pip_deps)
 
     def _keras_module_name_path(self, base_path):
         # The name of the keras module used, can be 'keras' or 'tensorflow.keras'

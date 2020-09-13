@@ -31,7 +31,7 @@ class H2oModelArtifact(BentoServiceArtifact):
     >>> from bentoml.adapters import DataframeInput
     >>>
     >>> @bentoml.artifacts([H2oModelArtifact('model')])
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> class H2oModelService(bentoml.BentoService):
     >>>
     >>>     @bentoml.api(input=DataframeInput())
@@ -51,7 +51,7 @@ class H2oModelArtifact(BentoServiceArtifact):
         self._model = None
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_python_packages(['h2o'])
+        env.add_pip_packages(['h2o'])
         env.add_conda_dependencies(['openjdk'])
 
     def _model_file_path(self, base_path):

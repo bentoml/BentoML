@@ -67,7 +67,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
     >>> from bentoml.frameworks.onnx import OnnxModelArtifact
     >>> from bentoml.adapters import DataframeInput
     >>>
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> @bentoml.artifacts([OnnxModelArtifact('model', backend='onnxruntime')])
     >>> class OnnxIrisClassifierService(bentoml.BentoService):
     >>>     @bentoml.api(input=DataframeInput())
@@ -137,7 +137,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
     def set_dependencies(self, env: BentoServiceEnv):
         if self.backend == 'onnxruntime':
-            env.add_python_packages(['onnxruntime'])
+            env.add_pip_packages(['onnxruntime'])
 
     def _get_onnx_inference_session(self):
         if self.backend == "onnxruntime":

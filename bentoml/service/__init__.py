@@ -29,6 +29,8 @@ import flask
 
 from bentoml import config
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
+from bentoml.configuration import get_bentoml_deploy_version
+from bentoml.saved_bundle.pip_pkg import seek_pip_packages
 from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir
@@ -431,10 +433,12 @@ def artifacts_decorator(artifacts: List[BentoServiceArtifact]):
 
 def env_decorator(
     pip_dependencies: List[str] = None,
+    pip_packages: List[str] = None,
     pip_index_url: str = None,
     pip_trusted_host: str = None,
     pip_extra_index_url: str = None,
     auto_pip_dependencies: bool = False,
+    infer_pip_packages: bool = False,
     requirements_txt_file: str = None,
     conda_channels: List[str] = None,
     conda_dependencies: List[str] = None,
@@ -445,13 +449,15 @@ def env_decorator(
     """Define environment and dependencies required for the BentoService being created
 
     Args:
-        pip_dependencies: list of pip_dependencies required, specified by package name
+        pip_packages:: list of pip_packages required, specified by package name
             or with specified version `{package_name}=={package_version}`
+        pip_dependencies: same as pip_packages but deprecated
         pip_index_url: passing down to pip install --index-url option
         pip_trusted_host: passing down to pip install --trusted-host option
         pip_extra_index_url: passing down to pip install --extra-index-url option
-        auto_pip_dependencies: (Beta) whether to automatically find all the required
+        infer_pip_packages: whether to automatically find all the required
             pip dependencies and pin their version
+        auto_pip_dependencies: same as infer_pip_packages but deprecated
         requirements_txt_file: pip dependencies in the form of a requirements.txt file,
             this can be a relative path to the requirements.txt file or the content
             of the file
@@ -467,11 +473,11 @@ def env_decorator(
 
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv(
-            pip_dependencies=pip_dependencies,
+            pip_packages=pip_packages or pip_dependencies,
             pip_index_url=pip_index_url,
             pip_trusted_host=pip_trusted_host,
             pip_extra_index_url=pip_extra_index_url,
-            auto_pip_dependencies=auto_pip_dependencies,
+            infer_pip_packages=infer_pip_packages or auto_pip_dependencies,
             requirements_txt_file=requirements_txt_file,
             conda_channels=conda_channels,
             conda_dependencies=conda_dependencies,
@@ -592,7 +598,7 @@ class BentoService:
     >>>  from bentoml.frameworks.sklearn import SklearnModelArtifact
     >>>
     >>>  @artifacts([SklearnModelArtifact('clf')])
-    >>>  @env(pip_dependencies=["scikit-learn"])
+    >>>  @env(pip_packages=["scikit-learn"])
     >>>  class MyMLService(BentoService):
     >>>
     >>>     @api(input=DataframeInput())
@@ -652,8 +658,8 @@ class BentoService:
         self._env = self.__class__._env or BentoServiceEnv()
 
         for api in self._inference_apis:
-            self._env.add_python_packages(api.input_adapter.pip_dependencies)
-            self._env.add_python_packages(api.output_adapter.pip_dependencies)
+            self._env.add_pip_packages(api.input_adapter.pip_dependencies)
+            self._env.add_pip_packages(api.output_adapter.pip_dependencies)
 
         for artifact in self.artifacts.get_artifact_list():
             artifact.set_dependencies(self.env)
@@ -926,3 +932,30 @@ class BentoService:
 
     def get_bento_service_metadata_pb(self):
         return SavedBundleConfig(self).get_bento_service_metadata_pb()
+
+    pip_dependencies_map = None
+
+    def infer_pip_dependencies_map(self):
+        if not self.pip_dependencies_map:
+            self.pip_dependencies_map = {}
+            bento_service_module = sys.modules[self.__class__.__module__]
+            if hasattr(bento_service_module, "__file__"):
+                bento_service_py_file_path = bento_service_module.__file__
+                reqs, unknown_modules = seek_pip_packages(bento_service_py_file_path)
+                self.pip_dependencies_map.update(reqs)
+                for module_name in unknown_modules:
+                    logger.warning(
+                        "unknown package dependency for module: %s", module_name
+                    )
+
+            # Reset bentoml to configured deploy version - this is for users using
+            # customized BentoML branch for development but use a different stable
+            # version for deployment
+            #
+            # For example, a BentoService created with local dirty branch will fail
+            # to deploy with docker due to the version can't be found on PyPI, but
+            # get_bentoml_deploy_version gives the user the latest released PyPI
+            # version that's closest to the `dirty` branch
+            self.pip_dependencies_map['bentoml'] = get_bentoml_deploy_version()
+
+        return self.pip_dependencies_map

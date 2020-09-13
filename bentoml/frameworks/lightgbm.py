@@ -32,7 +32,7 @@ class LightGBMModelArtifact(BentoServiceArtifact):
     >>> from bentoml.adapters import DataframeInput
     >>>
     >>> @bentoml.artifacts([LightGBMModelArtifact('model')])
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> class LgbModelService(bentoml.BentoService):
     >>>
     >>>     @bentoml.api(input=DataframeInput())
@@ -79,7 +79,7 @@ class LightGBMModelArtifact(BentoServiceArtifact):
         return self.pack(bst)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_python_packages(['lightgbm'])
+        env.add_pip_packages(['lightgbm'])
 
     def save(self, dst):
         return self._model.save_model(self._model_file_path(dst))

@@ -46,7 +46,7 @@ class SklearnModelArtifact(BentoServiceArtifact):
     >>> from bentoml.frameworks.sklearn import SklearnModelArtifact
     >>> from bentoml.adapters import DataframeInput
     >>>
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> @bentoml.artifacts([SklearnModelArtifact('model')])
     >>> class SklearnModelService(bentoml.BentoService):
     >>>
@@ -90,4 +90,4 @@ class SklearnModelArtifact(BentoServiceArtifact):
         joblib.dump(self._model, self._model_file_path(dst))
 
     def set_dependencies(self, env):
-        env.add_python_packages(['scikit-learn'])
+        env.add_pip_packages(['scikit-learn'])

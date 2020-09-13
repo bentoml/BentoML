@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import os
-import sys
 import logging
 import stat
+from pkg_resources import Requirement, parse_requirements
 from sys import version_info
 from pathlib import Path
 from typing import List
@@ -27,9 +27,9 @@ from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.saved_bundle.pip_pkg import (
     EPP_PKG_NOT_EXIST,
     EPP_PKG_VERSION_MISMATCH,
-    parse_requirement_string,
+    EPP_NO_ERROR,
     verify_pkg,
-    seek_pip_dependencies,
+    get_pkg_version,
 )
 
 
@@ -117,12 +117,12 @@ class BentoServiceEnv(object):
 
 
     Args:
-        pip_dependencies: list of pip_dependencies required, specified by package name
+        pip_packages: list of pip_packages required, specified by package name
             or with specified version `{package_name}=={package_version}`
         pip_index_url: passing down to pip install --index-url option
         pip_trusted_host: passing down to pip install --trusted-host option
         pip_extra_index_url: passing down to pip install --extra-index-url option
-        auto_pip_dependencies: Turn on to automatically find all the required
+        infer_pip_packages: Turn on to automatically find all the required
             pip dependencies and pin their version
         requirements_txt_file: pip dependencies in the form of a requirements.txt file,
             this can be a relative path to the requirements.txt file or the content
@@ -136,11 +136,11 @@ class BentoServiceEnv(object):
 
     def __init__(
         self,
-        pip_dependencies: List[str] = None,
+        pip_packages: List[str] = None,
         pip_index_url: str = None,
         pip_trusted_host: str = None,
         pip_extra_index_url: str = None,
-        auto_pip_dependencies: bool = False,
+        infer_pip_packages: bool = False,
         requirements_txt_file: str = None,
         conda_channels: List[str] = None,
         conda_dependencies: List[str] = None,
@@ -159,27 +159,19 @@ class BentoServiceEnv(object):
             default_env_yaml_file=conda_env_yml_file,
         )
 
+        self._pip_packages = {}
+
+        # add BentoML to pip packages list
         bentoml_deploy_version = get_bentoml_deploy_version()
-        self._pip_dependencies = ["bentoml=={}".format(bentoml_deploy_version)]
-        if pip_dependencies:
-            if auto_pip_dependencies:
-                logger.warning(
-                    "auto_pip_dependencies enabled, it may override package versions "
-                    "specified in `pip_dependencies=%s`",
-                    pip_dependencies,
-                )
-            self.add_python_packages(pip_dependencies)
+        self.add_pip_package("bentoml=={}".format(bentoml_deploy_version))
+
+        if pip_packages:
+            self.add_pip_packages(pip_packages)
 
         if requirements_txt_file:
-            if auto_pip_dependencies:
-                logger.warning(
-                    "auto_pip_dependencies enabled, it may override package versions "
-                    "specified in `requirements_txt_file=%s`",
-                    requirements_txt_file,
-                )
             self.add_packages_from_requirements_txt_file(requirements_txt_file)
 
-        self._auto_pip_dependencies = auto_pip_dependencies
+        self._infer_pip_packages = infer_pip_packages
 
         self.set_setup_sh(setup_sh)
 
@@ -188,32 +180,55 @@ class BentoServiceEnv(object):
         else:
             self._docker_base_image = config('core').get('default_docker_base_image')
 
-    @staticmethod
-    def check_dependency(dependency):
-        name, version = parse_requirement_string(dependency)
-        code = verify_pkg(name, version)
-        if code == EPP_PKG_NOT_EXIST:
-            logger.warning(
-                '%s package does not exist in the current python ' 'session', name
-            )
-        elif code == EPP_PKG_VERSION_MISMATCH:
-            logger.warning(
-                '%s package version is different from the version '
-                'being used in the current python session',
-                name,
-            )
-
     def add_conda_channels(self, channels: List[str]):
         self._conda_env.add_channels(channels)
 
     def add_conda_dependencies(self, conda_dependencies: List[str]):
         self._conda_env.add_conda_dependencies(conda_dependencies)
 
-    def add_python_packages(self, pip_dependencies: List[str]):
-        # Insert dependencies to the beginning of self.dependencies, so that user
-        # specified dependency version could overwrite this. This is used by BentoML
-        # to inject ModelArtifact or Adapter's optional pip dependencies
-        self._pip_dependencies = pip_dependencies + self._pip_dependencies
+    def add_pip_packages(self, pip_packages: List[str]):
+        for pip_package in pip_packages:
+            self.add_pip_package(pip_package)
+
+    def add_pip_package(self, pip_package: str):
+        # str must be a valid pip requirement specifier
+        # https://pip.pypa.io/en/stable/reference/pip_install/#requirement-specifiers
+        package_req = Requirement(pip_package)
+        self._add_pip_package_requirement(package_req)
+
+    def _add_pip_package_requirement(self, pkg_req: Requirement):
+        if pkg_req.name in self._pip_packages:
+            if (
+                pkg_req.specs
+                and pkg_req.specs != self._pip_packages[pkg_req.name].specs
+            ):
+                logger.warning(
+                    f"Overwriting existing pip package requirement "
+                    f"'{self._pip_packages[pkg_req.name]}' to '{pkg_req}'"
+                )
+            else:
+                logger.warning(f"pip package requirement {pkg_req} already exist")
+                return
+
+        verification_result = verify_pkg(pkg_req)
+        if verification_result == EPP_PKG_NOT_EXIST:
+            logger.warning(
+                f"pip package requirement `{str(pkg_req)}` not found in current "
+                f"python environment"
+            )
+        elif verification_result == EPP_PKG_VERSION_MISMATCH:
+            logger.warning(
+                f"pip package requirement `{str(pkg_req)}` does not match the "
+                f"version installed in current python environment"
+            )
+
+        if verification_result == EPP_NO_ERROR and not pkg_req.specs:
+            # pin the current version when there's no version spec found
+            pkg_version = get_pkg_version(pkg_req.name)
+            if pkg_version:
+                pkg_req = Requirement(f"{pkg_req.name}=={pkg_version}")
+
+        self._pip_packages[pkg_req.name] = pkg_req
 
     def set_setup_sh(self, setup_sh_path_or_content):
         self._setup_sh = None
@@ -231,13 +246,30 @@ class BentoServiceEnv(object):
 
     def add_packages_from_requirements_txt_file(self, requirements_txt_path):
         requirements_txt_file = Path(requirements_txt_path)
+        if not requirements_txt_file.is_file():
+            raise BentoMLException(
+                f"requirement txt file not found at '{requirements_txt_file}'"
+            )
+        with open(requirements_txt_file, 'rb') as f:
+            content = f.read().decode()
+            for req in parse_requirements(content):
+                self._add_pip_package_requirement(req)
 
-        with requirements_txt_file.open("rb") as f:
-            content = f.read()
-            module_list = content.decode("utf-8").split("\n")
-            self.add_python_packages(module_list)
+    def infer_pip_packages(self, bento_service):
+        if self._infer_pip_packages:
+            dependencies_map = bento_service.infer_pip_dependencies_map()
+            for pkg_name, pkg_version in dependencies_map.items():
+                if (
+                    pkg_name in self._pip_packages
+                    and self._pip_packages[pkg_name].specs
+                ):
+                    # package exist and already have version specs associated
+                    continue
+                else:
+                    # pin current version if the package has not been added
+                    self.add_pip_package(f"{pkg_name}=={pkg_version}")
 
-    def save(self, path, bento_service):
+    def save(self, path):
         conda_yml_file = os.path.join(path, "environment.yml")
         self._conda_env.write_to_yaml_file(conda_yml_file)
 
@@ -254,45 +286,9 @@ class BentoServiceEnv(object):
                 f.write(
                     f"--extra-index-url={self._pip_extra_index_url}\n".encode("utf-8")
                 )
-
-            dependencies_map = {}
-            for dep in self._pip_dependencies:
-                name, version = parse_requirement_string(dep)
-                dependencies_map[name] = version
-
-            if self._auto_pip_dependencies:
-                bento_service_module = sys.modules[bento_service.__class__.__module__]
-                if hasattr(bento_service_module, "__file__"):
-                    bento_service_py_file_path = bento_service_module.__file__
-                    reqs, unknown_modules = seek_pip_dependencies(
-                        bento_service_py_file_path
-                    )
-                    dependencies_map.update(reqs)
-                    for module_name in unknown_modules:
-                        logger.warning(
-                            "unknown package dependency for module: %s", module_name
-                        )
-
-                # Reset bentoml to configured deploy version - this is for users using
-                # customized BentoML branch for development but use a different stable
-                # version for deployment
-                #
-                # For example, a BentoService created with local dirty branch will fail
-                # to deploy with docker due to the version can't be found on PyPI, but
-                # get_bentoml_deploy_version gives the user the latest released PyPI
-                # version that's closest to the `dirty` branch
-                dependencies_map['bentoml'] = get_bentoml_deploy_version()
-
-            # Set self._pip_dependencies so it get writes to BentoService config file
-            self._pip_dependencies = []
-            for pkg_name, pkg_version in dependencies_map.items():
-                self._pip_dependencies.append(
-                    "{}{}".format(
-                        pkg_name, "=={}".format(pkg_version) if pkg_version else ""
-                    )
-                )
-
-            pip_content = "\n".join(self._pip_dependencies).encode("utf-8")
+            pip_content = '\n'.join(
+                [str(pkg_req) for pkg_req in self._pip_packages.values()]
+            ).encode("utf-8")
             f.write(pip_content)
 
         if self._setup_sh:
@@ -310,8 +306,10 @@ class BentoServiceEnv(object):
         if self._setup_sh:
             env_dict["setup_sh"] = self._setup_sh
 
-        if self._pip_dependencies:
-            env_dict["pip_dependencies"] = self._pip_dependencies
+        if self._pip_packages:
+            env_dict["pip_packages"] = [
+                str(pkg_req) for pkg_req in self._pip_packages.values()
+            ]
 
         env_dict["conda_env"] = self._conda_env._conda_env
 

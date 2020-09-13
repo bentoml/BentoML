@@ -54,7 +54,7 @@ Other than using Clipper specific input, the rest are the same as defining a reg
     >>> from bentoml.adapters import DataframeInput, ClipperFloatsInput
 
     >>> @artifacts([PickleArtifact('model')])
-    >>> @env(pip_dependencies=["scikit-learn"])
+    >>> @env(infer_pip_packages=True)
     >>> class IrisClassifier(BentoService):
 
     >>>     @api(input=DataframeInput())

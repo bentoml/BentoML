@@ -50,6 +50,37 @@ def test_service_env_pip_dependencies(tmpdir):
         assert 'torch' in module_list
 
 
+def test_service_env_pip_install_options(tmpdir):
+    sample_index_url = "https://pip.my_pypi_index.com"
+    sample_trusted_host = "https://pip.my_pypi_index.com"
+    sample_extra_index_url = "https://pip.my_pypi_index_ii.com"
+
+    @bentoml.env(
+        pip_dependencies=['numpy', 'pandas', 'torch'],
+        pip_index_url=sample_index_url,
+        pip_trusted_host=sample_trusted_host,
+        pip_extra_index_url=sample_extra_index_url,
+    )
+    class ServiceWithList(bentoml.BentoService):
+        @bentoml.api(input=DataframeInput())
+        def predict(self, df):
+            return df
+
+    service_with_list = ServiceWithList()
+    service_with_list.save_to_dir(str(tmpdir))
+
+    requirements_txt_path = os.path.join(str(tmpdir), 'requirements.txt')
+    with open(requirements_txt_path, 'rb') as f:
+        saved_requirements = f.read()
+        req_file = saved_requirements.decode('utf-8').split('\n')
+        assert 'numpy' in req_file
+        assert 'pandas' in req_file
+        assert 'torch' in req_file
+        assert f'--index-url={sample_index_url}' in req_file
+        assert f'--trusted-host={sample_trusted_host}' in req_file
+        assert f'--extra-index-url={sample_extra_index_url}' in req_file
+
+
 def test_artifact_pip_dependencies(tmpdir):
     @bentoml.artifacts([SklearnModelArtifact('model')])
     @bentoml.env(pip_dependencies=['scikit-learn==0.23.0'])

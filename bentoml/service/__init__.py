@@ -431,6 +431,9 @@ def artifacts_decorator(artifacts: List[BentoServiceArtifact]):
 
 def env_decorator(
     pip_dependencies: List[str] = None,
+    pip_index_url: str = None,
+    pip_trusted_host: str = None,
+    pip_extra_index_url: str = None,
     auto_pip_dependencies: bool = False,
     requirements_txt_file: str = None,
     conda_channels: List[str] = None,
@@ -444,6 +447,9 @@ def env_decorator(
     Args:
         pip_dependencies: list of pip_dependencies required, specified by package name
             or with specified version `{package_name}=={package_version}`
+        pip_index_url: passing down to pip install --index-url option
+        pip_trusted_host: passing down to pip install --trusted-host option
+        pip_extra_index_url: passing down to pip install --extra-index-url option
         auto_pip_dependencies: (Beta) whether to automatically find all the required
             pip dependencies and pin their version
         requirements_txt_file: pip dependencies in the form of a requirements.txt file,
@@ -461,6 +467,9 @@ def env_decorator(
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv(
             pip_dependencies=pip_dependencies,
+            pip_index_url=pip_index_url,
+            pip_trusted_host=pip_trusted_host,
+            pip_extra_index_url=pip_extra_index_url,
             auto_pip_dependencies=auto_pip_dependencies,
             requirements_txt_file=requirements_txt_file,
             conda_channels=conda_channels,

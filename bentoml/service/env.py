@@ -119,6 +119,9 @@ class BentoServiceEnv(object):
     Args:
         pip_dependencies: list of pip_dependencies required, specified by package name
             or with specified version `{package_name}=={package_version}`
+        pip_index_url: passing down to pip install --index-url option
+        pip_trusted_host: passing down to pip install --trusted-host option
+        pip_extra_index_url: passing down to pip install --extra-index-url option
         auto_pip_dependencies: Turn on to automatically find all the required
             pip dependencies and pin their version
         requirements_txt_file: pip dependencies in the form of a requirements.txt file,
@@ -134,6 +137,9 @@ class BentoServiceEnv(object):
     def __init__(
         self,
         pip_dependencies: List[str] = None,
+        pip_index_url: str = None,
+        pip_trusted_host: str = None,
+        pip_extra_index_url: str = None,
         auto_pip_dependencies: bool = False,
         requirements_txt_file: str = None,
         conda_channels: List[str] = None,
@@ -143,6 +149,9 @@ class BentoServiceEnv(object):
         docker_base_image: str = None,
     ):
         self._python_version = PYTHON_VERSION
+        self._pip_index_url = pip_index_url
+        self._pip_trusted_host = pip_trusted_host
+        self._pip_extra_index_url = pip_extra_index_url
 
         self._conda_env = CondaEnv(
             conda_channels, conda_dependencies, conda_environment_yml_file
@@ -235,6 +244,15 @@ class BentoServiceEnv(object):
 
         requirements_txt_file = os.path.join(path, "requirements.txt")
         with open(requirements_txt_file, "wb") as f:
+            if self._pip_index_url:
+                f.write(f"--index-url={self._pip_index_url}\n".encode("utf-8"))
+            if self._pip_trusted_host:
+                f.write(f"--trusted-host={self._pip_trusted_host}\n".encode("utf-8"))
+            if self._pip_extra_index_url:
+                f.write(
+                    f"--extra-index-url={self._pip_extra_index_url}\n".encode("utf-8")
+                )
+
             dependencies_map = {}
             for dep in self._pip_dependencies:
                 name, version = parse_requirement_string(dep)

@@ -1,7 +1,7 @@
 import pytest
 
 from bentoml.exceptions import InvalidArgument
-from bentoml.yatai.client.bento_repository_api import _validate_labels
+from bentoml.yatai.label_store import _validate_labels
 
 
 def test_validate_labels_fails():

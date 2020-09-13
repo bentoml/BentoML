@@ -38,7 +38,7 @@ class SpacyModelArtifact(BentoServiceArtifact):
     >>> from bentoml.adapters import JsonInput
     >>> from bentoml.frameworks.spacy import SpacyModelArtifact
     >>>
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> @bentoml.artifacts([SpacyModelArtifact('nlp')])
     >>> class SpacyModelService(bentoml.BentoService):
     >>>
@@ -97,7 +97,7 @@ class SpacyModelArtifact(BentoServiceArtifact):
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_python_packages(['spacy'])
+        env.add_pip_packages(['spacy'])
 
     def get(self):
         return self._model

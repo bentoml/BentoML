@@ -18,6 +18,7 @@ import logging
 import pkgutil
 import ast
 import zipimport
+from pkg_resources import Requirement
 
 
 EPP_NO_ERROR = 0
@@ -35,18 +36,25 @@ def parse_requirement_string(rs):
     return name, version
 
 
-def verify_pkg(pkg_name, pkg_version):
+def verify_pkg(pkg_req: Requirement):
     global __mm  # pylint: disable=global-statement
     if __mm is None:
         __mm = ModuleManager()
-    return __mm.verify_pkg(pkg_name, pkg_version)
+    return __mm.verify_pkg(pkg_req)
 
 
-def seek_pip_dependencies(target_py_file_path):
+def seek_pip_packages(target_py_file_path):
     global __mm  # pylint: disable=global-statement
     if __mm is None:
         __mm = ModuleManager()
-    return __mm.seek_pip_dependencies(target_py_file_path)
+    return __mm.seek_pip_packages(target_py_file_path)
+
+
+def get_pkg_version(pkg_name):
+    global __mm  # pylint: disable=global-statement
+    if __mm is None:
+        __mm = ModuleManager()
+    return __mm.pip_pkg_map.get(pkg_name, None)
 
 
 def get_all_pip_installed_modules():
@@ -112,17 +120,19 @@ class ModuleManager(object):
                     m.name, path, is_local, m.ispkg
                 )
 
-    def verify_pkg(self, pkg_name, pkg_version):
-        if pkg_name not in self.pip_pkg_map:
+    def verify_pkg(self, pkg_req: Requirement):
+        if pkg_req.name not in self.pip_pkg_map:
             # package does not exist in the current python session
             return EPP_PKG_NOT_EXIST
-        if pkg_version and pkg_version != self.pip_pkg_map[pkg_name]:
-            # package version is different from the version being used
-            # in the current python session
+
+        if self.pip_pkg_map[pkg_req.name] not in pkg_req.specifier:
+            # package version being used in the current python session does not meet
+            # the specified package version requirement
             return EPP_PKG_VERSION_MISMATCH
+
         return EPP_NO_ERROR
 
-    def seek_pip_dependencies(self, target_py_file_path):
+    def seek_pip_packages(self, target_py_file_path):
         work = DepSeekWork(self, target_py_file_path)
         work.do()
         requirements = {}

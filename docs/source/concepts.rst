@@ -21,7 +21,7 @@ the :doc:`Getting Started Guide <quickstart>`:
   from bentoml.adapters import DataframeInput
   from bentoml.frameworks.sklearn import SklearnModelArtifact
 
-  @bentoml.env(auto_pip_dependencies=True)
+  @bentoml.env(infer_pip_packages=True)
   @bentoml.artifacts([SklearnModelArtifact('model')])
   class IrisClassifier(bentoml.BentoService):
 
@@ -158,11 +158,11 @@ PyPI Packages
 
 Python PyPI package is the most common type of dependencies. BentoML provides a 
 mechanism that automatically figures out the PyPI packages required by your BentoService
-python class, simply use the :code:`auto_pip_dependencies=True` option.
+python class, simply use the :code:`infer_pip_packages=True` option.
 
 .. code-block:: python
 
-  @bentoml.env(auto_pip_dependencies=True)
+  @bentoml.env(infer_pip_packages=True)
   class ExamplePredictionService(bentoml.BentoService):
 
       @bentoml.api(input=DataframeInput())
@@ -170,14 +170,14 @@ python class, simply use the :code:`auto_pip_dependencies=True` option.
           return self.artifacts.model.predict(df)
 
 If you had specific versions of PyPI packages required for model serving that are
-different from your training environment, or if the :code:`auto_pip_dependencies=True`
+different from your training environment, or if the :code:`infer_pip_packages=True`
 option did not work for your case(bug report highly appreciated), you can also specify
 the list of PyPI packages manually, e.g.:
 
 .. code-block:: python
 
   @bentoml.env(
-    pip_dependencies=['scikit-learn']
+    pip_packages=['scikit-learn']
   )
   class ExamplePredictionService(bentoml.BentoService):
 
@@ -201,7 +201,7 @@ on an H2O model that requires the h2o conda packages:
 
     @bentoml.artifacts([H2oModelArtifact('model')])
     @bentoml.env(
-      pip_dependencies=['pandas', 'h2o==3.24.0.2'],
+      pip_packages=['pandas', 'h2o==3.24.0.2'],
       conda_channels=['h2oai'],
       conda_dependencies=['h2o==3.24.0.2']
     )
@@ -256,7 +256,7 @@ However, as with using any alternative Docker base image, there are a few things
 .. code-block:: python
 
   @bentoml.env(
-    pip_dependencies=['pandas'],
+    pip_packages=['pandas'],
     conda_channels=['h2oai'],
     conda_dependencies=['h2o==3.24.0.2'],
     docker_base_image="bentoml/model-server:0.8.12-slim-py37"
@@ -274,14 +274,14 @@ install extra system dependencies or do other setups required by the prediction 
 .. code-block:: python
 
   @bentoml.env(
-      auto_pip_dependencies=True,
+      infer_pip_packages=True,
       setup_sh="./my_init_script.sh"
   )
   class ExamplePredictionService(bentoml.BentoService):
       ...
 
   @bentoml.env(
-      auto_pip_dependencies=True,
+      infer_pip_packages=True,
       setup_sh="""\
   #!/bin/bash
   set -e
@@ -324,7 +324,7 @@ prediction service that packs two trained models:
     from bentoml.frameworks.sklearn import SklearnModelArtifact
     from bentoml.frameworks.xgboost import XgboostModelArtifact
 
-    @bentoml.env(auto_pip_dependencies=True)
+    @bentoml.env(infer_pip_packages=True)
     @artifacts([
         SklearnModelArtifact("model_a"),
         XgboostModelArtifact("model_b")

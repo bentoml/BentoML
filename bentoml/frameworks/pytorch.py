@@ -42,7 +42,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
     >>> from bentoml.adapters import ImageInput
     >>> from bentoml.frameworks.pytorch import PytorchModelArtifact
     >>>
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> @bentoml.artifacts([PytorchModelArtifact('net')])
     >>> class PytorchModelService(bentoml.BentoService):
     >>>
@@ -106,9 +106,9 @@ class PytorchModelArtifact(BentoServiceArtifact):
             "using PytorchModelArtifact. To make sure BentoML bundle those packages if "
             "they are required for your model, either import those packages in "
             "BentoService definition file or manually add them via "
-            "`@env(pip_dependencies=['torchvision'])` when defining a BentoService"
+            "`@env(pip_packages=['torchvision'])` when defining a BentoService"
         )
-        env.add_python_packages(['torch'])
+        env.add_pip_packages(['torch'])
 
     def get(self):
         return self._model

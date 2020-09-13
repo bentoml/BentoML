@@ -45,7 +45,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
     >>> from bentoml.frameworks.fastai import FastaiModelArtifact
     >>>
     >>> @bentoml.artifacts([FastaiModelArtifact('model')])
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> class FastaiModelService(bentoml.BentoService):
     >>>
     >>>     @api(input=DataframeInput())
@@ -93,9 +93,9 @@ class FastaiModelArtifact(BentoServiceArtifact):
             "using FastaiModelArtifact. To make sure BentoML bundle those packages if "
             "they are required for your model, either import those packages in "
             "BentoService definition file or manually add them via "
-            "`@env(pip_dependencies=['torchvision'])` when defining a BentoService"
+            "`@env(pip_packages=['torchvision'])` when defining a BentoService"
         )
-        env.add_python_packages(['torch', "fastai"])
+        env.add_pip_packages(['torch', "fastai"])
 
     def save(self, dst):
         self._model.export(file=self._file_name)

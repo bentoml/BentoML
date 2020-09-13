@@ -5,7 +5,7 @@ from bentoml.frameworks.onnx import OnnxModelArtifact
 from bentoml.adapters import DataframeInput
 
 
-@bentoml.env(auto_pip_dependencies=True)
+@bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([OnnxModelArtifact('model', backend='onnxruntime')])
 class OnnxIrisClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput())

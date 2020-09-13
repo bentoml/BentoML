@@ -28,9 +28,10 @@ message BentoServiceMetadata {
   message BentoServiceEnv {
     string setup_sh = 1;
     string conda_env = 2;
-    string pip_dependencies = 3;
+    string pip_dependencies = 3; // deprecated, in favor of pip_packages below
     string python_version = 4;
     string docker_base_image = 5;
+    repeated string pip_packages = 6;
   }
 
   message BentoArtifact {

@@ -44,7 +44,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
     >>> from bentoml.adapters import ImageInput
     >>> from bentoml.frameworks.coreml import CoreMLModelArtifact
     >>>
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> @bentoml.artifacts([CoreMLModelArtifact('model')])
     >>> class CoreMLModelService(bentoml.BentoService):
     >>>
@@ -104,7 +104,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_python_packages(['coremltools>=4.0b2'])
+        env.add_pip_packages(['coremltools>=4.0b2'])
 
     def get(self):
         return self._model

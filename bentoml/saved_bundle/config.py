@@ -147,10 +147,9 @@ class SavedBundleConfig(object):
                     self.config["env"]["conda_env"]
                 )
 
-            if "pip_dependencies" in self.config["env"]:
-                bento_service_metadata.env.pip_dependencies = "\n".join(
-                    self.config["env"]["pip_dependencies"]
-                )
+            if "pip_packages" in self.config["env"]:
+                for pip_package in self.config["env"]["pip_packages"]:
+                    bento_service_metadata.env.pip_packages.append(pip_package)
             if "python_version" in self.config["env"]:
                 bento_service_metadata.env.python_version = self.config["env"][
                     "python_version"

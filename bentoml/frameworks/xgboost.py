@@ -32,7 +32,7 @@ class XgboostModelArtifact(BentoServiceArtifact):
     >>> from bentoml.frameworks.xgboost import XgboostModelArtifact
     >>> from bentoml.adapters import DataframeInput
     >>>
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> @bentoml.artifacts(XgboostModelArtifact('model'))
     >>> class XGBoostModelService(bentoml.BentoService):
     >>>
@@ -52,7 +52,7 @@ class XgboostModelArtifact(BentoServiceArtifact):
         self._model = None
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_python_packages(['xgboost'])
+        env.add_pip_packages(['xgboost'])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._model_extension)

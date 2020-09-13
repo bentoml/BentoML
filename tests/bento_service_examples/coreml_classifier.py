@@ -8,7 +8,7 @@ from bentoml.adapters import DataframeInput
 from bentoml.frameworks.coreml import CoreMLModelArtifact
 
 
-@bentoml.env(auto_pip_dependencies=True)
+@bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([CoreMLModelArtifact('model')])
 class CoreMLClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput())

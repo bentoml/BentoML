@@ -43,7 +43,7 @@ class MultiFileInput(BaseInputAdapter):
         from bentoml.framework.pytroch import PytorchModelArtifact
         from bentoml.adapters import MultiFileInput
 
-        @bentoml.env(pip_dependencies=['torch', 'pillow', 'numpy'])
+        @bentoml.env(pip_packages=['torch', 'pillow', 'numpy'])
         @bentoml.artifacts([PytorchModelArtifact('classifier')])
         class PyTorchFashionClassifier(bentoml.BentoService):
 

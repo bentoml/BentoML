@@ -2525,6 +2525,9 @@ export namespace bentoml {
 
             /** BentoServiceEnv docker_base_image */
             docker_base_image?: (string|null);
+
+            /** BentoServiceEnv pip_packages */
+            pip_packages?: (string[]|null);
         }
 
         /** Represents a BentoServiceEnv. */
@@ -2550,6 +2553,9 @@ export namespace bentoml {
 
             /** BentoServiceEnv docker_base_image. */
             public docker_base_image: string;
+
+            /** BentoServiceEnv pip_packages. */
+            public pip_packages: string[];
 
             /**
              * Creates a new BentoServiceEnv instance using the specified properties.

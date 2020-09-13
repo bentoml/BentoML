@@ -6,7 +6,7 @@ from bentoml.frameworks.pytorch import PytorchModelArtifact
 from bentoml.adapters import DataframeInput
 
 
-@bentoml.env(auto_pip_dependencies=True)
+@bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([PytorchModelArtifact('model')])
 class PytorchClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput())

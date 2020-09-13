@@ -162,7 +162,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     >>> from bentoml.adapters import JsonInput
     >>> from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
     >>>
-    >>> @bentoml.env(pip_dependencies=["tensorflow"])
+    >>> @bentoml.env(pip_packages=["tensorflow"])
     >>> @bentoml.artifacts([TensorflowSavedModelArtifact('model')])
     >>> class TfModelService(bentoml.BentoService):
     >>>
@@ -189,7 +189,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         self._wrapper = None
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_python_packages(['tensorflow'])
+        env.add_pip_packages(['tensorflow'])
 
     def _saved_model_path(self, base_path):
         return os.path.join(base_path, self.name + '_saved_model')

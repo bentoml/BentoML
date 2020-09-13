@@ -26,7 +26,7 @@ class FasttextModelArtifact(BentoServiceArtifact):
     >>> from bentoml.adapters JsonInput
     >>> from bentoml.frameworks.fasttext import FasttextModelArtifact
     >>>
-    >>> @bentoml.env(auto_pip_dependencies=True)
+    >>> @bentoml.env(infer_pip_packages=True)
     >>> @bentoml.artifacts([FasttextModelArtifact('model')])
     >>> class FasttextModelService(bentoml.BentoService):
     >>>
@@ -46,7 +46,7 @@ class FasttextModelArtifact(BentoServiceArtifact):
         self._model = None
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_python_packages(["fasttext"])
+        env.add_pip_packages(["fasttext"])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)

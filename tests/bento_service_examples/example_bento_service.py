@@ -11,7 +11,7 @@ from bentoml.handlers import DataframeHandler  # deprecated
 
 
 @bentoml.artifacts([PickleArtifact("model")])
-@bentoml.env(auto_pip_dependencies=True)
+@bentoml.env(infer_pip_packages=True)
 class ExampleBentoService(bentoml.BentoService):
     """
     Example BentoService class made for testing purpose

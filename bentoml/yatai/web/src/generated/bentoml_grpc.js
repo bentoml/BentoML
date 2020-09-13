@@ -6358,6 +6358,7 @@ export const bentoml = $root.bentoml = (() => {
              * @property {string|null} [pip_dependencies] BentoServiceEnv pip_dependencies
              * @property {string|null} [python_version] BentoServiceEnv python_version
              * @property {string|null} [docker_base_image] BentoServiceEnv docker_base_image
+             * @property {Array.<string>|null} [pip_packages] BentoServiceEnv pip_packages
              */
 
             /**
@@ -6369,6 +6370,7 @@ export const bentoml = $root.bentoml = (() => {
              * @param {bentoml.BentoServiceMetadata.IBentoServiceEnv=} [properties] Properties to set
              */
             function BentoServiceEnv(properties) {
+                this.pip_packages = [];
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
@@ -6416,6 +6418,14 @@ export const bentoml = $root.bentoml = (() => {
             BentoServiceEnv.prototype.docker_base_image = "";
 
             /**
+             * BentoServiceEnv pip_packages.
+             * @member {Array.<string>} pip_packages
+             * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
+             * @instance
+             */
+            BentoServiceEnv.prototype.pip_packages = $util.emptyArray;
+
+            /**
              * Creates a new BentoServiceEnv instance using the specified properties.
              * @function create
              * @memberof bentoml.BentoServiceMetadata.BentoServiceEnv
@@ -6449,6 +6459,9 @@ export const bentoml = $root.bentoml = (() => {
                     writer.uint32(/* id 4, wireType 2 =*/34).string(message.python_version);
                 if (message.docker_base_image != null && Object.hasOwnProperty.call(message, "docker_base_image"))
                     writer.uint32(/* id 5, wireType 2 =*/42).string(message.docker_base_image);
+                if (message.pip_packages != null && message.pip_packages.length)
+                    for (let i = 0; i < message.pip_packages.length; ++i)
+                        writer.uint32(/* id 6, wireType 2 =*/50).string(message.pip_packages[i]);
                 return writer;
             };
 
@@ -6497,6 +6510,11 @@ export const bentoml = $root.bentoml = (() => {
                         break;
                     case 5:
                         message.docker_base_image = reader.string();
+                        break;
+                    case 6:
+                        if (!(message.pip_packages && message.pip_packages.length))
+                            message.pip_packages = [];
+                        message.pip_packages.push(reader.string());
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -6548,6 +6566,13 @@ export const bentoml = $root.bentoml = (() => {
                 if (message.docker_base_image != null && message.hasOwnProperty("docker_base_image"))
                     if (!$util.isString(message.docker_base_image))
                         return "docker_base_image: string expected";
+                if (message.pip_packages != null && message.hasOwnProperty("pip_packages")) {
+                    if (!Array.isArray(message.pip_packages))
+                        return "pip_packages: array expected";
+                    for (let i = 0; i < message.pip_packages.length; ++i)
+                        if (!$util.isString(message.pip_packages[i]))
+                            return "pip_packages: string[] expected";
+                }
                 return null;
             };
 
@@ -6573,6 +6598,13 @@ export const bentoml = $root.bentoml = (() => {
                     message.python_version = String(object.python_version);
                 if (object.docker_base_image != null)
                     message.docker_base_image = String(object.docker_base_image);
+                if (object.pip_packages) {
+                    if (!Array.isArray(object.pip_packages))
+                        throw TypeError(".bentoml.BentoServiceMetadata.BentoServiceEnv.pip_packages: array expected");
+                    message.pip_packages = [];
+                    for (let i = 0; i < object.pip_packages.length; ++i)
+                        message.pip_packages[i] = String(object.pip_packages[i]);
+                }
                 return message;
             };
 
@@ -6589,6 +6621,8 @@ export const bentoml = $root.bentoml = (() => {
                 if (!options)
                     options = {};
                 let object = {};
+                if (options.arrays || options.defaults)
+                    object.pip_packages = [];
                 if (options.defaults) {
                     object.setup_sh = "";
                     object.conda_env = "";
@@ -6606,6 +6640,11 @@ export const bentoml = $root.bentoml = (() => {
                     object.python_version = message.python_version;
                 if (message.docker_base_image != null && message.hasOwnProperty("docker_base_image"))
                     object.docker_base_image = message.docker_base_image;
+                if (message.pip_packages && message.pip_packages.length) {
+                    object.pip_packages = [];
+                    for (let j = 0; j < message.pip_packages.length; ++j)
+                        object.pip_packages[j] = message.pip_packages[j];
+                }
                 return object;
             };
 

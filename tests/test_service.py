@@ -36,8 +36,8 @@ def test_fastai_image_input_pip_dependencies():
 
     service = TestFastAiImageService()
 
-    assert 'imageio' in service._env._pip_dependencies
-    assert 'fastai' in service._env._pip_dependencies
+    assert 'imageio' in service._env._pip_packages
+    assert 'fastai' in service._env._pip_packages
 
 
 # noinspection PyUnusedLocal
@@ -90,7 +90,7 @@ def test_image_input_pip_dependencies():
             return images
 
     service = TestImageService()
-    assert 'imageio' in service._env._pip_dependencies
+    assert 'imageio' in service._env._pip_packages
 
 
 def test_validate_version_str_fails():

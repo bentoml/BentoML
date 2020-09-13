@@ -82,7 +82,7 @@ the iris classifier model trained above:
     from bentoml.adapters import DataframeInput
     from bentoml.frameworks.sklearn import SklearnModelArtifact
 
-    @env(auto_pip_dependencies=True)
+    @env(infer_pip_packages=True)
     @artifacts([SklearnModelArtifact('model')])
     class IrisClassifier(BentoService):
 
@@ -114,7 +114,7 @@ Besides `DataframeInput`, BentoML also supports API input types such as `JsonInp
 The :code:`@env` decorator specifies the dependencies and environment settings
 for this prediction service. It allows BentoML to reproduce the exact same environment
 when moving the model and related code to production. With the
-:code:`auto_pip_dependencies=True` flag used in this example, BentoML will automatically
+:code:`infer_pip_packages=True` flag used in this example, BentoML will automatically
 figure all the PyPI packages that are required by the prediction service code and pins
 down their versions.
 

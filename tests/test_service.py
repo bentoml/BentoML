@@ -1,7 +1,7 @@
 import pytest
 
 import bentoml
-from bentoml.artifact import PickleArtifact
+from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.adapters import DataframeInput, FastaiImageInput, ImageInput
 from bentoml.service import validate_version_str
 from bentoml.exceptions import InvalidArgument

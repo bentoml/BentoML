@@ -11,7 +11,7 @@ from bentoml.adapters import (  # FastaiImageInput,
     JsonInput,
     LegacyImageInput,
 )
-from bentoml.service.common_artifacts import PickleArtifact
+from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.frameworks.sklearn import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.saved_bundle import save_to_dir

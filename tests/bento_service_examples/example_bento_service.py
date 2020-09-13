@@ -6,7 +6,7 @@ from bentoml.adapters import (  # FastaiImageInput,
     LegacyImageInput,
     LegacyJsonInput,
 )
-from bentoml.service.common_artifacts import PickleArtifact
+from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.handlers import DataframeHandler  # deprecated
 
 

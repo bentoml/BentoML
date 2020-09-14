@@ -1,9 +1,7 @@
 import os
-import logging
-from bentoml.artifact import BentoServiceArtifact
+from bentoml.service import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException, InvalidArgument, NotFound
 
-logger = logging.getLogger(__name__)
 try:
     import transformers
 except ImportError:
@@ -12,7 +10,7 @@ except ImportError:
     )
 
 
-class TransformersArtifact(BentoServiceArtifact):
+class TransformersModelArtifact(BentoServiceArtifact):
     """[summary]
     Abstraction for saving/loading HuggingFace Transformers models
 
@@ -20,34 +18,26 @@ class TransformersArtifact(BentoServiceArtifact):
         name (string): name of the artifact
 
     Raises:
-        MissingDependencyException: transformers package is required for TransformersArtifact
-        InvalidArgument: invalid argument type, model being packed must be a dictionary of format {'model':transformers model object,'tokenizer':transformers tokenizer object} or a directory where the model is saved or a pretrained model provied by transformers which can be loaded by transformers.AutoModel
+        MissingDependencyException: transformers package is required for TransformersModelArtifact
+        InvalidArgument: invalid argument type, model being packed 
+            must be either a dictionary of format 
+            {'model':transformers model object,'tokenizer':transformers tokenizer object} 
+            or a directory path where the model is saved 
+            or a pretrained model provied by transformers 
+            which can be loaded by transformers.AutoModel
         NotFound: if the provided model name or model path is not found
 
     Example usage:
 
-    >>> import torch.nn as nn
-    >>>
-    >>> class Net(nn.Module):
-    >>>     def __init__(self):
-    >>>         super(Net, self).__init__()
-    >>>         ...
-    >>>
-    >>>     def forward(self, x):
-    >>>         ...
-    >>>
-    >>> net = Net()
-    >>> # Train model with data
-    >>>
-    >>>
+    >>> 
     >>> import bentoml
     >>> from bentoml.adapters import JsonInput
-    >>> from bentoml.frameworks.transformers import TransformersArtifact
-    >>> 
-    >>> 
+    >>> from bentoml.frameworks.transformers import TransformersModelArtifact
+    >>>
+    >>> # Example : text generation using GPT2
     >>> # Explicitly add either torch or tensorflow dependency which will be used by transformers
     >>> @bentoml.env(pip_dependencies=["torch==1.6.0", "transformers==3.1.0"])
-    >>> @bentoml.artifacts([TransformersArtifact('gptModel')])
+    >>> @bentoml.artifacts([TransformersModelArtifact('gptModel')])
     >>> class TransformersService(bentoml.BentoService):
     >>>     @bentoml.api(input=JsonInput())
     >>>     def predict(self, parsed_json):
@@ -69,7 +59,7 @@ class TransformersArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
-        super(TransformersArtifact, self).__init__(name)
+        super(TransformersModelArtifact, self).__init__(name)
         self._model = None
         self._model_type = None
         self._tokenizer_type = None
@@ -123,7 +113,7 @@ class TransformersArtifact(BentoServiceArtifact):
             transformers_model = transformers.AutoModel.from_pretrained(model_name)
             tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
             self._model = {"model": transformers_model, "tokenizer": tokenizer}
-        except Exception as error:
+        except Exception:
             raise NotFound(
                 "model with the name {} is not present in the transformers library".format(
                     model_name

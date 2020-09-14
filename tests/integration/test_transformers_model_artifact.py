@@ -1,8 +1,5 @@
-import os
-
 import pytest
 import bentoml
-from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.transformer_gpt_example import (
     TransformersGPT2TextGenerator,
 )

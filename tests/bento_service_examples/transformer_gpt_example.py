@@ -1,10 +1,10 @@
-from bentoml.frameworks.transformers import TransformersArtifact
+from bentoml.frameworks.transformers import TransformersModelArtifact
 import bentoml
 from bentoml.adapters import JsonInput
 
 
 @bentoml.env(pip_dependencies=["torch==1.6.0", "transformers==3.1.0"])
-@bentoml.artifacts([TransformersArtifact("gptModel")])
+@bentoml.artifacts([TransformersModelArtifact("gptModel")])
 class TransformersGPT2TextGenerator(bentoml.BentoService):
     @bentoml.api(input=JsonInput())
     def predict(self, parsed_json):

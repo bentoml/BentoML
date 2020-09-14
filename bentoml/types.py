@@ -66,11 +66,25 @@ class FileLike:
                     raise NotImplementedError(
                         f"{self.__class__} now supports scheme 'file://' only"
                     )
-                _, self.name = os.path.split(p.path)
+                _, self.name = os.path.split(self.path)
 
     @property
     def path(self):
-        return urllib.parse.urlparse(self.uri).path
+        r'''
+        supports:
+
+        /home/user/file
+        C:\Python27\Scripts\pip.exe
+        \\localhost\c$\WINDOWS\clock.avi
+        \\networkstorage\homes\user
+
+        https://stackoverflow.com/a/61922504/3089381
+        '''
+        parsed = urllib.parse.urlparse(self.uri)
+        raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))
+        host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
+        path = os.path.abspath(os.path.join(host, raw_path))
+        return path
 
     @property
     def _stream(self):

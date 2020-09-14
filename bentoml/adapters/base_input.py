@@ -15,6 +15,7 @@
 import argparse
 import functools
 import itertools
+import pathlib
 import sys
 from typing import Iterable, Iterator, NamedTuple, Sequence, Tuple
 
@@ -169,7 +170,8 @@ class CliInputParser(NamedTuple):
         if all(file_inputs):
             if functools.reduce(lambda i, j: len(i) == len(j), file_inputs):
                 for input_ in zip(*file_inputs):
-                    yield tuple(FileLike(uri=fpath) for fpath in input_)
+                    uris = (pathlib.Path(fpath).absolute().as_uri() for fpath in input_)
+                    yield tuple(FileLike(uri=uri) for uri in uris)
             else:
                 exit_cli(
                     f'''
@@ -216,7 +218,8 @@ def parse_cli_input(cli_args: Iterable[str]) -> Iterator[FileLike]:
     is_file = parsed_args.input_file is not None
     if is_file:
         for input_ in inputs:
-            yield FileLike(uri=input_)
+            uri = pathlib.Path(input_).absolute().as_uri()
+            yield FileLike(uri=uri)
 
     else:
         for input_ in inputs:

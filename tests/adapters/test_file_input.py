@@ -1,10 +1,10 @@
 # pylint: disable=redefined-outer-name
 import base64
-import pytest
-import mock
 
-from bentoml.types import HTTPRequest
+import pytest
+
 from bentoml.adapters import FileInput
+from bentoml.types import HTTPRequest
 
 
 @pytest.fixture()
@@ -42,9 +42,8 @@ def test_file_input_aws_lambda_event(input_adapter, bin_file):
 
 
 def test_file_input_http_request_post_binary(input_adapter, bin_file):
-    request = mock.MagicMock(spec=HTTPRequest)
-    request.headers = tuple()
-    request.body = open(str(bin_file), 'rb').read()
+    with open(str(bin_file), 'rb') as f:
+        request = HTTPRequest(body=f.read())
 
     task = input_adapter.from_http_request(request)
     assert b'\x810\x899' == task.data.read()
@@ -67,11 +66,7 @@ def test_file_input_http_request_multipart_form(input_adapter, bin_file):
 
 
 def test_file_input_http_request_malformatted_input_missing_file(input_adapter):
-    request = mock.MagicMock(spec=HTTPRequest)
-
-    request.files = {}
-    request.headers = {}
-    request.body = None
+    request = HTTPRequest(body=None)
 
     task = input_adapter.from_http_request(request)
     assert task.is_discarded

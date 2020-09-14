@@ -53,6 +53,7 @@ BENTOML_RESERVED_API_NAMES = [
     "feedback",
 ]
 logger = logging.getLogger(__name__)
+prediction_logger = logging.getLogger("bentoml.prediction")
 
 
 class InferenceAPI(object):
@@ -242,6 +243,22 @@ class InferenceAPI(object):
             )
 
         full_results = InferenceResult.complete_discarded(inf_tasks, inf_results)
+
+        log_data = dict(
+            service_name=self.service.name if self.service else "",
+            service_version=self.service.version if self.service else "",
+            api=self.name,
+        )
+        for task, result in zip(inf_tasks, inf_results):
+            prediction_logger.info(
+                dict(
+                    log_data,
+                    task=task.to_json(),
+                    result=result.to_json(),
+                    request_id=task.task_id,
+                )
+            )
+
         return tuple(full_results)
 
     def handle_request(self, request: flask.Request):

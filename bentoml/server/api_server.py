@@ -18,10 +18,17 @@ import sys
 import uuid
 from functools import partial
 
-from flask import Flask, jsonify, Response, request, make_response, send_from_directory
+from flask import (
+    Flask,
+    Response,
+    jsonify,
+    make_response,
+    request,
+    send_from_directory,
+)
 from werkzeug.exceptions import BadRequest, NotFound
 
-from bentoml import config, BentoService
+from bentoml import BentoService, config
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader
@@ -32,9 +39,7 @@ from bentoml.service import InferenceAPI
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
-prediction_logger = logging.getLogger("bentoml.prediction")
 feedback_logger = logging.getLogger("bentoml.feedback")
-
 logger = logging.getLogger(__name__)
 
 INDEX_HTML = '''\

@@ -13,16 +13,15 @@
 # limitations under the License.
 
 import argparse
-import contextlib
 import functools
-import io
 import itertools
 import sys
-from typing import BinaryIO, Iterable, Iterator, NamedTuple, Sequence, Tuple
+from typing import Iterable, Iterator, NamedTuple, Sequence, Tuple
 
 from bentoml.types import (
     ApiFuncArgs,
     AwsLambdaEvent,
+    FileLike,
     HTTPRequest,
     InferenceTask,
 )
@@ -128,7 +127,7 @@ class CliInputParser(NamedTuple):
 
         return cls(arg_names, file_arg_names, arg_strs, file_arg_strs, parser)
 
-    def parse(self, args: Sequence[str]) -> Iterator[Tuple[BinaryIO]]:
+    def parse(self, args: Sequence[str]) -> Iterator[Tuple[FileLike]]:
         try:
             parsed, _ = self.parser.parse_known_args(args)
         except SystemExit:
@@ -157,7 +156,7 @@ class CliInputParser(NamedTuple):
         if all(inputs):
             if functools.reduce(lambda i, j: len(i) == len(j), inputs):
                 for input_ in zip(*inputs):
-                    yield tuple(io.BytesIO(i.encode()) for i in input_)
+                    yield tuple(FileLike(bytes_=i.encode()) for i in input_)
             else:
                 exit_cli(
                     f'''
@@ -170,8 +169,7 @@ class CliInputParser(NamedTuple):
         if all(file_inputs):
             if functools.reduce(lambda i, j: len(i) == len(j), file_inputs):
                 for input_ in zip(*file_inputs):
-                    with contextlib.ExitStack() as stack:
-                        yield tuple(stack.enter_context(open(f, "rb")) for f in input_)
+                    yield tuple(FileLike(uri=fpath) for fpath in input_)
             else:
                 exit_cli(
                     f'''
@@ -183,8 +181,8 @@ class CliInputParser(NamedTuple):
 
 
 def parse_cli_inputs(
-    args: Sequence[str], input_names: Tuple[str, ...] = None
-) -> Iterator[Tuple[BinaryIO]]:
+    args: Sequence[str], input_names: Sequence[str] = None
+) -> Iterator[Tuple[FileLike]]:
     '''
     Parse CLI args and iter each pair of inputs in bytes.
 
@@ -197,7 +195,7 @@ def parse_cli_inputs(
     return parser.parse(args)
 
 
-def parse_cli_input(cli_args: Iterable[str]) -> Iterator[BinaryIO]:
+def parse_cli_input(cli_args: Iterable[str]) -> Iterator[FileLike]:
     '''
     Parse CLI args and iter each input in bytes.
 
@@ -218,13 +216,11 @@ def parse_cli_input(cli_args: Iterable[str]) -> Iterator[BinaryIO]:
     is_file = parsed_args.input_file is not None
     if is_file:
         for input_ in inputs:
-            with open(input_, "rb") as f:
-                yield f
+            yield FileLike(uri=input_)
 
     else:
         for input_ in inputs:
-            rv = io.BytesIO(input_.encode())
-            rv.name = None
+            rv = FileLike(bytes_=input_.encode())
             yield rv
 
     return _

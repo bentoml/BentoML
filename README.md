@@ -120,15 +120,16 @@ Online serving with API model server:
 * Automatically generate HTTP API spec in **Swagger/OpenAPI** format
 * **Prediction logging** and feedback logging endpoint
 * Health check endpoint and **Prometheus** `/metrics` endpoint for monitoring
+* Load and replay historical prediction request logs (roadmap)
 * Model serving via gRPC endpoint (roadmap)
 
 Advanced workflow for model serving and deployment:
 * **Central repository** for managing all your team's packaged models via Web UI and API
 * Launch inference run from CLI or Python, which enables **CI/CD** testing, programmatic 
     access and **batch offline inference job**
-* Distributed batch job or streaming job with **Apache Spark** (requires manual setup, better support for this is on roadmap)
-* Automated deployment with cloud platforms including AWS Lambda, AWS SageMaker, and Azure Functions
-* **Advanced model deployment workflow** on Kubernetes cluster, including auto-scaling, scale-to-zero, A/B testing, canary deployment, and multi-armed-bandit (roadmap)
+* **One-click deployment** to cloud platforms including AWS Lambda, AWS SageMaker, and Azure Functions
+* Distributed batch job or streaming job with **Apache Spark** (improved Spark support is on roadmap)
+* **Advanced model deployment workflows** for Kubernetes, including auto-scaling, scale-to-zero, A/B testing, canary deployment, and multi-armed-bandit (roadmap)
 * Deep integration with ML experimentation platforms including MLFlow, Kubeflow (roadmap)
 
 

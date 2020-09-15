@@ -1,22 +1,22 @@
-[![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml.png)](https://github.com/bentoml/BentoML)
+[![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-crop.png)](https://github.com/bentoml/BentoML)
 
-The easiest way to build high-performing Machine Learning APIs.
+## The easiest way to build high-performing Machine Learning APIs
 
 BentoML is an open-source framework for serving, managing and deploying machine
-learning models, aiming to bridge the gap between Data Science and DevOps.
+learning models. It is aiming to bridge the gap between Data Science and DevOps,
+and enable data science teams to continuesly deliver high-quality prediction
+services.
 
 What does BentoML do?
-* Package models trained with any framework and reproduce them for model serving in 
+* Package models trained with _any framework_ and reproduce them for model serving in 
     production
-* Package once and deploy anywhere, supporting Docker, Kubernetes, Apache Spark,
-    Airflow, Kubeflow, Knative, AWS Lambda, SageMaker, Azure ML, GCP, Heroku and more
-* High-Performance API model server with adaptive micro-batching support
-* Central hub for teams to manage and access packaged models via Web UI and API
+* Package once and _deploy anywhere_ for real-time API serving or offline batch serving
+* High-Performance API model server with _adaptive micro-batching_ support
+* Central storage hub with Web UI and APIs for managing and accessing packaged models
 
-👉 To connect with the community and ask questions, check out
-[BentoML Discussions on Github](https://github.com/bentoml/BentoML/discussions) and the
-[BentoML Slack Community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
-
+👉 Join the community:
+[BentoML Discussions on Github](https://github.com/bentoml/BentoML/discussions) and
+[BentoML Slack Channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
 
 ---
 

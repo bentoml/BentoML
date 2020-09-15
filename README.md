@@ -159,7 +159,7 @@ Advanced workflow for model serving and deployment:
 Be sure to check out [deployment overview doc](https://docs.bentoml.org/en/latest/deployment/index.html)
 to understand which deployment option is best suited for your use case.
 
-* One-click deployment with BentoML
+* One-click deployment with BentoML:
   - [AWS Lambda](https://docs.bentoml.org/en/latest/deployment/aws_lambda.html)
   - [AWS SageMaker](https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html)
   - [Azure Functions](https://docs.bentoml.org/en/latest/deployment/azure_functions.html)

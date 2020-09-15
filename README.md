@@ -57,7 +57,7 @@ from my_library import preprocess
 @artifacts([SklearnModelArtifact('my_model')])
 class MyPredictionService(BentoService):
 
-    @api(input=DataframeInput(orient="records"), batch=True)
+    @api(input=DataframeInput(orient="records"))
     def predict(self, df: pd.DataFrame):
         model_input = preprocess(df)
         return self.artifacts.model.predict(model_input)

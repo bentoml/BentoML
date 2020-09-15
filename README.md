@@ -1,4 +1,5 @@
-[![BentoML - The easiest way to build machine learning APIs](https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-readme-header.jpeg)](https://github.com/bentoml/BentoML)
+[<img src="https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-readme-header.jpeg" width="600px" margin-left="-5px">](https://github.com/bentoml/BentoML)
+
 
 ## The easiest way to build Machine Learning APIs
 

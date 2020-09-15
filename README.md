@@ -1,11 +1,12 @@
-[![BentoML](https://raw.githubusercontent.com/parano/BentoML/master/docs/source/_static/img/bentoml-crop.png)](https://github.com/bentoml/BentoML)
+[![BentoML](https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-crop.png)](https://github.com/bentoml/BentoML)
 
-## The easiest way to build high-performing Machine Learning APIs
+## The easiest way to build Machine Learning APIs
+__Multi-framework • High performance • Easy to learn • Designed for teams__
 
-BentoML is an open-source framework for serving, managing and deploying machine
-learning models. It is aiming to bridge the gap between Data Science and DevOps,
-and enable data science teams to continuesly deliver high-quality prediction
-services.
+
+BentoML is a framework for serving, managing and deploying machine learning models. It
+is aiming to bridge the gap between Data Science and DevOps, and enable data science 
+teams to continuesly deliver prediction services to production.
 
 What does BentoML do?
 * Package models trained with _any framework_ and reproduce them for model serving in 

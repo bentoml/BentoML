@@ -2,7 +2,7 @@
 
 ## The easiest way to build Machine Learning APIs
 
-_Multi-framework  /  High-performance  /  Easy to learn  /  Ready for production_
+_Multi-framework  /  High-performance  /  Easy to learn  /  Production ready_
 
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)

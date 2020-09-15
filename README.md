@@ -1,4 +1,4 @@
-[<img src="https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-crop.png" width="380px">](https://github.com/bentoml/BentoML)
+[<img src="https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-with-tagline.png" width="380px">](https://github.com/bentoml/BentoML)
 
 <h3 style="font-weight:normal"> The easiest way to build Machine Learning APIs</h3>
 _Multi-framework • High performance • Easy to learn • Designed for teams_

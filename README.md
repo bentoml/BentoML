@@ -19,8 +19,8 @@ is aiming to bridge the gap between Data Science and DevOps, and enable data sci
 teams to continuesly deliver prediction services to production.
 
 👉 Join the community:
-[BentoML Discussions on Github](https://github.com/bentoml/BentoML/discussions) and
-[BentoML Slack Channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+[BentoML Slack Channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+and [BentoML Discussions](https://github.com/bentoml/BentoML/discussions).
 
 ---
 

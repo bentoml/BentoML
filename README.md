@@ -185,10 +185,10 @@ is a sequential process across data science, engineering and DevOps teams: after
 model is trained by the data science team, they hand it over to the engineering team to
 refine and optimize code and creates an API, before DevOps can deploy.
 
-And most importantly, Data Science teams want to continously monitor the models deployed
-in production and ship new models quickly. But it takes months for engineering teams to
-build a model serving & deployment solution that allow data science teams to ship new
-models in a repeatable and reliable way.
+And most importantly, Data Science teams want to continously repeat this process,
+monitor the models deployed in production and ship new models quickly. It often takes
+months for an engineering team to build a model serving & deployment solution that allow
+data science teams to ship new models in a repeatable and reliable way.
 
 BentoML is a framework designed to solve this problem. It provides high-level APIs for
 Data Science team to create prediction services, abstract away DevOps'

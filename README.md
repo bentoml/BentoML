@@ -12,7 +12,7 @@ _Multi-framework  /  High-performance  /  Easy to learn  /  Production ready_
 <img src="https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c">
 
 What does BentoML do?
-* Package models trained with _any framework_ and reproduce them for model serving in 
+* Package models trained with _any ML framework_ and reproduce them for model serving in 
     production
 * Package once and _deploy anywhere_ for real-time API serving or offline batch serving
 * High-Performance API model server with _adaptive micro-batching_ support
@@ -76,31 +76,35 @@ svc.save()  # default saves to ~/bentoml/repository/MyPredictionService/{version
 
 This will save all the code, files, serialized models, and configs required to reproduce
 this prediction service for inferencing. BentoML automatically find all the pip package
-dependencies and local python code dependencies required by your prediction service. And
+dependencies and local python code dependencies required by your prediction service, and
 make sure all those information are packaged and versioned together with your code and
 models.
 
-With the saved prediction service, a user can easily start an API server hosting it:
+With the saved prediction service, a user can easily start a local API server hosting it:
 ```bash
 bentoml serve MyPredictionService:latest
 ```
 
-Or create a docker container image for deploying this API model server for production:
+And create a docker container image for this API model server with just one command:
 ```bash
 bentoml containerize my_prediction_service MyPredictionService:latest -t my_prediction_service
 
 docker run -p 5000:5000 my_prediction_service
 ```
 
-Here's a detailed [tutorial](https://docs.bentoml.org/en/latest/quickstart.html) 
-covering the basic functionalities of BentoML. You can also try it out 
+In addition to the model inference API, this containerized BentoML model server also 
+comes with instrumentations, metrics & healthcheck endpoint, prediction logging, tracing
+and it is ready for your DevOps team to deploy in production.
+
+Read the [Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html) 
+to learn more about the basic functionalities of BentoML. You can also try it out 
 [here on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb).
 
 ## Documentation
 
 BentoML documentation: [https://docs.bentoml.org/](https://docs.bentoml.org/)
 
-* [Quick Start Guide](https://docs.bentoml.org/en/latest/quickstart.html), try it out [on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb) 
+* [Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html), try it out [on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb) 
 * [Core Concepts](https://docs.bentoml.org/en/latest/concepts.html)
 * [API References](https://docs.bentoml.org/en/latest/api/index.html)
 * [FAQ](https://docs.bentoml.org/en/latest/faq.html)
@@ -176,18 +180,21 @@ to understand which deployment option is best suited for your use case.
 
 ## Why BentoML
 
-Moving trained Machine Learning models to serving applications in production is hard. 
-Data Scientists are not experts in building production services. The trained models they
-produced are loosely specified and hard to deploy. This often leads ML teams to a
-time-consuming and error-prone process, where a jupyter notebook along with pickle and
-protobuf file being handed over to ML engineers, for turning the trained model into
-services that can be properly deployed and managed by DevOps.
+Moving trained Machine Learning models to serving applications in production is hard. It
+is a sequential process across data science, engineering and DevOps teams: after a
+model is trained by the data science team, they hand it over to the engineering team to
+refine and optimize code and creates an API, before DevOps can deploy.
 
-BentoML is framework for ML model serving. It provides high-level APIs for Data
-Scientists to create production-ready prediction services, without them worrying about 
-the infrastructure needs and performance optimizations. BentoML does all those under the
-hood, which allows DevOps to seamlessly work with Data Science team, helping to deploy
-and operate their models, packaged in the BentoML format.
+And most importantly, Data Science teams want to continously monitor the models deployed
+in production and ship new models quickly. But it takes months for engineering teams to
+build a model serving & deployment solution that allow data science teams to ship new
+models in a repeatable and reliable way.
+
+BentoML is a framework designed to solve this problem. It provides high-level APIs for
+Data Science team to create prediction services, abstract away DevOps'
+infrastructure needs and performance optimizations in the process. This allows DevOps
+team to seamlessly work with data science side-by-side, deploy and operate their models
+packaged in BentoML format in production.
 
 Check out [Frequently Asked Questions](https://docs.bentoml.org/en/latest/faq.html) page
 on how does BentoML compares to Tensorflow-serving, Clipper, AWS SageMaker, MLFlow, etc.

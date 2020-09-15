@@ -29,6 +29,7 @@ and [BentoML Discussions](https://github.com/bentoml/BentoML/discussions).
 
 ---
 
+- [How it works](https://github.com/bentoml/BentoML#how-bentoml-works)
 - [Documentation](https://docs.bentoml.org/)
 - [Getting Started](https://github.com/bentoml/BentoML#getting-started)
 - [Example Gallery](https://github.com/bentoml/gallery)
@@ -36,6 +37,65 @@ and [BentoML Discussions](https://github.com/bentoml/BentoML/discussions).
 - [Contributing](https://github.com/bentoml/BentoML#contributing)
 - [License](https://github.com/bentoml/BentoML/blob/master/LICENSE)
 
+
+## How BentoML works
+
+BentoML provides high-level APIs for creating prediction services that's bundled with
+one or multiple trained models. User can define inference APIs with serving logic in the
+API callback function and specify input/output data format via BentoML's built-in data
+adapters:
+
+```python
+import pandas as pd
+from bentoml import env, artifacts, api, BentoService
+from bentoml.adapters import DataframeInput
+from bentoml.frameworks.sklearn import SklearnModelArtifact
+
+from my_library import preprocess
+
+@env(infer_pip_packages=True)
+@artifacts([SklearnModelArtifact('my_model')])
+class MyPredictionService(BentoService):
+
+    @api(input=DataframeInput(orient="records"), batch=True)
+    def predict(self, df: pd.DataFrame):
+        model_input = preprocess(df)
+        return self.artifacts.model.predict(model_input)
+```
+
+At the end of your model training pipeline, import your BentoML prediction service
+class, pack it with your trained model, and persist the entire prediction service with
+`save` call at the end:
+
+```python
+my_trained_sklearn_model = 
+from my_prediction_service import MyPredictionService
+svc = MyPredictionService()
+svc.pack('my_model', my_trained_sklearn_model)
+svc.save()
+```
+
+This will save all the code, files, serialized models, and configs required to reproduce
+this prediction service for inferencing. BentoML automatically find all the pip package
+dependencies and local python code dependencies required by your prediction service. And
+make sure all those information are packaged and versioned together with your code and
+models.
+
+With the saved prediction service, a user can easily start an API server hosting it:
+```bash
+bentoml serve MyPredictionService:latest
+```
+
+Or create a docker container image for deploying this API model server for production:
+```bash
+bentoml my_prediction_service MyPredictionService:latest -t my_prediction_service
+
+docker run -p 5000:5000 my_prediction_service
+```
+
+Here's a detailed [tutorial](https://docs.bentoml.org/en/latest/quickstart.html) 
+covering the basic functionalities of BentoML. You can also try it out 
+[here on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb).
 
 ## Documentation
 
@@ -47,47 +107,8 @@ BentoML documentation: [https://docs.bentoml.org/](https://docs.bentoml.org/)
 * [FAQ](https://docs.bentoml.org/en/latest/faq.html)
 * Example projects: [bentoml/Gallery](https://github.com/bentoml/gallery)
 
-#### ML Frameworks
 
-* Scikit-Learn - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#scikit-learn) | [Examples](https://github.com/bentoml/gallery#scikit-learn)
-* PyTorch - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#pytorch) | [Examples](https://github.com/bentoml/gallery#pytorch)
-* Tensorflow 2 - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#tensorflow-2-0) | [Examples](https://github.com/bentoml/gallery#tensorflow-20)
-* Tensorflow Keras - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#tensorflow-keras) | [Examples](https://github.com/bentoml/gallery#tensorflow-keras)
-* XGBoost - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#xgboost) | [Examples](https://github.com/bentoml/gallery#xgboost)
-* LightGBM - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#lightgbm) | [Examples](https://github.com/bentoml/gallery#lightgbm)
-* FastText - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#fasttext) | [Examples](https://github.com/bentoml/gallery#fasttext)
-* FastAI - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#fastai) | [Examples](https://github.com/bentoml/gallery#fastai)
-* H2O - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#h2o) | [Examples](https://github.com/bentoml/gallery#h2o)
-* ONNX - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#onnx) | [Examples](https://github.com/bentoml/gallery#onnx)
-* CoreML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#coreml)
-* Spacy - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#spacy)
-
-
-#### Deployment Options
-
-Be sure to check out [deployment overview doc](https://docs.bentoml.org/en/latest/deployment/index.html)
-to understand which deployment option is best suited for your use case.
-
-* One-click deployment with BentoML
-  - [AWS Lambda](https://docs.bentoml.org/en/latest/deployment/aws_lambda.html)
-  - [AWS SageMaker](https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html)
-  - [Azure Functions](https://docs.bentoml.org/en/latest/deployment/azure_functions.html)
-
-* Deploy with open-source platforms:
-  - [Docker](https://docs.bentoml.org/en/latest/deployment/docker.html)
-  - [Kubernetes](https://docs.bentoml.org/en/latest/deployment/kubernetes.html)
-  - [Knative](https://docs.bentoml.org/en/latest/deployment/knative.html)
-  - [Kubeflow](https://docs.bentoml.org/en/latest/deployment/kubeflow.html)
-  - [KFServing](https://docs.bentoml.org/en/latest/deployment/kfserving.html)
-  - [Clipper](https://docs.bentoml.org/en/latest/deployment/clipper.html)
-
-* Deploy directly to cloud services:
-  - [AWS ECS](https://docs.bentoml.org/en/latest/deployment/aws_ecs.html)
-  - [Google Cloud Run](https://docs.bentoml.org/en/latest/deployment/google_cloud_run.html)
-  - [Azure container instance](https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html)
-  - [Heroku](https://docs.bentoml.org/en/latest/deployment/heroku.html)
-
-#### Kye Features
+### Kye Features
 
 Online serving with API model server:
 * **Containerized model server** for production deployment with Docker, Kubernetes, OpenShift, AWS ECS, Azure, GCP GKE, etc
@@ -112,143 +133,45 @@ Advanced workflow for model serving and deployment:
 * Deep integration with ML experimentation platforms including MLFlow, Kubeflow (roadmap)
 
 
-## Getting Started
+### ML Frameworks
+
+* Scikit-Learn - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#scikit-learn) | [Examples](https://github.com/bentoml/gallery#scikit-learn)
+* PyTorch - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#pytorch) | [Examples](https://github.com/bentoml/gallery#pytorch)
+* Tensorflow 2 - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#tensorflow-2-0) | [Examples](https://github.com/bentoml/gallery#tensorflow-20)
+* Tensorflow Keras - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#tensorflow-keras) | [Examples](https://github.com/bentoml/gallery#tensorflow-keras)
+* XGBoost - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#xgboost) | [Examples](https://github.com/bentoml/gallery#xgboost)
+* LightGBM - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#lightgbm) | [Examples](https://github.com/bentoml/gallery#lightgbm)
+* FastText - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#fasttext) | [Examples](https://github.com/bentoml/gallery#fasttext)
+* FastAI - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#fastai) | [Examples](https://github.com/bentoml/gallery#fastai)
+* H2O - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#h2o) | [Examples](https://github.com/bentoml/gallery#h2o)
+* ONNX - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#onnx) | [Examples](https://github.com/bentoml/gallery#onnx)
+* CoreML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#coreml)
+* Spacy - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#spacy)
 
 
-BentoML requires python 3.6 or above, install with `pip`:
-```bash
-pip install bentoml
-```
+### Deployment Options
 
-Before starting, let's prepare a trained model for serving with BentoML.
+Be sure to check out [deployment overview doc](https://docs.bentoml.org/en/latest/deployment/index.html)
+to understand which deployment option is best suited for your use case.
 
-Install required dependencies to run the example code:
-```
-pip install scikit-learn pandas
-```
+* One-click deployment with BentoML
+  - [AWS Lambda](https://docs.bentoml.org/en/latest/deployment/aws_lambda.html)
+  - [AWS SageMaker](https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html)
+  - [Azure Functions](https://docs.bentoml.org/en/latest/deployment/azure_functions.html)
 
-Train a classifier model on the [Iris data set](https://en.wikipedia.org/wiki/Iris_flower_data_set):
-```python
-from sklearn import svm
-from sklearn import datasets
+* Deploy with open-source platforms:
+  - [Docker](https://docs.bentoml.org/en/latest/deployment/docker.html)
+  - [Kubernetes](https://docs.bentoml.org/en/latest/deployment/kubernetes.html)
+  - [Knative](https://docs.bentoml.org/en/latest/deployment/knative.html)
+  - [Kubeflow](https://docs.bentoml.org/en/latest/deployment/kubeflow.html)
+  - [KFServing](https://docs.bentoml.org/en/latest/deployment/kfserving.html)
+  - [Clipper](https://docs.bentoml.org/en/latest/deployment/clipper.html)
 
-# Load training data
-iris = datasets.load_iris()
-X, y = iris.data, iris.target
-
-# Model Training
-clf = svm.SVC(gamma='scale')
-clf.fit(X, y)
-```
-
-Here's what a minimal prediction service in BentoML looks like:
-
-```python
-import pandas as pd
-
-from bentoml import env, artifacts, api, BentoService
-from bentoml.adapters import DataframeInput
-from bentoml.frameworks.sklearn import SklearnModelArtifact
-
-@env(infer_pip_packages=True)
-@artifacts([SklearnModelArtifact('model')])
-class IrisClassifier(BentoService):
-
-    @api(input=DataframeInput())
-    def predict(self, df: pd.DataFrame):
-        # Optional pre-processing, post-processing code goes here
-        return self.artifacts.model.predict(df)
-```
-
-This code defines a prediction service that packages a scikit-learn model and provides
-an inference API that expects a `pandas.Dataframe` object as its input. BentoML also 
-supports other API input data types including `JsonInput`, `ImageInput`, `FileInput` and 
-[more](https://docs.bentoml.org/en/latest/api/adapters.html).
-
-
-In BentoML, **all inference APIs are suppose to accept a list of inputs and return a 
-list of results**. In the case of `DataframeInput`, each row of the dataframe is mapping
-to one prediction request received from the client. BentoML will convert HTTP JSON 
-requests into `pandas.DataFrame` object before passing it to the user-defined 
-inference API function.
- 
-This design allows BentoML to group API requests into small batches while serving online
-traffic. Comparing to a regular flask or FastAPI based model server, this can increases
-the overall throughput of the API server by 10-100x depending on the workload.
-
-The following code packages the trained model with the prediction service class
-`IrisClassifier` defined above, and then saves the IrisClassifier instance to disk 
-in the BentoML format for distribution and deployment:
-
-```python
-# import the IrisClassifier class defined above
-from iris_classifier import IrisClassifier
-
-# Create a iris classifier service instance
-iris_classifier_service = IrisClassifier()
-
-# Pack the newly trained model artifact
-iris_classifier_service.pack('model', clf)
-
-# Save the prediction service to disk for model serving
-saved_path = iris_classifier_service.save()
-```
-
-BentoML stores all packaged model files under the
-`~/bentoml/{service_name}/{service_version}` directory by default.
-The BentoML file format contains all the code, files, and configs required to 
-deploy the model for serving.
-
-To start a REST API model server with the `IrisClassifier` saved above, use 
-the `bentoml serve` command:
-
-```bash
-bentoml serve IrisClassifier:latest
-```
-
-The `IrisClassifier` model is now served at `localhost:5000`. Use `curl` command to send
-a prediction request:
-
-```bash
-$ curl -i \
-  --header "Content-Type: application/json" \
-  --request POST \
-  --data '[[5.1, 3.5, 1.4, 0.2]]' \
-  http://localhost:5000/predict
-```
-
-Or with `python` and [request library](https://requests.readthedocs.io/):
-```python
-import requests
-response = requests.post("http://127.0.0.1:5000/predict", json=[[5.1, 3.5, 1.4, 0.2]])
-print(response.text)
-```
-
-Note that BentoML API server automatically converts the Dataframe JSON format into a
-`pandas.DataFrame` object before sending it to the user-defined inference API function.
-
-The BentoML API server also provides a simple web UI dashboard.
-Go to http://localhost:5000 in the browser and use the Web UI to send
-prediction request:
-
-<img src="https://raw.githubusercontent.com/bentoml/BentoML/master/guides/quick-start/bento-api-server-web-ui.png" width="700">
-
-One common way of distributing this model API server for production deployment, is via
-Docker containers. And BentoML provides a convenient way to do that.
-
-If you already have docker configured, run the following command to build a
-docker container image for serving the `IrisClassifier` prediction service created above:
-
-```bash
-$ bentoml containerize IrisClassifier:latest -t iris-classifier
-```
-
-Start a container with the docker image built from the previous step:
-```bash
-$ docker run -p 5000:5000 iris-classifier --enable-microbatch --workers=1
-```
-
-Continue reading the getting started guide [here](https://docs.bentoml.org/en/latest/quickstart.html).
+* Deploy directly to cloud services:
+  - [AWS ECS](https://docs.bentoml.org/en/latest/deployment/aws_ecs.html)
+  - [Google Cloud Run](https://docs.bentoml.org/en/latest/deployment/google_cloud_run.html)
+  - [Azure container instance](https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html)
+  - [Heroku](https://docs.bentoml.org/en/latest/deployment/heroku.html)
 
 
 ## Why BentoML

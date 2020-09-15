@@ -65,3 +65,7 @@ TextFileArtifact
 ++++++++++++++++
 .. autoclass:: bentoml.service.artifacts.common.TextFileArtifact
 
+TransformersModelArtifact
+++++++++++++++++++
+.. autoclass:: bentoml.frameworks.transformers.TransformersModelArtifact
+

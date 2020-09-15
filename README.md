@@ -152,6 +152,7 @@ Advanced workflow for model serving and deployment:
 * ONNX - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#onnx) | [Examples](https://github.com/bentoml/gallery#onnx)
 * CoreML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#coreml)
 * Spacy - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#spacy)
+* Transformers - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#transformers)
 
 
 ### Deployment Options

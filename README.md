@@ -92,11 +92,10 @@ bentoml containerize my_prediction_service MyPredictionService:latest -t my_pred
 docker run -p 5000:5000 my_prediction_service
 ```
 
-BentoML ensures that this docker container has all the required dependencies installed
-with the exact version where it is created. In addition to the model inference API, this
-containerized BentoML model server also comes with instrumentations, metrics/healthcheck
-endpoints, prediction logging, tracing and it is thus ready your DevOps team to deploy
-in production.
+BentoML will make sure the container has all the required dependencies installed. In
+addition to the model inference API, this containerized BentoML model server also comes
+with instrumentations, metrics/healthcheck endpoints, prediction logging, tracing and it
+is thus ready your DevOps team to deploy in production.
 
 Read the [Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html) 
 to learn more about the basic functionalities of BentoML. You can also try it out 

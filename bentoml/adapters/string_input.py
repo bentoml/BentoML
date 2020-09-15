@@ -15,6 +15,7 @@
 from typing import Iterable, Iterator, Sequence, Tuple
 
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
+from bentoml.adapters.utils import decompress_gzip_request
 from bentoml.types import AwsLambdaEvent, HTTPRequest, InferenceTask
 
 ApiFuncArgs = Tuple[
@@ -50,6 +51,7 @@ class StringInput(BaseInputAdapter):
 
     BATCH_MODE_SUPPORTED = True
 
+    @decompress_gzip_request
     def from_http_request(self, req: HTTPRequest) -> InferenceTask[str]:
         try:
             return InferenceTask(

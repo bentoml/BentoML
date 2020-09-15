@@ -99,7 +99,7 @@ def test_json_extract(input_adapter, tasks, invalid_tasks):
     assert len(json_obj_list) == len(tasks)
 
     for out, task in zip(json_obj_list, tasks):
-        assert out == json.loads(task.data.decode())
+        assert out == json.loads(task.data)
 
     for task in invalid_tasks:
         assert task.is_discarded

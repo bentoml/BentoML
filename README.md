@@ -1,4 +1,8 @@
-[![BentoML The easiest way to build machine learning APIs](https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-with-tagline.jpeg)](https://github.com/bentoml/BentoML)
+[![BentoML - The easiest way to build machine learning APIs](https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-readme-header.jpeg)](https://github.com/bentoml/BentoML)
+
+## The easiest way to build Machine Learning APIs
+
+_Multi-framework  /  High-performance  /  Easy to learn  /  Ready for production_
 
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)

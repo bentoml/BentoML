@@ -1,6 +1,6 @@
-[<img src="https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-crop.png" width="580px">](https://github.com/bentoml/BentoML)
+[<img src="https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-crop.png" width="380px">](https://github.com/bentoml/BentoML)
 
-### The easiest way to build Machine Learning APIs
+<h3 style="font-weight:normal"> The easiest way to build Machine Learning APIs</h3>
 _Multi-framework • High performance • Easy to learn • Designed for teams_
 
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)

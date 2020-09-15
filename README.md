@@ -87,7 +87,7 @@ bentoml serve MyPredictionService:latest
 
 Or create a docker container image for deploying this API model server for production:
 ```bash
-bentoml my_prediction_service MyPredictionService:latest -t my_prediction_service
+bentoml containerize my_prediction_service MyPredictionService:latest -t my_prediction_service
 
 docker run -p 5000:5000 my_prediction_service
 ```

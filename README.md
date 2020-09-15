@@ -1,4 +1,4 @@
-[![BentoML](https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-crop.png)](https://github.com/bentoml/BentoML)
+[![BentoML](https://raw.githubusercontent.com/parano/BentoML/master/docs/source/_static/img/bentoml-crop.png)](https://github.com/bentoml/BentoML)
 
 ## The easiest way to build high-performing Machine Learning APIs
 

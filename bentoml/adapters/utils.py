@@ -1,5 +1,8 @@
+import gzip
 import json
 import os
+
+from bentoml.types import HTTPRequest, InferenceTask
 
 TF_B64_KEY = "b64"
 
@@ -107,3 +110,21 @@ def get_default_accept_image_formats():
         .get("default_image_input_accept_file_extensions")
         .split(",")
     ]
+
+
+def decompress_gzip_request(method):
+    def _method(self, req: HTTPRequest) -> InferenceTask:
+        if req.headers.content_encoding in {"gzip", "x-gzip"}:
+            # https://tools.ietf.org/html/rfc7230#section-4.2.3
+            try:
+                req.body = gzip.decompress(req.body)
+
+            except OSError:
+                return InferenceTask().discard(
+                    http_status=400, err_msg="Gzip decompression error"
+                )
+            req.headers.pop("content-encoding")
+            return method(self, req)
+        return method(self, req)
+
+    return _method

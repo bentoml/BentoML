@@ -15,6 +15,7 @@
 from typing import Iterator, Sequence, Tuple
 
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_inputs
+from bentoml.adapters.utils import decompress_gzip_request
 from bentoml.types import AwsLambdaEvent, FileLike, HTTPRequest, InferenceTask
 
 ApiFuncArgs = Tuple[Sequence[FileLike], ...]
@@ -87,6 +88,7 @@ class MultiFileInput(BaseInputAdapter):
             },
         }
 
+    @decompress_gzip_request
     def from_http_request(self, req: HTTPRequest) -> MultiFileTask:
         if req.headers.content_type != 'multipart/form-data':
             task = InferenceTask(data=None)

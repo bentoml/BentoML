@@ -147,7 +147,7 @@ class HTTPHeaders(CIMultiDict):
         return tuple(self.items())
 
 
-@dataclass(frozen=False)
+@dataclass
 class HTTPRequest:
     '''
     headers: tuple of key value pairs in strs

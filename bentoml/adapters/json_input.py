@@ -56,8 +56,6 @@ class JsonInput(StringInput):
         ```
     """
 
-    BATCH_MODE_SUPPORTED = True
-
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[str]]
     ) -> ApiFuncArgs:

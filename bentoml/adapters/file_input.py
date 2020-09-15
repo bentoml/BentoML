@@ -16,6 +16,7 @@ import base64
 from typing import Iterable, Iterator, Sequence, Tuple
 
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
+from bentoml.adapters.utils import decompress_gzip_request
 from bentoml.types import AwsLambdaEvent, FileLike, HTTPRequest, InferenceTask
 
 ApiFuncArgs = Tuple[
@@ -83,6 +84,7 @@ class FileInput(BaseInputAdapter):
             "*/*": {"schema": {"type": "string", "format": "binary"}},
         }
 
+    @decompress_gzip_request
     def from_http_request(self, req: HTTPRequest) -> InferenceTask[FileLike]:
         if req.headers.content_type == 'multipart/form-data':
             _, _, files = HTTPRequest.parse_form_data(req)

@@ -56,18 +56,12 @@ def test_json_from_http(input_adapter, raw_jsons):
     requests += [
         HTTPRequest(body=r, headers=(("Content-Encoding", "gzip"),)) for r in raw_jsons
     ]
-    requests += [
-        HTTPRequest(body=r, headers=(("Content-Encoding", "compress"),))
-        for r in raw_jsons
-    ]
     tasks = map(input_adapter.from_http_request, requests)
     iter_tasks = iter(tasks)
     for b, t in zip(raw_jsons, iter_tasks):
         assert t.data == b.decode()
     for b, t in zip(raw_jsons, iter_tasks):
         assert t.data == b.decode()
-    for b, t in zip(raw_jsons, iter_tasks):
-        assert t.is_discarded
     for b, t in zip(raw_jsons, iter_tasks):
         assert t.is_discarded
 

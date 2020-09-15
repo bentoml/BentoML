@@ -15,6 +15,7 @@ import base64
 from typing import Sequence, Tuple
 
 from bentoml.adapters.multi_image_input import MultiImageInput
+from bentoml.adapters.utils import decompress_gzip_request
 from bentoml.types import FileLike, HTTPRequest, InferenceTask
 from bentoml.utils.lazy_loader import LazyLoader
 
@@ -59,6 +60,7 @@ class LegacyImageInput(MultiImageInput):
 
     BATCH_MODE_SUPPORTED = False
 
+    @decompress_gzip_request
     def from_http_request(self, req: HTTPRequest) -> MultiImgTask:
         if len(self.input_names) == 1:
             # broad parsing while single input

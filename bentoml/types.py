@@ -123,6 +123,10 @@ class HTTPHeaders(CIMultiDict):
         return parse_options_header(self.get('content-type'))[0].lower()
 
     @property
+    def charset(self) -> Optional[str]:
+        return parse_options_header(self.get('content-type'))[1].get('charset', None)
+
+    @property
     def content_encoding(self) -> str:
         return parse_options_header(self.get('content-encoding'))[0].lower()
 

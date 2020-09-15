@@ -12,18 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.adapters.base_input import BaseInputAdapter
-from bentoml.adapters.dataframe_input import DataframeInput
-from bentoml.adapters.tensorflow_tensor_input import TfTensorInput
-from bentoml.adapters.json_input import JsonInput
-from bentoml.adapters.legacy_json_input import LegacyJsonInput
-from bentoml.adapters.image_input import ImageInput
 from bentoml.adapters.annotated_image_input import AnnotatedImageInput
-from bentoml.adapters.multi_image_input import MultiImageInput
-from bentoml.adapters.legacy_image_input import LegacyImageInput
-from bentoml.adapters.fastai_image_input import FastaiImageInput
-from bentoml.adapters.file_input import FileInput
-from bentoml.adapters.multi_file_input import MultiFileInput
+from bentoml.adapters.base_input import BaseInputAdapter
+from bentoml.adapters.base_output import BaseOutputAdapter
 from bentoml.adapters.clipper_input import (
     ClipperBytesInput,
     ClipperDoublesInput,
@@ -31,13 +22,21 @@ from bentoml.adapters.clipper_input import (
     ClipperIntsInput,
     ClipperStringsInput,
 )
-
+from bentoml.adapters.dataframe_input import DataframeInput
 from bentoml.adapters.dataframe_output import DataframeOutput
-from bentoml.adapters.tensorflow_tensor_output import TfTensorOutput
-from bentoml.adapters.base_output import BaseOutputAdapter
 from bentoml.adapters.default_output import DefaultOutput
+from bentoml.adapters.fastai_image_input import FastaiImageInput
+from bentoml.adapters.file_input import FileInput
+from bentoml.adapters.image_input import ImageInput
+from bentoml.adapters.json_input import JsonInput
 from bentoml.adapters.json_output import JsonSerializableOutput
-
+from bentoml.adapters.legacy_image_input import LegacyImageInput
+from bentoml.adapters.legacy_json_input import LegacyJsonInput
+from bentoml.adapters.multi_file_input import MultiFileInput
+from bentoml.adapters.multi_image_input import MultiImageInput
+from bentoml.adapters.string_input import StringInput
+from bentoml.adapters.tensorflow_tensor_input import TfTensorInput
+from bentoml.adapters.tensorflow_tensor_output import TfTensorOutput
 
 BATCH_MODE_SUPPORTED_INPUT_TYPES = {
     name for name, v in locals().items() if getattr(v, 'BATCH_MODE_SUPPORTED', None)
@@ -52,6 +51,7 @@ __all__ = [
     "TfTensorInput",
     'TfTensorOutput',
     "JsonInput",
+    "StringInput",
     "LegacyJsonInput",
     'JsonSerializableOutput',
     "ImageInput",

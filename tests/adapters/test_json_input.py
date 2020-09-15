@@ -39,12 +39,12 @@ def test_json_from_cli(input_adapter, json_files, raw_jsons):
     cli_args = ["--input-file"] + json_files
     tasks = input_adapter.from_cli(cli_args)
     for t, b in zip(tasks, raw_jsons):
-        assert t.data == b
+        assert t.data == b.decode()
 
     cli_args = ["--input"] + [r.decode() for r in raw_jsons]
     tasks = input_adapter.from_cli(cli_args)
     for t, b in zip(tasks, raw_jsons):
-        assert t.data == b
+        assert t.data == b.decode()
 
 
 def test_json_from_http(input_adapter, raw_jsons):
@@ -63,9 +63,9 @@ def test_json_from_http(input_adapter, raw_jsons):
     tasks = map(input_adapter.from_http_request, requests)
     iter_tasks = iter(tasks)
     for b, t in zip(raw_jsons, iter_tasks):
-        assert t.data == b
+        assert t.data == b.decode()
     for b, t in zip(raw_jsons, iter_tasks):
-        assert t.data == b
+        assert t.data == b.decode()
     for b, t in zip(raw_jsons, iter_tasks):
         assert t.is_discarded
     for b, t in zip(raw_jsons, iter_tasks):
@@ -78,16 +78,16 @@ def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
         for r in raw_jsons
     ]
     tasks = map(input_adapter.from_aws_lambda_event, events)
-    for t, r in zip(tasks, raw_jsons):
-        assert t.data == r
+    for t, b in zip(tasks, raw_jsons):
+        assert t.data == b.decode()
 
     events = [
         {"headers": {"Content-Type": "this_will_also_work"}, "body": r.decode()}
         for r in raw_jsons
     ]
     tasks = map(input_adapter.from_aws_lambda_event, events)
-    for t, r in zip(tasks, raw_jsons):
-        assert t.data == r
+    for t, b in zip(tasks, raw_jsons):
+        assert t.data == b.decode()
 
     raw_jsons = [b"not a valid json {}"]
     events = [
@@ -95,8 +95,8 @@ def test_json_from_aws_lambda_event(input_adapter, raw_jsons):
         for r in raw_jsons
     ]
     tasks = map(input_adapter.from_aws_lambda_event, events)
-    for t, r in zip(tasks, raw_jsons):
-        assert t.data == r
+    for t, b in zip(tasks, raw_jsons):
+        assert t.data == b.decode()
 
 
 def test_json_extract(input_adapter, tasks, invalid_tasks):

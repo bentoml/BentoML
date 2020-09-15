@@ -1,7 +1,4 @@
-[<img src="https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-with-tagline.png" width="380px">](https://github.com/bentoml/BentoML)
-
-<h3 style="font-weight:normal"> The easiest way to build Machine Learning APIs</h3>
-_Multi-framework • High performance • Easy to learn • Designed for teams_
+[![BentoML The easiest way to build machine learning APIs](https://raw.githubusercontent.com/parano/BentoML/messaging/docs/source/_static/img/bentoml-with-tagline.png)](https://github.com/bentoml/BentoML)
 
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
@@ -16,7 +13,6 @@ What does BentoML do?
 * Package once and _deploy anywhere_ for real-time API serving or offline batch serving
 * High-Performance API model server with _adaptive micro-batching_ support
 * Central storage hub with Web UI and APIs for managing and accessing packaged models
-                      
                                                            
 BentoML is a framework for serving, managing and deploying machine learning models. It
 is aiming to bridge the gap between Data Science and DevOps, and enable data science 
@@ -27,9 +23,6 @@ teams to continuesly deliver prediction services to production.
 [BentoML Slack Channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
 
 ---
-
-
-
 
 - [Documentation](https://docs.bentoml.org/)
 - [Getting Started](https://github.com/bentoml/BentoML#getting-started)

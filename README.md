@@ -68,11 +68,10 @@ class, pack it with your trained model, and persist the entire prediction servic
 `save` call at the end:
 
 ```python
-my_trained_sklearn_model = 
 from my_prediction_service import MyPredictionService
 svc = MyPredictionService()
-svc.pack('my_model', my_trained_sklearn_model)
-svc.save()
+svc.pack('my_model', my_sklearn_model)
+svc.save()  # default saves to ~/bentoml/repository/MyPredictionService/{version}/
 ```
 
 This will save all the code, files, serialized models, and configs required to reproduce

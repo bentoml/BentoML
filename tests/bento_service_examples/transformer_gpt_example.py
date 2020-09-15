@@ -3,7 +3,7 @@ import bentoml
 from bentoml.adapters import JsonInput
 
 
-@bentoml.env(pip_dependencies=["torch==1.6.0", "transformers==3.1.0"])
+@bentoml.env(pip_packages=["torch==1.6.0", "transformers==3.1.0"])
 @bentoml.artifacts([TransformersModelArtifact("gptModel")])
 class TransformersGPT2TextGenerator(bentoml.BentoService):
     @bentoml.api(input=JsonInput())

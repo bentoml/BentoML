@@ -14,7 +14,11 @@ from transformers import AutoModelWithLMHead, AutoTokenizer
 
 test_sentence = [{"text": "A Bento box is a "}]
 
-result = "A Bento box is a urn that is used to store the contents of a Bento box. It is usually used to store the contents of a Bento box in a storage container.\n\nThe Bento box is a small, rectangular"
+result = (
+    "A Bento box is a urn that is used to store the contents of a Bento box. "
+    + "It is usually used to store the contents of a Bento box in a storage container."
+    + "\n\nThe Bento box is a small, rectangular"
+)
 
 
 @pytest.fixture(scope="module")

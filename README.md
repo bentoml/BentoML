@@ -118,7 +118,7 @@ Online serving with API model server:
 * **Containerized model server** for production deployment with Docker, Kubernetes, OpenShift, AWS ECS, Azure, GCP GKE, etc
 * **Adaptive micro-batching** for optimal online serving performance
 * Discover and package all dependencies automatically, including PyPI, conda packages and local python modules
-* Support **multiple ML frameworks** including PyTorch, Tensorflow, Scikit-Learn, XGBoost, and [many more](https://github.com/bentoml/BentoML#frameworks)
+* Support **multiple ML frameworks** including PyTorch, TensorFlow, Scikit-Learn, XGBoost, and [many more](https://github.com/bentoml/BentoML#frameworks)
 * Serve compositions of **multiple models**
 * Serve **multiple endpoints** in one model server
 * Serve any Python code along with trained models

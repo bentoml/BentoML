@@ -9,6 +9,12 @@ RUN conda update -n base -c defaults conda
 ARG BENTOML_VERSION
 ENV BENTOML_VERSION=$BENTOML_VERSION
 
+ARG PYTHON_VERSION
+ENV PYTHON_VERSION=$PYTHON_VERSION
+
+## install proper python major version
+RUN conda install python=$PYTHON_VERSION -y
+
 # pre-install BentoML base dependencies
 RUN pip install bentoml==$BENTOML_VERSION --no-cache-dir
 

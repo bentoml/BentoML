@@ -150,8 +150,8 @@ Advanced workflow for model serving and deployment:
 * FastAI - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#fastai) | [Examples](https://github.com/bentoml/gallery#fastai)
 * H2O - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#h2o) | [Examples](https://github.com/bentoml/gallery#h2o)
 * ONNX - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#onnx) | [Examples](https://github.com/bentoml/gallery#onnx)
+* Spacy - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#spacy) | [Examples](https://github.com/bentoml/gallery#spacy)
 * CoreML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#coreml)
-* Spacy - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#spacy)
 * Transformers - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#transformers)
 
 

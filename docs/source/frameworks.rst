@@ -141,6 +141,7 @@ Spacy
 
 .. autoclass:: bentoml.frameworks.spacy.SpacyModelArtifact
 
+
 =====
 Transformers
 =====

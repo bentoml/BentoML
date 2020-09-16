@@ -97,6 +97,10 @@ addition to the model inference API, this containerized BentoML model server als
 with instrumentations, metrics/healthcheck endpoints, prediction logging, tracing and it
 is thus ready for your DevOps team to deploy in production.
 
+If you are at a small team without DevOps support, BentoML also provides an [one-click
+deployment option](https://github.com/bentoml/BentoML#deployment-options), which deploys
+the model server API to cloud platforms with minimum setup.
+
 Read the [Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html) 
 to learn more about the basic functionalities of BentoML. You can also try it out 
 [here on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb).

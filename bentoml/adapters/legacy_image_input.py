@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import base64
-import io
-from typing import BinaryIO, Sequence, Tuple
+from typing import Sequence, Tuple
 
 from bentoml.adapters.multi_image_input import MultiImageInput
-from bentoml.types import HTTPRequest, InferenceTask
+from bentoml.adapters.utils import decompress_gzip_request
+from bentoml.types import FileLike, HTTPRequest, InferenceTask
 from bentoml.utils.lazy_loader import LazyLoader
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
@@ -24,7 +24,7 @@ imageio = LazyLoader('imageio', globals(), 'imageio')
 numpy = LazyLoader('numpy', globals(), 'numpy')
 
 
-MultiImgTask = InferenceTask[Tuple[BinaryIO, ...]]  # image file bytes, json bytes
+MultiImgTask = InferenceTask[Tuple[FileLike, ...]]  # image file bytes, json bytes
 ApiFuncArgs = Tuple[Sequence['numpy.ndarray'], ...]
 
 
@@ -60,10 +60,11 @@ class LegacyImageInput(MultiImageInput):
 
     BATCH_MODE_SUPPORTED = False
 
+    @decompress_gzip_request
     def from_http_request(self, req: HTTPRequest) -> MultiImgTask:
         if len(self.input_names) == 1:
             # broad parsing while single input
-            if req.parsed_headers.content_type == 'multipart/form-data':
+            if req.headers.content_type == 'multipart/form-data':
                 _, _, files = HTTPRequest.parse_form_data(req)
                 if not any(files):
                     task = InferenceTask(data=None)
@@ -74,13 +75,19 @@ class LegacyImageInput(MultiImageInput):
                     )
                 else:
                     f = next(iter(files.values()))
-                    task = InferenceTask(http_headers=req.parsed_headers, data=(f,),)
-            else:
+                    task = InferenceTask(http_headers=req.headers, data=(f,),)
+            elif req.headers.content_type.startswith('image/'):
                 # for images/*
+                _, ext = req.headers.content_type.split('/')
                 task = InferenceTask(
-                    http_headers=req.parsed_headers, data=(io.BytesIO(req.body),),
+                    http_headers=req.headers,
+                    data=(FileLike(bytes_=req.body, name=f'default.{ext}'),),
                 )
-        elif req.parsed_headers.content_type == 'multipart/form-data':
+            else:
+                task = InferenceTask(
+                    http_headers=req.headers, data=(FileLike(bytes_=req.body),),
+                )
+        elif req.headers.content_type == 'multipart/form-data':
             _, _, files = HTTPRequest.parse_form_data(req)
             files = tuple(files.get(k) for k in self.input_names)
             if not any(files):
@@ -98,7 +105,7 @@ class LegacyImageInput(MultiImageInput):
                     f"fields {self.input_names}",
                 )
             else:
-                task = InferenceTask(http_headers=req.parsed_headers, data=files,)
+                task = InferenceTask(http_headers=req.headers, data=files,)
         else:
             task = InferenceTask(data=None)
             task.discard(
@@ -111,10 +118,9 @@ class LegacyImageInput(MultiImageInput):
     def from_aws_lambda_event(self, event):
         if event["headers"].get("Content-Type", "").startswith("images/"):
             img_bytes = base64.b64decode(event["body"])
-            img_io = io.BytesIO(img_bytes)
             _, ext = event["headers"]["Content-Type"].split('/')
-            img_io.name = f"img.{ext}"
-            task = InferenceTask(data=(img_io,))
+            f = FileLike(bytes_=img_bytes, name=f"default.{ext}")
+            task = InferenceTask(data=(f,))
         else:
             task = InferenceTask(data=None)
             task.discard(

@@ -17,9 +17,9 @@ import json
 import traceback
 from typing import Iterable, Sequence, Tuple
 
-from bentoml.adapters.json_input import JsonInput
+from bentoml.adapters.string_input import StringInput
 from bentoml.adapters.utils import TF_B64_KEY
-from bentoml.types import JSON_CHARSET, InferenceTask, JsonSerializable
+from bentoml.types import InferenceTask, JsonSerializable
 
 
 def b64_hook(o):
@@ -33,7 +33,7 @@ ApiFuncArgs = Tuple[
 ]
 
 
-class TfTensorInput(JsonInput):
+class TfTensorInput(StringInput):
     """
     Tensor input adapter for Tensorflow models.
     Transform incoming tf tensor data from http request, cli or lambda event into
@@ -84,15 +84,14 @@ class TfTensorInput(JsonInput):
             raise NotImplementedError(f"method {self.method} is not implemented")
 
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[bytes]]
+        self, tasks: Iterable[InferenceTask[str]]
     ) -> ApiFuncArgs:
         import tensorflow as tf
 
         instances_list = []
         for task in tasks:
             try:
-                json_str = task.data.decode(JSON_CHARSET)
-                parsed_json = json.loads(json_str, object_hook=b64_hook)
+                parsed_json = json.loads(task.data, object_hook=b64_hook)
                 if parsed_json.get("instances") is None:
                     task.discard(
                         http_status=400, err_msg="input format is not implemented",
@@ -107,10 +106,6 @@ class TfTensorInput(JsonInput):
                         instances_list.extend(instances)
                     else:
                         instances_list.append(instances)
-            except UnicodeDecodeError:
-                task.discard(
-                    http_status=400, err_msg=f"JSON must be encoded in {JSON_CHARSET}"
-                )
             except json.JSONDecodeError:
                 task.discard(http_status=400, err_msg="Not a valid JSON format")
             except Exception:  # pylint: disable=broad-except

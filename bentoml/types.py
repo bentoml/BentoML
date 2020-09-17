@@ -12,15 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 import io
-from dataclasses import dataclass
+import os
+import urllib
+import uuid
+from dataclasses import dataclass, field
 from typing import (
+    BinaryIO,
     Dict,
     Generic,
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -32,6 +36,11 @@ from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
 
+from bentoml import config
+from bentoml.utils.dataclasses import json_serializer
+
+BATCH_HEADER = config("apiserver").get("batch_request_header")
+
 # For non latin1 characters: https://tools.ietf.org/html/rfc8187
 # Also https://github.com/benoitc/gunicorn/issues/1778
 HEADER_CHARSET = 'latin1'
@@ -39,78 +48,138 @@ HEADER_CHARSET = 'latin1'
 JSON_CHARSET = 'utf-8'
 
 
-@dataclass(frozen=True)
-class ParsedHeaders:
-    headers_dict: Optional[CIMultiDict] = None
-    content_type: str = ""
-    content_encoding: str = ""
-    is_batch_input: Optional[bool] = None
+@json_serializer(fields=['uri', 'name'], compat=True)
+@dataclass(frozen=False)
+class FileLike:
+    stream: Optional[BinaryIO] = None
+    bytes_: Optional[bytes] = None
+    uri: Optional[str] = None
+    name: Optional[str] = None
 
-    def __getattr__(self, key):
-        if key in {
-            "headers_dict",
-            "content_type",
-            "content_encoding",
-            "is_batch_input",
-        }:
-            raise AttributeError(key)
-        return getattr(self.headers_dict or {}, key)
+    def __post_init__(self):
+        if self.name is None:
+            if self.stream is not None:
+                self.name = getattr(self.stream, "name", None)
+            elif self.uri is not None:
+                p = urllib.parse.urlparse(self.uri)
+                if p.scheme and p.scheme != "file":
+                    raise NotImplementedError(
+                        f"{self.__class__} now supports scheme 'file://' only"
+                    )
+                _, self.name = os.path.split(self.path)
+
+    @property
+    def path(self):
+        r'''
+        supports:
+
+        /home/user/file
+        C:\Python27\Scripts\pip.exe
+        \\localhost\c$\WINDOWS\clock.avi
+        \\networkstorage\homes\user
+
+        https://stackoverflow.com/a/61922504/3089381
+        '''
+        parsed = urllib.parse.urlparse(self.uri)
+        raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))
+        host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
+        path = os.path.abspath(os.path.join(host, raw_path))
+        return path
+
+    @property
+    def _stream(self):
+        if self.stream is not None:
+            pass
+        elif self.bytes_ is not None:
+            self.stream = io.BytesIO(self.bytes_)
+        elif self.uri is not None:
+            self.stream = open(self.path, "rb")
+        else:
+            return io.BytesIO()
+        return self.stream
+
+    def read(self, size=-1):
+        # TODO: also write to log
+        return self._stream.read(size)
+
+    def seek(self, pos):
+        return self._stream.seek(pos)
+
+    def tell(self):
+        return self._stream.tell()
+
+    def close(self):
+        if self.stream is not None:
+            self.stream.close()
+
+    def __del__(self):
+        if self.stream and not self.stream.closed:
+            self.stream.close()
+
+
+class HTTPHeaders(CIMultiDict):
+    @property
+    def content_type(self) -> str:
+        return parse_options_header(self.get('content-type'))[0].lower()
+
+    @property
+    def charset(self) -> Optional[str]:
+        return parse_options_header(self.get('content-type'))[1].get('charset', None)
+
+    @property
+    def content_encoding(self) -> str:
+        return parse_options_header(self.get('content-encoding'))[0].lower()
+
+    @property
+    def is_batch_input(self) -> bool:
+        hv = parse_options_header(self.get(BATCH_HEADER))[0].lower()
+        return hv == "true" if hv else None
 
     @classmethod
-    @functools.lru_cache()
-    def parse(cls, raw_headers: Sequence[Tuple[str, str]]):
-        from bentoml import config
+    def from_dict(cls, d: Mapping[str, str]):
+        return cls(d)
 
-        BATCH_REQUEST_HEADER = config("apiserver").get("batch_request_header")
-        if isinstance(raw_headers, dict):
-            raw_headers = raw_headers.items()
+    @classmethod
+    def from_sequence(cls, seq: Sequence[Tuple[str, str]]):
+        return cls(seq)
 
-        headers_dict = CIMultiDict((k.lower(), v) for k, v in raw_headers or tuple())
-        content_type = parse_options_header(headers_dict.get('content-type'))[0]
-        content_encoding = parse_options_header(headers_dict.get('content-encoding'))[0]
-        hv = parse_options_header(headers_dict.get(BATCH_REQUEST_HEADER))[0].lower()
-        if hv:
-            is_batch_input = hv == "true"
-        else:
-            is_batch_input = None
-        header = cls(
-            headers_dict,
-            content_type=content_type,
-            content_encoding=content_encoding,
-            is_batch_input=is_batch_input,
-        )
-        return header
+    def to_json(self):
+        return tuple(self.items())
 
 
-@dataclass(frozen=True)
+@dataclass
 class HTTPRequest:
     '''
     headers: tuple of key value pairs in strs
     data: str
     '''
 
-    headers: Sequence[Tuple[str, str]] = tuple()
+    headers: HTTPHeaders = HTTPHeaders()
     body: bytes = b""
 
-    @property
-    def parsed_headers(self) -> CIMultiDict:
-        return ParsedHeaders.parse(self.headers)
+    def __post_init__(self):
+        if self.headers is None:
+            self.headers = HTTPHeaders()
+        elif isinstance(self.headers, dict):
+            self.headers = HTTPHeaders.from_dict(self.headers)
+        elif isinstance(self.headers, (tuple, list)):
+            self.headers = HTTPHeaders.from_sequence(self.headers)
 
     @classmethod
-    @functools.lru_cache()
     def parse_form_data(cls, self):
         if not self.body:
             return None, None, {}
         environ = {
             'wsgi.input': io.BytesIO(self.body),
             'CONTENT_LENGTH': len(self.body),
-            'CONTENT_TYPE': self.parsed_headers.get('content-type', ''),
+            'CONTENT_TYPE': self.headers.get('content-type', ''),
             'REQUEST_METHOD': 'POST',
         }
         stream, form, files = parse_form_data(environ, silent=False)
-        for f in files.values():
-            f.name = f.filename
-        return stream, form, files
+        wrapped_files = {
+            k: FileLike(stream=f, name=f.filename) for k, f in files.items()
+        }
+        return stream, form, wrapped_files
 
     @classmethod
     def from_flask_request(cls, request):
@@ -128,17 +197,25 @@ class HTTPRequest:
         )
 
 
-@dataclass(frozen=True)
+@dataclass
 class HTTPResponse:
     status: int = 200
-    headers: tuple = tuple()
+    headers: HTTPHeaders = HTTPHeaders()
     body: bytes = b""
+
+    def __post_init__(self):
+        if self.headers is None:
+            self.headers = HTTPHeaders()
+        elif isinstance(self.headers, dict):
+            self.headers = HTTPHeaders.from_dict(self.headers)
+        elif isinstance(self.headers, (tuple, list)):
+            self.headers = HTTPHeaders.from_sequence(self.headers)
 
     def to_flask_response(self):
         import flask
 
         return flask.Response(
-            status=self.status, headers=self.headers, response=self.body
+            status=self.status, headers=self.headers.items(), response=self.body
         )
 
 
@@ -155,8 +232,11 @@ ApiFuncArgs = TypeVar("ApiFuncArgs")
 ApiFuncReturnValue = TypeVar("ApiFuncReturnValue")
 
 
-@dataclass(frozen=True)
+@json_serializer(compat=True)
+@dataclass
 class InferenceResult(Generic[Output]):
+    version: int = 0
+
     # payload
     data: Output = None
     err_msg: str = ''
@@ -166,9 +246,17 @@ class InferenceResult(Generic[Output]):
 
     # context
     http_status: Optional[int] = None
-    http_headers: ParsedHeaders = ParsedHeaders()
+    http_headers: HTTPHeaders = HTTPHeaders()
     aws_lambda_event: Optional[dict] = None
     cli_status: Optional[int] = 0
+
+    def __post_init__(self):
+        if self.http_headers is None:
+            self.http_headers = HTTPHeaders()
+        elif isinstance(self.http_headers, dict):
+            self.http_headers = HTTPHeaders.from_dict(self.http_headers)
+        elif isinstance(self.http_headers, (tuple, list)):
+            self.http_headers = HTTPHeaders.from_sequence(self.http_headers)
 
     @classmethod
     def complete_discarded(
@@ -187,30 +275,35 @@ class InferenceResult(Generic[Output]):
             ) from None
 
 
-@dataclass(frozen=True)
+@json_serializer(compat=True)
+@dataclass
 class InferenceError(InferenceResult):
     # context
     http_status: int = 500
     cli_status: int = 1
 
 
-@dataclass(frozen=False)
+@json_serializer(compat=True)
+@dataclass
 class InferenceTask(Generic[Input]):
+    version: int = 0
+
     # payload
-    data: Input
+    data: Input = None
     error: Optional[InferenceResult] = None
 
     # meta
-    task_id: Optional[str] = None
+    task_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     is_discarded: bool = False
     batch: Optional[int] = None
 
     # context
     http_method: Optional[str] = None
-    http_headers: ParsedHeaders = ParsedHeaders()
+    http_headers: HTTPHeaders = HTTPHeaders()
     aws_lambda_event: Optional[dict] = None
     cli_args: Optional[Sequence[str]] = None
 
     def discard(self, err_msg="", **context):
         self.is_discarded = True
         self.error = InferenceError(err_msg=err_msg, **context)
+        return self

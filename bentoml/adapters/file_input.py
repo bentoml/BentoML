@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import base64
-import io
-from typing import BinaryIO, Iterable, Iterator, Sequence, Tuple
+from typing import Iterable, Iterator, Sequence, Tuple
 
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
-from bentoml.types import AwsLambdaEvent, HTTPRequest, InferenceTask
+from bentoml.adapters.utils import decompress_gzip_request
+from bentoml.types import AwsLambdaEvent, FileLike, HTTPRequest, InferenceTask
 
 ApiFuncArgs = Tuple[
-    Sequence[BinaryIO],
+    Sequence[FileLike],
 ]
 
 
@@ -84,8 +84,9 @@ class FileInput(BaseInputAdapter):
             "*/*": {"schema": {"type": "string", "format": "binary"}},
         }
 
-    def from_http_request(self, req: HTTPRequest) -> InferenceTask[BinaryIO]:
-        if req.parsed_headers.content_type == 'multipart/form-data':
+    @decompress_gzip_request
+    def from_http_request(self, req: HTTPRequest) -> InferenceTask[FileLike]:
+        if req.headers.content_type == 'multipart/form-data':
             _, _, files = HTTPRequest.parse_form_data(req)
             if len(files) != 1:
                 task = InferenceTask(data=None)
@@ -97,10 +98,10 @@ class FileInput(BaseInputAdapter):
                 )
             else:
                 input_file = next(iter(files.values()))
-                task = InferenceTask(http_headers=req.parsed_headers, data=input_file,)
+                task = InferenceTask(http_headers=req.headers, data=input_file)
         elif req.body:
             task = InferenceTask(
-                http_headers=req.parsed_headers, data=io.BytesIO(req.body),
+                http_headers=req.headers, data=FileLike(bytes_=req.body),
             )
         else:
             task = InferenceTask(data=None)
@@ -111,19 +112,15 @@ class FileInput(BaseInputAdapter):
             )
         return task
 
-    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[BinaryIO]:
-        return InferenceTask(
-            aws_lambda_event=event,
-            data=io.BytesIO(base64.decodebytes(event.get('body', ""))),
-        )
+    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[FileLike]:
+        f = FileLike(bytes_=base64.decodebytes(event.get('body', "")))
+        return InferenceTask(aws_lambda_event=event, data=f)
 
-    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[BinaryIO]]:
-        for input_ in parse_cli_input(cli_args):
-            bio = io.BytesIO(input_.read())
-            bio.name = input_.name
-            yield InferenceTask(cli_args=cli_args, data=bio)
+    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[FileLike]]:
+        for f in parse_cli_input(cli_args):
+            yield InferenceTask(cli_args=cli_args, data=f)
 
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[BinaryIO]]
+        self, tasks: Iterable[InferenceTask[FileLike]]
     ) -> ApiFuncArgs:
         return (tuple(t.data for t in tasks),)

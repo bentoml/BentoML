@@ -12,26 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import gzip
 import json
 import traceback
-from typing import Iterable, Iterator, Sequence, Tuple
+from typing import Iterable, Sequence, Tuple
 
-from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
-from bentoml.types import (
-    JSON_CHARSET,
-    AwsLambdaEvent,
-    HTTPRequest,
-    InferenceTask,
-    JsonSerializable,
-)
+from bentoml.adapters.string_input import StringInput
+from bentoml.types import InferenceTask, JsonSerializable
 
 ApiFuncArgs = Tuple[
     Sequence[JsonSerializable],
 ]
 
 
-class JsonInput(BaseInputAdapter):
+class JsonInput(StringInput):
     """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
     json serializable object in python) and pass down to user defined API function
 
@@ -63,48 +56,14 @@ class JsonInput(BaseInputAdapter):
         ```
     """
 
-    BATCH_MODE_SUPPORTED = True
-
-    def from_http_request(self, req: HTTPRequest) -> InferenceTask[bytes]:
-        if req.parsed_headers.content_encoding in {"gzip", "x-gzip"}:
-            # https://tools.ietf.org/html/rfc7230#section-4.2.3
-            try:
-                return InferenceTask(
-                    http_headers=req.parsed_headers, data=gzip.decompress(req.body),
-                )
-            except OSError:
-                task = InferenceTask(data=None)
-                task.discard(http_status=400, err_msg="Gzip decompression error")
-                return task
-        elif req.parsed_headers.content_encoding in ["", "identity"]:
-            return InferenceTask(http_headers=req.parsed_headers, data=req.body,)
-        else:
-            task = InferenceTask(data=None)
-            task.discard(http_status=415, err_msg="Unsupported Media Type")
-            return task
-
-    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[bytes]:
-        return InferenceTask(
-            aws_lambda_event=event, data=event.get('body', "").encode(JSON_CHARSET),
-        )
-
-    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[bytes]]:
-        for json_input in parse_cli_input(cli_args):
-            yield InferenceTask(cli_args=cli_args, data=json_input.read())
-
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[bytes]]
+        self, tasks: Iterable[InferenceTask[str]]
     ) -> ApiFuncArgs:
         json_inputs = []
         for task in tasks:
             try:
-                json_str = task.data.decode(JSON_CHARSET)
-                parsed_json = json.loads(json_str)
+                parsed_json = json.loads(task.data)
                 json_inputs.append(parsed_json)
-            except UnicodeDecodeError:
-                task.discard(
-                    http_status=400, err_msg=f"JSON must be encoded in {JSON_CHARSET}"
-                )
             except json.JSONDecodeError:
                 task.discard(http_status=400, err_msg="Not a valid JSON format")
             except Exception:  # pylint: disable=broad-except

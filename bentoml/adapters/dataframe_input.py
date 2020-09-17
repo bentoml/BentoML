@@ -11,13 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
-from typing import BinaryIO, Iterable, Mapping, Optional, Sequence, Tuple
+from typing import Iterable, Mapping, Optional, Sequence, Tuple
 
 from bentoml.adapters.file_input import FileInput
 from bentoml.adapters.utils import check_file_extension
 from bentoml.exceptions import MissingDependencyException
-from bentoml.types import AwsLambdaEvent, InferenceTask, ParsedHeaders
+from bentoml.types import AwsLambdaEvent, FileLike, HTTPHeaders, InferenceTask
 from bentoml.utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
     read_dataframes_from_json_n_csv,
@@ -26,7 +25,7 @@ from bentoml.utils.lazy_loader import LazyLoader
 
 pandas = LazyLoader('pandas', globals(), 'pandas')
 
-DataFrameTask = InferenceTask[BinaryIO]
+DataFrameTask = InferenceTask[FileLike]
 ApiFuncArgs = Tuple['pandas.DataFrame']
 
 
@@ -171,16 +170,14 @@ class DataframeInput(FileInput):
             "text/csv": {"schema": {"type": "string", "format": "binary"}},
         }
 
-    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[BinaryIO]:
-        parsed_headers = ParsedHeaders.parse(tuple(event.get('headers', {}).items()))
-        if parsed_headers.content_type == "text/csv":
-            bio = io.BytesIO(event["body"].encode())
-            bio.name = "input.csv"
+    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[FileLike]:
+        headers = HTTPHeaders.from_dict(event.get('headers', {}))
+        if headers.content_type == "text/csv":
+            f = FileLike(bytes_=event["body"].encode(), name="input.csv")
         else:
             # Optimistically assuming Content-Type to be "application/json"
-            bio = io.BytesIO(event["body"].encode())
-            bio.name = "input.json"
-        return InferenceTask(aws_lambda_event=event, data=bio,)
+            f = FileLike(bytes_=event["body"].encode(), name="input.json")
+        return InferenceTask(aws_lambda_event=event, data=f,)
 
     @classmethod
     def _detect_format(cls, task: InferenceTask) -> str:

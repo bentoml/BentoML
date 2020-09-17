@@ -38,7 +38,8 @@ logger = logging.getLogger(__name__)
 PYTHON_SUPPORTED_VERSIONS = ["3.6", "3.7", "3.8"]
 
 PYTHON_MINOR_VERSION = "{major}.{minor}".format(
-    major=version_info.major, minor=version_info.minor)
+    major=version_info.major, minor=version_info.minor
+)
 
 PYTHON_VERSION = "{minor_version}.{micro}".format(
     minor_version=PYTHON_MINOR_VERSION, micro=version_info.micro
@@ -186,13 +187,19 @@ class BentoServiceEnv(object):
         else:
             if PYTHON_MINOR_VERSION not in PYTHON_SUPPORTED_VERSIONS:
                 logger.warning(
-                        f"current python environment uses Python {PYTHON_VERSION} which is unsupported"
-                        f"the docker image used will contain a different version of Python"
-                        f"supported Python versions are: f{', '.join(PYTHON_SUPPORTED_VERSIONS)}"
-                    )
-                self._docker_base_image = config('core').get('default_docker_base_image')
+                    f"Python {PYTHON_VERSION} in current environment is unsupported"
+                    f"the docker image used will contain a different version of Python"
+                    f"supported versions are: f{', '.join(PYTHON_SUPPORTED_VERSIONS)}"
+                )
+                self._docker_base_image = config('core').get(
+                    'default_docker_base_image'
+                )
             else:
-                self._docker_base_image = config('core').get('default_docker_base_image') + "-py" + PYTHON_MINOR_VERSION.replace(".", "")
+                self._docker_base_image = (
+                    config('core').get('default_docker_base_image')
+                    + "-py"
+                    + PYTHON_MINOR_VERSION.replace(".", "")
+                )
 
     def add_conda_channels(self, channels: List[str]):
         self._conda_env.add_channels(channels)

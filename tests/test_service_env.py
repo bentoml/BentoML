@@ -10,7 +10,7 @@ from bentoml.artifact import SklearnModelArtifact
 
 
 def test_pip_packages_env_with_legacy_api():
-    @bentoml.env(pip_dependencies=['numpy', 'pandas', 'torch'])
+    @bentoml.env(pip_packages=['numpy', 'pandas', 'torch'])
     class ServiceWithList(bentoml.BentoService):
         @bentoml.api(input=DataframeInput())
         def predict(self, df):

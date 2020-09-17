@@ -35,9 +35,16 @@ from bentoml.saved_bundle.pip_pkg import (
 
 logger = logging.getLogger(__name__)
 
-PYTHON_VERSION = "{major}.{minor}.{micro}".format(
-    major=version_info.major, minor=version_info.minor, micro=version_info.micro
+PYTHON_SUPPORTED_VERSIONS = ["3.6", "3.7", "3.8"]
+
+PYTHON_MINOR_VERSION = "{major}.{minor}".format(
+    major=version_info.major, minor=version_info.minor
 )
+
+PYTHON_VERSION = "{minor_version}.{micro}".format(
+    minor_version=PYTHON_MINOR_VERSION, micro=version_info.micro
+)
+
 
 # Including 'conda-forge' channel in the default channels to ensure newest Python
 # versions can be installed properly via conda when building API server docker image
@@ -178,7 +185,21 @@ class BentoServiceEnv(object):
         if docker_base_image:
             self._docker_base_image = docker_base_image
         else:
-            self._docker_base_image = config('core').get('default_docker_base_image')
+            if PYTHON_MINOR_VERSION not in PYTHON_SUPPORTED_VERSIONS:
+                logger.warning(
+                    f"Python {PYTHON_VERSION} in current environment is unsupported"
+                    f"the docker image used will contain a different version of Python"
+                    f"supported versions are: f{', '.join(PYTHON_SUPPORTED_VERSIONS)}"
+                )
+                self._docker_base_image = config('core').get(
+                    'default_docker_base_image'
+                )
+            else:
+                self._docker_base_image = (
+                    config('core').get('default_docker_base_image')
+                    + "-py"
+                    + PYTHON_MINOR_VERSION.replace(".", "")
+                )
 
     def add_conda_channels(self, channels: List[str]):
         self._conda_env.add_channels(channels)

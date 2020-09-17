@@ -393,7 +393,7 @@ class YataiService(YataiServicer):
                 logger.info(
                     'Getting latest version %s:%s',
                     request.bento_name,
-                    bento_pb.version,
+                    request.bento_version,
                 )
 
             if bento_pb:

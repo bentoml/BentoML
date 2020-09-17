@@ -35,9 +35,9 @@ from bentoml.saved_bundle.pip_pkg import (
 
 logger = logging.getLogger(__name__)
 
-PYTHON_SUPPORTED_VERSIONS = [3.6, 3.7, 3.8]
+PYTHON_SUPPORTED_VERSIONS = ["3.6", "3.7", "3.8"]
 
-PYTHON_MINOR_VERSION = "{major}.{minor}.{micro}".format(
+PYTHON_MINOR_VERSION = "{major}.{minor}".format(
     major=version_info.major, minor=version_info.minor)
 
 PYTHON_VERSION = "{minor_version}.{micro}".format(

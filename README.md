@@ -61,7 +61,7 @@ class MyPredictionService(BentoService):
     @api(input=DataframeInput(orient="records"))
     def predict(self, df: pd.DataFrame):
         model_input = preprocess(df)
-        return self.artifacts.model.predict(model_input)
+        return self.artifacts.my_model.predict(model_input)
 ```
 
 At the end of your model training pipeline, import your BentoML prediction service
@@ -95,7 +95,11 @@ docker run -p 5000:5000 my_prediction_service
 BentoML will make sure the container has all the required dependencies installed. In
 addition to the model inference API, this containerized BentoML model server also comes
 with instrumentations, metrics/healthcheck endpoints, prediction logging, tracing and it
-is thus ready your DevOps team to deploy in production.
+is thus ready for your DevOps team to deploy in production.
+
+If you are at a small team without DevOps support, BentoML also provides an [one-click
+deployment option](https://github.com/bentoml/BentoML#deployment-options), which deploys
+the model server API to cloud platforms with minimum setup.
 
 Read the [Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html) 
 to learn more about the basic functionalities of BentoML. You can also try it out 

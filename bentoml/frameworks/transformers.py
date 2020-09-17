@@ -12,8 +12,7 @@ except ImportError:
 
 
 class TransformersModelArtifact(BentoServiceArtifact):
-    """
-    Abstraction for saving/loading Transformers models
+    """Abstraction for saving/loading Transformers models
 
     Args:
         name (string): name of the artifact
@@ -34,45 +33,40 @@ class TransformersModelArtifact(BentoServiceArtifact):
 
     >>>
     >>> import bentoml
+    >>> from transformers import AutoModelWithLMHead, AutoTokenizer
     >>> from bentoml.adapters import JsonInput
-    >>> from bentoml.frameworks.transformers import TransformersModelArtifact
     >>>
-    >>> # Example : text generation using GPT2
-    >>> # Explicitly add either torch or tensorflow dependency
-    >>> # which will be used by transformers
-    >>> @bentoml.env(pip_packages=["torch==1.6", "transformers==3.1"])
-    >>> @bentoml.artifacts([TransformersModelArtifact('gptModel')])
-    >>> class TransformersService(bentoml.BentoService):
+    >>>
+    >>> @bentoml.env(pip_packages=["transformers==3.1.0", "torch==1.6.0"])
+    >>> @bentoml.artifacts([TransformersModelArtifact("gptModel")])
+    >>> class TransformerService(bentoml.BentoService):
     >>>     @bentoml.api(input=JsonInput())
     >>>     def predict(self, parsed_json):
-    >>>          src_text = parsed_json[0].get("text")
-    >>>          model = self.artifacts.gptModel.get("model")
-    >>>          tokenizer = self.artifacts.gptModel.get("tokenizer")
-    >>>          input_ids = tokenizer.encode(src_text, return_tensors="pt")
-    >>>          output = model.generate(input_ids, max_length=50)
-    >>>          output = [tokenizer.decode(output[0], skip_special_tokens=True)]
-    >>>          return output
+    >>>         src_text = parsed_json[0].get("text")
+    >>>         model = self.artifacts.gptModel.get("model")
+    >>>         tokenizer = self.artifacts.gptModel.get("tokenizer")
+    >>>         input_ids = tokenizer.encode(src_text, return_tensors="pt")
+    >>>         output = model.generate(input_ids, max_length=50)
+    >>>         output = [tokenizer.decode(output[0], skip_special_tokens=True)]
+    >>>         return output
     >>>
     >>>
-    >>> svc = TransformersService()
-    >>> ts = TransformersGPT2TextGenerator()
+    >>> ts = TransformerService()
+    >>>
+    >>> model_name = "gpt2"
+    >>> model = AutoModelWithLMHead.from_pretrained("gpt2")
     >>> tokenizer = AutoTokenizer.from_pretrained("gpt2")
-    >>> model = AutoModelWithLMHead.from_pretrained(
-    >>>          "gpt2",
-    >>>          pad_token_id=tokenizer.eos_token_id)
-    >>> ts = TransformersGPT2TextGenerator()
-    >>> ts.pack("gptModel", {"model": model, "tokenizer": tokenizer})
-    >>>
-    >>> # OR - Directly pack the model by providing its name
-    >>> ts = ts.pack('gptModel','gpt2')
-    >>>
+    >>> # Option 1: Pack using dictionary (recommended)
+    >>> artifact = {"model": model, "tokenizer": tokenizer}
+    >>> ts.pack("gptModel", artifact)
+    >>> # Option 2: pack using the name of the model
+    >>> # ts.pack("gptModel","gpt2")
     >>> # Note that while packing using the name of the model,
     >>> # ensure that the model can be loaded using
     >>> # transformers.AutoModelWithLMHead (eg GPT, Bert, Roberta etc.)
     >>> # If this is not the case (eg AutoModelForQuestionAnswering, BartModel etc)
     >>> # then pack the model by passing a dictionary
     >>> # with the model and tokenizer declared explicitly
-    >>>
     >>> saved_path = ts.save()
     """
 

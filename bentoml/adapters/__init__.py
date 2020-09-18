@@ -38,11 +38,6 @@ from bentoml.adapters.string_input import StringInput
 from bentoml.adapters.tensorflow_tensor_input import TfTensorInput
 from bentoml.adapters.tensorflow_tensor_output import TfTensorOutput
 
-BATCH_MODE_SUPPORTED_INPUT_TYPES = {
-    name for name, v in locals().items() if getattr(v, 'BATCH_MODE_SUPPORTED', None)
-}
-
-
 __all__ = [
     "BaseInputAdapter",
     'BaseOutputAdapter',

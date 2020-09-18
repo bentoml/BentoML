@@ -183,10 +183,8 @@ class MarshalService:
             self.batch_handlers[api_name] = _func
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):
-        from bentoml.adapters import BATCH_MODE_SUPPORTED_INPUT_TYPES
-
         for api_pb in bento_service_metadata_pb.apis:
-            if api_pb.input_type in BATCH_MODE_SUPPORTED_INPUT_TYPES:
+            if api_pb.batch:
                 max_latency = api_pb.mb_max_latency or self.DEFAULT_MAX_LATENCY
                 max_batch_size = api_pb.mb_max_batch_size or self.DEFAULT_MAX_BATCH_SIZE
                 self.add_batch_handler(api_pb.name, max_latency, max_batch_size)

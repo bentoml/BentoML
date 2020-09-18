@@ -23,6 +23,7 @@ from typing import Iterable, Iterator, Sequence
 import flask
 
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
+from bentoml.exceptions import BentoMLConfigException
 from bentoml.server import trace
 from bentoml.types import HTTPRequest, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
@@ -45,6 +46,7 @@ class InferenceAPI(object):
         output_adapter: BaseOutputAdapter,
         mb_max_latency=10000,
         mb_max_batch_size=1000,
+        batch=False,
     ):
         """
         :param service: ref to service containing this API
@@ -65,7 +67,8 @@ class InferenceAPI(object):
             inference API. This parameter governs the throughput/latency trade off, and
             avoids having large batches that exceed some resource constraint (e.g. GPU
             memory to hold the entire batch's data). Default: 1000.
-
+        :param batch: If true, the user API functool would take a batch of input data
+            a time.
         """
         self._service = service
         self._name = name
@@ -74,6 +77,18 @@ class InferenceAPI(object):
         self._output_adapter = output_adapter
         self.mb_max_latency = mb_max_latency
         self.mb_max_batch_size = mb_max_batch_size
+        self.batch = batch
+
+        if not self.input_adapter.BATCH_MODE_SUPPORTED and batch:
+            raise BentoMLConfigException(
+                f"{input_adapter.__class__.__name__} does not support `batch=True`"
+            )
+
+        if not self.input_adapter.SINGLE_MODE_SUPPORTED and not batch:
+            raise BentoMLConfigException(
+                f"{input_adapter.__class__.__name__} does not support `batch=False`, "
+                "its output passed to API functions could only be a batch of data."
+            )
 
         if doc is None:
             # generate a default doc string for this inference API
@@ -127,11 +142,15 @@ class InferenceAPI(object):
 
         # allow user to define handlers without 'tasks' kwargs
         _sig = inspect.signature(self._user_func)
+        if self.batch:
+            append_arg = "tasks"
+        else:
+            append_arg = "task"
         try:
-            _sig.bind(tasks=None)
-            append_tasks = False
+            _sig.bind(**{append_arg: None})
+            append_arg = None
         except TypeError:
-            append_tasks = True
+            pass
 
         @functools.wraps(self._user_func)
         def wrapped_func(*args, **kwargs):
@@ -139,24 +158,33 @@ class InferenceAPI(object):
                 service_name=self.__class__.__name__,
                 span_name="user defined inference api callback function",
             ):
-                if append_tasks and "tasks" in kwargs:
-                    tasks = kwargs.pop('tasks')
-                elif "tasks" in kwargs:
-                    tasks = kwargs['tasks']
+                if append_arg and append_arg in kwargs:
+                    tasks = kwargs.pop(append_arg)
+                elif append_arg in kwargs:
+                    tasks = kwargs[append_arg]
                 else:
                     tasks = []
                 try:
                     return self._user_func(*args, **kwargs)
                 except Exception as e:  # pylint: disable=broad-except
-                    for task in tasks:
+                    if self.batch:
+                        for task in tasks:
+                            if not task.is_discarded:
+                                task.discard(
+                                    http_status=500,
+                                    err_msg=f"Exception happened in API function: {e}",
+                                )
+                        return [None] * sum(
+                            1 if t.batch is None else t.batch for t in tasks
+                        )
+                    else:
+                        task = tasks
                         if not task.is_discarded:
                             task.discard(
                                 http_status=500,
                                 err_msg=f"Exception happened in API function: {e}",
                             )
-                    return [None] * sum(
-                        1 if t.batch is None else t.batch for t in tasks
-                    )
+                        return [None] * (1 if task.batch is None else task.batch)
 
         return wrapped_func
 
@@ -185,34 +213,45 @@ class InferenceAPI(object):
                 task.discard(http_status=400, err_msg=str(e))
 
     def infer(self, inf_tasks: Iterable[InferenceTask]) -> Sequence[InferenceResult]:
-        # task validation
         inf_tasks = tuple(inf_tasks)
 
         # extract args
-        user_args = self.input_adapter.extract_user_func_args(
-            tuple(self._filter_tasks(inf_tasks))
-        )
+        user_args = self.input_adapter.extract_user_func_args(inf_tasks)
         filtered_tasks = tuple(t for t in inf_tasks if not t.is_discarded)
 
         # call user function
-        if not self.input_adapter.BATCH_MODE_SUPPORTED:  # For legacy input adapters
+        if not self.batch:  # For single inputs
             user_return = tuple(
-                self.user_func(*legacy_user_args, tasks=(task,))
-                for task, *legacy_user_args in zip(filtered_tasks, *user_args)
+                self.user_func(*legacy_user_args, task=task)
+                for task, legacy_user_args in zip(
+                    filtered_tasks,
+                    self.input_adapter.iter_batch_args(user_args, tasks=filtered_tasks),
+                )
             )
+            if (
+                isinstance(user_return, (list, tuple))
+                and len(user_return)
+                and isinstance(user_return[0], InferenceResult)
+            ):
+                inf_results = user_return
+            else:
+                # pack return value
+                inf_results = self.output_adapter.pack_user_func_return_value(
+                    user_return, tasks=filtered_tasks
+                )
         else:
             user_return = self.user_func(*user_args, tasks=filtered_tasks)
-        if (
-            isinstance(user_return, (list, tuple))
-            and len(user_return)
-            and isinstance(user_return[0], InferenceResult)
-        ):
-            inf_results = user_return
-        else:
-            # pack return value
-            inf_results = self.output_adapter.pack_user_func_return_value(
-                user_return, tasks=filtered_tasks
-            )
+            if (
+                isinstance(user_return, (list, tuple))
+                and len(user_return)
+                and isinstance(user_return[0], InferenceResult)
+            ):
+                inf_results = user_return
+            else:
+                # pack return value
+                inf_results = self.output_adapter.pack_user_func_return_value(
+                    user_return, tasks=filtered_tasks
+                )
 
         full_results = InferenceResult.complete_discarded(inf_tasks, inf_results)
         return tuple(full_results)

@@ -22,6 +22,7 @@ from typing import Iterable, Iterator, NamedTuple, Sequence, Tuple
 from bentoml.types import (
     ApiFuncArgs,
     AwsLambdaEvent,
+    BatchApiFuncArgs,
     FileLike,
     HTTPRequest,
     InferenceTask,
@@ -37,6 +38,7 @@ class BaseInputAdapter:
 
     HTTP_METHODS = ["POST", "GET"]
     BATCH_MODE_SUPPORTED = True
+    SINGLE_MODE_SUPPORTED = True
 
     def __init__(self, http_input_example=None, **base_config):
         self._config = base_config
@@ -79,14 +81,23 @@ class BaseInputAdapter:
         """
         raise NotImplementedError()
 
-    def validate_task(self, _: InferenceTask):
-        return True
-
-    def extract_user_func_args(self, tasks: Iterable[InferenceTask]) -> ApiFuncArgs:
+    def extract_user_func_args(
+        self, tasks: Iterable[InferenceTask]
+    ) -> BatchApiFuncArgs:
         """
         Extract args that user API function is expecting from InferenceTask
         """
         raise NotImplementedError()
+
+    def iter_batch_args(
+        self,
+        batch_args: BatchApiFuncArgs,
+        tasks: InferenceTask = None,  # pylint: disable=unused-argument
+    ) -> Iterator[ApiFuncArgs]:
+        """
+        Extract args that user API function is expecting from InferenceTask
+        """
+        return iter(zip(*batch_args))
 
 
 COLOR_FAIL = '\033[91m'

@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 from sys import version_info
 
-from bentoml.utils.ruamel_yaml import YAML
 from bentoml import __version__ as BENTOML_VERSION
 from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version
-from bentoml.utils import dump_to_yaml_str
 from bentoml.exceptions import BentoMLConfigException
+from bentoml.utils import dump_to_yaml_str
+from bentoml.utils.ruamel_yaml import YAML
 
 BENTOML_CONFIG_YAML_TEMPLATE = """\
 version: {bentoml_version}
@@ -48,6 +48,7 @@ def _get_apis_list(bento_service):
             "output_type": api.output_adapter.__class__.__name__,
             "mb_max_batch_size": api.mb_max_batch_size,
             "mb_max_latency": api.mb_max_latency,
+            "batch": api.batch,
         }
         if api.input_adapter.config:
             api_obj["input_config"] = api.input_adapter.config

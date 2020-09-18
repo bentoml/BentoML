@@ -48,6 +48,7 @@ message BentoServiceMetadata {
     string output_type = 6;
     int32 mb_max_latency = 7;
     int32 mb_max_batch_size = 8;
+    bool batch = 9;
   }
 
   string name = 1;

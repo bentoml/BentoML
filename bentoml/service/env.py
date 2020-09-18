@@ -183,22 +183,44 @@ class BentoServiceEnv(object):
         self.set_setup_sh(setup_sh)
 
         if docker_base_image:
+            logger.info(
+                f"Using user specified docker base image: `{docker_base_image}`, user"
+                f"must make sure that the base image either has Python "
+                f"{PYTHON_MINOR_VERSION} or conda installed."
+            )
             self._docker_base_image = docker_base_image
+        elif config('core').get('default_docker_base_image'):
+            logger.info(
+                f"Using default docker base image: `{docker_base_image}` specified in"
+                f"BentoML config file or env var. User must make sure that the docker "
+                f"base image either has Python {PYTHON_MINOR_VERSION} or conda "
+                f"installed."
+            )
+            self._docker_base_image = config('core').get('default_docker_base_image')
         else:
             if PYTHON_MINOR_VERSION not in PYTHON_SUPPORTED_VERSIONS:
-                logger.warning(
-                    f"Python {PYTHON_VERSION} in current environment is unsupported"
-                    f"the docker image used will contain a different version of Python"
-                    f"supported versions are: f{', '.join(PYTHON_SUPPORTED_VERSIONS)}"
+                self._docker_base_image = (
+                    f"bentoml/model-server:{bentoml_deploy_version}"
                 )
-                self._docker_base_image = config('core').get(
-                    'default_docker_base_image'
+
+                logger.warning(
+                    f"Python {PYTHON_VERSION} found in current environment is not "
+                    f"officially supported by BentoML. The docker base image used is"
+                    f"'{self._docker_base_image}' which will use conda to install "
+                    f"Python {PYTHON_VERSION} in the build process. Supported Python "
+                    f"versions are: f{', '.join(PYTHON_SUPPORTED_VERSIONS)}"
                 )
             else:
+                # e.g. bentoml/model-server:0.8.6-py37
                 self._docker_base_image = (
-                    config('core').get('default_docker_base_image')
-                    + "-py"
-                    + PYTHON_MINOR_VERSION.replace(".", "")
+                    f"bentoml/model-server:"
+                    f"{bentoml_deploy_version}-"
+                    f"py{PYTHON_MINOR_VERSION.replace('.', '')}"
+                )
+
+                logger.debug(
+                    f"Using BentoML default docker base image "
+                    f"'{self._docker_base_image}'"
                 )
 
     def add_conda_channels(self, channels: List[str]):

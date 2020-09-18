@@ -387,14 +387,13 @@ class YataiService(YataiServicer):
             bento_pb = self.bento_metadata_store.get(
                 request.bento_name, request.bento_version
             )
-            if request.bento_version.lower() == 'latest':
-                logger.info(
-                    'Getting latest version %s:%s',
-                    request.bento_name,
-                    bento_pb.version,
-                )
-
             if bento_pb:
+                if request.bento_version.lower() == 'latest':
+                    logger.info(
+                        'Getting latest version %s:%s',
+                        request.bento_name,
+                        bento_pb.version,
+                    )
                 if bento_pb.uri.type == BentoUri.S3:
                     bento_pb.uri.s3_presigned_url = self.repo.get(
                         bento_pb.name, bento_pb.version

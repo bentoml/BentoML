@@ -2,11 +2,13 @@
 
 .. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
 
+***************
 Getting Started
-###############
+***************
+
 
 Run on Google Colab
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 Try out this quickstart guide interactively on Google Colab:
 `Open in Colab <https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
@@ -14,7 +16,7 @@ Try out this quickstart guide interactively on Google Colab:
 Note that Docker conterization does not work in the Colab environment.
 
 Run notebook locally
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 Install `BentoML <https://github.com/bentoml/BentoML>`_. This requires python 3.6 or
 above, install with :code:`pip` command:

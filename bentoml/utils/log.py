@@ -102,7 +102,11 @@ def get_logging_config_dict(logging_level, base_log_directory):
 
 def configure_logging(logging_level=None):
     if logging_level is None:
-        logging_level = config("logging").get("LOGGING_LEVEL").upper()
+        logging_level = config("logging").get("LEVEL").upper()
+        if "LOGGING_LEVEL" in config("logging"):
+            # Support legacy config name e.g. BENTOML__LOGGING__LOGGING_LEVEL=debug
+            logging_level = config("logging").get("LOGGING_LEVEL").upper()
+
     if get_debug_mode():
         logging_level = logging.getLevelName(logging.DEBUG)
 

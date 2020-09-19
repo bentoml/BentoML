@@ -65,7 +65,7 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         self.options = {
             "bind": "%s:%s" % ("0.0.0.0", self.port),
             "timeout": timeout,
-            "loglevel": config("logging").get("LOGGING_LEVEL").upper(),
+            "loglevel": config("logging").get("LEVEL").upper(),
         }
         if workers:
             self.options['workers'] = workers

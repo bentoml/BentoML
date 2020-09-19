@@ -74,15 +74,15 @@ def transformers_host(transformers_image):
 
 
 def test_transformers_artifact(transformers_svc):
-    assert transformers_svc.predict(test_sentence) == [
-        result
-    ], "Inference on unsaved Transformers artifact does not match expected"
+    assert (
+        transformers_svc.predict(test_sentence) == result
+    ), "Inference on unsaved Transformers artifact does not match expected"
 
 
 def test_tensorflow_2_artifact_loaded(transformers_svc_loaded):
-    assert transformers_svc_loaded.predict(test_sentence) == [
-        result
-    ], "Inference on saved and loaded Transformers artifact does not match expected"
+    assert (
+        transformers_svc_loaded.predict(test_sentence) == result
+    ), "Inference on saved and loaded Transformers artifact does not match expected"
 
 
 @pytest.mark.asyncio
@@ -91,6 +91,6 @@ async def test_transformers_artifact_with_docker(transformers_host):
         "POST",
         f"http://{transformers_host}/predict",
         headers=(("Content-Type", "application/json"),),
-        data=json.dumps(test_sentence[0]),
+        data=json.dumps(test_sentence),
         assert_status=200,
     )

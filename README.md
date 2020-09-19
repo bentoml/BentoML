@@ -157,7 +157,6 @@ Advanced workflow for model serving and deployment:
 * Spacy - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#spacy) | [Examples](https://github.com/bentoml/gallery#spacy)
 * Statsmodels - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#statsmodels) | [Examples](https://github.com/bentoml/gallery#statsmodels)
 * CoreML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#coreml)
-
 * Transformers - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#transformers)
 
 

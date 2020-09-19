@@ -150,3 +150,17 @@ Transformers
 ============
 
 .. autoclass:: bentoml.frameworks.transformers.TransformersModelArtifact
+
+
+===========
+Statsmodels
+===========
+
+For statsmodels, we recommend using PickleArtifact:
+
+.. autoclass:: bentoml.service.artifacts.common.PickleArtifact
+
+Example Projects:
+
+* Shampoo Sales Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
+

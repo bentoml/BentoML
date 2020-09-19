@@ -1,9 +1,8 @@
 import logging
 import os
 
+from bentoml.exceptions import InvalidArgument, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.exceptions import InvalidArgument
-from bentoml.exceptions import MissingDependencyException
 from bentoml.service.env import BentoServiceEnv
 
 logger = logging.getLogger(__name__)
@@ -48,7 +47,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
     >>> @bentoml.artifacts([CoreMLModelArtifact('model')])
     >>> class CoreMLModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(input=ImageInput())
+    >>>     @bentoml.api(input=ImageInput(), batch=True)
     >>>     def predict(self, imgs):
     >>>         outputs = [self.artifacts.model(PIL.Image.fromarray(_.astype("uint8")))
     >>>                    for img in imgs]

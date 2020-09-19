@@ -1,7 +1,12 @@
 import os
-from bentoml.service import BentoServiceArtifact
-from bentoml.exceptions import MissingDependencyException, InvalidArgument, NotFound
 from importlib import import_module
+
+from bentoml.exceptions import (
+    InvalidArgument,
+    MissingDependencyException,
+    NotFound,
+)
+from bentoml.service import BentoServiceArtifact
 
 try:
     import transformers
@@ -40,14 +45,14 @@ class TransformersModelArtifact(BentoServiceArtifact):
     >>> @bentoml.env(pip_packages=["transformers==3.1.0", "torch==1.6.0"])
     >>> @bentoml.artifacts([TransformersModelArtifact("gptModel")])
     >>> class TransformerService(bentoml.BentoService):
-    >>>     @bentoml.api(input=JsonInput())
+    >>>     @bentoml.api(input=JsonInput(), batch=False)
     >>>     def predict(self, parsed_json):
-    >>>         src_text = parsed_json[0].get("text")
+    >>>         src_text = parsed_json.get("text")
     >>>         model = self.artifacts.gptModel.get("model")
     >>>         tokenizer = self.artifacts.gptModel.get("tokenizer")
     >>>         input_ids = tokenizer.encode(src_text, return_tensors="pt")
     >>>         output = model.generate(input_ids, max_length=50)
-    >>>         output = [tokenizer.decode(output[0], skip_special_tokens=True)]
+    >>>         output = tokenizer.decode(output[0], skip_special_tokens=True)
     >>>         return output
     >>>
     >>>

@@ -70,6 +70,7 @@ def api_decorator(
     api_doc: str = None,
     mb_max_batch_size: int = DEFAULT_MAX_BATCH_SIZE,
     mb_max_latency: int = DEFAULT_MAX_LATENCY,
+    batch=False,
     **kwargs,
 ):  # pylint: disable=redefined-builtin
     """
@@ -97,11 +98,11 @@ def api_decorator(
     >>>
     >>> class FraudDetectionAndIdentityService(BentoService):
     >>>
-    >>>     @api(input=JsonInput())
+    >>>     @api(input=JsonInput(), batch=True)
     >>>     def fraud_detect(self, json_list):
     >>>         # user-defined callback function that process inference requests
     >>>
-    >>>     @api(input=DataframeInput(input_json_orient='records'))
+    >>>     @api(input=DataframeInput(input_json_orient='records'), batch=True)
     >>>     def identity(self, df):
     >>>         # user-defined callback function that process inference requests
     """
@@ -140,6 +141,7 @@ def api_decorator(
         setattr(func, "_api_doc", api_doc)
         setattr(func, "_mb_max_batch_size", mb_max_batch_size)
         setattr(func, "_mb_max_latency", mb_max_latency)
+        setattr(func, "_batch", batch)
 
         return func
 
@@ -366,7 +368,7 @@ class BentoService:
     >>>  @env(pip_packages=["scikit-learn"])
     >>>  class MyMLService(BentoService):
     >>>
-    >>>     @api(input=DataframeInput())
+    >>>     @api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
     >>>         return self.artifacts.clf.predict(df)
     >>>
@@ -443,6 +445,7 @@ class BentoService:
                 output_adapter = getattr(function, "_output_adapter")
                 mb_max_latency = getattr(function, "_mb_max_latency")
                 mb_max_batch_size = getattr(function, "_mb_max_batch_size")
+                batch = getattr(function, "_batch")
 
                 # Bind api method call with self(BentoService instance)
                 user_func = function.__get__(self)
@@ -457,6 +460,7 @@ class BentoService:
                         output_adapter=output_adapter,
                         mb_max_latency=mb_max_latency,
                         mb_max_batch_size=mb_max_batch_size,
+                        batch=batch,
                     )
                 )
 

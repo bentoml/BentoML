@@ -55,7 +55,8 @@ class MultiImageInput(MultiFileInput):
     >>> import bentoml
     >>>
     >>> class MyService(BentoService):
-    >>>     @bentoml.api(input=MultiImageInput(input_names=('imageX', 'imageY')))
+    >>>     @bentoml.api(
+    >>>         input=MultiImageInput(input_names=('imageX', 'imageY')), batch=True)
     >>>     def predict(self, image_groups):
     >>>         for image_group in image_groups:
     >>>             image_array_x = image_group['imageX']

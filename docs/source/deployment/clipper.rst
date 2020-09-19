@@ -57,7 +57,7 @@ Other than using Clipper specific input, the rest are the same as defining a reg
     >>> @env(infer_pip_packages=True)
     >>> class IrisClassifier(BentoService):
 
-    >>>     @api(input=DataframeInput())
+    >>>     @api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
     >>>         return self.artifacts.model.predict(df)
     >>>

@@ -1,7 +1,7 @@
 import os
 
-from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
+from bentoml.service.artifacts import BentoServiceArtifact
 
 
 def _import_joblib_module():
@@ -50,7 +50,7 @@ class SklearnModelArtifact(BentoServiceArtifact):
     >>> @bentoml.artifacts([SklearnModelArtifact('model')])
     >>> class SklearnModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(input=DataframeInput())
+    >>>     @bentoml.api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
     >>>         result = self.artifacts.model.predict(df)
     >>>         return result

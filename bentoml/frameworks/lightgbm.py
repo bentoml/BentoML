@@ -1,7 +1,7 @@
 import os
 
+from bentoml.exceptions import InvalidArgument, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.exceptions import MissingDependencyException, InvalidArgument
 from bentoml.service.env import BentoServiceEnv
 
 
@@ -35,7 +35,7 @@ class LightGBMModelArtifact(BentoServiceArtifact):
     >>> @bentoml.env(infer_pip_packages=True)
     >>> class LgbModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(input=DataframeInput())
+    >>>     @bentoml.api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
     >>>         return self.artifacts.model.predict(df)
     >>>

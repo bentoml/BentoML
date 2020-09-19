@@ -90,7 +90,7 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
 class TestBentoWithOutArtifact(bentoml.BentoService):
     __test__ = False
 
-    @bentoml.api(input=DataframeInput())
+    @bentoml.api(input=DataframeInput(), batch=True)
     def test(self, df):
         return df
 

@@ -1,8 +1,8 @@
 import os
 import stat
-import pytest
 
 import psutil  # noqa # pylint: disable=unused-import
+import pytest
 
 import bentoml
 from bentoml.adapters import DataframeInput
@@ -12,7 +12,7 @@ from bentoml.artifact import SklearnModelArtifact
 def test_pip_packages_env_with_legacy_api():
     @bentoml.env(pip_packages=['numpy', 'pandas', 'torch'])
     class ServiceWithList(bentoml.BentoService):
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
@@ -25,7 +25,7 @@ def test_pip_packages_env_with_legacy_api():
 def test_pip_packages_env():
     @bentoml.env(pip_packages=['numpy', 'pandas', 'torch'])
     class ServiceWithList(bentoml.BentoService):
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
@@ -38,7 +38,7 @@ def test_pip_packages_env():
 def test_service_env_pip_packages(tmpdir):
     @bentoml.env(pip_packages=['numpy', 'pandas', 'torch'])
     class ServiceWithList(bentoml.BentoService):
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
@@ -66,7 +66,7 @@ def test_service_env_pip_install_options(tmpdir):
         pip_extra_index_url=sample_extra_index_url,
     )
     class ServiceWithList(bentoml.BentoService):
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
@@ -90,7 +90,7 @@ def test_artifact_pip_packages(tmpdir):
     @bentoml.artifacts([SklearnModelArtifact('model')])
     @bentoml.env(pip_packages=['scikit-learn==0.23.0'])
     class ServiceWithList(bentoml.BentoService):
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
@@ -112,7 +112,7 @@ def test_can_instantiate_setup_sh_from_file(tmpdir):
 
     @bentoml.env(setup_sh=script_path)
     class ServiceWithSetup(bentoml.BentoService):
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
@@ -133,7 +133,7 @@ def test_can_instantiate_setup_sh_from_file(tmpdir):
 def test_can_instantiate_setup_sh_from_txt(tmpdir):
     @bentoml.env(setup_sh='ls')
     class ServiceWithSetup(bentoml.BentoService):
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
@@ -153,7 +153,7 @@ def test_can_instantiate_setup_sh_from_txt(tmpdir):
 def test_docker_base_image_env():
     @bentoml.env(docker_base_image='continuumio/miniconda3:4.8.0')
     class ServiceWithSetup(bentoml.BentoService):
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
@@ -166,7 +166,7 @@ def test_conda_channels_n_dependencies(tmpdir):
         conda_channels=["bentoml-test-channel"], conda_dependencies=["bentoml-test-lib"]
     )
     class ServiceWithCondaDeps(bentoml.BentoService):
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
@@ -206,7 +206,7 @@ dependencies:
         conda_dependencies=["bentoml-test-lib"],
     )
     class ServiceWithCondaDeps(bentoml.BentoService):
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 

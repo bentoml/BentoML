@@ -1,10 +1,10 @@
-import os
-import shutil
 import logging
+import os
 import pathlib
+import shutil
 
-from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
+from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 
 logger = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     >>> @bentoml.artifacts([TensorflowSavedModelArtifact('model')])
     >>> class TfModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(input=JsonInput())
+    >>>     @bentoml.api(input=JsonInput(), batch=False)
     >>>     def predict(self, json):
     >>>         input_data = json['input']
     >>>         prediction = self.artifacts.model.add(input_data)

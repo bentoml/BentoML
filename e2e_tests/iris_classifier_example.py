@@ -1,11 +1,11 @@
-from bentoml import BentoService, api, env, artifacts
-from bentoml.artifact import SklearnModelArtifact
+from bentoml import BentoService, api, artifacts, env
 from bentoml.adapters import DataframeInput
+from bentoml.artifact import SklearnModelArtifact
 
 
 @env(infer_pip_packages=True)
 @artifacts([SklearnModelArtifact('clf')])
 class IrisClassifier(BentoService):
-    @api(input=DataframeInput())
+    @api(input=DataframeInput(), batch=True)
     def predict(self, df):
         return self.artifacts.clf.predict(df)

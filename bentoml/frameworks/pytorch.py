@@ -1,11 +1,10 @@
-import os
 import logging
+import os
 
+from bentoml.exceptions import InvalidArgument, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 from bentoml.utils import cloudpickle
-from bentoml.exceptions import MissingDependencyException, InvalidArgument
-
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +45,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
     >>> @bentoml.artifacts([PytorchModelArtifact('net')])
     >>> class PytorchModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(input=ImageInput())
+    >>>     @bentoml.api(input=ImageInput(), batch=True)
     >>>     def predict(self, imgs):
     >>>         outputs = self.artifacts.net(imgs)
     >>>         return outputs

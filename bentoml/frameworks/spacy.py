@@ -1,8 +1,8 @@
 import logging
 import os
 
+from bentoml.exceptions import InvalidArgument, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.exceptions import MissingDependencyException, InvalidArgument
 from bentoml.service.env import BentoServiceEnv
 
 logger = logging.getLogger(__name__)
@@ -42,10 +42,10 @@ class SpacyModelArtifact(BentoServiceArtifact):
     >>> @bentoml.artifacts([SpacyModelArtifact('nlp')])
     >>> class SpacyModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(input=JsonInput())
+    >>>     @bentoml.api(input=JsonInput(), batch=False)
     >>>     def predict(self, parsed_json):
-    >>>         outputs = self.artifacts.nlp(parsed_json['text'])
-    >>>         return outputs
+    >>>         output = self.artifacts.nlp(parsed_json['text'])
+    >>>         return output
     >>>
     >>>
     >>> svc = SpacyModelService()

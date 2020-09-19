@@ -1,9 +1,9 @@
+import logging
 import os
 import shutil
-import logging
 
+from bentoml.exceptions import InvalidArgument, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.exceptions import MissingDependencyException, InvalidArgument
 from bentoml.service.env import BentoServiceEnv
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
     >>> @bentoml.env(infer_pip_packages=True)
     >>> class FastaiModelService(bentoml.BentoService):
     >>>
-    >>>     @api(input=DataframeInput())
+    >>>     @api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
     >>>         results = []
     >>>         for _, row in df.iterrows():

@@ -155,7 +155,9 @@ Advanced workflow for model serving and deployment:
 * H2O - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#h2o) | [Examples](https://github.com/bentoml/gallery#h2o)
 * ONNX - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#onnx) | [Examples](https://github.com/bentoml/gallery#onnx)
 * Spacy - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#spacy) | [Examples](https://github.com/bentoml/gallery#spacy)
+* Statsmodels - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#statsmodels) | [Examples](https://github.com/bentoml/gallery#statsmodels)
 * CoreML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#coreml)
+
 * Transformers - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#transformers)
 
 

@@ -229,7 +229,9 @@ Input = TypeVar("Input")
 Output = TypeVar("Output")
 
 ApiFuncArgs = TypeVar("ApiFuncArgs")
+BatchApiFuncArgs = TypeVar("BatchApiFuncArgs")
 ApiFuncReturnValue = TypeVar("ApiFuncReturnValue")
+BatchApiFuncReturnValue = TypeVar("BatchApiFuncReturnValue")
 
 
 @json_serializer(compat=True)

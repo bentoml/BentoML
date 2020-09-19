@@ -11,10 +11,10 @@ from bentoml.adapters import (  # FastaiImageInput,
     JsonInput,
     LegacyImageInput,
 )
-from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.frameworks.sklearn import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.saved_bundle import save_to_dir
+from bentoml.service.artifacts.pickle import PickleArtifact
 
 
 @bentoml.env(infer_pip_packages=True)
@@ -25,7 +25,7 @@ class ExampleBentoService(bentoml.BentoService):
     """
 
     @bentoml.api(
-        input=JsonInput(), mb_max_latency=1000, mb_max_batch_size=2000,
+        input=JsonInput(), mb_max_latency=1000, mb_max_batch_size=2000, batch=True
     )
     def predict_with_sklearn(self, jsons):
         """predict_dataframe expects dataframe as input
@@ -36,23 +36,24 @@ class ExampleBentoService(bentoml.BentoService):
         input=DataframeInput(dtype={"col1": "int"}),
         mb_max_latency=1000,
         mb_max_batch_size=2000,
+        batch=True,
     )
     def predict_dataframe(self, df):
         """predict_dataframe expects dataframe as input
         """
         return self.artifacts.model.predict_dataframe(df)
 
-    @bentoml.api(DataframeHandler, dtype={"col1": "int"})  # deprecated
+    @bentoml.api(DataframeHandler, dtype={"col1": "int"}, batch=True)  # deprecated
     def predict_dataframe_v1(self, df):
         """predict_dataframe expects dataframe as input
         """
         return self.artifacts.model.predict_dataframe(df)
 
-    @bentoml.api(input=ImageInput())
+    @bentoml.api(input=ImageInput(), batch=True)
     def predict_image(self, images):
         return self.artifacts.model.predict_image(images)
 
-    @bentoml.api(input=FileInput())
+    @bentoml.api(input=FileInput(), batch=True)
     def predict_file(self, files):
         return self.artifacts.model.predict_file(files)
 
@@ -60,11 +61,11 @@ class ExampleBentoService(bentoml.BentoService):
     def predict_legacy_images(self, original, compared):
         return self.artifacts.model.predict_legacy_images(original, compared)
 
-    @bentoml.api(input=JsonInput())
+    @bentoml.api(input=JsonInput(), batch=True)
     def predict_json(self, input_datas):
         return self.artifacts.model.predict_json(input_datas)
 
-    @bentoml.api(input=JsonInput(), mb_max_latency=10000 * 1000)
+    @bentoml.api(input=JsonInput(), mb_max_latency=10000 * 1000, batch=True)
     def echo_with_delay(self, input_datas):
         data = input_datas[0]
         time.sleep(data['b'] + data['a'] * len(input_datas))

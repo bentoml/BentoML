@@ -53,7 +53,7 @@ class FileInput(BaseInputAdapter):
         @bentoml.artifacts([PytorchModelArtifact('classifier')])
         class PyTorchFashionClassifier(bentoml.BentoService):
 
-            @bentoml.api(input=FileInput())
+            @bentoml.api(input=FileInput(), batch=True)
             def predict(self, file_streams):
                 img_arrays = []
                 for fs in file_streams:

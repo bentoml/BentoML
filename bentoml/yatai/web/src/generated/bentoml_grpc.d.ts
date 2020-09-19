@@ -2750,6 +2750,9 @@ export namespace bentoml {
 
             /** BentoServiceApi mb_max_batch_size */
             mb_max_batch_size?: (number|null);
+
+            /** BentoServiceApi batch */
+            batch?: (boolean|null);
         }
 
         /** Represents a BentoServiceApi. */
@@ -2784,6 +2787,9 @@ export namespace bentoml {
 
             /** BentoServiceApi mb_max_batch_size. */
             public mb_max_batch_size: number;
+
+            /** BentoServiceApi batch. */
+            public batch: boolean;
 
             /**
              * Creates a new BentoServiceApi instance using the specified properties.

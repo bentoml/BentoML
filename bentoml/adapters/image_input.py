@@ -66,7 +66,7 @@ class ImageInput(FileInput):
         >>>
         >>> @artifacts([TensorflowSavedModelArtifact('classifier')])
         >>> class PetClassification(BentoService):
-        >>>     @api(input=ImageInput())
+        >>>     @api(input=ImageInput(), batch=True)
         >>>     def predict(self, image_ndarrays):
         >>>         results = self.artifacts.classifer.predict(image_ndarrays)
         >>>         return [CLASS_NAMES[r] for r in results]

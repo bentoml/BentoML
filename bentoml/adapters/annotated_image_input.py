@@ -70,7 +70,7 @@ class AnnotatedImageInput(MultiFileInput):
         >>>
         >>> @artifacts([TensorflowSavedModelArtifact('classifier')])
         >>> class PetClassification(BentoService):
-        >>>    @api(input=AnnotatedImageInput())
+        >>>    @api(input=AnnotatedImageInput(), batch=True)
         >>>    def predict(
         >>>            self,
         >>>            image_list: 'Sequence[numpy.ndarray]',

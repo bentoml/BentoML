@@ -3,12 +3,12 @@ import os
 import pathlib
 import shutil
 
-from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.exceptions import (
-    MissingDependencyException,
-    InvalidArgument,
     BentoMLException,
+    InvalidArgument,
+    MissingDependencyException,
 )
+from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
     >>> @bentoml.env(infer_pip_packages=True)
     >>> @bentoml.artifacts([OnnxModelArtifact('model', backend='onnxruntime')])
     >>> class OnnxIrisClassifierService(bentoml.BentoService):
-    >>>     @bentoml.api(input=DataframeInput())
+    >>>     @bentoml.api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
     >>>         input_data = df.to_numpy().astype(numpy.float32
     >>>         input_name = self.artifacts.model.get_inputs()[0].name

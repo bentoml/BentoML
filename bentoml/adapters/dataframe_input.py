@@ -88,6 +88,8 @@ class DataframeInput(FileInput):
 
     """
 
+    SINGLE_MODE_SUPPORTED = False
+
     def __init__(
         self,
         typ: str = "frame",

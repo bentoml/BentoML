@@ -86,7 +86,7 @@ the iris classifier model trained above:
     @artifacts([SklearnModelArtifact('model')])
     class IrisClassifier(BentoService):
 
-        @api(input=DataframeInput())
+        @api(input=DataframeInput(), batch=True)
         def predict(self, df: pd.DataFrame):
             # Optional pre-processing, post-processing code goes here
             return self.artifacts.model.predict(df)

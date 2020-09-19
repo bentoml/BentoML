@@ -1,18 +1,18 @@
+import json
+
 import pytest
+
 import bentoml
 from tests.bento_service_examples.transformer_gpt_example import (
     TransformersGPT2TextGenerator,
 )
-
 from tests.integration.api_server.conftest import (
     build_api_server_docker_image,
     run_api_server_docker_container,
 )
-import json
-
 from transformers import AutoModelWithLMHead, AutoTokenizer
 
-test_sentence = [{"text": "A Bento box is a "}]
+test_sentence = {"text": "A Bento box is a "}
 
 result = (
     "A Bento box is a urn that is used to store the contents of a Bento box. "
@@ -74,15 +74,15 @@ def transformers_host(transformers_image):
 
 
 def test_transformers_artifact(transformers_svc):
-    assert transformers_svc.predict(test_sentence) == [
-        result
-    ], "Inference on unsaved Transformers artifact does not match expected"
+    assert (
+        transformers_svc.predict(test_sentence) == result
+    ), "Inference on unsaved Transformers artifact does not match expected"
 
 
 def test_tensorflow_2_artifact_loaded(transformers_svc_loaded):
-    assert transformers_svc_loaded.predict(test_sentence) == [
-        result
-    ], "Inference on saved and loaded Transformers artifact does not match expected"
+    assert (
+        transformers_svc_loaded.predict(test_sentence) == result
+    ), "Inference on saved and loaded Transformers artifact does not match expected"
 
 
 @pytest.mark.asyncio
@@ -91,6 +91,6 @@ async def test_transformers_artifact_with_docker(transformers_host):
         "POST",
         f"http://{transformers_host}/predict",
         headers=(("Content-Type", "application/json"),),
-        data=json.dumps(test_sentence[0]),
+        data=json.dumps(test_sentence),
         assert_status=200,
     )

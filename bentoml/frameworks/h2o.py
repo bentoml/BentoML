@@ -1,8 +1,8 @@
 import os
 import shutil
 
-from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
+from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 
 
@@ -34,7 +34,7 @@ class H2oModelArtifact(BentoServiceArtifact):
     >>> @bentoml.env(infer_pip_packages=True)
     >>> class H2oModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(input=DataframeInput())
+    >>>     @bentoml.api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
     >>>         hf = h2o.H2OFrame(df)
     >>>         predictions = self.artifacts.model.predict(hf)

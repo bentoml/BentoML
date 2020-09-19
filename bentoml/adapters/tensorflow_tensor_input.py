@@ -50,6 +50,7 @@ class TfTensorInput(StringInput):
     """
 
     BATCH_MODE_SUPPORTED = True
+    SINGLE_MODE_SUPPORTED = False
     METHODS = (PREDICT, CLASSIFY, REGRESS) = ("predict", "classify", "regress")
 
     def __init__(self, method=PREDICT, **base_kwargs):

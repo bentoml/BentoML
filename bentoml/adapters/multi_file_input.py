@@ -35,24 +35,22 @@ class MultiFileInput(BaseInputAdapter):
 
     Example:
 
-        ```python
-        import bentoml
-        from PIL import Image
-        import numpy as np
-
-        from bentoml.framework.pytroch import PytorchModelArtifact
-        from bentoml.adapters import MultiFileInput
-
-        @bentoml.env(pip_packages=['torch', 'pillow', 'numpy'])
-        @bentoml.artifacts([PytorchModelArtifact('classifier')])
-        class PyTorchFashionClassifier(bentoml.BentoService):
-
-            @bentoml.api(input=MultiFileInput(input_names=['image', 'json']))
-            def predict(self, image_list, json_list):
-                for img_io, json_io in zip(image_list, json_list):
-                    img = Image.open(img_io)
-                    json_obj = json.load(json_io)
-        ```
+    >>> import bentoml
+    >>> from PIL import Image
+    >>> import numpy as np
+    >>>
+    >>> from bentoml.framework.pytroch import PytorchModelArtifact
+    >>> from bentoml.adapters import MultiFileInput
+    >>>
+    >>> @bentoml.env(pip_packages=['torch', 'pillow', 'numpy'])
+    >>> @bentoml.artifacts([PytorchModelArtifact('classifier')])
+    >>> class PyTorchFashionClassifier(bentoml.BentoService):
+    >>>     @bentoml.api(
+    >>>         input=MultiFileInput(input_names=['image', 'json']), batch=True)
+    >>>     def predict(self, image_list, json_list):
+    >>>         for img_io, json_io in zip(image_list, json_list):
+    >>>             img = Image.open(img_io)
+    >>>             json_obj = json.load(json_io)
 
     """
 

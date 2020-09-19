@@ -1,7 +1,7 @@
 import os
 
+from bentoml.exceptions import InvalidArgument, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.exceptions import MissingDependencyException, InvalidArgument
 from bentoml.service.env import BentoServiceEnv
 
 
@@ -36,7 +36,7 @@ class XgboostModelArtifact(BentoServiceArtifact):
     >>> @bentoml.artifacts(XgboostModelArtifact('model'))
     >>> class XGBoostModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(input=DataframeInput())
+    >>>     @bentoml.api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
     >>>         result = self.artifacts.model.predict(df)
     >>>         return result

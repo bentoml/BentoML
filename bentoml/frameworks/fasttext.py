@@ -1,7 +1,7 @@
 import os
 
-from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.exceptions import MissingDependencyException
+from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 
 
@@ -30,7 +30,7 @@ class FasttextModelArtifact(BentoServiceArtifact):
     >>> @bentoml.artifacts([FasttextModelArtifact('model')])
     >>> class FasttextModelService(bentoml.BentoService):
     >>>
-    >>>     @bentoml.api(input=JsonInput())
+    >>>     @bentoml.api(input=JsonInput(), batch=False)
     >>>     def predict(self, parsed_json):
     >>>         # K is the number of labels that successfully were predicted,
     >>>         # among all the real labels

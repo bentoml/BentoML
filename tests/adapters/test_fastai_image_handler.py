@@ -8,7 +8,7 @@ pytestmark = pytest.mark.skip("skipping due to test being flaky on CI")
 
 def test_fastai_image_input(capsys, tmpdir):
     class ImageInputModelForFastai(bentoml.BentoService):
-        @bentoml.api(input=FastaiImageInput())
+        @bentoml.api(input=FastaiImageInput(), batch=False)
         def predict(self, image):
             return list(image.shape)
 

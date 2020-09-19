@@ -1,36 +1,46 @@
 import pytest
 
 import bentoml
-from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.adapters import DataframeInput, FastaiImageInput, ImageInput
-from bentoml.service import validate_version_str
 from bentoml.exceptions import InvalidArgument
+from bentoml.service import validate_version_str
+from bentoml.service.artifacts.pickle import PickleArtifact
 
 
 def test_custom_api_name():
     # these names should work:
-    bentoml.api(input=DataframeInput(), api_name="a_valid_name")(lambda x: x)
-    bentoml.api(input=DataframeInput(), api_name="AValidName")(lambda x: x)
-    bentoml.api(input=DataframeInput(), api_name="_AValidName")(lambda x: x)
-    bentoml.api(input=DataframeInput(), api_name="a_valid_name_123")(lambda x: x)
+    bentoml.api(input=DataframeInput(), api_name="a_valid_name", batch=True)(
+        lambda x: x
+    )
+    bentoml.api(input=DataframeInput(), api_name="AValidName", batch=True)(lambda x: x)
+    bentoml.api(input=DataframeInput(), api_name="_AValidName", batch=True)(lambda x: x)
+    bentoml.api(input=DataframeInput(), api_name="a_valid_name_123", batch=True)(
+        lambda x: x
+    )
 
     with pytest.raises(InvalidArgument) as e:
-        bentoml.api(input=DataframeInput(), api_name="a invalid name")(lambda x: x)
+        bentoml.api(input=DataframeInput(), api_name="a invalid name", batch=True)(
+            lambda x: x
+        )
     assert str(e.value).startswith("Invalid API name")
 
     with pytest.raises(InvalidArgument) as e:
-        bentoml.api(input=DataframeInput(), api_name="123_a_invalid_name")(lambda x: x)
+        bentoml.api(input=DataframeInput(), api_name="123_a_invalid_name", batch=True)(
+            lambda x: x
+        )
     assert str(e.value).startswith("Invalid API name")
 
     with pytest.raises(InvalidArgument) as e:
-        bentoml.api(input=DataframeInput(), api_name="a-invalid-name")(lambda x: x)
+        bentoml.api(input=DataframeInput(), api_name="a-invalid-name", batch=True)(
+            lambda x: x
+        )
     assert str(e.value).startswith("Invalid API name")
 
 
 @pytest.mark.skip("skip fastai tests to fix CI build")
 def test_fastai_image_input_pip_dependencies():
     class TestFastAiImageService(bentoml.BentoService):
-        @bentoml.api(input=FastaiImageInput())
+        @bentoml.api(input=FastaiImageInput(), batch=False)
         def test(self, image):
             return image
 
@@ -85,7 +95,7 @@ def test_invalid_api_input():
 
 def test_image_input_pip_dependencies():
     class TestImageService(bentoml.BentoService):
-        @bentoml.api(input=ImageInput())
+        @bentoml.api(input=ImageInput(), batch=True)
         def test(self, images):
             return images
 

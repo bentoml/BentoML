@@ -13,32 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
-import functools
 import inspect
-import itertools
 import logging
 import os
 import re
 import sys
 import uuid
 from datetime import datetime
-from typing import Iterable, Iterator, List, Sequence
-
-import flask
+from typing import List
 
 from bentoml import config
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 from bentoml.configuration import get_bentoml_deploy_version
-from bentoml.saved_bundle.pip_pkg import seek_pip_packages
-from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import SavedBundleConfig
-from bentoml.server import trace
+from bentoml.saved_bundle.pip_pkg import seek_pip_packages
+from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
-from bentoml.types import HTTPRequest, InferenceResult, InferenceTask
-from bentoml.utils import cached_property
+from bentoml.service.inference_api import InferenceAPI
 from bentoml.utils.hybridmethod import hybridmethod
 
 ARTIFACTS_DIR_NAME = "artifacts"
@@ -54,251 +47,6 @@ BENTOML_RESERVED_API_NAMES = [
 ]
 logger = logging.getLogger(__name__)
 prediction_logger = logging.getLogger("bentoml.prediction")
-
-
-class InferenceAPI(object):
-    """
-    InferenceAPI defines an inference call to the underlying model, including its input
-    and output adapter, the user-defined API callback function, and configurations for
-    working with the BentoML adaptive micro-batching mechanism
-    """
-
-    def __init__(
-        self,
-        service,
-        name,
-        doc,
-        input_adapter: BaseInputAdapter,
-        user_func: callable,
-        output_adapter: BaseOutputAdapter,
-        mb_max_latency=10000,
-        mb_max_batch_size=1000,
-    ):
-        """
-        :param service: ref to service containing this API
-        :param name: API name
-        :param doc: the user facing document of this inference API, default to the
-            docstring of the inference API function
-        :param input_adapter: A InputAdapter that transforms HTTP Request and/or
-            CLI options into parameters for API func
-        :param user_func: the user-defined API callback function, this is
-            typically the 'predict' method on a model
-        :param output_adapter: A OutputAdapter is an layer between result of user
-            defined API callback function
-            and final output in a variety of different forms,
-            such as HTTP response, command line stdout or AWS Lambda event object.
-        :param mb_max_latency: The latency goal of this inference API in milliseconds.
-            Default: 10000.
-        :param mb_max_batch_size: The maximum size of requests batch accepted by this
-            inference API. This parameter governs the throughput/latency trade off, and
-            avoids having large batches that exceed some resource constraint (e.g. GPU
-            memory to hold the entire batch's data). Default: 1000.
-
-        """
-        self._service = service
-        self._name = name
-        self._input_adapter = input_adapter
-        self._user_func = user_func
-        self._output_adapter = output_adapter
-        self.mb_max_latency = mb_max_latency
-        self.mb_max_batch_size = mb_max_batch_size
-
-        if doc is None:
-            # generate a default doc string for this inference API
-            doc = (
-                f"BentoService inference API '{self.name}', input: "
-                f"'{type(input_adapter).__name__}', output: "
-                f"'{type(output_adapter).__name__}'"
-            )
-        self._doc = doc
-
-    @property
-    def service(self):
-        """
-        :return: a reference to the BentoService serving this inference API
-        """
-        return self._service
-
-    @property
-    def name(self):
-        """
-        :return: the name of this inference API
-        """
-        return self._name
-
-    @property
-    def doc(self):
-        """
-        :return: user facing documentation of this inference API
-        """
-        return self._doc
-
-    @property
-    def input_adapter(self) -> BaseInputAdapter:
-        """
-        :return: the input adapter of this inference API
-        """
-        return self._input_adapter
-
-    @property
-    def output_adapter(self) -> BaseOutputAdapter:
-        """
-        :return: the output adapter of this inference API
-        """
-        return self._output_adapter
-
-    @cached_property
-    def user_func(self):
-        """
-        :return: user-defined inference API callback function
-        """
-
-        # allow user to define handlers without 'tasks' kwargs
-        _sig = inspect.signature(self._user_func)
-        try:
-            _sig.bind(tasks=None)
-            append_tasks = False
-        except TypeError:
-            append_tasks = True
-
-        @functools.wraps(self._user_func)
-        def wrapped_func(*args, **kwargs):
-            with trace(
-                service_name=self.__class__.__name__,
-                span_name="user defined inference api callback function",
-            ):
-                if append_tasks and "tasks" in kwargs:
-                    tasks = kwargs.pop('tasks')
-                elif "tasks" in kwargs:
-                    tasks = kwargs['tasks']
-                else:
-                    tasks = []
-                try:
-                    return self._user_func(*args, **kwargs)
-                except Exception as e:  # pylint: disable=broad-except
-                    for task in tasks:
-                        if not task.is_discarded:
-                            task.discard(
-                                http_status=500,
-                                err_msg=f"Exception happened in API function: {e}",
-                            )
-                    return [None] * sum(
-                        1 if t.batch is None else t.batch for t in tasks
-                    )
-
-        return wrapped_func
-
-    @property
-    def request_schema(self):
-        """
-        :return: the HTTP API request schema in OpenAPI/Swagger format
-        """
-        schema = self.input_adapter.request_schema
-        if schema.get('application/json'):
-            schema.get('application/json')[
-                'example'
-            ] = self.input_adapter._http_input_example
-        return schema
-
-    def _filter_tasks(
-        self, inf_tasks: Iterable[InferenceTask]
-    ) -> Iterator[InferenceTask]:
-        for task in inf_tasks:
-            if task.is_discarded:
-                continue
-            try:
-                self.input_adapter.validate_task(task)
-                yield task
-            except AssertionError as e:
-                task.discard(http_status=400, err_msg=str(e))
-
-    def infer(self, inf_tasks: Iterable[InferenceTask]) -> Sequence[InferenceResult]:
-        # task validation
-        inf_tasks = tuple(inf_tasks)
-
-        # extract args
-        user_args = self.input_adapter.extract_user_func_args(
-            tuple(self._filter_tasks(inf_tasks))
-        )
-        filtered_tasks = tuple(t for t in inf_tasks if not t.is_discarded)
-
-        # call user function
-        if not self.input_adapter.BATCH_MODE_SUPPORTED:  # For legacy input adapters
-            user_return = tuple(
-                self.user_func(*legacy_user_args, tasks=(task,))
-                for task, *legacy_user_args in zip(filtered_tasks, *user_args)
-            )
-        else:
-            user_return = self.user_func(*user_args, tasks=filtered_tasks)
-        if (
-            isinstance(user_return, (list, tuple))
-            and len(user_return)
-            and isinstance(user_return[0], InferenceResult)
-        ):
-            inf_results = user_return
-        else:
-            # pack return value
-            inf_results = self.output_adapter.pack_user_func_return_value(
-                user_return, tasks=filtered_tasks
-            )
-
-        full_results = InferenceResult.complete_discarded(inf_tasks, inf_results)
-
-        log_data = dict(
-            service_name=self.service.name if self.service else "",
-            service_version=self.service.version if self.service else "",
-            api=self.name,
-        )
-        for task, result in zip(inf_tasks, inf_results):
-            prediction_logger.info(
-                dict(
-                    log_data,
-                    task=task.to_json(),
-                    result=result.to_json(),
-                    request_id=task.task_id,
-                )
-            )
-
-        return tuple(full_results)
-
-    def handle_request(self, request: flask.Request):
-        req = HTTPRequest.from_flask_request(request)
-        inf_task = self.input_adapter.from_http_request(req)
-        results = self.infer((inf_task,))
-        result = next(iter(results))
-        response = self.output_adapter.to_http_response(result)
-        return response.to_flask_response()
-
-    def handle_batch_request(self, requests: Sequence[HTTPRequest]):
-        with trace(
-            service_name=self.__class__.__name__,
-            span_name=f"call `{self.input_adapter.__class__.__name__}`",
-        ):
-            inf_tasks = map(self.input_adapter.from_http_request, requests)
-            results = self.infer(inf_tasks)
-            return map(self.output_adapter.to_http_response, results)
-
-    def handle_cli(self, cli_args: Sequence[str]) -> int:
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--max-batch-size", default=sys.maxsize, type=int)
-        parsed_args, _ = parser.parse_known_args(cli_args)
-
-        exit_code = 0
-
-        tasks_iter = self.input_adapter.from_cli(tuple(cli_args))
-        while True:
-            tasks = tuple(itertools.islice(tasks_iter, parsed_args.max_batch_size))
-            if not len(tasks):
-                break
-            results = self.infer(tasks)
-            exit_code = exit_code or self.output_adapter.to_cli(results)
-
-        return exit_code
-
-    def handle_aws_lambda_event(self, event):
-        inf_task = self.input_adapter.from_aws_lambda_event(event)
-        result = next(iter(self.infer((inf_task,))))
-        return self.output_adapter.to_aws_lambda_event(result)
 
 
 def validate_inference_api_name(api_name: str):
@@ -322,6 +70,7 @@ def api_decorator(
     api_doc: str = None,
     mb_max_batch_size: int = DEFAULT_MAX_BATCH_SIZE,
     mb_max_latency: int = DEFAULT_MAX_LATENCY,
+    batch=False,
     **kwargs,
 ):  # pylint: disable=redefined-builtin
     """
@@ -349,11 +98,11 @@ def api_decorator(
     >>>
     >>> class FraudDetectionAndIdentityService(BentoService):
     >>>
-    >>>     @api(input=JsonInput())
+    >>>     @api(input=JsonInput(), batch=True)
     >>>     def fraud_detect(self, json_list):
     >>>         # user-defined callback function that process inference requests
     >>>
-    >>>     @api(input=DataframeInput(input_json_orient='records'))
+    >>>     @api(input=DataframeInput(input_json_orient='records'), batch=True)
     >>>     def identity(self, df):
     >>>         # user-defined callback function that process inference requests
     """
@@ -392,6 +141,7 @@ def api_decorator(
         setattr(func, "_api_doc", api_doc)
         setattr(func, "_mb_max_batch_size", mb_max_batch_size)
         setattr(func, "_mb_max_latency", mb_max_latency)
+        setattr(func, "_batch", batch)
 
         return func
 
@@ -618,7 +368,7 @@ class BentoService:
     >>>  @env(pip_packages=["scikit-learn"])
     >>>  class MyMLService(BentoService):
     >>>
-    >>>     @api(input=DataframeInput())
+    >>>     @api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
     >>>         return self.artifacts.clf.predict(df)
     >>>
@@ -695,6 +445,7 @@ class BentoService:
                 output_adapter = getattr(function, "_output_adapter")
                 mb_max_latency = getattr(function, "_mb_max_latency")
                 mb_max_batch_size = getattr(function, "_mb_max_batch_size")
+                batch = getattr(function, "_batch")
 
                 # Bind api method call with self(BentoService instance)
                 user_func = function.__get__(self)
@@ -709,6 +460,7 @@ class BentoService:
                         output_adapter=output_adapter,
                         mb_max_latency=mb_max_latency,
                         mb_max_batch_size=mb_max_batch_size,
+                        batch=batch,
                     )
                 )
 

@@ -1,10 +1,11 @@
 # pylint: disable=redefined-outer-name
 import io
-from urllib3.filepost import encode_multipart_formdata
-import pytest
 
-from bentoml.types import HTTPRequest, InferenceTask
+import pytest
+from urllib3.filepost import encode_multipart_formdata
+
 from bentoml.adapters import MultiFileInput
+from bentoml.types import HTTPRequest, InferenceTask
 
 
 @pytest.fixture()

@@ -25,7 +25,7 @@ the :doc:`Getting Started Guide <quickstart>`:
   @bentoml.artifacts([SklearnModelArtifact('model')])
   class IrisClassifier(bentoml.BentoService):
 
-      @bentoml.api(input=DataframeInput())
+      @bentoml.api(input=DataframeInput(), batch=True)
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
@@ -165,7 +165,7 @@ python class, simply use the :code:`infer_pip_packages=True` option.
   @bentoml.env(infer_pip_packages=True)
   class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(input=DataframeInput())
+      @bentoml.api(input=DataframeInput(), batch=True)
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
@@ -181,7 +181,7 @@ the list of PyPI packages manually, e.g.:
   )
   class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(input=DataframeInput())
+      @bentoml.api(input=DataframeInput(), batch=True)
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
@@ -207,7 +207,7 @@ on an H2O model that requires the h2o conda packages:
     )
     class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(input=DataframeInput())
+      @bentoml.api(input=DataframeInput(), batch=True)
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
@@ -331,7 +331,7 @@ prediction service that packs two trained models:
     ])
     class MyPredictionService(bentoml.BentoService):
 
-        @bentoml.api(input=DataframeInput())
+        @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             # assume the output of model_a will be the input of model_b in this example:
             df = self.artifacts.model_a.predict(df)
@@ -370,7 +370,7 @@ e.g.:
 
   class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(input=DataframeInput())
+      @bentoml.api(input=DataframeInput(), batch=True)
       def predict(self, df):
           assert type(df) == pandas.core.frame.DataFrame
           return postprocessing(model_output)
@@ -391,7 +391,7 @@ API function. For example:
 
   class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(input=DataframeInput())
+      @bentoml.api(input=DataframeInput(), batch=True)
       def predict(self, df):
           user_profile_column = fetch_user_profile_from_database(df['user_id'])
           df['user_profile'] = user_profile_column
@@ -452,11 +452,11 @@ service that supports different access patterns for different clients, e.g.:
 
   class ExamplePredictionService(bentoml.BentoService):
 
-      @bentoml.api(input=DataframeInput())
+      @bentoml.api(input=DataframeInput(), batch=True)
       def predict(self, df: pandas.Dataframe):
           return self.artifacts.model.predict(df)
 
-      @bentoml.api(input=JsonInput())
+      @bentoml.api(input=JsonInput(), batch=True)
       def predict_json(self, json_arr):
           df = process_custom_json_format(json-arr)
           return self.artifacts.model.predict(df)

@@ -6886,6 +6886,7 @@ export const bentoml = $root.bentoml = (() => {
              * @property {string|null} [output_type] BentoServiceApi output_type
              * @property {number|null} [mb_max_latency] BentoServiceApi mb_max_latency
              * @property {number|null} [mb_max_batch_size] BentoServiceApi mb_max_batch_size
+             * @property {boolean|null} [batch] BentoServiceApi batch
              */
 
             /**
@@ -6968,6 +6969,14 @@ export const bentoml = $root.bentoml = (() => {
             BentoServiceApi.prototype.mb_max_batch_size = 0;
 
             /**
+             * BentoServiceApi batch.
+             * @member {boolean} batch
+             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
+             * @instance
+             */
+            BentoServiceApi.prototype.batch = false;
+
+            /**
              * Creates a new BentoServiceApi instance using the specified properties.
              * @function create
              * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
@@ -7007,6 +7016,8 @@ export const bentoml = $root.bentoml = (() => {
                     writer.uint32(/* id 7, wireType 0 =*/56).int32(message.mb_max_latency);
                 if (message.mb_max_batch_size != null && Object.hasOwnProperty.call(message, "mb_max_batch_size"))
                     writer.uint32(/* id 8, wireType 0 =*/64).int32(message.mb_max_batch_size);
+                if (message.batch != null && Object.hasOwnProperty.call(message, "batch"))
+                    writer.uint32(/* id 9, wireType 0 =*/72).bool(message.batch);
                 return writer;
             };
 
@@ -7064,6 +7075,9 @@ export const bentoml = $root.bentoml = (() => {
                         break;
                     case 8:
                         message.mb_max_batch_size = reader.int32();
+                        break;
+                    case 9:
+                        message.batch = reader.bool();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -7128,6 +7142,9 @@ export const bentoml = $root.bentoml = (() => {
                 if (message.mb_max_batch_size != null && message.hasOwnProperty("mb_max_batch_size"))
                     if (!$util.isInteger(message.mb_max_batch_size))
                         return "mb_max_batch_size: integer expected";
+                if (message.batch != null && message.hasOwnProperty("batch"))
+                    if (typeof message.batch !== "boolean")
+                        return "batch: boolean expected";
                 return null;
             };
 
@@ -7165,6 +7182,8 @@ export const bentoml = $root.bentoml = (() => {
                     message.mb_max_latency = object.mb_max_latency | 0;
                 if (object.mb_max_batch_size != null)
                     message.mb_max_batch_size = object.mb_max_batch_size | 0;
+                if (object.batch != null)
+                    message.batch = Boolean(object.batch);
                 return message;
             };
 
@@ -7190,6 +7209,7 @@ export const bentoml = $root.bentoml = (() => {
                     object.output_type = "";
                     object.mb_max_latency = 0;
                     object.mb_max_batch_size = 0;
+                    object.batch = false;
                 }
                 if (message.name != null && message.hasOwnProperty("name"))
                     object.name = message.name;
@@ -7207,6 +7227,8 @@ export const bentoml = $root.bentoml = (() => {
                     object.mb_max_latency = message.mb_max_latency;
                 if (message.mb_max_batch_size != null && message.hasOwnProperty("mb_max_batch_size"))
                     object.mb_max_batch_size = message.mb_max_batch_size;
+                if (message.batch != null && message.hasOwnProperty("batch"))
+                    object.batch = message.batch;
                 return object;
             };
 

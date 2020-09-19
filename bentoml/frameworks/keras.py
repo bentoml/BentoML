@@ -1,15 +1,14 @@
-import os
 import importlib
+import os
 
-from bentoml.service.env import BentoServiceEnv
-from bentoml.utils import cloudpickle
-from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.exceptions import (
     ArtifactLoadingException,
-    MissingDependencyException,
     InvalidArgument,
+    MissingDependencyException,
 )
-
+from bentoml.service.artifacts import BentoServiceArtifact
+from bentoml.service.env import BentoServiceEnv
+from bentoml.utils import cloudpickle
 
 MODULE_NAME_FILE_ENCODING = "utf-8"
 
@@ -47,7 +46,7 @@ class KerasModelArtifact(BentoServiceArtifact):
     >>> @bentoml.env(infer_pip_packages=True)
     >>> @bentoml.artifacts([KerasModelArtifact('model')])
     >>> class KerasModelService(bentoml.BentoService):
-    >>>     @bentoml.api(input=JsonInput())
+    >>>     @bentoml.api(input=JsonInput(), batch=False)
     >>>     def predict(self, parsed_json):
     >>>         input_data = text.text_to_word_sequence(parsed_json['text'])
     >>>         return self.artifacts.model.predict_classes(input_data)

@@ -32,7 +32,7 @@ To give us more information for diagnosing the issue, make sure to enable debug 
 Enable via environment variable, e.g.:
 ```
 $ git clone git@github.com:bentoml/BentoML.git && cd bentoml
-$ BENTOML__LOGGING__LEVEL=debug python guides/quick-start/main.py
+$ BENTOML__CORE__DEBUG=true python guides/quick-start/main.py
 ```
 
 Or enable for all python sessions on current machine:

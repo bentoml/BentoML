@@ -208,6 +208,7 @@ class SavedBundleConfig(object):
                 if "output_config" in api_config:
                     for k, v in api_config["output_config"].items():
                         api_metadata.output_config[k] = v
+                api_metadata.batch = api_config.get("batch", False)
                 bento_service_metadata.apis.extend([api_metadata])
 
         if "artifacts" in self.config:

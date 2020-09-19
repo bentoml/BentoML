@@ -33,20 +33,26 @@ class JsonInput(StringInput):
 
     To enable micro batching for API with json inputs, custom bento service should use
     JsonInput and modify the handler method like this:
+
     >>> @bentoml.api(input=LegacyJsonInput())
     >>> def predict(self, parsed_json):
     >>>     results = self.artifacts.classifier([parsed_json['text']])
     >>>     return results[0]
+
     --->
+
     >>> @bentoml.api(input=JsonInput(), batch=True)
     >>> def predict(self, parsed_jsons):
     >>>     results = self.artifacts.classifier([j['text'] for j in parsed_jsons])
     >>>     return results
+
     OR
+
     >>> @bentoml.api(input=JsonInput(), batch=False)
     >>> def predict(self, parsed_json):
     >>>     results = self.artifacts.classifier([parsed_json['text']])
     >>>     return results[0]
+
     For clients, the request is the same as LegacyJsonInput, each includes single json.
         ```
         curl -i \

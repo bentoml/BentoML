@@ -40,7 +40,7 @@ class ImageInput(FileInput):
     and pass down to user defined API functions
 
     * If you want to operate raw image file stream or PIL.Image objects, use lowlevel
-    alternative FileInput.
+        alternative FileInput.
 
     Args:
         accept_image_formats (string[]):  A list of acceptable image formats.

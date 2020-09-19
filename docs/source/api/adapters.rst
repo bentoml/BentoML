@@ -46,7 +46,7 @@ FileInput
 ClipperInput
 ++++++++++++
 
-A special group of adapters that are designed to be used when deploying with `Clipper <http://clipper.ai/>`_.
+A special group of adapters that are designed to be used when deploying with `Clipper <http://clipper.ai/>`__.
 
 .. autoclass:: bentoml.adapters.ClipperBytesInput
 .. autoclass:: bentoml.adapters.ClipperFloatsInput

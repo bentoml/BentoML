@@ -37,6 +37,7 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
 
     api = model_service.get_inference_api('predict')
     assert api.name == "predict"
+    assert api.batch
     assert api.mb_max_latency == 1000
     assert api.mb_max_batch_size == 2000
     assert isinstance(api.input_adapter, DataframeInput)

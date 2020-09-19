@@ -1,18 +1,18 @@
+import json
+
 import pytest
+
 import bentoml
 from tests.bento_service_examples.transformer_gpt_example import (
     TransformersGPT2TextGenerator,
 )
-
 from tests.integration.api_server.conftest import (
     build_api_server_docker_image,
     run_api_server_docker_container,
 )
-import json
-
 from transformers import AutoModelWithLMHead, AutoTokenizer
 
-test_sentence = [{"text": "A Bento box is a "}]
+test_sentence = {"text": "A Bento box is a "}
 
 result = (
     "A Bento box is a urn that is used to store the contents of a Bento box. "

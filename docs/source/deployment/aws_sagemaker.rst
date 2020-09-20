@@ -7,7 +7,7 @@ users can enjoy the great system performance from Sagemaker with any popular ML 
 
 
 Prerequisites
-------------
+-------------
 
 * An active AWS account configured on the machine with AWS CLI installed and configured
 

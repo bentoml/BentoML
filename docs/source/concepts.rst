@@ -217,7 +217,7 @@ on an H2O model that requires the h2o conda packages:
     deployment due to the limitation of the AWS Lambda platform.
 
 Using other Docker base images
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, BentoML uses a default Docker base image and installs your model and its dependencies on top of it. This base image contains all of BentoML's dependencies and an installation of `conda` which helps BentoML to package and use the right Python version for your bundle.
 
@@ -929,7 +929,7 @@ creating model serving deployments.
     learn more about our offerings.
 
 Retrieving BentoServices
--------------------
+------------------------
 
 After saving your Model services to BentoML, you can retrieve the artifact bundle using the CLI from any environment configured to use the YataiService. The :code:`--target_dir` flag specifies where the artifact bundle will be populated. If the directory exists, it will not be overwritten to avoid inconsistent bundles.
 

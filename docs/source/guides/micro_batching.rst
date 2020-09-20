@@ -112,7 +112,7 @@ by default.
    throughput.
 
 3. How to implement batch mode for custom input adapters
-==================================================
+========================================================
 
 TL;DR: Implement the method ``handle_batch_request(requests)``
 following existent input adapters.

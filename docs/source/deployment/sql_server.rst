@@ -38,7 +38,7 @@ As long as the server is not connected to remote compute, no server costs will b
 
 
 SQL Server deployment with BentoML
----------------------------------
+----------------------------------
 
 Run the example project from the :doc:`quick start guide <../quickstart>` to create the
 BentoML saved bundle for deployment:

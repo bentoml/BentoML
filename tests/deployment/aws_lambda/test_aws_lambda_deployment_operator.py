@@ -10,7 +10,11 @@ from bentoml.yatai.deployment.aws_lambda.operator import (
     AwsLambdaDeploymentOperator,
     _create_aws_lambda_cloudformation_template_file,
 )
-from bentoml.yatai.deployment.aws_lambda.utils import init_sam_project
+from bentoml.yatai.deployment.aws_lambda.utils import (
+    init_sam_project,
+    LAMBDA_FUNCTION_LIMIT,
+    LAMBDA_FUNCTION_MAX_LIMIT,
+)
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentState
 from bentoml.yatai.proto.repository_pb2 import (
@@ -228,7 +232,7 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 )
 @patch(
     'bentoml.yatai.deployment.aws_lambda.operator.total_file_or_directory_size',
-    MagicMock(return_value=249000001),
+    MagicMock(return_value=LAMBDA_FUNCTION_LIMIT + 1),
 )
 @patch(
     'bentoml.yatai.deployment.aws_lambda.operator.'
@@ -248,6 +252,43 @@ def test_aws_lambda_apply_over_bundle_size_limit_success():
 
     assert result_pb.status.status_code == status_pb2.Status.OK
     assert result_pb.deployment.state.state == DeploymentState.PENDING
+
+
+@mock_lambda_related_operations
+@patch('shutil.rmtree', MagicMock())
+@patch('shutil.copytree', MagicMock())
+@patch('shutil.copy', MagicMock())
+@patch('os.listdir', MagicMock())
+@patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
+@patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template',
+    MagicMock(return_value=None),
+)
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy',
+    MagicMock(return_value=None),
+)
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.total_file_or_directory_size',
+    MagicMock(return_value=LAMBDA_FUNCTION_MAX_LIMIT + 1),
+)
+@patch('os.remove', MagicMock())
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    MagicMock(),
+)
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator._cleanup_s3_bucket_if_exist',
+    MagicMock(),
+)
+def test_aws_lambda_apply_over_max_bundle_size_limit_fail():
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_lambda_deployment_pb()
+    deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
+    result_pb = deployment_operator.add(test_deployment_pb)
+    assert result_pb.status.status_code == status_pb2.Status.INTERNAL
+    assert result_pb.deployment.state.state == DeploymentState.ERROR
 
 
 def test_aws_lambda_describe_still_in_progress():

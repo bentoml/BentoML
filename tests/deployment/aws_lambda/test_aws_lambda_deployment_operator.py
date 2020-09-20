@@ -84,6 +84,7 @@ def test_aws_lambda_app_py(monkeypatch):
     @patch('bentoml.load', return_value=mock_bento_service)
     def return_predict_func(_):
         from bentoml.yatai.deployment.aws_lambda.lambda_app import api_func
+
         return api_func
 
     predict = return_predict_func()  # pylint: disable=no-value-for-parameter

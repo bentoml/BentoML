@@ -41,13 +41,13 @@ and [BentoML Discussions](https://github.com/bentoml/BentoML/discussions).
 
 ## How BentoML works
 
-BentoML provides high-level APIs for creating prediction services that's bundled with
-one or multiple trained models. User can define inference APIs with serving logic in the
-API callback function and specify input/output data format via BentoML's built-in data
-adapters:
+BentoML provides abstractions for creating prediction service that's bundled with one
+or multiple trained models. User can define inference APIs with serving logic with
+Python code and specify the expected input/output data format:
 
 ```python
 import pandas as pd
+
 from bentoml import env, artifacts, api, BentoService
 from bentoml.adapters import DataframeInput
 from bentoml.frameworks.sklearn import SklearnModelArtifact
@@ -57,9 +57,17 @@ from my_library import preprocess
 @env(infer_pip_packages=True)
 @artifacts([SklearnModelArtifact('my_model')])
 class MyPredictionService(BentoService):
+    """
+    A minimum prediction service exposing a Scikit-learn model
+    """
 
     @api(input=DataframeInput(orient="records"), batch=True)
     def predict(self, df: pd.DataFrame):
+        """
+        An inference API named `predict` with Dataframe input adapter, which codifies
+        how HTTP requests or CSV files are converted to a pandas Dataframe object as the
+        inference API function input
+        """
         model_input = preprocess(df)
         return self.artifacts.my_model.predict(model_input)
 ```

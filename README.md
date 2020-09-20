@@ -32,7 +32,7 @@ and [BentoML Discussions](https://github.com/bentoml/BentoML/discussions).
 
 - [How it works](https://github.com/bentoml/BentoML#how-bentoml-works)
 - [Documentation](https://docs.bentoml.org/)
-- [Getting Started](https://github.com/bentoml/BentoML#getting-started)
+- [Getting Started](https://docs.bentoml.org/en/stable/quickstart.html)
 - [Example Gallery](https://github.com/bentoml/gallery)
 - [Why BentoML](https://github.com/bentoml/BentoML#why-bentoml)
 - [Contributing](https://github.com/bentoml/BentoML#contributing)

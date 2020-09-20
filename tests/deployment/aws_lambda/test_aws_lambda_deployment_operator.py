@@ -173,7 +173,7 @@ def mock_lambda_related_operations(func):
         conn.create_bucket(Bucket=mock_s3_bucket_name)
         return func(*args, **kwargs)
 
-    return mock_wrapper()
+    return mock_wrapper
 
 
 @mock_lambda_related_operations

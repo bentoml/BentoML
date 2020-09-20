@@ -335,7 +335,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         short_help="Containerizes given Bento into a ready-to-use Docker image",
     )
     @click.argument("bento", type=click.STRING)
-    @click.option('-p', '--push', is_flag=True)
+    @click.option('--push', is_flag=True)
     @click.option(
         '-t',
         '--tag',

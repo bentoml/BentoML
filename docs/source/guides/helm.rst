@@ -1,5 +1,5 @@
 Using Helm to install YataiService
-=============================================
+==================================
 
 *Helm* is a tool that streamlines installing and managing K8s applications. It lets developers easily configure a set of K8s resources that make up an application -- YataiService in this case. Helm enables developers to
 
@@ -8,7 +8,7 @@ Using Helm to install YataiService
 - drop and replace parts with your own (e.g. replace local Postgres with a remote RDS)
 
 1. Configuration
-==============================================================
+================
 Helm charts rely on a values file to configure how to template and create Kubernetes resources. The default values for these resources can be found in `BentoML/helm/YataiService/values.yaml`. These basic values describe a basic local `YataiService` instance with ephemereal storage.
 
 1.1 Persistent Storage
@@ -34,7 +34,7 @@ The recommended way to deploy `YataiService` is with a PostgreSQL DB instance wi
         pvReclaimPolicy: Retain
 
 1.2 Ingress
----------------------------
+-----------
 An Ingress helps to manage incoming external traffic into the cluster. The configuration for this can be found under the ingress block,
 
 .. code-block:: yaml
@@ -49,7 +49,7 @@ An Ingress helps to manage incoming external traffic into the cluster. The confi
             secretName: {}
 
 1.3 TLS
----------------------------
+-------
 To secure your ingress with TLS, you can enable it by setting `ingress.tls.enabled` to `true`.
 
 .. note::
@@ -72,7 +72,8 @@ For local development, create a self-signed key as follows.
 Read more here: https://kubernetes.github.io/ingress-nginx/user-guide/tls/
 
 2. Deploying
-==============================================================
+============
+
 2.1 Minikube (Local)
 ---------------------------
 Minikube is a tool that lets developers run a small Kubernetes cluster on their local machine. Get Minikube here: https://kubernetes.io/docs/tasks/tools/install-minikube/
@@ -146,9 +147,9 @@ Woo! You now have a `YataiService` instance running on a local K8s cluster :) To
 
 Keep reading for more info on configuring `YataiService` using Helm.
 
-=======
+=============
 Custom Values
-=======
+=============
 
 To deploy a `YataiService` instance with a PostgreSQL DB instance within the cluster, developers can use the custom values found in `helm/YataiService/values.yaml`. If this doesn't match the your needs, feel free to create your own custom values files to configure `YataiService` in a way that works for you/your company.
 
@@ -197,7 +198,7 @@ If the configuration looks correct, apply it by removing the `--dry-run` and `--
 Everything looks good!
 
 2.2 Cloud Providers
-----------------------------
+-------------------
 This part of the BentoML documentation is a work in progress. If you have any questions
 related to this, please join
 `the BentoML Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_

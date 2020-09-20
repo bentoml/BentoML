@@ -28,33 +28,32 @@ class JsonInput(StringInput):
     """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
     json serializable object in python) and pass down to user defined API function
 
-    ****
-    How to upgrade from LegacyJsonInput(JsonInput before 0.8.3)
+    Example usages:
 
-    To enable micro batching for API with json inputs, custom bento service should use
-    JsonInput and modify the handler method like this:
-    >>> @bentoml.api(input=LegacyJsonInput())
-    >>> def predict(self, parsed_json):
-    >>>     results = self.artifacts.classifier([parsed_json['text']])
-    >>>     return results[0]
-    --->
+    Use JsonInput with batch=True
+    >>> from typings import List
+    >>> from bentoml.types import JsonSerializable
+    >>>
     >>> @bentoml.api(input=JsonInput(), batch=True)
-    >>> def predict(self, parsed_jsons):
-    >>>     results = self.artifacts.classifier([j['text'] for j in parsed_jsons])
+    >>> def predict(self, parsed_json_list: List[JsonSerializable]):
+    >>>     results = self.artifacts.classifier([j['text'] for j in parsed_json_list])
     >>>     return results
-    OR
-    >>> @bentoml.api(input=JsonInput(), batch=False)
+
+    OR use JsonInput with batch=False(the default)
+
+    >>> @bentoml.api(input=JsonInput())
     >>> def predict(self, parsed_json):
     >>>     results = self.artifacts.classifier([parsed_json['text']])
     >>>     return results[0]
-    For clients, the request is the same as LegacyJsonInput, each includes single json.
-        ```
-        curl -i \
-            --header "Content-Type: application/json" \
-            --request POST \
-            --data '{"text": "best movie ever"}' \
-            localhost:5000/predict
-        ```
+
+    For client prediction request, it is the same for both batch and non-batch API,
+    the request should contain only one single input item:
+
+    >>> curl -i \
+    >>>   --header "Content-Type: application/json" \
+    >>>   --request POST \
+    >>>   --data '{"text": "best movie ever"}' \
+    >>>   localhost:5000/predict
     """
 
     def extract_user_func_args(

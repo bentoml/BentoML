@@ -2,11 +2,13 @@
 
 .. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
 
+***************
 Getting Started
-###############
+***************
+
 
 Run on Google Colab
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 Try out this quickstart guide interactively on Google Colab:
 `Open in Colab <https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
@@ -14,7 +16,7 @@ Try out this quickstart guide interactively on Google Colab:
 Note that Docker conterization does not work in the Colab environment.
 
 Run notebook locally
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 Install `BentoML <https://github.com/bentoml/BentoML>`_. This requires python 3.6 or
 above, install with :code:`pip` command:
@@ -71,11 +73,12 @@ classifier model with Scikit-Learn on the
 
 Model serving with BentoML comes after a model is trained. The first step is creating a
 prediction service class, which defines the models required and the inference APIs which
-contains the serving logic. Here is a minimal prediction service created for serving
-the iris classifier model trained above:
+contains the serving logic code. Here is a minimal prediction service created for
+serving the iris classifier model trained above:
 
 .. code-block:: python
 
+    # iris_classifier.py
     import pandas as pd
 
     from bentoml import env, artifacts, api, BentoService
@@ -85,45 +88,53 @@ the iris classifier model trained above:
     @env(infer_pip_packages=True)
     @artifacts([SklearnModelArtifact('model')])
     class IrisClassifier(BentoService):
+        """
+        A minimum prediction service exposing a Scikit-learn model
+        """
 
         @api(input=DataframeInput(), batch=True)
         def predict(self, df: pd.DataFrame):
-            # Optional pre-processing, post-processing code goes here
+            """
+            An inference API named `predict` with Dataframe input adapter, which codifies
+            how HTTP requests or CSV files are converted to a pandas Dataframe object as the
+            inference API function input
+            """
             return self.artifacts.model.predict(df)
 
+
+Firstly, the :code:`@artifact(...)` here defines the required trained models to be
+packed with this prediction service. BentoML model artifacts are pre-built wrappers for
+persisting, loading and running a traind model. This example uses the
+:code:`SklearnModelArtifact` for the scikit-learn frameowrk. BentoML also provide
+artifact class for other ML frameworks, including :code:`PytorchModelArtifact`,
+:code:`KerasModelArtifact`, and :code:`XgboostModelArtifact` etc.
+
+The :code:`@env` decorator specifies the dependencies and environment settings required
+for this prediction service. It allows BentoML to reproduce the exact same environment
+when moving the model and related code to production. With the
+:code:`infer_pip_packages=True` flag, BentoML will automatically find all the PyPI
+packages that are used by the prediction service code and pins their versions.
 
 The :code:`@api` decorator defines an inference API, which is the entry point for
 accessing the prediction service. The :code:`input=DataframeInput()` means this inferene
 API callback function defined by the user, is expecting a :code:`pandas.DataFrame`
 object as its input.
 
-In BentoML, all inference APIs are suppose to accept a list of inputs and return a list
-of results. In the case of `DataframeInput`, each row of the dataframe is mapping to one
-prediction request received from the client. BentoML will convert HTTP JSON requests
-into :code:`pandas.DataFrame` object before passing it to the user-defined inference API
-function.
+When the `batch` flag is set to True, an inference APIs is suppose to accept a list of
+inputs and return a list of results. In the case of `DataframeInput`, each row of the
+dataframe is mapping to one prediction request received from the client. BentoML will
+convert HTTP JSON requests into :code:`pandas.DataFrame` object before passing it to the
+user-defined inference API function.
 
 This design allows BentoML to group API requests into small batches while serving online
-traffic. Comparing to a regular flask or FastAPI based model server, this can increases
-the overall throughput of the API server by 10-100x depending on the workload.
+traffic. Comparing to a regular flask or FastAPI based model server, this can largely
+increases the overall throughput of the API server.
 
 Besides `DataframeInput`, BentoML also supports API input types such as `JsonInput`,
 `ImageInput`, `FileInput` and
-`more <https://docs.bentoml.org/en/latest/api/adapters.html>`_.
-
-The :code:`@env` decorator specifies the dependencies and environment settings
-for this prediction service. It allows BentoML to reproduce the exact same environment
-when moving the model and related code to production. With the
-:code:`infer_pip_packages=True` flag used in this example, BentoML will automatically
-figure all the PyPI packages that are required by the prediction service code and pins
-down their versions.
-
-Lastly the :code:`@artifact` defines the required trained models to be packed with this
-prediction service. BentoML model artifact are pre-built wrappers for persisting a
-traind model and access models from inference API. This example uses the
-:code:`SklearnModelArtifact` for the sklearn model. BentoML also provide artifact class
-for other frameworks including :code:`PytorchModelArtifact`, :code:`KerasModelArtifact`,
-and :code:`XgboostModelArtifact` etc.
+`more <https://docs.bentoml.org/en/latest/api/adapters.html>`_. `DataframeInput` and
+`TfTensorInput` only support inference API with `batch=True`, while other input adapters
+support either batch or single-item API.
 
 
 Save prediction service for distribution
@@ -149,9 +160,9 @@ in the BentoML format for distribution and deployment:
 
 
 BentoML stores all packaged model files under the
-`~/bentoml/{service_name}/{service_version}` directory by default. The BentoML file
-format contains all the code, files, and configs required to deploy the model for
-serving.
+`~/bentoml/repository/{service_name}/{service_version}` directory by default. The
+BentoML packaged model format contains all the code, files, and configs required to
+run and deploy the model.
 
 BentoML also comes with a model management component called
 `YataiService <https://docs.bentoml.org/en/latest/concepts.html#customizing-model-repository>`_,
@@ -198,7 +209,7 @@ packaged models:
 Model Serving via REST API
 --------------------------
 
-To start a REST API model server with the IrisClassifier saved above, use the
+To start a REST API model server locally with the IrisClassifier saved above, use the
 `bentoml serve` command followed by service name and version tag:
 
 .. code-block:: bash
@@ -273,6 +284,7 @@ container image for serving the `IrisClassifier` prediction service created abov
 .. code-block:: bash
 
     bentoml containerize IrisClassifier:latest -t iris-classifier
+
 
 Start a container with the docker image built from the previous step:
 

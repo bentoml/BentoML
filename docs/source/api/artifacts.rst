@@ -1,71 +1,29 @@
-Model Artifacts
-===============
+Base Artifact
+=============
 
-SklearnModelArtifact
-++++++++++++++++++++
-.. autoclass:: bentoml.frameworks.sklearn.SklearnModelArtifact
+All BentoML artifacts are inherited from the BentoServiceArtifact base class:
 
-PytorchModelArtifact
-++++++++++++++++++++
-.. autoclass:: bentoml.frameworks.pytorch.PytorchModelArtifact
+.. autoclass:: bentoml.service.artifacts.BentoServiceArtifact
 
-KerasModelArtifact
-++++++++++++++++++++
-.. autoclass:: bentoml.frameworks.keras.KerasModelArtifact
 
-TensorflowSavedModelArtifact
-++++++++++++++++++++++++++++
-.. autoclass:: bentoml.frameworks.tensorflow.TensorflowSavedModelArtifact
+In a BentoService#artifacts returns an ArtifactCollection instance:
 
-OnnxModelArtifact
-+++++++++++++++++
-.. autoclass:: bentoml.frameworks.onnx.OnnxModelArtifact
+.. autoclass:: bentoml.service.artifacts.ArtifactCollection
 
-Fastai2ModelArtifact
-++++++++++++++++++++
-.. autoclass:: bentoml.frameworks.fastai2.Fastai2ModelArtifact
 
-FastaiModelArtifact
-+++++++++++++++++++
-.. autoclass:: bentoml.frameworks.fastai.FastaiModelArtifact
-
-XgboostModelArtifact
-++++++++++++++++++++
-.. autoclass:: bentoml.frameworks.xgboost.XgboostModelArtifact
-
-SpacyModelArtifact
-++++++++++++++++++
-.. autoclass:: bentoml.frameworks.spacy.SpacyModelArtifact
-
-FasttextModelArtifact
-+++++++++++++++++++++
-.. autoclass:: bentoml.frameworks.fasttext.FasttextModelArtifact
-
-LightGBMModelArtifact
-+++++++++++++++++++++
-.. autoclass:: bentoml.frameworks.lightgbm.LightGBMModelArtifact
-
-CoreMLModelArtifact
-+++++++++++++++++++
-.. autoclass:: bentoml.frameworks.coreml.CoreMLModelArtifact
-
-H2oModelArtifact
+Common Artifacts
 ++++++++++++++++
-.. autoclass:: bentoml.frameworks.h2o.H2oModelArtifact
 
 PickleArtifact
-++++++++++++++
+
 .. autoclass:: bentoml.service.artifacts.common.PickleArtifact
 
 JSONArtifact
-++++++++++++
+
 .. autoclass:: bentoml.service.artifacts.common.JSONArtifact
 
 TextFileArtifact
-++++++++++++++++
+
 .. autoclass:: bentoml.service.artifacts.common.TextFileArtifact
 
-TransformersModelArtifact
-++++++++++++++++++
-.. autoclass:: bentoml.frameworks.transformers.TransformersModelArtifact
 

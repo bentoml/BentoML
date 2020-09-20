@@ -1,4 +1,4 @@
-Customizing InputAdapter(Former BentoHandler)
+Customizing InputAdapter
 ========================
 
 This part of the BentoML documentation is a work in progress. If you have any questions

@@ -1,7 +1,11 @@
 .. _bentoml-api-adapters-label:
 
-API InputAdapters(former Handlers)
-==================================
+API InputAdapters
+=================
+
+BaseInputAdapter
+++++++++++++++++
+.. autoclass:: bentoml.adapters.BaseInputAdapter
 
 DataframeInput
 ++++++++++++++
@@ -53,3 +57,43 @@ A special group of adapters that are designed to be used when deploying with `Cl
 .. autoclass:: bentoml.adapters.ClipperIntsInput
 .. autoclass:: bentoml.adapters.ClipperDoublesInput
 .. autoclass:: bentoml.adapters.ClipperStringsInput
+
+
+API OutputAdapters
+==================
+
+BaseOutputAdapter
++++++++++++++++++
+.. autoclass:: bentoml.adapters.BaseOutputAdapter
+
+DefaultOutput
++++++++++++++
+The default output adapter is used when there's no `output` specified in an Inference
+API. It ensembles multiple common output adapter and dynamically choose one base on the
+return value of the user-defined inference API callback function.
+
+.. autoclass:: bentoml.adapters.DefaultOutput
+
+DataframeOutput
++++++++++++++++
+.. autoclass:: bentoml.adapters.DataframeOutput
+
+TfTensorOutput
+++++++++++++++
+.. autoclass:: bentoml.adapters.TfTensorOutput
+
+JsonSerializableOutput
+++++++++++++++++++++++
+.. autoclass:: bentoml.adapters.JsonSerializableOutput
+
+
+Adapter Roadmap
+===============
+
+The following adapter types are on our roadmap:
+
+* NpNdarrayInputAdapter
+* NpNdarrayOutputAdapter
+* FileOutputAdapter
+* ImageOutputAdapter
+* MultiFileOutputAdapter

@@ -159,6 +159,7 @@ Statsmodels
 For statsmodels, we recommend using PickleArtifact:
 
 .. autoclass:: bentoml.service.artifacts.common.PickleArtifact
+    :noindex:
 
 Example Projects:
 

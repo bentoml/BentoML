@@ -7,5 +7,6 @@ API Reference
   :glob:
 
   bentoml
-  artifacts
   adapters
+  ../frameworks
+  artifacts

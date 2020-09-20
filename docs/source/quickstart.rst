@@ -285,6 +285,7 @@ container image for serving the `IrisClassifier` prediction service created abov
 
     bentoml containerize IrisClassifier:latest -t iris-classifier
 
+
 Start a container with the docker image built from the previous step:
 
 .. code-block:: bash

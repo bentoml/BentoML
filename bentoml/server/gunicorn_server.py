@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+
 from flask import Response
 from gunicorn.app.base import Application
 
@@ -62,9 +63,11 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
 
         self.port = port or config("apiserver").getint("default_port")
         timeout = timeout or config("apiserver").getint("default_timeout")
+        max_request_size = config("apiserver").getint("default_max_request_size")
         self.options = {
             "bind": "%s:%s" % ("0.0.0.0", self.port),
             "timeout": timeout,
+            "limit_request_line": max_request_size,
             "loglevel": config("logging").get("LEVEL").upper(),
         }
         if workers:

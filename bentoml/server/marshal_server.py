@@ -22,7 +22,6 @@ from bentoml import config
 from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
 
-
 if psutil.POSIX:
     # After Python 3.8, the default start method of multiprocessing for MacOS changed to
     # spawn, which would cause RecursionError when launching Gunicorn Application.
@@ -52,9 +51,11 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
 
         self.port = port or config("apiserver").getint("default_port")
         timeout = timeout or config("apiserver").getint("default_timeout")
+        max_request_size = config("apiserver").getint("default_max_request_size")
         self.options = {
             "bind": "%s:%s" % ("0.0.0.0", self.port),
             "timeout": timeout,
+            "limit_request_line": max_request_size,
             "loglevel": config("logging").get("LEVEL").upper(),
             "worker_class": "aiohttp.worker.GunicornWebWorker",
         }

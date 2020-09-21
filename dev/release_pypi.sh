@@ -13,8 +13,7 @@ SEMVER_REGEX="^[vV]?(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(\\-[0-9A
 if [[ "$VERSION_STR" =~ $SEMVER_REGEX ]]; then
   echo "Releasing bentoml version v$VERSION_STR:"
 else
-  echo "Version $VERSION_STR must follow semantic versioning schema"
-  exit 1
+  echo "Warning: version $VERSION_STR must follow semantic versioning schema, ignore this for preview releases"
 fi
 
 GIT_ROOT=$(git rev-parse --show-toplevel)

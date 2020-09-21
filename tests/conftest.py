@@ -32,21 +32,21 @@ def pytest_configure():
                 async with sess.request(
                     method, url, data=data, headers=headers, timeout=timeout
                 ) as r:
-                    data = await r.read()
+                    r_body = await r.read()
         except RuntimeError:
             # the event loop has been closed due to previous task failed, ignore
             return
 
         if callable(assert_status):
-            assert assert_status(r.status)
+            assert assert_status(r.status), f"{r.status} {r_body}"
         else:
-            assert r.status == assert_status
+            assert r.status == assert_status, f"{r.status} {r_body}"
 
         if assert_data is not None:
             if callable(assert_data):
-                assert assert_data(data)
+                assert assert_data(r_body)
             else:
-                assert data == assert_data
+                assert r_body == assert_data
 
     pytest.assert_request = assert_request
 

@@ -33,7 +33,7 @@ def test_aws_lambda_update_deployment(basic_bentoservice_v1, basic_bentoservice_
         assert deployment_endpoint, "AWS Lambda deployment should have endpoint"
         status_code, content = send_test_data_to_endpoint(deployment_endpoint)
         assert status_code == 200, "prediction request should success"
-        assert content == '"cat"', "prediction result mismatch"
+        assert content == '["cat"]', "prediction result mismatch"
 
         update_deployment_command = [
             'bentoml',
@@ -56,6 +56,6 @@ def test_aws_lambda_update_deployment(basic_bentoservice_v1, basic_bentoservice_
 
         status_code, content = send_test_data_to_endpoint(deployment_endpoint)
         assert status_code == 200, "Updated prediction request should success"
-        assert content == '"dog"', "Updated prediction result mismatch"
+        assert content == '["dog"]', "Updated prediction result mismatch"
     finally:
         delete_deployment('lambda', deployment_name)

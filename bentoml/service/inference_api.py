@@ -17,6 +17,7 @@ import argparse
 import functools
 import inspect
 import itertools
+import logging
 import sys
 from typing import Iterable, Iterator, Sequence
 
@@ -27,6 +28,8 @@ from bentoml.exceptions import BentoMLConfigException
 from bentoml.server import trace
 from bentoml.types import HTTPRequest, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
+
+prediction_logger = logging.getLogger("bentoml.prediction")
 
 
 class InferenceAPI(object):
@@ -254,6 +257,22 @@ class InferenceAPI(object):
                 )
 
         full_results = InferenceResult.complete_discarded(inf_tasks, inf_results)
+
+        log_data = dict(
+            service_name=self.service.name if self.service else "",
+            service_version=self.service.version if self.service else "",
+            api=self.name,
+        )
+        for task, result in zip(inf_tasks, inf_results):
+            prediction_logger.info(
+                dict(
+                    log_data,
+                    task=task.to_json(),
+                    result=result.to_json(),
+                    request_id=task.task_id,
+                )
+            )
+
         return tuple(full_results)
 
     def handle_request(self, request: flask.Request):

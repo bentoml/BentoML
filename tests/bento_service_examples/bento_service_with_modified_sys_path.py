@@ -4,19 +4,14 @@ from os import path
 import bentoml
 from bentoml.adapters import DataframeInput
 from bentoml.frameworks.sklearn import SklearnModelArtifact
-from tests.bento_service_examples.local_dependencies.local_module import (
-    dependency_in_local_module_directory,
-)
-from tests.bento_service_examples.local_dependencies.my_test_dependency import (
-    dummy_util_func,
-)
-from tests.bento_service_examples.local_dependencies.nested_dependency import (
-    nested_dependency_func,
-)
-
-sys.path.append(path.dirname(path.abspath(__file__)))
 
 # noqa # pylint: disable=import-error
+sys.path.append(path.dirname(path.abspath(__file__)))  # isort:skip
+from local_dependencies.local_module import (  # isort:skip
+    dependency_in_local_module_directory,
+)
+from local_dependencies.my_test_dependency import dummy_util_func  # isort:skip
+from local_dependencies.nested_dependency import nested_dependency_func  # isort:skip
 
 
 @bentoml.env(pip_packages=["scikit-learn"])

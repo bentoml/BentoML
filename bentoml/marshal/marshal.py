@@ -125,6 +125,7 @@ class MarshalService:
     _DEFAULT_PORT = config("apiserver").getint("default_port")
     DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
     DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
+    MAX_REQUEST_SIZE = config("apiserver").getint("default_max_request_size")
 
     def __init__(
         self,
@@ -298,7 +299,7 @@ class MarshalService:
         logger.info("Running micro batch service on :%d", port)
 
     def make_app(self):
-        app = aiohttp.web.Application()
+        app = aiohttp.web.Application(client_max_size=self.MAX_REQUEST_SIZE)
         app.router.add_view("/", self.relay_handler)
         app.router.add_view("/{name}", self.request_dispatcher)
         app.router.add_view("/{path:.*}", self.relay_handler)

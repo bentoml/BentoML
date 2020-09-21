@@ -51,15 +51,35 @@ JSON_CHARSET = 'utf-8'
 @json_serializer(fields=['uri', 'name'], compat=True)
 @dataclass(frozen=False)
 class FileLike:
-    stream: Optional[BinaryIO] = None
+    """
+    An universal lazy-loading wrapper for file-like objects.
+    It accepts URI, file path or bytes and provides interface like opened file object.
+
+    Attributes
+    ----------
+    bytes : bytes, optional
+
+    uri : str, optional
+        The set of possible uris is:
+
+        - ``file:///home/user/input.json``
+        - ``http://site.com/input.csv`` (Not implemented)
+        - ``https://site.com/input.csv`` (Not implemented)
+
+    name : str, default None
+
+    """
+
     bytes_: Optional[bytes] = None
     uri: Optional[str] = None
     name: Optional[str] = None
 
+    _stream: Optional[BinaryIO] = None
+
     def __post_init__(self):
         if self.name is None:
-            if self.stream is not None:
-                self.name = getattr(self.stream, "name", None)
+            if self._stream is not None:
+                self.name = getattr(self._stream, "name", None)
             elif self.uri is not None:
                 p = urllib.parse.urlparse(self.uri)
                 if p.scheme and p.scheme != "file":
@@ -87,37 +107,63 @@ class FileLike:
         return path
 
     @property
-    def _stream(self):
-        if self.stream is not None:
+    def stream(self):
+        if self._stream is not None:
             pass
         elif self.bytes_ is not None:
-            self.stream = io.BytesIO(self.bytes_)
+            self._stream = io.BytesIO(self.bytes_)
         elif self.uri is not None:
-            self.stream = open(self.path, "rb")
+            self._stream = open(self.path, "rb")
         else:
             return io.BytesIO()
-        return self.stream
+        return self._stream
 
     def read(self, size=-1):
         # TODO: also write to log
-        return self._stream.read(size)
+        return self.stream.read(size)
 
     def seek(self, pos):
-        return self._stream.seek(pos)
+        return self.stream.seek(pos)
 
     def tell(self):
-        return self._stream.tell()
+        return self.stream.tell()
 
     def close(self):
-        if self.stream is not None:
-            self.stream.close()
+        if self._stream is not None:
+            self._stream.close()
 
     def __del__(self):
-        if self.stream and not self.stream.closed:
-            self.stream.close()
+        if self._stream and not self._stream.closed:
+            self._stream.close()
 
 
 class HTTPHeaders(CIMultiDict):
+    """
+    A case insensitive mapping of HTTP headers' keys and values.
+    It also parses several commonly used fields for easier access.
+
+    Attributes
+    ----------
+    content_type : str
+        The value of ``Content-Type``, for example:
+        - ``application/json``
+        - ``text/plain``
+        - ``text/csv``
+
+    charset : str
+        The charset option of ``Content-Type``
+
+    content_encoding : str
+        The charset option of ``Content-Encoding``
+
+    Methods
+    -------
+    from_dict : create a HTTPHeaders object from a dict
+
+    from_sequence : create a HTTPHeaders object from a list/tuple
+
+    """
+
     @property
     def content_type(self) -> str:
         return parse_options_header(self.get('content-type'))[0].lower()
@@ -149,10 +195,17 @@ class HTTPHeaders(CIMultiDict):
 
 @dataclass
 class HTTPRequest:
-    '''
-    headers: tuple of key value pairs in strs
-    data: str
-    '''
+    """
+    A common HTTP Request object.
+    It also parses several commonly used fields for easier access.
+
+    Attributes
+    ----------
+    headers : HTTPHeaders
+
+    body : bytes
+
+    """
 
     headers: HTTPHeaders = HTTPHeaders()
     body: bytes = b""
@@ -177,7 +230,7 @@ class HTTPRequest:
         }
         stream, form, files = parse_form_data(environ, silent=False)
         wrapped_files = {
-            k: FileLike(stream=f, name=f.filename) for k, f in files.items()
+            k: FileLike(_stream=f, name=f.filename) for k, f in files.items()
         }
         return stream, form, wrapped_files
 
@@ -237,6 +290,11 @@ BatchApiFuncReturnValue = TypeVar("BatchApiFuncReturnValue")
 @json_serializer(compat=True)
 @dataclass
 class InferenceResult(Generic[Output]):
+    """
+    The data structure that returned by BentoML API server.
+    Contains result data and context like HTTP headers.
+    """
+
     version: int = 0
 
     # payload
@@ -264,6 +322,11 @@ class InferenceResult(Generic[Output]):
     def complete_discarded(
         cls, tasks: Iterable['InferenceTask'], results: Iterable['InferenceResult'],
     ) -> Iterator['InferenceResult']:
+        """
+        Generate InferenceResults based on successful inference results and
+        fallback results of discarded tasks.
+
+        """
         iterable_results = iter(results)
         try:
             for task in tasks:
@@ -280,6 +343,10 @@ class InferenceResult(Generic[Output]):
 @json_serializer(compat=True)
 @dataclass
 class InferenceError(InferenceResult):
+    """
+    The default InferenceResult when errors happened.
+    """
+
     # context
     http_status: int = 500
     cli_status: int = 1
@@ -288,6 +355,11 @@ class InferenceError(InferenceResult):
 @json_serializer(compat=True)
 @dataclass
 class InferenceTask(Generic[Input]):
+    """
+    The data structure passed to the BentoML API server for inferring.
+    Contains payload data and context like HTTP headers or CLI args.
+    """
+
     version: int = 0
 
     # payload
@@ -306,6 +378,19 @@ class InferenceTask(Generic[Input]):
     cli_args: Optional[Sequence[str]] = None
 
     def discard(self, err_msg="", **context):
+        """
+        Discard this task. All subsequent steps will be skipped.
+
+        Parameters
+        ----------
+        err_msg: str
+            The reason why this task got discarded. It would be the body of
+            HTTP Response, a field in AWS lambda event or CLI stderr message.
+
+        *other contexts
+            Other contexts of the fallback ``InferenceResult``
+        
+        """
         self.is_discarded = True
         self.error = InferenceError(err_msg=err_msg, **context)
         return self

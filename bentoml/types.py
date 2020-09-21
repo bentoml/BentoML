@@ -389,7 +389,6 @@ class InferenceTask(Generic[Input]):
 
         *other contexts
             Other contexts of the fallback ``InferenceResult``
-        
         """
         self.is_discarded = True
         self.error = InferenceError(err_msg=err_msg, **context)

@@ -81,7 +81,7 @@ class ExampleBentoServiceSingle(ExampleBentoService):
         input=MultiImageInput(input_names=('original', 'compared')), batch=False
     )
     def predict_legacy_images(self, original, compared):
-        return self.artifacts.model.predict_multi_images(original, compared)
+        return self.artifacts.model.predict_multi_images([original], [compared])[0]
 
     @bentoml.api(input=ImageInput(), batch=False)
     def predict_image(self, image):
@@ -113,7 +113,8 @@ class PickleModel(object):
         return [f.read() for f in input_files]
 
     def predict_multi_images(self, originals, compareds):
-        return (np.array(originals) == np.array(compareds)).all()
+        eq = np.array(originals) == np.array(compareds)
+        return eq.all(axis=tuple(range(1, len(eq.shape))))
 
     def predict_json(self, input_datas):
         return input_datas

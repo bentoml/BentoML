@@ -14,16 +14,21 @@ logger = logging.getLogger("bentoml.tests")
 
 
 @pytest.fixture(params=[True, False], scope="session")
+def batch_mode(request):
+    return request.param
+
+
+@pytest.fixture(params=[True, False], scope="session")
 def enable_microbatch(request):
     pytest.enable_microbatch = request.param
     return request.param
 
 
 @pytest.fixture(autouse=True, scope='session')
-def image(tmpdir_factory):
+def image(tmpdir_factory, batch_mode):
     bundle_dir = tmpdir_factory.mktemp('test_bundle')
     bundle_path = str(bundle_dir)
-    gen_test_bundle(bundle_path)
+    gen_test_bundle(bundle_path, batch_mode)
 
     with build_api_server_docker_image(bundle_path, "example_service") as image:
         yield image

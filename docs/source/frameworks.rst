@@ -110,7 +110,7 @@ Statsmodels
 
 Example Projects:
 
-* Shampoo Sales prediction - `Google Colab https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
+* Shampoo Sales prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`_
 
 .. autoclass:: bentoml.artifact.PickleArtifact
 ===

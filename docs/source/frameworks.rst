@@ -104,7 +104,15 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.fasttext.FasttextModelArtifact
 
+========
+Statsmodels
+========
 
+Example Projects:
+
+* Shampoo Sales prediction - `Google Colab https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
+
+.. autoclass:: bentoml.artifact.PickleArtifact
 ===
 H2O
 ===

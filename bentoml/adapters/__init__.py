@@ -25,7 +25,6 @@ from bentoml.adapters.clipper_input import (
 from bentoml.adapters.dataframe_input import DataframeInput
 from bentoml.adapters.dataframe_output import DataframeOutput
 from bentoml.adapters.default_output import DefaultOutput
-from bentoml.adapters.fastai_image_input import FastaiImageInput
 from bentoml.adapters.file_input import FileInput
 from bentoml.adapters.image_input import ImageInput
 from bentoml.adapters.json_input import JsonInput
@@ -48,7 +47,6 @@ __all__ = [
     'JsonSerializableOutput',
     "ImageInput",
     "MultiImageInput",
-    "FastaiImageInput",
     "FileInput",
     "MultiFileInput",
     "AnnotatedImageInput",

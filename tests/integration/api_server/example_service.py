@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 
 import bentoml
-from bentoml.adapters import (  # FastaiImageInput,
+from bentoml.adapters import (
     DataframeInput,
     FileInput,
     ImageInput,

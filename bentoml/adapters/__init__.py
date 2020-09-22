@@ -28,7 +28,7 @@ from bentoml.adapters.default_output import DefaultOutput
 from bentoml.adapters.file_input import FileInput
 from bentoml.adapters.image_input import ImageInput
 from bentoml.adapters.json_input import JsonInput
-from bentoml.adapters.json_output import JsonSerializableOutput
+from bentoml.adapters.json_output import JsonOutput
 from bentoml.adapters.multi_file_input import MultiFileInput
 from bentoml.adapters.multi_image_input import MultiImageInput
 from bentoml.adapters.string_input import StringInput
@@ -44,7 +44,7 @@ __all__ = [
     'TfTensorOutput',
     "JsonInput",
     "StringInput",
-    'JsonSerializableOutput',
+    'JsonOutput',
     "ImageInput",
     "MultiImageInput",
     "FileInput",

@@ -1,7 +1,7 @@
 import json
 from typing import Sequence
 
-from bentoml.adapters.json_output import JsonSerializableOutput
+from bentoml.adapters.json_output import JsonOutput
 from bentoml.types import InferenceError, InferenceResult, InferenceTask
 from bentoml.utils.dataframe_util import PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS
 
@@ -21,7 +21,7 @@ def df_to_json(result, pandas_dataframe_orient="records"):
     return json.dumps(result)
 
 
-class DataframeOutput(JsonSerializableOutput):
+class DataframeOutput(JsonOutput):
     """
     Converts result of user defined API function into specific output.
 

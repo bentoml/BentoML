@@ -70,9 +70,9 @@ TfTensorOutput
 ++++++++++++++
 .. autoclass:: bentoml.adapters.TfTensorOutput
 
-JsonSerializableOutput
+JsonOutput
 ++++++++++++++++++++++
-.. autoclass:: bentoml.adapters.JsonSerializableOutput
+.. autoclass:: bentoml.adapters.JsonOutput
 
 
 Adapter Roadmap

@@ -33,7 +33,7 @@ from bentoml.types import (
 ApiFuncReturnValue = Sequence[JsonSerializable]
 
 
-class JsonSerializableOutput(BaseOutputAdapter):
+class JsonOutput(BaseOutputAdapter):
     """
     Converts result of user defined API function into specific output.
 

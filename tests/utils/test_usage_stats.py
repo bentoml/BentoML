@@ -36,7 +36,7 @@ def mock_delete_deployment(deployment_pb):
 
 
 def mock_get_operator_func():
-    def func(_yatai_service, _deployment_pb):
+    def func(yatai_service, deployment_pb):
         operator = MagicMock()
         operator.delete.side_effect = mock_delete_deployment
         return operator
@@ -77,7 +77,7 @@ def test_get_bento_service_event_properties_with_no_artifact():
     assert properties["env"] is not None
 
 
-def test_track_cli_usage(bento_service, _bento_bundle_path):
+def test_track_cli_usage(bento_service, bento_bundle_path):
     with patch('bentoml.cli.click_utils.track') as mock:
         mock.side_effect = mock_track_func
         runner = CliRunner()
@@ -140,7 +140,7 @@ def test_track_server_successful_delete(mock_deployment_store):
             delete_request.namespace = MOCK_DEPLOYMENT_NAMESPACE
             delete_request.force_delete = False
             yatai_service.DeleteDeployment(delete_request)
-            event_name, _properties = mock.call_args_list[0][0]
+            event_name, properties = mock.call_args_list[0][0]
             assert event_name == 'deployment-AZURE_FUNCTIONS-stop'
 
 

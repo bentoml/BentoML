@@ -277,7 +277,7 @@ def ver_decorator(major, minor):
     while 'Major' and 'Minor' can be defined with '@ver' decorator
 
     >>>  from bentoml import ver, artifacts
-    >>>  from bentoml.artifact.common import PickleArtifact
+    >>>  from bentoml.artifact import PickleArtifact
     >>>
     >>>  @ver(major=1, minor=4)
     >>>  @artifacts([PickleArtifact('model')])

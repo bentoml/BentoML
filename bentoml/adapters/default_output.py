@@ -46,9 +46,9 @@ def detect_suitable_adapter(result) -> Type[BaseOutputAdapter]:
     except ImportError:
         pass
 
-    from .json_output import JsonSerializableOutput
+    from .json_output import JsonOutput
 
-    return JsonSerializableOutput
+    return JsonOutput
 
 
 class DefaultOutput(BaseOutputAdapter):

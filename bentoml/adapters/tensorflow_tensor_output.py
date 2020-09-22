@@ -16,7 +16,7 @@ import json
 from typing import Sequence
 
 from bentoml.adapters.base_output import regroup_return_value
-from bentoml.adapters.json_output import JsonSerializableOutput
+from bentoml.adapters.json_output import JsonOutput
 from bentoml.adapters.utils import TfTensorJsonEncoder
 from bentoml.types import InferenceError, InferenceResult, InferenceTask
 from bentoml.utils.lazy_loader import LazyLoader
@@ -41,7 +41,7 @@ def tf_to_numpy(tensor):
         return tensor.numpy()
 
 
-class TfTensorOutput(JsonSerializableOutput):
+class TfTensorOutput(JsonOutput):
     """
     Converts result of user defined API function into specific output.
 

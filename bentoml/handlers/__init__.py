@@ -23,7 +23,6 @@ from bentoml.adapters import (
     ClipperIntsInput,
     ClipperStringsInput,
     DataframeInput,
-    FastaiImageInput,
     JsonInput,
     MultiImageInput,
     TfTensorInput,
@@ -56,7 +55,6 @@ DataframeHandler = deprecated(DataframeInput, 'DataframeHandler')
 TensorflowTensorHandler = deprecated(TfTensorInput, 'TensorflowTensorHandler')
 JsonHandler = deprecated(JsonInput, 'JsonHandler')
 ImageHandler = deprecated(MultiImageInput, 'ImageHandler')
-FastaiImageHandler = deprecated(FastaiImageInput, 'FastaiImageHandler')
 ClipperIntsHandler = deprecated(ClipperIntsInput, 'ClipperIntsHandler')
 ClipperBytesHandler = deprecated(ClipperBytesInput, 'ClipperBytesHandler')
 ClipperDoublesHandler = deprecated(ClipperDoublesInput, 'ClipperDoublesHandler')
@@ -69,7 +67,6 @@ __all__ = [
     "TensorflowTensorHandler",
     "JsonHandler",
     "ImageHandler",
-    "FastaiImageHandler",
     "ClipperBytesHandler",
     "ClipperDoublesHandler",
     "ClipperFloatsHandler",

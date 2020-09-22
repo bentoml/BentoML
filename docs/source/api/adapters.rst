@@ -31,10 +31,6 @@ AnnotatedImageInput
 +++++++++++++++++++
 .. autoclass:: bentoml.adapters.AnnotatedImageInput
 
-FastaiImageInput
-++++++++++++++++
-.. autoclass:: bentoml.adapters.FastaiImageInput
-
 FileInput
 +++++++++
 .. autoclass:: bentoml.adapters.FileInput

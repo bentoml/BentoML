@@ -72,9 +72,6 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.fastai2.Fastai2ModelArtifact
 
-.. autoclass:: bentoml.adapters.FastaiImageInput
-    :noindex:
-
 =======
 XGBoost
 =======

@@ -1,7 +1,7 @@
 import pytest
 
 import bentoml
-from bentoml.adapters import DataframeInput, FastaiImageInput, ImageInput
+from bentoml.adapters import DataframeInput, ImageInput
 from bentoml.exceptions import InvalidArgument
 from bentoml.service import validate_version_str
 from bentoml.service.artifacts.pickle import PickleArtifact
@@ -35,19 +35,6 @@ def test_custom_api_name():
             lambda x: x
         )
     assert str(e.value).startswith("Invalid API name")
-
-
-@pytest.mark.skip("skip fastai tests to fix CI build")
-def test_fastai_image_input_pip_dependencies():
-    class TestFastAiImageService(bentoml.BentoService):
-        @bentoml.api(input=FastaiImageInput(), batch=False)
-        def test(self, image):
-            return image
-
-    service = TestFastAiImageService()
-
-    assert 'imageio' in service._env._pip_packages
-    assert 'fastai' in service._env._pip_packages
 
 
 # noinspection PyUnusedLocal

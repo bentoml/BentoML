@@ -50,7 +50,7 @@ Other than using Clipper specific input, the rest are the same as defining a reg
 
     >>> # save this to a separate iris_classifier.py file
     >>> from bentoml import BentoService, api, env, artifacts
-    >>> from bentoml.artifact import PickleArtifact
+    >>> from bentoml.service.artifacts.common import PickleArtifact
     >>> from bentoml.adapters import DataframeInput, ClipperFloatsInput
 
     >>> @artifacts([PickleArtifact('model')])

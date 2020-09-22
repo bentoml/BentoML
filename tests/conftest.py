@@ -149,16 +149,12 @@ class TestModel(object):
             assert input_data is not None
         return [input_data.shape for input_data in input_datas]
 
-    def predict_legacy_images(self, original, compared):
+    def predict_multi_images(self, original, compared):
         return (original == compared).all()
 
     def predict_json(self, input_jsons):
         assert input_jsons
         return [{"ok": True}] * len(input_jsons)
-
-    def predict_legacy_json(self, input_json):
-        assert input_json is not None
-        return {"ok": True}
 
 
 @pytest.fixture()

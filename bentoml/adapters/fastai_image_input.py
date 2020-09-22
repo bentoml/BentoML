@@ -15,7 +15,7 @@
 import traceback
 from typing import BinaryIO, Sequence, Tuple
 
-from bentoml.adapters.legacy_image_input import LegacyImageInput
+from bentoml.adapters.multi_image_input import MultiImageInput
 from bentoml.adapters.utils import (
     check_file_extension,
     get_default_accept_image_formats,
@@ -32,7 +32,7 @@ MultiImgTask = InferenceTask[Tuple[BinaryIO, ...]]  # image file bytes, json byt
 ApiFuncArgs = Tuple[Sequence['numpy.ndarray'], ...]
 
 
-class FastaiImageInput(LegacyImageInput):
+class FastaiImageInput(MultiImageInput):
     """InputAdapter specified for handling image input following fastai conventions
     by passing type fastai.vision.Image to user API function and providing options
     such as div, cls, and after_open

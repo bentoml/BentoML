@@ -3,8 +3,7 @@ from bentoml.adapters import (  # FastaiImageInput,
     DataframeInput,
     ImageInput,
     JsonInput,
-    LegacyImageInput,
-    LegacyJsonInput,
+    MultiImageInput,
 )
 from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.service.artifacts.pickle import PickleArtifact
@@ -42,18 +41,14 @@ class ExampleBentoService(bentoml.BentoService):
         return self.artifacts.model.predict_image(images)
 
     @bentoml.api(
-        input=LegacyImageInput(input_names=('original', 'compared')), batch=False
+        input=MultiImageInput(input_names=('original', 'compared')), batch=False
     )
-    def predict_legacy_images(self, original, compared):
-        return self.artifacts.model.predict_legacy_images(original, compared)
+    def predict_multi_images(self, original, compared):
+        return self.artifacts.model.predict_multi_images(original, compared)
 
     @bentoml.api(input=JsonInput(), batch=True)
     def predict_json(self, input_data):
         return self.artifacts.model.predict_json(input_data)
-
-    @bentoml.api(input=LegacyJsonInput(), batch=False)
-    def predict_legacy_json(self, input_data):
-        return self.artifacts.model.predict_legacy_json(input_data)
 
     # Disabling fastai related tests to fix ci build
     # @bentoml.api(input=FastaiImageInput())

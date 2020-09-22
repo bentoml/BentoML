@@ -39,7 +39,6 @@ class StringInput(BaseInputAdapter):
 
     Example Request
     -------
-    For clients, the request is the same as LegacyJsonInput, each includes single json.
         ```
         curl -i \
             --header "Content-Type: text/plain; charset=utf-8" \

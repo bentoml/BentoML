@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
-import json
 import asyncio
+import json
 
 import pytest
 
@@ -57,12 +57,12 @@ async def test_api_server_image(host, img_file):
             assert_data=b"[10, 10, 3]",
         )
 
-    # Test LegacyImageInput.
+    # Test MultiImageInput.
     with open(str(img_file), "rb") as f1:
         with open(str(img_file), "rb") as f2:
             await pytest.assert_request(
                 "POST",
-                f"http://{host}/predict_legacy_images",
+                f"http://{host}/predict_multi_images",
                 data={"original": f1, "compared": f2},
                 assert_data=b"true",
             )

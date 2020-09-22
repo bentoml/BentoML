@@ -5,12 +5,11 @@ import bentoml
 from bentoml.cli import create_bentoml_cli
 from bentoml.utils.usage_stats import _get_bento_service_event_properties
 from bentoml.yatai.proto.deployment_pb2 import (
-    Deployment,
     DeleteDeploymentResponse,
+    Deployment,
 )
 from bentoml.yatai.status import Status
 from bentoml.yatai.yatai_service import get_yatai_service
-
 
 MOCK_DEPLOYMENT_NAME = 'mock_name'
 MOCK_FAILED_DEPLOYMENT_NAME = 'mock-failed'
@@ -55,9 +54,7 @@ def test_get_bento_service_event_properties(bento_service):
     assert 'PickleArtifact' in properties["artifact_types"]
     assert 'DataframeInput' in properties["input_types"]
     assert 'ImageInput' in properties["input_types"]
-    assert 'LegacyImageInput' in properties["input_types"]
     assert 'JsonInput' in properties["input_types"]
-    assert 'LegacyJsonInput' in properties["input_types"]
     assert len(properties["input_types"]) == 5
 
     # Disabling fastai related tests to fix travis build

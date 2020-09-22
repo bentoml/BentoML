@@ -52,7 +52,7 @@ def test_api_function_route(bento_service, img_file):
     assert "[10, 10, 3]" in str(response.data)
 
     response = test_client.post(
-        "/predict_legacy_images",
+        "/predict_multi_images",
         data={
             'original': (BytesIO(img), 'original.jpg'),
             'compared': (BytesIO(img), 'compared.jpg'),

@@ -41,7 +41,7 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
         )
         assert request_success, 'Failed to make successful Sagemaker request'
         assert (
-            prediction_result.strip() == '[\n  "cat"\n]'
+            prediction_result.strip() == '"cat"'
         ), 'Sagemaker prediction result mismatch'
 
         update_bento_version_deployment_command = [
@@ -70,7 +70,7 @@ def test_sagemaker_update_deployment(basic_bentoservice_v1, basic_bentoservice_v
         )
         assert request_success, 'Failed to make successful Sagemaker request'
         assert (
-            prediction_result.strip() == '[\n  "dog"\n]'
+            prediction_result.strip() == '"dog"'
         ), 'Sagemaker prediction result mismatch'
     finally:
         delete_deployment('sagemaker', deployment_name)

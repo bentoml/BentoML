@@ -7,14 +7,14 @@ logger = logging.getLogger('bentoml.test')
 
 
 class SampleBentoService(BentoService):
-    @api(input=JsonInput(), batch=False)
+    @api(input=JsonInput(), batch=True)
     def predict(self, data):
         logger.info(f"SampleBentoService predict API received data {data}")
         return ['cat']
 
 
 class UpdatedSampleBentoService(BentoService):
-    @api(input=JsonInput(), batch=False)
+    @api(input=JsonInput(), batch=True)
     def predict(self, data):
         logger.info(f"UpdatedSampleBentoService predict API received data {data}")
         return ['dog']

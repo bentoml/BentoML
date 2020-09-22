@@ -12,21 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import functools
+import logging
 
 from bentoml.adapters import (
     BaseInputAdapter,
-    DataframeInput,
-    TfTensorInput,
-    JsonInput,
-    LegacyImageInput,
-    FastaiImageInput,
-    ClipperIntsInput,
     ClipperBytesInput,
     ClipperDoublesInput,
     ClipperFloatsInput,
+    ClipperIntsInput,
     ClipperStringsInput,
+    DataframeInput,
+    FastaiImageInput,
+    JsonInput,
+    MultiImageInput,
+    TfTensorInput,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ BentoHandler = deprecated(BaseInputAdapter, 'BentoHandler')
 DataframeHandler = deprecated(DataframeInput, 'DataframeHandler')
 TensorflowTensorHandler = deprecated(TfTensorInput, 'TensorflowTensorHandler')
 JsonHandler = deprecated(JsonInput, 'JsonHandler')
-ImageHandler = deprecated(LegacyImageInput, 'ImageHandler')
+ImageHandler = deprecated(MultiImageInput, 'ImageHandler')
 FastaiImageHandler = deprecated(FastaiImageInput, 'FastaiImageHandler')
 ClipperIntsHandler = deprecated(ClipperIntsInput, 'ClipperIntsHandler')
 ClipperBytesHandler = deprecated(ClipperBytesInput, 'ClipperBytesHandler')

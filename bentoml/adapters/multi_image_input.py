@@ -33,6 +33,8 @@ ApiFuncArgs = Tuple[Sequence['numpy.ndarray'], ...]
 
 class MultiImageInput(MultiFileInput):
     """
+    Transform incoming image datas from http request, cli or lambda event into numpy
+        arrays.
     Args:
         input_names (string[]): A tuple of acceptable input name for HTTP request.
             Default value is (image,)

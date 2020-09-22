@@ -82,7 +82,7 @@ class ImageInput(FileInput):
             raise TypeError(
                 "ImageInput doesn't take input_names as parameters since bentoml 0.8."
                 "Update your Service definition "
-                "or use LegacyImageInput instead(not recommended)."
+                "or use MultiImageInput instead."
             )
 
         self.pilmode = pilmode

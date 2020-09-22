@@ -15,10 +15,6 @@ JsonInput
 +++++++++
 .. autoclass:: bentoml.adapters.JsonInput
 
-LegacyJsonInput
-+++++++++++++++
-.. autoclass:: bentoml.adapters.LegacyJsonInput
-
 TfTensorInput
 +++++++++++++
 .. autoclass:: bentoml.adapters.TfTensorInput
@@ -34,10 +30,6 @@ MultiImageInput
 AnnotatedImageInput
 +++++++++++++++++++
 .. autoclass:: bentoml.adapters.AnnotatedImageInput
-
-LegacyImageInput
-++++++++++++++++
-.. autoclass:: bentoml.adapters.LegacyImageInput
 
 FastaiImageInput
 ++++++++++++++++

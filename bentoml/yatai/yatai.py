@@ -162,7 +162,7 @@ def list(
     yatai_url=None,
 ):
     """
-    List BentoServices that satisfy the specified criterias.
+    List BentoServices that satisfy the specified criteria.
     Args:
         bento_name: optional. BentoService name
         limit: optional. maximum number of returned results

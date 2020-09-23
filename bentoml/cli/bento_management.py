@@ -226,5 +226,5 @@ def add_bento_sub_command(cli):
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')
             return
-        yatai.pull(bento=bento, yatai_url=yatai_url)
+        yatai.push(bento=bento, yatai_url=yatai_url)
         _echo(f'Pushed {bento} to {yatai_url}')

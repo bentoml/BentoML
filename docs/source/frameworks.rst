@@ -70,13 +70,13 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.fastai.FastaiModelArtifact
 
-======
-FastAI
-======
+=========
+FastAI v2
+=========
 
 Example Projects:
 
-* Pet Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`__
+* Medical image classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__
 
 .. autoclass:: bentoml.frameworks.fastai.Fastai2ModelArtifact
 

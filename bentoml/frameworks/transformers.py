@@ -14,7 +14,6 @@ except ImportError:
     transformers = None
 
 
-
 class TransformersModelArtifact(BentoServiceArtifact):
     """Abstraction for saving/loading Transformers models
 
@@ -82,7 +81,7 @@ class TransformersModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "transformers package is required to use TransformersModelArtifact"
             )
-        
+
     def _file_path(self, base_path):
         return os.path.join(base_path, self.name)
 

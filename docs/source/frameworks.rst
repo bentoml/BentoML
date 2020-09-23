@@ -70,7 +70,15 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.fastai.FastaiModelArtifact
 
-.. autoclass:: bentoml.frameworks.fastai2.Fastai2ModelArtifact
+======
+FastAI
+======
+
+Example Projects:
+
+* Pet Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`__
+
+.. autoclass:: bentoml.frameworks.fastai.Fastai2ModelArtifact
 
 =======
 XGBoost

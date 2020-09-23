@@ -28,7 +28,7 @@ from bentoml.utils import get_default_yatai_client
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.saved_bundle import safe_retrieve
 from bentoml.exceptions import CLIException
-
+from bentoml.yatai import yatai
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
@@ -107,47 +107,27 @@ def add_bento_sub_command(cli):
         "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
         "In (value3, value3a), key4 DoesNotExist)",
     )
+    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table', 'wide'])
     )
-    def get(bento, limit, ascending_order, print_location, labels, output):
+    def get(bento, limit, ascending_order, print_location, labels, yatai_url, output):
         if ':' in bento:
-            name, version = bento.split(':')
-        else:
-            name = bento
-            version = None
-        yatai_client = get_default_yatai_client()
-
-        if name and version:
-            output = output or 'json'
-            get_bento_result = yatai_client.repository.get(name, version)
-            if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    get_bento_result.status
-                )
-                raise CLIException(f'{error_code}:{error_message}')
+            result = yatai.get(bento, yatai_url)
             if print_location:
-                _echo(get_bento_result.bento.uri.uri)
-                return
-            _print_bento_info(get_bento_result.bento, output)
-        elif name:
+                _echo(result.uri.rui)
+            else:
+                _print_bentos_info(result.bento, output)
+        else:
             output = output or 'table'
-            list_bento_versions_result = yatai_client.repository.list(
-                bento_name=name,
+            result = yatai.list(
+                bento_name=bento,
                 limit=limit,
-                labels=labels,
                 ascending_order=ascending_order,
+                labels=labels,
+                yatai_url=yatai_url,
             )
-            if (
-                list_bento_versions_result.status.status_code
-                != yatai_proto.status_pb2.Status.OK
-            ):
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    list_bento_versions_result.status
-                )
-                raise CLIException(f'{error_code}:{error_message}')
-
-            _print_bentos_info(list_bento_versions_result.bentos, output)
+            _print_bentos_info(result, output)
 
     @cli.command(name='list', help='List BentoServices information')
     @click.option(
@@ -167,28 +147,25 @@ def add_bento_sub_command(cli):
         '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
     )
     @click.option('--ascending-order', is_flag=True)
+    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
     @click.option(
         '-o',
         '--output',
         type=click.Choice(['json', 'yaml', 'table', 'wide']),
         default='table',
     )
-    def list_bentos(limit, offset, labels, order_by, ascending_order, output):
-        yatai_client = get_default_yatai_client()
-        list_bentos_result = yatai_client.repository.list(
+    def list_bentos(
+        limit, offset, labels, order_by, ascending_order, yatai_url, output
+    ):
+        result = yatai.list(
             limit=limit,
             offset=offset,
             labels=labels,
             order_by=order_by,
             ascending_order=ascending_order,
+            yatai_url=yatai_url,
         )
-        if list_bentos_result.status.status_code != yatai_proto.status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                list_bentos_result.status
-            )
-            raise CLIException(f'{error_code}:{error_message}')
-
-        _print_bentos_info(list_bentos_result.bentos, output)
+        _print_bentos_info(result, output)
 
     @cli.command()
     @click.argument("bentos", type=click.STRING, callback=parse_bento_tag_list_callback)
@@ -230,40 +207,24 @@ def add_bento_sub_command(cli):
             _echo(f'BentoService {name}:{version} deleted')
 
     @cli.command(
-        help='Retrieves BentoService artifacts into a target directory',
-        short_help="Retrieves BentoService artifacts into a target directory",
+        help='Pull BentoService from remote yatai server',
+        short_help="pull BentoService from remote yatai server",
     )
     @click.argument("bento", type=click.STRING)
-    @click.option(
-        '--target_dir',
-        help="Directory to put artifacts into. Defaults to pwd.",
-        default=os.getcwd(),
-    )
-    def retrieve(bento, target_dir):
+    @click.option('--yatai-url', required=True, help='Yatai server URL')
+    def pull(bento, yatai_url):
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')
             return
-        name, version = bento.split(':')
+        yatai.pull(bento=bento, yatai_url=yatai_url)
+        _echo(f'Pulled {bento} from {yatai_url}')
 
-        yatai_client = get_default_yatai_client()
-
-        get_bento_result = yatai_client.repository.get(name, version)
-        if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                get_bento_result.status
-            )
-            raise CLIException(
-                f'Failed to access BentoService {name}:{version} - '
-                f'{error_code}:{error_message}'
-            )
-
-        if get_bento_result.bento.uri.s3_presigned_url:
-            bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
-        elif get_bento_result.bento.uri.gcs_presigned_url:
-            bento_service_bundle_path = get_bento_result.bento.uri.gcs_presigned_url
-        else:
-            bento_service_bundle_path = get_bento_result.bento.uri.uri
-
-        safe_retrieve(bento_service_bundle_path, target_dir)
-
-        click.echo('Service %s artifact directory => %s' % (name, target_dir))
+    @cli.command(help='Push BentoService to remote yatai server')
+    @click.argument("bento", type=click.STRING)
+    @click.option('--yatai-url', required=True, help='Yatai server URL')
+    def push(bento, yatai_url):
+        if ':' not in bento:
+            _echo(f'BentoService {bento} invalid - specify name:version')
+            return
+        yatai.pull(bento=bento, yatai_url=yatai_url)
+        _echo(f'Pushed {bento} to {yatai_url}')

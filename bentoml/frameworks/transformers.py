@@ -11,9 +11,8 @@ from bentoml.service import BentoServiceArtifact
 try:
     import transformers
 except ImportError:
-    raise MissingDependencyException(
-        "transformers package is required to use TransformersModelArtifact"
-    )
+    transformers = None
+
 
 
 class TransformersModelArtifact(BentoServiceArtifact):
@@ -36,11 +35,9 @@ class TransformersModelArtifact(BentoServiceArtifact):
 
     Example usage:
 
-    >>>
     >>> import bentoml
     >>> from transformers import AutoModelWithLMHead, AutoTokenizer
     >>> from bentoml.adapters import JsonInput
-    >>>
     >>>
     >>> @bentoml.env(pip_packages=["transformers==3.1.0", "torch==1.6.0"])
     >>> @bentoml.artifacts([TransformersModelArtifact("gptModel")])
@@ -81,6 +78,11 @@ class TransformersModelArtifact(BentoServiceArtifact):
         self._tokenizer_type = None
         self._model_type = "AutoModelWithLMHead"
 
+        if transformers is None:
+            raise MissingDependencyException(
+                "transformers package is required to use TransformersModelArtifact"
+            )
+        
     def _file_path(self, base_path):
         return os.path.join(base_path, self.name)
 

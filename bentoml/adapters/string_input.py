@@ -88,7 +88,7 @@ class StringInput(BaseInputAdapter):
         for input_ in parse_cli_input(cli_args):
             try:
                 bytes_ = input_.read()
-                charset = chardet.detect(bytes_)['encoding']  # charset for cli input
+                charset = chardet.detect(bytes_)['encoding'] or "utf-8"
                 yield InferenceTask(
                     cli_args=cli_args, data=bytes_.decode(charset),
                 )

@@ -14,6 +14,8 @@
 
 from typing import Iterable, Iterator, Sequence, Tuple
 
+import chardet
+
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 from bentoml.adapters.utils import decompress_gzip_request
 from bentoml.types import AwsLambdaEvent, HTTPRequest, InferenceTask
@@ -52,11 +54,22 @@ class StringInput(BaseInputAdapter):
 
     @decompress_gzip_request
     def from_http_request(self, req: HTTPRequest) -> InferenceTask[str]:
+        if req.headers.content_type == 'multipart/form-data':
+            _, _, files = HTTPRequest.parse_form_data(req)
+            if len(files) != 1:
+                return InferenceTask().discard(
+                    http_status=400,
+                    err_msg=f"BentoML#{self.__class__.__name__} accepts one text file "
+                    "at a time",
+                )
+            input_file = next(iter(files.values()))
+            bytes_ = input_file.read()
+            charset = chardet.detect(bytes_)['encoding'] or "utf-8"
+        else:
+            bytes_ = req.body
+            charset = req.headers.charset or "utf-8"
         try:
-            return InferenceTask(
-                http_headers=req.headers,
-                data=req.body.decode(req.headers.charset or "utf-8"),
-            )
+            return InferenceTask(http_headers=req.headers, data=bytes_.decode(charset),)
         except UnicodeDecodeError:
             return InferenceTask().discard(
                 http_status=400,
@@ -74,14 +87,21 @@ class StringInput(BaseInputAdapter):
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[str]]:
         for input_ in parse_cli_input(cli_args):
             try:
+                bytes_ = input_.read()
+                charset = chardet.detect(bytes_)['encoding'] or "utf-8"
                 yield InferenceTask(
-                    cli_args=cli_args,
-                    data=input_.read().decode(),  # charset for cli input
+                    cli_args=cli_args, data=bytes_.decode(charset),
                 )
             except UnicodeDecodeError:
                 yield InferenceTask().discard(
                     http_status=400,
-                    err_msg=f"{self.__class__.__name__}: UnicodeDecodeError",
+                    err_msg=f"{self.__class__.__name__}: "
+                    f"Try decoding with {charset} but failed with DecodeError.",
+                )
+            except LookupError:
+                return InferenceTask().discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__}: Unsupported charset {charset}",
                 )
 
     def extract_user_func_args(

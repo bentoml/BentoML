@@ -11,26 +11,27 @@ logger = logging.getLogger(__name__)
 
 def _import_fastai2_module():
     try:
-        import fastai.basics
+        import fastai.basics  # noqa
     except ImportError:
         raise MissingDependencyException(
             "fastai2 package is required to use "
             "bentoml.artifacts.Fastai2ModelArtifact"
         )
 
-    return fastai2
+    return fastai
 
 
 class Fastai2ModelArtifact(BentoServiceArtifact):
-    """Saving and Loading FastAI2 Model
+    """Saving and Loading FastAI v2 Model
 
     Args:
-        name (str): Name for the fastai2 model
+        name (str): Name for the fastai v2 model
 
     Raises:
-        MissingDependencyException: Require fastai2 package for Fastai2 model artifact
+        MissingDependencyException: Require fastai>=2.0.0 package for Fastai model
+            artifact
         InvalidArgument: invalid argument type, model being packed must be instance of
-            fastai2.basics.Learner
+            fastai.basics.Learner
     """
 
     def __init__(self, name):
@@ -46,7 +47,7 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
 
         if not isinstance(model, fastai2_module.basics.Learner):
             raise InvalidArgument(
-                "Expect `model` argument to be `fastai2.basics.Learner` instance"
+                "Expect `model` argument to be `fastai.basics.Learner` instance"
             )
 
         self._model = model

@@ -78,7 +78,7 @@ Example Projects:
 
 * Medical image classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.fastai.Fastai2ModelArtifact
+.. autoclass:: bentoml.frameworks.fastai2.Fastai2ModelArtifact
 
 =======
 XGBoost

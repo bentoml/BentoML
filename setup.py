@@ -49,6 +49,7 @@ install_requires = [
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "multidict",
+    "chardet",
 ]
 
 test_requires = [

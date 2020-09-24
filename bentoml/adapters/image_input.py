@@ -36,8 +36,7 @@ class ImageInput(FileInput):
     """Convert incoming image data from http request, cli or lambda event into numpy
     array and pass down to user defined API functions
 
-    ** If you want to operate raw image file stream or PIL.Image objects, use its
-        lowlevel alternative ``FileInput``. **
+    ** To operate raw files or PIL.Image obj, use the lowlevel :class:`.FileInput`. **
 
     Parameters
     ----------

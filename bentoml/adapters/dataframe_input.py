@@ -113,9 +113,7 @@ class DataframeInput(StringInput):
 		# Optional pre-processing, post-processing code goes here
 		return self.artifacts.model.predict(df)
 
-    Query with HTTP request:
-
-    .. code-block:: console
+    Query with HTTP request::
 
 	curl -i \\
 	--header "Content-Type: application/json" \\
@@ -123,9 +121,7 @@ class DataframeInput(StringInput):
 	--data '[{"sw": 1, "sl": 2, "pw": 1, "pl": 2}]' \\
 	localhost:5000/predict
 
-    or
-
-    .. code-block:: console
+    or::
 
 	curl -i \\
 	--header "Content-Type: text/csv" \\
@@ -133,16 +129,12 @@ class DataframeInput(StringInput):
 	--data @file.csv \\
 	localhost:5000/predict
 
-    Query with CLI command:
-
-    .. code-block:: console
+    Query with CLI command::
 
 	bentoml run IrisClassifier:latest predict --input \\
 	'[{"sw": 1, "sl": 2, "pw": 1, "pl": 2}]'
 
-    or
-
-    .. code-block:: console
+    or::
 
 	bentoml run IrisClassifier:latest predict --format csv --input-file test.csv
 

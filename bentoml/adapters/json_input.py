@@ -44,7 +44,7 @@ class JsonInput(StringInput):
             results = self.artifacts.classifier([j['text'] for j in parsed_json_list])
             return results
 
-    OR use JsonInput with ``batch=False``(the default)
+    OR use JsonInput with ``batch=False`` (the default)
 
     .. code-block:: python
 
@@ -56,10 +56,10 @@ class JsonInput(StringInput):
     For client prediction request, it is the same for both batch and non-batch API,
     the request should contain only one single input item::
 
-        curl -i \
-          --header "Content-Type: application/json" \
-          --request POST \
-          --data '{"text": "best movie ever"}' \
+        curl -i \\
+          --header "Content-Type: application/json" \\
+          --request POST \\
+          --data '{"text": "best movie ever"}' \\
           localhost:5000/predict
     """
 

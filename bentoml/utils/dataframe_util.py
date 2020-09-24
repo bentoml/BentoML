@@ -187,7 +187,7 @@ def _dataframe_csv_from_input(table: str, fmt, orient, state):
 
 
 def read_dataframes_from_json_n_csv(
-    datas: Iterable[bytes],
+    datas: Iterable[str],
     formats: Iterable[str],
     orient: str = None,
     columns=None,
@@ -204,7 +204,7 @@ def read_dataframes_from_json_n_csv(
         columns={k: i for i, k in enumerate(columns)} if columns else None
     )
     trs_list = tuple(
-        _dataframe_csv_from_input(t.decode(), fmt, orient, state)
+        _dataframe_csv_from_input(t, fmt, orient, state)
         for t, fmt in zip(datas, formats)
     )
     header = ",".join(csv_quote(td) for td in state.columns) if state.columns else None

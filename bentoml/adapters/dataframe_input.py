@@ -11,12 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 from typing import Iterable, Mapping, Optional, Sequence, Tuple
 
-from bentoml.adapters.file_input import FileInput
-from bentoml.adapters.utils import check_file_extension
+from bentoml.adapters.string_input import StringInput
 from bentoml.exceptions import MissingDependencyException
-from bentoml.types import AwsLambdaEvent, FileLike, HTTPHeaders, InferenceTask
+from bentoml.types import HTTPHeaders, InferenceTask
 from bentoml.utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
     read_dataframes_from_json_n_csv,
@@ -25,11 +25,11 @@ from bentoml.utils.lazy_loader import LazyLoader
 
 pandas = LazyLoader('pandas', globals(), 'pandas')
 
-DataFrameTask = InferenceTask[FileLike]
+DataFrameTask = InferenceTask[str]
 ApiFuncArgs = Tuple['pandas.DataFrame']
 
 
-class DataframeInput(FileInput):
+class DataframeInput(StringInput):
     """
     Convert various inputs(HTTP, Aws Lambda or CLI) to pandas dataframe, passing it to
     API functions.
@@ -172,31 +172,33 @@ class DataframeInput(FileInput):
             "text/csv": {"schema": {"type": "string", "format": "binary"}},
         }
 
-    def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[FileLike]:
-        headers = HTTPHeaders.from_dict(event.get('headers', {}))
-        if headers.content_type == "text/csv":
-            f = FileLike(bytes_=event["body"].encode(), name="input.csv")
-        else:
-            # Optimistically assuming Content-Type to be "application/json"
-            f = FileLike(bytes_=event["body"].encode(), name="input.json")
-        return InferenceTask(aws_lambda_event=event, data=f,)
-
     @classmethod
     def _detect_format(cls, task: InferenceTask) -> str:
-        if task.http_headers.content_type == "application/json":
-            return "json"
-        if task.http_headers.content_type == "text/csv":
-            return "csv"
-        file_name = getattr(task.data, "name", "")
-        if check_file_extension(file_name, (".csv",)):
-            return "csv"
+        if task.aws_lambda_event:
+            headers = HTTPHeaders.from_dict(task.aws_lambda_event.get('headers', {}))
+            if headers.content_type == "application/json":
+                return "json"
+            if headers.content_type == "text/csv":
+                return "csv"
+        elif task.http_headers:
+            headers = task.http_headers
+            if headers.content_type == "application/json":
+                return "json"
+            if headers.content_type == "text/csv":
+                return "csv"
+        elif task.cli_args:
+            parser = argparse.ArgumentParser()
+            parser.add_argument('--format', type=str, choices=['csv', 'json'])
+            parsed_args, _ = parser.parse_known_args(list(task.cli_args))
+            return parsed_args.format or "json"
+
         return "json"
 
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[bytes]]
+        self, tasks: Iterable[InferenceTask[str]]
     ) -> ApiFuncArgs:
         fmts, datas = tuple(
-            zip(*((self._detect_format(task), task.data.read()) for task in tasks))
+            zip(*((self._detect_format(task), task.data) for task in tasks))
         )
 
         df, batchs = read_dataframes_from_json_n_csv(

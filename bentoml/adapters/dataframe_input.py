@@ -93,50 +93,50 @@ class DataframeInput(StringInput):
 
     .. code-block:: python
 
-	from bentoml import env, artifacts, api, BentoService
-	from bentoml.adapters import DataframeInput
-	from bentoml.frameworks.sklearn import SklearnModelArtifact
+        from bentoml import env, artifacts, api, BentoService
+        from bentoml.adapters import DataframeInput
+        from bentoml.frameworks.sklearn import SklearnModelArtifact
 
-	@env(infer_pip_packages=True)
-	@artifacts([SklearnModelArtifact('model')])
-	class IrisClassifier(BentoService):
+        @env(infer_pip_packages=True)
+        @artifacts([SklearnModelArtifact('model')])
+        class IrisClassifier(BentoService):
 
-	    @api(
+            @api(
                 input=DataframeInput(
-		    orient="records",
+                    orient="records",
                     columns=["sw", "sl", "pw", "pl"],
                     dtype={"sw": "float", "sl": "float", "pw": "float", "pl": "float"},
                 ), 
                 batch=True,
             )
-	    def predict(self, df):
-		# Optional pre-processing, post-processing code goes here
-		return self.artifacts.model.predict(df)
+            def predict(self, df):
+                # Optional pre-processing, post-processing code goes here
+                return self.artifacts.model.predict(df)
 
     Query with HTTP request::
 
-	curl -i \\
-	--header "Content-Type: application/json" \\
-	--request POST \\
-	--data '[{"sw": 1, "sl": 2, "pw": 1, "pl": 2}]' \\
-	localhost:5000/predict
+        curl -i \\
+          --header "Content-Type: application/json" \\
+          --request POST \\
+          --data '[{"sw": 1, "sl": 2, "pw": 1, "pl": 2}]' \\
+          localhost:5000/predict
 
-    or::
+    OR::
 
-	curl -i \\
-	--header "Content-Type: text/csv" \\
-	--request POST \\
-	--data @file.csv \\
-	localhost:5000/predict
+        curl -i \\
+          --header "Content-Type: text/csv" \\
+          --request POST \\
+          --data @file.csv \\
+          localhost:5000/predict
 
     Query with CLI command::
 
-	bentoml run IrisClassifier:latest predict --input \\
-	'[{"sw": 1, "sl": 2, "pw": 1, "pl": 2}]'
+        bentoml run IrisClassifier:latest predict --input \\
+          '[{"sw": 1, "sl": 2, "pw": 1, "pl": 2}]'
 
-    or::
+    OR::
 
-	bentoml run IrisClassifier:latest predict --format csv --input-file test.csv
+        bentoml run IrisClassifier:latest predict --format csv --input-file test.csv
 
     """
 

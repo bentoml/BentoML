@@ -28,32 +28,37 @@ class JsonInput(StringInput):
     """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
     json serializable object in python) and pass down to user defined API function
 
-    Example usages:
+    Examples
+    ----------
+    Example services:
 
     Use JsonInput with batch=True
-    >>> from typings import List
-    >>> from bentoml.types import JsonSerializable
-    >>>
-    >>> @bentoml.api(input=JsonInput(), batch=True)
-    >>> def predict(self, parsed_json_list: List[JsonSerializable]):
-    >>>     results = self.artifacts.classifier([j['text'] for j in parsed_json_list])
-    >>>     return results
+    .. code-block:: python
+
+        from typings import List
+        from bentoml.types import JsonSerializable
+       
+        @bentoml.api(input=JsonInput(), batch=True)
+        def predict(self, parsed_json_list: List[JsonSerializable]):
+            results = self.artifacts.classifier([j['text'] for j in parsed_json_list])
+            return results
 
     OR use JsonInput with batch=False(the default)
+    .. code-block:: python
 
-    >>> @bentoml.api(input=JsonInput())
-    >>> def predict(self, parsed_json):
-    >>>     results = self.artifacts.classifier([parsed_json['text']])
-    >>>     return results[0]
+        @bentoml.api(input=JsonInput())
+        def predict(self, parsed_json):
+            results = self.artifacts.classifier([parsed_json['text']])
+            return results[0]
 
     For client prediction request, it is the same for both batch and non-batch API,
-    the request should contain only one single input item:
+    the request should contain only one single input item::
 
-    >>> curl -i \
-    >>>   --header "Content-Type: application/json" \
-    >>>   --request POST \
-    >>>   --data '{"text": "best movie ever"}' \
-    >>>   localhost:5000/predict
+        curl -i \
+          --header "Content-Type: application/json" \
+          --request POST \
+          --data '{"text": "best movie ever"}' \
+          localhost:5000/predict
     """
 
     def extract_user_func_args(

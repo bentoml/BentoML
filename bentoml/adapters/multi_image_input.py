@@ -68,7 +68,7 @@ class MultiImageInput(MultiFileInput):
 
         from bentoml import BentoService
         import bentoml
-       
+
         class MyService(BentoService):
             @bentoml.api(
                 input=MultiImageInput(input_names=('imageX', 'imageY')), batch=True)

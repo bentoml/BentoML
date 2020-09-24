@@ -87,8 +87,7 @@ class DataframeInput(StringInput):
 
     ValueError: Incoming data format can not be handled. Only json and csv
 
-
-    Usages
+    Examples
     -------
     Example Service:
 

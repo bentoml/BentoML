@@ -32,7 +32,8 @@ class JsonInput(StringInput):
     ----------
     Example services:
 
-    Use JsonInput with batch=True
+    Use JsonInput with ``batch=True``
+
     .. code-block:: python
 
         from typings import List
@@ -43,7 +44,8 @@ class JsonInput(StringInput):
             results = self.artifacts.classifier([j['text'] for j in parsed_json_list])
             return results
 
-    OR use JsonInput with batch=False(the default)
+    OR use JsonInput with ``batch=False``(the default)
+
     .. code-block:: python
 
         @bentoml.api(input=JsonInput())

@@ -117,27 +117,27 @@ class DataframeInput(StringInput):
 
     .. code-block:: console
 
-	curl -i \
-	--header "Content-Type: application/json" \
-	--request POST \
-	--data '[{"sw": 1, "sl": 2, "pw": 1, "pl": 2}]' \
+	curl -i \\
+	--header "Content-Type: application/json" \\
+	--request POST \\
+	--data '[{"sw": 1, "sl": 2, "pw": 1, "pl": 2}]' \\
 	localhost:5000/predict
 
     or
 
     .. code-block:: console
 
-	curl -i \
-	--header "Content-Type: text/csv" \
-	--request POST \
-	--data @file.csv \
+	curl -i \\
+	--header "Content-Type: text/csv" \\
+	--request POST \\
+	--data @file.csv \\
 	localhost:5000/predict
 
     Query with CLI command:
 
     .. code-block:: console
 
-	bentoml run IrisClassifier:latest predict --input \
+	bentoml run IrisClassifier:latest predict --input \\
 	'[{"sw": 1, "sl": 2, "pw": 1, "pl": 2}]'
 
     or

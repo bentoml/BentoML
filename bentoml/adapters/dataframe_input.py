@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 from typing import Iterable, Mapping, Optional, Sequence, Tuple
 
 from bentoml.adapters.string_input import StringInput
@@ -186,7 +187,10 @@ class DataframeInput(StringInput):
             if headers.content_type == "text/csv":
                 return "csv"
         elif task.cli_args:
-            return "csv"
+            parser = argparse.ArgumentParser()
+            parser.add_argument('--format', type=str, choices=['csv', 'json'])
+            parsed_args, _ = parser.parse_known_args(list(task.cli_args))
+            return parsed_args.format or "json"
 
         return "json"
 

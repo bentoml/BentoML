@@ -25,45 +25,92 @@ ApiFuncArgs = Tuple[
 
 
 class FileInput(BaseInputAdapter):
-    """Transform incoming file data from http request, cli or lambda event into file
-    stream object.
+    """Convert incoming file data from http request, cli or lambda event into file
+    stream object and pass down to user defined API functions
 
-    Handle incoming file data from different sources, transform them into file streams
-    and pass down to user defined API functions
+    Parameters
+    ----------
+    None
 
-    Args:
-        None
+    Examples
+    ----------
+    Service using FileInput:
 
-    Example:
+    .. code-block:: python
 
-    >>> import bentoml
-    >>> from PIL import Image
-    >>> import numpy as np
-    >>>
-    >>> from bentoml.frameworks.pytorch import PytorchModelArtifact
-    >>> from bentoml.adapters import FileInput
-    >>>
-    >>>
-    >>> FASHION_MNIST_CLASSES = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-    >>>                          'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-    >>>
-    >>>
-    >>> @bentoml.env(pip_packages=['torch', 'pillow', 'numpy'])
-    >>> @bentoml.artifacts([PytorchModelArtifact('classifier')])
-    >>> class PyTorchFashionClassifier(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=FileInput(), batch=True)
-    >>>     def predict(self, file_streams):
-    >>>         img_arrays = []
-    >>>         for fs in file_streams:
-    >>>             im = Image.open(fs).convert(mode="L").resize((28, 28))
-    >>>             img_array = np.array(im)
-    >>>             img_arrays.append(img_array)
-    >>>
-    >>>         inputs = np.stack(img_arrays, axis=0)
-    >>>
-    >>>         outputs = self.artifacts.classifier(inputs)
-    >>>         return [FASHION_MNIST_CLASSES[c] for c in outputs]
+        import bentoml
+        from PIL import Image
+        import numpy as np
+       
+        from bentoml.frameworks.pytorch import PytorchModelArtifact
+        from bentoml.adapters import FileInput
+       
+       
+        FASHION_MNIST_CLASSES = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+                                 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+       
+       
+        @bentoml.env(pip_packages=['torch', 'pillow', 'numpy'])
+        @bentoml.artifacts([PytorchModelArtifact('classifier')])
+        class PyTorchFashionClassifier(bentoml.BentoService):
+       
+            @bentoml.api(input=FileInput(), batch=True)
+            def predict(self, file_streams):
+                img_arrays = []
+                for fs in file_streams:
+                    im = Image.open(fs).convert(mode="L").resize((28, 28))
+                    img_array = np.array(im)
+                    img_arrays.append(img_array)
+       
+                inputs = np.stack(img_arrays, axis=0)
+       
+                outputs = self.artifacts.classifier(inputs)
+                return [FASHION_MNIST_CLASSES[c] for c in outputs]
+
+    OR use FileInput with ``batch=False`` (the default):
+
+    .. code-block:: python
+
+        @bentoml.api(input=FileInput(), batch=False)
+        def predict(self, file_stream):
+            im = Image.open(file_stream).convert(mode="L").resize((28, 28))
+            img_array = np.array(im)
+            inputs = np.stack([img_array], axis=0)
+            outputs = self.artifacts.classifier(inputs)
+            return FASHION_MNIST_CLASSES[outputs[0]]
+
+    Query with HTTP request performed by cURL::
+
+        curl -i \\
+          --header "Content-Type: image/jpeg" \\
+          --request POST \\
+          --data @test.jpg \\
+          localhost:5000/predict
+
+    OR::
+
+        curl -i \\
+          -F image=@test.jpg \\
+          localhost:5000/predict
+
+    OR by an HTML form that sends multipart data:
+
+    .. code-block:: html
+
+        <form action="http://localhost:8000" method="POST"
+              enctype="multipart/form-data">
+            <input name="image" type="file">
+            <input type="submit">
+        </form>
+
+    Query with CLI command::
+
+        bentoml run PyTorchFashionClassifier:latest predict --input-file test.jpg
+
+    OR infer all images under a folder with ten images each batch::
+
+        bentoml run PyTorchFashionClassifier:latest predict \\
+          --input-file folder/*.jpg --max-batch-size 10
 
     """
 

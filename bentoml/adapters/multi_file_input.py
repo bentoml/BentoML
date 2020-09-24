@@ -27,30 +27,83 @@ class MultiFileInput(BaseInputAdapter):
     CLI or AWS lambda event into binary stream objects, then pass down to user defined
     API functions.
 
-    Args:
-        input_names: list of input names. For HTTP they are form input names. For CLI
-            they are CLI args --input-<name1> or --input-file-<name1>
-        allow_none: accept HTTP requests or AWS Lambda events without all files
-            provided. Does not take effect on CLI.
+    Parameters
+    ----------
+    input_names : List[str]
+        list of input names. For HTTP they are form input names. For CLI
+        they are CLI args --input-<name1> or --input-file-<name1>
 
-    Example:
+    allow_none : bool
+        accept HTTP requests or AWS Lambda events without all files
+        provided. Does not take effect on CLI.
 
-    >>> import bentoml
-    >>> from PIL import Image
-    >>> import numpy as np
-    >>>
-    >>> from bentoml.framework.pytroch import PytorchModelArtifact
-    >>> from bentoml.adapters import MultiFileInput
-    >>>
-    >>> @bentoml.env(pip_packages=['torch', 'pillow', 'numpy'])
-    >>> @bentoml.artifacts([PytorchModelArtifact('classifier')])
-    >>> class PyTorchFashionClassifier(bentoml.BentoService):
-    >>>     @bentoml.api(
-    >>>         input=MultiFileInput(input_names=['image', 'json']), batch=True)
-    >>>     def predict(self, image_list, json_list):
-    >>>         for img_io, json_io in zip(image_list, json_list):
-    >>>             img = Image.open(img_io)
-    >>>             json_obj = json.load(json_io)
+    Examples
+    ----------
+    Service using MultiFileInput:
+
+    .. code-block:: python
+
+        from typing import List
+
+        from PIL import Image
+        import numpy as np
+        import bentoml
+        from bentoml.types import FileLike
+        from bentoml.framework.pytroch import PytorchModelArtifact
+        from bentoml.adapters import MultiFileInput
+       
+        @bentoml.env(pip_packages=['torch', 'pillow', 'numpy'])
+        @bentoml.artifacts([PytorchModelArtifact('classifier')])
+        class PyTorchFashionClassifier(bentoml.BentoService):
+            @bentoml.api(
+                input=MultiFileInput(input_names=['image', 'json']), batch=True)
+            def predict(self, image_list: List[FileLike], json_list: List[FileLike]):
+                inputs = []
+                for img_io, json_io in zip(image_list, json_list):
+                    img = Image.open(img_io)
+                    json_obj = json.load(json_io)
+                    inputs.append([img, json_obj])
+                outputs = self.artifacts.classifier(inputs)
+                return outputs
+
+    Query with HTTP request performed by cURL::
+
+        curl -i \\
+          -F image=@test.jpg \\
+          -F json=@test.json \\
+          localhost:5000/predict
+
+    OR by an HTML form that sends multipart data:
+
+    .. code-block:: html
+
+        <form action="http://localhost:8000" method="POST"
+              enctype="multipart/form-data">
+            <input name="image" type="file">
+            <input name="json" type="file">
+            <input type="submit">
+        </form>
+
+    Query with CLI command::
+
+        bentoml run PyTorchFashionClassifier:latest predict \\
+          --input-file-image test.jpg \\
+          --input-file-json test.json
+
+    OR infer all file pairs under a folder with ten pairs each batch::
+
+        bentoml run PyTorchFashionClassifier:latest predict --max-batch-size 10 \\
+          --input-file-image folder/*.jpg \\
+          --input-file-json folder/*.json
+
+    Note: jpg files and json files should be in same prefix like this::
+
+        folder:
+            - apple.jpg
+            - apple.json
+            - banana.jpg
+            - banana.json
+            ...
 
     """
 

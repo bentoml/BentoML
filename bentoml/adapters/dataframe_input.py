@@ -106,7 +106,7 @@ class DataframeInput(StringInput):
                     orient="records",
                     columns=["sw", "sl", "pw", "pl"],
                     dtype={"sw": "float", "sl": "float", "pw": "float", "pl": "float"},
-                ), 
+                ),
                 batch=True,
             )
             def predict(self, df):

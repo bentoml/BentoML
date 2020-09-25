@@ -33,43 +33,93 @@ ApiFuncArgs = Tuple[
 
 
 class ImageInput(FileInput):
-    """Transform incoming image data from http request, cli or lambda event into numpy
-    array.
+    """Convert incoming image data from http request, cli or lambda event into numpy
+    array and pass down to user defined API functions
 
-    Handle incoming image data from different sources, transform them into numpy array
-    and pass down to user defined API functions
+    ** To operate raw files or PIL.Image obj, use the lowlevel :class:`.FileInput`. **
 
-    * If you want to operate raw image file stream or PIL.Image objects, use lowlevel
-        alternative FileInput.
+    Parameters
+    ----------
+    accept_image_formats : List[str]
+        A list of acceptable image formats.
+        Default value is loaded from bentoml config
+        'apiserver/default_image_input_accept_file_extensions', which is
+        set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
+        List of all supported format can be found here:
+        https://imageio.readthedocs.io/en/stable/formats.html
+    pilmode : str
+        The pilmode to be used for reading image file into numpy
+        array. Default value is 'RGB'.  Find more information at:
+        https://imageio.readthedocs.io/en/stable/format_png-pil.html
 
-    Args:
-        accept_image_formats (string[]):  A list of acceptable image formats.
-            Default value is loaded from bentoml config
-            'apiserver/default_image_input_accept_file_extensions', which is
-            set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
-            List of all supported format can be found here:
-            https://imageio.readthedocs.io/en/stable/formats.html
-        pilmode (string): The pilmode to be used for reading image file into numpy
-            array. Default value is 'RGB'.  Find more information at:
-            https://imageio.readthedocs.io/en/stable/format_png-pil.html
+    Raises
+    ----------
+    ImportError: imageio package is required to use ImageInput
 
-    Raises:
-        ImportError: imageio package is required to use ImageInput
+    Examples
+    ----------
 
-    Example:
+    Service using ImageInput:
 
-        >>> from bentoml import BentoService, api, artifacts
-        >>> from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
-        >>> from bentoml.adapters import ImageInput
-        >>>
-        >>> CLASS_NAMES = ['cat', 'dog']
-        >>>
-        >>> @artifacts([TensorflowSavedModelArtifact('classifier')])
-        >>> class PetClassification(BentoService):
-        >>>     @api(input=ImageInput(), batch=True)
-        >>>     def predict(self, image_ndarrays):
-        >>>         results = self.artifacts.classifer.predict(image_ndarrays)
-        >>>         return [CLASS_NAMES[r] for r in results]
+    .. code-block:: python
+
+        from typing import List
+
+        import numpy as np
+        from bentoml import BentoService, api, artifacts
+        from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
+        from bentoml.adapters import ImageInput
+
+        CLASS_NAMES = ['cat', 'dog']
+
+        @artifacts([TensorflowSavedModelArtifact('classifier')])
+        class PetClassification(BentoService):
+            @api(input=ImageInput(), batch=True)
+            def predict(self, image_ndarrays: List[np.ndarray]) -> List[str]:
+                results = self.artifacts.classifer.predict(image_ndarrays)
+                return [CLASS_NAMES[r] for r in results]
+
+    OR use ImageInput with ``batch=False`` (the default):
+
+    .. code-block:: python
+
+        @api(input=ImageInput(), batch=False)
+        def predict(self, image_ndarray: np.ndarray) -> str:
+            results = self.artifacts.classifer.predict([image_ndarray])
+            return CLASS_NAMES[results[0]]
+
+    Query with HTTP request::
+
+        curl -i \\
+          --header "Content-Type: image/jpeg" \\
+          --request POST \\
+          --data @test.jpg \\
+          localhost:5000/predict
+
+    OR::
+
+        curl -i \\
+          -F image=@test.jpg \\
+          localhost:5000/predict
+
+    OR by an HTML form that sends multipart data:
+
+    .. code-block:: html
+
+        <form action="http://localhost:8000" method="POST"
+              enctype="multipart/form-data">
+            <input name="image" type="file">
+            <input type="submit">
+        </form>
+
+    Query with CLI command::
+
+        bentoml run PyTorchFashionClassifier:latest predict --input-file test.jpg
+
+    OR infer all images under a folder with ten images each batch::
+
+        bentoml run PyTorchFashionClassifier:latest predict \\
+          --input-file folder/*.jpg --max-batch-size 10
     """
 
     def __init__(

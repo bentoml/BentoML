@@ -35,45 +35,89 @@ class MultiImageInput(MultiFileInput):
     """
     Transform incoming image datas from http request, cli or lambda event into numpy
         arrays.
-    Args:
-        input_names (string[]): A tuple of acceptable input name for HTTP request.
-            Default value is (image,)
-        accept_image_formats (string[]):  A list of acceptable image formats.
-            Default value is loaded from bentoml config
-            'apiserver/default_image_input_accept_file_extensions', which is
-            set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
-            List of all supported format can be found here:
-            https://imageio.readthedocs.io/en/stable/formats.html
-        pilmode (string): The pilmode to be used for reading image file into numpy
-            array. Default value is 'RGB'.  Find more information at:
-            https://imageio.readthedocs.io/en/stable/format_png-pil.html
 
-    Raises:
-        ImportError: imageio package is required to use MultiImageInput
+    Parameters
+    ----------
+    input_names : List[str]
+        A tuple of acceptable input name for HTTP request.
+        Default value is (image,)
 
-    Example usage:
+    accept_image_formats : List[str]
+        A list of acceptable image formats.
+        Default value is loaded from bentoml config
+        'apiserver/default_image_input_accept_file_extensions', which is
+        set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
+        List of all supported format can be found here:
+        https://imageio.readthedocs.io/en/stable/formats.html
 
-    >>> from bentoml import BentoService
-    >>> import bentoml
-    >>>
-    >>> class MyService(BentoService):
-    >>>     @bentoml.api(
-    >>>         input=MultiImageInput(input_names=('imageX', 'imageY')), batch=True)
-    >>>     def predict(self, image_groups):
-    >>>         for image_group in image_groups:
-    >>>             image_array_x = image_group['imageX']
-    >>>             image_array_y = image_group['imageY']
+    pilmode : str
+        The pilmode to be used for reading image file into numpy
+        array. Default value is 'RGB'.  Find more information at:
+        https://imageio.readthedocs.io/en/stable/format_png-pil.html
 
-    The endpoint could then be used with an HTML form that sends multipart data, like
-    the example below
+    Raises
+    ----------
+    ImportError: imageio package is required to use MultiImageInput
 
+    Examples
+    ----------
 
-    >>> <form action="http://localhost:8000" method="POST"
-    >>>       enctype="multipart/form-data">
-    >>>     <input name="imageX" type="file">
-    >>>     <input name="imageY" type="file">
-    >>>     <input type="submit">
-    >>> </form>
+    Service using MultiImageInput:
+
+    .. code-block:: python
+
+        from bentoml import BentoService
+        import bentoml
+
+        class MyService(BentoService):
+            @bentoml.api(
+                input=MultiImageInput(input_names=('imageX', 'imageY')), batch=True)
+            def predict(self, image_groups):
+                for image_group in image_groups:
+                    image_array_x = image_group['imageX']
+                    image_array_y = image_group['imageY']
+
+    Query the endpoint with HTTP request performed by cURL::
+
+        curl -i \\
+          -F imageX=@testx.jpg \\
+          -F imageY=@testy.jpg \\
+          localhost:5000/predict
+
+    OR by an HTML form that sends multipart data:
+
+    .. code-block:: html
+
+        <form action="http://localhost:8000" method="POST"
+              enctype="multipart/form-data">
+            <input name="imageX" type="file">
+            <input name="imageY" type="file">
+            <input type="submit">
+        </form>
+
+    Query with CLI command::
+
+        bentoml run PyTorchFashionClassifier:latest predict \\
+          --input-file-imageX testx.jpg \\
+          --input-file-imageY testy.jpg
+
+    OR infer all file pairs under a folder with ten pairs each batch::
+
+        bentoml run PyTorchFashionClassifier:latest predict --max-batch-size 10 \\
+          --input-file-imageX folderx/*.jpg \\
+          --input-file-imageY foldery/*.jpg
+
+    Note: jpg files and json files should be in same prefix like this::
+
+        folderx:
+            - 1.jpg
+            - 2.jpg
+            ...
+        foldery:
+            - 1.jpg
+            - 2.jpg
+            ...
+
 
     Or the following cURL command
 

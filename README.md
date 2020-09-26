@@ -18,9 +18,9 @@ What does BentoML do?
 * Package once and _deploy anywhere_ for real-time API serving or offline batch serving
 * High-Performance API model server with _adaptive micro-batching_ support
 * Central storage hub with Web UI and APIs for managing and accessing packaged models
-* Modular and flexible design allowing advanced users to easily customize
+* Modular and flexible design allowing advanced users to customize
                                                            
-BentoML is a framework for serving, managing and deploying machine learning models. It 
+BentoML is a framework for serving, managing, and deploying machine learning models. It 
 is aiming to bridge the gap between Data Science and DevOps, and enable data science 
 teams to continuously deliver prediction services to production. 
 
@@ -41,7 +41,7 @@ and [BentoML Discussions](https://github.com/bentoml/BentoML/discussions).
 
 ## How BentoML works
 
-BentoML provides abstractions for creating prediction service that's bundled with one
+BentoML provides abstractions for creating a prediction service that's bundled with one
 or multiple trained models. User can define inference APIs with serving logic with
 Python code and specify the expected input/output data format:
 
@@ -88,12 +88,12 @@ reproducing this prediction service for inference. BentoML automatically find al
 pip package dependencies and local python code dependencies, and make sure all those are
 packaged and versioned with your code and model in one place.
 
-With the saved prediction service, a user can easily start a local API server hosting it:
+With the saved prediction service, user can start a local API server hosting it:
 ```bash
 bentoml serve MyPredictionService:latest
 ```
 
-And create a docker container image for this API model server with just one command:
+And create a docker container image for this API model server with one command:
 ```bash
 bentoml containerize my_prediction_service MyPredictionService:latest -t my_prediction_service
 

@@ -22,7 +22,7 @@ What does BentoML do?
                                                            
 BentoML is a framework for serving, managing and deploying machine learning models. It 
 is aiming to bridge the gap between Data Science and DevOps, and enable data science 
-teams to continuesly deliver prediction services to production. 
+teams to continuously deliver prediction services to production. 
 
 👉 Join the community:
 [BentoML Slack Channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)

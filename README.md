@@ -124,7 +124,7 @@ BentoML documentation: [https://docs.bentoml.org/](https://docs.bentoml.org/)
 * Example projects: [bentoml/Gallery](https://github.com/bentoml/gallery)
 
 
-### Kye Features
+### Key Features
 
 Online serving with API model server:
 * **Containerized model server** for production deployment with Docker, Kubernetes, OpenShift, AWS ECS, Azure, GCP GKE, etc

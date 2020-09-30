@@ -392,11 +392,10 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             tag = f"{name}:{version}"
         if ":" not in tag:
             _echo(
-                "Image version not specified, using version parsed "
-                f"from BentoService: '{version}'",
+                "Image version not specified, using 'latest` tag instead",
                 CLI_COLOR_WARNING,
             )
-            tag = f"{tag}:{version}"
+            tag = f"{tag}:latest"
 
         docker_build_args = {}
         if build_arg:

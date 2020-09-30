@@ -424,24 +424,28 @@ The output of an API function can be any of the follow types:
     numpy.ndarray
     tensorflow.Tensor
 
-    # List of JSON Serializable
     # JSON = t.Union[str, int, float, bool, None, t.Mapping[str, 'JSON'], t.List['JSON']]
+    JSON
+    # For batch enabled API, List of JSON Serializable
     List[JSON]
 
-
-It is user API function's responsibility to make sure the list of prediction results
-matches the order of input sequence and have the exact same length.
-
+    # For fine-grained control
+    bentoml.types.InferenceResult
+    # For batch enabled API
+    List[InferenceResult]
+    bentoml.types.InferenceError
+    # For batch enabled API
+    List[InferenceError]
 
 .. note::
 
-    It is possible for API function to handle and return a single inference request at
-    one time before BentoML 0.7.0, but it is no longer recommended after introducing
-    the adaptive micro batching feature.
+    For API with batch enabled, it is user API function's responsibility to make sure
+    the list of prediction results matches the order of input sequence and have the
+    exact same length.
 
 
-Batch with API
-^^^^^^^^^^^^^^
+Defining a Batch API
+^^^^^^^^^^^^^^^^^^^^
 
 For APIs with ``batch=True``, the user-defined API function will be required to process
 a list of input item at a time, and return a list of results of the same length. On the

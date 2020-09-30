@@ -928,6 +928,109 @@ creating model serving deployments.
     and model serving deployment workflow. `Contact us <mailto:contact@bentoml.ai>`_ to
     learn more about our offerings.
 
+
+Labels
+------
+
+Labels are key/value pairs for BentoService and deployment to be used to identify
+attributes that are relevant to the users. Labels do not have any direct implications
+to YataiService.  Each key must be unique for the given resource.
+
+Valid label name and value must be 63 characters or less, beginning and ending with an
+alphanumeric character([a-zA-Z0-9]) with dashes (`-`), underscores (`_`), dots(`.`),
+and alphanumeric between.
+
+Example labels:
+
+* `"cicd-status": "success"`
+* `"data-cohort": "2020.9.10-2020.9.11"`
+* `"created_by": "Tim_Apple"`
+
+
+**Set labels for Bentos**
+
+Currently, the only way to set labels for Bento is during save Bento as Bento bundle.
+
+.. code-block:: python
+
+    svc = MyBentosService()
+    svc.pack('model', model)
+    svc.save(labels={"framework": "xgboost"})
+
+
+**Set labels for deployments**
+
+Currently, CLI is the only way to set labels for deployments. In the upcoming release, BentoML
+provides alternative ways to set and update labels.
+
+.. code-block:: bash
+
+    $ # In any of the deploy command, you can add labels via --label option
+    $ bentoml azure-functions deploy my_deployment --bento service:name \
+        --labels key1:value1,key2:value2
+
+
+Label selector
+^^^^^^^^^^^^^^
+
+BentoML provides label selector for the user to identify BentoServices or deployments.
+The label selector query supports two type of selector: `equality-based` and `set-based`.
+A label selector query can be made of multiple requirements which are comma-separated.
+In the case of multiple requirements, the comma separator acts as a logical AND operator.
+
+**Equality-based requirements**
+
+Equality-based requirements allow filtering by label keys and values, matching resources
+must satisfy the specified label constraint. The available operators are `=` and `!=`.
+`=` represents equality, and `!=` represents inequality.
+
+Examples:
+
+* ``framework=pytorch``
+* ``cicd_result!=failed``
+
+**Set-based requirements**
+
+Set-based requirements allow you to filter keys according to a set of values. BentoML
+supports four type of operators, `In`, `NotIn`, `Exists`, `DoesNotExist`.
+
+Example:
+
+* ``framework In (xgboost, lightgbm)``
+
+    This example selects all resources with key equals to `framework` and value equal to `xgboost` or `lightgbm`
+
+* ``platform NotIn (lambda, azure-function)``
+
+    This label selector selects all resources with key equals to `platform` and value not equal to `lambda` or `azure-function`.
+
+* ``fb_cohort Exists``
+
+    This example selects all resources that has a label with key equal to `fb_cohort`
+
+* ``cicd DoesNotExist``
+
+    This label selector selects all resources that does not have a label with key equal to `cicd`.
+
+
+**Use label selector in CLI**
+
+There are several CLI commands supported label selector. More ways to interact with label
+selector will be available in the future versions.
+
+Supported CLI commands:
+
+* ``bentoml list``
+* ``bentoml get``
+
+    ``--labels`` option will be ignored if the version is provided.
+    ``$ bentoml get bento_name --labels "key1=value1, key2 In (value2, value3)"``
+* ``bentoml deployment list``
+* ``bentoml lambda list``
+* ``bentoml sagemaker list``
+* ``bentoml azure-functions list``
+
+
 Retrieving BentoServices
 ------------------------
 

@@ -300,6 +300,21 @@ Start a container with the docker image built from the previous step:
     docker run -p 5000:5000 iris-classifier:latest --workers=1 --enable-microbatch
 
 
+If you need fine-grained control over how the docker image is built, BentoML provides a
+convenient way to containerize the model API server manually:
+
+.. code-block:: bash
+
+    # 1. Find the SavedBundle directory with `bentoml get` command
+    saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
+
+    # 2. Run `docker build` with the SavedBundle directory which contains a generated Dockerfile
+    docker build -t iris-classifier $saved_path
+
+    # 3. Run the generated docker image to start a docker container serving the model
+    docker run -p 5000:5000 iris-classifier --enable-microbatch --workers=1
+
+
 This made it possible to deploy BentoML bundled ML models with platforms such as
 `Kubeflow <https://www.kubeflow.org/docs/components/serving/bentoml/>`_,
 `Knative <https://knative.dev/community/samples/serving/machinelearning-python-bentoml/>`_,

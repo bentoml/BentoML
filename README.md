@@ -2,15 +2,14 @@
 
 ## The easiest way to build Machine Learning APIs  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20The%20easiest%20way%20to%20build%20Machine%20Learning%20APIs&url=https://github.com/bentoml/BentoML&via=bentomlai&hashtags=mlops,modelserving,ML,AI,machinelearning,bentoml)
 
-BentoML makes moving trained ML models to production easy:
+**What does BentoML do?**
 
-* Package models trained with __any ML framework__ and reproduce them for model serving
-    in production
-* __Deploy anywhere__ for online API serving or offline batch serving
-* High-Performance API model server with _adaptive micro-batching_ support
-* Central hub for managing models and deployment process via Web UI and APIs
-* Modular and flexible design making it _adaptable to your infrastrcuture_
-                                                           
+* Package models trained with **any ML framework** and reproduce them for model serving in production
+* Package once and **deploy anywhere** for real-time API serving or offline batch serving
+* High-Performance API model server with **adaptive micro-batching** support
+* Central storage hub with Web UI and APIs for managing and accessing packaged models
+* Modular and flexible design allowing advanced users to easily customize
+
 BentoML is a framework for serving, managing, and deploying machine learning models. It 
 is aiming to bridge the gap between Data Science and DevOps, and enable teams to deliver
 prediction services in a fast, repeatable, and scalable way.

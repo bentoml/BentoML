@@ -424,20 +424,122 @@ The output of an API function can be any of the follow types:
     numpy.ndarray
     tensorflow.Tensor
 
-    # List of JSON Serializable
     # JSON = t.Union[str, int, float, bool, None, t.Mapping[str, 'JSON'], t.List['JSON']]
+    JSON
+    # For batch enabled API, List of JSON Serializable
     List[JSON]
 
-
-It is user API function's responsibility to make sure the list of prediction results
-matches the order of input sequence and have the exact same length.
-
+    # For fine-grained control
+    bentoml.types.InferenceResult
+    # For batch enabled API
+    List[InferenceResult]
+    bentoml.types.InferenceError
+    # For batch enabled API
+    List[InferenceError]
 
 .. note::
 
-    It is possible for API function to handle and return a single inference request at
-    one time before BentoML 0.7.0, but it is no longer recommended after introducing
-    the adaptive micro batching feature.
+    For API with batch enabled, it is user API function's responsibility to make sure
+    the list of prediction results matches the order of input sequence and have the
+    exact same length.
+
+
+Defining a Batch API
+^^^^^^^^^^^^^^^^^^^^
+
+For APIs with ``batch=True``, the user-defined API function will be required to process
+a list of input item at a time, and return a list of results of the same length. On the
+contrary, @api by default uses batch=False, which processes one input item at a time.
+Implementing a batch API allow your workload to benefit from BentoML's adaptive
+micro-batching mechanism when serving online traffic, and also will speed up offline
+batch inference job. We recommend using batch=True if performance & throughput is a
+concern. Non-batch APIs are usually easier to implement, good for quick POC, simple
+use cases, and deploying on Serverless platforms such as AWS Lambda, Azure function,
+and Google KNative.
+
+``DataframeInput`` and ``TfTensorInput`` are special input types that only support
+accepting a batch of input at one time.
+
+**Input data validation while handling batch input**
+
+When the API function received a list of input, it is now possible to reject a subset
+of the input data and return an error code to the client, if the input data is invalid
+or malformated. Users can do this via the InferenceTask#discard API, here's an example:
+
+.. code-block:: python
+
+    from typings import List
+    from bentoml import env, artifacts, api, BentoService
+    from bentoml.adapters import JsonInput
+    from bentoml.types import JsonSerializable, InferenceTask  # type annotations are optional
+
+    @env(infer_pip_packages=True)
+    @artifacts([SklearnModelArtifact('classifier')])
+    class MyPredictionService(BentoService):
+
+            @api(input=JsonInput(), batch=True)
+            def predict_batch(self, parsed_json_list: List[JsonSerializable], tasks: List[InferenceTask]):
+                 model_input = []
+                 for json, task in zip(parsed_json_list, tasks):
+                      if "text" in json:
+                          model_input.append(json['text'])
+                      else:
+                          task.discard(http_status=400, err_msg="input json must contain `text` field")
+
+                results = self.artifacts.classifier(model_input)
+
+                return results
+
+The number of tasks got discarded plus the length of the results array returned, should
+be equal to the length of the input list, this will allow BentoML to match the results
+back to tasks that have not yet been discarded.
+
+*Allow fine-grained control of the HTTP response, CLI inference job output, etc. E.g.:*
+
+.. code-block:: python
+
+    import bentoml
+    from bentoml.types import JsonSerializable, InferenceTask, InferenceError  # type annotations are optional
+
+    class MyService(bentoml.BentoService):
+
+        @bentoml.api(input=JsonInput(), batch=False)
+        def predict(self, parsed_json: JsonSerializable, task: InferenceTask) -> InferenceResult:
+            if task.http_headers['Accept'] == "application/json":
+                predictions = self.artifact.model.predict([parsed_json])
+                return InferenceResult(
+                    data=predictions[0],
+                    http_status=200,
+                    http_headers={"Content-Type": "application/json"},
+                )
+            else:
+                return InferenceError(err_msg="application/json output only", http_status=400)
+
+Or when ``batch=True``:
+
+.. code-block:: python
+
+    import bentoml
+    from bentoml.types import JsonSerializable, InferenceTask, InferenceError  # type annotations are optional
+
+    class MyService(bentoml.BentoService):
+
+        @bentoml.api(input=JsonInput(), batch=True)
+        def predict(self, parsed_json_list: List[JsonSerializable], tasks: List[InferenceTask]) -> List[InferenceResult]:
+            rv = []
+            predictions = self.artifact.model.predict(parsed_json_list)
+            for task, prediction in zip(tasks, predictions):
+                if task.http_headers['Accept'] == "application/json":
+                    rv.append(
+                        InferenceResult(
+                            data=prediction,
+                            http_status=200,
+                            http_headers={"Content-Type": "application/json"},
+                    ))
+                else:
+                    rv.append(InferenceError(err_msg="application/json output only", http_status=400))
+                    # or task.discard(err_msg="application/json output only", http_status=400)
+            return rv
 
 
 Service with Multiple APIs

@@ -474,6 +474,29 @@ data. Operational API is still a beta feature, `contact us <mailto:contact@bento
 if you're interested in learning more.
 
 
+Customize Web UI
+----------------
+
+With ``@web_static_content`` decorator, you can add your web frontend project directory
+to your BentoService class and BentoML will automatically bundle all the web UI files
+and host them when starting the API server.
+
+.. code-block:: python
+
+    @env(auto_pip_dependencies=True)
+    @artifacts([SklearnModelArtifact('model')])
+    @web_static_content('./static')
+    class IrisClassifier(BentoService):
+
+        @api(input=DataframeInput(), batch=True)
+        def predict(self, df):
+            return self.artifacts.model.predict(df)
+
+Here is an example project `bentoml/gallery@master/scikit-learn/iris-classifier <https://github.com/bentoml/gallery/blob/master/scikit-learn/iris-classifier/iris-classifier.ipynb>`_
+
+.. image:: https://raw.githubusercontent.com/bentoml/gallery/master/scikit-learn/iris-classifier/webui.png
+
+
 Saving BentoService
 -------------------
 

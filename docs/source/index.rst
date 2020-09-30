@@ -15,11 +15,6 @@
 The easiest way to build Machine Learning APIs
 ==============================================
 
-*Multi-framework / High-performance / Easy to learn / Production ready*
-
-BentoML makes moving trained ML models to production easy:
-----------------------------------------------------------
-
 * Package models trained with **any ML frameworks** and reproduce them for model serving in production
 * **Deploy anywhere** for online API serving or offline batch serving
 * High-Performance API model server with **adaptive micro-batching** support

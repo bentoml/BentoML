@@ -26,9 +26,9 @@ BentoML makes moving trained ML models to production easy:
 * Central hub for managing models and deployment process via Web UI and APIs
 * Modular and flexible design making it _adaptable to your infrastructure
 
-BentoML is a framework for serving, managing and deploying machine learning models. It
-is aiming to bridge the gap between Data Science and DevOps, and enable data science
-teams to continuesly deliver prediction services to production.
+BentoML is a framework for serving, managing, and deploying machine learning models.
+It is aiming to bridge the gap between Data Science and DevOps, and enable teams to
+deliver prediction services in a fast, repeatable, and scalable way.
 
 
 💻 Get started with BentoML: :ref:`Quickstart Guide <getting-started-page>` | `Quickstart on Google Colab <https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_

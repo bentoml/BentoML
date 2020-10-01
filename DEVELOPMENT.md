@@ -142,6 +142,24 @@ If you are developing under macOS or linux, we also made a script that watches d
 file changes, automatically rebuild the docs, and refreshes the browser
 tab to show the change (macOS only):
 
+## How to run spell check for documentation site
+
+Install all dev dependencies:
+```bash
+$ pip install -e ".[dev]"
+```
+
+Install spellchecker dependencies:
+```
+$ make install-spellchecker-deps
+```
+
+To run spellchecker locally:
+```bash
+$ make spellcheck-doc
+```
+
+
 ### macOS
 
 Make sure you have fswatch command installed:

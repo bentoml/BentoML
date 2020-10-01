@@ -32,6 +32,7 @@ BentoService
         :return: this BentoService instance
 
   .. automethod:: bentoml.BentoService.pack
+    :noindex:
 
   .. _bentoml-bentoservice-save-label:
 

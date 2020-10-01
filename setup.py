@@ -90,6 +90,7 @@ docs_requires = [
     "sphinx_rtd_theme",
     "sphinxcontrib-fulltoc",
     "sphinxcontrib-spelling",
+    "pyenchant",
 ]
 
 dev_all = install_requires + dev_requires + docs_requires

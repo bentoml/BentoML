@@ -22,6 +22,7 @@ message DeploymentSpec {
     AWS_SAGEMAKER = 2;
     AWS_LAMBDA = 3;
     AZURE_FUNCTIONS = 4;
+    AWS_EC2 = 5;
   }
 
   message CustomOperatorConfig {
@@ -49,6 +50,7 @@ message DeploymentSpec {
     int32 memory_size = 3;
     int32 timeout = 4;
   }
+
 
   message AzureFunctionsOperatorConfig {
       // Similar to region value in AWS

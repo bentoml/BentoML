@@ -213,7 +213,12 @@ If you need to look at the logs of your deployed model, we can view these within
     REPORT RequestId: 11ee8a7a-9884-454a-b008-fd814d9b1781 Duration: 14.97 ms Billed Duration: 100 ms Memory Size: 1024 MB...
     ...
 
-If you'd like to have some more detailed analytics into your logs, you may notice that we log some more detailed JSON data as debug info. There are three main fields that are logged. `event` (AWS Lambda Event Object), `prediction` (response body), and `status_code` (HTTP Response Code). You can read more about the `event` object here: https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html. An example of the prediction JSON is as follows,
+If you'd like to have some more detailed analytics into your logs, you may notice that we log
+some more detailed JSON data as debug info. There are three main fields that are logged.
+`event` (AWS Lambda Event Object), `prediction` (response body), and `status_code` (HTTP Response Code).
+You can read more about the `event` object here:
+https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html.
+An example of the prediction JSON is as follows,
 
 .. code-block:: bash
 
@@ -343,7 +348,7 @@ Deploy and manage AWS Lambda deployments with Kubernetes
 
 Create a Kubernetes secret with the the AWS credentials.
 
-Generate bas64 strings from the AWS credentials from your AWS config file.
+Generate base64 strings from the AWS credentials from your AWS config file.
 
 .. code-block:: bash
 
@@ -451,4 +456,6 @@ Run `kubectl apply` command to deploy Yatai service to the Kubernetes cluster
     $ kubectl apply -f yatai-service.yaml
 
 
+.. spelling::
 
+    analytics

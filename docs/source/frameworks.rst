@@ -8,7 +8,7 @@ BentoML example projects in the `bentoml/gallery <https://github.com/bentoml/gal
 repository, group by the ML training frameworks used in the project.
 
 You can download the examples below and run them on your computer. Links to run them on
-Google Colab are also available, although some of the features demo'd in the notebooks
+Google Colab are also available, although some of the features demoed in the notebooks
 does not work in the Colab environment due to its limitations, including running the
 BentoML API model server, building docker image or creating cloud deployment.
 
@@ -183,3 +183,4 @@ Example Projects:
     MLModel
     tokenizer
     AutoModelWithLMHead
+    nn

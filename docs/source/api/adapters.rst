@@ -85,3 +85,21 @@ The following adapter types are on our roadmap:
 * FileOutputAdapter
 * ImageOutputAdapter
 * MultiFileOutputAdapter
+
+.. spelling::
+
+    dtype
+    dtypes
+    jsons
+    serializable
+    PIL
+    apiserver
+    jpg
+    png
+    jpeg
+    webp
+    bmp
+    pilmode
+    cURL
+    Ints
+    stdout

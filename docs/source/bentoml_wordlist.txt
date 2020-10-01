@@ -79,3 +79,6 @@ Protobuf
 subclassing
 dockerization
 MLlib
+istio
+Nginx
+pre

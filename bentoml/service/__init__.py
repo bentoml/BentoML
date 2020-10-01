@@ -230,7 +230,7 @@ def env_decorator(
             of the file
         conda_channels: list of extra conda channels to be used
         conda_dependencies: list of conda dependencies required
-        conda_env_yml_file: use a pre-defined conda environment yml filej
+        conda_env_yml_file: use a pre-defined conda environment yml file
         setup_sh: user defined setup bash script, it is executed in docker build time
         docker_base_image: used for customizing the docker container image built with
             BentoML saved bundle. Base image must either have both `bash` and `conda`
@@ -658,7 +658,7 @@ class BentoService:
 
         :param base_path: optional - override repository base path
         :param version: optional - save with version override
-        :param labels: optional - labels dictory
+        :param labels: optional - labels dictionary
         :return: saved_path: file path to where the BentoService is saved
         """
         return save(self, base_path, version, labels)

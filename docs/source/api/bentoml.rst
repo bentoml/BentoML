@@ -75,3 +75,14 @@ save_to_dir
 load
 ++++
 .. autofunction:: bentoml.load
+
+
+.. spelling::
+
+    inferencing
+    docstring
+    env
+    pre
+    yml
+    ver
+    dir

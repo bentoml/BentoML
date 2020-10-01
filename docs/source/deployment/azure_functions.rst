@@ -219,7 +219,7 @@ With the default authorization setting, your Azure Functions deployment is visib
 all.  Open your browser and visit the URL in hostNames. You should see the web UI
 provided by BentoML API server.
 
-To test the prediction API in the Azure Functions deployment, you could use the web ui
+To test the prediction API in the Azure Functions deployment, you could use the web UI
 mentioned above or you could make a `curl` request to the endpoint.
 
 
@@ -379,3 +379,7 @@ Run `kubectl apply` command to deploy Yatai service to the Kubernetes cluster
 
     $ kubectl apply -f yatai-service.yaml
 
+
+.. spelling::
+
+    hostNames

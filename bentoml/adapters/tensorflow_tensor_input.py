@@ -38,7 +38,7 @@ class TfTensorInput(StringInput):
     Tensor input adapter for Tensorflow models.
     Transform incoming tf tensor data from http request, cli or lambda event into
     tf tensor.
-    The behaviour should be compatible with tensorflow serving REST API:
+    The behavior should be compatible with tensorflow serving REST API:
     * https://www.tensorflow.org/tfx/serving/api_rest#classify_and_regress_api
     * https://www.tensorflow.org/tfx/serving/api_rest#predict_api
 

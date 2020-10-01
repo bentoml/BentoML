@@ -68,3 +68,7 @@ NGINX ≥ 1.13.9
 More options of gRPC NGINX configuration:
 `https://www.nginx.com/blog/nginx-1-13-10-grpc/ <https://www.nginx.com/blog/nginx-1-13-10-grpc/>`__
 
+.. spelling::
+
+    Cleartext
+    proxying

@@ -49,3 +49,7 @@ ___________
    api/index
    cli
    faq
+
+.. spelling::
+
+   scalable

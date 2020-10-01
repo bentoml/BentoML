@@ -275,3 +275,8 @@ Clean up deployment
 .. code-block:: bash
 
     kubectl delete namespace bentoml
+
+
+.. spelling::
+
+    knative

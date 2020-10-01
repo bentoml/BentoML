@@ -135,7 +135,7 @@ the models you and your team have created overtime.
     The BentoService class can not be defined in the :code:`__main__` module, meaning
     the class itself should not be defined in a Jupyter notebook cell or a python
     interactive shell. You can however use the :code:`%writefile` magic command in
-    jupyter notebook to write the BentoService class definition to a separate file, see
+    Jupyter notebook to write the BentoService class definition to a separate file, see
     example in `BentoML quickstart notebook <https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
 
 
@@ -1191,5 +1191,6 @@ This command extends BentoML to be useful in a CI workflow or to provide a rapid
     IoT
     programmatically
     Jupyter
+    jupyter
     installable
     zA

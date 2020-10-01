@@ -28,88 +28,12 @@ and [BentoML Discussions](https://github.com/bentoml/BentoML/discussions).
 [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
 
-- [How it works](https://github.com/bentoml/BentoML#how-bentoml-works)
-- [Documentation](https://docs.bentoml.org/)
-- [Getting Started](https://docs.bentoml.org/en/stable/quickstart.html)
-- [Example Gallery](https://github.com/bentoml/gallery)
+- [Documentation](https://github.com/bentoml/BentoML#documentation)
+- [Introduction](https://github.com/bentoml/BentoML#Introduction)
 - [Why BentoML](https://github.com/bentoml/BentoML#why-bentoml)
 - [Contributing](https://github.com/bentoml/BentoML#contributing)
 - [License](https://github.com/bentoml/BentoML/blob/master/LICENSE)
 
-
-## How BentoML works
-
-BentoML provides abstractions for creating a prediction service that's bundled with 
-trained models. User can define inference APIs with serving logic with Python code and 
-specify the expected input/output data type:
-
-```python
-import pandas as pd
-
-from bentoml import env, artifacts, api, BentoService
-from bentoml.adapters import DataframeInput
-from bentoml.frameworks.sklearn import SklearnModelArtifact
-
-from my_library import preprocess
-
-@env(infer_pip_packages=True)
-@artifacts([SklearnModelArtifact('my_model')])
-class MyPredictionService(BentoService):
-    """
-    A simple prediction service exposing a Scikit-learn model
-    """
-
-    @api(input=DataframeInput(orient="records"), batch=True)
-    def predict(self, df: pd.DataFrame):
-        """
-        An inference API named `predict` with Dataframe input adapter, which defines
-        how HTTP requests or CSV files get converted to a pandas Dataframe object as the
-        inference API function input
-        """
-        model_input = preprocess(df)
-        return self.artifacts.my_model.predict(model_input)
-```
-
-At the end of your model training pipeline, import your BentoML prediction service
-class, pack it with your trained model, and persist the entire prediction service with
-`save` call at the end:
-
-```python
-from my_prediction_service import MyPredictionService
-svc = MyPredictionService()
-svc.pack('my_model', my_sklearn_model)
-svc.save()  # default saves to ~/bentoml/repository/MyPredictionService/{version}/
-```
-
-This will save all the code files, serialized models, and configs required for 
-reproducing this prediction service for inference. BentoML automatically captures all
-the pip package dependencies and local python code dependencies, and versioned together
-with other code and model files in one place.
-
-With the saved prediction service, user can start a local API server hosting it:
-```bash
-bentoml serve MyPredictionService:latest
-```
-
-And create a docker container image for this API model server with one command:
-```bash
-bentoml containerize my_prediction_service MyPredictionService:latest -t my_prediction_service:latest
-
-docker run -p 5000:5000 my_prediction_service:latest
-```
-
-The container image produced will have all the required dependencies installed. Besides
-the model inference API, the containerized BentoML model server also comes with
-instrumentations, metrics, health check endpoint, prediction logging, tracing, which
-makes it easy for your DevOps team to integrate with and deploy in production.
-
-If you are at a small team without DevOps support, BentoML also provides an [one-click
-deployment option](https://github.com/bentoml/BentoML#deployment-options), which deploys
-the model server API to cloud platforms with minimum setup.
-
-Read the [Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html) 
-to learn more about the basic functionalities of BentoML. You can also try it out 
-[here on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb).
 
 ## Documentation
 
@@ -189,6 +113,81 @@ to understand which deployment option is best suited for your use case.
   - [Google Cloud Run](https://docs.bentoml.org/en/latest/deployment/google_cloud_run.html)
   - [Azure container instance](https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html)
   - [Heroku](https://docs.bentoml.org/en/latest/deployment/heroku.html)
+
+
+## Introduction
+
+BentoML provides abstractions for creating a prediction service that's bundled with 
+trained models. User can define inference APIs with serving logic with Python code and 
+specify the expected input/output data type:
+
+```python
+import pandas as pd
+
+from bentoml import env, artifacts, api, BentoService
+from bentoml.adapters import DataframeInput
+from bentoml.frameworks.sklearn import SklearnModelArtifact
+
+from my_library import preprocess
+
+@env(infer_pip_packages=True)
+@artifacts([SklearnModelArtifact('my_model')])
+class MyPredictionService(BentoService):
+    """
+    A simple prediction service exposing a Scikit-learn model
+    """
+
+    @api(input=DataframeInput(orient="records"), batch=True)
+    def predict(self, df: pd.DataFrame):
+        """
+        An inference API named `predict` with Dataframe input adapter, which defines
+        how HTTP requests or CSV files get converted to a pandas Dataframe object as the
+        inference API function input
+        """
+        model_input = preprocess(df)
+        return self.artifacts.my_model.predict(model_input)
+```
+
+At the end of your model training pipeline, import your BentoML prediction service
+class, pack it with your trained model, and persist the entire prediction service with
+`save` call at the end:
+
+```python
+from my_prediction_service import MyPredictionService
+svc = MyPredictionService()
+svc.pack('my_model', my_sklearn_model)
+svc.save()  # default saves to ~/bentoml/repository/MyPredictionService/{version}/
+```
+
+This will save all the code files, serialized models, and configs required for 
+reproducing this prediction service for inference. BentoML automatically captures all
+the pip package dependencies and local python code dependencies, and versioned together
+with other code and model files in one place.
+
+With the saved prediction service, user can start a local API server hosting it:
+```bash
+bentoml serve MyPredictionService:latest
+```
+
+And create a docker container image for this API model server with one command:
+```bash
+bentoml containerize my_prediction_service MyPredictionService:latest -t my_prediction_service:latest
+
+docker run -p 5000:5000 my_prediction_service:latest
+```
+
+The container image produced will have all the required dependencies installed. Besides
+the model inference API, the containerized BentoML model server also comes with
+instrumentations, metrics, health check endpoint, prediction logging, tracing, which
+makes it easy for your DevOps team to integrate with and deploy in production.
+
+If you are at a small team without DevOps support, BentoML also provides an [one-click
+deployment option](https://github.com/bentoml/BentoML#deployment-options), which deploys
+the model server API to cloud platforms with minimum setup.
+
+Read the [Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html) 
+to learn more about the basic functionalities of BentoML. You can also try it out 
+[here on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb).
 
 
 ## Why BentoML

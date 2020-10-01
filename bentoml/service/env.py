@@ -310,14 +310,6 @@ class BentoServiceEnv(object):
                     # pin current version if the package has not been added
                     self.add_pip_package(f"{pkg_name}=={pkg_version}")
 
-    def add_service_dependencies(self, bento_service):
-        for api in bento_service._inference_apis:
-            self.add_pip_packages(api.input_adapter.pip_dependencies)
-            self.add_pip_packages(api.output_adapter.pip_dependencies)
-
-        for artifact in bento_service.artifacts.get_artifact_list():
-            artifact.set_dependencies(self)
-
     def save(self, path):
         # Parse pip packages from specified requirements.txt file, note that this file
         # may not be presented in the docker container, but its content will be parsed

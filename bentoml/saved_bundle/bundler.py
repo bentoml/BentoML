@@ -102,7 +102,6 @@ def save_to_dir(bento_service, path, version=None, silent=False):
 
     # write conda environment, requirement.txt
     bento_service.env.infer_pip_packages(bento_service)
-    bento_service.env.add_service_dependencies(bento_service)
     bento_service.env.save(path)
 
     # Copy all local python modules used by the module containing the `bento_service`'s

@@ -419,6 +419,17 @@ class BentoService:
 
         self._config_artifacts()
         self._config_inference_apis()
+        self._config_environments()
+
+    def _config_environments(self):
+        self._env = self.__class__._env or BentoServiceEnv()
+
+        for api in self._inference_apis:
+            self._env.add_pip_packages(api.input_adapter.pip_dependencies)
+            self._env.add_pip_packages(api.output_adapter.pip_dependencies)
+
+        for artifact in self.artifacts.get_artifact_list():
+            artifact.set_dependencies(self.env)
 
     def _config_inference_apis(self):
         self._inference_apis = []

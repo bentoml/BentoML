@@ -21,8 +21,8 @@ from bentoml.service.artifacts.common import JSONArtifact
 from bentoml.service.artifacts.common import PickleArtifact
 
 from bentoml.frameworks.coreml import CoreMLModelArtifact
-from bentoml.frameworks.fastai import FastaiModelArtifact
-from bentoml.frameworks.fastai2 import Fastai2ModelArtifact
+from bentoml.frameworks.fastai import Fastai1ModelArtifact as FastaiModelArtifact
+from bentoml.frameworks.fastai import FastaiModelArtifact as Fastai2ModelArtifact
 from bentoml.frameworks.fasttext import FasttextModelArtifact
 from bentoml.frameworks.h2o import H2oModelArtifact
 from bentoml.frameworks.keras import KerasModelArtifact

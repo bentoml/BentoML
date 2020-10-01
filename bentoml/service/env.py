@@ -159,6 +159,7 @@ class BentoServiceEnv(object):
         self._pip_index_url = pip_index_url
         self._pip_trusted_host = pip_trusted_host
         self._pip_extra_index_url = pip_extra_index_url
+        self._requirements_txt_file = requirements_txt_file
 
         self._conda_env = CondaEnv(
             channels=conda_channels,
@@ -174,9 +175,6 @@ class BentoServiceEnv(object):
 
         if pip_packages:
             self.add_pip_packages(pip_packages)
-
-        if requirements_txt_file:
-            self.add_packages_from_requirements_txt_file(requirements_txt_file)
 
         self._infer_pip_packages = infer_pip_packages
 
@@ -321,6 +319,12 @@ class BentoServiceEnv(object):
             artifact.set_dependencies(self)
 
     def save(self, path):
+        # Parse pip packages from specified requirements.txt file, note that this file
+        # may not be presented in the docker container, but its content will be parsed
+        # and added to the new requirements.txt file generated in the Bento
+        if self._requirements_txt_file:
+            self.add_packages_from_requirements_txt_file(self._requirements_txt_file)
+
         conda_yml_file = os.path.join(path, "environment.yml")
         self._conda_env.write_to_yaml_file(conda_yml_file)
 

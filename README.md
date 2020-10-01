@@ -52,7 +52,7 @@ Online serving with API model server:
 * **Containerized model server** for production deployment with Docker, Kubernetes, OpenShift, AWS ECS, Azure, GCP GKE, etc
 * **Adaptive micro-batching** for optimal online serving performance
 * Discover and package all dependencies automatically, including PyPI, conda packages and local python modules
-* Support **multiple ML frameworks** including PyTorch, TensorFlow, Scikit-Learn, XGBoost, and [many more](https://github.com/bentoml/BentoML#frameworks)
+* Support **multiple ML frameworks** including PyTorch, TensorFlow, Scikit-Learn, XGBoost, and [many more](https://github.com/bentoml/BentoML#ml-frameworks)
 * Serve compositions of **multiple models**
 * Serve **multiple endpoints** in one model server
 * Serve any Python code along with trained models
@@ -171,7 +171,7 @@ bentoml serve MyPredictionService:latest
 
 And create a docker container image for this API model server with one command:
 ```bash
-bentoml containerize my_prediction_service MyPredictionService:latest -t my_prediction_service:latest
+bentoml containerize MyPredictionService:latest -t my_prediction_service:latest
 
 docker run -p 5000:5000 my_prediction_service:latest
 ```

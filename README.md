@@ -32,7 +32,7 @@ and [BentoML Discussions](https://github.com/bentoml/BentoML/discussions).
 - [Introduction](https://github.com/bentoml/BentoML#Introduction)
 - [Why BentoML](https://github.com/bentoml/BentoML#why-bentoml)
 - [Contributing](https://github.com/bentoml/BentoML#contributing)
-- [License](https://github.com/bentoml/BentoML/blob/master/LICENSE)
+- [License](https://github.com/bentoml/BentoML#license)
 
 
 ## Documentation
@@ -67,7 +67,7 @@ Advanced workflow for model serving and deployment:
 * Launch inference run from CLI or Python, which enables **CI/CD** testing, programmatic 
     access and **batch offline inference job**
 * **One-click deployment** to cloud platforms including AWS Lambda, AWS SageMaker, and Azure Functions
-* Distributed batch job or streaming job with **Apache Spark** (improved Spark support is on roadmap)
+* Distributed batch job or streaming job with **Apache Spark** (improved Spark support is on the roadmap)
 * **Advanced model deployment workflows** for Kubernetes, including auto-scaling, scale-to-zero, A/B testing, canary deployment, and multi-armed-bandit (roadmap)
 * Deep integration with ML experimentation platforms including MLFlow, Kubeflow (roadmap)
 
@@ -197,7 +197,7 @@ is a sequential process across data science, engineering and DevOps teams: after
 model is trained by the data science team, they hand it over to the engineering team to
 refine and optimize code and creates an API, before DevOps can deploy.
 
-And most importantly, Data Science teams want to continously repeat this process,
+And most importantly, Data Science teams want to continuously repeat this process,
 monitor the models deployed in production and ship new models quickly. It often takes
 months for an engineering team to build a model serving & deployment solution that allow
 data science teams to ship new models in a repeatable and reliable way.
@@ -231,9 +231,10 @@ Want to help build BentoML? Check out our
 ## Releases
 
 BentoML is under active development and is evolving rapidly.
-Currently it is a Beta release, __we may change APIs in future releases__.
+It is currently a Beta release, __we may change APIs in future releases__ and there
+are still major features being worked on.
 
-Read more about the latest features and changes in BentoML from the [releases page](https://github.com/bentoml/BentoML/releases).
+Read more about the latest updates from the [releases page](https://github.com/bentoml/BentoML/releases).
 
 
 ## Usage Tracking

@@ -112,3 +112,4 @@ It is also possible to invoke R by customizing a Python model artifact class in 
 
     SavedModel
     pre
+    jupyter

@@ -103,3 +103,4 @@ The following adapter types are on our roadmap:
     cURL
     Ints
     stdout
+    imageio

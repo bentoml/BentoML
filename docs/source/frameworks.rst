@@ -184,3 +184,5 @@ Example Projects:
     tokenizer
     AutoModelWithLMHead
     nn
+    fasttext
+    onnx

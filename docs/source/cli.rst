@@ -17,3 +17,5 @@ CLI Reference
     POSIX
     ui
     filesystem
+    gRPC
+

@@ -1190,5 +1190,6 @@ This command extends BentoML to be useful in a CI workflow or to provide a rapid
     frontend
     IoT
     programmatically
+    Jupyter
     installable
     zA

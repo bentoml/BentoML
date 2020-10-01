@@ -38,7 +38,7 @@ __all__ = [
 
 
 @contextmanager
-def reserve_free_port(host='localhost'):
+def reserve_free_port(host="localhost"):
     """
     detect free port and reserve until exit the context
     """
@@ -75,8 +75,8 @@ def pb_to_yaml(message: Message) -> str:
 def ProtoMessageToDict(protobuf_msg: Message, **kwargs) -> object:
     from google.protobuf.json_format import MessageToDict
 
-    if 'preserving_proto_field_name' not in kwargs:
-        kwargs['preserving_proto_field_name'] = True
+    if "preserving_proto_field_name" not in kwargs:
+        kwargs["preserving_proto_field_name"] = True
 
     return MessageToDict(protobuf_msg, **kwargs)
 

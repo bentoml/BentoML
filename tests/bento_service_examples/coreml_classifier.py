@@ -8,7 +8,7 @@ from coremltools.models import MLModel  # pylint: disable=import-error
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([CoreMLModelArtifact('model')])
+@bentoml.artifacts([CoreMLModelArtifact("model")])
 class CoreMLClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df: pd.DataFrame) -> float:

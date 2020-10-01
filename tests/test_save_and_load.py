@@ -24,7 +24,7 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
 
     test_model = TestModel()
     svc = example_bento_service_class()
-    svc.pack('model', test_model)
+    svc.pack("model", test_model)
 
     assert svc.predict(1000) == 2000
     version = "test_" + uuid.uuid4().hex
@@ -35,7 +35,7 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
     expected_version = "2.10.{}".format(version)
     assert model_service.version == expected_version
 
-    api = model_service.get_inference_api('predict')
+    api = model_service.get_inference_api("predict")
     assert api.name == "predict"
     assert api.batch
     assert api.mb_max_latency == 1000
@@ -52,12 +52,12 @@ def test_warning_when_save_without_decalred_artifact(
 ):
     svc = example_bento_service_class()
 
-    with mock.patch('bentoml.saved_bundle.bundler.logger') as log_mock:
+    with mock.patch("bentoml.saved_bundle.bundler.logger") as log_mock:
         svc.save_to_dir(str(tmpdir))
         log_mock.warning.assert_called_once_with(
             "Missing declared artifact '%s' for BentoService '%s'",
-            'model',
-            'ExampleBentoService',
+            "model",
+            "ExampleBentoService",
         )
 
 
@@ -80,7 +80,7 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
     expected_version = "2.10.{}".format(version)
     assert model_service.version == expected_version
 
-    api = model_service.get_inference_api('predict')
+    api = model_service.get_inference_api("predict")
     assert api.name == "predict"
     assert isinstance(api.input_adapter, DataframeInput)
     assert api.user_func(1) == 2
@@ -113,7 +113,7 @@ def test_save_duplicated_bento_exception_raised(example_bento_service_class):
     assert svc.version == svc_metadata.version
 
     with pytest.raises(BentoMLException):
-        with patch.object(bentoml.BentoService, 'save_to_dir') as save_to_dir_method:
+        with patch.object(bentoml.BentoService, "save_to_dir") as save_to_dir_method:
             # attempt to save again
             svc.save()
             save_to_dir_method.assert_not_called()
@@ -138,7 +138,7 @@ def test_pyversion_warning_on_load(
 
     test_model = TestModel()
     svc = example_bento_service_class()
-    svc.pack('model', test_model)
+    svc.pack("model", test_model)
 
     # Should not warn for default `_python_version` value
     match_dir = tmp_path_factory.mktemp("match")

@@ -64,7 +64,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
 
     def __init__(self, name):
         super(FastaiModelArtifact, self).__init__(name)
-        self._file_name = name + '.pkl'
+        self._file_name = name + ".pkl"
         self._model = None
 
     def _model_file_path(self, base_path):
@@ -95,7 +95,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
             "BentoService definition file or manually add them via "
             "`@env(pip_packages=['torchvision'])` when defining a BentoService"
         )
-        env.add_pip_packages(['torch', "fastai<2.0.0"])
+        env.add_pip_packages(["torch", "fastai<2.0.0"])
 
     def save(self, dst):
         self._model.export(file=self._file_name)

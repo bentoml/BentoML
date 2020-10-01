@@ -30,7 +30,7 @@ if psutil.POSIX:
     #
     # Note: https://bugs.python.org/issue33725 claims that fork method may cause crashes
     # on MacOS.
-    multiprocessing.set_start_method('fork')
+    multiprocessing.set_start_method("fork")
 
 marshal_logger = logging.getLogger("bentoml.marshal")
 
@@ -60,7 +60,7 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
             "worker_class": "aiohttp.worker.GunicornWebWorker",
         }
         if workers:
-            self.options['workers'] = workers
+            self.options["workers"] = workers
         self.prometheus_lock = prometheus_lock
 
         self.outbound_port = outbound_port

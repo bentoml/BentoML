@@ -63,19 +63,19 @@ class DeploymentAPIClient:
         if is_all_namespaces:
             if namespace is not None:
                 logger.warning(
-                    'Ignoring `namespace=%s` due to the --all-namespace flag presented',
+                    "Ignoring `namespace=%s` due to the --all-namespace flag presented",
                     namespace,
                 )
             namespace = ALL_NAMESPACE_TAG
         if isinstance(operator, str):
-            if operator == 'sagemaker':
+            if operator == "sagemaker":
                 operator = DeploymentSpec.AWS_SAGEMAKER
-            elif operator == 'lambda':
+            elif operator == "lambda":
                 operator = DeploymentSpec.AWS_LAMBDA
             elif operator == DeploymentSpec.AZURE_FUNCTIONS:
-                operator = 'azure-functions'
+                operator = "azure-functions"
             else:
-                raise BentoMLException(f'Unrecognized operator {operator}')
+                raise BentoMLException(f"Unrecognized operator {operator}")
 
         list_deployment_request = ListDeploymentsRequest(
             limit=limit,
@@ -119,8 +119,8 @@ class DeploymentAPIClient:
             deployment_pb = deployment_info
         else:
             raise YataiDeploymentException(
-                'Unexpected argument type, expect deployment info to be str in yaml '
-                'format or a dict or a deployment protobuf obj, instead got: {}'.format(
+                "Unexpected argument type, expect deployment info to be str in yaml "
+                "format or a dict or a deployment protobuf obj, instead got: {}".format(
                     str(type(deployment_info))
                 )
             )
@@ -128,8 +128,8 @@ class DeploymentAPIClient:
         validation_errors = validate_deployment_pb(deployment_pb)
         if validation_errors:
             raise YataiDeploymentException(
-                f'Failed to validate deployment {deployment_pb.name}: '
-                f'{validation_errors}'
+                f"Failed to validate deployment {deployment_pb.name}: "
+                f"{validation_errors}"
             )
 
         # Make sure there is no active deployment with the same deployment name
@@ -141,8 +141,8 @@ class DeploymentAPIClient:
         if get_deployment_pb.status.status_code != status_pb2.Status.NOT_FOUND:
             raise BentoMLException(
                 f'Deployment "{deployment_pb.name}" already existed, use Update or '
-                f'Apply for updating existing deployment, delete the deployment, '
-                f'or use a different deployment name'
+                f"Apply for updating existing deployment, delete the deployment, "
+                f"or use a different deployment name"
             )
         apply_result = self.yatai_service.ApplyDeployment(
             ApplyDeploymentRequest(deployment=deployment_pb)
@@ -151,7 +151,7 @@ class DeploymentAPIClient:
             error_code, error_message = status_pb_to_error_code_and_message(
                 apply_result.status
             )
-            raise YataiDeploymentException(f'{error_code}:{error_message}')
+            raise YataiDeploymentException(f"{error_code}:{error_message}")
         if wait:
             self._wait_deployment_action_complete(
                 deployment_pb.name, deployment_pb.namespace
@@ -167,8 +167,8 @@ class DeploymentAPIClient:
             deployment_pb = deployment_info
         else:
             raise YataiDeploymentException(
-                'Unexpected argument type, expect deployment info to be str in yaml '
-                'format or a dict or a deployment protobuf obj, instead got: {}'.format(
+                "Unexpected argument type, expect deployment info to be str in yaml "
+                "format or a dict or a deployment protobuf obj, instead got: {}".format(
                     str(type(deployment_info))
                 )
             )
@@ -176,8 +176,8 @@ class DeploymentAPIClient:
         validation_errors = validate_deployment_pb(deployment_pb)
         if validation_errors:
             raise YataiDeploymentException(
-                f'Failed to validate deployment {deployment_pb.name}: '
-                f'{validation_errors}'
+                f"Failed to validate deployment {deployment_pb.name}: "
+                f"{validation_errors}"
             )
 
         apply_result = self.yatai_service.ApplyDeployment(
@@ -187,7 +187,7 @@ class DeploymentAPIClient:
             error_code, error_message = status_pb_to_error_code_and_message(
                 apply_result.status
             )
-            raise YataiDeploymentException(f'{error_code}:{error_message}')
+            raise YataiDeploymentException(f"{error_code}:{error_message}")
         if wait:
             self._wait_deployment_action_complete(
                 deployment_pb.name, deployment_pb.namespace
@@ -304,10 +304,10 @@ class DeploymentAPIClient:
         if get_deployment_result.status.status_code != status_pb2.Status.OK:
             get_deployment_status = get_deployment_result.status
             raise BentoMLException(
-                f'Failed to retrieve current deployment {deployment_name} in '
-                f'{namespace}. '
-                f'{status_pb2.Status.Code.Name(get_deployment_status.status_code)}'
-                f':{get_deployment_status.error_message}'
+                f"Failed to retrieve current deployment {deployment_name} in "
+                f"{namespace}. "
+                f"{status_pb2.Status.Code.Name(get_deployment_status.status_code)}"
+                f":{get_deployment_status.error_message}"
             )
 
         deployment_pb = get_deployment_result.deployment
@@ -329,7 +329,7 @@ class DeploymentAPIClient:
             deployment_pb.spec.bento_version = bento_version
 
         logger.debug(
-            'Updated configuration for sagemaker deployment %s', deployment_pb.name
+            "Updated configuration for sagemaker deployment %s", deployment_pb.name
         )
 
         return self.apply(deployment_pb, wait)
@@ -365,6 +365,13 @@ class DeploymentAPIClient:
         del list_result.deployments[:]
         list_result.deployments.extend(sagemaker_deployments)
         return list_result
+
+    def create_ec2_deployment(self, name, bento_name, bento_version, wait=None):
+        deployment_pb = Deployment(name=name)
+        deployment_pb.spec.bento_name = bento_name
+        deployment_pb.spec.bento_version = bento_version
+        deployment_pb.spec.operator = DeploymentSpec.AWS_EC2
+        return self.create(deployment_pb, wait)
 
     def create_lambda_deployment(
         self,
@@ -433,8 +440,8 @@ class DeploymentAPIClient:
             )
             error_message = status_pb2.status.error_message
             raise BentoMLException(
-                f'Failed to retrieve current deployment {deployment_name} '
-                f'in {namespace}.  {error_code}:{error_message}'
+                f"Failed to retrieve current deployment {deployment_name} "
+                f"in {namespace}.  {error_code}:{error_message}"
             )
         deployment_pb = get_deployment_result.deployment
         if bento_name:
@@ -445,7 +452,7 @@ class DeploymentAPIClient:
             deployment_pb.spec.aws_lambda_operator_config.memory_size = memory_size
         if timeout:
             deployment_pb.spec.aws_lambda_operator_config.timeout = timeout
-        logger.debug('Updated configuration for Lambda deployment %s', deployment_name)
+        logger.debug("Updated configuration for Lambda deployment %s", deployment_name)
 
         return self.apply(deployment_pb, wait)
 
@@ -522,8 +529,8 @@ class DeploymentAPIClient:
             )
             error_message = status_pb2.status.error_message
             raise BentoMLException(
-                f'Failed to retrieve current deployment {deployment_name} in '
-                f'{namespace}. {error_code}:{error_message}'
+                f"Failed to retrieve current deployment {deployment_name} in "
+                f"{namespace}. {error_code}:{error_message}"
             )
         deployment_pb = get_deployment_result.deployment
         if bento_name:

@@ -15,7 +15,7 @@ def input_adapter():
 
 
 def read_bin(path):
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         return f.read()
 
 
@@ -32,7 +32,7 @@ def test_anno_image_input_extract_args(input_adapter, img_file, json_file):
 
     for img, json_obj in zip(*args):
         assert img.shape == (10, 10, 3)
-        assert json_obj['name'] == "kaith"
+        assert json_obj["name"] == "kaith"
 
 
 def test_anno_image_input_extract_args_custom_extension(
@@ -53,7 +53,7 @@ def test_anno_image_input_extract_args_custom_extension(
     args = input_adapter.extract_user_func_args([task])
     for img, json_obj in zip(*args):
         assert img.shape == (10, 10, 3)
-        assert json_obj['name'] == "kaith"
+        assert json_obj["name"] == "kaith"
 
 
 def test_anno_image_input_extract_args_missing_image(input_adapter, json_file):
@@ -126,7 +126,7 @@ def test_anno_image_input_aws_lambda_event_bad_content_type(
             annotations=("test.json", read_bin(json_file)),
         )
     )
-    headers = {"Content-Type": 'image/jpeg'}
+    headers = {"Content-Type": "image/jpeg"}
     aws_lambda_event = {"body": body, "headers": headers}
     task = input_adapter.from_aws_lambda_event(aws_lambda_event)
 

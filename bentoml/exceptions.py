@@ -14,7 +14,7 @@
 
 from bentoml.utils.lazy_loader import LazyLoader
 
-yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
+yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
 
 def _proto_status_code_to_http_status_code(proto_status_code, fallback):

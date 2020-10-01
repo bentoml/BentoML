@@ -26,7 +26,7 @@ from py_zipkin.transport import BaseTransportHandler
 from py_zipkin.util import generate_random_64bit_string
 
 
-trace_stack_var = ContextVar('trace_stack', default=None)
+trace_stack_var = ContextVar("trace_stack", default=None)
 
 
 def load_http_headers(headers):
@@ -36,8 +36,8 @@ def load_http_headers(headers):
         headers.get("X-B3-TraceId"),
         headers.get("X-B3-SpanId"),
         headers.get("X-B3-ParentSpanId"),
-        headers.get("X-B3-Flags") or '0',
-        False if headers.get("X-B3-Sampled") == '0' else True,
+        headers.get("X-B3-Flags") or "0",
+        False if headers.get("X-B3-Sampled") == "0" else True,
     )
 
 
@@ -46,7 +46,7 @@ def make_http_headers(attrs):
         "X-B3-TraceId": attrs.trace_id,
         "X-B3-SpanId": attrs.span_id,
         "X-B3-Flags": attrs.flags,
-        "X-B3-Sampled": attrs.is_sampled and '1' or '0',
+        "X-B3-Sampled": attrs.is_sampled and "1" or "0",
     }
     if attrs.parent_span_id:
         headers["X-B3-ParentSpanId"] = attrs.parent_span_id
@@ -68,7 +68,7 @@ def make_new_attrs(sample_rate=1.0):
         generate_random_64bit_string(),
         generate_random_64bit_string(),
         None,
-        '0',
+        "0",
         sample_rate and random.random() < sample_rate or False,
     )
 
@@ -85,14 +85,14 @@ class HttpTransport(BaseTransportHandler):
         requests.post(
             self.server_url,
             data=payload,
-            headers={'Content-Type': 'application/x-thrift'},
+            headers={"Content-Type": "application/x-thrift"},
         )
 
 
 class AsyncHttpTransport(BaseTransportHandler):
-    '''
+    """
     add trace data transporting task into default eventloop
-    '''
+    """
 
     def __init__(self, server_url):
         super(AsyncHttpTransport, self).__init__()
@@ -113,7 +113,7 @@ class AsyncHttpTransport(BaseTransportHandler):
             self._async_post(
                 self.server_url,
                 data=payload,
-                headers={'Content-Type': 'application/x-thrift'},
+                headers={"Content-Type": "application/x-thrift"},
             )
         )
 

@@ -71,7 +71,7 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
             "loglevel": config("logging").get("LEVEL").upper(),
         }
         if workers:
-            self.options['workers'] = workers
+            self.options["workers"] = workers
         self.prometheus_lock = prometheus_lock
 
         super(GunicornBentoServer, self).__init__()

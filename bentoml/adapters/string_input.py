@@ -54,7 +54,7 @@ class StringInput(BaseInputAdapter):
 
     @decompress_gzip_request
     def from_http_request(self, req: HTTPRequest) -> InferenceTask[str]:
-        if req.headers.content_type == 'multipart/form-data':
+        if req.headers.content_type == "multipart/form-data":
             _, _, files = HTTPRequest.parse_form_data(req)
             if len(files) != 1:
                 return InferenceTask().discard(
@@ -64,7 +64,7 @@ class StringInput(BaseInputAdapter):
                 )
             input_file = next(iter(files.values()))
             bytes_ = input_file.read()
-            charset = chardet.detect(bytes_)['encoding'] or "utf-8"
+            charset = chardet.detect(bytes_)["encoding"] or "utf-8"
         else:
             bytes_ = req.body
             charset = req.headers.charset or "utf-8"
@@ -82,13 +82,13 @@ class StringInput(BaseInputAdapter):
             )
 
     def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[str]:
-        return InferenceTask(aws_lambda_event=event, data=event.get('body', ""),)
+        return InferenceTask(aws_lambda_event=event, data=event.get("body", ""),)
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[str]]:
         for input_ in parse_cli_input(cli_args):
             try:
                 bytes_ = input_.read()
-                charset = chardet.detect(bytes_)['encoding'] or "utf-8"
+                charset = chardet.detect(bytes_)["encoding"] or "utf-8"
                 yield InferenceTask(
                     cli_args=cli_args, data=bytes_.decode(charset),
                 )

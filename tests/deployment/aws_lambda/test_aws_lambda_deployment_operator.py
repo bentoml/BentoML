@@ -24,19 +24,19 @@ from bentoml.yatai.proto.repository_pb2 import (
     GetBentoResponse,
 )
 
-mock_s3_bucket_name = 'test_deployment_bucket'
-mock_s3_prefix = 'prefix'
-mock_s3_path = 's3://{}/{}'.format(mock_s3_bucket_name, mock_s3_prefix)
+mock_s3_bucket_name = "test_deployment_bucket"
+mock_s3_prefix = "prefix"
+mock_s3_path = "s3://{}/{}".format(mock_s3_bucket_name, mock_s3_prefix)
 
 
 def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
-    bento_pb = Bento(name='bento_test_name', version='version1.1.1')
+    bento_pb = Bento(name="bento_test_name", version="version1.1.1")
     if repo_storage_type == BentoUri.LOCAL:
-        bento_pb.uri.uri = '/tmp/path/to/bundle'
+        bento_pb.uri.uri = "/tmp/path/to/bundle"
     bento_pb.uri.type = repo_storage_type
-    api = BentoServiceMetadata.BentoServiceApi(name='predict')
+    api = BentoServiceMetadata.BentoServiceApi(name="predict")
     bento_pb.bento_service_metadata.apis.extend([api])
-    bento_pb.bento_service_metadata.env.python_version = '3.7.0'
+    bento_pb.bento_service_metadata.env.python_version = "3.7.0"
     get_bento_response = GetBentoResponse(bento=bento_pb)
 
     yatai_service_mock = MagicMock()
@@ -45,13 +45,13 @@ def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
 
 
 def generate_lambda_deployment_pb():
-    test_deployment_pb = Deployment(name='test_aws_lambda', namespace='test-namespace')
-    test_deployment_pb.spec.bento_name = 'bento_name'
-    test_deployment_pb.spec.bento_version = 'v1.0.0'
+    test_deployment_pb = Deployment(name="test_aws_lambda", namespace="test-namespace")
+    test_deployment_pb.spec.bento_name = "bento_name"
+    test_deployment_pb.spec.bento_version = "v1.0.0"
     # DeploymentSpec.DeploymentOperator.AWS_LAMBDA
     test_deployment_pb.spec.operator = 3
-    test_deployment_pb.spec.aws_lambda_operator_config.region = 'us-west-2'
-    test_deployment_pb.spec.aws_lambda_operator_config.api_name = 'predict'
+    test_deployment_pb.spec.aws_lambda_operator_config.region = "us-west-2"
+    test_deployment_pb.spec.aws_lambda_operator_config.api_name = "predict"
     test_deployment_pb.spec.aws_lambda_operator_config.memory_size = 3008
     test_deployment_pb.spec.aws_lambda_operator_config.timeout = 6
 
@@ -60,7 +60,7 @@ def generate_lambda_deployment_pb():
 
 def test_aws_lambda_app_py(monkeypatch):
     def test_predict(value):
-        return {'body': value['body'], 'statusCode': 200}
+        return {"body": value["body"], "statusCode": 200}
 
     class Mock_bento_service_class(object):
         name = "mock_bento_service"
@@ -70,7 +70,7 @@ def test_aws_lambda_app_py(monkeypatch):
             return
 
         def get_inference_api(self, name):
-            if name == 'predict':
+            if name == "predict":
                 mock_api = Mock()
                 mock_api.handle_aws_lambda_event = test_predict
                 return mock_api
@@ -79,13 +79,13 @@ def test_aws_lambda_app_py(monkeypatch):
 
     mock_bento_service = Mock_bento_service_class()
 
-    monkeypatch.setenv('BENTOML_BENTO_SERVICE_NAME', 'Mock_bento_service')
-    monkeypatch.setenv('BENTOML_S3_BUCKET', 'Mock_s3_bucket')
-    monkeypatch.setenv('BENTOML_DEPLOYMENT_PATH_PREFIX', 'deployment/prefix')
-    monkeypatch.setenv('BENTOML_ARTIFACTS_PREFIX', 'mock_artifacts_prefix')
-    monkeypatch.setenv('BENTOML_API_NAME', 'predict')
+    monkeypatch.setenv("BENTOML_BENTO_SERVICE_NAME", "Mock_bento_service")
+    monkeypatch.setenv("BENTOML_S3_BUCKET", "Mock_s3_bucket")
+    monkeypatch.setenv("BENTOML_DEPLOYMENT_PATH_PREFIX", "deployment/prefix")
+    monkeypatch.setenv("BENTOML_ARTIFACTS_PREFIX", "mock_artifacts_prefix")
+    monkeypatch.setenv("BENTOML_API_NAME", "predict")
 
-    @patch('bentoml.load', return_value=mock_bento_service)
+    @patch("bentoml.load", return_value=mock_bento_service)
     def return_predict_func(_):
         from bentoml.yatai.deployment.aws_lambda.lambda_app import api_func
 
@@ -96,27 +96,27 @@ def test_aws_lambda_app_py(monkeypatch):
     with pytest.raises(RuntimeError):
         predict("Invalid Input Type", None)
 
-    assert predict({"headers": [], "body": 'test'}, None) == {
-        'body': 'test',
-        'statusCode': 200,
+    assert predict({"headers": [], "body": "test"}, None) == {
+        "body": "test",
+        "statusCode": 200,
     }
 
 
-@patch('shutil.rmtree', MagicMock())
-@patch('shutil.copytree', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.utils.cleanup_build_files', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.utils.call_sam_command', autospec=True)
+@patch("shutil.rmtree", MagicMock())
+@patch("shutil.copytree", MagicMock())
+@patch("bentoml.yatai.deployment.aws_lambda.utils.cleanup_build_files", MagicMock())
+@patch("bentoml.yatai.deployment.aws_lambda.utils.call_sam_command", autospec=True)
 def test_init_sam_project(mock_call_sam, tmpdir):
-    mock_sam_project_path = os.path.join(tmpdir, 'mock_sam_project')
-    mock_bento_bundle_path = os.path.join(tmpdir, 'mock_bento_service')
-    mock_deployment_name = 'mock_deployment'
-    mock_bento_name = 'mock_bento_name'
-    mock_api_names = ['predict']
-    mock_region = 'us-west-2'
-    mock_call_sam.return_value = 0, 'stdout', 'stderr'
+    mock_sam_project_path = os.path.join(tmpdir, "mock_sam_project")
+    mock_bento_bundle_path = os.path.join(tmpdir, "mock_bento_service")
+    mock_deployment_name = "mock_deployment"
+    mock_bento_name = "mock_bento_name"
+    mock_api_names = ["predict"]
+    mock_region = "us-west-2"
+    mock_call_sam.return_value = 0, "stdout", "stderr"
     os.mkdir(mock_sam_project_path)
     os.mkdir(mock_bento_bundle_path)
-    open(os.path.join(mock_bento_bundle_path, 'requirements.txt'), 'w').close()
+    open(os.path.join(mock_bento_bundle_path, "requirements.txt"), "w").close()
 
     init_sam_project(
         mock_sam_project_path,
@@ -127,53 +127,53 @@ def test_init_sam_project(mock_call_sam, tmpdir):
         mock_region,
     )
     assert os.path.isfile(
-        os.path.join(mock_sam_project_path, mock_deployment_name, 'app.py')
+        os.path.join(mock_sam_project_path, mock_deployment_name, "app.py")
     )
     assert os.path.isfile(
-        os.path.join(mock_sam_project_path, mock_deployment_name, 'requirements.txt')
+        os.path.join(mock_sam_project_path, mock_deployment_name, "requirements.txt")
     )
     assert os.path.isfile(
-        os.path.join(mock_sam_project_path, mock_deployment_name, '__init__.py')
+        os.path.join(mock_sam_project_path, mock_deployment_name, "__init__.py")
     )
 
 
 def test_generate_aws_lambda_template_yaml(tmpdir):
-    deployment_name = 'deployment_name'
-    api_names = ['predict', 'classify']
-    s3_bucket_name = 'test_bucket'
-    py_runtime = 'python3.7'
-    namespace = 'test'
+    deployment_name = "deployment_name"
+    api_names = ["predict", "classify"]
+    s3_bucket_name = "test_bucket"
+    py_runtime = "python3.7"
+    namespace = "test"
     memory_size = 3008
     timeout = 6
     _create_aws_lambda_cloudformation_template_file(
         str(tmpdir),
         namespace=namespace,
         deployment_name=deployment_name,
-        deployment_path_prefix='mock/deployment/path/prefix',
+        deployment_path_prefix="mock/deployment/path/prefix",
         api_names=api_names,
-        bento_service_name='mock_bento_service_name',
+        bento_service_name="mock_bento_service_name",
         s3_bucket_name=s3_bucket_name,
         py_runtime=py_runtime,
         memory_size=memory_size,
         timeout=timeout,
     )
-    template_path = os.path.join(str(tmpdir), 'template.yaml')
+    template_path = os.path.join(str(tmpdir), "template.yaml")
     yaml = YAML()
-    with open(template_path, 'rb') as f:
+    with open(template_path, "rb") as f:
         yaml_data = yaml.load(f.read())
-    assert yaml_data['Resources']['predict']['Properties']['Runtime'] == py_runtime
-    assert yaml_data['Resources']['classify']['Properties']['Handler'] == 'app.classify'
+    assert yaml_data["Resources"]["predict"]["Properties"]["Runtime"] == py_runtime
+    assert yaml_data["Resources"]["classify"]["Properties"]["Handler"] == "app.classify"
 
 
 def mock_lambda_related_operations(func):
-    @patch('subprocess.check_output', MagicMock())
+    @patch("subprocess.check_output", MagicMock())
     @mock_s3
     @patch(
-        'bentoml.yatai.deployment.aws_lambda.operator.get_default_aws_region',
-        MagicMock(return_value='mock_region'),
+        "bentoml.yatai.deployment.aws_lambda.operator.get_default_aws_region",
+        MagicMock(return_value="mock_region"),
     )
     def mock_wrapper(*args, **kwargs):
-        conn = boto3.client('s3', region_name='us-west-2')
+        conn = boto3.client("s3", region_name="us-west-2")
         conn.create_bucket(Bucket=mock_s3_bucket_name)
         return func(*args, **kwargs)
 
@@ -181,27 +181,27 @@ def mock_lambda_related_operations(func):
 
 
 @mock_lambda_related_operations
-@patch('shutil.rmtree', MagicMock())
-@patch('shutil.copytree', MagicMock())
-@patch('shutil.copy', MagicMock())
-@patch('os.listdir', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
+@patch("shutil.rmtree", MagicMock())
+@patch("shutil.copytree", MagicMock())
+@patch("shutil.copy", MagicMock())
+@patch("os.listdir", MagicMock())
+@patch("bentoml.yatai.deployment.aws_lambda.operator.init_sam_project", MagicMock())
+@patch("bentoml.yatai.deployment.aws_lambda.operator.lambda_package", MagicMock())
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template',
+    "bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template",
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy',
+    "bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy",
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.total_file_or_directory_size',
+    "bentoml.yatai.deployment.aws_lambda.operator.total_file_or_directory_size",
     MagicMock(return_value=250),
 )
-@patch('os.remove', MagicMock())
+@patch("os.remove", MagicMock())
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    "bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise",
     MagicMock(),
 )
 def test_aws_lambda_apply_under_bundle_size_limit_success():
@@ -216,31 +216,31 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 
 
 @mock_lambda_related_operations
-@patch('shutil.rmtree', MagicMock())
-@patch('shutil.copytree', MagicMock())
-@patch('shutil.copy', MagicMock())
-@patch('os.listdir', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
+@patch("shutil.rmtree", MagicMock())
+@patch("shutil.copytree", MagicMock())
+@patch("shutil.copy", MagicMock())
+@patch("os.listdir", MagicMock())
+@patch("bentoml.yatai.deployment.aws_lambda.operator.init_sam_project", MagicMock())
+@patch("bentoml.yatai.deployment.aws_lambda.operator.lambda_package", MagicMock())
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template',
+    "bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template",
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy',
+    "bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy",
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.total_file_or_directory_size',
+    "bentoml.yatai.deployment.aws_lambda.operator.total_file_or_directory_size",
     MagicMock(return_value=LAMBDA_FUNCTION_LIMIT + 1),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.'
-    'reduce_bundle_size_and_upload_extra_resources_to_s3',
+    "bentoml.yatai.deployment.aws_lambda.operator."
+    "reduce_bundle_size_and_upload_extra_resources_to_s3",
     MagicMock(),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    "bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise",
     MagicMock(),
 )
 def test_aws_lambda_apply_over_bundle_size_limit_success():
@@ -255,31 +255,31 @@ def test_aws_lambda_apply_over_bundle_size_limit_success():
 
 
 @mock_lambda_related_operations
-@patch('shutil.rmtree', MagicMock())
-@patch('shutil.copytree', MagicMock())
-@patch('shutil.copy', MagicMock())
-@patch('os.listdir', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
+@patch("shutil.rmtree", MagicMock())
+@patch("shutil.copytree", MagicMock())
+@patch("shutil.copy", MagicMock())
+@patch("os.listdir", MagicMock())
+@patch("bentoml.yatai.deployment.aws_lambda.operator.init_sam_project", MagicMock())
+@patch("bentoml.yatai.deployment.aws_lambda.operator.lambda_package", MagicMock())
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template',
+    "bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template",
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy',
+    "bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy",
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.total_file_or_directory_size',
+    "bentoml.yatai.deployment.aws_lambda.operator.total_file_or_directory_size",
     MagicMock(return_value=LAMBDA_FUNCTION_MAX_LIMIT + 1),
 )
-@patch('os.remove', MagicMock())
+@patch("os.remove", MagicMock())
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    "bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise",
     MagicMock(),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator._cleanup_s3_bucket_if_exist',
+    "bentoml.yatai.deployment.aws_lambda.operator._cleanup_s3_bucket_if_exist",
     MagicMock(),
 )
 def test_aws_lambda_apply_over_max_bundle_size_limit_fail():
@@ -293,18 +293,18 @@ def test_aws_lambda_apply_over_max_bundle_size_limit_fail():
 
 def test_aws_lambda_describe_still_in_progress():
     def mock_cf_response(_self, op_name, _kwarg):
-        if op_name == 'DescribeStacks':
-            return {'Stacks': [{'StackStatus': 'CREATE_IN_PROGRESS'}]}
+        if op_name == "DescribeStacks":
+            return {"Stacks": [{"StackStatus": "CREATE_IN_PROGRESS"}]}
         else:
-            raise Exception('This test does not handle operation {}'.format(op_name))
+            raise Exception("This test does not handle operation {}".format(op_name))
 
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     with patch(
-        'bentoml.yatai.deployment.aws_lambda.operator.get_default_aws_region',
-        MagicMock(return_value='mock_region'),
+        "bentoml.yatai.deployment.aws_lambda.operator.get_default_aws_region",
+        MagicMock(return_value="mock_region"),
     ):
-        with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
+        with patch("botocore.client.BaseClient._make_api_call", new=mock_cf_response):
             deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
             result_pb = deployment_operator.describe(test_deployment_pb)
             assert result_pb.status.status_code == status_pb2.Status.OK
@@ -313,31 +313,31 @@ def test_aws_lambda_describe_still_in_progress():
 
 def test_aws_lambda_describe_success():
     def mock_cf_response(_self, op_name, _kwarg):
-        if op_name == 'DescribeStacks':
+        if op_name == "DescribeStacks":
             return {
-                'Stacks': [
+                "Stacks": [
                     {
-                        'StackStatus': 'CREATE_COMPLETE',
-                        'Outputs': [
+                        "StackStatus": "CREATE_COMPLETE",
+                        "Outputs": [
                             {
-                                'OutputKey': 'EndpointUrl',
-                                'OutputValue': 'https://somefakelink.amazonaws.com'
-                                '/prod/predict',
+                                "OutputKey": "EndpointUrl",
+                                "OutputValue": "https://somefakelink.amazonaws.com"
+                                "/prod/predict",
                             }
                         ],
                     }
                 ]
             }
         else:
-            raise Exception('This test does not handle operation {}'.format(op_name))
+            raise Exception("This test does not handle operation {}".format(op_name))
 
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
     with patch(
-        'bentoml.yatai.deployment.aws_lambda.operator.get_default_aws_region',
-        MagicMock(return_value='mock_region'),
+        "bentoml.yatai.deployment.aws_lambda.operator.get_default_aws_region",
+        MagicMock(return_value="mock_region"),
     ):
-        with patch('botocore.client.BaseClient._make_api_call', new=mock_cf_response):
+        with patch("botocore.client.BaseClient._make_api_call", new=mock_cf_response):
             deployment_operator = AwsLambdaDeploymentOperator(yatai_service_mock)
             result_pb = deployment_operator.describe(test_deployment_pb)
             assert result_pb.status.status_code == status_pb2.Status.OK

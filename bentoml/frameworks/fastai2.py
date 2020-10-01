@@ -36,7 +36,7 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
 
     def __init__(self, name):
         super(Fastai2ModelArtifact, self).__init__(name)
-        self._file_name = name + '.pkl'
+        self._file_name = name + ".pkl"
         self._model = None
 
     def _model_file_path(self, base_path):
@@ -56,7 +56,7 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
     def load(self, path):
         fastai2_module = _import_fastai2_module()
 
-        model = fastai2_module.basics.load_learner(path + '/' + self._file_name)
+        model = fastai2_module.basics.load_learner(path + "/" + self._file_name)
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
@@ -67,7 +67,7 @@ class Fastai2ModelArtifact(BentoServiceArtifact):
             "BentoService definition file or manually add them via "
             "`@env(pip_packages=['torchvision'])` when defining a BentoService"
         )
-        env.add_pip_packages(['torch', "fastcore", "fastai2>=2.0.0"])
+        env.add_pip_packages(["torch", "fastcore", "fastai2>=2.0.0"])
 
     def save(self, dst):
         self._model.export(fname=self._file_name)

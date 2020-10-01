@@ -89,7 +89,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
                 "torch package is required to use PytorchModelArtifact"
             )
 
-        model = cloudpickle.load(open(self._file_path(path), 'rb'))
+        model = cloudpickle.load(open(self._file_path(path), "rb"))
 
         if not isinstance(model, torch.nn.Module):
             raise InvalidArgument(
@@ -107,7 +107,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
             "BentoService definition file or manually add them via "
             "`@env(pip_packages=['torchvision'])` when defining a BentoService"
         )
-        env.add_pip_packages(['torch'])
+        env.add_pip_packages(["torch"])
 
     def get(self):
         return self._model

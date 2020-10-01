@@ -542,7 +542,7 @@ class BentoService:
             return None
         if self._bento_service_bundle_path:
             return os.path.join(
-                self._bento_service_bundle_path, self.name, 'web_static_content',
+                self._bento_service_bundle_path, self.name, "web_static_content",
             )
         else:
             return os.path.join(os.getcwd(), self.web_static_content)
@@ -563,7 +563,7 @@ class BentoService:
         if cls._bento_service_name is not None:
             if not cls._bento_service_name.isidentifier():
                 raise InvalidArgument(
-                    'BentoService#_bento_service_name must be valid python identifier'
+                    "BentoService#_bento_service_name must be valid python identifier"
                     'matching regex `(letter|"_")(letter|digit|"_")*`'
                 )
 
@@ -725,6 +725,6 @@ class BentoService:
             # to deploy with docker due to the version can't be found on PyPI, but
             # get_bentoml_deploy_version gives the user the latest released PyPI
             # version that's closest to the `dirty` branch
-            self.pip_dependencies_map['bentoml'] = get_bentoml_deploy_version()
+            self.pip_dependencies_map["bentoml"] = get_bentoml_deploy_version()
 
         return self.pip_dependencies_map

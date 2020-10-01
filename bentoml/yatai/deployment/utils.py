@@ -43,13 +43,13 @@ def process_docker_api_line(payload):
             if line_payload:
                 if "errorDetail" in line_payload:
                     error = line_payload["errorDetail"]
-                    error_msg = 'Error running docker command: {}: {}'.format(
-                        error["code"], error['message']
+                    error_msg = "Error running docker command: {}: {}".format(
+                        error["code"], error["message"]
                     )
                     logger.error(error_msg)
                     errors.append(error_msg)
                 elif "stream" in line_payload:
-                    logger.info(line_payload['stream'])
+                    logger.info(line_payload["stream"])
 
     if errors:
         error_msg = ";".join(errors)
@@ -58,15 +58,15 @@ def process_docker_api_line(payload):
 
 def ensure_docker_available_or_raise():
     try:
-        subprocess.check_output(['docker', 'info'])
+        subprocess.check_output(["docker", "info"])
     except subprocess.CalledProcessError as error:
         raise BentoMLException(
-            'Error executing docker command: {}'.format(error.output.decode())
+            "Error executing docker command: {}".format(error.output.decode())
         )
     except FileNotFoundError:
         raise MissingDependencyException(
-            'Docker is required for this deployment. Please visit '
-            'www.docker.com for instructions'
+            "Docker is required for this deployment. Please visit "
+            "www.docker.com for instructions"
         )
 
 
@@ -104,15 +104,15 @@ def generate_aws_compatible_string(*items, max_length=63):
     items = [item[0] if type(item) == tuple else item for item in items]
 
     for i in range(len(trimmed_items)):
-        if len('-'.join(items)) <= max_length:
+        if len("-".join(items)) <= max_length:
             break
         else:
             items[i] = trimmed_items[i]
 
-    name = '-'.join(items)
+    name = "-".join(items)
     if len(name) > max_length:
         raise BentoMLException(
-            'AWS resource name {} exceeds maximum length of {}'.format(name, max_length)
+            "AWS resource name {} exceeds maximum length of {}".format(name, max_length)
         )
     invalid_chars = re.compile("[^a-zA-Z0-9-]|_")
     name = re.sub(invalid_chars, "-", name)
@@ -125,5 +125,5 @@ def get_default_aws_region():
         return aws_session.region_name
     except ClientError as e:
         # We will do nothing, if there isn't a default region
-        logger.error('Encounter error when getting default region for AWS: %s', str(e))
-        return ''
+        logger.error("Encounter error when getting default region for AWS: %s", str(e))
+        return ""

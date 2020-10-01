@@ -33,7 +33,7 @@ class DataframeOutput(JsonOutput):
 
     BATCH_MODE_SUPPORTED = True
 
-    def __init__(self, output_orient='records', **kwargs):
+    def __init__(self, output_orient="records", **kwargs):
         super().__init__(**kwargs)
         self.output_orient = output_orient
 
@@ -52,7 +52,7 @@ class DataframeOutput(JsonOutput):
         """
         :return: List of PyPI package names required by this OutputAdapter
         """
-        return ['pandas']
+        return ["pandas"]
 
     def pack_user_func_return_value(
         self, return_result, tasks: Sequence[InferenceTask],

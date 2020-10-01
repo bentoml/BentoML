@@ -183,7 +183,7 @@ class DepSeekWork(object):
             with open(file_path) as f:
                 content = f.read()
         except UnicodeDecodeError:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
         tree = ast.parse(content)
@@ -197,7 +197,7 @@ class DepSeekWork(object):
                     import_set.add(node.module.partition(".")[0])
         for module_name in import_set:
             # Avoid parsing BentoML when BentoML is imported from local source code repo
-            if module_name == 'bentoml':
+            if module_name == "bentoml":
                 continue
             if module_name in self.parsed_module_set:
                 continue
@@ -240,6 +240,6 @@ class DepSeekWork(object):
                     continue
                 self.seek_in_file(os.path.join(path, file_name))
             for dir_name in dir_list:
-                if dir_name == '__pycache__':
+                if dir_name == "__pycache__":
                     continue
                 self.seek_in_dir(os.path.join(path, dir_name))

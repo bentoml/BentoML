@@ -18,7 +18,7 @@ def test_ensure_docker_available_or_raise():
     else:
         not_found_error = FileNotFoundError
 
-    with patch('subprocess.check_output', new=lambda x: raise_(not_found_error())):
+    with patch("subprocess.check_output", new=lambda x: raise_(not_found_error())):
         with pytest.raises(MissingDependencyException) as error:
             ensure_docker_available_or_raise()
-        assert str(error.value).startswith('Docker is required')
+        assert str(error.value).startswith("Docker is required")

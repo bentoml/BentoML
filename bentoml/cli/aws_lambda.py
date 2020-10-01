@@ -31,54 +31,54 @@ from bentoml.cli.deployment import (
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.exceptions import CLIException
 
-yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
+yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
 
 def get_aws_lambda_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
-        name='lambda',
-        help='Commands for AWS Lambda BentoService deployments',
+        name="lambda",
+        help="Commands for AWS Lambda BentoService deployments",
         cls=BentoMLCommandGroup,
     )
     def aws_lambda():
         pass
 
-    @aws_lambda.command(help='Deploy BentoService to AWS Lambda')
-    @click.argument('name', type=click.STRING)
+    @aws_lambda.command(help="Deploy BentoService to AWS Lambda")
+    @click.argument("name", type=click.STRING)
     @click.option(
-        '-b',
-        '--bento',
-        '--bento-service-bundle',
+        "-b",
+        "--bento",
+        "--bento-service-bundle",
         type=click.STRING,
         required=True,
         callback=parse_bento_tag_callback,
-        help='Target BentoService to be deployed, referenced by its name and version '
+        help="Target BentoService to be deployed, referenced by its name and version "
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
-        '-n',
-        '--namespace',
+        "-n",
+        "--namespace",
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration yatai_service/default_namespace',
+        "can be changed in BentoML configuration yatai_service/default_namespace",
     )
     @click.option(
-        '-l',
-        '--labels',
+        "-l",
+        "--labels",
         type=click.STRING,
         callback=parse_labels_callback,
-        help='Key:value pairs that are attached to deployments and intended to be used'
-        'to specify identifying attributes of the deployments that are meaningful to '
-        'users. Multiple labels are separated with `,`',
+        help="Key:value pairs that are attached to deployments and intended to be used"
+        "to specify identifying attributes of the deployments that are meaningful to "
+        "users. Multiple labels are separated with `,`",
     )
-    @click.option('--region', help='AWS region name for deployment')
+    @click.option("--region", help="AWS region name for deployment")
     @click.option(
-        '--api-name', help='User defined API function will be used for inference',
+        "--api-name", help="User defined API function will be used for inference",
     )
     @click.option(
-        '--memory-size',
+        "--memory-size",
         help="Maximum Memory Capacity for AWS Lambda function, you can set the memory "
         "size in 64MB increments from 128MB to 3008MB. The default value "
         "is 1024 MB.",
@@ -86,19 +86,19 @@ def get_aws_lambda_sub_command():
         default=1024,
     )
     @click.option(
-        '--timeout',
+        "--timeout",
         help="The amount of time that AWS Lambda allows a function to run before "
         "stopping it. The default is 3 seconds. The maximum allowed value is "
         "900 seconds",
         type=click.INT,
         default=3,
     )
-    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option("-o", "--output", type=click.Choice(["json", "yaml"]), default="json")
     @click.option(
-        '--wait/--no-wait',
+        "--wait/--no-wait",
         default=True,
-        help='Wait for apply action to complete or encounter an error.'
-        'If set to no-wait, CLI will return immediately. The default value is wait',
+        help="Wait for apply action to complete or encounter an error."
+        "If set to no-wait, CLI will return immediately. The default value is wait",
     )
     def deploy(
         name,
@@ -113,7 +113,7 @@ def get_aws_lambda_sub_command():
         wait,
     ):
         yatai_client = get_default_yatai_client()
-        bento_name, bento_version = bento.split(':')
+        bento_name, bento_version = bento.split(":")
         with Spinner(f'Deploying "{bento}" to AWS Lambda '):
             result = yatai_client.deployment.create_lambda_deployment(
                 name=name,
@@ -131,57 +131,57 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIException(f'{error_code}:{error_message}')
-        _echo(f'Successfully created AWS Lambda deployment {name}', CLI_COLOR_SUCCESS)
+            raise CLIException(f"{error_code}:{error_message}")
+        _echo(f"Successfully created AWS Lambda deployment {name}", CLI_COLOR_SUCCESS)
         _print_deployment_info(result.deployment, output)
 
-    @aws_lambda.command(help='Update existing AWS Lambda deployment')
-    @click.argument('name', type=click.STRING)
+    @aws_lambda.command(help="Update existing AWS Lambda deployment")
+    @click.argument("name", type=click.STRING)
     @click.option(
-        '-b',
-        '--bento',
-        '--bento-service-bundle',
+        "-b",
+        "--bento",
+        "--bento-service-bundle",
         type=click.STRING,
         callback=parse_bento_tag_callback,
-        help='Target BentoService to be deployed, referenced by its name and version '
+        help="Target BentoService to be deployed, referenced by its name and version "
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
-        '-n',
-        '--namespace',
+        "-n",
+        "--namespace",
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration yatai_service/default_namespace',
+        "can be changed in BentoML configuration yatai_service/default_namespace",
     )
     @click.option(
-        '--memory-size',
+        "--memory-size",
         help="Maximum memory capacity for AWS Lambda function in MB, you can set "
         "the memory size in 64MB increments from 128 to 3008. "
         "The default value is 1024",
         type=click.INT,
     )
     @click.option(
-        '--timeout',
+        "--timeout",
         help="The amount of time that AWS Lambda allows a function to run before "
         "stopping it. The default is 3 seconds. The maximum allowed value is "
         "900 seconds",
         type=click.INT,
     )
-    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option("-o", "--output", type=click.Choice(["json", "yaml"]), default="json")
     @click.option(
-        '--wait/--no-wait',
+        "--wait/--no-wait",
         default=True,
-        help='Wait for apply action to complete or encounter an error.'
-        'If set to no-wait, CLI will return immediately. The default value is wait',
+        help="Wait for apply action to complete or encounter an error."
+        "If set to no-wait, CLI will return immediately. The default value is wait",
     )
     def update(name, namespace, bento, memory_size, timeout, output, wait):
         yatai_client = get_default_yatai_client()
         if bento:
-            bento_name, bento_version = bento.split(':')
+            bento_name, bento_version = bento.split(":")
         else:
             bento_name = None
             bento_version = None
-        with Spinner('Updating Lambda deployment '):
+        with Spinner("Updating Lambda deployment "):
             result = yatai_client.deployment.update_lambda_deployment(
                 bento_name=bento_name,
                 bento_version=bento_version,
@@ -195,26 +195,26 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIException(f'{error_code}:{error_message}')
+            raise CLIException(f"{error_code}:{error_message}")
         _echo(
-            f'Successfully updated AWS Lambda deployment {name}', CLI_COLOR_SUCCESS,
+            f"Successfully updated AWS Lambda deployment {name}", CLI_COLOR_SUCCESS,
         )
         _print_deployment_info(result.deployment, output)
 
-    @aws_lambda.command(help='Delete AWS Lambda deployment')
-    @click.argument('name', type=click.STRING)
+    @aws_lambda.command(help="Delete AWS Lambda deployment")
+    @click.argument("name", type=click.STRING)
     @click.option(
-        '-n',
-        '--namespace',
+        "-n",
+        "--namespace",
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration yatai_service/default_namespace',
+        "can be changed in BentoML configuration yatai_service/default_namespace",
     )
     @click.option(
-        '--force',
+        "--force",
         is_flag=True,
-        help='force delete the deployment record in database and '
-        'ignore errors when deleting cloud resources',
+        help="force delete the deployment record in database and "
+        "ignore errors when deleting cloud resources",
     )
     def delete(name, namespace, force):
         yatai_client = get_default_yatai_client()
@@ -225,7 +225,7 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise CLIException(f'{error_code}:{error_message}')
+            raise CLIException(f"{error_code}:{error_message}")
         result = yatai_client.deployment.delete(
             namespace=namespace, deployment_name=name, force_delete=force
         )
@@ -233,22 +233,22 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIException(f'{error_code}:{error_message}')
+            raise CLIException(f"{error_code}:{error_message}")
         _echo(
             f'Successfully deleted AWS Lambda deployment "{name}"', CLI_COLOR_SUCCESS,
         )
 
-    @aws_lambda.command(help='Get AWS Lambda deployment information')
-    @click.argument('name', type=click.STRING)
+    @aws_lambda.command(help="Get AWS Lambda deployment information")
+    @click.argument("name", type=click.STRING)
     @click.option(
-        '-n',
-        '--namespace',
+        "-n",
+        "--namespace",
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration yatai_service/default_namespace',
+        "can be changed in BentoML configuration yatai_service/default_namespace",
     )
     @click.option(
-        '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='json'
+        "-o", "--output", type=click.Choice(["json", "yaml", "table"]), default="json"
     )
     def get(name, namespace, output):
         yatai_client = get_default_yatai_client()
@@ -257,51 +257,51 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 describe_result.status
             )
-            raise CLIException(f'{error_code}:{error_message}')
+            raise CLIException(f"{error_code}:{error_message}")
 
         get_result = yatai_client.deployment.get(namespace, name)
         if get_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_result.status
             )
-            raise CLIException(f'{error_code}:{error_message}')
+            raise CLIException(f"{error_code}:{error_message}")
         _print_deployment_info(get_result.deployment, output)
 
-    @aws_lambda.command(name='list', help='List AWS Lambda deployments')
+    @aws_lambda.command(name="list", help="List AWS Lambda deployments")
     @click.option(
-        '-n',
-        '--namespace',
+        "-n",
+        "--namespace",
         type=click.STRING,
         help='Deployment namespace managed by BentoML, default value is "dev" which'
-        'can be changed in BentoML configuration yatai_service/default_namespace',
+        "can be changed in BentoML configuration yatai_service/default_namespace",
         default=ALL_NAMESPACE_TAG,
     )
     @click.option(
-        '--limit',
+        "--limit",
         type=click.INT,
-        help='The maximum amount of AWS Lambda deployments to be listed at once',
+        help="The maximum amount of AWS Lambda deployments to be listed at once",
     )
     @click.option(
-        '-l',
-        '--labels',
+        "-l",
+        "--labels",
         type=click.STRING,
         help="Label query to filter Lambda deployments, supports '=', '!=', 'IN', "
         "'NotIn', 'Exists', and 'DoesNotExist'. (e.g. key1=value1, "
         "key2!=value2, key3 In (value3, value3a), key4 DoesNotExist)",
     )
     @click.option(
-        '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
+        "--order-by", type=click.Choice(["created_at", "name"]), default="created_at",
     )
     @click.option(
-        '--asc/--desc',
+        "--asc/--desc",
         default=False,
-        help='Ascending or descending order for list deployments',
+        help="Ascending or descending order for list deployments",
     )
     @click.option(
-        '-o',
-        '--output',
-        type=click.Choice(['json', 'yaml', 'table', 'wide']),
-        default='table',
+        "-o",
+        "--output",
+        type=click.Choice(["json", "yaml", "table", "wide"]),
+        default="table",
     )
     def list_deployments(namespace, limit, labels, order_by, asc, output):
         yatai_client = get_default_yatai_client()
@@ -316,7 +316,7 @@ def get_aws_lambda_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_result.status
             )
-            raise CLIException(f'{error_code}:{error_message}')
+            raise CLIException(f"{error_code}:{error_message}")
         else:
             _print_deployments_info(list_result.deployments, output)
 

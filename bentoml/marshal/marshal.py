@@ -40,40 +40,40 @@ def metrics_patch(cls):
             from prometheus_client import Histogram, Counter, Gauge
 
             super(_MarshalService, self).__init__(*args, **kwargs)
-            namespace = config('instrument').get(
-                'default_namespace'
+            namespace = config("instrument").get(
+                "default_namespace"
             )  # its own namespace?
             service_name = self.bento_service_metadata_pb.name
 
             self.metrics_request_batch_size = Histogram(
-                name=service_name + '_mb_batch_size',
+                name=service_name + "_mb_batch_size",
                 documentation=service_name + "microbatch request batch size",
                 namespace=namespace,
-                labelnames=['endpoint'],
+                labelnames=["endpoint"],
             )
             self.metrics_request_duration = Histogram(
-                name=service_name + '_mb_requestmb_duration_seconds',
+                name=service_name + "_mb_requestmb_duration_seconds",
                 documentation=service_name + "API HTTP request duration in seconds",
                 namespace=namespace,
-                labelnames=['endpoint', 'http_response_code'],
+                labelnames=["endpoint", "http_response_code"],
             )
             self.metrics_request_in_progress = Gauge(
                 name=service_name + "_mb_request_in_progress",
-                documentation='Total number of HTTP requests in progress now',
+                documentation="Total number of HTTP requests in progress now",
                 namespace=namespace,
-                labelnames=['endpoint', 'http_method'],
+                labelnames=["endpoint", "http_method"],
             )
             self.metrics_request_exception = Counter(
                 name=service_name + "_mb_request_exception",
-                documentation='Total number of service exceptions',
+                documentation="Total number of service exceptions",
                 namespace=namespace,
-                labelnames=['endpoint', 'exception_class'],
+                labelnames=["endpoint", "exception_class"],
             )
             self.metrics_request_total = Counter(
                 name=service_name + "_mb_request_total",
-                documentation='Total number of service exceptions',
+                documentation="Total number of service exceptions",
                 namespace=namespace,
-                labelnames=['endpoint', 'http_response_code'],
+                labelnames=["endpoint", "http_response_code"],
             )
 
         async def request_dispatcher(self, request):
@@ -166,13 +166,13 @@ class MarshalService:
         return self._outbound_sema
 
     def add_batch_handler(self, api_name, max_latency, max_batch_size):
-        '''
+        """
         Params:
         * max_latency: limit the max latency of overall request handling
         * max_batch_size: limit the max batch size for handler
 
         ** marshal server will give priority to meet these limits than efficiency
-        '''
+        """
 
         if api_name not in self.batch_handlers:
             _func = CorkDispatcher(
@@ -244,7 +244,7 @@ class MarshalService:
         )
 
     async def _batch_handler_template(self, requests, api_name):
-        '''
+        """
         batch request handler
         params:
             * requests: list of aiohttp request
@@ -252,7 +252,7 @@ class MarshalService:
         raise:
             * RemoteException: known exceptions from model server
             * Exception: other exceptions
-        '''
+        """
         headers = {self._MARSHAL_FLAG: "true"}
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_name}"
 

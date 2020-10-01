@@ -40,10 +40,10 @@ SESSION_ID = str(uuid.uuid4())  # uuid that marks current python session
 
 
 # Use dev amplitude key
-API_KEY = '7f65f2446427226eb86f6adfacbbf47a'
+API_KEY = "7f65f2446427226eb86f6adfacbbf47a"
 if _is_pip_installed_bentoml():
     # Use prod amplitude key
-    API_KEY = '1ad6ee0e81b9666761aebd55955bbd3a'
+    API_KEY = "1ad6ee0e81b9666761aebd55955bbd3a"
 
 
 def _send_amplitude_event(event_type, event_properties):
@@ -113,9 +113,9 @@ def _bento_service_metadata_to_event_properties(
         properties["artifact_types"] = ["NO_ARTIFACT"]
 
     env_dict = ProtoMessageToDict(bento_service_metadata.env)
-    if 'conda_env' in env_dict:
-        env_dict['conda_env'] = YAML().load(env_dict['conda_env'])
-    properties['env'] = env_dict
+    if "conda_env" in env_dict:
+        env_dict["conda_env"] = YAML().load(env_dict["conda_env"])
+    properties["env"] = env_dict
 
     return properties
 
@@ -127,13 +127,13 @@ def track(event_type, event_properties=None):
     if event_properties is None:
         event_properties = {}
 
-    if 'bento_service_bundle_path' in event_properties:
+    if "bento_service_bundle_path" in event_properties:
         _get_bento_service_event_properties_from_bundle_path(
-            event_properties['bento_service_bundle_path'], event_properties
+            event_properties["bento_service_bundle_path"], event_properties
         )
-        del event_properties['bento_service_bundle_path']
+        del event_properties["bento_service_bundle_path"]
 
-    event_properties['py_version'] = PY_VERSION
+    event_properties["py_version"] = PY_VERSION
     event_properties["bento_version"] = BENTOML_VERSION
     event_properties["platform_info"] = PLATFORM
 
@@ -146,7 +146,7 @@ def track_save(bento_service, extra_properties=None):
 
 
 def track_load_start():
-    return track('load-start', {})
+    return track("load-start", {})
 
 
 def track_load_finish(bento_service):

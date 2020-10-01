@@ -148,10 +148,10 @@ def save_to_dir(bento_service, path, version=None, silent=False):
         )
         if not os.path.isdir(src_web_static_content_dir):
             raise BentoMLException(
-                f'web_static_content directory {src_web_static_content_dir} not found'
+                f"web_static_content directory {src_web_static_content_dir} not found"
             )
         dest_web_static_content_dir = os.path.join(
-            module_base_path, 'web_static_content'
+            module_base_path, "web_static_content"
         )
         shutil.copytree(src_web_static_content_dir, dest_web_static_content_dir)
 
@@ -184,7 +184,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     # as package data after pip installed as a python package
     config.write_to_path(module_base_path)
 
-    bundled_pip_dependencies_path = os.path.join(path, 'bundled_pip_dependencies')
+    bundled_pip_dependencies_path = os.path.join(path, "bundled_pip_dependencies")
     _bundle_local_bentoml_if_installed_from_source(bundled_pip_dependencies_path)
 
     if not silent:
@@ -204,9 +204,9 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
     """
 
     # Find bentoml module path
-    (module_location,) = importlib.util.find_spec('bentoml').submodule_search_locations
+    (module_location,) = importlib.util.find_spec("bentoml").submodule_search_locations
 
-    bentoml_setup_py = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
+    bentoml_setup_py = os.path.abspath(os.path.join(module_location, "..", "setup.py"))
 
     # this is for BentoML developer to create BentoService containing custom develop
     # branches of BentoML library, it is True only when BentoML module is installed in
@@ -219,9 +219,9 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
 
         # Create tmp directory inside bentoml module for storing the bundled
         # targz file. Since dist-dir can only be inside of the module directory
-        bundle_dir_name = '__bentoml_tmp_sdist_build'
+        bundle_dir_name = "__bentoml_tmp_sdist_build"
         source_dir = os.path.abspath(
-            os.path.join(module_location, '..', bundle_dir_name)
+            os.path.join(module_location, "..", bundle_dir_name)
         )
 
         if os.path.isdir(source_dir):
@@ -232,7 +232,7 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
 
         sandbox.run_setup(
             bentoml_setup_py,
-            ['-q', 'sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name],
+            ["-q", "sdist", "--format", "gztar", "--dist-dir", bundle_dir_name],
         )
 
         # copy the generated targz to saved bundle directory and remove it from

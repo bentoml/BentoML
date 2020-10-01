@@ -25,8 +25,8 @@ from bentoml.types import InferenceTask, JsonSerializable, Optional
 from bentoml.utils.lazy_loader import LazyLoader
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
-imageio = LazyLoader('imageio', globals(), 'imageio')
-numpy = LazyLoader('numpy', globals(), 'numpy')
+imageio = LazyLoader("imageio", globals(), "imageio")
+numpy = LazyLoader("numpy", globals(), "numpy")
 
 
 ApiFuncArgs = Tuple[Sequence[numpy.ndarray], Sequence[Optional[JsonSerializable]]]

@@ -10,27 +10,27 @@ from bentoml.types import HTTPRequest, InferenceTask
 
 @pytest.fixture()
 def input_adapter():
-    return MultiFileInput(input_names=['x', 'y'])
+    return MultiFileInput(input_names=["x", "y"])
 
 
 def read_bin(path):
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         return f.read()
 
 
 def test_file_input_cli(input_adapter, bin_file):
     test_args = ["--input-file-x", bin_file, "--input-file-y", bin_file]
     for task in input_adapter.from_cli(test_args):
-        assert b'\x810\x899' == task.data[0].read()
-        assert b'\x810\x899' == task.data[1].read()
+        assert b"\x810\x899" == task.data[0].read()
+        assert b"\x810\x899" == task.data[1].read()
 
 
 def test_file_input_cli_list(input_adapter, bin_files):
     test_args = ["--input-file-x"] + bin_files + ["--input-file-y"] + bin_files
     tasks = input_adapter.from_cli(test_args)
     for i, task in enumerate(tasks):
-        assert b'\x810\x899' + str(i).encode() == task.data[0].read()
-        assert b'\x810\x899' + str(i).encode() == task.data[1].read()
+        assert b"\x810\x899" + str(i).encode() == task.data[0].read()
+        assert b"\x810\x899" + str(i).encode() == task.data[1].read()
 
 
 def test_file_input_cli_list_missing_file(input_adapter, bin_files):
@@ -42,7 +42,7 @@ def test_file_input_cli_list_missing_file(input_adapter, bin_files):
 
 
 def test_file_input_aws_lambda_event(input_adapter, bin_file):
-    file_bytes = open(str(bin_file), 'rb').read()
+    file_bytes = open(str(bin_file), "rb").read()
 
     body, content_type = encode_multipart_formdata(
         dict(x=("test.bin", file_bytes), y=("test.bin", file_bytes),)
@@ -51,12 +51,12 @@ def test_file_input_aws_lambda_event(input_adapter, bin_file):
     aws_lambda_event = {"headers": headers, "body": body}
 
     task = input_adapter.from_aws_lambda_event(aws_lambda_event)
-    assert b'\x810\x899' == task.data[0].read()
-    assert b'\x810\x899' == task.data[1].read()
+    assert b"\x810\x899" == task.data[0].read()
+    assert b"\x810\x899" == task.data[1].read()
 
 
 def test_file_input_http_request_multipart_form(input_adapter, bin_file):
-    file_bytes = open(str(bin_file), 'rb').read()
+    file_bytes = open(str(bin_file), "rb").read()
 
     body, content_type = encode_multipart_formdata(
         dict(x=("test.bin", file_bytes), y=("test.bin", file_bytes),)
@@ -64,17 +64,17 @@ def test_file_input_http_request_multipart_form(input_adapter, bin_file):
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
     task = input_adapter.from_http_request(request)
-    assert b'\x810\x899' == task.data[0].read()
-    assert b'\x810\x899' == task.data[1].read()
+    assert b"\x810\x899" == task.data[0].read()
+    assert b"\x810\x899" == task.data[1].read()
 
 
 def test_file_input_http_request_malformatted_input_missing_file(
     input_adapter, bin_file
 ):
-    file_bytes = open(str(bin_file), 'rb').read()
+    file_bytes = open(str(bin_file), "rb").read()
     requests = []
 
-    body = b''
+    body = b""
     headers = (("Content-Type", "multipart/form-data; boundary=123456"),)
     requests.append(HTTPRequest(headers=headers, body=body))
 
@@ -91,7 +91,7 @@ def test_file_input_http_request_malformatted_input_missing_file(
 
 
 def test_file_input_http_request_none_file(bin_file):
-    file_bytes = open(str(bin_file), 'rb').read()
+    file_bytes = open(str(bin_file), "rb").read()
     allow_none_input_adapter = MultiFileInput(input_names=["x", "y"], allow_none=True)
 
     body, content_type = encode_multipart_formdata(dict(x=("test.bin", file_bytes),))
@@ -99,7 +99,7 @@ def test_file_input_http_request_none_file(bin_file):
     request = HTTPRequest(headers=headers, body=body)
     task = allow_none_input_adapter.from_http_request(request)
     assert not task.is_discarded
-    assert b'\x810\x899' == task.data[0].read()
+    assert b"\x810\x899" == task.data[0].read()
     assert task.data[1] is None
 
 
@@ -114,5 +114,5 @@ def test_file_input_extract(input_adapter, bin_file):
     assert args[1]
 
     for file1, file2 in zip(*args):
-        assert b'\x810\x899' == file1.read()
-        assert b'\x810\x899' == file2.read()
+        assert b"\x810\x899" == file1.read()
+        assert b"\x810\x899" == file2.read()

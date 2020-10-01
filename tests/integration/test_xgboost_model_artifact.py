@@ -24,7 +24,7 @@ def XgboostModel():
     dtrain = xgb.DMatrix(X_train, label=y_train)
 
     # specify parameters via map
-    param = {'max_depth': 3, 'eta': 0.3, 'objective': 'multi:softprob', 'num_class': 2}
+    param = {"max_depth": 3, "eta": 0.3, "objective": "multi:softprob", "num_class": 2}
     num_round = 20
     bst = xgb.train(param, dtrain, num_round)
 
@@ -69,7 +69,7 @@ test_data = {
 def xgboost_svc():
     svc = XgboostModelClassifier()
     model = XgboostModel()
-    svc.pack('model', model)
+    svc.pack("model", model)
 
     return svc
 
@@ -99,7 +99,7 @@ def xgboost_image(xgboost_svc_saved_dir):
     client = docker.from_env()
 
     image = client.images.build(
-        path=xgboost_svc_saved_dir, tag='xgboost_example_service', rm=True
+        path=xgboost_svc_saved_dir, tag="xgboost_example_service", rm=True
     )[0]
     yield image
     client.images.remove(image.id)
@@ -110,7 +110,7 @@ def _wait_until_ready(_host, timeout, check_interval=0.5):
     while time.time() - start_time < timeout:
         try:
             if (
-                urllib.request.urlopen(f'http://{_host}/healthz', timeout=0.1).status
+                urllib.request.urlopen(f"http://{_host}/healthz", timeout=0.1).status
                 == 200
             ):
                 break
@@ -128,7 +128,7 @@ def xgboost_docker_host(xgboost_image):
     with bentoml.utils.reserve_free_port() as port:
         pass
 
-    command = 'bentoml serve-gunicorn /bento --workers 1'
+    command = "bentoml serve-gunicorn /bento --workers 1"
 
     try:
         container = client.containers.run(
@@ -136,10 +136,10 @@ def xgboost_docker_host(xgboost_image):
             image=xgboost_image.id,
             auto_remove=True,
             tty=True,
-            ports={'5000/tcp': port},
+            ports={"5000/tcp": port},
             detach=True,
         )
-        _host = f'127.0.0.1:{port}'
+        _host = f"127.0.0.1:{port}"
         _wait_until_ready(_host, 10)
         yield _host
     finally:

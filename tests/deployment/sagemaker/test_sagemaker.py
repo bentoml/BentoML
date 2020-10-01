@@ -32,40 +32,40 @@ if sys.platform == "darwin":
 def test_sagemaker_handle_client_errors():
     error = ClientError(
         error_response={
-            'Error': {'Code': 'ValidationException', 'Message': 'error message'}
+            "Error": {"Code": "ValidationException", "Message": "error message"}
         },
-        operation_name='failed_operation',
+        operation_name="failed_operation",
     )
     exception = _aws_client_error_to_bentoml_exception(error)
     assert isinstance(exception, AWSServiceError)
 
 
-ROLE_PATH_ARN_RESULT = 'arn:aws:us-west-2:999'
-USER_PATH_ARN_RESULT = 'arn:aws:us-west-2:888'
+ROLE_PATH_ARN_RESULT = "arn:aws:us-west-2:999"
+USER_PATH_ARN_RESULT = "arn:aws:us-west-2:888"
 
 
 def test_get_arn_from_aws_user():
     def mock_role_path_call(
         self, operation_name, kwarg
     ):  # pylint: disable=unused-argument
-        if operation_name == 'GetCallerIdentity':
-            return {'Arn': 'something:something:role/random'}
-        elif operation_name == 'GetRole':
-            return {'Role': {'Arn': ROLE_PATH_ARN_RESULT}}
+        if operation_name == "GetCallerIdentity":
+            return {"Arn": "something:something:role/random"}
+        elif operation_name == "GetRole":
+            return {"Role": {"Arn": ROLE_PATH_ARN_RESULT}}
         else:
             raise Exception(
-                'This test does not handle operation: {}'.format(operation_name)
+                "This test does not handle operation: {}".format(operation_name)
             )
 
-    with patch('botocore.client.BaseClient._make_api_call', new=mock_role_path_call):
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_role_path_call):
         assert get_arn_role_from_current_aws_user() == ROLE_PATH_ARN_RESULT
 
     def mock_user_path_call(
         self, operation_name, kwarg
     ):  # pylint: disable=unused-argument
-        if operation_name == 'GetCallerIdentity':
-            return {'Arn': 'something:something:user/random'}
-        elif operation_name == 'ListRoles':
+        if operation_name == "GetCallerIdentity":
+            return {"Arn": "something:something:user/random"}
+        elif operation_name == "ListRoles":
             return {
                 "Roles": [
                     {
@@ -88,18 +88,18 @@ def test_get_arn_from_aws_user():
             }
         else:
             raise Exception(
-                'This test does not handle operation: {}'.format(operation_name)
+                "This test does not handle operation: {}".format(operation_name)
             )
 
-    with patch('botocore.client.BaseClient._make_api_call', new=mock_user_path_call):
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_user_path_call):
         assert get_arn_role_from_current_aws_user() == USER_PATH_ARN_RESULT
 
     def mock_role_path_call_no_service_principal(
         self, operation_name, kwarg
     ):  # pylint: disable=unused-argument
-        if operation_name == 'GetCallerIdentity':
-            return {'Arn': 'something:something:user/random'}
-        elif operation_name == 'ListRoles':
+        if operation_name == "GetCallerIdentity":
+            return {"Arn": "something:something:user/random"}
+        elif operation_name == "ListRoles":
             return {
                 "Roles": [
                     {
@@ -123,11 +123,11 @@ def test_get_arn_from_aws_user():
             }
         else:
             raise Exception(
-                'This test does not handle operation: {}'.format(operation_name)
+                "This test does not handle operation: {}".format(operation_name)
             )
 
     with patch(
-        'botocore.client.BaseClient._make_api_call',
+        "botocore.client.BaseClient._make_api_call",
         new=mock_role_path_call_no_service_principal,
     ):
         assert pytest.raises(
@@ -135,15 +135,15 @@ def test_get_arn_from_aws_user():
         )
 
 
-TEST_AWS_REGION = 'us-west-2'
-TEST_DEPLOYMENT_NAME = 'my_deployment'
-TEST_DEPLOYMENT_NAMESPACE = 'my_company'
-TEST_DEPLOYMENT_BENTO_NAME = 'my_bento'
-TEST_DEPLOYMENT_BENTO_VERSION = 'v1.1.0'
-TEST_BENTO_API_NAME = 'predict'
+TEST_AWS_REGION = "us-west-2"
+TEST_DEPLOYMENT_NAME = "my_deployment"
+TEST_DEPLOYMENT_NAMESPACE = "my_company"
+TEST_DEPLOYMENT_BENTO_NAME = "my_bento"
+TEST_DEPLOYMENT_BENTO_VERSION = "v1.1.0"
+TEST_BENTO_API_NAME = "predict"
 TEST_DEPLOYMENT_INSTANCE_COUNT = 1
-TEST_DEPLOYMENT_INSTANCE_TYPE = 'm3-xlarge'
-TEST_DEPLOYMENT_BENTO_LOCAL_URI = '/fake/path/bento/bundle'
+TEST_DEPLOYMENT_INSTANCE_TYPE = "m3-xlarge"
+TEST_DEPLOYMENT_BENTO_LOCAL_URI = "/fake/path/bento/bundle"
 
 
 def mock_aws_services_for_sagemaker(func):
@@ -152,12 +152,12 @@ def mock_aws_services_for_sagemaker(func):
     @mock_sts
     @moto_mock_sagemaker
     def mock_wrapper(*args, **kwargs):
-        ecr_client = boto3.client('ecr', TEST_AWS_REGION)
-        repo_name = TEST_DEPLOYMENT_BENTO_NAME + '-sagemaker'
+        ecr_client = boto3.client("ecr", TEST_AWS_REGION)
+        repo_name = TEST_DEPLOYMENT_BENTO_NAME + "-sagemaker"
         try:
             ecr_client.create_repository(repositoryName=repo_name)
         except ecr_client.exceptions.RepositoryAlreadyExistsException:
-            print('Repository already exists')
+            print("Repository already exists")
 
         iam_role_policy = """
         {
@@ -173,7 +173,7 @@ def mock_aws_services_for_sagemaker(func):
             ]
         }
         """
-        iam_client = boto3.client('iam', TEST_AWS_REGION)
+        iam_client = boto3.client("iam", TEST_AWS_REGION)
         iam_client.create_role(
             RoleName="moto", AssumeRolePolicyDocument=iam_role_policy
         )
@@ -184,16 +184,16 @@ def mock_aws_services_for_sagemaker(func):
 
 def mock_sagemaker_deployment_wrapper(func):
     @mock_aws_services_for_sagemaker
-    @patch('subprocess.check_output', MagicMock())
-    @patch('docker.APIClient.build', MagicMock())
-    @patch('docker.APIClient.push', MagicMock())
+    @patch("subprocess.check_output", MagicMock())
+    @patch("docker.APIClient.build", MagicMock())
+    @patch("docker.APIClient.push", MagicMock())
     @patch(
-        'bentoml.yatai.deployment.sagemaker.operator._init_sagemaker_project',
+        "bentoml.yatai.deployment.sagemaker.operator._init_sagemaker_project",
         MagicMock(),
     )
     @patch(
-        'bentoml.yatai.deployment.sagemaker.operator.get_default_aws_region',
-        MagicMock(return_value='mock_region'),
+        "bentoml.yatai.deployment.sagemaker.operator.get_default_aws_region",
+        MagicMock(return_value="mock_region"),
     )
     def mock_wrapper(*args, **kwargs):
         return func(*args, **kwargs)
@@ -248,7 +248,7 @@ def test_sagemaker_apply_fail_not_local_repo():
     deployment_operator = SageMakerDeploymentOperator(yatai_service)
     result_pb = deployment_operator.add(sagemaker_deployment_pb)
     assert result_pb.status.status_code == Status.INTERNAL
-    assert result_pb.status.error_message.startswith('BentoML currently not support')
+    assert result_pb.status.error_message.startswith("BentoML currently not support")
 
 
 @mock_sagemaker_deployment_wrapper
@@ -283,35 +283,35 @@ def test_sagemaker_apply_create_model_fail():
     orig = botocore.client.BaseClient._make_api_call
 
     def fail_create_model_random(self, operation_name, kwarg):
-        if operation_name == 'CreateModel':
-            raise ClientError({'Error': {'Code': 'Random'}}, 'CreateModel')
+        if operation_name == "CreateModel":
+            raise ClientError({"Error": {"Code": "Random"}}, "CreateModel")
         else:
             return orig(self, operation_name, kwarg)
 
     with patch(
-        'botocore.client.BaseClient._make_api_call', new=fail_create_model_random
+        "botocore.client.BaseClient._make_api_call", new=fail_create_model_random
     ):
         failed_result = deployment_operator.add(sagemaker_deployment_pb)
     assert failed_result.status.status_code == Status.INTERNAL
     assert failed_result.status.error_message.startswith(
-        'Failed to create sagemaker model'
+        "Failed to create sagemaker model"
     )
 
     def fail_create_model_validation(self, operation_name, kwarg):
-        if operation_name == 'CreateModel':
+        if operation_name == "CreateModel":
             raise ClientError(
-                {'Error': {'Code': 'ValidationException', 'Message': 'failed message'}},
-                'CreateModel',
+                {"Error": {"Code": "ValidationException", "Message": "failed message"}},
+                "CreateModel",
             )
         else:
             return orig(self, operation_name, kwarg)
 
     with patch(
-        'botocore.client.BaseClient._make_api_call', new=fail_create_model_validation
+        "botocore.client.BaseClient._make_api_call", new=fail_create_model_validation
     ):
         result = deployment_operator.add(sagemaker_deployment_pb)
     assert result.status.status_code == Status.INTERNAL
-    assert result.status.error_message.startswith('Failed to create sagemaker model')
+    assert result.status.error_message.startswith("Failed to create sagemaker model")
 
 
 @mock_sagemaker_deployment_wrapper
@@ -322,20 +322,20 @@ def test_sagemaker_apply_delete_model_fail():
     deployment_operator = SageMakerDeploymentOperator(yatai_service)
 
     def fail_delete_model(self, operation_name, kwarg):
-        if operation_name == 'DeleteModel':
+        if operation_name == "DeleteModel":
             raise ClientError(
-                {'Error': {'Code': 'ValidationException', 'Message': 'failed message'}},
-                'DeleteModel',
+                {"Error": {"Code": "ValidationException", "Message": "failed message"}},
+                "DeleteModel",
             )
-        elif operation_name == 'CreateEndpoint':
-            raise ClientError({}, 'CreateEndpoint')
+        elif operation_name == "CreateEndpoint":
+            raise ClientError({}, "CreateEndpoint")
         else:
             return orig(self, operation_name, kwarg)
 
-    with patch('botocore.client.BaseClient._make_api_call', new=fail_delete_model):
+    with patch("botocore.client.BaseClient._make_api_call", new=fail_delete_model):
         result = deployment_operator.add(sagemaker_deployment_pb)
     assert result.status.status_code == Status.INTERNAL
-    assert result.status.error_message.startswith('Failed to cleanup sagemaker model')
+    assert result.status.error_message.startswith("Failed to cleanup sagemaker model")
 
 
 @mock_sagemaker_deployment_wrapper
@@ -346,18 +346,18 @@ def test_sagemaker_apply_duplicate_endpoint():
     deployment_operator = SageMakerDeploymentOperator(yatai_service)
     deployment_operator.add(sagemaker_deployment_pb)
 
-    endpoint_name = '{ns}-{name}'.format(
+    endpoint_name = "{ns}-{name}".format(
         ns=TEST_DEPLOYMENT_NAMESPACE, name=TEST_DEPLOYMENT_NAME
     )
-    expect_value = 'Endpoint {} already exists'.format(endpoint_name.replace('_', '-'))
+    expect_value = "Endpoint {} already exists".format(endpoint_name.replace("_", "-"))
 
     def mock_ok_return(self, op_name, kwargs):
-        if op_name == 'CreateModel' or op_name == 'CreateEndpointConfig':
-            return ''
+        if op_name == "CreateModel" or op_name == "CreateEndpointConfig":
+            return ""
         else:
             return orig(self, op_name, kwargs)
 
-    with patch('botocore.client.BaseClient._make_api_call', new=mock_ok_return):
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_ok_return):
         with pytest.raises(ValueError) as error:
             deployment_operator.add(sagemaker_deployment_pb)
     assert str(error.value) == expect_value
@@ -373,7 +373,7 @@ def test_sagemaker_update_deployment_with_new_bento_service_tag():
         generate_sagemaker_deployment_pb()
     )
     mocked_sagemaker_deployment_pb_with_new_bento_service_tag.spec.bento_version = (
-        'NEW_BENTO_VERSION'
+        "NEW_BENTO_VERSION"
     )
     update_sagemaker_deployment_result = deployment_operator.update(
         mocked_sagemaker_deployment_pb_with_new_bento_service_tag,

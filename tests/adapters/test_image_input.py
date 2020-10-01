@@ -16,7 +16,7 @@ def input_adapter():
 def img_bytes_list(img_files):
     results = []
     for path in img_files:
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             results.append(f.read())
     return results
 
@@ -71,11 +71,11 @@ def test_file_input_http_request_post_binary(input_adapter, img_bytes_list):
     # post as multipart/form-data
     headers = (("Content-Type", "multipart/form-data; boundary=123456"),)
     body = (
-        b'--123456\n'
+        b"--123456\n"
         + b'Content-Disposition: form-data; name="file"; filename="text.jpg"\n'
-        + b'Content-Type: application/octet-stream\n\n'
+        + b"Content-Type: application/octet-stream\n\n"
         + img_bytes
-        + b'\n--123456--\n'
+        + b"\n--123456--\n"
     )
     request = HTTPRequest(headers=headers, body=body)
     task = input_adapter.from_http_request(request)

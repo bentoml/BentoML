@@ -41,7 +41,7 @@ def tf2_svc():
 
     svc = Tensorflow2Classifier()
     model = Tensorflow2Model()
-    svc.pack('model', model)
+    svc.pack("model", model)
 
     return svc
 
@@ -82,13 +82,13 @@ def tf2_host(tf2_image):
 def test_tensorflow_2_artifact(tf2_svc):
     assert (
         tf2_svc.predict(test_tensor) == 15.0
-    ), 'Inference on unsaved TF2 artifact does not match expected'
+    ), "Inference on unsaved TF2 artifact does not match expected"
 
 
 def test_tensorflow_2_artifact_loaded(tf2_svc_loaded):
     assert (
         tf2_svc_loaded.predict(test_tensor) == 15.0
-    ), 'Inference on saved and loaded TF2 artifact does not match expected'
+    ), "Inference on saved and loaded TF2 artifact does not match expected"
 
 
 @pytest.mark.asyncio
@@ -99,5 +99,5 @@ async def test_tensorflow_2_artifact_with_docker(tf2_host):
         headers=(("Content-Type", "application/json"),),
         data=json.dumps({"instances": test_data}),
         assert_status=200,
-        assert_data=b'[[15.0]]',
+        assert_data=b"[[15.0]]",
     )

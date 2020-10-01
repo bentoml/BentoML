@@ -112,7 +112,7 @@ def copy_local_py_modules(target_module, destination):
         )
 
     # Find all non pip installed modules must be packaged for target module to run
-    exclude_modules = ['bentoml'] + get_all_pip_installed_modules()
+    exclude_modules = ["bentoml"] + get_all_pip_installed_modules()
     finder = modulefinder.ModuleFinder(excludes=exclude_modules)
 
     try:
@@ -137,7 +137,7 @@ def copy_local_py_modules(target_module, destination):
 
                 return _find_module(name, path)
 
-            with patch.object(modulefinder, '_find_module', _patch_find_module):
+            with patch.object(modulefinder, "_find_module", _patch_find_module):
                 finder.run_script(target_module_file)
         else:
             finder.run_script(target_module_file)

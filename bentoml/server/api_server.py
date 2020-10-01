@@ -42,7 +42,7 @@ CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
 
-INDEX_HTML = '''\
+INDEX_HTML = """\
 <!DOCTYPE html>
 <head><link rel="stylesheet" type="text/css"
             href="/swagger_static/swagger-ui.css"></head>
@@ -56,7 +56,7 @@ INDEX_HTML = '''\
     }})
 </script>
 </body>
-'''
+"""
 
 
 def _request_to_json(req):
@@ -102,7 +102,7 @@ class BentoAPIServer:
         self.static_path = self.bento_service.get_web_static_content_path()
 
         self.swagger_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'swagger_static'
+            os.path.dirname(os.path.abspath(__file__)), "swagger_static"
         )
 
         for middleware in (InstrumentMiddleware,):
@@ -137,7 +137,7 @@ class BentoAPIServer:
         """
         The index route for BentoML API server
         """
-        return send_from_directory(static_path, 'index.html')
+        return send_from_directory(static_path, "index.html")
 
     @staticmethod
     def swagger_ui_func():
@@ -145,7 +145,7 @@ class BentoAPIServer:
         The swagger UI route for BentoML API server
         """
         return Response(
-            response=INDEX_HTML.format(url='/docs.json'),
+            response=INDEX_HTML.format(url="/docs.json"),
             status=200,
             mimetype="text/html",
         )
@@ -298,15 +298,15 @@ class BentoAPIServer:
                         e.status_code,
                     )
                 else:
-                    response = make_response('', e.status_code)
+                    response = make_response("", e.status_code)
             except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
                 log_exception(sys.exc_info())
 
                 response = make_response(
-                    'An error has occurred in BentoML user code when handling this '
-                    'request, find the error details in server logs',
+                    "An error has occurred in BentoML user code when handling this "
+                    "request, find the error details in server logs",
                     500,
                 )
 

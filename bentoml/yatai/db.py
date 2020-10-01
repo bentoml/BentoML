@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 def is_sqlite_db(db_url):
     try:
-        return urlparse(db_url).scheme == 'sqlite'
+        return urlparse(db_url).scheme == "sqlite"
     except ValueError:
         return False
 
@@ -38,17 +38,17 @@ def is_sqlite_db(db_url):
 def init_db(db_url):
     from sqlalchemy_utils import database_exists
 
-    extra_db_args = {'echo': True}
+    extra_db_args = {"echo": True}
 
     if is_sqlite_db(db_url):
-        extra_db_args['connect_args'] = {'check_same_thread': False}
-        extra_db_args['echo'] = False
+        extra_db_args["connect_args"] = {"check_same_thread": False}
+        extra_db_args["echo"] = False
     engine = create_engine(db_url, **extra_db_args)
 
     if not database_exists(engine.url) and not is_sqlite_db(db_url):
         raise BentoMLException(
-            f'Database does not exist or Database name is missing in config '
-            f'db.url: {db_url}'
+            f"Database does not exist or Database name is missing in config "
+            f"db.url: {db_url}"
         )
     create_all_or_upgrade_db(engine, db_url)
 
@@ -74,17 +74,17 @@ def create_all_or_upgrade_db(engine, db_url):
     from alembic.config import Config
     from sqlalchemy import inspect
 
-    alembic_config_file = os.path.join(os.path.dirname(__file__), 'alembic.ini')
+    alembic_config_file = os.path.join(os.path.dirname(__file__), "alembic.ini")
     alembic_config = Config(alembic_config_file)
-    alembic_config.set_main_option('sqlalchemy.url', db_url)
+    alembic_config.set_main_option("sqlalchemy.url", db_url)
 
     inspector = inspect(engine)
     tables = inspector.get_table_names()
 
-    if 'deployments' not in tables or 'bentos' not in tables:
-        logger.debug('Creating tables')
+    if "deployments" not in tables or "bentos" not in tables:
+        logger.debug("Creating tables")
         Base.metadata.create_all(engine)
-        command.stamp(alembic_config, 'head')
+        command.stamp(alembic_config, "head")
     else:
-        logger.debug('Upgrading tables to the latest revision')
-        command.upgrade(alembic_config, 'heads')
+        logger.debug("Upgrading tables to the latest revision")
+        command.upgrade(alembic_config, "heads")

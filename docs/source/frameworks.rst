@@ -112,9 +112,9 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.fasttext.FasttextModelArtifact
 
-========
+===========
 Statsmodels
-========
+===========
 
 Example Projects:
 

@@ -9,6 +9,6 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-sphinx-build -W -b spelling "$GIT_ROOT"/docs/source "GIT_ROOT"/docs/build
+sphinx-build -W --keep-going -b spelling "$GIT_ROOT"/docs/source "GIT_ROOT"/docs/build
 
 test $error = 0 # Return non-zero if spellchecker failed

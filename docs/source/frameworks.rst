@@ -177,3 +177,9 @@ Example Projects:
 
 * Shampoo Sales Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
 
+
+.. spelling::
+
+    MLModel
+    tokenizer
+    AutoModelWithLMHead

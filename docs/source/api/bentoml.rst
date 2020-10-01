@@ -32,6 +32,7 @@ BentoService
         :return: this BentoService instance
 
   .. automethod:: bentoml.BentoService.pack
+    :noindex:
 
   .. _bentoml-bentoservice-save-label:
 
@@ -75,3 +76,14 @@ save_to_dir
 load
 ++++
 .. autofunction:: bentoml.load
+
+
+.. spelling::
+
+    inferencing
+    docstring
+    env
+    pre
+    yml
+    ver
+    dir

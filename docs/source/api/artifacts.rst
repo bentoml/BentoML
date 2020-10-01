@@ -27,3 +27,8 @@ TextFileArtifact
 .. autoclass:: bentoml.service.artifacts.common.TextFileArtifact
 
 
+.. spelling::
+
+    deserialization
+    deserializing
+    stdlib

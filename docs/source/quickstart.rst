@@ -13,7 +13,7 @@ Run on Google Colab
 Try out this quickstart guide interactively on Google Colab:
 `Open in Colab <https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
 
-Note that Docker conterization does not work in the Colab environment.
+Note that Docker containerization does not work in the Colab environment.
 
 Run notebook locally
 --------------------
@@ -111,8 +111,8 @@ serving the iris classifier model trained above:
 
 Firstly, the :code:`@artifact(...)` here defines the required trained models to be
 packed with this prediction service. BentoML model artifacts are pre-built wrappers for
-persisting, loading and running a traind model. This example uses the
-:code:`SklearnModelArtifact` for the scikit-learn frameowrk. BentoML also provide
+persisting, loading and running a trained model. This example uses the
+:code:`SklearnModelArtifact` for the scikit-learn framework. BentoML also provide
 artifact class for other ML frameworks, including :code:`PytorchModelArtifact`,
 :code:`KerasModelArtifact`, and :code:`XgboostModelArtifact` etc.
 
@@ -123,7 +123,7 @@ when moving the model and related code to production. With the
 packages that are used by the prediction service code and pins their versions.
 
 The :code:`@api` decorator defines an inference API, which is the entry point for
-accessing the prediction service. The :code:`input=DataframeInput()` means this inferene
+accessing the prediction service. The :code:`input=DataframeInput()` means this inference
 API callback function defined by the user, is expecting a :code:`pandas.DataFrame`
 object as its input.
 
@@ -344,7 +344,7 @@ If the cloud platform you are working with is not on the list above, try out the
 - `Azure container instance Deployment <https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html>`_
 - `Heroku Deployment <https://docs.bentoml.org/en/latest/deployment/heroku.html>`_
 
-Lastly, if you have a DevOps or ML Engineering team who's operating a Kubernetes or OpenShift cluster, use the following guides as references for implementating your deployment strategy:
+Lastly, if you have a DevOps or ML Engineering team who's operating a Kubernetes or OpenShift cluster, use the following guides as references for implementing your deployment strategy:
 
 - `Kubernetes Deployment <https://docs.bentoml.org/en/latest/deployment/kubernetes.html>`_
 - `Knative Deployment <https://docs.bentoml.org/en/latest/deployment/knative.html>`_
@@ -398,3 +398,10 @@ a must-read for anyone who is looking to adopt BentoML.
 
 Be sure to `join BentoML slack channel <http://bit.ly/2N5IpbB>`_ to hear about the
 latest development updates and be part of the roadmap discussions.
+
+
+.. spelling::
+
+    pypirc
+    pre
+    installable

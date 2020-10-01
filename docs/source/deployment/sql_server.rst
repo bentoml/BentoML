@@ -220,3 +220,8 @@ After executing the final query you can see the predictions in form of a table.
 
 To disconnect from the server, click the disconnect icon on the left panel under Object Explorer in SSMS.
 The model is served with SQL server easily with the help of BentoML.
+
+.. spelling::
+
+    analytics
+    exe

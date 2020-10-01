@@ -262,3 +262,9 @@ Remove deployment
 
     kubectl delete -f iris-classifier.yaml
 
+
+.. spelling::
+
+    de
+    facto
+

@@ -206,3 +206,8 @@ Clean up deployed service on Google Cloud Run
 1. Navigate to the manage resources page in Google Cloud Console.
 2. In the project list, select the project you want to delete and click the `delete` icon
 3. In the dialog, type the projectID `sentiment-gcloud-run` and then click `Shut down` to delete the project.
+
+
+.. spelling::
+
+    projectID

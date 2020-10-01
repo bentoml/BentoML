@@ -135,7 +135,7 @@ the models you and your team have created overtime.
     The BentoService class can not be defined in the :code:`__main__` module, meaning
     the class itself should not be defined in a Jupyter notebook cell or a python
     interactive shell. You can however use the :code:`%writefile` magic command in
-    jupyter notebook to write the BentoService class definition to a separate file, see
+    Jupyter notebook to write the BentoService class definition to a separate file, see
     example in `BentoML quickstart notebook <https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
 
 
@@ -464,7 +464,7 @@ accepting a batch of input at one time.
 
 When the API function received a list of input, it is now possible to reject a subset
 of the input data and return an error code to the client, if the input data is invalid
-or malformated. Users can do this via the InferenceTask#discard API, here's an example:
+or malformatted. Users can do this via the InferenceTask#discard API, here's an example:
 
 .. code-block:: python
 
@@ -845,7 +845,7 @@ Python. There are two main ways this can be done:
       bentoml run $saved_path predict --input='[[5.1, 3.5, 1.4, 0.2]]'
       bentoml run $saved_path predict --input='./iris_test_data.csv'
 
-  Or if you have already pip-install'd the BentoService, it provides a CLI command
+  Or if you have already pip-installed the BentoService, it provides a CLI command
   specifically for this BentoService. The CLI command is the same as the BentoService
   class name:
 
@@ -1179,3 +1179,18 @@ This command extends BentoML to be useful in a CI workflow or to provide a rapid
 .. code-block:: bash
 
     bentoml retrieve ModelServe --target_dir=~/bentoml_bundle/
+
+
+.. spelling::
+
+    pre
+    init
+    deserialization
+    malformatted
+    frontend
+    IoT
+    programmatically
+    Jupyter
+    jupyter
+    installable
+    zA

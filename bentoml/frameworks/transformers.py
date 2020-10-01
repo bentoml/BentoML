@@ -28,7 +28,7 @@ class TransformersModelArtifact(BentoServiceArtifact):
             {'model':transformers model object,
             'tokenizer':transformers tokenizer object}
             or a directory path where the model is saved
-            or a pretrained model provided by transformers
+            or a pre-trained model provided by transformers
             which can be loaded using transformers.AutoModelWithLMHead
         NotFound: if the provided model name or model path is not found
 

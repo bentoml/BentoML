@@ -8,7 +8,7 @@ BentoML example projects in the `bentoml/gallery <https://github.com/bentoml/gal
 repository, group by the ML training frameworks used in the project.
 
 You can download the examples below and run them on your computer. Links to run them on
-Google Colab are also available, although some of the features demo'd in the notebooks
+Google Colab are also available, although some of the features demoed in the notebooks
 does not work in the Colab environment due to its limitations, including running the
 BentoML API model server, building docker image or creating cloud deployment.
 
@@ -112,9 +112,9 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.fasttext.FasttextModelArtifact
 
-========
+===========
 Statsmodels
-========
+===========
 
 Example Projects:
 
@@ -177,3 +177,12 @@ Example Projects:
 
 * Shampoo Sales Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
 
+
+.. spelling::
+
+    MLModel
+    tokenizer
+    AutoModelWithLMHead
+    nn
+    fasttext
+    onnx

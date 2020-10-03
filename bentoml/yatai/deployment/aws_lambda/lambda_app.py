@@ -14,6 +14,8 @@
 
 import os
 import sys
+import logging
+import json
 
 try:
     import download_extra_resources
@@ -38,6 +40,8 @@ if '/tmp/requirements' not in sys.path:
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
 from bentoml import load  # noqa
 
+logger = logging.getLogger('bentoml.lambda_app')
+
 bento_name = os.environ['BENTOML_BENTO_SERVICE_NAME']
 api_name = os.environ["BENTOML_API_NAME"]
 
@@ -45,11 +49,11 @@ bento_bundle_path = os.path.join('./', bento_name)
 if not os.path.exists(bento_bundle_path):
     bento_bundle_path = os.path.join('/tmp/requirements', bento_name)
 
-print(f'Loading BentoService bundle from path: "{bento_bundle_path}"')
+logger.debug('Loading BentoService bundle from path: "%s"', bento_bundle_path)
 bento_service = load(bento_bundle_path)
-print(f'BentoService "{bento_service.name}" loaded successfully')
-bento_service_api = bento_service.get_service_api(api_name)
-print(f'BentoService API "{api_name}" loaded successfully')
+logger.debug('BentoService "%s" loaded successfully', bento_service.name)
+bento_service_api = bento_service.get_inference_api(api_name)
+logger.debug('BentoService API "%s" loaded successfully', {bento_service_api.name})
 
 this_module = sys.modules[__name__]
 
@@ -62,18 +66,34 @@ def api_func(event, context):  # pylint: disable=unused-argument
     Application Load Balancer, in which case the parameter `event` must be type `dict`
     containing the HTTP request headers and body.
 
-    see: https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
+    You can find an example of which
+    variables you can expect from the `event` object on the AWS Docs, here
+    https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html
     """
 
     if type(event) is dict and "headers" in event and "body" in event:
-        return bento_service_api.handle_aws_lambda_event(event)
+        prediction = bento_service_api.handle_aws_lambda_event(event)
+        logger.info(
+            json.dumps(
+                {
+                    'event': event,
+                    'prediction': prediction["body"],
+                    'status_code': prediction["statusCode"],
+                }
+            )
+        )
+
+        if prediction["statusCode"] >= 400:
+            logger.warning('Error when predicting. Check logs for more information.')
+
+        return prediction
     else:
         error_msg = (
             'Error: Unexpected Lambda event data received. Currently BentoML lambda '
             'deployment can only handle event triggered by HTTP request from '
             'Application Load Balancer.'
         )
-        print(error_msg)
+        logger.error(error_msg)
         raise RuntimeError(error_msg)
 
 

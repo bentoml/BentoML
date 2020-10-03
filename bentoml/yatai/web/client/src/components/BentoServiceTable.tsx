@@ -1,14 +1,14 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 
-import { displayTimeInFromNowFormat } from "../utils/index";
+import { displayTimeInFromNowFormat } from "../utils";
 import Table from "../ui/Table";
 
 const apisToDisplayFormat = (apis) => {
   if (!apis) {
     return "";
   }
-  return apis.map((api) => `${api.name}<${api.handler_type}>`).join("\n");
+  return apis.map((api) => `${api.name}<${api.input_type}>`).join("\n");
 };
 
 const artifactsToDisplayFormat = (artifacts) => {

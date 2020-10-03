@@ -2,22 +2,22 @@ import sys
 from os import path
 
 import bentoml
-from bentoml.handlers import DataframeHandler
-from bentoml.artifact import SklearnModelArtifact
-
-sys.path.append(path.dirname(path.abspath(__file__)))
+from bentoml.adapters import DataframeInput
+from bentoml.frameworks.sklearn import SklearnModelArtifact
 
 # noqa # pylint: disable=import-error
+sys.path.append(path.dirname(path.abspath(__file__)))  # isort:skip
+from local_dependencies.local_module import (  # isort:skip
+    dependency_in_local_module_directory,
+)
+from local_dependencies.my_test_dependency import dummy_util_func  # isort:skip
+from local_dependencies.nested_dependency import nested_dependency_func  # isort:skip
 
-from local_dependencies.my_test_dependency import dummy_util_func
-from local_dependencies.local_module import dependency_in_local_module_directory
-from local_dependencies.nested_dependency import nested_dependency_func
 
-
-@bentoml.env(pip_dependencies=["scikit-learn"])
+@bentoml.env(pip_packages=["scikit-learn"])
 @bentoml.artifacts([SklearnModelArtifact('model')])
 class IrisClassifier(bentoml.BentoService):
-    @bentoml.api(DataframeHandler)
+    @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):
         df = dummy_util_func(df)
         df = dependency_in_local_module_directory(df)

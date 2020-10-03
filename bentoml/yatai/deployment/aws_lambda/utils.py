@@ -201,7 +201,7 @@ def init_sam_project(
     function_path = os.path.join(sam_project_path, deployment_name)
     os.mkdir(function_path)
     # Copy requirements.txt
-    logger.debug('Coping requirements.txt')
+    logger.debug('Copying requirements.txt')
     requirement_txt_path = os.path.join(bento_service_bundle_path, 'requirements.txt')
     shutil.copy(requirement_txt_path, function_path)
 
@@ -210,7 +210,7 @@ def init_sam_project(
     )
     if os.path.isdir(bundled_dep_path):
         # Copy bundled pip dependencies
-        logger.debug('Coping bundled_dependencies')
+        logger.debug('Copying bundled_dependencies')
         shutil.copytree(
             bundled_dep_path, os.path.join(function_path, 'bundled_pip_dependencies')
         )
@@ -218,7 +218,7 @@ def init_sam_project(
             os.path.join(function_path, 'bundled_pip_dependencies')
         )
         for index, bundled_file_name in enumerate(bundled_files):
-            bundled_files[index] = '\n./bundled_pip_dependencies/{}'.format(
+            bundled_files[index] = './bundled_pip_dependencies/{}\n'.format(
                 bundled_file_name
             )
 
@@ -226,13 +226,13 @@ def init_sam_project(
         with open(
             os.path.join(function_path, 'requirements.txt'), 'r+'
         ) as requirement_file:
-            required_modules = requirement_file.readlines() + bundled_files
+            required_modules = bundled_files + requirement_file.readlines()
             # Write from beginning of the file, instead of appending to the end.
             requirement_file.seek(0)
             requirement_file.writelines(required_modules)
 
     # Copy bento_service_model
-    logger.debug('Coping model directory')
+    logger.debug('Copying model directory')
     model_path = os.path.join(bento_service_bundle_path, bento_name)
     shutil.copytree(model_path, os.path.join(function_path, bento_name))
 

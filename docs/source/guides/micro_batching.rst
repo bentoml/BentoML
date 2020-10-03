@@ -29,11 +29,11 @@ preprocessing procedure will also benefit from micro-batching.
 -  **inbound requests**: requests from user clients
 -  **outbound requests**: requests to upstream model servers
 -  ``mb_max_batch_size`` The maximum size of any batch. This parameter
-   governs the throughput/latency tradeoff, and also avoids having
+   governs the throughput/latency trade-off, and also avoids having
    batches that are so large they exceed some resource constraint (e.g.
    GPU memory to hold a batch's data). Default: 1000.
 -  ``mb_max_latency`` The latency goal of your service in milliseconds.
-   Default: 300.
+   Default: 10000.
 -  **outbound semaphore:** The semaphore represents the degree of
    parallelism, i.e. the maximum number of batches processed
    concurrently. **It is set automatically** when launching the bento
@@ -73,8 +73,8 @@ algorithm, but less than ``mb_max_batch_size``.
 If the outbound semaphore is still locked, requests may be canceled once
 reached ``mb_max_latency``.
 
-1.5 The main design decisions and tradeoffs
--------------------------------------------
+1.5 The main design decisions and trade-offs
+--------------------------------------------
 
 Throughput and latency are most concerned for API servers. BentoML will
 fine-tune batches **automatically** to(in the order priority):
@@ -94,11 +94,12 @@ latency. It will respond to the fluctuations of server loading.
 .. code:: python
 
     class MovieReviewService(bentoml.BentoService):
-        @bentoml.api(DataframeHandler, mb_max_latency=300, mb_max_batch_size=1000)
+        @bentoml.api(input=DataframeInput(),
+                     mb_max_latency=10000, mb_max_batch_size=1000, batch=True)
         def predict(self, inputs):
                     pass
 
-``mb_max_batch_size`` is 1000 by default and ``mb_max_latency`` is 300
+``mb_max_batch_size`` is 1000 by default and ``mb_max_latency`` is 10000
 by default.
 
 -  If the RAM of GPU only allowed input with 100 batch size, then you
@@ -110,15 +111,15 @@ by default.
    ``mb_max_latency`` to 10 \* 100ms will help to achieve higher
    throughput.
 
-3. How to implement batch mode for custom handlers
-==================================================
+3. How to implement batch mode for custom input adapters
+========================================================
 
-TL;DR: Implement the method ``batch_request_handler(requests)``
-following existent handlers.
+TL;DR: Implement the method ``handle_batch_request(requests)``
+following existent input adapters.
 
 The batching service is HTTP request-wise now, which is mostly
 transparent for developers. The only difference between
-``batch_request_handler`` and ``request_handler`` is:
+``handle_batch_request`` and ``handle_request`` is:
 
 -  the input parameter is a list of request object
 -  the return value should be a list of response object
@@ -129,7 +130,7 @@ alternative of each operation from the beginning. For example, each
 
 .. code:: python
 
-    def batch_request_handler(self, requests):
+    def handle_batch_request(self, requests):
         dfs = []
         for req in requests:
             dfs.append(pd.read_csv(req.body))
@@ -182,3 +183,9 @@ of SLO.
 Therefore, for most cases, Clipper have higher latency than BentoML,
 which also means it's able to serve less users at same time.
 
+.. spelling::
+
+    preprocessing
+    concat
+    Nagle
+    mb

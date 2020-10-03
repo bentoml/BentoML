@@ -15,10 +15,10 @@
 import os
 import sys
 import logging
-import pkg_resources
 import pkgutil
 import ast
 import zipimport
+from pkg_resources import Requirement
 
 
 EPP_NO_ERROR = 0
@@ -36,18 +36,38 @@ def parse_requirement_string(rs):
     return name, version
 
 
-def verify_pkg(pkg_name, pkg_version):
+def verify_pkg(pkg_req: Requirement):
     global __mm  # pylint: disable=global-statement
     if __mm is None:
         __mm = ModuleManager()
-    return __mm.verify_pkg(pkg_name, pkg_version)
+    return __mm.verify_pkg(pkg_req)
 
 
-def seek_pip_dependencies(target_py_file_path):
+def seek_pip_packages(target_py_file_path):
     global __mm  # pylint: disable=global-statement
     if __mm is None:
         __mm = ModuleManager()
-    return __mm.seek_pip_dependencies(target_py_file_path)
+    return __mm.seek_pip_packages(target_py_file_path)
+
+
+def get_pkg_version(pkg_name):
+    global __mm  # pylint: disable=global-statement
+    if __mm is None:
+        __mm = ModuleManager()
+    return __mm.pip_pkg_map.get(pkg_name, None)
+
+
+def get_all_pip_installed_modules():
+    global __mm  # pylint: disable=global-statement
+    if __mm is None:
+        __mm = ModuleManager()
+
+    installed_modules = list(
+        # local modules are the ones imported from current directory, either from a
+        # module.py file or a module directory that contains a `__init__.py` file
+        filter(lambda m: not m.is_local, __mm.searched_modules.values())
+    )
+    return list(map(lambda m: m.name, installed_modules))
 
 
 class ModuleInfo(object):
@@ -66,8 +86,19 @@ class ModuleManager(object):
         self.pip_module_map = {}
         self.setuptools_module_set = set()
         self.nonlocal_package_path = set()
+
+        import pkg_resources
+
         for dist in pkg_resources.working_set:  # pylint: disable=not-an-iterable
-            self.nonlocal_package_path.add(dist.module_path)
+            module_path = dist.module_path or dist.location
+            if not module_path:
+                # Skip if no module path was found for pkg distribution
+                continue
+
+            if os.path.realpath(module_path) != os.getcwd():
+                # add to nonlocal_package path only if it's not current directory
+                self.nonlocal_package_path.add(module_path)
+
             self.pip_pkg_map[dist._key] = dist._version
             for mn in dist._get_metadata("top_level.txt"):
                 if dist._key != "setuptools":
@@ -89,17 +120,19 @@ class ModuleManager(object):
                     m.name, path, is_local, m.ispkg
                 )
 
-    def verify_pkg(self, pkg_name, pkg_version):
-        if pkg_name not in self.pip_pkg_map:
+    def verify_pkg(self, pkg_req: Requirement):
+        if pkg_req.name not in self.pip_pkg_map:
             # package does not exist in the current python session
             return EPP_PKG_NOT_EXIST
-        if pkg_version and pkg_version != self.pip_pkg_map[pkg_name]:
-            # package version is different from the version being used
-            # in the current python session
+
+        if self.pip_pkg_map[pkg_req.name] not in pkg_req.specifier:
+            # package version being used in the current python session does not meet
+            # the specified package version requirement
             return EPP_PKG_VERSION_MISMATCH
+
         return EPP_NO_ERROR
 
-    def seek_pip_dependencies(self, target_py_file_path):
+    def seek_pip_packages(self, target_py_file_path):
         work = DepSeekWork(self, target_py_file_path)
         work.do()
         requirements = {}
@@ -163,6 +196,9 @@ class DepSeekWork(object):
                 if node.module is not None and node.level == 0:
                     import_set.add(node.module.partition(".")[0])
         for module_name in import_set:
+            # Avoid parsing BentoML when BentoML is imported from local source code repo
+            if module_name == 'bentoml':
+                continue
             if module_name in self.parsed_module_set:
                 continue
             self.parsed_module_set.add(module_name)

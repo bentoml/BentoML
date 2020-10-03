@@ -1,13 +1,13 @@
-import os
 import json
+import os
 from io import BytesIO
 
-from bentoml.server import BentoAPIServer
+from bentoml.server.api_server import BentoAPIServer
 
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
-def test_api_function_route(bento_service, tmpdir, img_file):
+def test_api_function_route(bento_service, img_file):
     import imageio  # noqa # pylint: disable=unused-import
     import numpy as np  # noqa # pylint: disable=unused-import
 
@@ -32,16 +32,16 @@ def test_api_function_route(bento_service, tmpdir, img_file):
     response = test_client.post(
         "/predict_dataframe", data=json.dumps(data), content_type="application/json"
     )
-    assert response.data.decode().strip() == '30'
+    assert response.data.decode().strip() == '[{"col1":20},{"col1":40}]'
 
     assert "predict_dataframe_v1" in index_list
     data = [{"col1": 10}, {"col1": 20}]
     response = test_client.post(
         "/predict_dataframe_v1", data=json.dumps(data), content_type="application/json"
     )
-    assert response.data.decode().strip() == '30'
+    assert response.data.decode().strip() == '[{"col1":20},{"col1":40}]'
 
-    # Test Image handlers.
+    # Test ImageInput.
     with open(str(img_file), "rb") as f:
         img = f.read()
 
@@ -52,7 +52,7 @@ def test_api_function_route(bento_service, tmpdir, img_file):
     assert "[10, 10, 3]" in str(response.data)
 
     response = test_client.post(
-        "/predict_images",
+        "/predict_multi_images",
         data={
             'original': (BytesIO(img), 'original.jpg'),
             'compared': (BytesIO(img), 'compared.jpg'),

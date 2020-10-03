@@ -1,48 +1,34 @@
-Model Artifacts
-===============
+Base Artifact
+=============
 
-SklearnModelArtifact
-++++++++++++++++++++
-.. autoclass:: bentoml.artifact.SklearnModelArtifact
+All BentoML artifacts are inherited from the BentoServiceArtifact base class:
 
-PytorchModelArtifact
-++++++++++++++++++++
-.. autoclass:: bentoml.artifact.PytorchModelArtifact
+.. autoclass:: bentoml.service.artifacts.BentoServiceArtifact
 
-KerasModelArtifact
-++++++++++++++++++++
-.. autoclass:: bentoml.artifact.KerasModelArtifact
 
-FastaiModelArtifact
-+++++++++++++++++++
-.. autoclass:: bentoml.artifact.FastaiModelArtifact
+In a BentoService#artifacts returns an ArtifactCollection instance:
 
-TensorflowSavedModelArtifact
-++++++++++++++++++++++++++++
-.. autoclass:: bentoml.artifact.TensorflowSavedModelArtifact
+.. autoclass:: bentoml.service.artifacts.ArtifactCollection
 
-XgboostModelArtifact
-++++++++++++++++++++
-.. autoclass:: bentoml.artifact.XgboostModelArtifact
 
-LightGBMModelArtifact
-+++++++++++++++++++++
-.. autoclass:: bentoml.artifact.LightGBMModelArtifact
-
-OnnxModelArtifact
-+++++++++++++++++
-.. autoclass:: bentoml.artifact.OnnxModelArtifact
-
-H2oModelArtifact
+Common Artifacts
 ++++++++++++++++
-.. autoclass:: bentoml.artifact.H2oModelArtifact
 
 PickleArtifact
-++++++++++++++
-.. autoclass:: bentoml.artifact.PickleArtifact
+
+.. autoclass:: bentoml.service.artifacts.common.PickleArtifact
+
+JSONArtifact
+
+.. autoclass:: bentoml.service.artifacts.common.JSONArtifact
 
 TextFileArtifact
-++++++++++++++++
-.. autoclass:: bentoml.artifact.TextFileArtifact
+
+.. autoclass:: bentoml.service.artifacts.common.TextFileArtifact
 
 
+.. spelling::
+
+    deserialization
+    deserializing
+    stdlib

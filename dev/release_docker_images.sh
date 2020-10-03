@@ -9,7 +9,8 @@ else
 fi
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd $GIT_ROOT
+cd "$GIT_ROOT"
 
-./docker/yatai-service/release.sh
-./docker/model-server/release.sh
+./docker/yatai-service/release.sh "$BENTOML_VERSION"
+./docker/model-server/release.sh "$BENTOML_VERSION"
+./docker/azure-functions/release.sh "$BENTOML_VERSION"

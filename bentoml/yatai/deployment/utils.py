@@ -90,7 +90,7 @@ def generate_aws_compatible_string(*items, max_length=63):
     length in a tuple, e.g.:
 
     >> generate_aws_compatible_string("abc", "def")
-    >> 'abc-def'  # concatenate mupltiple parts
+    >> 'abc-def'  # concatenate multiple parts
 
     >> generate_aws_compatible_string("abc_def")
     >> 'abc-def'  # replace invalid chars to '-'
@@ -98,16 +98,16 @@ def generate_aws_compatible_string(*items, max_length=63):
     >> generate_aws_compatible_string(("ab", 1), ("bcd", 2), max_length=4)
     >> 'a-bc'  # trim based on max_length of each part
     """
-    trimed_items = [
+    trimmed_items = [
         item[0][: item[1]] if type(item) == tuple else item for item in items
     ]
     items = [item[0] if type(item) == tuple else item for item in items]
 
-    for i in range(len(trimed_items)):
+    for i in range(len(trimmed_items)):
         if len('-'.join(items)) <= max_length:
             break
         else:
-            items[i] = trimed_items[i]
+            items[i] = trimmed_items[i]
 
     name = '-'.join(items)
     if len(name) > max_length:

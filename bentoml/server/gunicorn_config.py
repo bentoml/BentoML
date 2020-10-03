@@ -1,8 +1,6 @@
 import atexit
 from multiprocessing.util import _exit_function
 
-from bentoml.utils.usage_stats import track_server_stop
-
 
 def worker_exit(server, worker):  # pylint: disable=unused-argument
     from prometheus_client import multiprocess
@@ -51,5 +49,4 @@ def worker_abort(worker):
 
 def post_worker_init(worker):
     worker.log.debug('Unregistering usage tracking in worker process')
-    atexit.unregister(track_server_stop)
     atexit.unregister(_exit_function)  # Shutting down Gunicorn gracefully

@@ -12,25 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
 import asyncio
 import logging
 import multiprocessing
+import time
 import traceback
 from functools import partial
 
-import psutil
 import aiohttp
+import psutil
 
 from bentoml import config
 from bentoml.exceptions import RemoteException
-from bentoml.server.trace import async_trace, make_http_headers
-from bentoml.marshal.utils import DataLoader, SimpleRequest
-from bentoml.handlers import HANDLER_TYPES_BATCH_MODE_SUPPORTED
-from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.utils.usage_stats import track_server
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
-from bentoml.marshal.utils import SimpleResponse
+from bentoml.marshal.utils import DataLoader
+from bentoml.saved_bundle import load_bento_service_metadata
+from bentoml.server.trace import async_trace, make_http_headers
+from bentoml.types import HTTPRequest, HTTPResponse
 
 logger = logging.getLogger(__name__)
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
@@ -61,19 +59,19 @@ def metrics_patch(cls):
             )
             self.metrics_request_in_progress = Gauge(
                 name=service_name + "_mb_request_in_progress",
-                documentation='Totoal number of HTTP requests in progress now',
+                documentation='Total number of HTTP requests in progress now',
                 namespace=namespace,
                 labelnames=['endpoint', 'http_method'],
             )
             self.metrics_request_exception = Counter(
                 name=service_name + "_mb_request_exception",
-                documentation='Totoal number of service exceptions',
+                documentation='Total number of service exceptions',
                 namespace=namespace,
                 labelnames=['endpoint', 'exception_class'],
             )
             self.metrics_request_total = Counter(
                 name=service_name + "_mb_request_total",
-                documentation='Totoal number of service exceptions',
+                documentation='Total number of service exceptions',
                 namespace=namespace,
                 labelnames=['endpoint', 'http_response_code'],
             )
@@ -92,6 +90,7 @@ def metrics_patch(cls):
                 self.metrics_request_exception.labels(
                     endpoint=api_name, exception_class=e.__class__.__name__
                 ).inc()
+                logger.error(traceback.format_exc())
                 resp = aiohttp.web.Response(status=500)
             self.metrics_request_total.labels(
                 endpoint=api_name, http_response_code=resp.status
@@ -124,8 +123,9 @@ class MarshalService:
 
     _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
     _DEFAULT_PORT = config("apiserver").getint("default_port")
-    _DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
-    _DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
+    DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
+    DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
+    MAX_REQUEST_SIZE = config("apiserver").getint("default_max_request_size")
 
     def __init__(
         self,
@@ -184,23 +184,12 @@ class MarshalService:
             self.batch_handlers[api_name] = _func
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):
-        for api_config in bento_service_metadata_pb.apis:
-            if api_config.handler_type in HANDLER_TYPES_BATCH_MODE_SUPPORTED:
-                handler_config = getattr(api_config, "handler_config", {})
-                max_latency = (
-                    handler_config["mb_max_latency"]
-                    if "mb_max_latency" in handler_config
-                    else self._DEFAULT_MAX_LATENCY
-                )
-                max_batch_size = (
-                    handler_config["mb_max_batch_size"]
-                    if "mb_max_batch_size" in handler_config
-                    else self._DEFAULT_MAX_BATCH_SIZE
-                )
-                self.add_batch_handler(
-                    api_config.name, max_latency, max_batch_size,
-                )
-                logger.info("Micro batch enabled for API `%s`", api_config.name)
+        for api_pb in bento_service_metadata_pb.apis:
+            if api_pb.batch:
+                max_latency = api_pb.mb_max_latency or self.DEFAULT_MAX_LATENCY
+                max_batch_size = api_pb.mb_max_batch_size or self.DEFAULT_MAX_BATCH_SIZE
+                self.add_batch_handler(api_pb.name, max_latency, max_batch_size)
+                logger.info("Micro batch enabled for API `%s`", api_pb.name)
 
     async def request_dispatcher(self, request):
         with async_trace(
@@ -213,7 +202,10 @@ class MarshalService:
         ):
             api_name = request.match_info.get("name")
             if api_name in self.batch_handlers:
-                req = SimpleRequest(request.raw_headers, await request.read())
+                req = HTTPRequest(
+                    tuple((k.decode(), v.decode()) for k, v in request.raw_headers),
+                    await request.read(),
+                )
                 try:
                     resp = await self.batch_handlers[api_name](req)
                 except RemoteException as e:
@@ -222,11 +214,11 @@ class MarshalService:
                     resp = aiohttp.web.Response(
                         status=e.payload.status,
                         headers=e.payload.headers,
-                        body=e.payload.data,
+                        body=e.payload.body,
                     )
                 except Exception:  # pylint: disable=broad-except
                     logger.error(traceback.format_exc())
-                    resp = aiohttp.web.InternalServerError()
+                    resp = aiohttp.web.HTTPInternalServerError()
             else:
                 resp = await self.relay_handler(request)
         return resp
@@ -271,17 +263,28 @@ class MarshalService:
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
             reqs_s = DataLoader.merge_requests(requests)
-            async with aiohttp.ClientSession() as client:
-                async with client.post(api_url, data=reqs_s, headers=headers) as resp:
-                    raw = await resp.read()
+            try:
+                async with aiohttp.ClientSession() as client:
+                    async with client.post(
+                        api_url, data=reqs_s, headers=headers
+                    ) as resp:
+                        raw = await resp.read()
+            except aiohttp.client_exceptions.ClientConnectionError as e:
+                raise RemoteException(
+                    e, payload=HTTPResponse(status=503, body=b"Service Unavailable")
+                )
             if resp.status != 200:
                 raise RemoteException(
                     f"Bad response status from model server:\n{resp.status}\n{raw}",
-                    payload=SimpleResponse(resp.status, resp.headers, raw),
+                    payload=HTTPResponse(
+                        status=resp.status,
+                        headers=tuple(resp.headers.items()),
+                        body=raw,
+                    ),
                 )
             merged = DataLoader.split_responses(raw)
             return tuple(
-                aiohttp.web.Response(body=i.data, headers=i.headers, status=i.status)
+                aiohttp.web.Response(body=i.body, headers=i.headers, status=i.status)
                 for i in merged
             )
 
@@ -289,7 +292,6 @@ class MarshalService:
         """
         Start an micro batch server at the specific port on the instance or parameter.
         """
-        track_server('marshal')
         marshal_proc = multiprocessing.Process(
             target=self.fork_start_app, kwargs=dict(port=port), daemon=True,
         )
@@ -297,7 +299,7 @@ class MarshalService:
         logger.info("Running micro batch service on :%d", port)
 
     def make_app(self):
-        app = aiohttp.web.Application()
+        app = aiohttp.web.Application(client_max_size=self.MAX_REQUEST_SIZE)
         app.router.add_view("/", self.relay_handler)
         app.router.add_view("/{name}", self.request_dispatcher)
         app.router.add_view("/{path:.*}", self.relay_handler)

@@ -33,16 +33,12 @@ def get_deployment_operator(yatai_service, deployment_pb):
         )
 
         return AwsLambdaDeploymentOperator(yatai_service)
-    elif operator == DeploymentSpec.GCP_FUNCTION:
-        raise NotImplementedError(
-            "GCP Function deployment operator is not supported in current version of "
-            "BentoML"
+    elif operator == DeploymentSpec.AZURE_FUNCTIONS:
+        from bentoml.yatai.deployment.azure_functions.operator import (
+            AzureFunctionsDeploymentOperator,
         )
-    elif operator == DeploymentSpec.KUBERNETES:
-        raise NotImplementedError(
-            "Kubernetes deployment operator is not supported in current version of "
-            "BentoML"
-        )
+
+        return AzureFunctionsDeploymentOperator(yatai_service)
     elif operator == DeploymentSpec.CUSTOM:
         raise NotImplementedError(
             "Custom deployment operator is not supported in current version of BentoML"

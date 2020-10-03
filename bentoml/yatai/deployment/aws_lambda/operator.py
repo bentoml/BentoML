@@ -21,8 +21,8 @@ from pathlib import Path
 
 import boto3
 from botocore.exceptions import ClientError
-from ruamel.yaml import YAML
 
+from bentoml.utils.ruamel_yaml import YAML
 from bentoml.exceptions import (
     BentoMLException,
     InvalidArgument,
@@ -88,7 +88,7 @@ def _create_aws_lambda_cloudformation_template_file(
             'Function': {'Timeout': timeout, 'Runtime': py_runtime},
             'Api': {
                 'BinaryMediaTypes': ['image~1*'],
-                'Cors': {'AllowOrigin': "'*'"},
+                'Cors': "'*'",
                 'Auth': {
                     'ApiKeyRequired': False,
                     'DefaultAuthorizer': 'NONE',
@@ -189,8 +189,10 @@ def _deploy_lambda_function(
         for i in artifact_types
     ) and (py_major, py_minor) != ('3', '6'):
         raise BentoMLException(
-            'For Tensorflow and Keras model, only python3.6 is '
-            'supported for AWS Lambda deployment'
+            'AWS Lambda Deployment only supports BentoML services'
+            'built with Python 3.6.x. To fix this, repack your'
+            'service with the right Python version'
+            '(hint: pyenv/anaconda) and try again'
         )
 
     api_names = (

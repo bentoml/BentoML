@@ -5,7 +5,7 @@
   "description": "",
   "license": "Apache-2.0",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node dist/bundle.js",
     "dev": "bash -c 'concurrently \"nodemon -- ${0} ${1} ${2}\" \"npm run watch:client\"'",
     "watch": "concurrently \"npm:watch:*\"",
     "watch:server": "nodemon",
@@ -24,10 +24,10 @@
     "@grpc/grpc-js": "^0.7.5",
     "@types/lodash": "^4.14.149",
     "express": "^4.17.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "morgan": "^1.10.0",
     "normalize.css": "^8.0.1",
-    "protobufjs": "^6.8.8",
+    "protobufjs": "^6.9.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.5.4",
     "winston": "^3.2.1"

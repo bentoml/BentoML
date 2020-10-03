@@ -1,0 +1,39 @@
+{{- if .Values.postgres.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yatai-postgres
+  labels:
+    app: yatai-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yatai-postgres
+  template:
+    metadata:
+      labels:
+        app: yatai-postgres
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: yatai-postgres
+          image: "{{ .Values.postgres.image.repo }}:{{ .Values.postgres.image.version }}"
+          imagePullPolicy: {{ .Values.yatai.image.pullPolicy }}
+          ports:
+            - containerPort: 5432 # default postgres port
+          envFrom:
+            - configMapRef:
+                name: yatai-postgres-config
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: yatai-postgredb
+      volumes:
+        - name: yatai-postgredb
+          persistentVolumeClaim:
+            claimName: yatai-postgres-pv-claim
+{{- end -}}

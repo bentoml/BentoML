@@ -1,12 +1,10 @@
+import json
 import os
 import sys
-import json
-import pytest
 
 import pandas as pd
 import psutil
-
-from bentoml.configuration import get_bentoml_deploy_version
+import pytest
 
 
 def format_path(path_str):
@@ -18,19 +16,17 @@ def format_path(path_str):
 @pytest.mark.skipif('not psutil.POSIX')
 def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     import subprocess
+    from pip._internal.cli.main import main as pipmain
 
     install_path = str(tmpdir.mkdir("pip_local"))
     bentoml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-    stdout = subprocess.check_output(
-        ["pip", "install", "-U", "--target={}".format(install_path), bento_bundle_path]
-    ).decode('utf-8')
-
-    assert format_path("Processing {}".format(bento_bundle_path)) in format_path(
-        format_path(stdout)
-    )
-    assert "Collecting bentoml=={}".format(get_bentoml_deploy_version()) in stdout
-    assert "Successfully built ExampleBentoService" in stdout
+    assert (
+        pipmain(
+            ["install", "-U", "--target={}".format(install_path), bento_bundle_path]
+        )
+        == 0
+    ), 'saved bundle successfully installed'
 
     # ensure BentoML is installed as dependency
     if psutil.WINDOWS:
@@ -46,10 +42,10 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
 
     svc = ExampleBentoService.load()
     res = svc.predict_dataframe(pd.DataFrame(pd.DataFrame([1], columns=["col1"])))
-    assert res == 1
+    assert (res == 2).all()
 
     res = svc.predict_dataframe_v1(pd.DataFrame(pd.DataFrame([1], columns=["col1"])))
-    assert res == 1
+    assert (res == 2).all()
 
     # pip install should place cli entry script under target/bin directory
     if psutil.WINDOWS:

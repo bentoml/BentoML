@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import logging
+
 from flask import Response
 from gunicorn.app.base import Application
 
 from bentoml import config
 from bentoml.saved_bundle import load
-from bentoml.server import BentoAPIServer
+from bentoml.server.api_server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
-from bentoml.utils.usage_stats import track_server
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +63,12 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
 
         self.port = port or config("apiserver").getint("default_port")
         timeout = timeout or config("apiserver").getint("default_timeout")
+        max_request_size = config("apiserver").getint("default_max_request_size")
         self.options = {
             "bind": "%s:%s" % ("0.0.0.0", self.port),
             "timeout": timeout,
-            "loglevel": config("logging").get("LOGGING_LEVEL").upper(),
+            "limit_request_line": max_request_size,
+            "loglevel": config("logging").get("LEVEL").upper(),
         }
         if workers:
             self.options['workers'] = workers
@@ -94,6 +96,5 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         return api_server.app
 
     def run(self):
-        track_server('gunicorn', {"number_of_workers": self.cfg.workers})
         setup_prometheus_multiproc_dir(self.prometheus_lock)
         super(GunicornBentoServer, self).run()

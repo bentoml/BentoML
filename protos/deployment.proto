@@ -5,6 +5,7 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 import "status.proto";
+import "label_selectors.proto";
 
 // DeploymentSpec defines a model serving deployment that can be reproduced to target
 // deployment target
@@ -20,8 +21,7 @@ message DeploymentSpec {
     // Built-in deployment operator types
     AWS_SAGEMAKER = 2;
     AWS_LAMBDA = 3;
-    GCP_FUNCTION = 4;
-    KUBERNETES = 5;
+    AZURE_FUNCTIONS = 4;
   }
 
   message CustomOperatorConfig {
@@ -50,16 +50,16 @@ message DeploymentSpec {
     int32 timeout = 4;
   }
 
-  message GcpFunctionOperatorConfig {
-    string region = 1;
-    string api_name = 2;
-  }
-
-  message KubernetesOperatorConfig {
-    string kube_namespace = 1;
-    int32 replicas = 2;
-    string service_name = 3;
-    string service_type = 4;
+  message AzureFunctionsOperatorConfig {
+      // Similar to region value in AWS
+      string location = 1;
+      // Azure function premium plan id
+      string premium_plan_sku = 2;
+      // Number of workers for the app service plan
+      int32 min_instances = 3;
+      // Maximum number of elastic workers
+      int32 max_burst = 4;
+      string function_auth_level = 5;
   }
 
   // Bento name and version are used as an reference to the saved Bento
@@ -73,8 +73,7 @@ message DeploymentSpec {
     CustomOperatorConfig custom_operator_config = 4;
     SageMakerOperatorConfig sagemaker_operator_config = 5;
     AwsLambdaOperatorConfig aws_lambda_operator_config = 6;
-    GcpFunctionOperatorConfig gcp_function_operator_config = 7;
-    KubernetesOperatorConfig kubernetes_operator_config = 8;
+    AzureFunctionsOperatorConfig azure_functions_operator_config = 7;
   }
 }
 
@@ -183,9 +182,9 @@ message ListDeploymentsRequest {
   DeploymentSpec.DeploymentOperator operator = 4;
   SORTABLE_COLUMN order_by = 5;
   bool ascending_order = 6;
-  // Optional, currently only handle label filter with key=value pairs. In the future,
-  // we should handle more advanced filter query such as `in` and `notin`.
-  string labels_query =7;
+
+  string labels_query =7; // Deprecated in favor of label_selectors
+  LabelSelectors label_selectors =8;
 }
 
 message ListDeploymentsResponse {

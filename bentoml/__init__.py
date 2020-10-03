@@ -29,11 +29,11 @@ from bentoml.service import (
     BentoService,
     api_decorator as api,
     env_decorator as env,
+    web_static_content_decorator as web_static_content,
     artifacts_decorator as artifacts,
     ver_decorator as ver,
     save,
 )
-
 
 __all__ = [
     "__version__",
@@ -41,11 +41,13 @@ __all__ = [
     "artifacts",
     "config",
     "env",
+    "web_static_content",
     "ver",
     "BentoService",
     "load",
     "save",
     "save_to_dir",
     "handlers",
+    "adapters",
     "artifact",
 ]

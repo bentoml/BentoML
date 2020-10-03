@@ -12,17 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.yatai.proto import status_pb2
+from bentoml.utils.lazy_loader import LazyLoader
 
-_PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE = {
-    status_pb2.Status.INTERNAL: 500,  # Internal Server Error
-    status_pb2.Status.INVALID_ARGUMENT: 400,  # "Bad Request"
-    status_pb2.Status.NOT_FOUND: 404,  # Not Found
-    status_pb2.Status.DEADLINE_EXCEEDED: 408,  # Request Time out
-    status_pb2.Status.PERMISSION_DENIED: 401,  # Unauthorized
-    status_pb2.Status.UNAUTHENTICATED: 401,  # Unauthorized
-    status_pb2.Status.FAILED_PRECONDITION: 500,  # Internal Server Error
-}
+yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
+
+
+def _proto_status_code_to_http_status_code(proto_status_code, fallback):
+    _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE = {
+        yatai_proto.status_pb2.Status.INTERNAL: 500,  # Internal Server Error
+        yatai_proto.status_pb2.Status.INVALID_ARGUMENT: 400,  # "Bad Request"
+        yatai_proto.status_pb2.Status.NOT_FOUND: 404,  # Not Found
+        yatai_proto.status_pb2.Status.DEADLINE_EXCEEDED: 408,  # Request Time out
+        yatai_proto.status_pb2.Status.PERMISSION_DENIED: 401,  # Unauthorized
+        yatai_proto.status_pb2.Status.UNAUTHENTICATED: 401,  # Unauthorized
+        yatai_proto.status_pb2.Status.FAILED_PRECONDITION: 500,  # Internal Server Error
+    }
+    return _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE.get(proto_status_code, fallback)
 
 
 class BentoMLException(Exception):
@@ -31,23 +36,25 @@ class BentoMLException(Exception):
     Each custom exception should be derived from this class
     """
 
-    proto_status_code = status_pb2.Status.INTERNAL
+    @property
+    def proto_status_code(self):
+        return yatai_proto.status_pb2.Status.INTERNAL
 
     @property
     def status_proto(self):
-        return status_pb2.Status(
+        return yatai_proto.status_pb2.Status(
             status_code=self.proto_status_code, error_message=str(self)
         )
 
     @property
     def status_code(self):
         """HTTP response status code"""
-        return _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE.get(self.proto_status_code, 500)
+        return _proto_status_code_to_http_status_code(self.proto_status_code, 500)
 
 
 class RemoteException(BentoMLException):
     """
-    Raise when known exceptions happend in remote server(a model server normally)
+    Raise when known exceptions happened in remote server(a model server normally)
     """
 
     def __init__(self, *args, payload, **kwargs):
@@ -61,7 +68,9 @@ class Unauthenticated(BentoMLException):
     party cloud service such as AWS s3, Docker Hub, or Atalaya hosted BentoML service
     """
 
-    proto_status_code = status_pb2.Status.UNAUTHENTICATED
+    @property
+    def proto_status_code(self):
+        return yatai_proto.status_pb2.Status.UNAUTHENTICATED
 
 
 class InvalidArgument(BentoMLException):
@@ -70,11 +79,13 @@ class InvalidArgument(BentoMLException):
     Request, or python API function parameters
     """
 
-    proto_status_code = status_pb2.Status.INVALID_ARGUMENT
+    @property
+    def proto_status_code(self):
+        return yatai_proto.status_pb2.Status.INVALID_ARGUMENT
 
 
 class BadInput(InvalidArgument):
-    """Raise when BentoHandler receiving bad input request"""
+    """Raise when InputAdapter receiving bad input request"""
 
 
 class NotFound(BentoMLException):
@@ -82,7 +93,9 @@ class NotFound(BentoMLException):
     Raise when specified resource or name not found
     """
 
-    proto_status_code = status_pb2.Status.NOT_FOUND
+    @property
+    def proto_status_code(self):
+        return yatai_proto.status_pb2.Status.NOT_FOUND
 
 
 class FailedPrecondition(BentoMLException):
@@ -90,7 +103,9 @@ class FailedPrecondition(BentoMLException):
     Raise when required precondition check failed
     """
 
-    proto_status_code = status_pb2.Status.FAILED_PRECONDITION
+    @property
+    def proto_status_code(self):
+        return yatai_proto.status_pb2.Status.FAILED_PRECONDITION
 
 
 class ArtifactLoadingException(BentoMLException):
@@ -117,7 +132,9 @@ class YataiServiceException(BentoMLException):
 class YataiServiceRpcAborted(YataiServiceException):
     """Raise when YataiService RPC operation aborted"""
 
-    proto_status_code = status_pb2.Status.ABORTED
+    @property
+    def proto_status_code(self):
+        return yatai_proto.status_pb2.Status.ABORTED
 
 
 class YataiDeploymentException(YataiServiceException):
@@ -125,8 +142,20 @@ class YataiDeploymentException(YataiServiceException):
 
 
 class YataiRepositoryException(YataiServiceException):
-    """Raise when YataiService encounters an issue managing BentoService repoistory"""
+    """Raise when YataiService encounters an issue managing BentoService repository"""
 
 
 class AWSServiceError(YataiDeploymentException):
     """Raise when YataiService encounters an issue with AWS service"""
+
+
+class AzureServiceError(YataiDeploymentException):
+    """Raise when YataiService encounters an issue with Azure service"""
+
+
+class CLIException(BentoMLException):
+    """Raise when CLI encounters an issue"""
+
+
+class YataiLabelException(YataiServiceException):
+    """Raise when YataiService encounters an issue managing BentoService label"""

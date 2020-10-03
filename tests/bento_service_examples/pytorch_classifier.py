@@ -1,15 +1,15 @@
 import numpy
-import torch  # pylint: disable=import-error
 
 import bentoml
-from bentoml.artifact import PytorchModelArtifact
-from bentoml.handlers import DataframeHandler
+import torch  # pylint: disable=import-error
+from bentoml.adapters import DataframeInput
+from bentoml.frameworks.pytorch import PytorchModelArtifact
 
 
-@bentoml.env(auto_pip_dependencies=True)
+@bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([PytorchModelArtifact('model')])
 class PytorchClassifier(bentoml.BentoService):
-    @bentoml.api(DataframeHandler)
+    @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):
         input_data = df.to_numpy().astype(numpy.float32)
         input_tensor = torch.from_numpy(input_data)

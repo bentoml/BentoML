@@ -33,7 +33,7 @@ Create Google cloud project
 
 .. code-block:: bash
 
-    $ glcoud components update
+    $ gcloud components update
 
     All components are up to date.
 
@@ -42,7 +42,7 @@ Create Google cloud project
 
     $ gcloud projects create irisclassifier-gcloud-run
 
-    # Sample ouput
+    # Sample output
 
     Create in progress for [https://cloudresourcemanager.googleapis.com/v1/projects/irisclassifier-gcloud-run].
     Waiting for [operations/cp.6403723248945195918] to finish...done.
@@ -69,6 +69,7 @@ BentoML saved bundle for deployment:
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
+    pip install -r ./bentoml/guides/quick-start/requirements.txt
     python ./bentoml/guides/quick-start/main.py
 
 Verify the saved bundle created:
@@ -103,7 +104,7 @@ Verify the saved bundle created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeHandler",
+            "InputType": "DataframeInput",
             "docs": "BentoService API"
           }
         ]
@@ -134,8 +135,8 @@ Use `gcloud` CLI to build the docker image
 
 .. code-block:: bash
 
-    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
-    $ saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    # Find the local path of the latest version IrisClassifier saved bundle
+    $ saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
     $ cd $saved_path
     $ gcloud builds submit --tag gcr.io/irisclassifier-gcloud-run/iris-classifier
 
@@ -164,12 +165,12 @@ Deploy the image to Google Cloud Run
 2. Click `Create Service` on the top of the navigation bar
 3. In the Create Cloud Run service page:
 
-**Select container image URL from the selection menu, choose allow Unauthenitcated invocations from the Authentication section**
+**Select container image URL from the selection menu, choose allow Unauthenticated invocations from the Authentication section**
 
 .. image:: ../_static/img/gcloud-start.png
     :alt: GCP project creation
 
-**Expand Show Optional Revision Settings and change COntainer Port from `8080` to `5000`**
+**Expand Show Optional Revision Settings and change Container Port from `8080` to `5000`**
 
 .. image:: ../_static/img/gcloud-setting.png
     :alt: GCP project setting
@@ -205,3 +206,8 @@ Clean up deployed service on Google Cloud Run
 1. Navigate to the manage resources page in Google Cloud Console.
 2. In the project list, select the project you want to delete and click the `delete` icon
 3. In the dialog, type the projectID `sentiment-gcloud-run` and then click `Shut down` to delete the project.
+
+
+.. spelling::
+
+    projectID

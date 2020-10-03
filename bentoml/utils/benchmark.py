@@ -50,9 +50,9 @@ class DynamicBucketMerge:
     def __init__(self, sample_range=1, bucket_num=10):
         self.bucket_num = bucket_num
         self.sample_range = sample_range
-        self.bucket = [0] * (bucket_num)
-        self.bucket_sample = [0] * (bucket_num)
-        self.bucket_ver = [0] * (bucket_num)
+        self.bucket = [0] * bucket_num
+        self.bucket_sample = [0] * bucket_num
+        self.bucket_ver = [0] * bucket_num
 
     def put(self, timestamp, num):
         timestamp = timestamp / self.sample_range
@@ -198,7 +198,7 @@ class Stat:
         if health < 90:
             print(
                 """
-                *** WARNNING ***
+                *** WARNING ***
                 The client health rate is low. The benchmark result is not reliable.
                 Possible solutions:
                 * check the failure_rate and avoid request failures
@@ -229,17 +229,41 @@ class BenchmarkClient:
     """
     A locust-like benchmark tool with asyncio.
     Features:
-    * Very effcient, low CPU cost
-    * Could be embeded into other asyncio APPs, like jupyter notebook
+    * Very efficient, low CPU cost
+    * Could be embedded into other asyncio apps, like jupyter notebook
 
     Paras:
-    * request_producer: function with return value
+    * request_producer: The test case producer, a function with return value
         (url: str, method: str, headers: dict, data: str)
-    * gen_wait_time: function to return each users' wait time between requests,
+    * request_interval: intervals in seconds between each requests of the same user,
+      lazy value supported.
         for eg:
-            - lambda: 1  # for constant 1 sec
+            - 1  # for constant 1 sec
             - lambda: random.random()  # for random wait time between 0 and 1
     * url_override: override the url provided by request_producer
+
+
+    Example usage
+    =========
+
+    In a session of one minute, 100 users keep sending POST request with
+    one seconds interval:
+
+    ``` test.py
+    def test_case_producer():
+        return ('http://localhost:5000',
+                "POST",
+                {"Content-Type": "application/json"},
+                '{"x": 1.0}')
+
+    from bentoml.utils.benchmark import BenchmarkClient
+    b = BenchmarkClient(test_case_producer, request_interval=1, timeout=10)
+    b.start_session(session_time=60, total_user=100)
+    ```
+
+    run command:
+    > python test.py
+
     """
 
     STATUS_STOPPED = 0
@@ -250,12 +274,12 @@ class BenchmarkClient:
     def __init__(
         self,
         request_producer: callable,
-        gen_wait_time: callable,
+        request_interval,
         verify_response: callable = default_verify_response,
         url_override=None,
         timeout=10,
     ):
-        self.gen_wait_time = gen_wait_time
+        self.request_interval = request_interval
         self.request_producer = request_producer
         self.verify_response = verify_response
         self.url_override = url_override
@@ -274,6 +298,7 @@ class BenchmarkClient:
                 req_url = self.url_override or url
                 err = ''
                 group = ''
+                # noinspection PyUnresolvedReferences
                 try:
                     async with sess.request(
                         method,
@@ -286,7 +311,7 @@ class BenchmarkClient:
                         if not self.verify_response(r.status, msg):
                             group = f"{r.status}"
                             err = f"<status: {r.status}>\n{msg}"
-                except asyncio.CancelledError:
+                except asyncio.CancelledError:  # pylint: disable=try-except-raise
                     raise
                 except (
                     aiohttp.client_exceptions.ServerDisconnectedError,
@@ -305,7 +330,11 @@ class BenchmarkClient:
                     self.stat.log_succeed(req_stop - req_start)
 
                 url, method, headers, data = self.request_producer()
-                wait_time = self.gen_wait_time() + wait_time_suffix
+                if callable(self.request_interval):
+                    request_interval = self.request_interval()
+                else:
+                    request_interval = self.request_interval
+                wait_time = request_interval + wait_time_suffix
 
                 sleep_until = req_stop + wait_time
 
@@ -383,14 +412,16 @@ class BenchmarkClient:
                 loop = asyncio.get_event_loop()
                 loop.stop()
 
-    def start_session(self, session_time, total_user, spawn_speed):
+    def start_session(self, session_time, total_user, spawn_speed=None):
         """
         To start a benchmark session. If it's running It will return immediately.
         Paras:
         * session_time: session time in sec
         * total_user: user count need to be spawned
-        * spawn_speed: user spawnning speed, in user/sec
+        * spawn_speed: user spawning speed, in user/sec
         """
+        if spawn_speed is None:
+            spawn_speed = total_user
         loop = asyncio.get_event_loop()
         if not loop.is_running():
             self._stop_loop_flag = True

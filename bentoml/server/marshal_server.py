@@ -15,12 +15,22 @@
 import logging
 import multiprocessing
 
+import psutil
 from gunicorn.app.base import Application
 
 from bentoml import config
-from bentoml.marshal import MarshalService
-from bentoml.utils.usage_stats import track_server
+from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
+
+if psutil.POSIX:
+    # After Python 3.8, the default start method of multiprocessing for MacOS changed to
+    # spawn, which would cause RecursionError when launching Gunicorn Application.
+    # Ref:
+    # https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+    #
+    # Note: https://bugs.python.org/issue33725 claims that fork method may cause crashes
+    # on MacOS.
+    multiprocessing.set_start_method('fork')
 
 marshal_logger = logging.getLogger("bentoml.marshal")
 
@@ -41,10 +51,12 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
 
         self.port = port or config("apiserver").getint("default_port")
         timeout = timeout or config("apiserver").getint("default_timeout")
+        max_request_size = config("apiserver").getint("default_max_request_size")
         self.options = {
             "bind": "%s:%s" % ("0.0.0.0", self.port),
             "timeout": timeout,
-            "loglevel": config("logging").get("LOGGING_LEVEL").upper(),
+            "limit_request_line": max_request_size,
+            "loglevel": config("logging").get("LEVEL").upper(),
             "worker_class": "aiohttp.worker.GunicornWebWorker",
         }
         if workers:
@@ -81,7 +93,6 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         return server.make_app()
 
     def run(self):
-        track_server('gunicorn-microbatch', {"number_of_workers": self.cfg.workers})
         setup_prometheus_multiproc_dir(self.prometheus_lock)
         super(GunicornMarshalServer, self).run()
 

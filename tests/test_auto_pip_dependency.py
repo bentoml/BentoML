@@ -8,7 +8,7 @@ from tests.bento_service_examples.iris_classifier import IrisClassifier
 from tests.conftest import delete_saved_bento_service
 
 
-def test_auto_handler_dependencies(bento_bundle_path):
+def test_auto_adapter_dependencies(bento_bundle_path):
     with open(os.path.join(bento_bundle_path, 'requirements.txt')) as f:
         requirements_txt_content = f.read()
 
@@ -17,7 +17,7 @@ def test_auto_handler_dependencies(bento_bundle_path):
     assert 'imageio' in dependencies
     assert 'bentoml' in dependencies
 
-    # Test that dependencies also wrote to BentoServiceMetadat config file
+    # Test that dependencies also wrote to BentoServiceMetadata config file
 
 
 def test_auto_artifact_dependencies():
@@ -45,7 +45,7 @@ def test_auto_artifact_dependencies():
 
     # Test that dependencies also wrote to BentoServiceMetadat config file
     bs_matadata = load_bento_service_metadata(saved_path)
-    dependencies = bs_matadata.env.pip_dependencies.split('\n')
+    dependencies = bs_matadata.env.pip_packages
     dependencies = [dep.split('==')[0] for dep in dependencies]
     assert 'scikit-learn' in dependencies
     assert 'bentoml' in dependencies

@@ -52,6 +52,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+.test_bundle/
 
 # Translations
 *.mo
@@ -128,3 +129,11 @@ mlflow_tmp/
 # bundle local bentoml source when installed in editor mode
 __bentoml_tmp_sdist_build
 
+# vscode config
+.vscode/
+
+# temp sdist build generated when bundling local dev branch of BentoML
+__bentoml_tmp_sdist_build
+
+# Helm Dependencies
+helm/YataiService/charts

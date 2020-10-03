@@ -14,12 +14,10 @@ BentoService
 
   .. automethod:: bentoml.BentoService.set_version
 
-  .. automethod:: bentoml.BentoService.get_service_apis
+  .. autoattribute:: bentoml.BentoService.inference_apis
 
-  .. method:: bentoml.BentoService.artifacts
+  .. autoattribute:: bentoml.BentoService.artifacts
 
-        returns a dictionary of packed artifacts from the artifact name to the artifact
-        model instance in its native form
 
   .. _bentoml-bentoservice-pack-label:
 
@@ -34,6 +32,7 @@ BentoService
         :return: this BentoService instance
 
   .. automethod:: bentoml.BentoService.pack
+    :noindex:
 
   .. _bentoml-bentoservice-save-label:
 
@@ -77,3 +76,14 @@ save_to_dir
 load
 ++++
 .. autofunction:: bentoml.load
+
+
+.. spelling::
+
+    inferencing
+    docstring
+    env
+    pre
+    yml
+    ver
+    dir

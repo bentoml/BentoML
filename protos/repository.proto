@@ -5,6 +5,7 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 import "status.proto";
+import "label_selectors.proto";
 
 
 message BentoUri {
@@ -20,15 +21,17 @@ message BentoUri {
   StorageType type = 1;
   string uri = 2;
   string s3_presigned_url = 3;
+  string gcs_presigned_url = 4;
 }
 
 message BentoServiceMetadata {
   message BentoServiceEnv {
     string setup_sh = 1;
     string conda_env = 2;
-    string pip_dependencies = 3;
+    string pip_dependencies = 3; // deprecated, in favor of pip_packages below
     string python_version = 4;
     string docker_base_image = 5;
+    repeated string pip_packages = 6;
   }
 
   message BentoArtifact {
@@ -38,11 +41,14 @@ message BentoServiceMetadata {
 
   message BentoServiceApi {
     string name = 1;
-    string handler_type = 2;
+    string input_type = 2;
     string docs = 3;
-
-    // Configs for customizing BentoHandler
-    google.protobuf.Struct handler_config = 4;
+    google.protobuf.Struct input_config = 4;
+    google.protobuf.Struct output_config = 5;
+    string output_type = 6;
+    int32 mb_max_latency = 7;
+    int32 mb_max_batch_size = 8;
+    bool batch = 9;
   }
 
   string name = 1;
@@ -51,6 +57,8 @@ message BentoServiceMetadata {
   BentoServiceEnv env = 4;
   repeated BentoArtifact artifacts = 5;
   repeated BentoServiceApi apis = 6;
+  // Optional, used for managing BentoService
+  map<string, string> labels = 7;
 }
 
 message Bento {
@@ -125,6 +133,7 @@ message ListBentoRequest {
   int32 limit = 3;
   SORTABLE_COLUMN order_by = 4;
   bool ascending_order = 5;
+  LabelSelectors label_selectors = 6;
 }
 
 message ListBentoResponse {

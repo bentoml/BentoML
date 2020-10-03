@@ -1,14 +1,14 @@
+import logging
 import uuid
+
 import mock
 import pytest
-
 from mock import patch
 
 import bentoml
-from bentoml.handlers import DataframeHandler
-from bentoml.saved_bundle import load_bento_service_metadata
+from bentoml.adapters import DataframeInput
 from bentoml.exceptions import BentoMLException
-
+from bentoml.saved_bundle import load_bento_service_metadata
 from tests.conftest import delete_saved_bento_service
 
 
@@ -23,7 +23,8 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
     )
 
     test_model = TestModel()
-    svc = example_bento_service_class.pack(model=test_model)
+    svc = example_bento_service_class()
+    svc.pack('model', test_model)
 
     assert svc.predict(1000) == 2000
     version = "test_" + uuid.uuid4().hex
@@ -34,10 +35,13 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
     expected_version = "2.10.{}".format(version)
     assert model_service.version == expected_version
 
-    api = model_service.get_service_api('predict')
+    api = model_service.get_inference_api('predict')
     assert api.name == "predict"
-    assert isinstance(api.handler, DataframeHandler)
-    assert api.func(1) == 2
+    assert api.batch
+    assert api.mb_max_latency == 1000
+    assert api.mb_max_batch_size == 2000
+    assert isinstance(api.input_adapter, DataframeInput)
+    assert api.user_func(1, tasks=[]) == 2
 
     # Check api methods are available
     assert model_service.predict(1) == 2
@@ -76,10 +80,10 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
     expected_version = "2.10.{}".format(version)
     assert model_service.version == expected_version
 
-    api = model_service.get_service_api('predict')
+    api = model_service.get_inference_api('predict')
     assert api.name == "predict"
-    assert isinstance(api.handler, DataframeHandler)
-    assert api.func(1) == 2
+    assert isinstance(api.input_adapter, DataframeInput)
+    assert api.user_func(1) == 2
     # Check api methods are available
     assert model_service.predict(1) == 2
 
@@ -87,7 +91,7 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
 class TestBentoWithOutArtifact(bentoml.BentoService):
     __test__ = False
 
-    @bentoml.api(DataframeHandler)
+    @bentoml.api(input=DataframeInput(), batch=True)
     def test(self, df):
         return df
 
@@ -96,7 +100,7 @@ def test_bento_without_artifact(tmpdir):
     TestBentoWithOutArtifact().save_to_dir(str(tmpdir))
     model_service = bentoml.load(str(tmpdir))
     assert model_service.test(1) == 1
-    assert len(model_service.get_service_apis()) == 1
+    assert len(model_service.inference_apis) == 1
 
 
 def test_save_duplicated_bento_exception_raised(example_bento_service_class):
@@ -122,3 +126,32 @@ def test_save_duplicated_bento_exception_raised(example_bento_service_class):
 
     delete_saved_bento_service(svc_metadata.name, svc_metadata.version)
     delete_saved_bento_service(svc_metadata_new.name, svc_metadata_new.version)
+
+
+def test_pyversion_warning_on_load(
+    tmp_path_factory, capsys, example_bento_service_class
+):
+    # Set logging level so version mismatch warnings are outputted
+    bentoml.configure_logging(logging_level=logging.WARNING)
+    # (Note that logger.warning() is captured by pytest in stdout, NOT stdlog.
+    #  So the warning is in capsys.readouterr().out, NOT caplog.text.)
+
+    test_model = TestModel()
+    svc = example_bento_service_class()
+    svc.pack('model', test_model)
+
+    # Should not warn for default `_python_version` value
+    match_dir = tmp_path_factory.mktemp("match")
+    svc.save_to_dir(match_dir)
+    _ = bentoml.load(str(match_dir))
+    assert "Python version mismatch" not in capsys.readouterr().out
+
+    # Should warn for any version mismatch (major, minor, or micro)
+    svc.env._python_version = "X.Y.Z"
+    mismatch_dir = tmp_path_factory.mktemp("mismatch")
+    svc.save_to_dir(mismatch_dir)
+    _ = bentoml.load(str(mismatch_dir))
+    assert "Python version mismatch" in capsys.readouterr().out
+
+    # Reset logging level to default
+    bentoml.configure_logging()

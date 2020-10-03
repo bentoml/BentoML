@@ -28,16 +28,23 @@ from sqlalchemy import (
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
-from bentoml.exceptions import YataiDeploymentException, BadInput
+from bentoml.exceptions import YataiDeploymentException
 from bentoml.yatai.db import Base, create_session
+from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
+from bentoml.yatai.label_store import (
+    filter_label_query,
+    delete_labels,
+    add_labels,
+    list_labels,
+    get_labels,
+    add_or_update_labels,
+    RESOURCE_TYPE,
+)
 from bentoml.yatai.proto import deployment_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
 from bentoml.utils import ProtoMessageToDict
 
-
 logger = logging.getLogger(__name__)
-
-ALL_NAMESPACE_TAG = '__BENTOML_ALL_NAMESPACE'
 
 
 class Deployment(Base):
@@ -52,7 +59,6 @@ class Deployment(Base):
 
     spec = Column(JSON, nullable=False, default={})
     state = Column(JSON, nullable=False, default={})
-    labels = Column(JSON, nullable=False, default={})
     annotations = Column(JSON, nullable=False, default={})
 
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
@@ -64,36 +70,31 @@ def _deployment_pb_to_orm_obj(deployment_pb, deployment_obj=Deployment()):
     deployment_obj.namespace = deployment_pb.namespace
     deployment_obj.spec = ProtoMessageToDict(deployment_pb.spec)
     deployment_obj.state = ProtoMessageToDict(deployment_pb.state)
-    deployment_obj.labels = dict(deployment_pb.labels)
     deployment_obj.annotations = dict(deployment_pb.annotations)
     deployment_obj.created_at = deployment_pb.created_at.ToDatetime()
     deployment_obj.last_updated_at = deployment_pb.last_updated_at.ToDatetime()
     return deployment_obj
 
 
-def _deployment_orm_obj_to_pb(deployment_obj):
+def _deployment_orm_obj_to_pb(deployment_obj, labels=None):
     deployment_pb = deployment_pb2.Deployment(
         name=deployment_obj.name,
         namespace=deployment_obj.namespace,
         spec=ParseDict(deployment_obj.spec, deployment_pb2.DeploymentSpec()),
         state=ParseDict(deployment_obj.state, deployment_pb2.DeploymentState()),
-        labels=deployment_obj.labels,
         annotations=deployment_obj.annotations,
     )
     deployment_pb.created_at.FromDatetime(deployment_obj.created_at)
     if deployment_obj.last_updated_at:
         deployment_pb.last_updated_at.FromDatetime(deployment_obj.last_updated_at)
+    if labels is not None:
+        deployment_pb.labels.update(labels)
     return deployment_pb
 
 
 class DeploymentStore(object):
     def __init__(self, sess_maker):
         self.sess_maker = sess_maker
-
-    def insert(self, deployment_pb):
-        with create_session(self.sess_maker) as sess:
-            deployment_obj = _deployment_pb_to_orm_obj(deployment_pb)
-            return sess.add(deployment_obj)
 
     def insert_or_update(self, deployment_pb):
         with create_session(self.sess_maker) as sess:
@@ -108,8 +109,31 @@ class DeploymentStore(object):
                 if deployment_obj:
                     # updating deployment record in db
                     _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
+                    if deployment_pb.labels:
+                        add_or_update_labels(
+                            sess,
+                            RESOURCE_TYPE.deployment,
+                            deployment_obj.id,
+                            deployment_pb.labels,
+                        )
             except NoResultFound:
-                sess.add(_deployment_pb_to_orm_obj(deployment_pb))
+                deployment_orm_obj = _deployment_pb_to_orm_obj(deployment_pb)
+                sess.add(deployment_orm_obj)
+                if deployment_pb.labels:
+                    deployment_row = (
+                        sess.query(Deployment)
+                        .filter_by(
+                            name=deployment_orm_obj.name,
+                            namespace=deployment_orm_obj.namespace,
+                        )
+                        .one()
+                    )
+                    add_labels(
+                        sess,
+                        RESOURCE_TYPE.deployment,
+                        deployment_row.id,
+                        deployment_pb.labels,
+                    )
 
     @contextmanager
     def update_deployment(self, name, namespace):
@@ -132,10 +156,11 @@ class DeploymentStore(object):
                     .filter_by(name=name, namespace=namespace)
                     .one()
                 )
+                labels = get_labels(sess, RESOURCE_TYPE.deployment, deployment_obj.id)
             except NoResultFound:
                 return None
 
-            return _deployment_orm_obj_to_pb(deployment_obj)
+            return _deployment_orm_obj_to_pb(deployment_obj, labels)
 
     def delete(self, name, namespace):
         with create_session(self.sess_maker) as sess:
@@ -144,6 +169,11 @@ class DeploymentStore(object):
                     sess.query(Deployment)
                     .filter_by(name=name, namespace=namespace)
                     .one()
+                )
+                delete_labels(
+                    sess,
+                    resource_type=RESOURCE_TYPE.deployment,
+                    resource_id=deployment.id,
                 )
                 return sess.delete(deployment)
             except NoResultFound:
@@ -155,7 +185,7 @@ class DeploymentStore(object):
         self,
         namespace,
         operator=None,
-        labels_query=None,
+        label_selectors=None,
         offset=None,
         limit=None,
         order_by=ListDeploymentsRequest.created_at,
@@ -169,6 +199,11 @@ class DeploymentStore(object):
                 order_by_field if ascending_order else desc(order_by_field)
             )
             query = query.order_by(order_by_action)
+            if label_selectors.match_labels or label_selectors.match_expressions:
+                deployment_ids = filter_label_query(
+                    sess, RESOURCE_TYPE.deployment, label_selectors
+                )
+                query.filter(Deployment.id.in_(deployment_ids))
             if namespace != ALL_NAMESPACE_TAG:  # else query all namespaces
                 query = query.filter_by(namespace=namespace)
             if operator:
@@ -176,21 +211,6 @@ class DeploymentStore(object):
                 query = query.filter(
                     Deployment.spec['operator'].contains(operator_name)
                 )
-            if labels_query:
-                # We only handle key=value query at the moment, the more advanced query
-                # such as `in` or `notin` are not handled.
-                labels_list = labels_query.split(',')
-                for label in labels_list:
-                    if '=' not in label:
-                        raise BadInput(
-                            'Invalid label format. Please present query in '
-                            'key=value format'
-                        )
-                    label_key, label_value = label.split('=')
-                    query = query.filter(
-                        Deployment.labels[label_key].contains(label_value)
-                    )
-
             # We are not defaulting limit to 200 in the signature,
             # because protobuf will pass 0 as value
             limit = limit or 200
@@ -200,5 +220,12 @@ class DeploymentStore(object):
             if offset:
                 query = query.offset(offset)
             query_result = query.all()
+            deployment_ids = [deployment_obj.id for deployment_obj in query_result]
+            labels = list_labels(sess, RESOURCE_TYPE.deployment, deployment_ids)
 
-            return list(map(_deployment_orm_obj_to_pb, query_result))
+            return [
+                _deployment_orm_obj_to_pb(
+                    deployment_obj, labels.get(str(deployment_obj.id))
+                )
+                for deployment_obj in query_result
+            ]

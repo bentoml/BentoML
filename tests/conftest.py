@@ -1,10 +1,111 @@
-import pytest
+import glob
 
 import imageio
 import numpy as np
+import pytest
 
 from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
+
+
+def pytest_configure():
+    '''
+    global constants for tests
+    '''
+    # async request client
+    async def assert_request(
+        method,
+        url,
+        headers=None,
+        data=None,
+        timeout=None,
+        assert_status=None,
+        assert_data=None,
+    ):
+        if assert_status is None:
+            assert_status = 200
+
+        import aiohttp
+
+        try:
+            async with aiohttp.ClientSession() as sess:
+                async with sess.request(
+                    method, url, data=data, headers=headers, timeout=timeout
+                ) as r:
+                    r_body = await r.read()
+        except RuntimeError:
+            # the event loop has been closed due to previous task failed, ignore
+            return
+
+        if callable(assert_status):
+            assert assert_status(r.status), f"{r.status} {r_body}"
+        else:
+            assert r.status == assert_status, f"{r.status} {r_body}"
+
+        if assert_data is not None:
+            if callable(assert_data):
+                assert assert_data(r_body)
+            else:
+                assert r_body == assert_data
+
+    pytest.assert_request = assert_request
+
+    # dataframe json orients
+    pytest.DF_ORIENTS = {
+        'split',
+        'records',
+        'index',
+        'columns',
+        'values',
+        # 'table',  # TODO(bojiang)
+    }
+    pytest.DF_AUTO_ORIENTS = {
+        'records',
+        'columns',
+    }
+
+
+def pytest_addoption(parser):
+    parser.addoption("--batch-request", action="store_false")
+
+
+@pytest.fixture()
+def is_batch_request(pytestconfig):
+    return pytestconfig.getoption("batch_request")
+
+
+@pytest.fixture()
+def bin_file(tmpdir):
+    bin_file_ = tmpdir.join("bin_file.bin")
+    with open(bin_file_, "wb") as of:
+        of.write("â".encode('gb18030'))
+    return str(bin_file_)
+
+
+@pytest.fixture()
+def bin_files(tmpdir):
+    for i in range(10):
+        bin_file_ = tmpdir.join(f"{i}.bin")
+        with open(bin_file_, "wb") as of:
+            of.write(f"â{i}".encode('gb18030'))
+    return sorted(glob.glob(str(tmpdir.join("*.bin"))))
+
+
+@pytest.fixture()
+def unicode_file(tmpdir):
+    bin_file_ = tmpdir.join("bin_file.unicode")
+    with open(bin_file_, "wb") as of:
+        of.write("â".encode('utf-8'))
+    return str(bin_file_)
+
+
+@pytest.fixture()
+def unicode_files(tmpdir):
+    for i in range(10):
+        bin_file_ = tmpdir.join(f"{i}.list.unicode")
+        with open(bin_file_, "wb") as of:
+            of.write(f"â{i}".encode('utf-8'))
+    return sorted(glob.glob(str(tmpdir.join("*.list.unicode"))))
 
 
 @pytest.fixture()
@@ -17,23 +118,43 @@ def img_file(tmpdir):
 @pytest.fixture()
 def img_files(tmpdir):
     for i in range(10):
-        img_file_ = tmpdir.join(f"test_img_{i}.jpg")
+        img_file_ = tmpdir.join(f"{i}.list.jpg")
         imageio.imwrite(str(img_file_), np.zeros((10, 10)))
-    return str(tmpdir.join("*.jpg"))
+    return sorted(glob.glob(str(tmpdir.join("*.list.jpg"))))
+
+
+@pytest.fixture()
+def json_file(tmpdir):
+    json_file_ = tmpdir.join("test.json")
+    with open(json_file_, "w") as of:
+        of.write('{"name": "kaith", "game": "morrowind"}')
+    return str(json_file_)
+
+
+@pytest.fixture()
+def json_files(tmpdir):
+    for i in range(10):
+        file_ = tmpdir.join(f"{i}.list.json")
+        with open(file_, "w") as of:
+            of.write('{"i": %d, "name": "kaith", "game": "morrowind"}' % i)
+    return sorted(glob.glob(str(tmpdir.join("*.list.json"))))
 
 
 class TestModel(object):
     def predict_dataframe(self, df):
-        return df["col1"].sum()
+        return df["col1"] * 2
 
     def predict_image(self, input_datas):
         for input_data in input_datas:
             assert input_data is not None
         return [input_data.shape for input_data in input_datas]
 
-    def predict_json(self, input_data):
-        assert input_data is not None
-        return {"ok": True}
+    def predict_multi_images(self, original, compared):
+        return (original == compared).all()
+
+    def predict_json(self, input_jsons):
+        assert input_jsons
+        return [{"ok": True}] * len(input_jsons)
 
 
 @pytest.fixture()

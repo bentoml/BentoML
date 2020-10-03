@@ -3,7 +3,7 @@
 Frequently Asked Questions
 ==========================
 
-
+.. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
 
 Why BentoML?
 ------------
@@ -45,9 +45,9 @@ BentoML works great with Clipper, users can deploy BentoML packaged models to th
 How does BentoML compare to AWS SageMaker?
 ------------------------------------------
 
-When not using the build-in algorithms, model deployment on SageMaker requires users to build their API server with Flask and containerized the flask app by themselves
+When not using the built-in algorithms, model deployment on SageMaker requires users to build their API server with Flask and containerize the flask app by themselves
 
-BentoML provides a high-performance API server for its users without the need to work with lower-level web server development work
+BentoML provides a high-performance API server for users without the need for lower-level web server development work
 
 BentoML packaged model can be easily deployed to SageMaker serving: https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html
 
@@ -55,9 +55,9 @@ BentoML packaged model can be easily deployed to SageMaker serving: https://docs
 How does BentoML compare to MLFlow?
 -----------------------------------
 
-MLFlow provides components that work great for experimentation management, ML project management. BentoML only focuses on serving and deploying trained models. You can, in fact, serve models logged in MLFlow experimentations with BentoML(we are working on related documentation)
+MLFlow provides components that work great for experimentation management, ML project management. BentoML only focuses on serving and deploying trained models. You can, in fact, serve models logged in MLFlow experimentation with BentoML (we are working on related documentation)
 
-Both BentoML and MLflow can expose a trained model as a REST API server, but there are a few main differences:
+Both BentoML and MLFlow can expose a trained model as a REST API server, but there are a few main differences:
 
 - In our benchmark testing, the BentoML API server is roughly 3-10x better performance compared to MLFlow's API server, and over 50x in some extreme cases: https://github.com/bentoml/BentoML/tree/master/benchmark
 
@@ -65,9 +65,9 @@ Both BentoML and MLflow can expose a trained model as a REST API server, but the
 
 - MLFlow focuses on loading and running a model, while BentoML provides an abstraction to build a prediction service, which includes the necessary pre-processing and post-processing logic in addition to the model itself
 
-- BentoML is more feature-rich in terms of serving, it supports many essential model serving features that are missing in MLflow, including multi-model inferencing, API server dockerization, built-in Prometheus metrics endpoint, Swagger/OpenAPI endpoint for API client library generation, serverless endpoint deployment, prediction/feedback logging and many more
+- BentoML is more feature-rich in terms of serving, it supports many essential model serving features that are missing in MLFlow, including multi-model inference, API server dockerization, built-in Prometheus metrics endpoint, Swagger/OpenAPI endpoint for API client library generation, serverless endpoint deployment, prediction/feedback logging and many more
 
-MLflow API server requires the user to also use MLFlow's own "MLflow Project" framework, while BentoML works with any model development and model training workflow - users can use BentoML with MLflow, Kubeflow, Floydhub, AWS SageMaker, local jupyter notebook, etc
+MLFlow API server requires the user to also use MLFlow's own "MLFlow Project" framework, while BentoML works with any model development and model training workflow - users can use BentoML with MLFlow, Kubeflow, Floydhub, AWS SageMaker, local jupyter notebook, etc
 
 
 
@@ -86,9 +86,9 @@ How does BentoML compare with Cortex?
 
 Cortex provides CLI tools for creating and managing a Kubernetes cluster on AWS, but does not provide too much help in model packaging and model serving.
 
-BentoML focuses on model serving specific problems. It leaves the cluster management part to the tools that do it really well(such as Kops, Rancher, AWS EKS, Google K8s Engine etc) and focus on managing model serving workloads on an existing K8s cluster.
+BentoML focuses on model serving specific problems. It leaves the cluster management part to the tools that do it really well (such as Kops, Rancher, AWS EKS, Google K8s Engine etc) and focuses instead on managing model serving workloads on an existing K8s cluster.
 
-We are working on an opinionated end-to-end deployment solution on Kubernetes for BentoML. It leaves the cluster management part to the tools that do it well and focus on managing model serving workloads on existing K8s cluster. We plan to provide support for horizontal scaling, blue-green-deployment, auto-scaling, logging and monitoring integration, etc.
+We are working on an opinionated end-to-end deployment solution on Kubernetes for BentoML. We plan to provide support for horizontal scaling, blue-green-deployment, auto-scaling, logging and monitoring integration, etc.
 
 
 How does BentoML compare to Seldon?
@@ -108,4 +108,8 @@ It is also possible to invoke R by customizing a Python model artifact class in 
 
 
 
+.. spelling::
 
+    SavedModel
+    pre
+    jupyter

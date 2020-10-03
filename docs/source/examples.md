@@ -1,6 +1,8 @@
 Example Projects
 ================
 
+<img src="https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c">
+
 Here are the official BentoML example projects that you can find in the 
 [bentoml/gallery](https://github.com/bentoml/gallery) repository, grouped by the main
 ML training framework used in the project.
@@ -26,9 +28,9 @@ BentoML API model server, building docker image or creating cloud deployment.
 
 
 #### Tensorflow Keras
-* Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/fashion-mnist/keras-fashion-mnist.ipynb)
-* Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/text-classification/keras-text-classification.ipynb)
-* Toxic Comment Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb)
+* Fashion MNIST - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/fashion-mnist/keras-fashion-mnist.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/legacy-keras/fashion-mnist/keras-fashion-mnist.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/legacy-keras/fashion-mnist/keras-fashion-mnist.ipynb)
+* Text Classification - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb)
+* Toxic Comment Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb)
 
 #### Tensorflow 2.0
 * tf.Function model - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb)
@@ -53,6 +55,12 @@ BentoML API model server, building docker image or creating cloud deployment.
 ### ONNX
 * Scikit-Learn Iris Classifier - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/onnx/sklearn-iris-classifier/SK-iris-classifier.ipynb)
 * ResNet50 Image recognition (ONNX model zoo) - [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb)
+
+### SQL Server Machine Learning Services
+ * Iris Classifier deployed with SQL Server - [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/end-to-end/sql-server-deployment/sql-server-deployment.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/end-to-end/sql-server-deployment/sql-server-deployment.ipynb)
+ 
+### Statsmodels
+* Shampoo Sales Prediction -  [Google Colab](https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb) | [nbviewer](https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb) | [source](https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb)
 
 #### Community Projects
 

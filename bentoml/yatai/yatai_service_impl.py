@@ -11,16 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from datetime import datetime
 import logging
 
 from bentoml import config
+from bentoml.utils.usage_stats import track
 from bentoml.yatai.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,
     ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
+    DeploymentSpec,
 )
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoResponse,
@@ -49,6 +51,15 @@ from bentoml import __version__ as BENTOML_VERSION
 
 
 logger = logging.getLogger(__name__)
+
+
+def track_deployment_delete(deployment_operator, created_at, force_delete=False):
+    operator_name = DeploymentSpec.DeploymentOperator.Name(deployment_operator)
+    up_time = int((datetime.utcnow() - created_at.ToDatetime()).total_seconds())
+    track(
+        f'deployment-{operator_name}-stop',
+        {'up_time': up_time, 'force_delete': force_delete},
+    )
 
 
 class YataiService(YataiServicer):
@@ -148,7 +159,7 @@ class YataiService(YataiServicer):
             return ApplyDeploymentResponse(status=e.status_proto)
         except Exception as e:
             logger.error("URPC ERROR ApplyDeployment: %s", e)
-            return ApplyDeploymentResponse(status=status_pb2.Status.INTERNAL)
+            return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
 
     def DeleteDeployment(self, request, context=None):
         try:
@@ -166,6 +177,9 @@ class YataiService(YataiServicer):
 
                 # if delete successful, remove it from active deployment records table
                 if response.status.status_code == status_pb2.Status.OK:
+                    track_deployment_delete(
+                        deployment_pb.spec.operator, deployment_pb.created_at
+                    )
                     self.deployment_store.delete(
                         request.deployment_name, request.namespace
                     )
@@ -174,6 +188,10 @@ class YataiService(YataiServicer):
                 # If force delete flag is True, we will remove the record
                 # from yatai database.
                 if request.force_delete:
+                    # Track deployment delete before it vanquishes from deployment store
+                    track_deployment_delete(
+                        deployment_pb.spec.operator, deployment_pb.created_at, True
+                    )
                     self.deployment_store.delete(
                         request.deployment_name, request.namespace
                     )
@@ -205,7 +223,7 @@ class YataiService(YataiServicer):
             return DeleteDeploymentResponse(status=e.status_proto)
         except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR DeleteDeployment: %s", e)
-            return DeleteDeploymentResponse(status=status_pb2.Status.INTERNAL)
+            return DeleteDeploymentResponse(status=Status.INTERNAL(str(e)))
 
     def GetDeployment(self, request, context=None):
         try:
@@ -271,7 +289,7 @@ class YataiService(YataiServicer):
             namespace = request.namespace or self.default_namespace
             deployment_pb_list = self.deployment_store.list(
                 namespace=namespace,
-                labels_query=request.labels_query,
+                label_selectors=request.label_selectors,
                 offset=request.offset,
                 limit=request.limit,
                 operator=request.operator,
@@ -284,10 +302,10 @@ class YataiService(YataiServicer):
             )
         except BentoMLException as e:
             logger.error("RPC ERROR ListDeployments: %s", e)
-            return DeleteDeploymentResponse(status=e.status_proto)
+            return ListDeploymentsResponse(status=e.status_proto)
         except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR ListDeployments: %s", e)
-            return DeleteDeploymentResponse(status=Status.INTERNAL())
+            return ListDeploymentsResponse(status=Status.INTERNAL())
 
     def AddBento(self, request, context=None):
         try:
@@ -301,7 +319,6 @@ class YataiService(YataiServicer):
                 )
                 logger.error(error_message)
                 return AddBentoResponse(status=Status.ABORTED(error_message))
-
             new_bento_uri = self.repo.add(request.bento_name, request.bento_version)
             self.bento_metadata_store.add(
                 bento_name=request.bento_name,
@@ -309,7 +326,6 @@ class YataiService(YataiServicer):
                 uri=new_bento_uri.uri,
                 uri_type=new_bento_uri.type,
             )
-
             return AddBentoResponse(status=Status.OK(), uri=new_bento_uri)
         except BentoMLException as e:
             logger.error("RPC ERROR AddBento: %s", e)
@@ -371,16 +387,19 @@ class YataiService(YataiServicer):
             bento_pb = self.bento_metadata_store.get(
                 request.bento_name, request.bento_version
             )
-            if request.bento_version.lower() == 'latest':
-                logger.info(
-                    'Getting latest version %s:%s',
-                    request.bento_name,
-                    bento_pb.version,
-                )
-
             if bento_pb:
+                if request.bento_version.lower() == 'latest':
+                    logger.info(
+                        'Getting latest version %s:%s',
+                        request.bento_name,
+                        bento_pb.version,
+                    )
                 if bento_pb.uri.type == BentoUri.S3:
                     bento_pb.uri.s3_presigned_url = self.repo.get(
+                        bento_pb.name, bento_pb.version
+                    )
+                elif bento_pb.uri.type == BentoUri.GCS:
+                    bento_pb.uri.gcs_presigned_url = self.repo.get(
                         bento_pb.name, bento_pb.version
                     )
                 return GetBentoResponse(status=Status.OK(), bento=bento_pb)
@@ -407,6 +426,7 @@ class YataiService(YataiServicer):
                 offset=request.offset,
                 limit=request.limit,
                 order_by=request.order_by,
+                label_selectors=request.label_selectors,
                 ascending_order=request.ascending_order,
             )
 

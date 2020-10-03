@@ -55,17 +55,34 @@ def get_open_api_spec_json(bento_service):
         )
     if config("apiserver").getboolean("enable_feedback"):
         paths["/feedback"] = OrderedDict(
-            get=OrderedDict(
+            post=OrderedDict(
                 tags=["infra"],
-                description="Predictions feedback endpoint. Expecting feedback request "
-                "in JSON format and must contain a `request_id` field, which can be "
-                "obtained from any BentoService API response header",
+                description="Provide feedback to prediction results from BentoService. "
+                "Expecting feedback request payload in JSON format "
+                "and requires `request_id` field, which can be obtained "
+                "from any BentoService prediction response's header. "
+                "Only last key will be considered if keys are repeated.",
+                requestBody=OrderedDict(
+                    required=True,
+                    content={
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["request_id"],
+                                "properties": {"request_id": {"type": "uuid"}},
+                            },
+                            "example": {
+                                "request_id": "cf420b0f-15fa-013d-a37b-12345678c321",
+                                "example_feedback": "key-value pair can be anything",
+                            },
+                        }
+                    },
+                ),
                 responses=default_response,
-            )
+            ),
         )
-        paths["/feedback"]["post"] = paths["/feedback"]["get"]
 
-    for api in bento_service.get_service_apis():
+    for api in bento_service.inference_apis:
         path = "/{}".format(api.name)
         paths[path] = OrderedDict(
             post=OrderedDict(

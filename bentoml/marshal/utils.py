@@ -1,27 +1,11 @@
 import pickle
 from functools import lru_cache
-from typing import NamedTuple, Iterable
+from typing import Sequence
 
+from bentoml import config as bentoml_config
+from bentoml.types import HTTPRequest, HTTPResponse
 
-class SimpleRequest(NamedTuple):
-    '''
-    headers: tuple of key value pairs in bytes
-    data: str
-    '''
-
-    headers: tuple
-    data: str
-
-    @property
-    @lru_cache()
-    def formated_headers(self):
-        return {hk.decode().lower(): hv.decode() for hk, hv in self.headers or tuple()}
-
-
-class SimpleResponse(NamedTuple):
-    status: int
-    headers: tuple
-    data: str
+BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")
 
 
 class PlasmaDataLoader:
@@ -75,19 +59,19 @@ class PlasmaDataLoader:
 
 class PickleDataLoader:
     @classmethod
-    def merge_requests(cls, reqs: Iterable[SimpleRequest]) -> bytes:
+    def merge_requests(cls, reqs: Sequence[HTTPRequest]) -> bytes:
         return pickle.dumps(reqs)
 
     @classmethod
-    def split_requests(cls, raw: bytes) -> Iterable[SimpleRequest]:
+    def split_requests(cls, raw: bytes) -> Sequence[HTTPRequest]:
         return pickle.loads(raw)
 
     @classmethod
-    def merge_responses(cls, resps: Iterable[SimpleResponse]) -> bytes:
-        return pickle.dumps(resps)
+    def merge_responses(cls, resps: Sequence[HTTPResponse]) -> bytes:
+        return pickle.dumps(list(resps))
 
     @classmethod
-    def split_responses(cls, raw: bytes) -> Iterable[SimpleResponse]:
+    def split_responses(cls, raw: bytes) -> Sequence[HTTPResponse]:
         try:
             return pickle.loads(raw)
         except pickle.UnpicklingError:

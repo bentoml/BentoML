@@ -15,7 +15,7 @@ trained with other machine learning frameworks, see more BentoML examples :doc:`
 Prerequisites
 -------------
 
-* An active AWS account configured on the machine with AWS CLI installed and configurated
+* An active AWS account configured on the machine with AWS CLI installed and configured
 
   * Install instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
   * Configure AWS account instruction: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
@@ -47,6 +47,7 @@ BentoML saved bundle for deployment:
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
+    pip install -r ./bentoml/guides/quick-start/requirements.txt
     python ./bentoml/guides/quick-start/main.py
 
 Verify the saved bundle created:
@@ -81,7 +82,7 @@ Verify the saved bundle created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeHandler",
+            "inputType": "DataframeInput",
             "docs": "BentoService API"
           }
         ]
@@ -107,9 +108,9 @@ BentoService and available for sending test request:
       --data '[[5.1, 3.5, 1.4, 0.2]]' \
       http://localhost:5000/predict
 
-=============================================
-Dockerize BentoML model server for deployment
-=============================================
+================================================
+Containerize BentoML model server for deployment
+================================================
 
 In order to create ECS deployment, the model server need to be containerized and push to
 a container registry. Amazon Elastic Container Registry (ECR) is a fully-managed Docker
@@ -120,11 +121,17 @@ Docker login with AWS ECR
 
 .. code-block:: bash
 
+    # For AWS cli V1
+    
     $ aws ecr get-login --region us-west-2 --no-include-email
+    
+    # For AWS cli V2
+    
+    $ aws ecr get-login-password --region us-west-2
+    
+    # Sample output (Authentication Token)
 
-    # Sample output
-
-    docker login -u AWS -p eyJ.................OOH https://account_id.dkr.ecr.us-west-2.amazonaws.com
+    eyJ.................OOH
 
 Copy the output from previous step and run it in the terminal
 
@@ -161,8 +168,9 @@ Create AWS ECR repository
 
 .. code-block:: bash
 
-    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
-    $ saved_path=$(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    # Find the local path of the latest version IrisClassifier saved bundle
+    $ saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
+
     $ docker build --tag=192023623294.dkr.ecr.us-west-2.amazonaws.com/irisclassifier-ecs $saved_path
 
     # Sample output
@@ -251,11 +259,12 @@ Create IAM role
         }
     }
 
+Adding policy `AmazonECSTaskExecutionRolePolicy` to role `ecsTaskExecutionRole`
 
 .. code-block:: bash
 
     aws iam --region us-west-2 attach-role-policy --role-name ecsTaskExecutionRole \
-      --policy-arn arn:aws:iam:aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 
 
 =================
@@ -297,7 +306,7 @@ Start ECR cluster with the ecr profile we created in the earlier step
     Subnet created: subnet-0dece5451f1a3b8b2
     Cluster creation succeeded.
 
-Use the VPC id from previous command to get secruity group ID
+Use the VPC id from previous command to get security group ID
 
 .. code-block:: bash
 
@@ -476,3 +485,9 @@ Shutting down the AWS ECS cluster
     INFO[0001] Waiting for your cluster resources to be deleted...
     INFO[0001] Cloudformation stack status                   stackStatus=DELETE_IN_PROGRESS
     INFO[0062] Deleted cluster                               cluster=tutorial
+
+
+.. spelling::
+
+    Fargate
+    subnets

@@ -1,0 +1,3 @@
+db_url: postgresql://postgres:password123@yatai-postgres:5432/postgres
+postgres:
+  enabled: true

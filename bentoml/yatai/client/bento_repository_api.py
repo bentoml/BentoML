@@ -23,6 +23,8 @@ import shutil
 
 
 from bentoml.exceptions import BentoMLException
+from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
+from bentoml.yatai.label_store import _validate_labels
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoRequest,
     GetBentoRequest,
@@ -34,7 +36,7 @@ from bentoml.yatai.proto.repository_pb2 import (
 )
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.saved_bundle import save_to_dir, load_bento_service_metadata
+from bentoml.saved_bundle import save_to_dir
 from bentoml.yatai.status import Status
 
 
@@ -45,7 +47,7 @@ class BentoRepositoryAPIClient:
     def __init__(self, yatai_service):
         self.yatai_service = yatai_service
 
-    def upload(self, bento_service, version=None):
+    def upload(self, bento_service, version=None, labels=None):
         """Save and upload given bento_service to yatai_service, which manages all your
         saved BentoService bundles and model serving deployments.
 
@@ -57,10 +59,14 @@ class BentoRepositoryAPIClient:
         """
         with TempDirectory() as tmpdir:
             save_to_dir(bento_service, tmpdir, version, silent=True)
-            return self._upload_bento_service(tmpdir)
+            return self._upload_bento_service(bento_service, tmpdir, labels)
 
-    def _upload_bento_service(self, saved_bento_path):
-        bento_service_metadata = load_bento_service_metadata(saved_bento_path)
+    def _upload_bento_service(self, bento_service, saved_bento_path, labels):
+        bento_service_metadata = bento_service.get_bento_service_metadata_pb()
+
+        if labels:
+            _validate_labels(labels)
+            bento_service_metadata.labels.update(labels)
 
         get_bento_response = self.yatai_service.GetBento(
             GetBentoRequest(
@@ -114,7 +120,8 @@ class BentoRepositoryAPIClient:
             )
             # Return URI to saved bento in repository storage
             return response.uri.uri
-        elif response.uri.type == BentoUri.S3:
+        elif response.uri.type == BentoUri.S3 or response.uri.type == BentoUri.GCS:
+            uri_type = 'S3' if response.uri.type == BentoUri.S3 else 'GCS'
             self._update_bento_upload_progress(
                 bento_service_metadata, UploadStatus.UPLOADING, 0
             )
@@ -124,28 +131,34 @@ class BentoRepositoryAPIClient:
                 tar.add(saved_bento_path, arcname=bento_service_metadata.name)
             fileobj.seek(0, 0)
 
-            http_response = requests.put(response.uri.s3_presigned_url, data=fileobj)
+            if response.uri.type == BentoUri.S3:
+                http_response = requests.put(
+                    response.uri.s3_presigned_url, data=fileobj
+                )
+            else:
+                http_response = requests.put(
+                    response.uri.gcs_presigned_url, data=fileobj
+                )
 
             if http_response.status_code != 200:
                 self._update_bento_upload_progress(
                     bento_service_metadata, UploadStatus.ERROR
                 )
                 raise BentoMLException(
-                    f"Error saving BentoService bundle to S3. "
+                    f"Error saving BentoService bundle to {uri_type}."
                     f"{http_response.status_code}: {http_response.text}"
                 )
 
             self._update_bento_upload_progress(bento_service_metadata)
 
             logger.info(
-                "Successfully saved BentoService bundle '%s:%s' to S3: %s",
+                "Successfully saved BentoService bundle '%s:%s' to {uri_type}: %s",
                 bento_service_metadata.name,
                 bento_service_metadata.version,
                 response.uri.uri,
             )
 
             return response.uri.uri
-
         else:
             raise BentoMLException(
                 f"Error saving Bento to target repository, URI type {response.uri.type}"
@@ -176,6 +189,7 @@ class BentoRepositoryAPIClient:
         bento_name=None,
         offset=None,
         limit=None,
+        labels=None,
         order_by=None,
         ascending_order=None,
     ):
@@ -186,6 +200,9 @@ class BentoRepositoryAPIClient:
             order_by=order_by,
             ascending_order=ascending_order,
         )
+        if labels is not None:
+            generate_gprc_labels_selector(list_bento_request.label_selectors, labels)
+
         return self.yatai_service.ListBento(list_bento_request)
 
     def dangerously_delete_bento(self, name, version):

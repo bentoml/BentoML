@@ -1,14 +1,14 @@
 import numpy
 
 import bentoml
-from bentoml.artifact import OnnxModelArtifact
-from bentoml.handlers import DataframeHandler
+from bentoml.adapters import DataframeInput
+from bentoml.frameworks.onnx import OnnxModelArtifact
 
 
-@bentoml.env(auto_pip_dependencies=True)
+@bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([OnnxModelArtifact('model', backend='onnxruntime')])
 class OnnxIrisClassifier(bentoml.BentoService):
-    @bentoml.api(DataframeHandler)
+    @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):
         input_data = df.to_numpy().astype(numpy.float32)
         input_name = self.artifacts.model.get_inputs()[0].name

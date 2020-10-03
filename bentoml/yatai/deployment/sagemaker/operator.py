@@ -49,7 +49,7 @@ RUN apt-get update --fix-missing && \
     apt-get clean
 
 # gevent required by AWS Sagemaker
-RUN pip install gevent
+RUN pip install gevent>=20.9.0
 
 # copy over model files
 COPY . /bento
@@ -86,9 +86,9 @@ def get_arn_role_from_current_aws_user():
             policy_document = role["AssumeRolePolicyDocument"]
             statement = policy_document["Statement"][0]
             if (
-                statement["Effect"] == "Allow"
-                and statement["Principal"].get("Service", None)
-                == "sagemaker.amazonaws.com"
+                "Service" in statement["Principal"]
+                and statement["Effect"] == "Allow"
+                and "sagemaker.amazonaws.com" in statement["Principal"]["Service"]
             ):
                 arn = role["Arn"]
         if arn is None:
@@ -97,7 +97,7 @@ def get_arn_role_from_current_aws_user():
                 "again"
             )
         return arn
-    elif type_role[0] == "role":
+    elif type_role[0] in ["role", "assumed-role"]:
         role_response = iam_client.get_role(RoleName=type_role[1])
         return role_response["Role"]["Arn"]
 
@@ -183,7 +183,7 @@ def _aws_client_error_to_bentoml_exception(e, message_prefix=None):
     """parse botocore.exceptions.ClientError into Bento StatusProto
 
     We handle two most common errors when deploying to Sagemaker.
-        1. Authenication issue/invalid access(InvalidSignatureException)
+        1. Authentication issue/invalid access(InvalidSignatureException)
         2. resources not found (ValidationException)
     It will return correlated StatusProto(NOT_FOUND, UNAUTHENTICATED)
 
@@ -433,8 +433,6 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             sagemaker_config.region = (
                 sagemaker_config.region or get_default_aws_region()
             )
-            if not sagemaker_config.region:
-                raise InvalidArgument('AWS region is missing')
 
             ensure_docker_available_or_raise()
             if sagemaker_config is None:
@@ -554,7 +552,9 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 )
         updated_deployment_spec = deployment_pb.spec
         updated_sagemaker_config = updated_deployment_spec.sagemaker_operator_config
-        sagemaker_client = boto3.client('sagemaker', updated_sagemaker_config.region)
+        sagemaker_client = boto3.client(
+            'sagemaker', updated_sagemaker_config.region or get_default_aws_region()
+        )
 
         try:
             raise_if_api_names_not_found_in_bento_service_metadata(

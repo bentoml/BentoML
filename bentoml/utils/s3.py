@@ -15,9 +15,6 @@
 import logging
 from urllib.parse import urlparse
 
-import boto3
-from botocore.exceptions import ClientError
-
 logger = logging.getLogger(__name__)
 
 
@@ -32,6 +29,9 @@ def is_s3_url(url):
 
 
 def create_s3_bucket_if_not_exists(bucket_name, region):
+    import boto3
+    from botocore.exceptions import ClientError
+
     s3_client = boto3.client('s3', region)
     try:
         s3_client.get_bucket_acl(Bucket=bucket_name)

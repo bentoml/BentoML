@@ -1,5 +1,5 @@
-import { Client, credentials, ServerCredentials } from "@grpc/grpc-js";
-import { bentoml } from "./generated/bentoml_grpc";
+import {Client, credentials} from "@grpc/grpc-js";
+import {bentoml} from "./generated/bentoml_grpc";
 
 export const createYataiClient = (grpcAddress: string) => {
   const client = new Client(grpcAddress, credentials.createInsecure());
@@ -19,6 +19,5 @@ export const createYataiClient = (grpcAddress: string) => {
     );
   };
 
-  const yataiClient = bentoml.Yatai.create(rpcImpl, false, false);
-  return yataiClient;
+  return bentoml.Yatai.create(rpcImpl, false, false);
 };

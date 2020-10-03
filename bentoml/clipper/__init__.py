@@ -26,7 +26,7 @@ from bentoml.yatai.deployment.utils import (
     process_docker_api_line,
     ensure_docker_available_or_raise,
 )
-from bentoml.handlers.clipper_handler import HANDLER_TYPE_TO_INPUT_TYPE
+from bentoml.adapters.clipper_input import ADAPTER_TYPE_TO_INPUT_TYPE
 from bentoml.exceptions import BentoMLException
 from bentoml.utils.usage_stats import track
 
@@ -34,8 +34,6 @@ logger = logging.getLogger(__name__)
 
 
 CLIPPER_ENTRY = """\
-from __future__ import print_function
-
 import rpc # this is clipper's rpc.py module
 import os
 import sys
@@ -73,7 +71,7 @@ class BentoServiceContainer(rpc.ModelContainerBase):
 
 
 if __name__ == "__main__":
-    print("Starting BentoService Clipper Containter")
+    print("Starting BentoService Clipper Container")
     rpc_service = rpc.RPCService()
 
     try:
@@ -112,8 +110,8 @@ CMD ["python", "/container/clipper_entry.py"]
 """  # noqa: E501
 
 
-def get_clipper_compatiable_string(item):
-    """Generate clipper compatiable string. It must be a valid DNS-1123.
+def get_clipper_compatible_string(item):
+    """Generate clipper compatible string. It must be a valid DNS-1123.
     It must consist of lower case alphanumeric characters, '-' or '.',
     and must start and end with an alphanumeric character
 
@@ -152,7 +150,7 @@ def deploy_bentoml(
     if not clipper_conn.connected:
         raise BentoMLException(
             "No connection to Clipper cluster. CallClipperConnection.connect to "
-            "connect to an existing cluster or ClipperConnnection.start_clipper to "
+            "connect to an existing cluster or ClipperConnection.start_clipper to "
             "create a new one"
         )
 
@@ -169,16 +167,16 @@ def deploy_bentoml(
             )
         )
 
-    if api_metadata.handler_type not in HANDLER_TYPE_TO_INPUT_TYPE:
+    if api_metadata.input_type not in ADAPTER_TYPE_TO_INPUT_TYPE:
         raise BentoMLException(
-            "Only BentoService APIs using ClipperHandler can be deployed to Clipper"
+            "Only BentoService APIs using ClipperInput can be deployed to Clipper"
         )
 
-    input_type = HANDLER_TYPE_TO_INPUT_TYPE[api_metadata.handler_type]
-    model_name = model_name or get_clipper_compatiable_string(
+    input_type = ADAPTER_TYPE_TO_INPUT_TYPE[api_metadata.input_type]
+    model_name = model_name or get_clipper_compatible_string(
         bento_service_metadata.name + "-" + api_metadata.name
     )
-    model_version = get_clipper_compatiable_string(bento_service_metadata.version)
+    model_version = get_clipper_compatible_string(bento_service_metadata.version)
 
     with TempDirectory() as tempdir:
         entry_py_content = CLIPPER_ENTRY.format(api_name=api_name)

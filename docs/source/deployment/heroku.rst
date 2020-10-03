@@ -9,14 +9,14 @@ This guide demonstrates how to deploy a scikit-learn based iris classifier model
 BentoML to Heroku. The same deployment steps are also applicable for models
 trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
 
-Prerequsities
+Prerequisites
 -------------
 
 * An active Heroku account and Heroku CLI tool installed in your system.
 
     * Install instruction: https://devcenter.heroku.com/articles/heroku-cli
 
-* Docker is installed and docker deamon is running on your system
+* Docker is installed and docker daemon is running on your system
 
     * Install instruction: https://docs.docker.com/install
 
@@ -38,6 +38,7 @@ BentoML saved bundle for deployment:
 .. code-block:: bash
 
     git clone git@github.com:bentoml/BentoML.git
+    pip install -r ./bentoml/guides/quick-start/requirements.txt
     python ./bentoml/guides/quick-start/main.py
 
 Verify the saved bundle created:
@@ -73,7 +74,7 @@ Verify the saved bundle created:
         "apis": [
           {
             "name": "predict",
-            "handlerType": "DataframeHandler",
+            "InputType": "DataframeInput",
             "docs": "BentoService API"
           }
         ]
@@ -130,8 +131,9 @@ Find the IrisClassifier SavedBundle directory:
 
 .. code-block:: bash
 
-    # Install jq, the command-line JSON processor: https://stedolan.github.io/jq/download/
-    cd $(bentoml get IrisClassifier:latest -q | jq -r ".uri.uri")
+    cd $(bentoml get IrisClassifier:latest --print-location --quiet)
+
+
 
 
 Build and push API server container with the SavedBundle, and push to the Heroku app

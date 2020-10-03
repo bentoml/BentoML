@@ -1,0 +1,15 @@
+{{- if .Values.postgres.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: yatai-postgres
+  labels:
+    app: yatai-postgres
+spec:
+  type: NodePort
+  ports:
+    - port: {{ .Values.postgres.port }}
+      nodePort: 30007
+  selector:
+   app: yatai-postgres
+{{ end }}

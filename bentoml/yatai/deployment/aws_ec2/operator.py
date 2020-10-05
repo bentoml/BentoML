@@ -275,7 +275,7 @@ Resources:
         Type: AWS::AutoScaling::AutoScalingGroup
         Properties:
             MinSize: "0"
-            MaxSize: "2"
+            MaxSize: "1"
             DesiredCapacity: "1"
             AvailabilityZones: !GetAZs
             LaunchTemplate: 

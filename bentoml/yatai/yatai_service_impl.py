@@ -122,6 +122,7 @@ class YataiService(YataiServicer):
             if previous_deployment:
                 response = operator.update(request.deployment, previous_deployment)
             else:
+                print("operator is ", operator)
                 response = operator.add(request.deployment)
 
             if response.status.status_code == status_pb2.Status.OK:
@@ -158,6 +159,7 @@ class YataiService(YataiServicer):
             logger.error("RPC ERROR ApplyDeployment: %s", e)
             return ApplyDeploymentResponse(status=e.status_proto)
         except Exception as e:
+            raise(e)
             logger.error("URPC ERROR ApplyDeployment: %s", e)
             return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
 

@@ -15,10 +15,7 @@ runcmd:
 - sudo ./aws/install
 - ln -s /usr/bin/aws aws
 
-- export AWS_ACCESS_KEY_ID=
-- export AWS_SECRET_ACCESS_KEY=
-
-- aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 752014255238.dkr.ecr.ap-south-1.amazonaws.com
+- docker login --username AWS --password some-password-H0= https://752014255238.dkr.ecr.ap-south-1.amazonaws.com
 - sudo docker pull 752014255238.dkr.ecr.ap-south-1.amazonaws.com/bento-iris:latest
 - sudo docker run -p 5000:5000 752014255238.dkr.ecr.ap-south-1.amazonaws.com/bento-iris:latest
 

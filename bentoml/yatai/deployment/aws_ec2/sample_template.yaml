@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: "BentoML load balanced template template"
+
+Parameters:
+  AmazonLinux2LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+Resources:
+  SecurityGroupResource:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "security group for bentoservice"
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 5000
+          ToPort: 5000
+        -
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 22
+          ToPort: 22
+
+  LaunchTemplateResource:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: template-manual-1
+      #Key and security gorups remainign for logging in
+      LaunchTemplateData:
+        ImageId: !Ref AmazonLinux2LatestAmiId
+        InstanceType: t2.micro
+        UserData: "TUlNRS1WZXJzaW9uOiAxLjAKQ29udGVudC1UeXBlOiBtdWx0aXBhcnQvbWl4ZWQ7IGJvdW5kYXJ5PSI9PU1ZQk9VTkRBUlk9PSIKCi0tPT1NWUJPVU5EQVJZPT0KQ29udGVudC1UeXBlOiB0ZXh0L2Nsb3VkLWNvbmZpZzsgY2hhcnNldD0idXMtYXNjaWkiCgpydW5jbWQ6CgotIHN1ZG8geXVtIHVwZGF0ZSAteQotIHN1ZG8gYW1hem9uLWxpbnV4LWV4dHJhcyBpbnN0YWxsIGRvY2tlciAteQotIHN1ZG8gc2VydmljZSBkb2NrZXIgc3RhcnQKLSBzdWRvIHVzZXJtb2QgLWEgLUcgZG9ja2VyIGVjMi11c2VyCi0gY3VybCAiaHR0cHM6Ly9hd3NjbGkuYW1hem9uYXdzLmNvbS9hd3NjbGktZXhlLWxpbnV4LXg4Nl82NC56aXAiIC1vICJhd3NjbGl2Mi56aXAiCi0gdW56aXAgYXdzY2xpdjIuemlwCi0gc3VkbyAuL2F3cy9pbnN0YWxsCi0gbG4gLXMgL3Vzci9iaW4vYXdzIGF3cwoKLSBleHBvcnQgQVdTX0FDQ0VTU19LRVlfSUQ9QUtJQTI2RjRLNFNERE5KRUNLSUwKLSBleHBvcnQgQVdTX1NFQ1JFVF9BQ0NFU1NfS0VZPTdYNENKWUYyTG9laSs4UitjcHplWlZhbVBMLzk5U1RTMjFGMmw0cW4KCi0gYXdzIGVjciBnZXQtbG9naW4tcGFzc3dvcmQgLS1yZWdpb24gYXAtc291dGgtMSB8IGRvY2tlciBsb2dpbiAtLXVzZXJuYW1lIEFXUyAtLXBhc3N3b3JkLXN0ZGluIDc1MjAxNDI1NTIzOC5ka3IuZWNyLmFwLXNvdXRoLTEuYW1hem9uYXdzLmNvbQotIHN1ZG8gZG9ja2VyIHB1bGwgNzUyMDE0MjU1MjM4LmRrci5lY3IuYXAtc291dGgtMS5hbWF6b25hd3MuY29tL2JlbnRvLWlyaXM6bGF0ZXN0Ci0gc3VkbyBkb2NrZXIgcnVuIC1wIDUwMDA6NTAwMCA3NTIwMTQyNTUyMzguZGtyLmVjci5hcC1zb3V0aC0xLmFtYXpvbmF3cy5jb20vYmVudG8taXJpczpsYXRlc3QKCi0tPT1NWUJPVU5EQVJZPT0tLQ=="
+        SecurityGroupIds:
+          - !GetAtt SecurityGroupResource.GroupId
+  
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MinSize: "0"
+      MaxSize: "2"
+      DesiredCapacity: "1"
+      AvailabilityZones: !GetAZs
+      LaunchTemplate: 
+        LaunchTemplateId: !Ref LaunchTemplateResource
+        Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
+      

@@ -377,7 +377,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         Docker. You may provide your own through `--username` and `--password`.
         """
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
-
+        _echo(f"bendle path is {pip_installed_bundle_path}")
+        _echo(f"bento is {bento}")
         _echo(f"Found Bento: {saved_bundle_path}")
 
         bento_metadata = load_bento_service_metadata(saved_bundle_path)

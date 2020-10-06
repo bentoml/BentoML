@@ -23,6 +23,7 @@ from bentoml.cli.click_utils import (
     _echo,
     BentoMLCommandGroup,
     conditional_argument,
+    CLI_COLOR_ERROR,
 )
 from bentoml.cli.utils import (
     echo_docker_api_result,
@@ -353,11 +354,16 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '-p', '--password', type=click.STRING, required=False,
     )
-    def containerize(bento, push, tag, build_arg, username, password):
+    @click.option(
+        '--tag-latest/--do-not-tag-latest',
+        default=True,
+        help='BentoML will create a special latest tag for the image.',
+    )
+    def containerize(bento, push, tag, build_arg, username, password, tag_latest):
         """Containerize specified BentoService.
 
         BENTO is the target BentoService to be containerized, referenced by its name
-        and version in format of name:version. For example: "iris_classifier:v1.2.0"
+        and version in the format of name:version. For example: "iris_classifier:v1.2.0"
 
         `bentoml containerize` command also supports the use of the `latest` tag
         which will automatically use the last built version of your Bento.
@@ -392,10 +398,11 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             tag = f"{name}:{version}"
         if ":" not in tag:
             _echo(
-                "Image version not specified, using 'latest` tag instead",
+                "Image version not specified, using version parsed "
+                f"from BentoService: '{version}'",
                 CLI_COLOR_WARNING,
             )
-            tag = f"{tag}:latest"
+            tag = f"{tag}:{version}"
 
         docker_build_args = {}
         if build_arg:
@@ -417,6 +424,15 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     )
                 ):
                     _echo(line)
+
+            if tag_latest:
+                image_name = f'{tag.split(":")[0]}'
+                _echo(f'Tagging latest: {image_name}:latest')
+                try:
+                    docker_api.tag(image=tag, repository=image_name, tag='latest')
+                    _echo(f'Finished tagging {image_name}:lateset')
+                except docker.errors.APIError as error:
+                    _echo(f'Failed to tag "latest" for {tag}: {error}', CLI_COLOR_ERROR)
         except docker.errors.APIError as error:
             raise CLIException(f'Could not build Docker image: {error}')
 

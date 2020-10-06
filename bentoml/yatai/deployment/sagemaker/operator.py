@@ -25,7 +25,7 @@ from bentoml.yatai.deployment.utils import (
 )
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
-    get_default_aws_region
+    get_default_aws_region,
 )
 from bentoml.yatai.proto.deployment_pb2 import (
     DeploymentState,

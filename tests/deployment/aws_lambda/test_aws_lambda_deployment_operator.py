@@ -10,9 +10,7 @@ from bentoml.yatai.deployment.aws_lambda.operator import (
     AwsLambdaDeploymentOperator,
     _create_aws_lambda_cloudformation_template_file,
 )
-from bentoml.yatai.deployment.aws_lambda.utils import (
-    init_sam_project
-)
+from bentoml.yatai.deployment.aws_lambda.utils import init_sam_project
 from bentoml.yatai.deployment.aws_lambda.utils import (
     LAMBDA_FUNCTION_LIMIT,
     LAMBDA_FUNCTION_MAX_LIMIT,

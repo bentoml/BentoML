@@ -32,9 +32,7 @@ from bentoml.saved_bundle import loader
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.yatai.deployment.aws_utils import (
-    validate_sam_template,
-)
+from bentoml.yatai.deployment.aws_utils import validate_sam_template
 from bentoml.yatai.deployment.aws_lambda.utils import (
     init_sam_project,
     call_sam_command,
@@ -70,6 +68,7 @@ from bentoml.yatai.status import Status
 
 
 logger = logging.getLogger(__name__)
+
 
 def _create_aws_lambda_cloudformation_template_file(
     project_dir,

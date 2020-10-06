@@ -35,6 +35,7 @@ LAMBDA_FUNCTION_LIMIT = 249000000
 LAMBDA_TEMPORARY_DIRECTORY_MAX_LIMIT = 511000000
 LAMBDA_FUNCTION_MAX_LIMIT = LAMBDA_FUNCTION_LIMIT + LAMBDA_TEMPORARY_DIRECTORY_MAX_LIMIT
 
+
 def init_sam_project(
     sam_project_path,
     bento_service_bundle_path,
@@ -111,7 +112,8 @@ def init_sam_project(
     logger.debug("Removing unnecessary files to free up space")
     for api_name in api_names:
         cleanup_build_files(sam_project_path, api_name)
-        
+
+
 def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, ".aws-sam/build/{}".format(api_name))
     logger.debug("Cleaning up unused files in SAM built directory %s", build_dir)

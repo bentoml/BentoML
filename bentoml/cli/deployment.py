@@ -28,9 +28,9 @@ from bentoml.exceptions import CLIException
 from bentoml.cli.utils import (
     Spinner,
     _print_deployment_info,
-    _print_deployments_info,
-    get_default_yatai_client,
+    _print_deployments_info
 )
+from bentoml.utils import get_default_yatai_client
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 

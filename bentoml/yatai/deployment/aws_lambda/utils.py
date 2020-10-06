@@ -34,23 +34,6 @@ LAMBDA_FUNCTION_LIMIT = 249000000
 LAMBDA_TEMPORARY_DIRECTORY_MAX_LIMIT = 511000000
 LAMBDA_FUNCTION_MAX_LIMIT = LAMBDA_FUNCTION_LIMIT + LAMBDA_TEMPORARY_DIRECTORY_MAX_LIMIT
 
-
-def ensure_sam_available_or_raise():
-    try:
-        import samcli
-
-        if samcli.__version__ != "0.33.1":
-            raise BentoMLException(
-                "aws-sam-cli package requires version 0.33.1 "
-                "Install the package with `pip install -U aws-sam-cli==0.33.1`"
-            )
-    except ImportError:
-        raise MissingDependencyException(
-            "aws-sam-cli package is required. Install "
-            "with `pip install --user aws-sam-cli`"
-        )
-
-
 def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, ".aws-sam/build/{}".format(api_name))
     logger.debug("Cleaning up unused files in SAM built directory %s", build_dir)
@@ -83,28 +66,6 @@ def cleanup_build_files(project_dir, api_name):
         if "caff2" in files:
             logger.debug("removing file: %s", os.path.join(root, "caff2"))
             os.remove(os.path.join(root, "caff2"))
-
-
-def call_sam_command(command, project_dir, region):
-    command = ["sam"] + command
-
-    # We are passing region as part of the param, due to sam cli is not currently
-    # using the region that passed in each command.  Set the region param as
-    # AWS_DEFAULT_REGION for the subprocess call
-    logger.debug('Setting envar "AWS_DEFAULT_REGION" to %s for subprocess call', region)
-    copied_env = os.environ.copy()
-    copied_env["AWS_DEFAULT_REGION"] = region
-
-    proc = subprocess.Popen(
-        command,
-        cwd=project_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=copied_env,
-    )
-    stdout, stderr = proc.communicate()
-    logger.debug("SAM cmd %s output: %s", command, stdout.decode("utf-8"))
-    return proc.returncode, stdout.decode("utf-8"), stderr.decode("utf-8")
 
 
 def lambda_package(project_dir, aws_region, s3_bucket_name, deployment_prefix):
@@ -173,22 +134,6 @@ def lambda_deploy(project_dir, aws_region, stack_name):
         )
     else:
         return stdout
-
-
-def validate_lambda_template(template_file, aws_region, sam_project_path):
-    status_code, stdout, stderr = call_sam_command(
-        ["validate", "--template-file", template_file, "--region", aws_region],
-        project_dir=sam_project_path,
-        region=aws_region,
-    )
-    if status_code != 0:
-        error_message = stderr
-        if not error_message:
-            error_message = stdout
-        raise BentoMLException(
-            "Failed to validate lambda template. {}".format(error_message)
-        )
-
 
 def init_sam_project(
     sam_project_path,

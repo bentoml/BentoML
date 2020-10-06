@@ -118,7 +118,7 @@ class DeploymentStore(object):
                         )
             except NoResultFound:
                 deployment_orm_obj = _deployment_pb_to_orm_obj(deployment_pb)
-                sess.add(deployment_orm_obj)
+                #sess.add(deployment_orm_obj) #TODO: uncomment this
                 if deployment_pb.labels:
                     deployment_row = (
                         sess.query(Deployment)

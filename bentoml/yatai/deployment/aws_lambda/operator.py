@@ -33,12 +33,11 @@ from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.tempdir import TempDirectory
 
-from bentoml.yatai.deployment.aws_lambda.utils import (
-    ensure_sam_available_or_raise,
+from bentoml.yatai.deployment.aws_utils import (
     init_sam_project,
     lambda_deploy,
     lambda_package,
-    validate_lambda_template,
+    validate_sam_template,
     reduce_bundle_size_and_upload_extra_resources_to_s3,
     total_file_or_directory_size,
     LAMBDA_FUNCTION_LIMIT,
@@ -48,11 +47,10 @@ from bentoml.yatai.deployment.aws_lambda.utils import (
 
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import (
-    raise_if_api_names_not_found_in_bento_service_metadata,
-    generate_aws_compatible_string,
-    get_default_aws_region,
-    ensure_docker_available_or_raise,
+    raise_if_api_names_not_found_in_bento_service_metadata
 )
+from bentoml.yatai.deployment.aws_utils import generate_aws_compatible_string, get_default_aws_region
+from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import (
     DeploymentState,
@@ -223,7 +221,7 @@ def _deploy_lambda_function(
             timeout=lambda_deployment_config.timeout,
         )
         logger.debug("Validating generated template.yaml")
-        validate_lambda_template(
+        validate_sam_template(
             template_file_path, lambda_deployment_config.region, lambda_project_dir,
         )
         logger.debug(

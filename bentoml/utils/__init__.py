@@ -17,9 +17,16 @@ from contextlib import contextmanager
 from functools import wraps
 from io import StringIO
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
+import os
 
 from google.protobuf.message import Message
 from werkzeug.utils import cached_property
+
+from bentoml.utils.s3 import is_s3_url
+from bentoml.utils.gcs import is_gcs_url
+#from bentoml.cli.utils import get_default_yatai_client
+from bentoml.utils.lazy_loader import LazyLoader
+#from bentoml.yatai import proto as yatai_proto
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -36,6 +43,7 @@ __all__ = [
     "catch_exceptions",
 ]
 
+yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
 @contextmanager
 def reserve_free_port(host="localhost"):
@@ -105,3 +113,47 @@ class catch_exceptions(object):
                 return self.fallback
 
         return _
+
+def resolve_bundle_path(bento, pip_installed_bundle_path):
+    from bentoml.exceptions import BentoMLException
+    if pip_installed_bundle_path:
+        assert (
+            bento is None
+        ), "pip installed BentoService commands should not have Bento argument"
+        return pip_installed_bundle_path
+
+    if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
+        # saved_bundle already support loading local, s3 path and gcs path
+        return bento
+
+    elif ":" in bento:
+        # assuming passing in BentoService in the form of Name:Version tag
+        yatai_client = get_default_yatai_client()
+        name, version = bento.split(":")
+        get_bento_result = yatai_client.repository.get(name, version)
+        if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_bento_result.status
+            )
+            raise BentoMLException(
+                f"BentoService {name}:{version} not found - "
+                f"{error_code}:{error_message}"
+            )
+        if get_bento_result.bento.uri.s3_presigned_url:
+            # Use s3 presigned URL for downloading the repository if it is presented
+            return get_bento_result.bento.uri.s3_presigned_url
+        if get_bento_result.bento.uri.gcs_presigned_url:
+            return get_bento_result.bento.uri.gcs_presigned_url
+        else:
+            return get_bento_result.bento.uri.uri
+    else:
+        raise BentoMLException(
+            f'BentoService "{bento}" not found - either specify the file path of '
+            f"the BentoService saved bundle, or the BentoService id in the form of "
+            f'"name:version"'
+        )
+
+def get_default_yatai_client():
+    from bentoml.yatai.client import YataiClient
+
+    return YataiClient()

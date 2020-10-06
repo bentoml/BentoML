@@ -197,9 +197,3 @@ def _print_deployments_info(deployments, output_type):
     else:
         for deployment in deployments:
             _print_deployment_info(deployment, output_type)
-
-
-def get_default_yatai_client():
-    from bentoml.yatai.client import YataiClient
-
-    return YataiClient()

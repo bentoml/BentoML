@@ -64,6 +64,13 @@ message DeploymentSpec {
       string function_auth_level = 5;
   }
 
+  message AwsEc2OperatorConfig {
+    string region=1;
+    string min_capacity=2;
+    string max_capacity=3;
+    string desired_capacity=4;
+  }
+
   // Bento name and version are used as an reference to the saved Bento
   // in user's bentoml repository
   string bento_name = 1;
@@ -76,6 +83,7 @@ message DeploymentSpec {
     SageMakerOperatorConfig sagemaker_operator_config = 5;
     AwsLambdaOperatorConfig aws_lambda_operator_config = 6;
     AzureFunctionsOperatorConfig azure_functions_operator_config = 7;
+    AwsEc2OperatorConfig aws_ec2_operator_config = 8;
   }
 }
 

@@ -16,6 +16,7 @@ from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import (
     ProtoMessageToDict,
     status_pb_to_error_code_and_message,
+    resolve_bundle_path
 )
 from bentoml.cli.click_utils import (
     CLI_COLOR_WARNING,
@@ -26,14 +27,17 @@ from bentoml.cli.click_utils import (
 )
 from bentoml.cli.utils import (
     echo_docker_api_result,
-    Spinner,
-    get_default_yatai_client,
+    Spinner
 )
+from bentoml.utils import get_default_yatai_client
 from bentoml.saved_bundle import (
     load,
     load_bento_service_api,
     load_bento_service_metadata,
 )
+from bentoml.utils.docker_utils import (
+    containerize_bento_service, validate_tag, to_valid_docker_image_name,
+    to_valid_docker_image_version)
 
 try:
     import click_completion
@@ -55,103 +59,7 @@ def escape_shell_params(param):
     return "{}={}".format(k, v)
 
 
-def to_valid_docker_image_name(name):
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return name.lower().strip("._-")
 
-
-def to_valid_docker_image_version(version):
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return version.encode("ascii", errors="ignore").decode().lstrip(".-")[:128]
-
-
-def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
-    if tag is None:
-        return tag
-
-    if ":" in tag:
-        name, version = tag.split(":")[:2]
-    else:
-        name, version = tag, None
-
-    valid_name_pattern = re.compile(
-        r"""
-        ^(
-        [a-z0-9]+      # alphanumeric
-        (.|_{1,2}|-+)? # seperators
-        )*$
-        """,
-        re.VERBOSE,
-    )
-    valid_version_pattern = re.compile(
-        r"""
-        ^
-        [a-zA-Z0-9] # cant start with .-
-        [ -~]{,127} # ascii match rest, cap at 128
-        $
-        """,
-        re.VERBOSE,
-    )
-
-    if not valid_name_pattern.match(name):
-        raise click.BadParameter(
-            f"Provided Docker Image tag {tag} is invalid. "
-            "Name components may contain lowercase letters, digits "
-            "and separators. A separator is defined as a period, "
-            "one or two underscores, or one or more dashes.",
-            ctx=ctx,
-            param=param,
-        )
-    if version and not valid_version_pattern.match(version):
-        raise click.BadParameter(
-            f"Provided Docker Image tag {tag} is invalid. "
-            "A tag name must be valid ASCII and may contain "
-            "lowercase and uppercase letters, digits, underscores, "
-            "periods and dashes. A tag name may not start with a period "
-            "or a dash and may contain a maximum of 128 characters.",
-            ctx=ctx,
-            param=param,
-        )
-    return tag
-
-
-def resolve_bundle_path(bento, pip_installed_bundle_path):
-    if pip_installed_bundle_path:
-        assert (
-            bento is None
-        ), "pip installed BentoService commands should not have Bento argument"
-        return pip_installed_bundle_path
-
-    if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
-        # saved_bundle already support loading local, s3 path and gcs path
-        return bento
-
-    elif ":" in bento:
-        # assuming passing in BentoService in the form of Name:Version tag
-        yatai_client = get_default_yatai_client()
-        name, version = bento.split(":")
-        get_bento_result = yatai_client.repository.get(name, version)
-        if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                get_bento_result.status
-            )
-            raise BentoMLException(
-                f"BentoService {name}:{version} not found - "
-                f"{error_code}:{error_message}"
-            )
-        if get_bento_result.bento.uri.s3_presigned_url:
-            # Use s3 presigned URL for downloading the repository if it is presented
-            return get_bento_result.bento.uri.s3_presigned_url
-        if get_bento_result.bento.uri.gcs_presigned_url:
-            return get_bento_result.bento.uri.gcs_presigned_url
-        else:
-            return get_bento_result.bento.uri.uri
-    else:
-        raise BentoMLException(
-            f'BentoService "{bento}" not found - either specify the file path of '
-            f"the BentoService saved bundle, or the BentoService id in the form of "
-            f'"name:version"'
-        )
 
 
 def create_bento_service_cli(pip_installed_bundle_path=None):
@@ -354,101 +262,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         "-p", "--password", type=click.STRING, required=False,
     )
     def containerize(bento, push, tag, build_arg, username, password):
-        """Containerize specified BentoService.
+        containerize_bento_service(bento, push, tag, build_arg, username, password, pip_installed_bundle_path)
 
-        BENTO is the target BentoService to be containerized, referenced by its name
-        and version in format of name:version. For example: "iris_classifier:v1.2.0"
-
-        `bentoml containerize` command also supports the use of the `latest` tag
-        which will automatically use the last built version of your Bento.
-
-        You can provide a tag for the image built by Bento using the
-        `--docker-image-tag` flag. Additionally, you can provide a `--push` flag,
-        which will push the built image to the Docker repository specified by the
-        image tag.
-
-        You can also prefixing the tag with a hostname for the repository you wish
-        to push to.
-        e.g. `bentoml containerize IrisClassifier:latest --push --tag username/iris`
-        would build a Docker image called `username/iris:latest` and push that to
-        Docker Hub.
-
-        By default, the `containerize` command will use the credentials provided by
-        Docker. You may provide your own through `--username` and `--password`.
-        """
-        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
-        _echo(f"bendle path is {pip_installed_bundle_path}")
-        _echo(f"bento is {bento}")
-        _echo(f"Found Bento: {saved_bundle_path}")
-
-        bento_metadata = load_bento_service_metadata(saved_bundle_path)
-        name = to_valid_docker_image_name(bento_metadata.name)
-        version = to_valid_docker_image_version(bento_metadata.version)
-
-        if not tag:
-            _echo(
-                "Tag not specified, using tag parsed from "
-                f"BentoService: '{name}:{version}'"
-            )
-            tag = f"{name}:{version}"
-        if ":" not in tag:
-            _echo(
-                "Image version not specified, using version parsed "
-                f"from BentoService: '{version}'",
-                CLI_COLOR_WARNING,
-            )
-            tag = f"{tag}:{version}"
-
-        docker_build_args = {}
-        if build_arg:
-            for arg in build_arg:
-                key, value = arg.split("=")
-                docker_build_args[key] = value
-
-        import docker
-
-        docker_api = docker.APIClient()
-        try:
-            with Spinner(f"Building Docker image {tag} from {bento} \n"):
-                for line in echo_docker_api_result(
-                    docker_api.build(
-                        path=saved_bundle_path,
-                        tag=tag,
-                        decode=True,
-                        buildargs=docker_build_args,
-                    )
-                ):
-                    _echo(line)
-        except docker.errors.APIError as error:
-            raise CLIException(f"Could not build Docker image: {error}")
-
-        _echo(
-            f"Finished building {tag} from {bento}", CLI_COLOR_SUCCESS,
-        )
-
-        if push:
-            auth_config_payload = (
-                {"username": username, "password": password}
-                if username or password
-                else None
-            )
-
-            try:
-                with Spinner(f"Pushing docker image to {tag}\n"):
-                    for line in echo_docker_api_result(
-                        docker_api.push(
-                            repository=tag,
-                            stream=True,
-                            decode=True,
-                            auth_config=auth_config_payload,
-                        )
-                    ):
-                        _echo(line)
-                _echo(
-                    f"Pushed {tag} to {name}", CLI_COLOR_SUCCESS,
-                )
-            except (docker.errors.APIError, BentoMLException) as error:
-                raise CLIException(f"Could not push Docker image: {error}")
 
     # pylint: enable=unused-variable
     return bentoml_cli

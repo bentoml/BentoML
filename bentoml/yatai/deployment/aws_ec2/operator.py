@@ -14,158 +14,58 @@
 """
 import os
 import boto3
+#from botocore.exceptions import RepositoryAlreadyExistsException
 from pathlib import Path
+from uuid import uuid4
 
-from bentoml.utils.s3 import is_s3_url
-from bentoml.utils.gcs import is_gcs_url
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.yatai.deployment.aws_lambda.utils import call_sam_command
-from bentoml.cli.utils import (
-    echo_docker_api_result,
-    Spinner,
-    get_default_yatai_client,
-)
+
+from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.saved_bundle import loader
 from bentoml.utils import (
     ProtoMessageToDict,
     status_pb_to_error_code_and_message,
+    resolve_bundle_path
 )
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.exceptions import BentoMLException
-
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.proto.deployment_pb2 import ApplyDeploymentResponse
 from bentoml.yatai.status import Status
 from bentoml.saved_bundle import (
-    load,
-    load_bento_service_api,
-    load_bento_service_metadata,
+    load_bento_service_metadata
 )
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.ruamel_yaml import YAML
+from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.aws_utils import (
+    generate_aws_compatible_string,
+    get_default_aws_region,
+    ensure_sam_available_or_raise,
+    call_sam_command,
+    validate_sam_template
+)
+from bentoml.utils.docker_utils import (
+    to_valid_docker_image_name,
+    to_valid_docker_image_version,
+    validate_tag,
+    containerize_bento_service
+)
+from bentoml.exceptions import (
+    BentoMLException,
+    InvalidArgument,
+    YataiDeploymentException,
+)
+from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
-def to_valid_docker_image_name(name):
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return name.lower().strip("._-")
-
-def to_valid_docker_image_version(version):
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return version.encode("ascii", errors="ignore").decode().lstrip(".-")[:128]
-
-
-def resolve_bundle_path(bento, pip_installed_bundle_path):
-    if pip_installed_bundle_path:
-        assert (
-            bento is None
-        ), "pip installed BentoService commands should not have Bento argument"
-        return pip_installed_bundle_path
-
-    if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
-        # saved_bundle already support loading local, s3 path and gcs path
-        return bento
-
-    elif ":" in bento:
-        # assuming passing in BentoService in the form of Name:Version tag
-        yatai_client = get_default_yatai_client()
-        name, version = bento.split(":")
-        get_bento_result = yatai_client.repository.get(name, version)
-        if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                get_bento_result.status
-            )
-            raise BentoMLException(
-                f"BentoService {name}:{version} not found - "
-                f"{error_code}:{error_message}"
-            )
-        if get_bento_result.bento.uri.s3_presigned_url:
-            # Use s3 presigned URL for downloading the repository if it is presented
-            return get_bento_result.bento.uri.s3_presigned_url
-        if get_bento_result.bento.uri.gcs_presigned_url:
-            return get_bento_result.bento.uri.gcs_presigned_url
-        else:
-            return get_bento_result.bento.uri.uri
-    else:
-        raise BentoMLException(
-            f'BentoService "{bento}" not found - either specify the file path of '
-            f"the BentoService saved bundle, or the BentoService id in the form of "
-            f'"name:version"'
-        )
-
-def _containerize_service(bento, docker_api, tag=None, build_arg = None, username = None, password = None):
-    saved_bundle_path = resolve_bundle_path(bento, None)
-
-    print(f"Found Bento: {saved_bundle_path}")
-
-    bento_metadata = load_bento_service_metadata(saved_bundle_path)
-    name = to_valid_docker_image_name(bento_metadata.name)
-    version = to_valid_docker_image_version(bento_metadata.version)
-
-    if not tag:
-        print(
-            "Tag not specified, using tag parsed from "
-            f"BentoService: '{name}:{version}'"
-        )
-        tag = f"{name}:{version}"
-    if ":" not in tag:
-        print(
-            "Image version not specified, using version parsed "
-            f"from BentoService: {version}",
-        )
-        tag = f"{tag}:{version}"
-
-    docker_build_args = {}
-    if build_arg:
-        for arg in build_arg:
-            key, value = arg.split("=")
-            docker_build_args[key] = value
-
-    import docker
-
-    #docker_api = docker.APIClient()
-    try:
-        with Spinner(f"Building Docker image {tag} from {bento} \n"):
-            for line in echo_docker_api_result(
-                docker_api.build(
-                    path=saved_bundle_path,
-                    tag=tag,
-                    decode=True,
-                    buildargs=docker_build_args,
-                )
-            ):
-                print(line)
-    except docker.errors.APIError as error:
-        raise BentoMLException(f"Could not build Docker image: {error}")
-
-
-    print("pushing image")
-    auth_config_payload = (
-        {"username": username, "password": password}
-        if username or password
-        else None
-    )
-
-    try:
-        with Spinner(f"Pushing docker image to {tag}\n"):
-            for line in echo_docker_api_result(
-                docker_api.push(
-                    repository=tag,
-                    stream=True,
-                    decode=True,
-                    auth_config=auth_config_payload,
-                )
-            ):
-                print(line)
-        print(
-            f"Pushed {tag} to {name}",
-        )
-    except (docker.errors.APIError, BentoMLException) as error:
-        raise BentoMLException (f"Could not push Docker image: {error}")
-
 def _create_ecr_repo(repo_name):
-    ecr_client = boto3.client("ecr")
-    repository = ecr_client.create_repository(repositoryName = repo_name, imageScanningConfiguration = {"scanOnPush" : False})
-    registry_id = repository["repository"]["registryId"]
+    try:
+        ecr_client = boto3.client("ecr")
+        repository = ecr_client.create_repository(repositoryName = repo_name, imageScanningConfiguration = {"scanOnPush" : False})
+        registry_id = repository["repository"]["registryId"]
+    except ecr_client.exceptions.RepositoryAlreadyExistsException:
+        all_repositories = ecr_client.describe_repositories(repositoryNames=[repo_name])
+        registry_id = all_repositories['repositories'][0]["registryId"]
     return registry_id
 
 def _get_ecr_password(registry_id):
@@ -216,10 +116,7 @@ runcmd:
 
 --==MYBOUNDARY==--
 """.format(username, password, registry, tag)
-
-    print("user data is \n", base_format)
     encoded = base64.b64encode(base_format.encode("ascii")).decode("ascii")
-    print("encoded data is \n", encoded)
     return encoded
 
 def _make_cloudformation_template(project_dir, user_data):
@@ -303,42 +200,110 @@ def deploy_template(project_directory, template_file_path, s3_bucket_name, regio
 
 class AwsEc2DeploymentOperator(DeploymentOperatorBase):
     def add(self, deployment_pb):
-        import uuid
-        REPO_NAME = str(uuid.uuid4())
-        REGION = "us-east-1"
-        S3_BUCKET_NAME = "bento-iris-classifier-1234"
-        STACK_NAME = "bento-stack-auto-2"
-        TAG = "752014255238.dkr.ecr.ap-south-1.amazonaws.com/bento-iris:latest"
+        print("deployment pb is \n", deployment_pb)
 
-        with TempDirectory() as PROJECT_PATH:
-            print("deployment_pb is ", deployment_pb)
-            bento = f"{deployment_pb.spec.bento_name}:latest"
+        deployment_spec = deployment_pb.spec
+        deployment_spec.aws_ec2_operator_config.region = (
+            deployment_spec.aws_ec2_operator_config.region or get_default_aws_region()
+        )
+        if not deployment_spec.aws_ec2_operator_config:
+            raise InvalidArgument("AWS region is missing")
+        #REGION = "us-east-1"
 
-            
-            registry_id = _create_ecr_repo(REPO_NAME)
+        ensure_sam_available_or_raise()
+        ensure_docker_available_or_raise()
+
+        bento_pb = self.yatai_service.GetBento(
+            GetBentoRequest(
+                bento_name=deployment_spec.bento_name,
+                bento_version = deployment_spec.bento_version
+            )
+        )
+        if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
+            raise BentoMLException(
+                "BentoML currently not support {} repository".format(
+                    BentoUri.StorageType.Name(bento_pb.bento.uri.type)
+                )
+            )
+        bento_path = bento_pb.bento.uri.uri
+
+        return self._add(deployment_pb, bento_pb, bento_path)
+
+    def _add(self, deployment_pb, bento_pb, bento_path):
+        if loader._is_remote_path(bento_path):
+            with loader._resolve_remote_bundle_path(bento_path) as local_path:
+                return self._add(deployment_pb, bento_pb, local_path)
+
+        deployment_spec = deployment_pb.spec
+        aws_ec2_deployment_config = deployment_spec.aws_ec2_operator_config
+        #bento_service_metadata = bento_pb.bento.bento_service_metadata
+
+        artifact_s3_bucket_name = generate_aws_compatible_string(
+            "btml-{namespace}-{name}-{random_string}".format(
+                namespace=deployment_pb.namespace,
+                name=deployment_pb.name,
+                random_string=uuid4().hex[:6].lower()
+            )
+        )
+        #S3_BUCKET_NAME = "bento-iris-classifier-1234"
+        create_s3_bucket_if_not_exists(
+            artifact_s3_bucket_name, aws_ec2_deployment_config.region
+        )
+
+        deployment_stack_name = generate_aws_compatible_string(
+            "btml-stack-{namespace}-{name}-{random_string}".format(
+                namespace=deployment_pb.namespace,
+                name=deployment_pb.name,
+                random_string=uuid4().hex[:6].lower()
+            )
+        )
+
+        repo_name = generate_aws_compatible_string(
+            "btml-repo-{namespace}-{name}-{random_string}".format(
+                namespace=deployment_pb.namespace,
+                name=deployment_pb.name,
+                random_string=uuid4().hex[:6].lower()
+            )
+        )
+        repo_name="bento-iris" #NOTE: DELETE THIS
+
+        with TempDirectory() as project_path:
+            registry_id = _create_ecr_repo(repo_name)
             registry_token, registry_url = _get_ecr_password(registry_id)
             registry_username, registry_password = _get_creds_from_token(registry_token)
-
-            docker_api = _login_docker(registry_username, registry_password, registry_url)
-            _containerize_service(bento, docker_api, tag = TAG, username=registry_username, password=registry_password)
             
-            create_s3_bucket_if_not_exists(
-                    S3_BUCKET_NAME, REGION
-                )
+            #docker_api = _login_docker(registry_username, registry_password, registry_url)
+            #752014255238.dkr.ecr.ap-south-1.amazonaws.com/btml-repo-dev-deploy-76-cdb0ae:latest
+            registry_domain = registry_url.replace("https://", "")
+            tag = f"{registry_domain}/{repo_name}"
 
-            encoded_user_data = _make_user_data(registry_username, registry_password, registry_url, TAG)
+            #containerize_bento_service(bento, True, tag = tag, 
+            #    build_arg = {}, username=registry_username, 
+            #    password=registry_password, pip_installed_bundle_path=None)
             
-            template_file_path = _make_cloudformation_template(PROJECT_PATH, encoded_user_data)
+            encoded_user_data = _make_user_data(registry_username, registry_password, registry_url, tag)
+            
+            template_file_path = _make_cloudformation_template(project_path, encoded_user_data)
 
-            #validate_template_file() TODO
+            validate_sam_template("template.yml", aws_ec2_deployment_config.region, project_path)
 
-            deploy_template(PROJECT_PATH, template_file_path, S3_BUCKET_NAME, REGION, STACK_NAME)
-
-
+            """
+            deploy_template(project_path, template_file_path, 
+                            artifact_s3_bucket_name, aws_ec2_deployment_config.region, 
+                            deployment_stack_name)
+            """
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
+        
     def update(self, deployment_pb):
         pass
+
     def delete(self, deployment_pb):
-        pass
+        #delete stack
+        deployment_spec = deployment_pb
+
+
+        #delete repo from ecr
+
+
     def describe(self, deployment_pb):
         pass

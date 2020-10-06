@@ -59,16 +59,16 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.keras.KerasModelArtifact
 
-======
-FastAI
-======
+=========
+FastAI v1
+=========
 
 Example Projects:
 
 * Pet Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`__
 * Salary Range Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.fastai.FastaiModelArtifact
+.. autoclass:: bentoml.frameworks.fastai.Fastai1ModelArtifact
 
 =========
 FastAI v2
@@ -78,7 +78,7 @@ Example Projects:
 
 * Medical image classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.fastai2.Fastai2ModelArtifact
+.. autoclass:: bentoml.frameworks.fastai.FastaiModelArtifact
 
 =======
 XGBoost

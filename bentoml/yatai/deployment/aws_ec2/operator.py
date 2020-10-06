@@ -1,38 +1,21 @@
-"""
-# make dockerfile of bentoservice -> done -> automatically generated when service is saved
-# build image and tag it properly for ecr repo -> DONE
-# push it to ecr -> DONE
-#create s3 -> DONE
-# make target group -> OPTIONAL
-# make launch temaplate which does: -> DONE
-#   pull image
-#   run it
-# create security group which allows traffic on port 5000 -> PENDING
-
-# make autoscaling group for ec2 -> optional
-# make template of all above and deploy it -> DONE
-"""
 import os
 import boto3
-#from botocore.exceptions import RepositoryAlreadyExistsException
 from pathlib import Path
 from uuid import uuid4
+import docker
+import base64
 
 from bentoml.utils.tempdir import TempDirectory
 
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.saved_bundle import loader
-from bentoml.utils import (
-    ProtoMessageToDict,
-    status_pb_to_error_code_and_message,
-    resolve_bundle_path
-)
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
-from bentoml.yatai.proto.deployment_pb2 import ApplyDeploymentResponse
-from bentoml.yatai.status import Status
-from bentoml.saved_bundle import (
-    load_bento_service_metadata
+from bentoml.yatai.proto.deployment_pb2 import (
+    ApplyDeploymentResponse,
+    DeleteDeploymentResponse,
 )
+from bentoml.yatai.status import Status
+
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.ruamel_yaml import YAML
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
@@ -41,13 +24,13 @@ from bentoml.yatai.deployment.aws_utils import (
     get_default_aws_region,
     ensure_sam_available_or_raise,
     call_sam_command,
-    validate_sam_template
+    validate_sam_template,
 )
 from bentoml.utils.docker_utils import (
     to_valid_docker_image_name,
     to_valid_docker_image_version,
     validate_tag,
-    containerize_bento_service
+    containerize_bento_service,
 )
 from bentoml.exceptions import (
     BentoMLException,
@@ -58,42 +41,41 @@ from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
+
 def _create_ecr_repo(repo_name):
     try:
         ecr_client = boto3.client("ecr")
-        repository = ecr_client.create_repository(repositoryName = repo_name, imageScanningConfiguration = {"scanOnPush" : False})
+        repository = ecr_client.create_repository(
+            repositoryName=repo_name, imageScanningConfiguration={"scanOnPush": False}
+        )
         registry_id = repository["repository"]["registryId"]
     except ecr_client.exceptions.RepositoryAlreadyExistsException:
         all_repositories = ecr_client.describe_repositories(repositoryNames=[repo_name])
-        registry_id = all_repositories['repositories'][0]["registryId"]
+        registry_id = all_repositories["repositories"][0]["registryId"]
     return registry_id
+
 
 def _get_ecr_password(registry_id):
     ecr_client = boto3.client("ecr")
-    token_data = ecr_client.get_authorization_token(registryIds = [registry_id])
+    token_data = ecr_client.get_authorization_token(registryIds=[registry_id])
     token = token_data["authorizationData"][0]["authorizationToken"]
     registry_endpoint = token_data["authorizationData"][0]["proxyEndpoint"]
     return token, registry_endpoint
 
+
 def _get_creds_from_token(token):
-    import base64
     cred_string = base64.b64decode(token).decode("ascii")
     username, password = str(cred_string).split(":")
     return username, password
 
-def _login_docker(username, password, registry_url):
-    import docker
 
+def _login_docker(username, password, registry_url):
     docker_api = docker.APIClient()
-    docker_api.login(username = username, password = password, registry = registry_url)
+    docker_api.login(username=username, password=password, registry=registry_url)
     return docker_api
 
-def _make_user_data(username, password, registry, tag):
-    #input: docker usernaame, password, registry
-    #bento image name
-    #return base64 encoded user data
-    import base64
 
+def _make_user_data(username, password, registry, tag):
     base_format = """MIME-Version: 1.0
 Content-Type: multipart/mixed; boundary=\"==MYBOUNDARY==\"
 
@@ -115,26 +97,32 @@ runcmd:
 - sudo docker run -p 5000:5000 {3}
 
 --==MYBOUNDARY==--
-""".format(username, password, registry, tag)
+""".format(
+        username, password, registry, tag
+    )
     encoded = base64.b64encode(base_format.encode("ascii")).decode("ascii")
     return encoded
 
+
 def _make_cloudformation_template(project_dir, user_data):
+    """
+    TODO: Template should return ec2 public address
+    NOTE: SSH ACCESS TO INSTANCE MAY NOT BE REQUIRED
+    """
     template_file_path = os.path.join(project_dir, "template.yml")
     yaml = YAML()
     sam_config = {
         "AWSTemplateFormatVersion": "2010-09-09",
         "Transform": "AWS::Serverless-2016-10-31",
         "Description": "BentoML load balanced template template",
-        "Parameters" : {
-            "AmazonLinux2LatestAmiId":{
+        "Parameters": {
+            "AmazonLinux2LatestAmiId": {
                 "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
-                "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+                "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
             },
-        }
+        },
     }
     yaml.dump(sam_config, Path(template_file_path))
-    #NOTE: REMOVE SSH ACCESS TO INSTANCE FROM BELOW TEMPLATE
 
     with open(template_file_path, "a") as f:
         f.write(
@@ -178,29 +166,54 @@ Resources:
             LaunchTemplate: 
                 LaunchTemplateId: !Ref LaunchTemplateResource
                 Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
-            """.format(user_data)
+            """.format(
+                user_data
+            )
         )
     return template_file_path
 
 
-def deploy_template(project_directory, template_file_path, s3_bucket_name, region, stack_name):
-    #build -> sam build -t "$2".yaml
+def deploy_template(
+    project_directory, template_file_path, s3_bucket_name, region, stack_name
+):
+    """
+    TODO: make separate function for package,build,deploy
+    """
+    status_code, stdout, stderr = call_sam_command(
+        ["build", "-t", template_file_path], project_directory, region
+    )
 
-    status_code, stdout, stderr = call_sam_command(["build", "-t", template_file_path], project_directory, region)
-    print("build ", status_code, stdout, stderr)
+    status_code, stdout, stderr = call_sam_command(
+        [
+            "package",
+            "--output-template-file",
+            "packaged.yaml",
+            "--s3-bucket",
+            s3_bucket_name,
+        ],
+        project_directory,
+        region,
+    )
 
+    status_code, stdout, stderr = call_sam_command(
+        [
+            "deploy",
+            "--template-file",
+            "packaged.yaml",
+            "--stack-name",
+            stack_name,
+            "--capabilities",
+            "CAPABILITY_IAM",
+            "--s3-bucket",
+            s3_bucket_name,
+        ],
+        project_directory,
+        region,
+    )
 
-    #package -> sam package --output-template-file packaged.yaml --s3-bucket "$1"
-    status_code, stdout, stderr = call_sam_command(["package", "--output-template-file", "packaged.yaml", "--s3-bucket", s3_bucket_name], project_directory, region)
-    print("package ", status_code, stdout, stderr)
-
-    #deploy -> sam deploy --template-file packaged.yaml --stack-name "$3" --capabilities CAPABILITY_IAM --s3-bucket "$1"
-    status_code, stdout, stderr = call_sam_command(["deploy", "--template-file", "packaged.yaml", "--stack-name", stack_name, "--capabilities", "CAPABILITY_IAM", "--s3-bucket", s3_bucket_name], project_directory, region)
-    print("deploy ", status_code, stdout, stderr)
 
 class AwsEc2DeploymentOperator(DeploymentOperatorBase):
     def add(self, deployment_pb):
-        print("deployment pb is \n", deployment_pb)
 
         deployment_spec = deployment_pb.spec
         deployment_spec.aws_ec2_operator_config.region = (
@@ -208,7 +221,6 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         )
         if not deployment_spec.aws_ec2_operator_config:
             raise InvalidArgument("AWS region is missing")
-        #REGION = "us-east-1"
 
         ensure_sam_available_or_raise()
         ensure_docker_available_or_raise()
@@ -216,7 +228,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         bento_pb = self.yatai_service.GetBento(
             GetBentoRequest(
                 bento_name=deployment_spec.bento_name,
-                bento_version = deployment_spec.bento_version
+                bento_version=deployment_spec.bento_version,
             )
         )
         if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
@@ -236,74 +248,103 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
 
         deployment_spec = deployment_pb.spec
         aws_ec2_deployment_config = deployment_spec.aws_ec2_operator_config
-        #bento_service_metadata = bento_pb.bento.bento_service_metadata
 
         artifact_s3_bucket_name = generate_aws_compatible_string(
             "btml-{namespace}-{name}-{random_string}".format(
                 namespace=deployment_pb.namespace,
                 name=deployment_pb.name,
-                random_string=uuid4().hex[:6].lower()
+                random_string=uuid4().hex[:6].lower(),
             )
         )
-        #S3_BUCKET_NAME = "bento-iris-classifier-1234"
         create_s3_bucket_if_not_exists(
             artifact_s3_bucket_name, aws_ec2_deployment_config.region
         )
 
         deployment_stack_name = generate_aws_compatible_string(
-            "btml-stack-{namespace}-{name}-{random_string}".format(
-                namespace=deployment_pb.namespace,
-                name=deployment_pb.name,
-                random_string=uuid4().hex[:6].lower()
+            "btml-stack-{namespace}-{name}".format(
+                namespace=deployment_pb.namespace, name=deployment_pb.name
             )
         )
 
         repo_name = generate_aws_compatible_string(
-            "btml-repo-{namespace}-{name}-{random_string}".format(
-                namespace=deployment_pb.namespace,
-                name=deployment_pb.name,
-                random_string=uuid4().hex[:6].lower()
+            "btml-repo-{namespace}-{name}".format(
+                namespace=deployment_pb.namespace, name=deployment_pb.name
             )
         )
-        repo_name="bento-iris" #NOTE: DELETE THIS
 
         with TempDirectory() as project_path:
             registry_id = _create_ecr_repo(repo_name)
             registry_token, registry_url = _get_ecr_password(registry_id)
             registry_username, registry_password = _get_creds_from_token(registry_token)
-            
-            #docker_api = _login_docker(registry_username, registry_password, registry_url)
-            #752014255238.dkr.ecr.ap-south-1.amazonaws.com/btml-repo-dev-deploy-76-cdb0ae:latest
+
+            bento = f"{deployment_pb.spec.bento_name}:latest"
             registry_domain = registry_url.replace("https://", "")
             tag = f"{registry_domain}/{repo_name}"
 
-            #containerize_bento_service(bento, True, tag = tag, 
-            #    build_arg = {}, username=registry_username, 
-            #    password=registry_password, pip_installed_bundle_path=None)
-            
-            encoded_user_data = _make_user_data(registry_username, registry_password, registry_url, tag)
-            
-            template_file_path = _make_cloudformation_template(project_path, encoded_user_data)
+            containerize_bento_service(
+                bento,
+                True,
+                tag=tag,
+                build_arg={},
+                username=registry_username,
+                password=registry_password,
+                pip_installed_bundle_path=None,
+            )
 
-            validate_sam_template("template.yml", aws_ec2_deployment_config.region, project_path)
+            encoded_user_data = _make_user_data(
+                registry_username, registry_password, registry_url, tag
+            )
 
-            """
-            deploy_template(project_path, template_file_path, 
-                            artifact_s3_bucket_name, aws_ec2_deployment_config.region, 
-                            deployment_stack_name)
-            """
+            template_file_path = _make_cloudformation_template(
+                project_path, encoded_user_data
+            )
+
+            validate_sam_template(
+                "template.yml", aws_ec2_deployment_config.region, project_path
+            )
+
+            deploy_template(
+                project_path,
+                template_file_path,
+                artifact_s3_bucket_name,
+                aws_ec2_deployment_config.region,
+                deployment_stack_name,
+            )
+
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
-        
-    def update(self, deployment_pb):
-        pass
 
     def delete(self, deployment_pb):
-        #delete stack
+        deployment_spec = deployment_pb.spec
+        ec2_deployment_config = deployment_spec.aws_ec2_operator_config
+        ec2_deployment_config.region = (
+            ec2_deployment_config.region or get_default_aws_region()
+        )
+        if not ec2_deployment_config.region:
+            raise InvalidArgument("AWS region is missing")
+
+        # delete stack
         deployment_spec = deployment_pb
+        deployment_stack_name = generate_aws_compatible_string(
+            "btml-stack-{namespace}-{name}".format(
+                namespace=deployment_pb.namespace, name=deployment_pb.name
+            )
+        )
 
+        cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
+        cf_client.delete_stack(StackName=deployment_stack_name)
 
-        #delete repo from ecr
+        # delete repo from ecr
+        repository_name = generate_aws_compatible_string(
+            "btml-repo-{namespace}-{name}".format(
+                namespace=deployment_pb.namespace, name=deployment_pb.name
+            )
+        )
+        ecr_client = boto3.client("ecr", ec2_deployment_config.region)
+        ecr_client.delete_repository(repositoryName=repository_name)
+        return DeleteDeploymentResponse(status=Status.OK())
 
+    def update(self, deployment_pb, previous_deployment):
+        pass
 
     def describe(self, deployment_pb):
         pass

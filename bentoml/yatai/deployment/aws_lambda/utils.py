@@ -24,6 +24,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from bentoml.exceptions import BentoMLException, MissingDependencyException
+from bentoml.yatai.deployment.aws_utils import call_sam_command
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,83 @@ LAMBDA_FUNCTION_LIMIT = 249000000
 LAMBDA_TEMPORARY_DIRECTORY_MAX_LIMIT = 511000000
 LAMBDA_FUNCTION_MAX_LIMIT = LAMBDA_FUNCTION_LIMIT + LAMBDA_TEMPORARY_DIRECTORY_MAX_LIMIT
 
+def init_sam_project(
+    sam_project_path,
+    bento_service_bundle_path,
+    deployment_name,
+    bento_name,
+    api_names,
+    aws_region,
+):
+    function_path = os.path.join(sam_project_path, deployment_name)
+    os.mkdir(function_path)
+    # Copy requirements.txt
+    logger.debug("Copying requirements.txt")
+    requirement_txt_path = os.path.join(bento_service_bundle_path, "requirements.txt")
+    shutil.copy(requirement_txt_path, function_path)
+
+    bundled_dep_path = os.path.join(
+        bento_service_bundle_path, "bundled_pip_dependencies"
+    )
+    if os.path.isdir(bundled_dep_path):
+        # Copy bundled pip dependencies
+        logger.debug("Copying bundled_dependencies")
+        shutil.copytree(
+            bundled_dep_path, os.path.join(function_path, "bundled_pip_dependencies")
+        )
+        bundled_files = os.listdir(
+            os.path.join(function_path, "bundled_pip_dependencies")
+        )
+        for index, bundled_file_name in enumerate(bundled_files):
+            bundled_files[index] = "./bundled_pip_dependencies/{}\n".format(
+                bundled_file_name
+            )
+
+        logger.debug("Updating requirements.txt")
+        with open(
+            os.path.join(function_path, "requirements.txt"), "r+"
+        ) as requirement_file:
+            required_modules = bundled_files + requirement_file.readlines()
+            # Write from beginning of the file, instead of appending to the end.
+            requirement_file.seek(0)
+            requirement_file.writelines(required_modules)
+
+    # Copy bento_service_model
+    logger.debug("Copying model directory")
+    model_path = os.path.join(bento_service_bundle_path, bento_name)
+    shutil.copytree(model_path, os.path.join(function_path, bento_name))
+
+    logger.debug("Creating python files for lambda function")
+    # Create empty __init__.py
+    open(os.path.join(function_path, "__init__.py"), "w").close()
+
+    app_py_path = os.path.join(os.path.dirname(__file__), "lambda_app.py")
+    shutil.copy(app_py_path, os.path.join(function_path, "app.py"))
+    unzip_requirement_py_path = os.path.join(
+        os.path.dirname(__file__), "download_extra_resources.py"
+    )
+    shutil.copy(
+        unzip_requirement_py_path,
+        os.path.join(function_path, "download_extra_resources.py"),
+    )
+
+    logger.info("Building lambda project")
+    return_code, stdout, stderr = call_sam_command(
+        ["build", "--use-container", "--region", aws_region],
+        project_dir=sam_project_path,
+        region=aws_region,
+    )
+    if return_code != 0:
+        error_message = stderr
+        if not error_message:
+            error_message = stdout
+        raise BentoMLException(
+            "Failed to build lambda function. {}".format(error_message)
+        )
+    logger.debug("Removing unnecessary files to free up space")
+    for api_name in api_names:
+        cleanup_build_files(sam_project_path, api_name)
+        
 def cleanup_build_files(project_dir, api_name):
     build_dir = os.path.join(project_dir, ".aws-sam/build/{}".format(api_name))
     logger.debug("Cleaning up unused files in SAM built directory %s", build_dir)
@@ -134,83 +212,6 @@ def lambda_deploy(project_dir, aws_region, stack_name):
         )
     else:
         return stdout
-
-def init_sam_project(
-    sam_project_path,
-    bento_service_bundle_path,
-    deployment_name,
-    bento_name,
-    api_names,
-    aws_region,
-):
-    function_path = os.path.join(sam_project_path, deployment_name)
-    os.mkdir(function_path)
-    # Copy requirements.txt
-    logger.debug("Copying requirements.txt")
-    requirement_txt_path = os.path.join(bento_service_bundle_path, "requirements.txt")
-    shutil.copy(requirement_txt_path, function_path)
-
-    bundled_dep_path = os.path.join(
-        bento_service_bundle_path, "bundled_pip_dependencies"
-    )
-    if os.path.isdir(bundled_dep_path):
-        # Copy bundled pip dependencies
-        logger.debug("Copying bundled_dependencies")
-        shutil.copytree(
-            bundled_dep_path, os.path.join(function_path, "bundled_pip_dependencies")
-        )
-        bundled_files = os.listdir(
-            os.path.join(function_path, "bundled_pip_dependencies")
-        )
-        for index, bundled_file_name in enumerate(bundled_files):
-            bundled_files[index] = "./bundled_pip_dependencies/{}\n".format(
-                bundled_file_name
-            )
-
-        logger.debug("Updating requirements.txt")
-        with open(
-            os.path.join(function_path, "requirements.txt"), "r+"
-        ) as requirement_file:
-            required_modules = bundled_files + requirement_file.readlines()
-            # Write from beginning of the file, instead of appending to the end.
-            requirement_file.seek(0)
-            requirement_file.writelines(required_modules)
-
-    # Copy bento_service_model
-    logger.debug("Copying model directory")
-    model_path = os.path.join(bento_service_bundle_path, bento_name)
-    shutil.copytree(model_path, os.path.join(function_path, bento_name))
-
-    logger.debug("Creating python files for lambda function")
-    # Create empty __init__.py
-    open(os.path.join(function_path, "__init__.py"), "w").close()
-
-    app_py_path = os.path.join(os.path.dirname(__file__), "lambda_app.py")
-    shutil.copy(app_py_path, os.path.join(function_path, "app.py"))
-    unzip_requirement_py_path = os.path.join(
-        os.path.dirname(__file__), "download_extra_resources.py"
-    )
-    shutil.copy(
-        unzip_requirement_py_path,
-        os.path.join(function_path, "download_extra_resources.py"),
-    )
-
-    logger.info("Building lambda project")
-    return_code, stdout, stderr = call_sam_command(
-        ["build", "--use-container", "--region", aws_region],
-        project_dir=sam_project_path,
-        region=aws_region,
-    )
-    if return_code != 0:
-        error_message = stderr
-        if not error_message:
-            error_message = stdout
-        raise BentoMLException(
-            "Failed to build lambda function. {}".format(error_message)
-        )
-    logger.debug("Removing unnecessary files to free up space")
-    for api_name in api_names:
-        cleanup_build_files(sam_project_path, api_name)
 
 
 def total_file_or_directory_size(file_or_dir):

@@ -2,6 +2,7 @@ import logging
 import re
 import subprocess
 import os
+import shutil
 
 import boto3
 from botocore.exceptions import ClientError
@@ -13,6 +14,7 @@ from bentoml.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
 
 def generate_aws_compatible_string(*items, max_length=63):
     """
@@ -60,6 +62,7 @@ def get_default_aws_region():
         logger.error("Encounter error when getting default region for AWS: %s", str(e))
         return ""
 
+
 def ensure_sam_available_or_raise():
     try:
         import samcli
@@ -74,6 +77,7 @@ def ensure_sam_available_or_raise():
             "aws-sam-cli package is required. Install "
             "with `pip install --user aws-sam-cli`"
         )
+
 
 def call_sam_command(command, project_dir, region):
     command = ["sam"] + command
@@ -95,6 +99,7 @@ def call_sam_command(command, project_dir, region):
     stdout, stderr = proc.communicate()
     logger.debug("SAM cmd %s output: %s", command, stdout.decode("utf-8"))
     return proc.returncode, stdout.decode("utf-8"), stderr.decode("utf-8")
+
 
 def validate_sam_template(template_file, aws_region, sam_project_path):
     status_code, stdout, stderr = call_sam_command(

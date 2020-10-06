@@ -4,9 +4,7 @@ import os
 import json
 import re
 import psutil
-from bentoml.saved_bundle import (
-    load_bento_service_metadata
-)
+from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.cli.utils import Spinner, echo_docker_api_result
 from bentoml.exceptions import BentoMLException, CLIException
 from bentoml.utils import resolve_bundle_path
@@ -18,6 +16,7 @@ from bentoml.cli.click_utils import (
     conditional_argument,
 )
 
+
 def to_valid_docker_image_name(name):
     # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
     return name.lower().strip("._-")
@@ -26,7 +25,6 @@ def to_valid_docker_image_name(name):
 def to_valid_docker_image_version(version):
     # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
     return version.encode("ascii", errors="ignore").decode().lstrip(".-")[:128]
-
 
 
 def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
@@ -78,7 +76,10 @@ def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
         )
     return tag
 
-def containerize_bento_service(bento, push, tag, build_arg, username, password, pip_installed_bundle_path):
+
+def containerize_bento_service(
+    bento, push, tag, build_arg, username, password, pip_installed_bundle_path
+):
     """Containerize specified BentoService.
 
     BENTO is the target BentoService to be containerized, referenced by its name
@@ -174,5 +175,5 @@ def containerize_bento_service(bento, push, tag, build_arg, username, password, 
                 f"Pushed {tag} to {name}", CLI_COLOR_SUCCESS,
             )
         except (docker.errors.APIError, BentoMLException) as error:
-            raise CLIException(f"Could not push Docker image: {error}")    
+            raise CLIException(f"Could not push Docker image: {error}")
     return tag

@@ -16,7 +16,7 @@ from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import (
     ProtoMessageToDict,
     status_pb_to_error_code_and_message,
-    resolve_bundle_path
+    resolve_bundle_path,
 )
 from bentoml.cli.click_utils import (
     CLI_COLOR_WARNING,
@@ -25,10 +25,7 @@ from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     conditional_argument,
 )
-from bentoml.cli.utils import (
-    echo_docker_api_result,
-    Spinner
-)
+from bentoml.cli.utils import echo_docker_api_result, Spinner
 from bentoml.utils import get_default_yatai_client
 from bentoml.saved_bundle import (
     load,
@@ -36,8 +33,11 @@ from bentoml.saved_bundle import (
     load_bento_service_metadata,
 )
 from bentoml.utils.docker_utils import (
-    containerize_bento_service, validate_tag, to_valid_docker_image_name,
-    to_valid_docker_image_version)
+    containerize_bento_service,
+    validate_tag,
+    to_valid_docker_image_name,
+    to_valid_docker_image_version,
+)
 
 try:
     import click_completion
@@ -57,9 +57,6 @@ def escape_shell_params(param):
     k, v = param.split("=")
     v = re.sub(r"([^a-zA-Z0-9])", r"\\\1", v)
     return "{}={}".format(k, v)
-
-
-
 
 
 def create_bento_service_cli(pip_installed_bundle_path=None):
@@ -262,8 +259,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         "-p", "--password", type=click.STRING, required=False,
     )
     def containerize(bento, push, tag, build_arg, username, password):
-        containerize_bento_service(bento, push, tag, build_arg, username, password, pip_installed_bundle_path)
-
+        containerize_bento_service(
+            bento, push, tag, build_arg, username, password, pip_installed_bundle_path
+        )
 
     # pylint: enable=unused-variable
     return bentoml_cli

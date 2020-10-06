@@ -11,7 +11,9 @@ from bentoml.yatai.deployment.aws_lambda.operator import (
     _create_aws_lambda_cloudformation_template_file,
 )
 from bentoml.yatai.deployment.aws_lambda.utils import (
-    init_sam_project,
+    init_sam_project
+)
+from bentoml.yatai.deployment.aws_lambda.utils import (
     LAMBDA_FUNCTION_LIMIT,
     LAMBDA_FUNCTION_MAX_LIMIT,
 )
@@ -105,7 +107,7 @@ def test_aws_lambda_app_py(monkeypatch):
 @patch("shutil.rmtree", MagicMock())
 @patch("shutil.copytree", MagicMock())
 @patch("bentoml.yatai.deployment.aws_lambda.utils.cleanup_build_files", MagicMock())
-@patch("bentoml.yatai.deployment.aws_lambda.utils.call_sam_command", autospec=True)
+@patch("bentoml.yatai.deployment.aws_utils.call_sam_command", autospec=True)
 def test_init_sam_project(mock_call_sam, tmpdir):
     mock_sam_project_path = os.path.join(tmpdir, "mock_sam_project")
     mock_bento_bundle_path = os.path.join(tmpdir, "mock_bento_service")
@@ -188,7 +190,7 @@ def mock_lambda_related_operations(func):
 @patch("bentoml.yatai.deployment.aws_lambda.operator.init_sam_project", MagicMock())
 @patch("bentoml.yatai.deployment.aws_lambda.operator.lambda_package", MagicMock())
 @patch(
-    "bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template",
+    "bentoml.yatai.deployment.aws_utils.validate_sam_template",
     MagicMock(return_value=None),
 )
 @patch(
@@ -223,7 +225,7 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 @patch("bentoml.yatai.deployment.aws_lambda.operator.init_sam_project", MagicMock())
 @patch("bentoml.yatai.deployment.aws_lambda.operator.lambda_package", MagicMock())
 @patch(
-    "bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template",
+    "bentoml.yatai.deployment.aws_utils.validate_sam_template",
     MagicMock(return_value=None),
 )
 @patch(
@@ -262,7 +264,7 @@ def test_aws_lambda_apply_over_bundle_size_limit_success():
 @patch("bentoml.yatai.deployment.aws_lambda.operator.init_sam_project", MagicMock())
 @patch("bentoml.yatai.deployment.aws_lambda.operator.lambda_package", MagicMock())
 @patch(
-    "bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template",
+    "bentoml.yatai.deployment.aws_utils.validate_sam_template",
     MagicMock(return_value=None),
 )
 @patch(

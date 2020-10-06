@@ -20,10 +20,12 @@ from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import (
     process_docker_api_line,
-    generate_aws_compatible_string,
-    get_default_aws_region,
     ensure_docker_available_or_raise,
     raise_if_api_names_not_found_in_bento_service_metadata,
+)
+from bentoml.yatai.deployment.aws_utils import (
+    generate_aws_compatible_string,
+    get_default_aws_region
 )
 from bentoml.yatai.proto.deployment_pb2 import (
     DeploymentState,

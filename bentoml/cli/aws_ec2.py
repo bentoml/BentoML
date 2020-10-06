@@ -52,4 +52,44 @@ def get_aws_ec2_sub_command():
 
         _echo(f"Successfully created AWS EC2 deployment ", CLI_COLOR_SUCCESS)
 
+    @aws_ec2.command(help="Delete AWS EC2 deployment")
+    @click.argument("name", type=click.STRING)
+    @click.option(
+        "-n",
+        "--namespace",
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
+        "can be changed in BentoML configuration yatai_service/default_namespace",
+    )
+    @click.option(
+        "--force",
+        is_flag=True,
+        help="force delete the deployment record in database and "
+        "ignore errors when deleting cloud resources",
+    )
+    def delete(name, namespace, force):
+        yatai_client = get_default_yatai_client()
+        get_deployment_result = yatai_client.deployment.get(
+            namespace=namespace, name=name
+        )
+        if get_deployment_result.status.status_code != yatai_proto.status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_deployment_result.status
+            )
+            raise CLIException(f"{error_code}:{error_message}")
+
+        delete_deployment_result = yatai_client.deployment.delete(
+            namespace=namespace, deployment_name=name, force_delete=force
+        )
+        if (
+            delete_deployment_result.status.status_code
+            != yatai_proto.status_pb2.Status.OK
+        ):
+            error_code, error_message = status_pb_to_error_code_and_message(
+                get_deployment_result.status
+            )
+            raise CLIException(f"{error_code}:{error_message}")
+
+        _echo(f"Successfiully deleted AWS EC2 deployment '{name}'", CLI_COLOR_SUCCESS)
+
     return aws_ec2

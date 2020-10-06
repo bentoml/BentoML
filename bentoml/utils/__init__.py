@@ -24,9 +24,11 @@ from werkzeug.utils import cached_property
 
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
-#from bentoml.cli.utils import get_default_yatai_client
+
+# from bentoml.cli.utils import get_default_yatai_client
 from bentoml.utils.lazy_loader import LazyLoader
-#from bentoml.yatai import proto as yatai_proto
+
+# from bentoml.yatai import proto as yatai_proto
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -44,6 +46,7 @@ __all__ = [
 ]
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
+
 
 @contextmanager
 def reserve_free_port(host="localhost"):
@@ -114,8 +117,10 @@ class catch_exceptions(object):
 
         return _
 
+
 def resolve_bundle_path(bento, pip_installed_bundle_path):
     from bentoml.exceptions import BentoMLException
+
     if pip_installed_bundle_path:
         assert (
             bento is None
@@ -152,6 +157,7 @@ def resolve_bundle_path(bento, pip_installed_bundle_path):
             f"the BentoService saved bundle, or the BentoService id in the form of "
             f'"name:version"'
         )
+
 
 def get_default_yatai_client():
     from bentoml.yatai.client import YataiClient

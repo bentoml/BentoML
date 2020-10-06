@@ -426,13 +426,19 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     _echo(line)
 
             if tag_latest:
-                image_name = f'{tag.split(":")[0]}'
-                _echo(f'Tagging latest: {image_name}:latest')
-                try:
-                    docker_api.tag(image=tag, repository=image_name, tag='latest')
-                    _echo(f'Finished tagging {image_name}:lateset')
-                except docker.errors.APIError as error:
-                    _echo(f'Failed to tag "latest" for {tag}: {error}', CLI_COLOR_ERROR)
+                image_name, current_tag = tag.split(":")
+                if current_tag == "latest":
+                    _echo('Skipping building "latest" tag.')
+                else:
+                    _echo(f'Tagging latest: {image_name}:latest')
+                    try:
+                        docker_api.tag(image=tag, repository=image_name, tag='latest')
+                        _echo(f'Finished tagging {image_name}:lateset')
+                    except docker.errors.APIError as error:
+                        _echo(
+                            f'Failed to tag "latest" for {tag}: {error}',
+                            CLI_COLOR_ERROR,
+                        )
         except docker.errors.APIError as error:
             raise CLIException(f'Could not build Docker image: {error}')
 

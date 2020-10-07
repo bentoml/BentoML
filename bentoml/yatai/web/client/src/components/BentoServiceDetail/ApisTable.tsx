@@ -6,7 +6,7 @@ const inputConfigToTableContent = (
   input_config
 ): Array<string> | null | undefined => {
   if (!input_config) {
-    return "None";
+    return ["None"];
   }
   const config = input_config.fields;
   /*

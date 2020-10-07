@@ -53,7 +53,8 @@ const Table: React.FC<ITableProps> = (props) => {
     <TableContainer>
       {finalHeader && (
         <TableHeader>
-          {finalHeader.map((h, i) => (
+          {// @ts-ignore
+          finalHeader.map((h, i) => (
             <Cell key={i} flex={h[1]}>
               {h[0]}
             </Cell>

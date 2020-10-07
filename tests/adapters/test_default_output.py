@@ -13,7 +13,7 @@ except ImportError:
 
 
 @pytest.fixture(name='inference_result_api')
-def inference_result_api(make_api):
+def api_returns_inference_result(make_api):
     def test_func_inference_result(df):
         return [
             InferenceResult(

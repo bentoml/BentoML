@@ -78,7 +78,13 @@ def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
 
 
 def containerize_bento_service(
-    bento, push, tag, build_arg, username, password, pip_installed_bundle_path
+    bento,
+    push=False,
+    tag=None,
+    build_arg=None,
+    username=None,
+    password=None,
+    pip_installed_bundle_path=None,
 ):
     """Containerize specified BentoService.
 

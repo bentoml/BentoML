@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 import io
 
+import numpy
 import pytest
 
 from bentoml.adapters import MultiImageInput
@@ -36,7 +37,9 @@ def verify_args():
 
         for img1, img2 in zip(*args):
             assert img1.shape == (10, 10, 3)
+            assert isinstance(img1, numpy.ndarray)
             assert img2.shape == (10, 10, 3)
+            assert isinstance(img2, numpy.ndarray)
 
     return _
 

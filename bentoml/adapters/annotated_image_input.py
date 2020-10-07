@@ -192,7 +192,7 @@ class AnnotatedImageInput(MultiFileInput):
                 assert getattr(image_file, "name", None)
                 assert check_file_extension(image_file.name, self.accept_image_formats)
                 image_array = imageio.imread(image_file, pilmode=self.pilmode)
-                image_arrays.append(image_array)
+                image_arrays.append(numpy.array(image_array))
                 if json_file is not None:
                     json_objs.append(json.load(json_file))
                 else:

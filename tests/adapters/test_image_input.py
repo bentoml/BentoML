@@ -2,6 +2,7 @@
 import base64
 
 import pytest
+import numpy
 
 from bentoml.adapters import ImageInput
 from bentoml.types import HTTPRequest
@@ -86,6 +87,7 @@ def test_image_input_extract(input_adapter, tasks, invalid_tasks):
     api_args = input_adapter.extract_user_func_args(tasks + invalid_tasks)
     obj_list = api_args[0]
     assert len(obj_list) == len(tasks)
+    assert isinstance(obj_list[0], numpy.ndarray)
 
     for out, task in zip(obj_list, tasks + invalid_tasks):
         if not task.is_discarded:

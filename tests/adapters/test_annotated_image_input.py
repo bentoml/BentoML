@@ -2,6 +2,7 @@
 import os
 import io
 
+import numpy
 import pytest
 from urllib3.filepost import encode_multipart_formdata
 
@@ -53,6 +54,7 @@ def test_anno_image_input_extract_args_custom_extension(
     args = input_adapter.extract_user_func_args([task])
     for img, json_obj in zip(*args):
         assert img.shape == (10, 10, 3)
+        assert isinstance(img, numpy.ndarray)
         assert json_obj['name'] == "kaith"
 
 

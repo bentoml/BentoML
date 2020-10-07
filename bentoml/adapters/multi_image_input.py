@@ -169,7 +169,8 @@ class MultiImageInput(MultiFileInput):
                     for f in task.data
                 )
                 image_array_tuple = tuple(
-                    imageio.imread(f, pilmode=self.pilmode) for f in task.data
+                    numpy.array(imageio.imread(f, pilmode=self.pilmode))
+                    for f in task.data
                 )
                 yield image_array_tuple
             except ValueError:

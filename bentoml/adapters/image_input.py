@@ -182,7 +182,7 @@ class ImageInput(FileInput):
                 continue
             try:
                 img_array = imageio.imread(task.data, pilmode=self.pilmode)
-                img_list.append(img_array)
+                img_list.append(numpy.array(img_array))
             except ValueError as e:
                 task.discard(http_status=400, err_msg=str(e))
 

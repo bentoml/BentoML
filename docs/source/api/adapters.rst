@@ -104,3 +104,5 @@ The following adapter types are on our roadmap:
     Ints
     stdout
     imageio
+    numpy
+    ndarray

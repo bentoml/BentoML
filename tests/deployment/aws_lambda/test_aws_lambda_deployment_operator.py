@@ -105,7 +105,7 @@ def test_aws_lambda_app_py(monkeypatch):
 @patch("shutil.rmtree", MagicMock())
 @patch("shutil.copytree", MagicMock())
 @patch("bentoml.yatai.deployment.aws_lambda.utils.cleanup_build_files", MagicMock())
-@patch("bentoml.yatai.deployment.aws_utils.call_sam_command", autospec=True)
+@patch("bentoml.yatai.deployment.aws_lambda.utils.call_sam_command", autospec=True)
 def test_init_sam_project(mock_call_sam, tmpdir):
     mock_sam_project_path = os.path.join(tmpdir, "mock_sam_project")
     mock_bento_bundle_path = os.path.join(tmpdir, "mock_bento_service")
@@ -188,7 +188,7 @@ def mock_lambda_related_operations(func):
 @patch("bentoml.yatai.deployment.aws_lambda.operator.init_sam_project", MagicMock())
 @patch("bentoml.yatai.deployment.aws_lambda.operator.lambda_package", MagicMock())
 @patch(
-    "bentoml.yatai.deployment.aws_utils.validate_sam_template",
+    "bentoml.yatai.deployment.aws_lambda.operator.validate_sam_template",
     MagicMock(return_value=None),
 )
 @patch(
@@ -202,6 +202,10 @@ def mock_lambda_related_operations(func):
 @patch("os.remove", MagicMock())
 @patch(
     "bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_lambda.operator._cleanup_s3_bucket_if_exist",
     MagicMock(),
 )
 def test_aws_lambda_apply_under_bundle_size_limit_success():
@@ -223,7 +227,7 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 @patch("bentoml.yatai.deployment.aws_lambda.operator.init_sam_project", MagicMock())
 @patch("bentoml.yatai.deployment.aws_lambda.operator.lambda_package", MagicMock())
 @patch(
-    "bentoml.yatai.deployment.aws_utils.validate_sam_template",
+    "bentoml.yatai.deployment.aws_lambda.operator.validate_sam_template",
     MagicMock(return_value=None),
 )
 @patch(
@@ -241,6 +245,10 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 )
 @patch(
     "bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_lambda.operator._cleanup_s3_bucket_if_exist",
     MagicMock(),
 )
 def test_aws_lambda_apply_over_bundle_size_limit_success():

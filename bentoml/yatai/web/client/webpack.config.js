@@ -52,13 +52,8 @@ module.exports = {
         loader: 'url-loader?limit=10000&mimetype=image/svg+xml&name=fonts/[hash].[ext]'
       },
       {
-        test: /\.(jpe?g|png|gif)$/i,
-        include: [path.resolve(__dirname, 'src/assets')],
-        loader: 'url-loader',
-        options: {
-          esModule: false,
-          limit: 10000
-        }
+        test: /\.(jpe?g|png|gif|jp2|webp)$/,
+        loader: 'file-loader',
       },
     ],
   },

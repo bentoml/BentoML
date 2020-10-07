@@ -10,6 +10,7 @@ import {
   Classes,
 } from "@blueprintjs/core";
 
+// @ts-ignore
 import logo from "../assets/bentoml-logo.png";
 
 const NavigationBar = () => {

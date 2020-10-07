@@ -79,28 +79,19 @@ class DefaultOutput(BaseOutputAdapter):
         raise NotImplementedError()
 
     def to_http_response(self, result) -> HTTPResponse:
-        # If the actual_adapter is still None, use the base output adapter (JsonOutput).
         if self.actual_adapter is None:
-            from .json_output import JsonOutput
-
-            self.actual_adapter = JsonOutput()
+            self.actual_adapter = detect_suitable_adapter(result)()
 
         return self.actual_adapter.to_http_response(result)
 
     def to_cli(self, results) -> int:
-        # If actual_adapter is not set, use the base output adapter (JsonOutput).
         if self.actual_adapter is None:
-            from .json_output import JsonOutput
-
-            self.actual_adapter = JsonOutput()
+            self.actual_adapter = detect_suitable_adapter(results)()
 
         return self.actual_adapter.to_cli(results)
 
     def to_aws_lambda_event(self, result) -> AwsLambdaEvent:
-        # If actual_adapter is not set, use the base output adapter (JsonOutput).
         if self.actual_adapter is None:
-            from .json_output import JsonOutput
-
-            self.actual_adapter = JsonOutput()
+            self.actual_adapter = detect_suitable_adapter(result)()
 
         return self.actual_adapter.to_aws_lambda_event(result)

@@ -9,7 +9,7 @@ Using Helm to install YataiService
 
 1. Configuration
 ================
-Helm charts rely on a values file to configure how to template and create Kubernetes resources. The default values for these resources can be found in `BentoML/helm/YataiService/values.yaml`. These basic values describe a basic local `YataiService` instance with ephemereal storage.
+Helm charts rely on a values file to configure how to template and create Kubernetes resources. The default values for these resources can be found in `BentoML/helm/YataiService/values.yaml`. These basic values describe a basic local `YataiService` instance with ephemeral storage.
 
 1.1 Persistent Storage
 ---------------------------

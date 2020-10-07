@@ -36,9 +36,9 @@ def add_yatai_service_sub_command(cli):
     @click.option(
         "--repo-base-url",
         type=click.STRING,
-        help="Base URL for storing BentoML saved bundle files, this can be a filesystem"
-        'path(POSIX/Windows), or a S3 URL, usually starting with "s3://"',
-        envvar="BENTOML_REPO_BASE_URL",
+        help='Base URL for storing BentoML saved bundle files, this can be a file '
+        'system path(POSIX/Windows), or a S3 URL, usually starting with "s3://"',
+        envvar='BENTOML_REPO_BASE_URL',
     )
     @click.option(
         "--grpc-port",

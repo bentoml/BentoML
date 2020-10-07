@@ -117,8 +117,8 @@ def get_deployment_sub_command():
         "-n",
         "--namespace",
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "default" which'
-        "can be changed in BentoML configuration file",
+        help='Deployment namespace managed by BentoML, default value is "default" '
+        'which can be changed in BentoML configuration file',
     )
     @click.option(
         "--force",
@@ -148,8 +148,8 @@ def get_deployment_sub_command():
         "-n",
         "--namespace",
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which'
-        "can be changed in BentoML configuration file",
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
+        'can be changed in BentoML configuration file',
     )
     @click.option("-o", "--output", type=click.Choice(["json", "yaml"]), default="json")
     def get(name, namespace, output):
@@ -176,8 +176,8 @@ def get_deployment_sub_command():
         "-n",
         "--namespace",
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which'
-        "can be changed in BentoML configuration file",
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
+        'can be changed in BentoML configuration file',
         default=ALL_NAMESPACE_TAG,
     )
     @click.option(

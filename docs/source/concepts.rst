@@ -135,7 +135,7 @@ the models you and your team have created overtime.
     The BentoService class can not be defined in the :code:`__main__` module, meaning
     the class itself should not be defined in a Jupyter notebook cell or a python
     interactive shell. You can however use the :code:`%writefile` magic command in
-    jupyter notebook to write the BentoService class definition to a separate file, see
+    Jupyter notebook to write the BentoService class definition to a separate file, see
     example in `BentoML quickstart notebook <https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
 
 
@@ -424,20 +424,122 @@ The output of an API function can be any of the follow types:
     numpy.ndarray
     tensorflow.Tensor
 
-    # List of JSON Serializable
     # JSON = t.Union[str, int, float, bool, None, t.Mapping[str, 'JSON'], t.List['JSON']]
+    JSON
+    # For batch enabled API, List of JSON Serializable
     List[JSON]
 
-
-It is user API function's responsibility to make sure the list of prediction results
-matches the order of input sequence and have the exact same length.
-
+    # For fine-grained control
+    bentoml.types.InferenceResult
+    # For batch enabled API
+    List[InferenceResult]
+    bentoml.types.InferenceError
+    # For batch enabled API
+    List[InferenceError]
 
 .. note::
 
-    It is possible for API function to handle and return a single inference request at
-    one time before BentoML 0.7.0, but it is no longer recommended after introducing
-    the adaptive micro batching feature.
+    For API with batch enabled, it is user API function's responsibility to make sure
+    the list of prediction results matches the order of input sequence and have the
+    exact same length.
+
+
+Defining a Batch API
+^^^^^^^^^^^^^^^^^^^^
+
+For APIs with ``batch=True``, the user-defined API function will be required to process
+a list of input item at a time, and return a list of results of the same length. On the
+contrary, @api by default uses batch=False, which processes one input item at a time.
+Implementing a batch API allow your workload to benefit from BentoML's adaptive
+micro-batching mechanism when serving online traffic, and also will speed up offline
+batch inference job. We recommend using batch=True if performance & throughput is a
+concern. Non-batch APIs are usually easier to implement, good for quick POC, simple
+use cases, and deploying on Serverless platforms such as AWS Lambda, Azure function,
+and Google KNative.
+
+``DataframeInput`` and ``TfTensorInput`` are special input types that only support
+accepting a batch of input at one time.
+
+**Input data validation while handling batch input**
+
+When the API function received a list of input, it is now possible to reject a subset
+of the input data and return an error code to the client, if the input data is invalid
+or malformatted. Users can do this via the InferenceTask#discard API, here's an example:
+
+.. code-block:: python
+
+    from typings import List
+    from bentoml import env, artifacts, api, BentoService
+    from bentoml.adapters import JsonInput
+    from bentoml.types import JsonSerializable, InferenceTask  # type annotations are optional
+
+    @env(infer_pip_packages=True)
+    @artifacts([SklearnModelArtifact('classifier')])
+    class MyPredictionService(BentoService):
+
+            @api(input=JsonInput(), batch=True)
+            def predict_batch(self, parsed_json_list: List[JsonSerializable], tasks: List[InferenceTask]):
+                 model_input = []
+                 for json, task in zip(parsed_json_list, tasks):
+                      if "text" in json:
+                          model_input.append(json['text'])
+                      else:
+                          task.discard(http_status=400, err_msg="input json must contain `text` field")
+
+                results = self.artifacts.classifier(model_input)
+
+                return results
+
+The number of tasks got discarded plus the length of the results array returned, should
+be equal to the length of the input list, this will allow BentoML to match the results
+back to tasks that have not yet been discarded.
+
+*Allow fine-grained control of the HTTP response, CLI inference job output, etc. E.g.:*
+
+.. code-block:: python
+
+    import bentoml
+    from bentoml.types import JsonSerializable, InferenceTask, InferenceError  # type annotations are optional
+
+    class MyService(bentoml.BentoService):
+
+        @bentoml.api(input=JsonInput(), batch=False)
+        def predict(self, parsed_json: JsonSerializable, task: InferenceTask) -> InferenceResult:
+            if task.http_headers['Accept'] == "application/json":
+                predictions = self.artifact.model.predict([parsed_json])
+                return InferenceResult(
+                    data=predictions[0],
+                    http_status=200,
+                    http_headers={"Content-Type": "application/json"},
+                )
+            else:
+                return InferenceError(err_msg="application/json output only", http_status=400)
+
+Or when ``batch=True``:
+
+.. code-block:: python
+
+    import bentoml
+    from bentoml.types import JsonSerializable, InferenceTask, InferenceError  # type annotations are optional
+
+    class MyService(bentoml.BentoService):
+
+        @bentoml.api(input=JsonInput(), batch=True)
+        def predict(self, parsed_json_list: List[JsonSerializable], tasks: List[InferenceTask]) -> List[InferenceResult]:
+            rv = []
+            predictions = self.artifact.model.predict(parsed_json_list)
+            for task, prediction in zip(tasks, predictions):
+                if task.http_headers['Accept'] == "application/json":
+                    rv.append(
+                        InferenceResult(
+                            data=prediction,
+                            http_status=200,
+                            http_headers={"Content-Type": "application/json"},
+                    ))
+                else:
+                    rv.append(InferenceError(err_msg="application/json output only", http_status=400))
+                    # or task.discard(err_msg="application/json output only", http_status=400)
+            return rv
 
 
 Service with Multiple APIs
@@ -472,6 +574,29 @@ User can also create APIs that, instead of handling an inference request, handle
 request for updating prediction service configs or retraining models with new arrived
 data. Operational API is still a beta feature, `contact us <mailto:contact@bentoml.ai>`_
 if you're interested in learning more.
+
+
+Customize Web UI
+----------------
+
+With ``@web_static_content`` decorator, you can add your web frontend project directory
+to your BentoService class and BentoML will automatically bundle all the web UI files
+and host them when starting the API server.
+
+.. code-block:: python
+
+    @env(auto_pip_dependencies=True)
+    @artifacts([SklearnModelArtifact('model')])
+    @web_static_content('./static')
+    class IrisClassifier(BentoService):
+
+        @api(input=DataframeInput(), batch=True)
+        def predict(self, df):
+            return self.artifacts.model.predict(df)
+
+Here is an example project `bentoml/gallery@master/scikit-learn/iris-classifier <https://github.com/bentoml/gallery/blob/master/scikit-learn/iris-classifier/iris-classifier.ipynb>`_
+
+.. image:: https://raw.githubusercontent.com/bentoml/gallery/master/scikit-learn/iris-classifier/webui.png
 
 
 Saving BentoService
@@ -720,7 +845,7 @@ Python. There are two main ways this can be done:
       bentoml run $saved_path predict --input='[[5.1, 3.5, 1.4, 0.2]]'
       bentoml run $saved_path predict --input='./iris_test_data.csv'
 
-  Or if you have already pip-install'd the BentoService, it provides a CLI command
+  Or if you have already pip-installed the BentoService, it provides a CLI command
   specifically for this BentoService. The CLI command is the same as the BentoService
   class name:
 
@@ -928,6 +1053,109 @@ creating model serving deployments.
     and model serving deployment workflow. `Contact us <mailto:contact@bentoml.ai>`_ to
     learn more about our offerings.
 
+
+Labels
+------
+
+Labels are key/value pairs for BentoService and deployment to be used to identify
+attributes that are relevant to the users. Labels do not have any direct implications
+to YataiService.  Each key must be unique for the given resource.
+
+Valid label name and value must be 63 characters or less, beginning and ending with an
+alphanumeric character([a-zA-Z0-9]) with dashes (`-`), underscores (`_`), dots(`.`),
+and alphanumeric between.
+
+Example labels:
+
+* `"cicd-status": "success"`
+* `"data-cohort": "2020.9.10-2020.9.11"`
+* `"created_by": "Tim_Apple"`
+
+
+**Set labels for Bentos**
+
+Currently, the only way to set labels for Bento is during save Bento as Bento bundle.
+
+.. code-block:: python
+
+    svc = MyBentosService()
+    svc.pack('model', model)
+    svc.save(labels={"framework": "xgboost"})
+
+
+**Set labels for deployments**
+
+Currently, CLI is the only way to set labels for deployments. In the upcoming release, BentoML
+provides alternative ways to set and update labels.
+
+.. code-block:: bash
+
+    $ # In any of the deploy command, you can add labels via --label option
+    $ bentoml azure-functions deploy my_deployment --bento service:name \
+        --labels key1:value1,key2:value2
+
+
+Label selector
+^^^^^^^^^^^^^^
+
+BentoML provides label selector for the user to identify BentoServices or deployments.
+The label selector query supports two type of selector: `equality-based` and `set-based`.
+A label selector query can be made of multiple requirements which are comma-separated.
+In the case of multiple requirements, the comma separator acts as a logical AND operator.
+
+**Equality-based requirements**
+
+Equality-based requirements allow filtering by label keys and values, matching resources
+must satisfy the specified label constraint. The available operators are `=` and `!=`.
+`=` represents equality, and `!=` represents inequality.
+
+Examples:
+
+* ``framework=pytorch``
+* ``cicd_result!=failed``
+
+**Set-based requirements**
+
+Set-based requirements allow you to filter keys according to a set of values. BentoML
+supports four type of operators, `In`, `NotIn`, `Exists`, `DoesNotExist`.
+
+Example:
+
+* ``framework In (xgboost, lightgbm)``
+
+    This example selects all resources with key equals to `framework` and value equal to `xgboost` or `lightgbm`
+
+* ``platform NotIn (lambda, azure-function)``
+
+    This label selector selects all resources with key equals to `platform` and value not equal to `lambda` or `azure-function`.
+
+* ``fb_cohort Exists``
+
+    This example selects all resources that has a label with key equal to `fb_cohort`
+
+* ``cicd DoesNotExist``
+
+    This label selector selects all resources that does not have a label with key equal to `cicd`.
+
+
+**Use label selector in CLI**
+
+There are several CLI commands supported label selector. More ways to interact with label
+selector will be available in the future versions.
+
+Supported CLI commands:
+
+* ``bentoml list``
+* ``bentoml get``
+
+    ``--labels`` option will be ignored if the version is provided.
+    ``$ bentoml get bento_name --labels "key1=value1, key2 In (value2, value3)"``
+* ``bentoml deployment list``
+* ``bentoml lambda list``
+* ``bentoml sagemaker list``
+* ``bentoml azure-functions list``
+
+
 Retrieving BentoServices
 ------------------------
 
@@ -951,3 +1179,18 @@ This command extends BentoML to be useful in a CI workflow or to provide a rapid
 .. code-block:: bash
 
     bentoml retrieve ModelServe --target_dir=~/bentoml_bundle/
+
+
+.. spelling::
+
+    pre
+    init
+    deserialization
+    malformatted
+    frontend
+    IoT
+    programmatically
+    Jupyter
+    jupyter
+    installable
+    zA

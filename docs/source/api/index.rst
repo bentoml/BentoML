@@ -10,3 +10,4 @@ API Reference
   adapters
   ../frameworks
   artifacts
+  types

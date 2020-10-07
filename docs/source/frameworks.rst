@@ -8,7 +8,7 @@ BentoML example projects in the `bentoml/gallery <https://github.com/bentoml/gal
 repository, group by the ML training frameworks used in the project.
 
 You can download the examples below and run them on your computer. Links to run them on
-Google Colab are also available, although some of the features demo'd in the notebooks
+Google Colab are also available, although some of the features demoed in the notebooks
 does not work in the Colab environment due to its limitations, including running the
 BentoML API model server, building docker image or creating cloud deployment.
 
@@ -59,16 +59,16 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.keras.KerasModelArtifact
 
-======
-FastAI
-======
+=========
+FastAI v1
+=========
 
 Example Projects:
 
 * Pet Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`__
 * Salary Range Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.fastai.FastaiModelArtifact
+.. autoclass:: bentoml.frameworks.fastai.Fastai1ModelArtifact
 
 =========
 FastAI v2
@@ -78,7 +78,7 @@ Example Projects:
 
 * Medical image classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.fastai2.Fastai2ModelArtifact
+.. autoclass:: bentoml.frameworks.fastai.FastaiModelArtifact
 
 =======
 XGBoost
@@ -112,9 +112,9 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.fasttext.FasttextModelArtifact
 
-========
+===========
 Statsmodels
-========
+===========
 
 Example Projects:
 
@@ -177,3 +177,12 @@ Example Projects:
 
 * Shampoo Sales Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
 
+
+.. spelling::
+
+    MLModel
+    tokenizer
+    AutoModelWithLMHead
+    nn
+    fasttext
+    onnx

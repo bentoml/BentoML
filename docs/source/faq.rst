@@ -108,4 +108,8 @@ It is also possible to invoke R by customizing a Python model artifact class in 
 
 
 
+.. spelling::
 
+    SavedModel
+    pre
+    jupyter

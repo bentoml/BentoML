@@ -287,7 +287,7 @@ Deploy and manage AWS Sagemaker deployments with Kubernetes
 
 Create a Kubernetes secret with the the AWS credentials.
 
-Generate bas64 strings from the AWS credentials from your AWS config file.
+Generate base64 strings from the AWS credentials from your AWS config file.
 
 .. code-block:: bash
 

@@ -108,9 +108,9 @@ BentoService and available for sending test request:
       --data '[[5.1, 3.5, 1.4, 0.2]]' \
       http://localhost:5000/predict
 
-=============================================
-Dockerize BentoML model server for deployment
-=============================================
+================================================
+Containerize BentoML model server for deployment
+================================================
 
 In order to create ECS deployment, the model server need to be containerized and push to
 a container registry. Amazon Elastic Container Registry (ECR) is a fully-managed Docker
@@ -485,3 +485,9 @@ Shutting down the AWS ECS cluster
     INFO[0001] Waiting for your cluster resources to be deleted...
     INFO[0001] Cloudformation stack status                   stackStatus=DELETE_IN_PROGRESS
     INFO[0062] Deleted cluster                               cluster=tutorial
+
+
+.. spelling::
+
+    Fargate
+    subnets

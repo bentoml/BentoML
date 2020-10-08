@@ -108,7 +108,14 @@ deployment_schema = {
             },
             "aws_ec2_operator_config": {
                 "type": "dict",
-                "schema": {"region": {"type": "string"}},
+                "schema": {
+                    "region": {"type": "string"},
+                    "instance_type": {"type": "string"},
+                    "ami_id": {"type": "string"},
+                    "autoscale_min_capacity": {"type": "integer"},
+                    "autoscale_desired_capacity": {"type": "integer"},
+                    "autoscale_max_capacity": {"type": "integer"},
+                },
             },
         },
     },

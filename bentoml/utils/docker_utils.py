@@ -6,7 +6,7 @@ import re
 import psutil
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.cli.utils import Spinner, echo_docker_api_result
-from bentoml.exceptions import BentoMLException, CLIException
+from bentoml.exceptions import BentoMLException, YataiDeploymentException
 from bentoml.utils import resolve_bundle_path
 from bentoml.cli.click_utils import (
     CLI_COLOR_WARNING,
@@ -78,13 +78,14 @@ def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
 
 
 def containerize_bento_service(
-    bento,
+    bento_name,
+    bento_version,
+    saved_bundle_path,
     push=False,
     tag=None,
     build_arg=None,
     username=None,
     password=None,
-    pip_installed_bundle_path=None,
 ):
     """Containerize specified BentoService.
 
@@ -108,30 +109,14 @@ def containerize_bento_service(
     By default, the `containerize` command will use the credentials provided by
     Docker. You may provide your own through `--username` and `--password`.
     """
-    saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
-    _echo(f"bendle path is {pip_installed_bundle_path}")
-    _echo(f"bento is {bento}")
-    _echo(f"Found Bento: {saved_bundle_path}")
-
-    bento_metadata = load_bento_service_metadata(saved_bundle_path)
-    name = to_valid_docker_image_name(bento_metadata.name)
-    version = to_valid_docker_image_version(bento_metadata.version)
+    name = to_valid_docker_image_name(bento_name)
+    version = to_valid_docker_image_version(bento_version)
 
     if not tag:
-        _echo(
-            "Tag not specified, using tag parsed from "
-            f"BentoService: '{name}:{version}'"
-        )
         tag = f"{name}:{version}"
     if ":" not in tag:
-        _echo(
-            "Image version not specified, using version parsed "
-            f"from BentoService: '{version}'",
-            CLI_COLOR_WARNING,
-        )
         tag = f"{tag}:{version}"
 
-    print("tag is ", tag)
     docker_build_args = {}
     if build_arg:
         for arg in build_arg:
@@ -142,22 +127,11 @@ def containerize_bento_service(
 
     docker_api = docker.APIClient()
     try:
-        with Spinner(f"Building Docker image {tag} from {bento} \n"):
-            for line in echo_docker_api_result(
-                docker_api.build(
-                    path=saved_bundle_path,
-                    tag=tag,
-                    decode=True,
-                    buildargs=docker_build_args,
-                )
-            ):
-                _echo(line)
+        docker_api.build(
+            path=saved_bundle_path, tag=tag, decode=True, buildargs=docker_build_args,
+        )
     except docker.errors.APIError as error:
-        raise CLIException(f"Could not build Docker image: {error}")
-
-    _echo(
-        f"Finished building {tag} from {bento}", CLI_COLOR_SUCCESS,
-    )
+        raise YataiDeploymentException(f"Could not build Docker image: {error}")
 
     if push:
         auth_config_payload = (
@@ -167,19 +141,12 @@ def containerize_bento_service(
         )
 
         try:
-            with Spinner(f"Pushing docker image to {tag}\n"):
-                for line in echo_docker_api_result(
-                    docker_api.push(
-                        repository=tag,
-                        stream=True,
-                        decode=True,
-                        auth_config=auth_config_payload,
-                    )
-                ):
-                    _echo(line)
-            _echo(
-                f"Pushed {tag} to {name}", CLI_COLOR_SUCCESS,
+            docker_api.push(
+                repository=tag,
+                stream=True,
+                decode=True,
+                auth_config=auth_config_payload,
             )
         except (docker.errors.APIError, BentoMLException) as error:
-            raise CLIException(f"Could not push Docker image: {error}")
+            raise YataiDeploymentException(f"Could not push Docker image: {error}")
     return tag

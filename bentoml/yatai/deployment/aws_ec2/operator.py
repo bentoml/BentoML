@@ -26,7 +26,6 @@ from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
     get_default_aws_region,
     ensure_sam_available_or_raise,
-    call_sam_command,
     validate_sam_template,
     SUCCESS_CLOUDFORMATION_STACK_STATUS,
     FAILED_CLOUDFORMATION_STACK_STATUS,
@@ -44,6 +43,11 @@ from bentoml.exceptions import (
 )
 from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
 from bentoml.yatai.proto import status_pb2
+from bentoml.yatai.deployment.aws_ec2.utils import (
+    build_template,
+    package_template,
+    deploy_template,
+)
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 SAM_TEMPLATE_NAME = "template.yml"
@@ -112,7 +116,15 @@ runcmd:
 
 
 def _make_cloudformation_template(
-    project_dir, user_data, s3_bucket_name, sam_template_name
+    project_dir,
+    user_data,
+    s3_bucket_name,
+    sam_template_name,
+    ami_id,
+    instance_type,
+    autoscaling_min_size,
+    autoscaling_desired_size,
+    autoscaling_max_size,
 ):
     """
     TODO: Template should return ec2 public address
@@ -127,7 +139,7 @@ def _make_cloudformation_template(
         "Parameters": {
             "AmazonLinux2LatestAmiId": {
                 "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
-                "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
+                "Default": ami_id,
             },
         },
     }
@@ -156,11 +168,11 @@ Resources:
     LaunchTemplateResource:
         Type: AWS::EC2::LaunchTemplate
         Properties:
-            LaunchTemplateName: template-1
+            LaunchTemplateName: {template_name}
             #Key and security gorups remainign for logging in
             LaunchTemplateData:
                 ImageId: !Ref AmazonLinux2LatestAmiId
-                InstanceType: t2.micro
+                InstanceType: {instance_type}
                 UserData: "{user_data}"
                 SecurityGroupIds:
                 - !GetAtt SecurityGroupResource.GroupId
@@ -168,9 +180,9 @@ Resources:
     AutoScalingGroup:
         Type: AWS::AutoScaling::AutoScalingGroup
         Properties:
-            MinSize: "0"
-            MaxSize: "1"
-            DesiredCapacity: "1"
+            MinSize: {autoscaling_min_size}
+            MaxSize: {autoscaling_max_size}
+            DesiredCapacity: {autoscaling_desired_size}
             AvailabilityZones: !GetAZs
             LaunchTemplate: 
                 LaunchTemplateId: !Ref LaunchTemplateResource
@@ -180,55 +192,26 @@ Outputs:
         Value: {s3_bucket_name},
         Description: 'S3 Bucket for saving artifacts and lambda bundle'
 """.format(
-                user_data=user_data, s3_bucket_name=s3_bucket_name
+                template_name=sam_template_name,
+                instance_type=instance_type,
+                user_data=user_data,
+                autoscaling_min_size=autoscaling_min_size,
+                autoscaling_desired_size=autoscaling_desired_size,
+                autoscaling_max_size=autoscaling_max_size,
+                s3_bucket_name=s3_bucket_name,
             )
         )
     return template_file_path
 
 
-def deploy_template(
-    project_directory, template_file_path, s3_bucket_name, region, stack_name
-):
-    """
-    TODO: make separate function for package,build,deploy
-    """
-    status_code, stdout, stderr = call_sam_command(
-        ["build", "-t", template_file_path], project_directory, region
-    )
-
-    status_code, stdout, stderr = call_sam_command(
-        [
-            "package",
-            "--output-template-file",
-            "packaged.yaml",
-            "--s3-bucket",
-            s3_bucket_name,
-        ],
-        project_directory,
-        region,
-    )
-
-    status_code, stdout, stderr = call_sam_command(
-        [
-            "deploy",
-            "--template-file",
-            "packaged.yaml",
-            "--stack-name",
-            stack_name,
-            "--capabilities",
-            "CAPABILITY_IAM",
-            "--s3-bucket",
-            s3_bucket_name,
-        ],
-        project_directory,
-        region,
-    )
-    print("stdout", stdout)
-
-
 class AwsEc2DeploymentOperator(DeploymentOperatorBase):
     def deploy_service(
-        self, deployment_pb, deployment_spec, aws_ec2_deployment_config, s3_bucket_name
+        self,
+        deployment_pb,
+        deployment_spec,
+        bento_path,
+        aws_ec2_deployment_config,
+        s3_bucket_name,
     ):
         sam_template_name = "template.yml"
 
@@ -249,39 +232,53 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             registry_token, registry_url = _get_ecr_password(registry_id)
             registry_username, registry_password = _get_creds_from_token(registry_token)
 
-            bento = f"{deployment_spec.bento_name}:{deployment_spec.bento_version}"
             registry_domain = registry_url.replace("https://", "")
             tag = f"{registry_domain}/{repo_name}"
 
-            """
             containerize_bento_service(
-                    bento,
-                    True,
-                    tag=tag,
-                    build_arg={},
-                    username=registry_username,
-                    password=registry_password,
-                    pip_installed_bundle_path=None,
-                )
-            """
+                bento_name=deployment_spec.bento_name,
+                bento_version=deployment_spec.bento_version,
+                saved_bundle_path=bento_path,
+                push=True,
+                tag=tag,
+                build_arg={},
+                username=registry_username,
+                password=registry_password,
+            )
+
             encoded_user_data = _make_user_data(
                 registry_username, registry_password, registry_url, tag
             )
 
             template_file_path = _make_cloudformation_template(
-                project_path, encoded_user_data, s3_bucket_name, sam_template_name
+                project_path,
+                encoded_user_data,
+                s3_bucket_name,
+                sam_template_name,
+                aws_ec2_deployment_config.ami_id,
+                aws_ec2_deployment_config.instance_type,
+                aws_ec2_deployment_config.autoscale_min_capacity,
+                aws_ec2_deployment_config.autoscale_desired_capacity,
+                aws_ec2_deployment_config.autoscale_max_capacity,
             )
 
             validate_sam_template(
                 sam_template_name, aws_ec2_deployment_config.region, project_path
             )
 
+            build_template(
+                template_file_path, project_path, aws_ec2_deployment_config.region
+            )
+
+            package_template(
+                s3_bucket_name, project_path, aws_ec2_deployment_config.region
+            )
+
             deploy_template(
-                project_path,
-                template_file_path,
-                s3_bucket_name,
-                aws_ec2_deployment_config.region,
                 deployment_stack_name,
+                s3_bucket_name,
+                project_path,
+                aws_ec2_deployment_config.region,
             )
 
     def add(self, deployment_pb):
@@ -302,7 +299,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 bento_version=deployment_spec.bento_version,
             )
         )
-        print("bento pb ", bento_pb)
+
         if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
             raise BentoMLException(
                 "BentoML currently not support {} repository".format(
@@ -335,6 +332,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         self.deploy_service(
             deployment_pb,
             deployment_spec,
+            bento_path,
             aws_ec2_deployment_config,
             artifact_s3_bucket_name,
         )
@@ -399,8 +397,6 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                     deployment_pb, previous_deployment_pb, bento_pb, local_path
                 )
 
-        print("\nBENTO PB IS  \n", bento_pb)
-
         updated_deployment_spec = deployment_pb.spec
         updated_deployment_config = updated_deployment_spec.aws_ec2_operator_config
         # updated_bento_service_metadata = bento_pb.bento_service_metadata
@@ -434,7 +430,6 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
     def describe(self, deployment_pb):
-        print("\n deployment pb is \n", deployment_pb)
         try:
             deployment_spec = deployment_pb.spec
             ec2_deployment_config = deployment_spec.aws_ec2_operator_config
@@ -457,7 +452,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                     StackName=deployment_stack_name
                 )
                 stack_result = cloudformation_stack_result.get("Stacks")[0]
-                print("\nstack result \n", stack_result)
+
                 if stack_result["StackStatus"] in SUCCESS_CLOUDFORMATION_STACK_STATUS:
                     if stack_result.get("Outputs"):
                         outputs = stack_result.get("Outputs")

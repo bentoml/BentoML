@@ -38,7 +38,6 @@ from bentoml.yatai.deployment.aws_utils import (
 )
 from bentoml.yatai.deployment.aws_lambda.utils import (
     init_sam_project,
-    call_sam_command,
     cleanup_build_files,
     lambda_deploy,
     lambda_package,

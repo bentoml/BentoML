@@ -66,9 +66,11 @@ message DeploymentSpec {
 
   message AwsEc2OperatorConfig {
     string region=1;
-    string min_capacity=2;
-    string max_capacity=3;
-    string desired_capacity=4;
+    string instance_type=2;
+    string ami_id=6;
+    int32 autoscale_min_capacity=7;
+    int32 autoscale_desired_capacity=8;
+    int32 autoscale_max_capacity=9;
   }
 
   // Bento name and version are used as an reference to the saved Bento

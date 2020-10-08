@@ -74,6 +74,8 @@ class DeploymentAPIClient:
                 operator = DeploymentSpec.AWS_LAMBDA
             elif operator == DeploymentSpec.AZURE_FUNCTIONS:
                 operator = "azure-functions"
+            elif operator == "ec2":
+                operator = DeploymentSpec.AWS_EC2
             else:
                 raise BentoMLException(f"Unrecognized operator {operator}")
 
@@ -367,11 +369,32 @@ class DeploymentAPIClient:
         list_result.deployments.extend(sagemaker_deployments)
         return list_result
 
-    def create_ec2_deployment(self, name, bento_name, bento_version, wait=None):
+    def create_ec2_deployment(
+        self,
+        name,
+        bento_name,
+        bento_version,
+        region,
+        min_capacity,
+        desired_capacity,
+        max_capacity,
+        instance_type,
+        ami_id,
+        wait=None,
+    ):
+
         deployment_pb = Deployment(name=name)
         deployment_pb.spec.bento_name = bento_name
         deployment_pb.spec.bento_version = bento_version
         deployment_pb.spec.operator = DeploymentSpec.AWS_EC2
+        deployment_pb.spec.aws_ec2_operator_config.region = region
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_min_capacity = min_capacity
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = (
+            desired_capacity
+        )
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_max_capacity = max_capacity
+        deployment_pb.spec.aws_ec2_operator_config.instance_type = instance_type
+        deployment_pb.spec.aws_ec2_operator_config.ami_id = ami_id
         return self.create(deployment_pb, wait)
 
     def update_ec2_deployment(

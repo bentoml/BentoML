@@ -401,24 +401,24 @@ class DeploymentAPIClient:
 
     def list_ec2_deployments(
         self,
-        limit = None,
+        limit=None,
         offset=None,
         labels=None,
-        namespace = None,
+        namespace=None,
         order_by=None,
         ascending_order=None,
-        is_all_namespaces=False
-        ):
+        is_all_namespaces=False,
+    ):
         return self.list(
-                limit=limit,
-                offset=offset,
-                labels=labels,
-                namespace=namespace,
-                is_all_namespaces=is_all_namespaces,
-                operator=DeploymentSpec.AWS_EC2,
-                order_by=order_by,
-                ascending_order=ascending_order,
-            )
+            limit=limit,
+            offset=offset,
+            labels=labels,
+            namespace=namespace,
+            is_all_namespaces=is_all_namespaces,
+            operator=DeploymentSpec.AWS_EC2,
+            order_by=order_by,
+            ascending_order=ascending_order,
+        )
 
     def create_lambda_deployment(
         self,

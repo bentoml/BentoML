@@ -42,7 +42,13 @@ def get_aws_ec2_sub_command():
 
     @aws_ec2.command(help="Deploy BentoServide to ec2")
     @click.argument("name", type=click.STRING)
-    @click.option("-b", "--bento", type=click.STRING, required=True, callback=parse_bento_tag_callback)
+    @click.option(
+        "-b",
+        "--bento",
+        type=click.STRING,
+        required=True,
+        callback=parse_bento_tag_callback,
+    )
     def deploy(name, bento):
         yatai_client = get_default_yatai_client()
         bento_name, bento_version = bento.split(":")
@@ -174,7 +180,6 @@ def get_aws_ec2_sub_command():
 
         _print_deployment_info(update_result.deployment, output)
 
-    
     @aws_ec2.command(name="list", help="List AWS Lambda deployments")
     @click.option(
         "-n",
@@ -219,12 +224,12 @@ def get_aws_ec2_sub_command():
     def list_deployments(namespace, limit, offset, labels, order_by, asc, output):
         yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list_ec2_deployments(
-            limit = limit,
+            limit=limit,
             labels=labels,
             offset=offset,
-            namespace = namespace,
+            namespace=namespace,
             order_by=order_by,
-            ascending_order=asc
+            ascending_order=asc,
         )
         if list_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(

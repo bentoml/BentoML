@@ -48,6 +48,7 @@ from bentoml.yatai.proto import status_pb2
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 SAM_TEMPLATE_NAME = "template.yml"
 
+
 def _create_ecr_repo(repo_name):
     try:
         ecr_client = boto3.client("ecr")
@@ -110,7 +111,9 @@ runcmd:
     return encoded
 
 
-def _make_cloudformation_template(project_dir, user_data, s3_bucket_name, sam_template_name):
+def _make_cloudformation_template(
+    project_dir, user_data, s3_bucket_name, sam_template_name
+):
     """
     TODO: Template should return ec2 public address
     NOTE: SSH ACCESS TO INSTANCE MAY NOT BE REQUIRED
@@ -224,7 +227,9 @@ def deploy_template(
 
 
 class AwsEc2DeploymentOperator(DeploymentOperatorBase):
-    def deploy_service(self, deployment_pb, deployment_spec, aws_ec2_deployment_config, s3_bucket_name):
+    def deploy_service(
+        self, deployment_pb, deployment_spec, aws_ec2_deployment_config, s3_bucket_name
+    ):
         sam_template_name = "template.yml"
 
         deployment_stack_name = generate_aws_compatible_string(
@@ -308,7 +313,6 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
 
         return self._add(deployment_pb, bento_pb, bento_path)
 
-
     def _add(self, deployment_pb, bento_pb, bento_path):
         if loader._is_remote_path(bento_path):
             with loader._resolve_remote_bundle_path(bento_path) as local_path:
@@ -328,7 +332,12 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             artifact_s3_bucket_name, aws_ec2_deployment_config.region
         )
 
-        self.deploy_service(deployment_pb, deployment_spec, aws_ec2_deployment_config, artifact_s3_bucket_name)
+        self.deploy_service(
+            deployment_pb,
+            deployment_spec,
+            aws_ec2_deployment_config,
+            artifact_s3_bucket_name,
+        )
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
@@ -372,30 +381,30 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 bento_version=deployment_spec.bento_version,
             )
         )
-        
+
         if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
-                raise BentoMLException(
-                    "BentoML currently not support {} repository".format(
-                        BentoUri.StorageType.Name(bento_pb.bento.uri.type)
-                    )
+            raise BentoMLException(
+                "BentoML currently not support {} repository".format(
+                    BentoUri.StorageType.Name(bento_pb.bento.uri.type)
                 )
-        return self._update(
-                deployment_pb, previous_deployment, bento_pb, bento_pb.bento.uri.uri
             )
+        return self._update(
+            deployment_pb, previous_deployment, bento_pb, bento_pb.bento.uri.uri
+        )
 
     def _update(self, deployment_pb, previous_deployment_pb, bento_pb, bento_path):
         if loader._is_remote_path(bento_path):
             with loader._resolve_remote_bundle_path(bento_path) as local_path:
                 return self._update(
                     deployment_pb, previous_deployment_pb, bento_pb, local_path
-            )
-        
+                )
+
         print("\nBENTO PB IS  \n", bento_pb)
 
         updated_deployment_spec = deployment_pb.spec
         updated_deployment_config = updated_deployment_spec.aws_ec2_operator_config
-        #updated_bento_service_metadata = bento_pb.bento_service_metadata
-            
+        # updated_bento_service_metadata = bento_pb.bento_service_metadata
+
         describe_result = self.describe(deployment_pb)
         if describe_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
@@ -416,9 +425,14 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 "it exists and try again"
             )
 
-        self.deploy_service(deployment_pb, updated_deployment_spec, updated_deployment_config, s3_bucket_name)
+        self.deploy_service(
+            deployment_pb,
+            updated_deployment_spec,
+            updated_deployment_config,
+            s3_bucket_name,
+        )
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
-        
+
     def describe(self, deployment_pb):
         print("\n deployment pb is \n", deployment_pb)
         try:
@@ -435,7 +449,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                     namespace=deployment_pb.namespace, name=deployment_pb.name
                 )
             )
-            #deployment_stack_name = "mutract-stack"  # TODO: DELETE THIHS
+            # deployment_stack_name = "mutract-stack"  # TODO: DELETE THIHS
             try:
                 cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
 

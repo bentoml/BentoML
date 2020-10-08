@@ -102,6 +102,7 @@ class BaseInputAdapter:
 
 COLOR_FAIL = '\033[91m'
 
+
 def exit_cli(err_msg: str = "", exit_code: int = None):
     if exit_code is None:
         exit_code = 1 if err_msg else 0

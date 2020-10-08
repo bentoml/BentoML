@@ -119,13 +119,13 @@ deployment_schema = {
             },
         },
     },
-    "state": {
-        "type": "dict",
-        "schema": {
-            "state": {"type": "string", "allowed": DeploymentState.State.keys()},
-            "error_message": {"type": "string"},
-            "info_json": {"type": "string"},
-            "timestamp": {"type": "string"},
+    'state': {
+        'type': 'dict',
+        'schema': {
+            'state': {'type': 'string', 'allowed': DeploymentState.State.keys()},
+            'error_message': {'type': 'string'},
+            'info_json': {'type': 'string'},
+            'timestamp': {'type': 'string'},
         },
     },
 }

@@ -35,8 +35,9 @@ AnnoImgTask = InferenceTask[Tuple[BinaryIO, BinaryIO]]  # image file bytes, json
 
 class AnnotatedImageInput(MultiFileInput):
     """Transform incoming image data from http request, cli or lambda event into a
-    numpy array, while allowing an optional JSON file for image annotations (such
-    as object bounding boxes, class labels, etc.)
+    imageio array (a subclass of numpy.ndarray that has a meta attribute), while
+    allowing an optional JSON file for image annotations (such as object bounding
+    boxes, class labels, etc.)
 
     Transforms input image file into a numpy array, and loads JSON file as
     a JSON serializable Python object, providing them to user-defined
@@ -87,7 +88,7 @@ class AnnotatedImageInput(MultiFileInput):
            @api(input=AnnotatedImageInput(), batch=True)
            def predict(
                    self,
-                   image_list: 'Sequence[numpy.ndarray]',
+                   image_list: 'Sequence[imageio.core.utils.Array]',
                    annotations_list: 'Sequence[JsonSerializable]',
                ) -> Sequence[str]:
                cropped_pets = some_pet_finder(image_list, annotations_list)

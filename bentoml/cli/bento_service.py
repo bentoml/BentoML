@@ -47,10 +47,10 @@ try:
 except ImportError:
     # click_completion package is optional to use BentoML cli,
     click_completion = None
-    shell_types = click.Choice(["bash", "zsh", "fish", "powershell"])
+    shell_types = click.Choice(['bash', 'zsh', 'fish', 'powershell'])
 
 
-yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
+yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
 def escape_shell_params(param):
@@ -77,7 +77,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.argument("api_name", type=click.STRING)
-    @click.argument("run_args", nargs=-1, type=click.UNPROCESSED)
+    @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
     def run(api_name, run_args, bento=None):
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
 
@@ -127,21 +127,21 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         default=BentoAPIServer.DEFAULT_PORT,
         help=f"The port to listen on for the REST api server, "
         f"default is {BentoAPIServer.DEFAULT_PORT}",
-        envvar="BENTOML_PORT",
+        envvar='BENTOML_PORT',
     )
     @click.option(
-        "--enable-microbatch/--disable-microbatch",
+        '--enable-microbatch/--disable-microbatch',
         default=False,
         help="Run API server with micro-batch enabled",
-        envvar="BENTOML_ENABLE_MICROBATCH",
+        envvar='BENTOML_ENABLE_MICROBATCH',
     )
     @click.option(
-        "--run-with-ngrok",
+        '--run-with-ngrok',
         is_flag=True,
         default=False,
         help="Use ngrok to relay traffic on a public endpoint to this "
         "API server on localhost",
-        envvar="BENTOML_ENABLE_NGROK",
+        envvar='BENTOML_ENABLE_NGROK',
     )
     def serve(port, bento=None, enable_microbatch=False, run_with_ngrok=False):
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
@@ -161,7 +161,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         default=BentoAPIServer.DEFAULT_PORT,
         help=f"The port to listen on for the REST api server, "
         f"default is {BentoAPIServer.DEFAULT_PORT}",
-        envvar="BENTOML_PORT",
+        envvar='BENTOML_PORT',
     )
     @click.option(
         "-w",
@@ -169,21 +169,21 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         type=click.INT,
         default=None,
         help="Number of workers will start for the gunicorn server",
-        envvar="BENTOML_GUNICORN_WORKERS",
+        envvar='BENTOML_GUNICORN_WORKERS',
     )
     @click.option("--timeout", type=click.INT, default=None)
     @click.option(
-        "--enable-microbatch/--disable-microbatch",
+        '--enable-microbatch/--disable-microbatch',
         default=False,
         help="Run API server with micro batch enabled",
-        envvar="BENTOML_ENABLE_MICROBATCH",
+        envvar='BENTOML_ENABLE_MICROBATCH',
     )
     @click.option(
-        "--microbatch-workers",
+        '--microbatch-workers',
         type=click.INT,
         default=1,
         help="Number of micro-batch request dispatcher workers",
-        envvar="BENTOML_MICROBATCH_WORKERS",
+        envvar='BENTOML_MICROBATCH_WORKERS',
     )
     def serve_gunicorn(
         port,
@@ -216,19 +216,19 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         short_help="Install shell command completion",
     )
     @click.option(
-        "--append/--overwrite",
+        '--append/--overwrite',
         help="Append the completion code to the file",
         default=None,
     )
-    @click.argument("shell", required=False, type=shell_types)
-    @click.argument("path", required=False)
+    @click.argument('shell', required=False, type=shell_types)
+    @click.argument('path', required=False)
     def install_completion(append, shell, path):
         if click_completion:
             # click_completion package is imported
             shell, path = click_completion.core.install(
                 shell=shell, path=path, append=append
             )
-            click.echo("%s completion installed in %s" % (shell, path))
+            click.echo('%s completion installed in %s' % (shell, path))
         else:
             click.echo(
                 "'click_completion' is required for BentoML auto-completion, "
@@ -236,31 +236,29 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             )
 
     @bentoml_cli.command(
-        help="Containerizes given Bento into a ready-to-use Docker image.",
+        help='Containerizes given Bento into a ready-to-use Docker image.',
         short_help="Containerizes given Bento into a ready-to-use Docker image",
     )
     @click.argument("bento", type=click.STRING)
-    @click.option("--push", is_flag=True)
+    @click.option('--push', is_flag=True)
     @click.option(
-        "-t",
-        "--tag",
+        '-t',
+        '--tag',
         help="Optional image tag. If not specified, Bento will generate one from "
         "the name of the Bento.",
         required=False,
         callback=validate_tag,
     )
     @click.option(
-        "--build-arg", multiple=True, help="pass through docker image build arguments"
+        '--build-arg', multiple=True, help="pass through docker image build arguments"
     )
     @click.option(
-        "-u", "--username", type=click.STRING, required=False,
+        '-u', '--username', type=click.STRING, required=False,
     )
     @click.option(
-        "-p", "--password", type=click.STRING, required=False,
+        '-p', '--password', type=click.STRING, required=False,
     )
-    def containerize_bento_service(
-        bento, push, tag, build_arg, username, password, pip_installed_bundle_path,
-    ):
+    def containerize(bento, push, tag, build_arg, username, password):
         """Containerize specified BentoService.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -284,8 +282,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         Docker. You may provide your own through `--username` and `--password`.
         """
         saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
-        _echo(f"bendle path is {pip_installed_bundle_path}")
-        _echo(f"bento is {bento}")
+
         _echo(f"Found Bento: {saved_bundle_path}")
 
         bento_metadata = load_bento_service_metadata(saved_bundle_path)
@@ -306,7 +303,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             )
             tag = f"{tag}:{version}"
 
-        print("tag is ", tag)
         docker_build_args = {}
         if build_arg:
             for arg in build_arg:
@@ -328,10 +324,10 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 ):
                     _echo(line)
         except docker.errors.APIError as error:
-            raise CLIException(f"Could not build Docker image: {error}")
+            raise CLIException(f'Could not build Docker image: {error}')
 
         _echo(
-            f"Finished building {tag} from {bento}", CLI_COLOR_SUCCESS,
+            f'Finished building {tag} from {bento}', CLI_COLOR_SUCCESS,
         )
 
         if push:
@@ -353,10 +349,10 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                     ):
                         _echo(line)
                 _echo(
-                    f"Pushed {tag} to {name}", CLI_COLOR_SUCCESS,
+                    f'Pushed {tag} to {name}', CLI_COLOR_SUCCESS,
                 )
             except (docker.errors.APIError, BentoMLException) as error:
-                raise CLIException(f"Could not push Docker image: {error}")
+                raise CLIException(f'Could not push Docker image: {error}')
 
     # pylint: enable=unused-variable
     return bentoml_cli

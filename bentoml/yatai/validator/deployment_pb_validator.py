@@ -24,85 +24,85 @@ from bentoml.yatai.deployment.azure_functions.constants import (
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 
 deployment_schema = {
-    "name": {"type": "string", "required": True, "minlength": 4},
+    'name': {'type': 'string', 'required': True, 'minlength': 4},
     # namespace is optional - YataiService will fill-in the default namespace configured
     # when it is missing in the apply deployment request
-    "namespace": {"type": "string", "required": False, "minlength": 3},
-    "labels": {"type": "dict", "deployment_labels": True},
-    "annotations": {"type": "dict", "allow_unknown": True},
-    "created_at": {"type": "string"},
-    "last_updated_at": {"type": "string"},
-    "spec": {
-        "type": "dict",
-        "required": True,
-        "schema": {
-            "operator": {
-                "type": "string",
-                "required": True,
-                "allowed": DeploymentSpec.DeploymentOperator.keys(),
+    'namespace': {'type': 'string', 'required': False, 'minlength': 3},
+    'labels': {'type': 'dict', 'deployment_labels': True},
+    'annotations': {'type': 'dict', 'allow_unknown': True},
+    'created_at': {'type': 'string'},
+    'last_updated_at': {'type': 'string'},
+    'spec': {
+        'type': 'dict',
+        'required': True,
+        'schema': {
+            'operator': {
+                'type': 'string',
+                'required': True,
+                'allowed': DeploymentSpec.DeploymentOperator.keys(),
             },
-            "bento_name": {"type": "string", "required": True},
-            "bento_version": {
-                "type": "string",
-                "required": True,
-                "bento_service_version": True,
+            'bento_name': {'type': 'string', 'required': True},
+            'bento_version': {
+                'type': 'string',
+                'required': True,
+                'bento_service_version': True,
             },
-            "custom_operator_config": {
-                "type": "dict",
-                "schema": {
-                    "name": {"type": "string"},
-                    "config": {"type": "dict", "allow_unknown": True},
+            'custom_operator_config': {
+                'type': 'dict',
+                'schema': {
+                    'name': {'type': 'string'},
+                    'config': {'type': 'dict', 'allow_unknown': True},
                 },
             },
-            "sagemaker_operator_config": {
-                "type": "dict",
-                "schema": {
-                    "api_name": {"type": "string", "required": True, "minlength": 3},
-                    "instance_type": {"type": "string", "required": True},
-                    "instance_count": {"type": "integer", "min": 1, "required": True},
-                    "region": {"type": "string"},
-                    "num_of_gunicorn_workers_per_instance": {
-                        "type": "integer",
-                        "min": 1,
+            'sagemaker_operator_config': {
+                'type': 'dict',
+                'schema': {
+                    'api_name': {'type': 'string', 'required': True, 'minlength': 3},
+                    'instance_type': {'type': 'string', 'required': True},
+                    'instance_count': {'type': 'integer', 'min': 1, 'required': True},
+                    'region': {'type': 'string'},
+                    'num_of_gunicorn_workers_per_instance': {
+                        'type': 'integer',
+                        'min': 1,
                     },
-                    "timeout": {"type": "integer", "min": 1},
+                    'timeout': {'type': 'integer', 'min': 1},
                 },
             },
-            "aws_lambda_operator_config": {
-                "type": "dict",
-                "schema": {
-                    "region": {"type": "string"},
-                    "api_name": {"type": "string", "minlength": 3},
-                    "memory_size": {"type": "integer", "aws_lambda_memory": True},
-                    "timeout": {"type": "integer", "min": 1, "max": 900},
+            'aws_lambda_operator_config': {
+                'type': 'dict',
+                'schema': {
+                    'region': {'type': 'string'},
+                    'api_name': {'type': 'string', 'minlength': 3},
+                    'memory_size': {'type': 'integer', 'aws_lambda_memory': True},
+                    'timeout': {'type': 'integer', 'min': 1, 'max': 900},
                 },
             },
             # https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan
             # https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-http-webhook-trigger?tabs=python#configuration
-            "azure_functions_operator_config": {
-                "type": "dict",
-                "azure_functions_configuration": True,
-                "schema": {
-                    "location": {"type": "string"},
-                    "premium_plan_sku": {
-                        "type": "string",
-                        "allowed": AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
+            'azure_functions_operator_config': {
+                'type': 'dict',
+                'azure_functions_configuration': True,
+                'schema': {
+                    'location': {'type': 'string'},
+                    'premium_plan_sku': {
+                        'type': 'string',
+                        'allowed': AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
                     },
-                    "min_instances": {
-                        "required": True,
-                        "type": "integer",
-                        "min": 1,
-                        "max": 20,
+                    'min_instances': {
+                        'required': True,
+                        'type': 'integer',
+                        'min': 1,
+                        'max': 20,
                     },
-                    "max_burst": {
-                        "type": "integer",
-                        "min": 1,
-                        "max": 20,
-                        "required": True,
+                    'max_burst': {
+                        'type': 'integer',
+                        'min': 1,
+                        'max': 20,
+                        'required': True,
                     },
-                    "function_auth_level": {
-                        "type": "string",
-                        "allowed": AZURE_FUNCTIONS_AUTH_LEVELS,
+                    'function_auth_level': {
+                        'type': 'string',
+                        'allowed': AZURE_FUNCTIONS_AUTH_LEVELS,
                     },
                 },
             },
@@ -112,8 +112,8 @@ deployment_schema = {
                     "region": {"type": "string"},
                     "instance_type": {"type": "string"},
                     "ami_id": {"type": "string"},
-                    "autoscale_min_capacity": {"type": "integer"},
-                    "autoscale_desired_capacity": {"type": "integer"},
+                    "autoscale_min_capacity": {"type": "integer", "min": 1},
+                    "autoscale_desired_capacity": {"type": "integer", "min": 1},
                     "autoscale_max_capacity": {"type": "integer"},
                 },
             },
@@ -142,15 +142,19 @@ class YataiDeploymentValidator(Validator):
             if value > 3008 or value < 128:
                 self._error(
                     field,
-                    "AWS Lambda memory must be between 128 MB to 3,008 MB, "
-                    "in 64 MB increments.",
+                    'AWS Lambda memory must be between 128 MB to 3,008 MB, '
+                    'in 64 MB increments.',
                 )
             if value % 64 > 0:
                 self._error(
                     field,
-                    "AWS Lambda memory must be between 128 MB to 3,008 MB, "
-                    "in 64 MB increments.",
+                    'AWS Lambda memory must be between 128 MB to 3,008 MB, '
+                    'in 64 MB increments.',
                 )
+
+    def _validate_aws_ec2_capacity(self):
+        # TODO: check min_capacity </= desired_capacity < max_capacity if possible to accept multiple variables here.
+        pass
 
     def _validate_bento_service_version(self, bento_service_version, field, value):
         """ Test the given BentoService version is not "latest"
@@ -162,7 +166,7 @@ class YataiDeploymentValidator(Validator):
             self._error(
                 field,
                 'Must use specific "bento_version" in deployment, using "latest" is '
-                "an anti-pattern.",
+                'an anti-pattern.',
             )
 
     def _validate_azure_functions_configuration(
@@ -174,10 +178,10 @@ class YataiDeploymentValidator(Validator):
         {'type': 'boolean'}
         """
         if azure_functions_configuration:
-            if value.get("max_burst", 0) < value.get("min_instances", 0):
+            if value.get('max_burst', 0) < value.get('min_instances', 0):
                 self._error(
                     field,
-                    "Azure Functions min instances must be smaller than max burst",
+                    'Azure Functions min instances must be smaller than max burst',
                 )
 
     def _validate_deployment_labels(self, deployment_labels, field, value):
@@ -192,9 +196,9 @@ class YataiDeploymentValidator(Validator):
             except InvalidArgument:
                 self._error(
                     field,
-                    "Valid label key and value must be 63 characters or less and "
-                    "must be being and end with an alphanumeric character "
-                    "[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)",
+                    'Valid label key and value must be 63 characters or less and '
+                    'must be being and end with an alphanumeric character '
+                    '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
                 )
 
 

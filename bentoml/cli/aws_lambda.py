@@ -62,7 +62,7 @@ def get_aws_lambda_sub_command():
         '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
@@ -70,7 +70,7 @@ def get_aws_lambda_sub_command():
         '--labels',
         type=click.STRING,
         callback=parse_labels_callback,
-        help='Key:value pairs that are attached to deployments and intended to be used'
+        help='Key:value pairs that are attached to deployments and intended to be used '
         'to specify identifying attributes of the deployments that are meaningful to '
         'users. Multiple labels are separated with `,`',
     )
@@ -151,7 +151,7 @@ def get_aws_lambda_sub_command():
         '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
@@ -208,7 +208,7 @@ def get_aws_lambda_sub_command():
         '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
@@ -245,7 +245,7 @@ def get_aws_lambda_sub_command():
         '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
@@ -273,7 +273,7 @@ def get_aws_lambda_sub_command():
         '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
         'can be changed in BentoML configuration yatai_service/default_namespace',
         default=ALL_NAMESPACE_TAG,
     )

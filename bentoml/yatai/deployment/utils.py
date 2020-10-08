@@ -43,13 +43,13 @@ def process_docker_api_line(payload):
             if line_payload:
                 if "errorDetail" in line_payload:
                     error = line_payload["errorDetail"]
-                    error_msg = "Error running docker command: {}: {}".format(
-                        error["code"], error["message"]
+                    error_msg = 'Error running docker command: {}: {}'.format(
+                        error["code"], error['message']
                     )
                     logger.error(error_msg)
                     errors.append(error_msg)
                 elif "stream" in line_payload:
-                    logger.info(line_payload["stream"])
+                    logger.info(line_payload['stream'])
 
     if errors:
         error_msg = ";".join(errors)
@@ -58,15 +58,15 @@ def process_docker_api_line(payload):
 
 def ensure_docker_available_or_raise():
     try:
-        subprocess.check_output(["docker", "info"])
+        subprocess.check_output(['docker', 'info'])
     except subprocess.CalledProcessError as error:
         raise BentoMLException(
-            "Error executing docker command: {}".format(error.output.decode())
+            'Error executing docker command: {}'.format(error.output.decode())
         )
     except FileNotFoundError:
         raise MissingDependencyException(
-            "Docker is required for this deployment. Please visit "
-            "www.docker.com for instructions"
+            'Docker is required for this deployment. Please visit '
+            'www.docker.com for instructions'
         )
 
 

@@ -4,6 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 import docker
 import base64
+import json
 
 from bentoml.utils.tempdir import TempDirectory
 
@@ -13,9 +14,11 @@ from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
+    DescribeDeploymentResponse,
+    DeploymentState,
 )
 from bentoml.yatai.status import Status
-
+from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.ruamel_yaml import YAML
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
@@ -25,6 +28,8 @@ from bentoml.yatai.deployment.aws_utils import (
     ensure_sam_available_or_raise,
     call_sam_command,
     validate_sam_template,
+    SUCCESS_CLOUDFORMATION_STACK_STATUS,
+    FAILED_CLOUDFORMATION_STACK_STATUS,
 )
 from bentoml.utils.docker_utils import (
     to_valid_docker_image_name,
@@ -38,9 +43,10 @@ from bentoml.exceptions import (
     YataiDeploymentException,
 )
 from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
+from bentoml.yatai.proto import status_pb2
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
-
+SAM_TEMPLATE_NAME = "template.yml"
 
 def _create_ecr_repo(repo_name):
     try:
@@ -104,12 +110,12 @@ runcmd:
     return encoded
 
 
-def _make_cloudformation_template(project_dir, user_data):
+def _make_cloudformation_template(project_dir, user_data, s3_bucket_name, sam_template_name):
     """
     TODO: Template should return ec2 public address
     NOTE: SSH ACCESS TO INSTANCE MAY NOT BE REQUIRED
     """
-    template_file_path = os.path.join(project_dir, "template.yml")
+    template_file_path = os.path.join(project_dir, sam_template_name)
     yaml = YAML()
     sam_config = {
         "AWSTemplateFormatVersion": "2010-09-09",
@@ -152,7 +158,7 @@ Resources:
             LaunchTemplateData:
                 ImageId: !Ref AmazonLinux2LatestAmiId
                 InstanceType: t2.micro
-                UserData: "{0}"
+                UserData: "{user_data}"
                 SecurityGroupIds:
                 - !GetAtt SecurityGroupResource.GroupId
     
@@ -166,8 +172,12 @@ Resources:
             LaunchTemplate: 
                 LaunchTemplateId: !Ref LaunchTemplateResource
                 Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
-            """.format(
-                user_data
+Outputs: 
+    S3Bucket:
+        Value: {s3_bucket_name},
+        Description: 'S3 Bucket for saving artifacts and lambda bundle'
+""".format(
+                user_data=user_data, s3_bucket_name=s3_bucket_name
             )
         )
     return template_file_path
@@ -210,16 +220,72 @@ def deploy_template(
         project_directory,
         region,
     )
+    print("stdout", stdout)
 
 
 class AwsEc2DeploymentOperator(DeploymentOperatorBase):
+    def deploy_service(self, deployment_pb, deployment_spec, aws_ec2_deployment_config, s3_bucket_name):
+        sam_template_name = "template.yml"
+
+        deployment_stack_name = generate_aws_compatible_string(
+            "btml-stack-{namespace}-{name}".format(
+                namespace=deployment_pb.namespace, name=deployment_pb.name
+            )
+        )
+
+        repo_name = generate_aws_compatible_string(
+            "btml-repo-{namespace}-{name}".format(
+                namespace=deployment_pb.namespace, name=deployment_pb.name
+            )
+        )
+
+        with TempDirectory() as project_path:
+            registry_id = _create_ecr_repo(repo_name)
+            registry_token, registry_url = _get_ecr_password(registry_id)
+            registry_username, registry_password = _get_creds_from_token(registry_token)
+
+            bento = f"{deployment_spec.bento_name}:{deployment_spec.bento_version}"
+            registry_domain = registry_url.replace("https://", "")
+            tag = f"{registry_domain}/{repo_name}"
+
+            """
+            containerize_bento_service(
+                    bento,
+                    True,
+                    tag=tag,
+                    build_arg={},
+                    username=registry_username,
+                    password=registry_password,
+                    pip_installed_bundle_path=None,
+                )
+            """
+            encoded_user_data = _make_user_data(
+                registry_username, registry_password, registry_url, tag
+            )
+
+            template_file_path = _make_cloudformation_template(
+                project_path, encoded_user_data, s3_bucket_name, sam_template_name
+            )
+
+            validate_sam_template(
+                sam_template_name, aws_ec2_deployment_config.region, project_path
+            )
+
+            deploy_template(
+                project_path,
+                template_file_path,
+                s3_bucket_name,
+                aws_ec2_deployment_config.region,
+                deployment_stack_name,
+            )
+
     def add(self, deployment_pb):
 
         deployment_spec = deployment_pb.spec
         deployment_spec.aws_ec2_operator_config.region = (
             deployment_spec.aws_ec2_operator_config.region or get_default_aws_region()
         )
-        if not deployment_spec.aws_ec2_operator_config:
+        if not deployment_spec.aws_ec2_operator_config.region:
             raise InvalidArgument("AWS region is missing")
 
         ensure_sam_available_or_raise()
@@ -231,6 +297,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 bento_version=deployment_spec.bento_version,
             )
         )
+        print("bento pb ", bento_pb)
         if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
             raise BentoMLException(
                 "BentoML currently not support {} repository".format(
@@ -240,6 +307,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         bento_path = bento_pb.bento.uri.uri
 
         return self._add(deployment_pb, bento_pb, bento_path)
+
 
     def _add(self, deployment_pb, bento_pb, bento_path):
         if loader._is_remote_path(bento_path):
@@ -260,56 +328,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             artifact_s3_bucket_name, aws_ec2_deployment_config.region
         )
 
-        deployment_stack_name = generate_aws_compatible_string(
-            "btml-stack-{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            )
-        )
-
-        repo_name = generate_aws_compatible_string(
-            "btml-repo-{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            )
-        )
-
-        with TempDirectory() as project_path:
-            registry_id = _create_ecr_repo(repo_name)
-            registry_token, registry_url = _get_ecr_password(registry_id)
-            registry_username, registry_password = _get_creds_from_token(registry_token)
-
-            bento = f"{deployment_pb.spec.bento_name}:latest"
-            registry_domain = registry_url.replace("https://", "")
-            tag = f"{registry_domain}/{repo_name}"
-
-            containerize_bento_service(
-                bento,
-                True,
-                tag=tag,
-                build_arg={},
-                username=registry_username,
-                password=registry_password,
-                pip_installed_bundle_path=None,
-            )
-
-            encoded_user_data = _make_user_data(
-                registry_username, registry_password, registry_url, tag
-            )
-
-            template_file_path = _make_cloudformation_template(
-                project_path, encoded_user_data
-            )
-
-            validate_sam_template(
-                "template.yml", aws_ec2_deployment_config.region, project_path
-            )
-
-            deploy_template(
-                project_path,
-                template_file_path,
-                artifact_s3_bucket_name,
-                aws_ec2_deployment_config.region,
-                deployment_stack_name,
-            )
+        self.deploy_service(deployment_pb, deployment_spec, aws_ec2_deployment_config, artifact_s3_bucket_name)
 
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
@@ -344,7 +363,125 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         return DeleteDeploymentResponse(status=Status.OK())
 
     def update(self, deployment_pb, previous_deployment):
-        pass
+        ensure_sam_available_or_raise()
+        ensure_docker_available_or_raise()
+        deployment_spec = deployment_pb.spec
+        bento_pb = self.yatai_service.GetBento(
+            GetBentoRequest(
+                bento_name=deployment_spec.bento_name,
+                bento_version=deployment_spec.bento_version,
+            )
+        )
+        
+        if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
+                raise BentoMLException(
+                    "BentoML currently not support {} repository".format(
+                        BentoUri.StorageType.Name(bento_pb.bento.uri.type)
+                    )
+                )
+        return self._update(
+                deployment_pb, previous_deployment, bento_pb, bento_pb.bento.uri.uri
+            )
 
+    def _update(self, deployment_pb, previous_deployment_pb, bento_pb, bento_path):
+        if loader._is_remote_path(bento_path):
+            with loader._resolve_remote_bundle_path(bento_path) as local_path:
+                return self._update(
+                    deployment_pb, previous_deployment_pb, bento_pb, local_path
+            )
+        
+        print("\nBENTO PB IS  \n", bento_pb)
+
+        updated_deployment_spec = deployment_pb.spec
+        updated_deployment_config = updated_deployment_spec.aws_ec2_operator_config
+        #updated_bento_service_metadata = bento_pb.bento_service_metadata
+            
+        describe_result = self.describe(deployment_pb)
+        if describe_result.status.status_code != status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                describe_result.status
+            )
+            raise YataiDeploymentException(
+                f"Failed fetching Lambda deployment current status - "
+                f"{error_code}:{error_message}"
+            )
+
+        previous_deployment_state = json.loads(describe_result.state.info_json)
+
+        if "s3_bucket" in previous_deployment_state:
+            s3_bucket_name = previous_deployment_state["s3_bucket"]
+        else:
+            raise BentoMLException(
+                "S3 Bucket is missing in the AWS Lambda deployment, please make sure "
+                "it exists and try again"
+            )
+
+        self.deploy_service(deployment_pb, updated_deployment_spec, updated_deployment_config, s3_bucket_name)
+        return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
+        
     def describe(self, deployment_pb):
-        pass
+        print("\n deployment pb is \n", deployment_pb)
+        try:
+            deployment_spec = deployment_pb.spec
+            ec2_deployment_config = deployment_spec.aws_ec2_operator_config
+            ec2_deployment_config.region = (
+                ec2_deployment_config.region or get_default_aws_region()
+            )
+            if not ec2_deployment_config.region:
+                raise InvalidArgument("AWS region is missing")
+
+            deployment_stack_name = generate_aws_compatible_string(
+                "btml-stack-{namespace}-{name}".format(
+                    namespace=deployment_pb.namespace, name=deployment_pb.name
+                )
+            )
+            #deployment_stack_name = "mutract-stack"  # TODO: DELETE THIHS
+            try:
+                cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
+
+                cloudformation_stack_result = cf_client.describe_stacks(
+                    StackName=deployment_stack_name
+                )
+                stack_result = cloudformation_stack_result.get("Stacks")[0]
+                print("\nstack result \n", stack_result)
+                if stack_result["StackStatus"] in SUCCESS_CLOUDFORMATION_STACK_STATUS:
+                    if stack_result.get("Outputs"):
+                        outputs = stack_result.get("Outputs")
+                    else:
+                        return DescribeDeploymentResponse(
+                            status=Status.ABORTED('"Outputs" field is not present'),
+                            state=DeploymentState(
+                                state=DeploymentState.ERROR,
+                                error_message='"Outputs" field is not present',
+                            ),
+                        )
+
+                elif stack_result["StackStatus"] in FAILED_CLOUDFORMATION_STACK_STATUS:
+                    state = DeploymentState(state=DeploymentState.FAILED)
+                    return DescribeDeploymentResponse(status=Status.OK(), state=state)
+
+                else:
+                    state = DeploymentState(state=DeploymentState.PENDING)
+                    return DescribeDeploymentResponse(status=Status.OK(), state=state)
+
+            except Exception as error:  # pylint: disable=broad-except
+                state = DeploymentState(
+                    state=DeploymentState.ERROR, error_message=str(error)
+                )
+                return DescribeDeploymentResponse(
+                    status=Status.INTERNAL(str(error)), state=state
+                )
+
+            outputs = {o["OutputKey"]: o["OutputValue"] for o in outputs}
+            info_json = {}
+
+            if "S3Bucket" in outputs:
+                info_json["s3_bucket"] = outputs["S3Bucket"]
+
+            state = DeploymentState(
+                state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
+            )
+            return DescribeDeploymentResponse(status=Status.OK(), state=state)
+
+        except BentoMLException as error:
+            return DescribeDeploymentResponse(status=error.status_proto)

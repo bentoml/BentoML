@@ -32,7 +32,10 @@ from bentoml.saved_bundle import loader
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.yatai.deployment.aws_utils import validate_sam_template
+from bentoml.yatai.deployment.aws_utils import (
+    validate_sam_template,
+    FAILED_CLOUDFORMATION_STACK_STATUS,
+)
 from bentoml.yatai.deployment.aws_lambda.utils import (
     init_sam_project,
     call_sam_command,
@@ -43,7 +46,6 @@ from bentoml.yatai.deployment.aws_lambda.utils import (
     total_file_or_directory_size,
     LAMBDA_FUNCTION_LIMIT,
     LAMBDA_FUNCTION_MAX_LIMIT,
-    FAILED_CLOUDFORMATION_STACK_STATUS,
 )
 
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase

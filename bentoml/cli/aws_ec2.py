@@ -42,7 +42,7 @@ def get_aws_ec2_sub_command():
 
     @aws_ec2.command(help="Deploy BentoServide to ec2")
     @click.argument("name", type=click.STRING)
-    @click.option("-b", "--bento", type=click.STRING, callback=parse_bento_tag_callback)
+    @click.option("-b", "--bento", type=click.STRING, required=True, callback=parse_bento_tag_callback)
     def deploy(name, bento):
         yatai_client = get_default_yatai_client()
         bento_name, bento_version = bento.split(":")
@@ -91,5 +91,147 @@ def get_aws_ec2_sub_command():
             raise CLIException(f"{error_code}:{error_message}")
 
         _echo(f"Successfiully deleted AWS EC2 deployment '{name}'", CLI_COLOR_SUCCESS)
+
+    @aws_ec2.command(help="Get EC2 deployment")
+    @click.argument("name", type=click.STRING)
+    @click.option(
+        "-n",
+        "--namespace",
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
+        'can be changed in BentoML configuration yatai_service/default_namespace',
+    )
+    @click.option(
+        "-o", "--output", type=click.Choice(["json", "yaml", "table"]), default="json"
+    )
+    def get(name, namespace, output):
+        yatai_client = get_default_yatai_client()
+        describe_result = yatai_client.deployment.describe(namespace, name)
+
+        if describe_result.status.status_code != yatai_proto.status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                describe_result.status
+            )
+            raise CLIException(f"{error_code}:{error_message}")
+
+        get_result = yatai_client.deployment.get(namespace, name)
+        if get_result.status.status_code != yatai_proto.status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                describe_result.status
+            )
+            raise CLIException(f"{error_code}:{error_message}")
+
+        _print_deployment_info(get_result.deployment, output)
+
+    @aws_ec2.command(help="Update existing AWS EC2 deployments")
+    @click.argument("name", type=click.STRING)
+    @click.option(
+        "-b",
+        "--bento",
+        "--bento-service-bundle",
+        type=click.STRING,
+        callback=parse_bento_tag_callback,
+        help="Target BentoService to be deployed, referenced by its name and version "
+        'in format of name:version. For example: "iris_classifier:v1.2.0"',
+    )
+    @click.option(
+        "-n",
+        "--namespace",
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
+        'can be changed in BentoML configuration yatai_service/default_namespace',
+    )
+    @click.option(
+        "-o", "--output", type=click.Choice(["json", "yaml", "table"]), default="json"
+    )
+    @click.option(
+        "--wait/--no-wait",
+        default=True,
+        help="Wait for apply action to complete or encounter an error."
+        "If set to no-wait, CLI will return immediately. The default value is wait",
+    )
+    def update(name, namespace, bento, output, wait):
+        yatai_client = get_default_yatai_client()
+        if bento:
+            bento_name, bento_version = bento.split(":")
+        else:
+            bento_name = None
+            bento_version = None
+
+        with Spinner("Updating EC2 deployment"):
+            update_result = yatai_client.deployment.update_ec2_deployment(
+                deployment_name=name,
+                bento_name=bento_name,
+                bento_version=bento_version,
+                namespace=namespace,
+                wait=wait,
+            )
+            if update_result.status.status_code != yatai_proto.status_pb2.Status.OK:
+                error_code, error_message = status_pb_to_error_code_and_message(
+                    update_result.status
+                )
+                raise CLIException(f"{error_code}:{error_message}")
+
+        _print_deployment_info(update_result.deployment, output)
+
+    
+    @aws_ec2.command(name="list", help="List AWS Lambda deployments")
+    @click.option(
+        "-n",
+        "--namespace",
+        type=click.STRING,
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
+        'can be changed in BentoML configuration yatai_service/default_namespace',
+        default=ALL_NAMESPACE_TAG,
+    )
+    @click.option(
+        "--limit",
+        type=click.INT,
+        help="The maximum amount of AWS Lambda deployments to be listed at once",
+    )
+    @click.option(
+        "--offset",
+        type=click.INT,
+        help="The offset for list of AWS Lambda deployments",
+    )
+    @click.option(
+        "-l",
+        "--labels",
+        type=click.STRING,
+        help="Label query to filter Lambda deployments, supports '=', '!=', 'IN', "
+        "'NotIn', 'Exists', and 'DoesNotExist'. (e.g. key1=value1, "
+        "key2!=value2, key3 In (value3, value3a), key4 DoesNotExist)",
+    )
+    @click.option(
+        "--order-by", type=click.Choice(["created_at", "name"]), default="created_at",
+    )
+    @click.option(
+        "--asc/--desc",
+        default=False,
+        help="Ascending or descending order for list deployments",
+    )
+    @click.option(
+        "-o",
+        "--output",
+        type=click.Choice(["json", "yaml", "table", "wide"]),
+        default="table",
+    )
+    def list_deployments(namespace, limit, offset, labels, order_by, asc, output):
+        yatai_client = get_default_yatai_client()
+        list_result = yatai_client.deployment.list_ec2_deployments(
+            limit = limit,
+            labels=labels,
+            offset=offset,
+            namespace = namespace,
+            order_by=order_by,
+            ascending_order=asc
+        )
+        if list_result.status.status_code != yatai_proto.status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                list_result.status
+            )
+            raise CLIException(f"{error_code}:{error_message}")
+        else:
+            _print_deployments_info(list_result.deployments, output)
 
     return aws_ec2

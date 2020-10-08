@@ -106,6 +106,12 @@ deployment_schema = {
                     },
                 },
             },
+            "aws_ec2_operator_config":{
+                "type": "dict",
+                "schema": {
+                    "region": {"type": "string"}
+                }
+            }
         },
     },
     "state": {

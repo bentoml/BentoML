@@ -293,22 +293,6 @@ def reduce_bundle_size_and_upload_extra_resources_to_s3(
         raise BentoMLException(str(e))
 
 
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/\
-# using-cfn-describing-stacks.html
-FAILED_CLOUDFORMATION_STACK_STATUS = [
-    "CREATE_FAILED",
-    # Ongoing creation of one or more stacks with an expected StackId
-    # but without any templates or resources.
-    "REVIEW_IN_PROGRESS",
-    "ROLLBACK_FAILED",
-    # This status exists only after a failed stack creation.
-    "ROLLBACK_COMPLETE",
-    # Ongoing removal of one or more stacks after a failed stack
-    # creation or after an explicitly cancelled stack creation.
-    "ROLLBACK_IN_PROGRESS",
-]
-
-
 def ensure_is_ready_to_deploy_to_cloud_formation(stack_name, region):
     try:
         cf_client = boto3.client("cloudformation", region)

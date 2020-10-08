@@ -258,10 +258,8 @@ class YataiService(YataiServicer):
             deployment_pb = self.deployment_store.get(
                 request.deployment_name, request.namespace
             )
-
             if deployment_pb:
                 operator = get_deployment_operator(self, deployment_pb)
-
                 response = operator.describe(deployment_pb)
 
                 if response.status.status_code == status_pb2.Status.OK:

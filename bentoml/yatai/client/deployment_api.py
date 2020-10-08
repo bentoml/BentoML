@@ -125,6 +125,7 @@ class DeploymentAPIClient:
                 )
             )
 
+        print("creaing new deployment pb ", deployment_pb)
         validation_errors = validate_deployment_pb(deployment_pb)
         if validation_errors:
             raise YataiDeploymentException(
@@ -372,6 +373,52 @@ class DeploymentAPIClient:
         deployment_pb.spec.bento_version = bento_version
         deployment_pb.spec.operator = DeploymentSpec.AWS_EC2
         return self.create(deployment_pb, wait)
+
+    def update_ec2_deployment(
+        self, deployment_name, bento_name, bento_version, namespace, wait
+    ):
+        get_deployment_result = self.get(namespace=namespace, name=deployment_name)
+        if get_deployment_result.status.status_code != status_pb2.Status.OK:
+            error_code = status_pb2.Status.Code.Name(
+                get_deployment_result.status.status_code
+            )
+            error_message = get_deployment_result.status.error_message
+            raise BentoMLException(
+                f"Failed to retrieve current deployment {deployment_name} "
+                f"in {namespace}.  {error_code}:{error_message}"
+            )
+        # new deloyment info with updated configs
+        deployment_pb = get_deployment_result.deployment
+        print("existing deployment pb is ", deployment_pb)
+
+        if bento_name:
+            deployment_pb.spec.bento_name = bento_name
+        if bento_version:
+            deployment_pb.spec.bento_version = bento_version
+        logger.debug("Updated configuration for Lambda deployment %s", deployment_name)
+
+        return self.apply(deployment_pb, wait)
+
+    def list_ec2_deployments(
+        self,
+        limit = None,
+        offset=None,
+        labels=None,
+        namespace = None,
+        order_by=None,
+        ascending_order=None,
+        is_all_namespaces=False
+        ):
+        return self.list(
+                limit=limit,
+                offset=offset,
+                labels=labels,
+                namespace=namespace,
+                is_all_namespaces=is_all_namespaces,
+                operator=DeploymentSpec.AWS_EC2,
+                order_by=order_by,
+                ascending_order=ascending_order,
+            )
 
     def create_lambda_deployment(
         self,

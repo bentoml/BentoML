@@ -15,6 +15,23 @@ from bentoml.exceptions import (
 
 logger = logging.getLogger(__name__)
 
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/\
+# using-cfn-describing-stacks.html
+FAILED_CLOUDFORMATION_STACK_STATUS = [
+    "CREATE_FAILED",
+    # Ongoing creation of one or more stacks with an expected StackId
+    # but without any templates or resources.
+    "REVIEW_IN_PROGRESS",
+    "ROLLBACK_FAILED",
+    # This status exists only after a failed stack creation.
+    "ROLLBACK_COMPLETE",
+    # Ongoing removal of one or more stacks after a failed stack
+    # creation or after an explicitly cancelled stack creation.
+    "ROLLBACK_IN_PROGRESS",
+]
+
+SUCCESS_CLOUDFORMATION_STACK_STATUS = ["CREATE_COMPLETE", "UPDATE_COMPLETE"]
+
 
 def generate_aws_compatible_string(*items, max_length=63):
     """
@@ -56,6 +73,9 @@ def generate_aws_compatible_string(*items, max_length=63):
 def get_default_aws_region():
     try:
         aws_session = boto3.session.Session()
+        region = aws_session.region_name
+        if not region:
+            return ""
         return aws_session.region_name
     except ClientError as e:
         # We will do nothing, if there isn't a default region
